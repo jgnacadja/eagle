@@ -43,4 +43,14 @@ describe('HttpExceptionFilter', () => {
       expect.objectContaining({ statusCode: 400, message: 'Validation failed' })
     )
   })
+
+  it('falls back to exception.message when the response object has no message field', () => {
+    const { host, mockResponse } = makeHost('/test')
+    const exception = new HttpException({ error: 'Forbidden' }, HttpStatus.FORBIDDEN)
+    filter.catch(exception, host)
+
+    expect(mockResponse.json).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: 403, message: exception.message })
+    )
+  })
 })

@@ -16,6 +16,7 @@
   "dependencies": {
     "@learnup/types": "workspace:*",
     "@learnup/ui": "workspace:*",
+    "nuxt": "^4",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
   },

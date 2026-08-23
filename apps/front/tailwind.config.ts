@@ -1,42 +1,44 @@
 import type { Config } from 'tailwindcss'
+import { colors, radii, shadows, typography } from '@learnup/ui'
 
 const config: Config = {
   content: [
-    './components/**/*.{vue,ts}',
-    './layouts/**/*.{vue,ts}',
-    './pages/**/*.{vue,ts}',
-    './plugins/**/*.{ts,js}',
-    './app.vue',
+    './app/components/**/*.{vue,ts}',
+    './app/layouts/**/*.{vue,ts}',
+    './app/pages/**/*.{vue,ts}',
+    './app/app.vue',
     './nuxt.config.{ts,js}'
   ],
   theme: {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#00E89F',
-          dark: '#00B57A',
-          soft: '#E6FBF5'
+          DEFAULT: colors.primary.default,
+          dark: colors.primary.dark,
+          soft: colors.primary.soft
         },
         ink: {
-          DEFAULT: '#1A1A1A',
-          muted: '#6C757D'
+          DEFAULT: colors.ink.default,
+          muted: colors.ink.muted
         },
-        gold: {
-          DEFAULT: '#FDB813',
-          soft: '#FFF5D9'
-        },
-        danger: '#DC3545',
-        surface: '#f2f1ec',
-        paper: '#F8F9FA'
+        danger: colors.danger.default,
+        surface: colors.surface,
+        paper: colors.paper,
+        rule: colors.rule
       },
       fontFamily: {
-        display: ['Unbounded', 'system-ui', 'sans-serif'],
-        sans: ['Poppins', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'ui-monospace', 'monospace']
+        display: [...typography.fontFamily.display],
+        sans: [...typography.fontFamily.sans],
+        mono: [...typography.fontFamily.mono]
+      },
+      borderRadius: {
+        sm: radii.sm,
+        md: radii.md,
+        lg: radii.lg
       },
       boxShadow: {
-        sm: '0 1px 2px rgb(26 26 26 / 8%)',
-        md: '0 4px 12px rgb(26 26 26 / 10%)'
+        sm: shadows.sm,
+        md: shadows.md
       }
     }
   }

@@ -93,19 +93,19 @@ export default tseslint.config(
     }
   },
   {
-    files: ['apps/backend/**/*.ts'],
+    files: ['apps/api/**/*.ts'],
     languageOptions: {
       globals: nodeGlobals
     }
   },
   {
-    files: ['apps/backend/**/*.spec.ts', 'apps/web/**/*.spec.ts', 'apps/web/test/**/*.ts'],
+    files: ['apps/api/**/*.spec.ts', 'apps/front/**/*.spec.ts', 'apps/front/test/**/*.ts'],
     languageOptions: {
       globals: vitestGlobals
     }
   },
   {
-    files: ['apps/web/**/*.ts', 'apps/web/**/*.vue'],
+    files: ['apps/front/**/*.ts', 'apps/front/**/*.vue'],
     languageOptions: {
       globals: {
         ...nodeGlobals,

@@ -1,5 +1,5 @@
 {
-  "name": "@taskflow/web",
+  "name": "@learnup/front",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -14,11 +14,8 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@pinia/nuxt": "^0.11.3",
-    "date-fns": "^4.4.0",
-    "nuxt": "^3.15.1",
-    "pinia": "^3.0.4",
-    "socket.io-client": "^4.8.3",
+    "@learnup/types": "workspace:*",
+    "@learnup/ui": "workspace:*",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
   },

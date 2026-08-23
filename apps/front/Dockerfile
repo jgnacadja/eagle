@@ -1,4 +1,3 @@
-
 FROM node:22-alpine AS base
 RUN corepack enable
 WORKDIR /app
@@ -6,9 +5,10 @@ WORKDIR /app
 
 FROM base AS build
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-COPY apps/web apps/web
-RUN pnpm install --filter @taskflow/web... --frozen-lockfile
-RUN pnpm --filter @taskflow/web build
+COPY packages packages
+COPY apps/front apps/front
+RUN pnpm install --filter @learnup/front... --frozen-lockfile
+RUN pnpm --filter @learnup/front build
 
 FROM base AS runtime
 ENV NODE_ENV=production
@@ -16,7 +16,7 @@ ENV NITRO_HOST=0.0.0.0
 ENV NITRO_PORT=3000
 WORKDIR /app
 
-COPY --from=build /app/apps/web/.output ./.output
+COPY --from=build /app/apps/front/.output ./.output
 
 RUN addgroup -S app && adduser -S app -G app && chown -R app:app /app
 USER app

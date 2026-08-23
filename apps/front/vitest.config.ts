@@ -9,7 +9,7 @@ export default defineVitestConfig({
       provider: 'v8',
       reportsDirectory: './coverage',
       all: true,
-      include: ['components/**/*.vue'],
+      include: ['app/components/**/*.vue'],
       reporter: ['text', ['lcov', { file: 'lcov.info' }]],
       thresholds: {
         lines: 90,

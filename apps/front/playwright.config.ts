@@ -28,7 +28,7 @@ export default defineConfig({
       timeout: 120_000
     },
     {
-      command: 'pnpm --filter @taskflow/backend dev',
+      command: 'pnpm --filter @learnup/api dev',
       url: 'http://localhost:3001/health',
       reuseExistingServer: true,
       timeout: 60_000

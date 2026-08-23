@@ -8,6 +8,7 @@
       "outputs": ["dist/**", ".output/**", ".nuxt/**"]
     },
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
       "persistent": true
     },

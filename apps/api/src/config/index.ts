@@ -20,10 +20,9 @@ export function configureApp(app: INestApplication): void {
   })
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('TaskFlow API')
-    .setDescription('API TaskFlow — documentation OpenAPI')
+    .setTitle('LEARN UP ACADEMY API')
+    .setDescription('API LEARN UP ACADEMY — documentation OpenAPI')
     .setVersion('0.0.1')
-    .addBearerAuth()
     .build()
   SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, swaggerConfig))
 }

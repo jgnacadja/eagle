@@ -17,35 +17,31 @@ services:
       retries: 5
       start_period: 10s
 
-  backend:
+  api:
     build:
       context: .
-      dockerfile: apps/backend/Dockerfile
+      dockerfile: apps/api/Dockerfile
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      BACKEND_PORT: 3001
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
-      JWT_SECRET: ${JWT_SECRET}
+      API_PORT: 3001
+      CORS_ORIGIN: ${CORS_ORIGIN}
     ports:
       - '3001:3001'
-    depends_on:
-      postgres:
-        condition: service_healthy
 
-  web:
+  front:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
+      dockerfile: apps/front/Dockerfile
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      NUXT_API_BASE: http://backend:3001
+      NUXT_API_BASE: http://api:3001
       NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE}
     ports:
       - '3000:3000'
     depends_on:
-      backend:
+      api:
         condition: service_healthy
 
 volumes:

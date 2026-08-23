@@ -1,5 +1,5 @@
 {
-  "name": "taskflow",
+  "name": "learnup-academy",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -8,29 +8,19 @@
     "node": ">=22"
   },
   "scripts": {
+    "prepare": "husky",
     "dev": "turbo run dev",
-    "dev:web": "pnpm --filter @taskflow/web dev",
-    "dev:backend": "pnpm --filter @taskflow/backend dev",
+    "dev:front": "pnpm --filter @learnup/front dev",
+    "dev:api": "pnpm --filter @learnup/api dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,vue,js,json,md,yml,yaml}\"",
     "test": "turbo run test -- --passWithNoTests",
     "test:coverage": "turbo run test:coverage",
-    "test:e2e": "turbo run test:e2e",
-    "db:migrate": "pnpm --filter @taskflow/backend prisma:migrate",
-    "db:generate": "pnpm --filter @taskflow/backend prisma:generate",
-    "db:reset": "pnpm --filter @taskflow/backend exec prisma migrate reset --force"
+    "test:e2e": "turbo run test:e2e"
   },
   "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/client",
-      "@prisma/engines",
-      "prisma",
-      "@swc/core",
-      "esbuild",
-      "@parcel/watcher",
-      "bcrypt"
-    ]
+    "onlyBuiltDependencies": ["@swc/core", "esbuild", "@parcel/watcher"]
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
@@ -44,8 +34,5 @@
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.0",
     "vue-eslint-parser": "^9.4.3"
-  },
-  "dependencies": {
-    "date-fns": "^4.4.0"
   }
 }

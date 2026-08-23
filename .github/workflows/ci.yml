@@ -23,9 +23,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Generate Prisma client
-        run: pnpm --filter @taskflow/backend exec prisma generate
-
       - name: Lint
         run: pnpm lint
 
@@ -51,7 +48,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: pnpm --filter @taskflow/web exec playwright install --with-deps chromium
+        run: pnpm --filter @learnup/front exec playwright install --with-deps chromium
 
       - name: Create .env
         run: cp .env.example .env

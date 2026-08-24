@@ -30,14 +30,25 @@ pnpm dev
 `@learnup/types`) avant de démarrer les apps — aucune étape manuelle
 supplémentaire n'est nécessaire.
 
-> **Avec Docker** — stack complète (API + front + PostgreSQL) :
+> **Avec Docker** — stack locale complète :
 >
 > ```bash
 > docker compose up --build
+> pnpm seed   # une fois Directus démarré
 > ```
->
-> L'environnement local complet (Redis, MinIO, Directus, seeds) est mis en
-> place en ST-09.
+
+| Service           | URL                            | Rôle                                  |
+| ------------------ | ------------------------------- | -------------------------------------- |
+| `postgres`         | —                                | PostgreSQL 16, healthcheck              |
+| `redis`            | —                                | Cache Directus                          |
+| `minio`            | http://localhost:9001 (console) | Stockage média S3-compatible            |
+| `directus`         | http://localhost:8055           | Back-office (admin bootstrap via `.env`) |
+| `api`              | http://localhost:3001           | NestJS                                  |
+| `front`            | http://localhost:3000           | Nuxt 4                                  |
+
+`docker compose up` démarre toute la stack en une seule commande — chaque
+service attend que ses dépendances soient healthy (`depends_on` +
+healthchecks) avant de démarrer.
 
 Installation attendue en moins de 15 minutes pour un nouveau développeur.
 
@@ -56,7 +67,11 @@ packages/
                   les valeurs sont provisoires tant que la DA n'est pas validée
   types/          Types TypeScript partagés (@learnup/types)
 
-directus/         Schema snapshots + config Directus versionnés (dès ST-11)
+directus/
+  seed/           Script de seed idempotent (`pnpm seed`) — données de démo
+                  (3 centres, 11 familles, formations, articles). Saute
+                  proprement les collections pas encore modélisées (ST-11).
+  schema/         Snapshots de schéma Directus versionnés (peuplé en ST-11)
 ```
 
 ### Convention UI — zéro valeur de style en dur

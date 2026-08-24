@@ -131,5 +131,17 @@ export default tseslint.config(
       'vue/multi-word-component-names': 'off'
     }
   },
+  {
+    files: ['directus/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        ...nodeGlobals,
+        fetch: 'readonly'
+      }
+    },
+    rules: {
+      'no-console': 'off'
+    }
+  },
   prettier
 )

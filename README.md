@@ -1,4 +1,4 @@
-# TaskFlow
+# EAGLE
 
 [![CI](https://github.com/jgnacadja/taskflow/actions/workflows/ci.yml/badge.svg)](https://github.com/jgnacadja/taskflow/actions/workflows/ci.yml)
 

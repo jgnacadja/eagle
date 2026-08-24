@@ -20,7 +20,7 @@ export function configureApp(app: INestApplication): void {
   })
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('LEARN UP ACADEMY API')
+    .setTitle('Backend API')
     .setDescription('API LEARN UP ACADEMY — documentation OpenAPI')
     .setVersion('0.0.1')
     .build()

@@ -11,6 +11,7 @@
 
 import { collections, relations } from './collections.mjs'
 import { permissionsFor, publicPermissions, roles } from './roles.mjs'
+import { log, logError } from '../logger.mjs'
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL ?? 'http://localhost:8055'
 const ADMIN_EMAIL = process.env.DIRECTUS_ADMIN_EMAIL ?? 'admin@example.com'
@@ -61,7 +62,7 @@ async function fieldExists(token, collection, field) {
 async function ensureCollections(token) {
   for (const def of collections) {
     if (await collectionExists(token, def.collection)) {
-      console.log(`↷  collection ${def.collection} déjà présente`)
+      log(`↷  collection ${def.collection} déjà présente`)
       continue
     }
     await api(token, 'POST', '/collections', {
@@ -71,14 +72,14 @@ async function ensureCollections(token) {
       schema: {},
       fields: def.fields
     })
-    console.log(`✔  collection ${def.collection} créée (${def.fields.length} champs)`)
+    log(`✔  collection ${def.collection} créée (${def.fields.length} champs)`)
   }
 }
 
 async function ensureRelations(token) {
   for (const rel of relations) {
     if (await fieldExists(token, rel.collection, rel.field)) {
-      console.log(`↷  relation ${rel.collection}.${rel.field} déjà présente`)
+      log(`↷  relation ${rel.collection}.${rel.field} déjà présente`)
       continue
     }
     await api(token, 'POST', `/fields/${rel.collection}`, {
@@ -91,7 +92,7 @@ async function ensureRelations(token) {
       field: rel.field,
       related_collection: rel.related_collection
     })
-    console.log(`✔  relation ${rel.collection}.${rel.field} → ${rel.related_collection}`)
+    log(`✔  relation ${rel.collection}.${rel.field} → ${rel.related_collection}`)
   }
 }
 
@@ -104,7 +105,7 @@ async function ensureRoles(token) {
   const existing = await fetchByName(token, '/roles')
   for (const role of roles) {
     if (existing.has(role.name)) {
-      console.log(`↷  rôle ${role.name} déjà présent`)
+      log(`↷  rôle ${role.name} déjà présent`)
       continue
     }
     const { data } = await api(token, 'POST', '/roles', {
@@ -113,7 +114,7 @@ async function ensureRoles(token) {
       description: role.description
     })
     existing.set(role.name, data.id)
-    console.log(`✔  rôle ${role.name} créé`)
+    log(`✔  rôle ${role.name} créé`)
   }
   return existing
 }
@@ -125,7 +126,7 @@ async function ensurePolicies(token) {
   const existing = await fetchByName(token, '/policies')
   for (const role of roles) {
     if (existing.has(role.name)) {
-      console.log(`↷  policy ${role.name} déjà présente`)
+      log(`↷  policy ${role.name} déjà présente`)
       continue
     }
     const { data } = await api(token, 'POST', '/policies', {
@@ -136,7 +137,7 @@ async function ensurePolicies(token) {
       app_access: true
     })
     existing.set(role.name, data.id)
-    console.log(`✔  policy ${role.name} créée`)
+    log(`✔  policy ${role.name} créée`)
   }
   return existing
 }
@@ -150,11 +151,11 @@ async function ensureAccess(token, roleIds, policyIds) {
     const policyId = policyIds.get(role.name)
     const key = `${roleId}:${policyId}`
     if (linked.has(key)) {
-      console.log(`↷  ${role.name} déjà lié à sa policy`)
+      log(`↷  ${role.name} déjà lié à sa policy`)
       continue
     }
     await api(token, 'POST', '/access', { role: roleId, policy: policyId })
-    console.log(`✔  ${role.name} lié à sa policy`)
+    log(`✔  ${role.name} lié à sa policy`)
   }
 }
 
@@ -189,7 +190,7 @@ async function ensurePermissions(token, policyIds) {
     const existing = await fetchExistingPermissions(token, policyId)
     const wanted = permissionsFor(role.name)
     const created = await createPermissions(token, policyId, wanted, existing)
-    console.log(`✔  permissions ${role.name} — ${created} créées, ${wanted.length - created} déjà présentes`)
+    log(`✔  permissions ${role.name} — ${created} créées, ${wanted.length - created} déjà présentes`)
   }
 }
 
@@ -209,11 +210,11 @@ async function ensurePublicPermissions(token) {
   const existing = await fetchExistingPermissions(token, policyId)
   const wanted = publicPermissions()
   const created = await createPermissions(token, policyId, wanted, existing)
-  console.log(`✔  permissions public — ${created} créées, ${wanted.length - created} déjà présentes`)
+  log(`✔  permissions public — ${created} créées, ${wanted.length - created} déjà présentes`)
 }
 
 async function main() {
-  console.log(`Connexion à Directus (${DIRECTUS_URL})…`)
+  log(`Connexion à Directus (${DIRECTUS_URL})…`)
   const token = await authenticate()
 
   await ensureCollections(token)
@@ -224,10 +225,10 @@ async function main() {
   await ensurePermissions(token, policyIds)
   await ensurePublicPermissions(token)
 
-  console.log('Schéma v1 prêt.')
+  log('Schéma v1 prêt.')
 }
 
 main().catch((error) => {
-  console.error('Build schema échoué :', error.message)
+  logError('Build schema échoué :', error.message)
   process.exitCode = 1
 })

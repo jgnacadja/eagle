@@ -138,7 +138,10 @@ export default tseslint.config(
         ...nodeGlobals,
         fetch: 'readonly'
       }
-    },
+    }
+  },
+  {
+    files: ['directus/logger.mjs'],
     rules: {
       'no-console': 'off'
     }

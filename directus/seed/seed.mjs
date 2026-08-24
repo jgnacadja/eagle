@@ -8,6 +8,7 @@
 // il devient pleinement actif une fois ST-11 livré, sans changement requis.
 
 import { articles, centres, famillesFormation, formations } from './data.mjs'
+import { log, logError } from '../logger.mjs'
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL ?? 'http://localhost:8055'
 const ADMIN_EMAIL = process.env.DIRECTUS_ADMIN_EMAIL ?? 'admin@example.com'
@@ -97,7 +98,7 @@ async function upsertItem(token, collection, item, existingId) {
 
 async function seedDataset(token, { collection, items }) {
   if (!(await collectionExists(token, collection))) {
-    console.log(`⏭  ${collection} — collection absente (ST-11 non livré), ignoré`)
+    log(`⏭  ${collection} — collection absente (ST-11 non livré), ignoré`)
     return
   }
 
@@ -107,11 +108,11 @@ async function seedDataset(token, { collection, items }) {
     const outcome = await upsertItem(token, collection, item, existingBySlug.get(item.slug))
     results[outcome] += 1
   }
-  console.log(`✔  ${collection} — ${results.created} créés, ${results.updated} mis à jour`)
+  log(`✔  ${collection} — ${results.created} créés, ${results.updated} mis à jour`)
 }
 
 async function main() {
-  console.log(`Connexion à Directus (${DIRECTUS_URL})…`)
+  log(`Connexion à Directus (${DIRECTUS_URL})…`)
   await waitForDirectus()
   const token = await authenticate()
 
@@ -119,10 +120,10 @@ async function main() {
     await seedDataset(token, dataset)
   }
 
-  console.log('Seed terminé.')
+  log('Seed terminé.')
 }
 
 main().catch((error) => {
-  console.error('Seed échoué :', error.message)
+  logError('Seed échoué :', error.message)
   process.exitCode = 1
 })

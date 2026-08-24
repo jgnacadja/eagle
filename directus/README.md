@@ -32,10 +32,18 @@ simple pour ce cas d'usage, mais ce n'est pas obligatoire (une policy peut
 | **editeur** | Crée/édite articles et blocs de contenu (brouillon). Lecture seule sur centres/familles/pages/stats. Pas de suppression. |
 | **moderateur** | Lecture + édition sur articles et blocs (relecture, publication). Lecture seule ailleurs. Ni création ni suppression. |
 | **lecteur** | Lecture seule sur tout, aucune écriture. |
+| **Public** (natif Directus, visiteurs non connectés) | Lecture seule, uniquement le contenu `status: published`. |
 
 Matrice vérifiée empiriquement (utilisateurs de test créés/testés/supprimés) :
-lecture toujours OK pour les 4 rôles, écriture/suppression refusées (403) hors
-du périmètre accordé à chacun.
+lecture toujours OK pour les 4 rôles internes, écriture/suppression refusées
+(403) hors du périmètre accordé à chacun.
+
+**Public n'est pas un rôle classique** — Directus le représente par une ligne
+`directus_access` où `role` et `user` valent tous les deux `null`, pas par une
+entrée dans `directus_roles`. Sans permissions dessus, un visiteur du site
+(donc non authentifié) reçoit un 403 sur toute lecture — c'est ce qui a été
+découvert en branchant le front (ST-12) : le manque avait échappé à la revue
+initiale de ST-11, qui n'avait modélisé que les rôles internes.
 
 ## Procédure de restauration — environnement vierge
 

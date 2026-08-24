@@ -135,6 +135,9 @@ importers:
 
   apps/front:
     dependencies:
+      '@directus/sdk':
+        specifier: ^25.0.0
+        version: 25.0.0
       '@learnup/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -160,6 +163,9 @@ importers:
       '@playwright/test':
         specifier: ^1.49.1
         version: 1.61.0
+      '@vitejs/plugin-vue':
+        specifier: ^6.0.8
+        version: 6.0.8(vite@8.2.2(@types/node@22.20.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.0))(vue@3.5.38(typescript@5.9.3))
       '@vitest/coverage-v8':
         specifier: ^3.0.5
         version: 3.2.6(vitest@3.2.6(@types/node@22.20.0)(happy-dom@16.8.1)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.48.0)(yaml@2.9.0))
@@ -519,6 +525,10 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       postcss-selector-parser: ^7.0.0
+
+  '@directus/sdk@25.0.0':
+    resolution: {integrity: sha512-kQJ7LiJsR653v/zq+4CUXBnHqE00W37+qT/pUuRsWl0ZAEY2uYcRaHd89LbCVvaCR7kZTzrxhXVCQGcyD+o5QQ==}
+    engines: {node: '>=22'}
 
   '@dxup/nuxt@0.5.10':
     resolution: {integrity: sha512-54Vehb7LmR7qYpC6KFwjDTSm6CB1CayBu+JXdHrPLrIjjr5xAgb43jvgOU+mnB+tsRh414fSsEy0QjBMKILQ8g==}
@@ -6701,6 +6711,8 @@ snapshots:
     dependencies:
       postcss-selector-parser: 7.1.4
 
+  '@directus/sdk@25.0.0': {}
+
   '@dxup/nuxt@0.5.10(esbuild@0.28.1)(magicast@0.5.4)(rolldown@1.2.5)(rollup@4.62.2)(vite@8.2.2(@types/node@22.20.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.0))(webpack@5.106.2(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.26))':
     dependencies:
       '@dxup/unimport': 0.1.2
@@ -8395,6 +8407,12 @@ snapshots:
       vue: 3.5.41(typescript@5.9.3)
     transitivePeerDependencies:
       - supports-color
+
+  '@vitejs/plugin-vue@6.0.8(vite@8.2.2(@types/node@22.20.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.0))(vue@3.5.38(typescript@5.9.3))':
+    dependencies:
+      '@rolldown/pluginutils': 1.0.1
+      vite: 8.2.2(@types/node@22.20.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.0)
+      vue: 3.5.38(typescript@5.9.3)
 
   '@vitejs/plugin-vue@6.0.8(vite@8.2.2(@types/node@22.20.0)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.0))(vue@3.5.41(typescript@5.9.3))':
     dependencies:

@@ -14,6 +14,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@directus/sdk": "^25.0.0",
     "@learnup/types": "workspace:*",
     "@learnup/ui": "workspace:*",
     "nuxt": "^4",
@@ -24,6 +25,7 @@
     "@nuxt/test-utils": "^3.15.4",
     "@nuxtjs/tailwindcss": "^6.14.0",
     "@playwright/test": "^1.49.1",
+    "@vitejs/plugin-vue": "^6.0.8",
     "@vitest/coverage-v8": "^3.0.5",
     "@vue/test-utils": "^2.4.6",
     "happy-dom": "^16.5.3",

@@ -34,7 +34,9 @@ supplémentaire n'est nécessaire.
 >
 > ```bash
 > docker compose up --build
-> pnpm seed   # une fois Directus démarré
+> # une fois directus healthy (docker compose ps) :
+> #   restaurer le schéma + rôles → voir directus/README.md
+> pnpm seed
 > ```
 
 | Service           | URL                            | Rôle                                  |
@@ -68,10 +70,12 @@ packages/
   types/          Types TypeScript partagés (@learnup/types)
 
 directus/
+  schema/         Schéma Directus versionné : collections, rôles/permissions,
+                  snapshot + script de build. Procédure de restauration
+                  complète dans directus/README.md.
   seed/           Script de seed idempotent (`pnpm seed`) — données de démo
-                  (3 centres, 11 familles, formations, articles). Saute
-                  proprement les collections pas encore modélisées (ST-11).
-  schema/         Snapshots de schéma Directus versionnés (peuplé en ST-11)
+                  (3 centres, 11 familles, 3 articles). Saute proprement les
+                  collections pas dans le périmètre de ST-11 (voir son README).
 ```
 
 ### Convention UI — zéro valeur de style en dur

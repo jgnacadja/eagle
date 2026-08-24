@@ -133,10 +133,14 @@ services:
       NODE_ENV: production
       NUXT_API_BASE: http://api:3001
       NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE}
+      NUXT_DIRECTUS_URL: http://directus:8055
+      NUXT_PUBLIC_DIRECTUS_URL: ${NUXT_PUBLIC_DIRECTUS_URL}
     ports:
       - '3000:3000'
     depends_on:
       api:
+        condition: service_healthy
+      directus:
         condition: service_healthy
 
 volumes:

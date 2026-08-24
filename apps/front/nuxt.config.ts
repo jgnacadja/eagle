@@ -1,6 +1,12 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
 const apiBase = process.env.NUXT_API_BASE ?? 'http://localhost:3001'
+// Deux valeurs distinctes : le rendu SSR tourne dans le conteneur front et
+// doit joindre Directus via le nom de service Docker (`directus`), alors que
+// le navigateur (hydratation, navigation client) ne connaît que l'URL
+// publique. Sans Docker, les deux valeurs par défaut sont identiques.
+const directusUrlServer = process.env.NUXT_DIRECTUS_URL ?? 'http://localhost:8055'
+const directusUrlPublic = process.env.NUXT_PUBLIC_DIRECTUS_URL ?? 'http://localhost:8055'
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-01-01',
@@ -14,8 +20,10 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/tailwindcss'],
   css: ['~/assets/css/main.css'],
   runtimeConfig: {
+    directusUrl: directusUrlServer,
     public: {
-      apiBase
+      apiBase,
+      directusUrl: directusUrlPublic
     }
   }
 })

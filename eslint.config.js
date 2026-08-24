@@ -53,10 +53,11 @@ const nuxtGlobals = {
   clearError: 'readonly',
   showError: 'readonly',
   $fetch: 'readonly',
-  // Composables custom auto-importés depuis apps/front/app/composables/
+  // Composables/utils custom auto-importés depuis apps/front/app/
   useDirectusClient: 'readonly',
   useContentSeo: 'readonly',
-  useDirectusItemBySlug: 'readonly'
+  useDirectusItemBySlug: 'readonly',
+  sanitizeHtml: 'readonly'
 }
 
 const vueGlobals = {

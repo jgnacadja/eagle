@@ -10,7 +10,7 @@
 // officiel.
 
 import { collections, relations } from './collections.mjs'
-import { permissionsFor, roles } from './roles.mjs'
+import { permissionsFor, publicPermissions, roles } from './roles.mjs'
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL ?? 'http://localhost:8055'
 const ADMIN_EMAIL = process.env.DIRECTUS_ADMIN_EMAIL ?? 'admin@example.com'
@@ -165,27 +165,51 @@ async function fetchExistingPermissions(token, policyId) {
   )
 }
 
+async function createPermissions(token, policyId, wanted, existing) {
+  let created = 0
+  for (const grant of wanted) {
+    const key = `${grant.collection}:${grant.action}`
+    if (existing.has(key)) continue
+    await api(token, 'POST', '/permissions', {
+      policy: policyId,
+      collection: grant.collection,
+      action: grant.action,
+      fields: ['*'],
+      permissions: grant.permissions ?? {},
+      validation: {}
+    })
+    created += 1
+  }
+  return created
+}
+
 async function ensurePermissions(token, policyIds) {
   for (const role of roles) {
     const policyId = policyIds.get(role.name)
     const existing = await fetchExistingPermissions(token, policyId)
     const wanted = permissionsFor(role.name)
-    let created = 0
-    for (const grant of wanted) {
-      const key = `${grant.collection}:${grant.action}`
-      if (existing.has(key)) continue
-      await api(token, 'POST', '/permissions', {
-        policy: policyId,
-        collection: grant.collection,
-        action: grant.action,
-        fields: ['*'],
-        permissions: {},
-        validation: {}
-      })
-      created += 1
-    }
+    const created = await createPermissions(token, policyId, wanted, existing)
     console.log(`✔  permissions ${role.name} — ${created} créées, ${wanted.length - created} déjà présentes`)
   }
+}
+
+// Le rôle "Public" natif de Directus (visiteurs non authentifiés) n'est pas
+// dans `roles` — c'est un cas particulier repéré via directus_access où
+// `role` et `user` sont tous les deux null. Sans permissions dessus, un
+// site public ne peut rien lire (deny-by-default).
+async function findPublicPolicyId(token) {
+  const { data } = await api(token, 'GET', '/access?limit=-1')
+  const publicAccess = data.find((a) => a.role === null && a.user === null)
+  if (!publicAccess) throw new Error('Policy Public introuvable (attendue nativement dans Directus)')
+  return publicAccess.policy
+}
+
+async function ensurePublicPermissions(token) {
+  const policyId = await findPublicPolicyId(token)
+  const existing = await fetchExistingPermissions(token, policyId)
+  const wanted = publicPermissions()
+  const created = await createPermissions(token, policyId, wanted, existing)
+  console.log(`✔  permissions public — ${created} créées, ${wanted.length - created} déjà présentes`)
 }
 
 async function main() {
@@ -198,6 +222,7 @@ async function main() {
   const policyIds = await ensurePolicies(token)
   await ensureAccess(token, roleIds, policyIds)
   await ensurePermissions(token, policyIds)
+  await ensurePublicPermissions(token)
 
   console.log('Schéma v1 prêt.')
 }

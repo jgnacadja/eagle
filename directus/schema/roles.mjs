@@ -47,3 +47,23 @@ export function permissionsFor(roleName) {
       return []
   }
 }
+
+// Accès public (visiteurs du site, non authentifiés) — trouvé en testant
+// ST-12 en réel : le front lit Directus sans se connecter, donc sans ceci
+// tout GET est 403 (deny-by-default). Statut "published" uniquement sur les
+// collections qui ont un champ status ; le reste (page_blocks, stats,
+// directus_files) n'en a pas, lecture non filtrée.
+const PUBLIC_STATUS_FILTERED = ['centres', 'familles_formation', 'articles', 'pages']
+const PUBLIC_UNRESTRICTED = ['page_blocks', 'stats', 'directus_files']
+
+/** @returns {Array<{collection: string, action: string, permissions?: object}>} */
+export function publicPermissions() {
+  return [
+    ...PUBLIC_STATUS_FILTERED.map((collection) => ({
+      collection,
+      action: 'read',
+      permissions: { status: { _eq: 'published' } }
+    })),
+    ...PUBLIC_UNRESTRICTED.map((collection) => ({ collection, action: 'read', permissions: {} }))
+  ]
+}

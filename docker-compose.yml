@@ -82,6 +82,7 @@ services:
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       CACHE_ENABLED: 'true'
+      CACHE_AUTO_PURGE: 'true'
       CACHE_STORE: redis
       REDIS: redis://redis:6379
       STORAGE_LOCATIONS: s3
@@ -94,6 +95,7 @@ services:
       STORAGE_S3_FORCE_PATH_STYLE: 'true'
       CORS_ENABLED: 'true'
       CORS_ORIGIN: ${CORS_ORIGIN}
+      PUBLIC_URL: http://localhost:8055
     ports:
       - '8055:8055'
     depends_on:
@@ -104,7 +106,7 @@ services:
       minio-init:
         condition: service_completed_successfully
     healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:8055/server/health']
+      test: ['CMD', 'wget', '--spider', '-q', 'http://127.0.0.1:8055/server/health']
       interval: 15s
       timeout: 5s
       retries: 10

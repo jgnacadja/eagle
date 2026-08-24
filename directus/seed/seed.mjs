@@ -10,7 +10,7 @@
 import { articles, centres, famillesFormation, formations } from './data.mjs'
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL ?? 'http://localhost:8055'
-const ADMIN_EMAIL = process.env.DIRECTUS_ADMIN_EMAIL ?? 'admin@learnup.local'
+const ADMIN_EMAIL = process.env.DIRECTUS_ADMIN_EMAIL ?? 'admin@example.com'
 const ADMIN_PASSWORD = process.env.DIRECTUS_ADMIN_PASSWORD
 
 const DATASETS = [
@@ -57,25 +57,32 @@ async function collectionExists(token, collection) {
   return res.ok
 }
 
-async function findBySlug(token, collection, slug) {
+// Deux pièges observés empiriquement sur cette version de Directus, tous les
+// deux évités ici :
+// - `filter[slug][_eq]=x&limit=1` juste après une écriture peut renvoyer un
+//   résultat vide alors que l'item existe (répétable, cause exacte non
+//   identifiée côté Directus)
+// - combiner `limit=-1` avec `fields=...` (restriction de champs) renvoie
+//   systématiquement un tableau vide, alors que chacun fonctionne seul
+// Charger la collection complète (`limit=-1`, pas de `fields`) une seule
+// fois et comparer en mémoire contourne les deux, et reste largement assez
+// efficace pour des jeux de données de démo.
+async function fetchExistingBySlug(token, collection) {
   const url = new URL(`${DIRECTUS_URL}/items/${collection}`)
-  url.searchParams.set('filter[slug][_eq]', slug)
-  url.searchParams.set('limit', '1')
+  url.searchParams.set('limit', '-1')
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
   if (!res.ok) throw new Error(`Lecture ${collection} échouée (${res.status})`)
   const { data } = await res.json()
-  return data[0] ?? null
+  return new Map(data.map((row) => [row.slug, row.id]))
 }
 
-async function upsertItem(token, collection, item) {
-  const existing = await findBySlug(token, collection, item.slug)
-  const method = existing ? 'PATCH' : 'POST'
-  const url = existing
-    ? `${DIRECTUS_URL}/items/${collection}/${existing.id}`
+async function upsertItem(token, collection, item, existingId) {
+  const url = existingId
+    ? `${DIRECTUS_URL}/items/${collection}/${existingId}`
     : `${DIRECTUS_URL}/items/${collection}`
 
   const res = await fetch(url, {
-    method,
+    method: existingId ? 'PATCH' : 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json'
@@ -85,7 +92,7 @@ async function upsertItem(token, collection, item) {
   if (!res.ok) {
     throw new Error(`Upsert ${collection}/${item.slug} échoué (${res.status})`)
   }
-  return existing ? 'updated' : 'created'
+  return existingId ? 'updated' : 'created'
 }
 
 async function seedDataset(token, { collection, items }) {
@@ -94,9 +101,10 @@ async function seedDataset(token, { collection, items }) {
     return
   }
 
+  const existingBySlug = await fetchExistingBySlug(token, collection)
   const results = { created: 0, updated: 0 }
   for (const item of items) {
-    const outcome = await upsertItem(token, collection, item)
+    const outcome = await upsertItem(token, collection, item, existingBySlug.get(item.slug))
     results[outcome] += 1
   }
   console.log(`✔  ${collection} — ${results.created} créés, ${results.updated} mis à jour`)

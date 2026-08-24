@@ -4,11 +4,11 @@ WORKDIR /app
 
 
 FROM base AS build
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json tsconfig.base.json ./
 COPY packages packages
 COPY apps/front apps/front
-RUN pnpm install --filter @learnup/front... --frozen-lockfile
-RUN pnpm --filter @learnup/front build
+RUN pnpm install --filter @learnup/front... --frozen-lockfile --ignore-scripts
+RUN pnpm exec turbo build --filter=@learnup/front...
 
 FROM base AS runtime
 ENV NODE_ENV=production

@@ -1,4 +1,5 @@
 import type { INestApplication } from '@nestjs/common'
+import type { CustomOrigin } from '@nestjs/common/interfaces/external/cors-options.interface'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 
 export function configureApp(app: INestApplication): void {
@@ -7,22 +8,26 @@ export function configureApp(app: INestApplication): void {
     .map((o) => o.trim())
     .filter(Boolean)
 
+  const corsOrigin: CustomOrigin = (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(null, false)
+    }
+  }
+
   app.enableCors({
-    origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true)
-      } else {
-        callback(new Error(`CORS: origin "${origin}" not allowed`))
-      }
-    },
+    origin: corsOrigin,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true
   })
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('Backend API')
-    .setDescription('API LEARN UP ACADEMY — documentation OpenAPI')
-    .setVersion('0.0.1')
-    .build()
-  SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, swaggerConfig))
+  if (process.env.NODE_ENV !== 'production') {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('Backend API')
+      .setDescription('API LEARN UP ACADEMY — documentation OpenAPI')
+      .setVersion('0.0.1')
+      .build()
+    SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, swaggerConfig))
+  }
 }

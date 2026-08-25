@@ -17,8 +17,7 @@ export default defineConfig({
         'src/**/*.spec.ts',
         'src/**/*.dto.ts',
         'src/**/*.guard.ts',
-        'src/**/*.decorator.ts',
-        'src/config/**'
+        'src/**/*.decorator.ts'
       ],
       reporter: ['text', ['lcov', { file: 'lcov.info' }]],
       thresholds: {

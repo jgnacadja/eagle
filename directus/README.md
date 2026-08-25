@@ -56,7 +56,7 @@ docker cp directus/schema/snapshot.yaml <container_directus>:/directus/uploads/s
 docker exec <container_directus> npx directus schema apply --yes /directus/uploads/snapshot.yaml
 
 # 2. Rôles, policies, permissions (le snapshot ne les couvre pas)
-pnpm exec node directus/schema/build.mjs
+pnpm directus:build
 
 # 3. (optionnel) Contenu de démonstration
 pnpm seed
@@ -90,11 +90,10 @@ schéma attendu.
 
 ## Point d'attention — "formations"
 
-Le ticket ST-09 seede un jeu de données "formations témoin", mais ST-11 ne
-définit pas de collection `formations` dédiée (seules `centres`,
+ST-11 ne définit pas de collection `formations` dédiée (seules `centres`,
 `familles_formation`, `articles`, `pages`/`page_blocks`, `stats` sont dans son
-périmètre explicite). Le script de seed saute donc ce jeu de données
-proprement (log explicite), en l'état. À clarifier : soit une collection
-`formations` est ajoutée dans un ticket ultérieur, soit les formations
-individuelles sont pilotées depuis Digiforma plutôt que dupliquées dans
-Directus — dans ce dernier cas, ce jeu de données du seed devrait être retiré.
+périmètre explicite) : les formations individuelles sont pilotées depuis
+Digiforma plutôt que dupliquées dans Directus. Le jeu de données "formations
+témoin" initialement seedé par ST-09 a été retiré en conséquence — si un
+besoin de collection `formations` apparaît plus tard, il fera l'objet d'un
+ticket dédié plutôt que d'une réintroduction du seed.

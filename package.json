@@ -18,7 +18,8 @@
     "test": "turbo run test -- --passWithNoTests",
     "test:coverage": "turbo run test:coverage -- --passWithNoTests",
     "test:e2e": "turbo run test:e2e",
-    "seed": "node directus/seed/seed.mjs"
+    "directus:build": "node --env-file=.env directus/schema/build.mjs",
+    "seed": "node --env-file=.env directus/seed/seed.mjs"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

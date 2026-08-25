@@ -14,12 +14,6 @@ export const famillesFormation = Array.from({ length: 11 }, (_, i) => {
   return { slug: `famille-${n}`, name: `Famille de formation ${n}`, status: 'published' }
 })
 
-export const formations = [
-  { slug: 'formation-temoin-1', name: 'Formation témoin 1', famille_slug: 'famille-01' },
-  { slug: 'formation-temoin-2', name: 'Formation témoin 2', famille_slug: 'famille-02' },
-  { slug: 'formation-temoin-3', name: 'Formation témoin 3', famille_slug: 'famille-03' }
-]
-
 export const articles = [
   { slug: 'article-demo-1', title: 'Article de démonstration 1', status: 'published' },
   { slug: 'article-demo-2', title: 'Article de démonstration 2', status: 'published' },

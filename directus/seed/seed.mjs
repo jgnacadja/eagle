@@ -2,12 +2,12 @@
 // Seed idempotent des données de démonstration LEARN UP ACADEMY.
 // Usage : node directus/seed/seed.mjs (après `docker compose up`).
 //
-// Les collections ciblées (centres, familles_formation, formations,
-// articles) sont modélisées en ST-11. Tant qu'une collection n'existe pas
-// encore, ce script la saute proprement (log + skip) plutôt que d'échouer —
-// il devient pleinement actif une fois ST-11 livré, sans changement requis.
+// Les collections ciblées (centres, familles_formation, articles) sont
+// modélisées en ST-11. Tant qu'une collection n'existe pas encore, ce script
+// la saute proprement (log + skip) plutôt que d'échouer — il devient
+// pleinement actif une fois ST-11 livré, sans changement requis.
 
-import { articles, centres, famillesFormation, formations } from './data.mjs'
+import { articles, centres, famillesFormation } from './data.mjs'
 import { log, logError } from '../logger.mjs'
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL ?? 'http://localhost:8055'
@@ -17,7 +17,6 @@ const ADMIN_PASSWORD = process.env.DIRECTUS_ADMIN_PASSWORD
 const DATASETS = [
   { collection: 'centres', items: centres },
   { collection: 'familles_formation', items: famillesFormation },
-  { collection: 'formations', items: formations },
   { collection: 'articles', items: articles }
 ]
 

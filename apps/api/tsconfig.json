@@ -10,9 +10,6 @@
     "emitDecoratorMetadata": true,
     "declaration": false,
     "removeComments": true,
-    "strictNullChecks": true,
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": true,
     "types": ["node", "vitest/globals"]
   },

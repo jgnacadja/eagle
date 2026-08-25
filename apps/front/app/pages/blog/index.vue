@@ -21,14 +21,12 @@
 </template>
 
 <script setup lang="ts">
-import { readItems } from '@directus/sdk'
 import type { Article } from '@learnup/types'
 
-const directus = useDirectusClient()
-
-const { data: articles } = await useAsyncData('blog-articles', () =>
-  directus.request<Article[]>(readItems('articles', { sort: ['-id'] })).catch(() => [])
-)
+const articles = await useDirectusList<Article>('articles', 'blog-articles', {
+  sort: ['-publish_at'],
+  filter: { publish_at: { _lte: '$NOW' } }
+})
 
 useContentSeo({}, 'Blog — LEARN UP ACADEMY')
 </script>

@@ -57,7 +57,9 @@ const nuxtGlobals = {
   useDirectusClient: 'readonly',
   useContentSeo: 'readonly',
   useDirectusItemBySlug: 'readonly',
-  sanitizeHtml: 'readonly'
+  useDirectusList: 'readonly',
+  sanitizeHtml: 'readonly',
+  logServerError: 'readonly'
 }
 
 const vueGlobals = {
@@ -149,7 +151,7 @@ export default tseslint.config(
     }
   },
   {
-    files: ['directus/logger.mjs'],
+    files: ['directus/logger.mjs', 'apps/front/app/utils/logger.ts'],
     rules: {
       'no-console': 'off'
     }

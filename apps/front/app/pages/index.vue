@@ -37,18 +37,12 @@
 </template>
 
 <script setup lang="ts">
-import { readItems } from '@directus/sdk'
 import type { Centre, FamilleFormation } from '@learnup/types'
 
-const directus = useDirectusClient()
-
-const { data: centres } = await useAsyncData('home-centres', () =>
-  directus.request<Centre[]>(readItems('centres', { limit: 3 })).catch(() => [])
-)
-
-const { data: familles } = await useAsyncData('home-familles', () =>
-  directus.request<FamilleFormation[]>(readItems('familles_formation', { limit: 6 })).catch(() => [])
-)
+const centres = await useDirectusList<Centre>('centres', 'home-centres', { limit: 3 })
+const familles = await useDirectusList<FamilleFormation>('familles_formation', 'home-familles', {
+  limit: 6
+})
 
 useContentSeo({}, 'LEARN UP ACADEMY')
 </script>

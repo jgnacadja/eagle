@@ -1,5 +1,5 @@
 {
-  "name": "taskflow",
+  "name": "learnup-academy",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -8,44 +8,52 @@
     "node": ">=22"
   },
   "scripts": {
+    "prepare": "husky",
     "dev": "turbo run dev",
-    "dev:web": "pnpm --filter @taskflow/web dev",
-    "dev:backend": "pnpm --filter @taskflow/backend dev",
+    "dev:front": "pnpm --filter @learnup/front dev",
+    "dev:api": "pnpm --filter @learnup/api dev",
     "build": "turbo run build",
-    "lint": "turbo run lint",
+    "lint": "turbo run lint && eslint \"directus/**/*.mjs\"",
     "format": "prettier --write \"**/*.{ts,vue,js,json,md,yml,yaml}\"",
     "test": "turbo run test -- --passWithNoTests",
-    "test:coverage": "turbo run test:coverage",
+    "test:coverage": "turbo run test:coverage -- --passWithNoTests",
     "test:e2e": "turbo run test:e2e",
-    "db:migrate": "pnpm --filter @taskflow/backend prisma:migrate",
-    "db:generate": "pnpm --filter @taskflow/backend prisma:generate",
-    "db:reset": "pnpm --filter @taskflow/backend exec prisma migrate reset --force"
+    "directus:build": "node --env-file=.env directus/schema/build.mjs",
+    "seed": "node --env-file=.env directus/seed/seed.mjs"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "@prisma/client",
-      "@prisma/engines",
-      "prisma",
       "@swc/core",
       "esbuild",
-      "@parcel/watcher",
-      "bcrypt"
-    ]
+      "@parcel/watcher"
+    ],
+    "overrides": {
+      "tar": ">=7.5.19",
+      "brace-expansion@<1.1.16": ">=1.1.16 <2.0.0",
+      "brace-expansion@>=2.0.0 <2.1.2": ">=2.1.2 <3.0.0",
+      "js-yaml": ">=4.3.0",
+      "shell-quote": ">=1.9.0",
+      "fast-uri": ">=3.1.4",
+      "multer": ">=2.2.0",
+      "postcss": ">=8.5.23",
+      "nanoid": ">=3.3.18",
+      "socket.io-parser": ">=4.2.7"
+    }
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
     "@eslint/js": "^9.17.0",
     "@typescript-eslint/eslint-plugin": "^8.18.0",
     "@typescript-eslint/parser": "^8.18.0",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-vue": "^9.32.0",
+    "husky": "^9.1.7",
     "prettier": "^3.4.2",
     "turbo": "^2.3.3",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.0",
     "vue-eslint-parser": "^9.4.3"
-  },
-  "dependencies": {
-    "date-fns": "^4.4.0"
   }
 }

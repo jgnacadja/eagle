@@ -1,4 +1,4 @@
-# LEARN UP ACADEMY
+# EAGLE
 
 [![CI](https://github.com/jgnacadja/eagle/actions/workflows/ci.yml/badge.svg)](https://github.com/jgnacadja/eagle/actions/workflows/ci.yml)
 

@@ -2,17 +2,13 @@ export interface HubspotConfig {
   portalId: string
   formId: string
   region: string
-  profileFieldName: string
 }
 
 export interface HubspotEnv {
   VITE_HUBSPOT_PORTAL_ID?: string
   VITE_HUBSPOT_FORM_ID?: string
   VITE_HUBSPOT_REGION?: string
-  VITE_HUBSPOT_PROFILE_FIELD?: string
 }
-
-const DEFAULT_PROFILE_FIELD_NAME = 'profil'
 
 /**
  * portalId/formId/region must all be set — a missing region silently breaks the
@@ -27,55 +23,60 @@ export function getHubspotConfig(env: HubspotEnv): HubspotConfig | null {
     return null
   }
 
-  return {
-    portalId,
-    formId,
-    region,
-    profileFieldName: env.VITE_HUBSPOT_PROFILE_FIELD || DEFAULT_PROFILE_FIELD_NAME
-  }
+  return { portalId, formId, region }
 }
 
-const HUBSPOT_SCRIPT_SRC = '//js.hsforms.net/forms/embed/v2.js'
+const HUBSPOT_FORMS_SCRIPT_SRC = '//js.hsforms.net/forms/embed/v2.js'
+const HUBSPOT_TRACKING_SCRIPT_ID = 'hs-script-loader'
 
-let scriptLoadPromise: Promise<void> | null = null
+let formsScriptLoadPromise: Promise<void> | null = null
 
-export function loadHubspotScript(doc: Document = document): Promise<void> {
-  if (scriptLoadPromise) {
-    return scriptLoadPromise
+export function loadHubspotFormsScript(doc: Document = document): Promise<void> {
+  if (formsScriptLoadPromise) {
+    return formsScriptLoadPromise
   }
 
-  scriptLoadPromise = new Promise((resolve, reject) => {
-    const existing = doc.querySelector(`script[src="${HUBSPOT_SCRIPT_SRC}"]`)
+  formsScriptLoadPromise = new Promise((resolve, reject) => {
+    const existing = doc.querySelector(`script[src="${HUBSPOT_FORMS_SCRIPT_SRC}"]`)
     if (existing) {
       resolve()
       return
     }
 
     const script = doc.createElement('script')
-    script.src = HUBSPOT_SCRIPT_SRC
+    script.src = HUBSPOT_FORMS_SCRIPT_SRC
     script.async = true
     script.onload = () => resolve()
     script.onerror = () => reject(new Error('Failed to load HubSpot forms script'))
     doc.head.appendChild(script)
   })
 
-  return scriptLoadPromise
+  return formsScriptLoadPromise
 }
 
-interface HubspotFormInstance {
-  find(selector: string): { val(value: string): unknown }
+/**
+ * Site-wide HubSpot tracking snippet, required by the ticket's reuse procedure
+ * for an external (non-HubSpot-hosted) domain. Fire-and-forget: nothing on this
+ * page depends on it having loaded, so this doesn't return a promise.
+ */
+export function loadHubspotTrackingCode(portalId: string, doc: Document = document): void {
+  if (doc.getElementById(HUBSPOT_TRACKING_SCRIPT_ID)) {
+    return
+  }
+
+  const script = doc.createElement('script')
+  script.id = HUBSPOT_TRACKING_SCRIPT_ID
+  script.type = 'text/javascript'
+  script.async = true
+  script.defer = true
+  script.src = `//js.hs-scripts.com/${portalId}.js`
+  doc.head.appendChild(script)
 }
 
 interface HubspotWindow extends Window {
   hbspt?: {
     forms: {
-      create(options: {
-        region: string
-        portalId: string
-        formId: string
-        target: string
-        onFormReady?: (form: HubspotFormInstance) => void
-      }): void
+      create(options: { region: string; portalId: string; formId: string; target: string }): void
     }
   }
 }
@@ -83,10 +84,9 @@ interface HubspotWindow extends Window {
 export async function renderHubspotForm(
   config: HubspotConfig,
   targetSelector: string,
-  profileValue: string,
   win: HubspotWindow = window as HubspotWindow
 ): Promise<void> {
-  await loadHubspotScript(win.document)
+  await loadHubspotFormsScript(win.document)
 
   if (!win.hbspt) {
     throw new Error('HubSpot forms script did not expose window.hbspt')
@@ -96,9 +96,6 @@ export async function renderHubspotForm(
     region: config.region,
     portalId: config.portalId,
     formId: config.formId,
-    target: targetSelector,
-    onFormReady: (form) => {
-      form.find(`[name="${config.profileFieldName}"]`).val(profileValue)
-    }
+    target: targetSelector
   })
 }

@@ -1,0 +1,36 @@
+/**
+ * Mirrors src/tokens/*.ts as CSS custom properties. Keep both in sync by hand
+ * until a build-time generator is worth the setup — placeholder values only,
+ * see README.md.
+ */
+:root {
+  --color-primary: #2563eb;
+  --color-primary-dark: #1d4ed8;
+  --color-primary-soft: #eff6ff;
+  --color-ink: #18181b;
+  --color-ink-muted: #71717a;
+  --color-surface: #f4f4f5;
+  --color-paper: #ffffff;
+  --color-rule: #e4e4e7;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fef2f2;
+
+  --font-display: system-ui, sans-serif;
+  --font-sans: system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
+
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 8%);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 10%);
+}

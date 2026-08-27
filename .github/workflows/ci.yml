@@ -23,18 +23,59 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Generate Prisma client
-        run: pnpm --filter @taskflow/backend exec prisma generate
-
       - name: Lint
         run: pnpm lint
+
+      - name: Build
+        run: pnpm build
 
       - name: Test
         run: pnpm test
 
+  sonarqube:
+    name: SonarQube analysis
+    needs: unit-and-lint
+    # L'analyse complète et le quality gate ne s'exécutent qu'après fusion sur main.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.3
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate coverage reports
+        run: pnpm test:coverage
+
+      - name: SonarQube scan
+        uses: SonarSource/sonarqube-scan-action@v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+
+      - name: SonarQube quality gate
+        uses: SonarSource/sonarqube-quality-gate-action@v1
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # TODO(ST-10/Sprint 2): apps/front/e2e n'existe plus (domaine TaskFlow retiré).
+  # Job conservé en scaffold pour la reprise des tests e2e ; désactivé pour ne
+  # pas échouer sur un dossier absent.
   e2e:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: false
     steps:
       - uses: actions/checkout@v4
 
@@ -51,7 +92,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: pnpm --filter @taskflow/web exec playwright install --with-deps chromium
+        run: pnpm --filter @learnup/front exec playwright install --with-deps chromium
 
       - name: Create .env
         run: cp .env.example .env

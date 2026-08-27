@@ -48,7 +48,26 @@ const nuxtGlobals = {
   useRoute: 'readonly',
   useRouter: 'readonly',
   useHead: 'readonly',
-  $fetch: 'readonly'
+  useState: 'readonly',
+  createError: 'readonly',
+  clearError: 'readonly',
+  showError: 'readonly',
+  $fetch: 'readonly',
+  // Composables/utils custom auto-importés depuis apps/front/app/
+  useDirectusClient: 'readonly',
+  useContentSeo: 'readonly',
+  useDirectusItemBySlug: 'readonly',
+  useDirectusList: 'readonly',
+  sanitizeHtml: 'readonly',
+  logServerError: 'readonly'
+}
+
+const browserGlobals = {
+  window: 'readonly',
+  document: 'readonly',
+  Document: 'readonly',
+  Window: 'readonly',
+  HTMLElement: 'readonly'
 }
 
 const vueGlobals = {
@@ -93,19 +112,30 @@ export default tseslint.config(
     }
   },
   {
-    files: ['apps/backend/**/*.ts'],
+    files: ['apps/api/**/*.ts'],
     languageOptions: {
       globals: nodeGlobals
     }
   },
   {
-    files: ['apps/backend/**/*.spec.ts', 'apps/web/**/*.spec.ts', 'apps/web/test/**/*.ts'],
+    files: [
+      'apps/api/**/*.spec.ts',
+      'apps/front/**/*.spec.ts',
+      'apps/front/test/**/*.ts',
+      'apps/presence/**/*.spec.ts'
+    ],
     languageOptions: {
       globals: vitestGlobals
     }
   },
   {
-    files: ['apps/web/**/*.ts', 'apps/web/**/*.vue'],
+    files: ['apps/presence/**/*.ts'],
+    languageOptions: {
+      globals: browserGlobals
+    }
+  },
+  {
+    files: ['apps/front/**/*.ts', 'apps/front/**/*.vue'],
     languageOptions: {
       globals: {
         ...nodeGlobals,
@@ -123,12 +153,26 @@ export default tseslint.config(
       'prefer-const': 'error',
       'no-console': 'error',
       'no-undef': 'error',
-      '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }
       ],
       'vue/multi-word-component-names': 'off'
+    }
+  },
+  {
+    files: ['directus/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        ...nodeGlobals,
+        fetch: 'readonly'
+      }
+    }
+  },
+  {
+    files: ['directus/logger.mjs', 'apps/front/app/utils/logger.ts'],
+    rules: {
+      'no-console': 'off'
     }
   },
   prettier

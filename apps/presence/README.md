@@ -50,6 +50,12 @@ en `#141530` (couleur trouvée dans le fichier source). Même tracé, aucune
 approximation de forme — uniquement une correction de transparence + une
 recoloration unie. À faire valider par le client au même titre que le reste.
 
+Seul `logo-reverse.png` (blanc) est affiché sur la page, dans le hero sur fond
+sombre. `logo.png` (encre foncée) a été retiré du pied de page — même image
+que le hero, doublon visuel pur sans second contexte de fond clair pour le
+justifier. Gardé dans `public/` en cas de besoin futur (favicon, section sur
+fond clair).
+
 ## Ce qui est fait vs. laissé de côté (ticket S0-06)
 
 Fait dans cette PR : page complète (logo, slogan, bandeau "site en

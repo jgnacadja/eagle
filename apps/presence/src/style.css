@@ -110,13 +110,3 @@ img {
   font-weight: 600;
 }
 
-.footer {
-  padding: 2rem 1.25rem 3rem;
-  text-align: center;
-}
-
-.footer__logo {
-  width: min(140px, 40vw);
-  margin: 0 auto;
-  opacity: 0.85;
-}

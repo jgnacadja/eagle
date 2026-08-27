@@ -62,6 +62,14 @@ const nuxtGlobals = {
   logServerError: 'readonly'
 }
 
+const browserGlobals = {
+  window: 'readonly',
+  document: 'readonly',
+  Document: 'readonly',
+  Window: 'readonly',
+  HTMLElement: 'readonly'
+}
+
 const vueGlobals = {
   ref: 'readonly',
   reactive: 'readonly',
@@ -110,9 +118,20 @@ export default tseslint.config(
     }
   },
   {
-    files: ['apps/api/**/*.spec.ts', 'apps/front/**/*.spec.ts', 'apps/front/test/**/*.ts'],
+    files: [
+      'apps/api/**/*.spec.ts',
+      'apps/front/**/*.spec.ts',
+      'apps/front/test/**/*.ts',
+      'apps/presence/**/*.spec.ts'
+    ],
     languageOptions: {
       globals: vitestGlobals
+    }
+  },
+  {
+    files: ['apps/presence/**/*.ts'],
+    languageOptions: {
+      globals: browserGlobals
     }
   },
   {

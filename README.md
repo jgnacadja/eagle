@@ -115,18 +115,18 @@ une fois la direction artistique validée par LEARN UP PRIME.
 
 ## CI/CD
 
-| Déclencheur          | `unit-and-lint` | `e2e` |
-| --------------------- | :--------------: | :---: |
-| Push sur toute branche |        ✅        |   —   |
-| PR → `main`            |        ✅        |   —   |
-| Push sur `main`        |        ✅        |  ✅   |
+| Déclencheur            | `unit-and-lint` | `sonarqube` |   `e2e`   |
+| ---------------------- | :-------------: | :---------: | :-------: |
+| Push sur toute branche |       ✅        |      —      |     —     |
+| PR → `main`            |       ✅        |      —      |     —     |
+| Push sur `main`        |       ✅        |     ✅      | désactivé |
 
-- **`unit-and-lint`** — lint ESLint + tests Vitest (coverage v8). Rapide,
-  tourne sur toutes les branches.
-- **`e2e`** — déclenché uniquement sur `main` (post-merge) : stack Docker
-  complète + Playwright headless.
-
-Le quality gate SonarQube (ST-10) n'est pas encore branché sur ce pipeline —
-suivi séparément.
+- **`unit-and-lint`** — lint ESLint + tests Vitest. Rapide, tourne sur toutes
+  les branches.
+- **`sonarqube`** — après un push sur `main`, génère la couverture Vitest,
+  lance l'analyse et échoue si le quality gate est rouge. Il requiert le secret
+  `SONAR_TOKEN` et la variable de dépôt `SONAR_HOST_URL`.
+- **`e2e`** — scaffold actuellement désactivé, dans l'attente de la reprise des
+  tests end-to-end.
 
 > **Prérequis Playwright** : `pnpm --filter @learnup/front exec playwright install chromium`

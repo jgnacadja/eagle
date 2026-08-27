@@ -1,5 +1,5 @@
 import './style.css'
-import { PROFILES, isProfileId } from './profiles'
+import { getProfileById, isProfileId } from './profiles'
 import { getHubspotConfig, renderHubspotForm, type HubspotEnv } from './hubspot'
 
 const FORM_TARGET_SELECTOR = '#hubspot-form-target'
@@ -24,10 +24,7 @@ export function initPresencePage(doc: Document = document): void {
         return
       }
 
-      const profile = PROFILES.find((candidate) => candidate.id === profileId)
-      if (!profile) {
-        return
-      }
+      const profile = getProfileById(profileId)
 
       renderHubspotForm(config, FORM_TARGET_SELECTOR, profile.hubspotValue).catch(() => {
         unavailableNotice?.removeAttribute('hidden')

@@ -4,8 +4,8 @@ Page de présence statique LEARN UP ACADEMY — [S0-06](https://app.clickup.com/
 
 Isolée à dessein : ne dépend d'aucun package du monorepo (`@learnup/ui`,
 `@learnup/types`) ni du socle Nuxt 4 / NestJS / Directus / Scaleway. Vite +
-TypeScript strict, zéro framework UI, un seul appel externe (l'embed natif
-HubSpot Forms).
+TypeScript strict, zéro framework UI, deux scripts externes chargés à
+l'exécution (embed natif HubSpot Forms + tracking code HubSpot).
 
 ## Lancement local
 
@@ -16,19 +16,27 @@ pnpm --filter @learnup/presence test
 pnpm --filter @learnup/presence test:coverage
 ```
 
+## Formulaire HubSpot
+
+Le ticket demande de **réutiliser tel quel** le formulaire HubSpot « Contact »
+existant (pas de nouveau champ, pas de segmentation par profil — la logique
+des 4 boutons profils initialement prévue a été abandonnée, cf. commentaires
+du ticket). Le bouton CTA unique de la page est un simple lien ancre
+(`<a href="#hubspot-form-target">`, scroll fluide en CSS) vers le bloc où le
+formulaire est intégré **une seule fois**, au chargement de la page.
+
+Un tracking code HubSpot est aussi injecté dans le `<head>` (requis pour un
+domaine externe non hébergé par HubSpot, cf. procédure du ticket) — il
+réutilise le même `portalId` que l'embed du formulaire (portalId et Hub ID
+sont le même identifiant côté HubSpot).
+
 ## Variables d'environnement
 
 Voir [`.env.example`](.env.example). `VITE_HUBSPOT_PORTAL_ID`,
 `VITE_HUBSPOT_FORM_ID` et `VITE_HUBSPOT_REGION` sont obligatoires — tant
 qu'elles ne sont pas renseignées (en local ou dans les env vars du projet
-Vercel), le formulaire affiche un message "indisponible" au lieu de planter ou
-de simuler un CTA qui ne fait rien.
-
-`VITE_HUBSPOT_PROFILE_FIELD` (optionnel, défaut `profil`) est le nom interne
-du champ HubSpot prérempli selon le bouton cliqué (Entreprise / Particulier /
-Franchisé / Formateur) — **à vérifier contre le formulaire HubSpot réel**
-avant mise en prod, ce nom est une convention de départ, pas une valeur
-confirmée côté HubSpot.
+Vercel), la page affiche un message "indisponible" au lieu de planter ou de
+simuler un CTA qui ne fait rien.
 
 ## Logo
 
@@ -44,14 +52,14 @@ recoloration unie. À faire valider par le client au même titre que le reste.
 
 ## Ce qui est fait vs. laissé de côté (ticket S0-06)
 
-Fait dans ce PR : page complète (logo, slogan, bandeau "site en
-développement", 4 CTA profils, section formulaire), mobile-first, RGAA de
-base (contrastes, ≥16px, cibles tactiles ≥44px), intégration HubSpot pilotée
-par variables d'environnement.
+Fait dans cette PR : page complète (logo, slogan, bandeau "site en
+développement", CTA unique, section formulaire), mobile-first, RGAA de base
+(contrastes, ≥16px, cibles tactiles ≥44px), formulaire HubSpot « Contact »
+existant + tracking code, pilotés par variables d'environnement.
 
 Volontairement laissé de côté (décision produit — cf. échanges sur le
 ticket) : création du projet Vercel + réglage de son "Root Directory" sur
 `apps/presence`, désactivation de la protection de preview Vercel,
-enregistrements DNS chez Ionos pour `www.learnupacademy.fr`, création du
-formulaire HubSpot réel et vérification bout-en-bout (soumission → CRM). Ces
-points restent ouverts dans le DoD du ticket et sont hors du périmètre code.
+enregistrements DNS chez Ionos pour `www.learnupacademy.fr`, et vérification
+bout-en-bout du formulaire réel (soumission → CRM). Ces points restent
+ouverts dans le DoD du ticket et sont hors du périmètre code.

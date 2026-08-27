@@ -1,5 +1,6 @@
 :root {
   color-scheme: light;
+  scroll-behavior: smooth;
   --ink: #141530;
   --paper: #ffffff;
 }
@@ -58,23 +59,13 @@ img {
   font-weight: 700;
 }
 
-.hero__cta-group {
-  display: grid;
-  gap: 0.75rem;
-  max-width: 320px;
-  margin: 0 auto;
-}
-
-@media (min-width: 640px) {
-  .hero__cta-group {
-    grid-template-columns: repeat(2, 1fr);
-    max-width: 480px;
-  }
-}
-
 .cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 44px;
-  padding: 0.75rem 1.25rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem 1.5rem;
   border: 2px solid var(--paper);
   border-radius: 0.5rem;
   background: transparent;
@@ -82,6 +73,7 @@ img {
   font-family: inherit;
   font-size: 1rem;
   font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
   transition:
     background-color 0.15s ease,

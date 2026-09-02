@@ -1,8 +1,10 @@
 import type { INestApplication } from '@nestjs/common'
 import type { CustomOrigin } from '@nestjs/common/interfaces/external/cors-options.interface'
+import helmet from 'helmet'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 
 export function configureApp(app: INestApplication): void {
+  app.use(helmet())
   const allowedOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:3000')
     .split(',')
     .map((o) => o.trim())

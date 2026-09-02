@@ -13,8 +13,8 @@ CREATE TABLE "public"."formations" (
     "certification" TEXT,
     "certifier_name" TEXT,
     "category" TEXT,
-    "famille_slug" TEXT,
-    "centre_slug" TEXT,
+    "family_slug" TEXT,
+    "center_slug" TEXT,
     "blocks" JSONB,
     "image_url" TEXT,
     "status" TEXT NOT NULL DEFAULT 'draft',
@@ -48,7 +48,7 @@ CREATE TABLE "public"."sync_runs" (
 CREATE UNIQUE INDEX "formations_digiforma_id_key" ON "public"."formations"("digiforma_id");
 
 -- CreateIndex
-CREATE INDEX "formations_famille_slug_idx" ON "public"."formations"("famille_slug");
+CREATE INDEX "formations_family_slug_idx" ON "public"."formations"("family_slug");
 
 -- CreateIndex
 CREATE INDEX "formations_status_idx" ON "public"."formations"("status");

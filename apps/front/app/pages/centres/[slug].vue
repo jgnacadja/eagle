@@ -17,7 +17,8 @@
       <div v-if="centre.contact_name">
         <dt class="font-sans text-sm text-ink-muted">Interlocuteur</dt>
         <dd class="font-sans text-ink">
-          {{ centre.contact_name }}<span v-if="centre.contact_role"> — {{ centre.contact_role }}</span>
+          {{ centre.contact_name
+          }}<span v-if="centre.contact_role"> — {{ centre.contact_role }}</span>
         </dd>
       </div>
       <div v-if="centre.qualiopi_certified">

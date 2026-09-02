@@ -5,7 +5,11 @@
     </p>
     <h1 class="mt-2 font-display text-2xl font-bold text-ink">{{ article.title }}</h1>
     <!-- eslint-disable-next-line vue/no-v-html -- sanitizé via sanitizeHtml() -->
-    <div v-if="article.content" class="mt-6 font-sans text-ink" v-html="sanitizeHtml(article.content)" />
+    <div
+      v-if="article.content"
+      class="mt-6 font-sans text-ink"
+      v-html="sanitizeHtml(article.content)"
+    />
   </article>
 </template>
 

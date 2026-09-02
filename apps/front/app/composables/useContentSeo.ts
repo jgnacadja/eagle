@@ -10,9 +10,7 @@ export function useContentSeo(source: SeoSource, fallbackTitle: string) {
   useHead({
     title,
     meta: [
-      ...(source.seo_description
-        ? [{ name: 'description', content: source.seo_description }]
-        : []),
+      ...(source.seo_description ? [{ name: 'description', content: source.seo_description }] : []),
       { property: 'og:title', content: title }
     ],
     link: [...(source.seo_canonical ? [{ rel: 'canonical', href: source.seo_canonical }] : [])]

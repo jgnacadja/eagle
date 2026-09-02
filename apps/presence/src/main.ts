@@ -1,5 +1,10 @@
 import './style.css'
-import { getHubspotConfig, loadHubspotTrackingCode, renderHubspotForm, type HubspotEnv } from './hubspot'
+import {
+  getHubspotConfig,
+  loadHubspotTrackingCode,
+  renderHubspotForm,
+  type HubspotEnv
+} from './hubspot'
 
 const FORM_TARGET_SELECTOR = '#hubspot-form-target'
 

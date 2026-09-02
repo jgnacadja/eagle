@@ -25,14 +25,14 @@ Directus 11 sépare le rôle de ses permissions : `role` → `directus_access` �
 simple pour ce cas d'usage, mais ce n'est pas obligatoire (une policy peut
 être partagée entre plusieurs rôles).
 
-| Rôle | Périmètre |
-|---|---|
-| **Administrator** (natif Directus) | Super-admin, accès total, bypass complet. |
-| **admin** | CRUD complet sur tout le contenu (centres, familles, articles, pages, blocs, stats, médiathèque). |
-| **editeur** | Crée/édite articles et blocs de contenu (brouillon). Lecture seule sur centres/familles/pages/stats. Pas de suppression. |
-| **moderateur** | Lecture + édition sur articles et blocs (relecture, publication). Lecture seule ailleurs. Ni création ni suppression. |
-| **lecteur** | Lecture seule sur tout, aucune écriture. |
-| **Public** (natif Directus, visiteurs non connectés) | Lecture seule, uniquement le contenu `status: published`. |
+| Rôle                                                 | Périmètre                                                                                                                |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Administrator** (natif Directus)                   | Super-admin, accès total, bypass complet.                                                                                |
+| **admin**                                            | CRUD complet sur tout le contenu (centres, familles, articles, pages, blocs, stats, médiathèque).                        |
+| **editeur**                                          | Crée/édite articles et blocs de contenu (brouillon). Lecture seule sur centres/familles/pages/stats. Pas de suppression. |
+| **moderateur**                                       | Lecture + édition sur articles et blocs (relecture, publication). Lecture seule ailleurs. Ni création ni suppression.    |
+| **lecteur**                                          | Lecture seule sur tout, aucune écriture.                                                                                 |
+| **Public** (natif Directus, visiteurs non connectés) | Lecture seule, uniquement le contenu `status: published`.                                                                |
 
 Matrice vérifiée empiriquement (utilisateurs de test créés/testés/supprimés) :
 lecture toujours OK pour les 4 rôles internes, écriture/suppression refusées

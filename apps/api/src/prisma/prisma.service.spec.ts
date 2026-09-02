@@ -12,7 +12,7 @@ describe('PrismaService', () => {
         {
           provide: ConfigService,
           useValue: {
-            getOrThrow: () => 'postgresql://learnup:learnup@localhost:5433/learnup_api'
+            getOrThrow: () => 'postgresql://learnup:learnup@localhost:5432/learnup_api'
           }
         }
       ]

@@ -1,12 +1,12 @@
 import { Controller, Get, Post, UseGuards } from '@nestjs/common'
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
+import { ApiSecurity, ApiTags } from '@nestjs/swagger'
 import { AdminApiKeyGuard } from '../common/guards/admin-api-key.guard'
 import { SyncService } from './sync.service'
 
 @ApiTags('admin')
 @Controller('admin')
 @UseGuards(AdminApiKeyGuard)
-@ApiBearerAuth('x-api-key')
+@ApiSecurity('x-api-key')
 export class SyncController {
   constructor(private readonly syncService: SyncService) {}
 

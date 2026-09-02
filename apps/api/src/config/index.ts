@@ -29,6 +29,7 @@ export function configureApp(app: INestApplication): void {
       .setTitle('Backend API')
       .setDescription('API LEARN UP ACADEMY — documentation OpenAPI')
       .setVersion('0.0.1')
+      .addApiKey({ type: 'apiKey', name: 'x-api-key', in: 'header' }, 'x-api-key')
       .build()
     SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, swaggerConfig))
   }

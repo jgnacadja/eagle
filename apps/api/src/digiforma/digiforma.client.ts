@@ -64,7 +64,7 @@ export class DigiformaClient {
   }
 
   private async queryPrograms(cursor?: string, attempt = 1): Promise<DigiformaProgramsResponse> {
-    const query = this.buildProgramsQuery(cursor)
+    const query = this.buildProgramsQuery()
 
     try {
       const response = await fetch(this.url, {
@@ -73,7 +73,7 @@ export class DigiformaClient {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${this.token}`
         },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query, variables: { after: cursor ?? null } }),
         signal: AbortSignal.timeout(30_000)
       })
 
@@ -85,6 +85,10 @@ export class DigiformaClient {
 
       if (body.errors && body.errors.length > 0) {
         this.logger.warn({ errors: body.errors }, 'GraphQL errors from Digiforma')
+
+        if (!body.data?.programs) {
+          throw new Error(`Digiforma GraphQL errors: ${JSON.stringify(body.errors)}`)
+        }
       }
 
       return body
@@ -101,11 +105,10 @@ export class DigiformaClient {
     }
   }
 
-  private buildProgramsQuery(cursor?: string): string {
-    const pagination = cursor ? `, after: "${cursor}"` : ''
+  private buildProgramsQuery(): string {
     return `
-      query {
-        programs(first: 100${pagination}) {
+      query Programs($after: String) {
+        programs(first: 100, after: $after) {
           nodes {
             id
             slug

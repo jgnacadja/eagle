@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client'
+import { Prisma } from '../generated/prisma/client'
 import type { Program } from './digiforma.client'
 
 export type FormationInput = Prisma.FormationCreateInput

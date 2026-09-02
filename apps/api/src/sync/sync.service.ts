@@ -1,10 +1,10 @@
 import { promises as fs } from 'node:fs'
-import { join } from 'node:path'
+import { resolve } from 'node:path'
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { CronJob } from 'cron'
+import { CronJob, validateCronExpression } from 'cron'
 import { SchedulerRegistry } from '@nestjs/schedule'
-import type { Prisma } from '@prisma/client'
+import type { Prisma } from '../generated/prisma/client'
 import { CacheService } from '../common/cache/cache.service'
 import { DigiformaClient, type Program } from '../digiforma/digiforma.client'
 import { mapProgramToFormation } from '../digiforma/digiforma.mapper'
@@ -24,6 +24,13 @@ export class SyncService {
 
   onModuleInit(): void {
     const expression = this.config.get<string>('SYNC_CRON') ?? '0 * * * *'
+    const validation = validateCronExpression(expression)
+
+    if (!validation.valid) {
+      this.logger.error(`Invalid SYNC_CRON expression: ${expression}`)
+      return
+    }
+
     const job = new CronJob(expression, () => {
       void this.run().catch((error) => {
         this.logger.error(error, 'Scheduled sync failed')
@@ -43,7 +50,6 @@ export class SyncService {
     const counts = {
       inserted: 0,
       updated: 0,
-      unchanged: 0,
       failed: 0
     }
 
@@ -57,7 +63,6 @@ export class SyncService {
 
           if (result === 'inserted') counts.inserted += 1
           else if (result === 'updated') counts.updated += 1
-          else counts.unchanged += 1
         } catch (error) {
           counts.failed += 1
           this.logger.warn({ error, programId: program.id }, 'Failed to sync program')
@@ -102,7 +107,7 @@ export class SyncService {
       return await this.client.fetchAllPrograms()
     } catch (error) {
       this.logger.warn(error, 'Digiforma call failed, falling back to fixture')
-      const fixturePath = join(process.cwd(), 'test', 'fixtures', 'programs.json')
+      const fixturePath = resolve(__dirname, '..', '..', 'test', 'fixtures', 'programs.json')
       const raw = await fs.readFile(fixturePath, 'utf-8')
       return JSON.parse(raw) as Program[]
     }
@@ -112,7 +117,7 @@ export class SyncService {
     input: Prisma.FormationCreateInput
   ): Promise<'inserted' | 'updated'> {
     const existing = await this.prisma.formation.findUnique({
-      where: { digiformaId: input.digiformaId as string }
+      where: { digiformaId: input.digiformaId }
     })
 
     if (!existing) {
@@ -121,7 +126,7 @@ export class SyncService {
     }
 
     await this.prisma.formation.update({
-      where: { digiformaId: input.digiformaId as string },
+      where: { digiformaId: input.digiformaId },
       data: input
     })
     return 'updated'

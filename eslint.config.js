@@ -97,7 +97,8 @@ export default tseslint.config(
       '**/node_modules/**',
       '**/coverage/**',
       '**/playwright-report/**',
-      '**/test-results/**'
+      '**/test-results/**',
+      'apps/api/src/generated/prisma/**'
     ]
   },
   js.configs.recommended,

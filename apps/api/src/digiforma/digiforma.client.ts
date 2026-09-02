@@ -56,7 +56,14 @@ export class DigiformaClient {
       const nodes = response.data?.programs?.nodes ?? []
       programs.push(...nodes)
       hasNext = response.data?.programs?.pageInfo?.hasNextPage ?? false
-      cursor = response.data?.programs?.pageInfo?.endCursor ?? undefined
+      const nextCursor = response.data?.programs?.pageInfo?.endCursor ?? undefined
+
+      if (hasNext && (nextCursor === undefined || nextCursor === cursor)) {
+        this.logger.warn('Pagination cursor did not advance, stopping')
+        break
+      }
+
+      cursor = nextCursor
       page += 1
     }
 

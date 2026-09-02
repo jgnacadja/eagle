@@ -14,7 +14,7 @@ export class AdminApiKeyGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<{ headers: { 'x-api-key'?: string } }>()
     const provided = request.headers['x-api-key']
 
-    if (!provided || provided.length !== this.expected.length) {
+    if (!provided) {
       throw new UnauthorizedException('Invalid admin API key')
     }
 

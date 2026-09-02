@@ -13,6 +13,7 @@ import { PrismaService } from '../prisma/prisma.service'
 @Injectable()
 export class SyncService {
   private readonly logger = new Logger(SyncService.name)
+  private running = false
 
   constructor(
     private readonly config: ConfigService,
@@ -43,6 +44,12 @@ export class SyncService {
   }
 
   async run(): Promise<void> {
+    if (this.running) {
+      this.logger.warn('Sync already in progress, skipping')
+      return
+    }
+    this.running = true
+
     const run = await this.prisma.syncRun.create({
       data: { status: 'running' }
     })
@@ -82,16 +89,22 @@ export class SyncService {
 
       this.logger.log(`Sync terminée : ${JSON.stringify(counts)}`)
     } catch (error) {
-      await this.prisma.syncRun.update({
-        where: { id: run.id },
-        data: {
-          status: 'failed',
-          finishedAt: new Date(),
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      })
+      try {
+        await this.prisma.syncRun.update({
+          where: { id: run.id },
+          data: {
+            status: 'failed',
+            finishedAt: new Date(),
+            error: error instanceof Error ? error.message : 'Unknown error'
+          }
+        })
+      } catch (updateError) {
+        this.logger.error(updateError, 'Failed to record sync failure')
+      }
 
       throw error
+    } finally {
+      this.running = false
     }
   }
 
@@ -106,6 +119,9 @@ export class SyncService {
     try {
       return await this.client.fetchAllPrograms()
     } catch (error) {
+      if (this.config.get<string>('NODE_ENV') === 'production') {
+        throw error
+      }
       this.logger.warn(error, 'Digiforma call failed, falling back to fixture')
       const fixturePath = resolve(__dirname, '..', '..', 'test', 'fixtures', 'programs.json')
       const raw = await fs.readFile(fixturePath, 'utf-8')

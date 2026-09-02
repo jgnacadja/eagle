@@ -14,6 +14,12 @@ vi.mock('ioredis', () => ({
       return Promise.resolve('OK')
     })
 
+    incr = vi.fn((key: string) => {
+      const current = parseInt(this.store.get(key) ?? '0', 10) + 1
+      this.store.set(key, String(current))
+      return Promise.resolve(current)
+    })
+
     setex = vi.fn((key: string, _ttl: number, value: string) => {
       this.store.set(key, value)
       return Promise.resolve('OK')

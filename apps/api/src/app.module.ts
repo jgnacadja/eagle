@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis'
+import { createHash } from 'node:crypto'
 import { HealthController } from './health/health.controller'
 import { PrismaModule } from './prisma/prisma.module'
 import { DigiformaModule } from './digiforma/digiforma.module'
@@ -11,7 +12,8 @@ import { CacheModule } from './common/cache/cache.module'
 
 function isAdminRoute(context: ExecutionContext): boolean {
   const request = context.switchToHttp().getRequest<{ originalUrl?: string }>()
-  return request.originalUrl?.startsWith('/admin') ?? false
+  const url = request.originalUrl ?? ''
+  return url === '/admin' || url.startsWith('/admin/')
 }
 
 @Module({
@@ -36,7 +38,10 @@ function isAdminRoute(context: ExecutionContext): boolean {
             ttl: 60_000,
             limit: 10,
             skipIf: (context) => !isAdminRoute(context),
-            getTracker: (req) => req.headers?.['x-api-key'] ?? 'anonymous'
+            getTracker: (req) => {
+              const key = req.headers?.['x-api-key']
+              return key ? createHash('sha256').update(key).digest('hex') : 'anonymous'
+            }
           }
         ],
         storage: new ThrottlerStorageRedisService(config.getOrThrow<string>('REDIS_URL'))

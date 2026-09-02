@@ -15,8 +15,13 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit(): Promise<void> {
-    const version = await this.client.get(this.versionKey)
-    this.currentVersion = version ? parseInt(version, 10) : 0
+    try {
+      const version = await this.client.get(this.versionKey)
+      this.currentVersion = version ? parseInt(version, 10) : 0
+    } catch (error) {
+      this.logger.warn(error, 'Failed to read cache version, starting at 0')
+      this.currentVersion = 0
+    }
   }
 
   async onModuleDestroy(): Promise<void> {
@@ -47,10 +52,10 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async invalidateCatalog(): Promise<void> {
-    const oldVersion = this.currentVersion
+    const newVersion = await this.client.incr(this.versionKey)
+    const oldVersion = newVersion - 1
+    this.currentVersion = newVersion
     await this.deleteByPattern(`catalog:v${oldVersion}:*`)
-    this.currentVersion += 1
-    await this.client.set(this.versionKey, this.currentVersion.toString())
     this.logger.log(`Cache catalogue invalidé, nouvelle version v${this.currentVersion}`)
   }
 
@@ -59,25 +64,22 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async deleteByPattern(pattern: string): Promise<void> {
-    const keys: string[] = []
     const stream = this.client.scanStream({ match: pattern, count: 100 })
+    const pending: Promise<unknown>[] = []
 
     await new Promise<void>((resolve, reject) => {
       stream.on('data', (batch: string[]) => {
-        keys.push(...batch)
+        if (batch.length === 0) return
+        const pipeline = this.client.pipeline()
+        for (const key of batch) {
+          pipeline.del(key)
+        }
+        pending.push(pipeline.exec())
       })
       stream.on('end', () => resolve())
       stream.on('error', (error) => reject(error))
     })
 
-    if (keys.length === 0) {
-      return
-    }
-
-    const pipeline = this.client.pipeline()
-    for (const key of keys) {
-      pipeline.del(key)
-    }
-    await pipeline.exec()
+    await Promise.all(pending)
   }
 }

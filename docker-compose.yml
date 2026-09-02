@@ -67,6 +67,23 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_BUCKET: ${MINIO_BUCKET}
 
+  postgres-init:
+    image: postgres:16-alpine
+    restart: 'no'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGHOST: postgres
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        psql -U "$$PGUSER" -d postgres -h "$$PGHOST" -tc "SELECT 1 FROM pg_database WHERE datname='learnup_api'" | grep -q 1 ||
+        psql -U "$$PGUSER" -d postgres -h "$$PGHOST" -c "CREATE DATABASE learnup_api;"
+
   directus:
     image: directus/directus:11
     restart: unless-stopped
@@ -124,8 +141,15 @@ services:
       ADMIN_API_KEY: ${ADMIN_API_KEY}
       DIGIFORMA_API_KEY: ${DIGIFORMA_API_KEY}
       SYNC_CRON: ${SYNC_CRON}
-      DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: ${REDIS_URL}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/learnup_api
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     ports:
       - '3001:3001'
 

@@ -6,6 +6,7 @@ WORKDIR /app
 FROM base AS build
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY apps/api/package.json apps/api/
+COPY apps/api/prisma apps/api/prisma
 RUN pnpm install --filter @learnup/api... --frozen-lockfile
 COPY apps/api apps/api
 RUN pnpm --filter @learnup/api build

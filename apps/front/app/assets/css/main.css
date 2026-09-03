@@ -14,3 +14,12 @@ body {
   color: var(--color-ink);
   background: var(--color-surface);
 }
+
+@keyframes scroll-left {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}

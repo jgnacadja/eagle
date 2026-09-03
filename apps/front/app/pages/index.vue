@@ -1,48 +1,77 @@
 <template>
-  <div class="mx-auto max-w-5xl px-6 py-16">
-    <section class="mb-16 text-center">
-      <h1 class="font-display text-3xl font-bold text-ink">LEARN UP ACADEMY</h1>
-      <p class="mt-4 font-sans text-ink-muted">Gabarit d'accueil — en cours de construction.</p>
-    </section>
-
-    <section v-if="centres?.length" class="mb-16">
-      <h2 class="mb-6 font-display text-xl font-bold text-ink">Nos centres</h2>
-      <div class="grid gap-4 sm:grid-cols-3">
-        <NuxtLink
-          v-for="centre in centres"
-          :key="centre.id"
-          :to="`/centres/${centre.slug}`"
-          class="rounded-md border border-rule bg-paper p-4 shadow-sm hover:shadow-md"
-        >
-          <p class="font-sans font-semibold text-ink">{{ centre.name }}</p>
-          <p v-if="centre.city" class="mt-1 font-sans text-sm text-ink-muted">{{ centre.city }}</p>
-        </NuxtLink>
-      </div>
-    </section>
-
-    <section v-if="familles?.length">
-      <h2 class="mb-6 font-display text-xl font-bold text-ink">Nos formations</h2>
-      <div class="grid gap-4 sm:grid-cols-3">
-        <NuxtLink
-          v-for="famille in familles"
-          :key="famille.id"
-          :to="`/formations/${famille.slug}`"
-          class="rounded-md border border-rule bg-paper p-4 shadow-sm hover:shadow-md"
-        >
-          <p class="font-sans font-semibold text-ink">{{ famille.name }}</p>
-        </NuxtLink>
-      </div>
-    </section>
-  </div>
+  <main class="bg-paper">
+    <HomeHero />
+    <HomeStatsTicker :items="stats" />
+    <HomeNetwork />
+    <HomeHowItWorks />
+    <HomeFormations :familles="familles" />
+    <HomeCenters :centres="centres" />
+    <HomeConfier />
+    <HomeStats :items="stats" />
+    <HomeTestimonials />
+    <HomeNews :articles="articles" />
+  </main>
 </template>
 
 <script setup lang="ts">
-import type { Centre, FamilleFormation } from '@learnup/types'
+import type { Article, Centre, FamilleFormation, Stat } from '@learnup/types'
 
-const centres = await useDirectusList<Centre>('centres', 'home-centres', { limit: 3 })
 const familles = await useDirectusList<FamilleFormation>('familles_formation', 'home-familles', {
-  limit: 6
+  limit: 4,
+  filter: { status: { _eq: 'published' } }
 })
 
-useContentSeo({}, 'LEARN UP ACADEMY')
+const centres = await useDirectusList<Centre>('centres', 'home-centres', {
+  limit: 2,
+  filter: { status: { _eq: 'published' } }
+})
+
+const articles = await useDirectusList<Article>('articles', 'home-articles', {
+  limit: 3,
+  filter: { status: { _eq: 'published' } },
+  sort: ['-publish_at']
+})
+
+const stats = await useDirectusList<Stat>('stats', 'home-stats', {
+  filter: { status: { _eq: 'published' } },
+  sort: ['sort']
+})
+
+useContentSeo(
+  {
+    seo_title: 'LEARN UP ACADEMY — Plateforme de conseil en formation professionnelle',
+    seo_description:
+      'Trouvez et organisez la formation réglementaire adaptée à vos équipes. +400 centres partenaires, CACES, habilitations électriques, secours, incendie.'
+  },
+  'LEARN UP ACADEMY'
+)
+
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@graph': [
+          {
+            '@type': 'WebSite',
+            name: 'LEARN UP ACADEMY',
+            url: 'https://learnup.fr',
+            potentialAction: {
+              '@type': 'SearchAction',
+              target: 'https://learnup.fr/formations?search={search_term_string}',
+              'query-input': 'required name=search_term_string'
+            }
+          },
+          {
+            '@type': 'Organization',
+            name: 'LEARN UP ACADEMY',
+            url: 'https://learnup.fr',
+            description: 'Plateforme de conseil en formation professionnelle réglementaire.'
+          }
+        ]
+      })
+    }
+  ]
+})
 </script>

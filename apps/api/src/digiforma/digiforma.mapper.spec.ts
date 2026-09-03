@@ -1,11 +1,11 @@
-import { mapProgramToFormation } from './digiforma.mapper'
+import { mapProgramToCourse } from './digiforma.mapper'
 import type { Program } from './digiforma.client'
 
 const program: Program = {
   id: 'prog-001',
-  slug: ' formation-pilotage ',
-  title: '  Pilotage de projet  ',
-  description: ' Apprendre à piloter. ',
+  slug: 'course-pilotage',
+  title: 'Pilotage de projet',
+  description: 'Apprendre à piloter.',
   durationInDays: 3,
   durationInHours: 21,
   price: 1800,
@@ -21,31 +21,31 @@ const program: Program = {
   status: 'published'
 }
 
-describe('mapProgramToFormation', () => {
+describe('mapProgramToCourse', () => {
   it('maps a complete program', () => {
-    const formation = mapProgramToFormation(program)
+    const course = mapProgramToCourse(program)
 
-    expect(formation.digiformaId).toBe('prog-001')
-    expect(formation.slug).toBe('formation-pilotage')
-    expect(formation.title).toBe('Pilotage de projet')
-    expect(formation.description).toBe('Apprendre à piloter.')
-    expect(formation.durationDays).toBe(3)
-    expect(formation.durationHours).toBe(21)
-    expect(formation.price).toBe(1800)
-    expect(formation.cpf).toBe(true)
-    expect(formation.certification).toBe('Certificat')
-    expect(formation.familySlug).toBe('management')
-    expect(formation.status).toBe('published')
-    expect(formation.raw).toEqual(program)
+    expect(course.digiformaId).toBe('prog-001')
+    expect(course.slug).toBe('course-pilotage')
+    expect(course.title).toBe('Pilotage de projet')
+    expect(course.description).toBe('Apprendre à piloter.')
+    expect(course.durationDays).toBe(3)
+    expect(course.durationHours).toBe(21)
+    expect(course.price).toBe(1800)
+    expect(course.cpf).toBe(true)
+    expect(course.certification).toBe('Certificat')
+    expect(course.familySlug).toBe('management')
+    expect(course.status).toBe('published')
+    expect(course.raw).toEqual(program)
   })
 
   it('falls back to a generated slug when missing', () => {
-    const formation = mapProgramToFormation({ ...program, slug: '' })
-    expect(formation.slug).toBe('pilotage-de-projet')
+    const course = mapProgramToCourse({ ...program, slug: '' })
+    expect(course.slug).toBe('pilotage-de-projet')
   })
 
   it('falls back to draft when status is not published', () => {
-    const formation = mapProgramToFormation({ ...program, status: 'archived' })
-    expect(formation.status).toBe('draft')
+    const course = mapProgramToCourse({ ...program, status: 'archived' })
+    expect(course.status).toBe('draft')
   })
 })

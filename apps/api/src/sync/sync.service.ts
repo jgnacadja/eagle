@@ -7,7 +7,7 @@ import { SchedulerRegistry } from '@nestjs/schedule'
 import type { Prisma } from '../generated/prisma/client'
 import { CacheService } from '../common/cache/cache.service'
 import { DigiformaClient, type Program } from '../digiforma/digiforma.client'
-import { mapProgramToFormation } from '../digiforma/digiforma.mapper'
+import { mapProgramToCourse } from '../digiforma/digiforma.mapper'
 import { PrismaService } from '../prisma/prisma.service'
 
 @Injectable()
@@ -21,7 +21,7 @@ export class SyncService {
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
     private readonly scheduler: SchedulerRegistry
-  ) {}
+  ) { }
 
   onModuleInit(): void {
     const expression = this.config.get<string>('SYNC_CRON') ?? '0 * * * *'
@@ -40,7 +40,7 @@ export class SyncService {
 
     this.scheduler.addCronJob('digiforma-sync', job)
     job.start()
-    this.logger.log(`Cron Digiforma planifié : ${expression}`)
+    this.logger.log(`Digiforma cron scheduled: ${expression}`)
   }
 
   async run(): Promise<void> {
@@ -65,8 +65,8 @@ export class SyncService {
 
       for (const program of programs) {
         try {
-          const input = mapProgramToFormation(program)
-          const result = await this.upsertFormation(input)
+          const input = mapProgramToCourse(program)
+          const result = await this.upsertCourse(input)
 
           if (result === 'inserted') counts.inserted += 1
           else if (result === 'updated') counts.updated += 1
@@ -87,7 +87,7 @@ export class SyncService {
         }
       })
 
-      this.logger.log(`Sync terminée : ${JSON.stringify(counts)}`)
+      this.logger.log(`Sync finished: ${JSON.stringify(counts)}`)
     } catch (error) {
       try {
         await this.prisma.syncRun.update({
@@ -129,19 +129,19 @@ export class SyncService {
     }
   }
 
-  private async upsertFormation(
-    input: Prisma.FormationCreateInput
+  private async upsertCourse(
+    input: Prisma.CourseCreateInput
   ): Promise<'inserted' | 'updated'> {
-    const existing = await this.prisma.formation.findUnique({
+    const existing = await this.prisma.course.findUnique({
       where: { digiformaId: input.digiformaId }
     })
 
     if (!existing) {
-      await this.prisma.formation.create({ data: input })
+      await this.prisma.course.create({ data: input })
       return 'inserted'
     }
 
-    await this.prisma.formation.update({
+    await this.prisma.course.update({
       where: { digiformaId: input.digiformaId },
       data: input
     })

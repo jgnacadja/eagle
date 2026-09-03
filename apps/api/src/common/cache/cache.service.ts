@@ -29,26 +29,39 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async get<T>(key: string): Promise<T | null> {
-    const value = await this.client.get(this.key(key))
-    if (value === null || value === '') {
-      return null
-    }
-
     try {
-      return JSON.parse(value) as T
+      const value = await this.client.get(this.key(key))
+      if (value === null || value === '') {
+        return null
+      }
+
+      try {
+        return JSON.parse(value) as T
+      } catch (error) {
+        this.logger.warn({ error, key }, 'Failed to parse cached value')
+        return null
+      }
     } catch (error) {
-      this.logger.warn({ error, key }, 'Failed to parse cached value')
+      this.logger.warn({ error, key }, 'Failed to get cached value')
       return null
     }
   }
 
   async set<T>(key: string, value: T, ttlSeconds = 3600): Promise<void> {
-    const serialized = JSON.stringify(value)
-    await this.client.setex(this.key(key), ttlSeconds, serialized)
+    try {
+      const serialized = JSON.stringify(value)
+      await this.client.setex(this.key(key), ttlSeconds, serialized)
+    } catch (error) {
+      this.logger.warn({ error, key }, 'Failed to set cached value')
+    }
   }
 
   async del(pattern: string): Promise<void> {
-    await this.deleteByPattern(this.key(pattern))
+    try {
+      await this.deleteByPattern(this.key(pattern))
+    } catch (error) {
+      this.logger.warn({ error, pattern }, 'Failed to delete cached values')
+    }
   }
 
   async invalidateCatalog(): Promise<void> {

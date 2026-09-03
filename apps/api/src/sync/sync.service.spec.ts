@@ -25,9 +25,10 @@ function mockPrisma() {
   return {
     syncRun: {
       create: vi.fn().mockResolvedValue({ id: 1, status: 'running' }),
+      findFirst: vi.fn().mockResolvedValue({ id: 1, status: 'success' }),
       update: vi.fn().mockResolvedValue({ id: 1 })
     },
-    formation: {
+    course: {
       findUnique: vi.fn().mockResolvedValue(null),
       create: vi.fn().mockResolvedValue({ id: 1 }),
       update: vi.fn().mockResolvedValue({ id: 1 })
@@ -40,31 +41,46 @@ describe('SyncService', () => {
   let prisma: PrismaService
   let client: DigiformaClient
   let cache: CacheService
+  let config: ConfigService
+  let scheduler: { addCronJob: ReturnType<typeof vi.fn> }
 
   beforeEach(async () => {
     prisma = mockPrisma()
     client = { fetchAllPrograms: vi.fn() } as unknown as DigiformaClient
     cache = { invalidateCatalog: vi.fn() } as unknown as CacheService
+    scheduler = { addCronJob: vi.fn() }
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SyncService,
         {
           provide: ConfigService,
-          useValue: { get: () => '0 * * * *' }
+          useValue: { get: vi.fn((key: string) => (key === 'SYNC_CRON' ? '0 * * * *' : undefined)) }
         },
         { provide: DigiformaClient, useValue: client },
         { provide: PrismaService, useValue: prisma },
         { provide: CacheService, useValue: cache },
-        { provide: SchedulerRegistry, useValue: { addCronJob: vi.fn() } }
+        { provide: SchedulerRegistry, useValue: scheduler }
       ]
     }).compile()
 
     service = module.get<SyncService>(SyncService)
+    config = module.get<ConfigService>(ConfigService)
   })
 
   it('should be defined', () => {
     expect(service).toBeDefined()
+  })
+
+  it('registers the cron job on module init', () => {
+    service.onModuleInit()
+    expect(scheduler.addCronJob).toHaveBeenCalledWith('digiforma-sync', expect.any(Object))
+  })
+
+  it('does not register a cron job with an invalid expression', () => {
+    vi.mocked(config.get).mockReturnValue('invalid-cron')
+    service.onModuleInit()
+    expect(scheduler.addCronJob).not.toHaveBeenCalled()
   })
 
   it('upserts programs and tracks counts', async () => {
@@ -73,7 +89,7 @@ describe('SyncService', () => {
     await service.run()
 
     expect(prisma.syncRun.create).toHaveBeenCalledWith({ data: { status: 'running' } })
-    expect(prisma.formation.create).toHaveBeenCalled()
+    expect(prisma.course.create).toHaveBeenCalled()
     expect(prisma.syncRun.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ status: 'success' })
@@ -87,18 +103,27 @@ describe('SyncService', () => {
 
     await service.run()
 
-    expect(prisma.formation.create).toHaveBeenCalled()
+    expect(prisma.course.create).toHaveBeenCalled()
   })
 
-  it('updates existing formations', async () => {
+  it('throws Digiforma errors in production instead of falling back', async () => {
+    vi.mocked(config.get).mockImplementation((key: string) =>
+      key === 'NODE_ENV' ? 'production' : '0 * * * *'
+    )
+    vi.mocked(client.fetchAllPrograms).mockRejectedValue(new Error('network'))
+
+    await expect(service.run()).rejects.toThrow('network')
+  })
+
+  it('updates existing courses', async () => {
     vi.mocked(client.fetchAllPrograms).mockResolvedValue([sampleProgram])
-    vi.mocked(prisma.formation.findUnique).mockResolvedValue({ id: 1 } as unknown as Awaited<
-      ReturnType<PrismaService['formation']['findUnique']>
+    vi.mocked(prisma.course.findUnique).mockResolvedValue({ id: 1 } as unknown as Awaited<
+      ReturnType<PrismaService['course']['findUnique']>
     >)
 
     await service.run()
 
-    expect(prisma.formation.update).toHaveBeenCalled()
+    expect(prisma.course.update).toHaveBeenCalled()
   })
 
   it('logs individual program errors without failing the run', async () => {
@@ -114,5 +139,11 @@ describe('SyncService', () => {
         data: expect.objectContaining({ status: 'success', failed: 1 })
       })
     )
+  })
+
+  it('returns the latest sync run', async () => {
+    const latest = await service.getLatestRun()
+    expect(prisma.syncRun.findFirst).toHaveBeenCalledWith({ orderBy: { startedAt: 'desc' } })
+    expect(latest).toEqual({ id: 1, status: 'success' })
   })
 })

@@ -1,7 +1,7 @@
 import { Prisma } from '../generated/prisma/client'
 import type { Program } from './digiforma.client'
 
-export type FormationInput = Prisma.FormationCreateInput
+export type CourseInput = Prisma.CourseCreateInput
 
 function slugify(input: string): string {
   return input
@@ -29,7 +29,7 @@ function toJsonValue(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value ?? Prisma.JsonNull)) as Prisma.InputJsonValue
 }
 
-export function mapProgramToFormation(program: Program): FormationInput {
+export function mapProgramToCourse(program: Program): CourseInput {
   const title = program.title.trim()
   const slug = (program.slug ?? '').trim() || slugify(title)
   const familySlug = mapFamilySlug(program.category, program.programCategory)

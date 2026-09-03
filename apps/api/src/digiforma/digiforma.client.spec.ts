@@ -21,7 +21,9 @@ const sampleProgram: Program = {
   status: 'published'
 }
 
-function mockResponse(programs: Program[] = [sampleProgram], hasNextPage = false) {
+function mockResponse(programs: Program[] = [sampleProgram], hasNextPage = false, endCursor?: string | null) {
+  const resolvedEndCursor = endCursor === undefined ? (hasNextPage ? 'cursor-1' : undefined) : endCursor
+
   return {
     ok: true,
     status: 200,
@@ -29,7 +31,10 @@ function mockResponse(programs: Program[] = [sampleProgram], hasNextPage = false
       data: {
         programs: {
           nodes: programs,
-          pageInfo: { hasNextPage, endCursor: hasNextPage ? 'cursor-1' : undefined }
+          pageInfo: {
+            hasNextPage,
+            endCursor: resolvedEndCursor
+          }
         }
       }
     })
@@ -101,5 +106,53 @@ describe('DigiformaClient', () => {
 
     await expect(client.fetchAllPrograms()).rejects.toThrow('network')
     expect(fetch).toHaveBeenCalledTimes(3)
+  })
+
+  it('stops pagination when the cursor is missing', async () => {
+    vi.mocked(fetch).mockResolvedValue(mockResponse([sampleProgram], true, null))
+
+    const programs = await client.fetchAllPrograms()
+
+    expect(programs).toHaveLength(1)
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('stops pagination when the cursor does not advance', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(mockResponse([sampleProgram], true, 'cursor-1'))
+      .mockResolvedValueOnce(mockResponse([{ ...sampleProgram, id: 'prog-002' }], true, 'cursor-1'))
+
+    const programs = await client.fetchAllPrograms()
+
+    expect(programs).toHaveLength(2)
+    expect(fetch).toHaveBeenCalledTimes(2)
+  })
+
+  it('warns on GraphQL errors but returns data when a program payload is present', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({
+        data: { programs: { nodes: [sampleProgram], pageInfo: { hasNextPage: false } } },
+        errors: [{ message: 'partial' }]
+      })
+    } as unknown as Response)
+
+    const programs = await client.fetchAllPrograms()
+
+    expect(programs).toHaveLength(1)
+  })
+
+  it('throws when GraphQL errors are returned without a program payload', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({
+        data: { programs: null },
+        errors: [{ message: 'fatal' }]
+      })
+    } as unknown as Response)
+
+    await expect(client.fetchAllPrograms()).rejects.toThrow('Digiforma GraphQL errors')
   })
 })

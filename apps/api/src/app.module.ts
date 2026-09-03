@@ -8,6 +8,7 @@ import { HealthController } from './health/health.controller'
 import { PrismaModule } from './prisma/prisma.module'
 import { DigiformaModule } from './digiforma/digiforma.module'
 import { SyncModule } from './sync/sync.module'
+import { CatalogModule } from './catalog/catalog.module'
 import { CacheModule } from './common/cache/cache.module'
 
 function isAdminRoute(context: ExecutionContext): boolean {
@@ -27,7 +28,6 @@ function isAdminRoute(context: ExecutionContext): boolean {
       useFactory: (config: ConfigService) => ({
         throttlers: [
           {
-            name: 'public',
             ttl: 60_000,
             limit: 100,
             skipIf: (context) => isAdminRoute(context),
@@ -50,7 +50,8 @@ function isAdminRoute(context: ExecutionContext): boolean {
     PrismaModule,
     CacheModule,
     DigiformaModule,
-    SyncModule
+    SyncModule,
+    CatalogModule
   ],
   controllers: [HealthController],
   providers: [
@@ -60,4 +61,4 @@ function isAdminRoute(context: ExecutionContext): boolean {
     }
   ]
 })
-export class AppModule {}
+export class AppModule { }

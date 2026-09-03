@@ -19,6 +19,7 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
+    "@learnup/types": "workspace:*",
     "@nest-lab/throttler-storage-redis": "^1.2.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",

@@ -49,3 +49,11 @@ export interface Article extends SeoFields {
   centre: number | null
   cover_image: string | null
 }
+
+export interface Stat {
+  id: number
+  status: ContentStatus
+  sort: number | null
+  label: string
+  value: string
+}

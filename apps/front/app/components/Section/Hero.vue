@@ -32,7 +32,9 @@
               d="M9 2a1 1 0 0 1 1 1v.5a5.5 5.5 0 0 1 4.9 4.9H16a1 1 0 1 1 0 2h-.5a1 1 0 0 1-1-1A4.5 4.5 0 0 0 10 4.5a1 1 0 0 1-1-1V2z"
             />
           </svg>
+          <label for="hero-search" class="sr-only">Rechercher une formation</label>
           <input
+            id="hero-search"
             type="text"
             placeholder="« Je dois former 8 salariés au CACES près de Lyon avant septembre »"
             class="flex-1 bg-transparent font-sans text-sm text-ink placeholder:text-ink-placeholder focus:outline-none"

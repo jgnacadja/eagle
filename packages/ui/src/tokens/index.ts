@@ -1,3 +1,4 @@
+export * from './breakpoints.js'
 export * from './colors.js'
 export * from './radii.js'
 export * from './shadows.js'

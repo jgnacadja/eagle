@@ -2,11 +2,12 @@
   <section class="border-b border-rule">
     <div class="mx-auto grid max-w-container grid-cols-2 gap-8 px-6 py-14 md:grid-cols-4">
       <div v-for="stat in items" :key="stat.label">
-        <!-- eslint-disable-next-line vue/no-v-html -- contenu local statique, sanitizé -->
+        <!-- eslint-disable vue/no-v-html -- contenu local statique, sanitizé -->
         <p
           class="font-display text-3xl font-extrabold text-ink md:text-4xl"
           v-html="sanitizeHtml(stat.value)"
         />
+        <!-- eslint-enable vue/no-v-html -->
         <p class="mt-1 text-sm text-ink-muted">{{ stat.label }}</p>
       </div>
     </div>

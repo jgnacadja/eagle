@@ -1,18 +1,12 @@
 <template>
   <header class="border-b border-rule bg-paper">
-    <div
-      class="mx-auto flex max-w-container items-center justify-between px-gutter-mobile md:px-gutter py-md"
-    >
-      <NuxtLink to="/" class="flex items-center gap-2">
+    <div class="mx-auto flex max-w-container items-center px-gutter-mobile md:px-gutter py-3">
+      <NuxtLink to="/" aria-label="LEARN UP ACADEMY — Accueil" class="inline-block">
         <Logo />
-        <div class="leading-tight">
-          <p class="text-meta font-extrabold tracking-wide text-ink">LEARN UP ACADEMY</p>
-          <p class="text-overline text-ink-subtle uppercase">Réseau de formation</p>
-        </div>
       </NuxtLink>
 
       <nav
-        class="hidden items-center gap-xl text-small font-medium text-ink-muted md:flex"
+        class="ml-7 hidden items-center gap-7 text-body font-semibold text-primary md:flex"
         aria-label="Navigation principale"
       >
         <NuxtLink to="/" class="hover:text-ink">Formations</NuxtLink>
@@ -21,26 +15,34 @@
         <NuxtLink to="/" class="hover:text-ink">Actualités</NuxtLink>
       </nav>
 
-      <NuxtLink
-        to="/"
-        class="hidden text-small font-semibold text-accent-text hover:text-accent md:inline underline underline-offset-4"
-      >
-        Rejoindre le réseau
-      </NuxtLink>
+      <div class="ml-auto">
+        <NuxtLink
+          to="/"
+          class="hidden text-body font-bold text-primary hover:text-ink md:inline underline underline-offset-4"
+        >
+          Rejoindre le réseau
+        </NuxtLink>
 
-      <button
-        ref="openBtn"
-        type="button"
-        aria-controls="mobile-menu"
-        :aria-expanded="isOpen"
-        aria-label="Ouvrir le menu"
-        class="flex h-touch w-touch items-center justify-center rounded-md border border-rule text-ink md:hidden"
-        @click="openMenu"
-      >
-        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path d="M4 7h16M4 12h16M4 17h16" />
-        </svg>
-      </button>
+        <button
+          ref="openBtn"
+          type="button"
+          aria-controls="mobile-menu"
+          :aria-expanded="isOpen"
+          aria-label="Ouvrir le menu"
+          class="flex h-touch w-touch items-center justify-center rounded-md border border-rule text-ink md:hidden"
+          @click="openMenu"
+        >
+          <svg
+            class="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -53,12 +55,13 @@
       aria-label="Menu principal"
     >
       <div class="flex items-center justify-between border-b border-rule px-gutter-mobile py-md">
-        <NuxtLink to="/" class="flex items-center gap-2" @click="closeMenu">
+        <NuxtLink
+          to="/"
+          aria-label="LEARN UP ACADEMY — Accueil"
+          class="inline-block"
+          @click="closeMenu"
+        >
           <Logo />
-          <div class="leading-tight">
-            <p class="text-meta font-extrabold tracking-wide text-ink">LEARN UP ACADEMY</p>
-            <p class="text-overline text-ink-subtle uppercase">Réseau de formation</p>
-          </div>
         </NuxtLink>
 
         <button

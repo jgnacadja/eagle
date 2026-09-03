@@ -15,6 +15,6 @@ export function useContentSeo(source: SeoSource, fallbackTitle: string) {
         : []),
       { property: 'og:title', content: title }
     ],
-    link: [...(source.seo_canonical ? [{ rel: 'canonical', href: source.seo_canonical }] : [])]
+    link: source.seo_canonical ? [{ rel: 'canonical' as const, href: source.seo_canonical }] : []
   })
 }

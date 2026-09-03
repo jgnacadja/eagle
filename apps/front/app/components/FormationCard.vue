@@ -1,13 +1,13 @@
 <template>
-  <article class="overflow-hidden rounded-md border border-rule bg-paper">
+  <article class="rounded-md border border-rule bg-paper p-md">
     <div
-      class="flex aspect-video items-center justify-center bg-surface-alt text-center text-meta text-ink-subtle px-md"
+      class="flex aspect-video items-center justify-center rounded-sm border border-dashed border-outline bg-surface-alt text-center text-meta text-ink-muted"
     >
       <span>{{ imageTop }}<br />{{ imageBottom }}</span>
     </div>
-    <div class="p-md">
-      <h3 class="font-sans text-h4 font-semibold text-ink">{{ title }}</h3>
-      <NuxtLink to="/" class="mt-xs inline-block text-small text-accent-text hover:text-accent">
+    <div class="mt-md">
+      <h3 class="font-sans text-h4 text-ink">{{ title }}</h3>
+      <NuxtLink to="/" class="mt-xs inline-block text-small font-bold text-primary hover:text-ink">
         Voir le détail →
       </NuxtLink>
     </div>

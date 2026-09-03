@@ -1,14 +1,14 @@
 <template>
-  <article class="overflow-hidden rounded-md bg-primary">
+  <article class="flex flex-col gap-md">
     <div
-      class="flex aspect-video items-center justify-center bg-primary/60 text-center text-small text-ink-inverse-muted px-md"
+      class="flex aspect-[2/1] items-center justify-center rounded-md border border-dashed border-outline-inverse bg-primary-card px-md text-center text-small font-medium text-ink-inverse/60"
     >
-      <span>{{ imageLabel }}</span>
+      <span>{{ imageLabel }}<br v-if="imageSub" />{{ imageSub }}</span>
     </div>
-    <div class="p-md">
-      <p class="text-overline text-accent">{{ tag }}</p>
-      <h3 class="mt-xs font-sans text-h4 font-semibold">{{ title }}</h3>
-      <p class="mt-sm text-small text-ink-inverse-muted">{{ body }}</p>
+    <div class="flex flex-col gap-1.5 rounded-md bg-primary-card p-lg">
+      <p class="text-overline text-accent uppercase">{{ tag }}</p>
+      <h3 class="font-sans text-h4 text-ink-inverse">{{ title }}</h3>
+      <p class="text-body text-ink-inverse/65">{{ body }}</p>
     </div>
   </article>
 </template>
@@ -19,5 +19,6 @@ defineProps<{
   title: string
   body: string
   imageLabel: string
+  imageSub?: string
 }>()
 </script>

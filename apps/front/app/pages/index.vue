@@ -1,54 +1,52 @@
 <template>
   <div class="bg-paper">
     <!-- Hero -->
-    <section class="relative overflow-hidden bg-surface">
+    <section class="relative overflow-hidden bg-gradient-to-b from-paper to-surface">
       <div
-        class="pointer-events-none absolute -top-24 -left-32 h-96 w-96 rounded-full bg-info-soft blur-3xl"
+        class="pointer-events-none absolute -bottom-44 -left-32 h-96 w-96 rounded-full bg-primary/5"
       />
       <div
-        class="pointer-events-none absolute -top-10 -right-24 h-80 w-80 rounded-full bg-warning-soft blur-3xl"
+        class="pointer-events-none absolute -right-36 -top-32 h-96 w-96 rounded-full bg-accent/5"
       />
 
       <div
-        class="relative mx-auto max-w-container px-gutter-mobile md:px-gutter pb-section pt-2xl text-center md:pt-2xl"
+        class="relative mx-auto max-w-container px-gutter-mobile md:px-gutter pb-section pt-4xl text-center"
       >
         <span
-          class="inline-block rounded-full border border-rule bg-paper px-lg py-sm text-overline text-ink-muted"
+          class="inline-block rounded-full border border-primary bg-paper px-4 py-2 text-h4 font-bold uppercase leading-3 tracking-widest text-primary"
         >
           Plateforme de conseil en formation professionnelle
         </span>
 
-        <h1 class="mt-xl font-display text-h1 font-extrabold leading-tight text-ink md:text-hero">
+        <h1 class="mt-5 font-display text-h1 font-extrabold text-ink md:text-hero">
           Vos besoins de formation,<br />
           <span class="text-accent-text">orchestrés</span> de bout en bout.
         </h1>
 
-        <p class="mt-md font-sans text-body text-ink-muted md:text-lead">
+        <p class="mt-md font-sans text-lead font-semibold text-ink">
           La bonne formation. Au bon endroit. Au bon moment.
         </p>
 
-        <form class="mx-auto mt-xl max-w-prose" @submit.prevent>
+        <form class="mx-auto mt-xl w-full max-w-2xl" @submit.prevent>
           <div
-            class="flex items-center gap-sm rounded-full border border-rule bg-paper px-lg py-md shadow-sm focus-within:ring-2 focus-within:ring-outline"
+            class="flex items-center gap-sm rounded-full border-2 border-primary bg-paper py-2.5 pl-6 pr-2.5 shadow-sm focus-within:ring-2 focus-within:ring-outline"
           >
-            <svg class="h-md w-md shrink-0 text-accent" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                d="M9 2a1 1 0 0 1 1 1v.5a5.5 5.5 0 0 1 4.9 4.9H16a1 1 0 1 1 0 2h-.5a1 1 0 0 1-1-1A4.5 4.5 0 0 0 10 4.5a1 1 0 0 1-1-1V2z"
-              />
+            <svg class="h-5 w-5 shrink-0 text-accent" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 0l2.5 7.5L20 10l-7.5 2.5L10 20l-2.5-7.5L0 10l7.5-2.5L10 0z" />
             </svg>
             <label for="hero-search" class="sr-only">Rechercher une formation</label>
             <input
               id="hero-search"
               type="text"
               placeholder="« Je dois former 8 salariés au CACES près de Lyon avant septembre »"
-              class="flex-1 bg-transparent font-sans text-small text-ink placeholder:text-ink-placeholder focus:outline-none"
+              class="flex-1 bg-transparent font-sans text-lead leading-tight text-ink placeholder:text-ink-placeholder focus:outline-none"
             />
             <button
               type="submit"
-              class="shrink-0 rounded-full bg-ink p-sm text-paper hover:bg-primary transition"
+              class="flex h-control w-control shrink-0 items-center justify-center rounded-full bg-primary text-paper transition hover:bg-primary-dark"
             >
               <svg
-                class="h-md w-md"
+                class="h-5 w-5"
                 fill="none"
                 stroke="currentColor"
                 stroke-width="2"
@@ -61,15 +59,17 @@
           </div>
         </form>
 
-        <p class="mx-auto mt-xl max-w-prose text-small text-ink-muted">
-          <span class="font-semibold text-ink">LEARN UP</span>, organisme de formation et de
-          recommandation, vous accompagne pour identifier et organiser la formation la plus adaptée
-          à vos équipes.
+        <p class="mx-auto mt-5 max-w-5xl text-body md:whitespace-nowrap">
+          <span class="font-bold text-ink">LEARN UP</span
+          ><span class="font-medium text-ink-body"
+            >, organisme de formation et de recommandation, vous accompagne pour identifier et
+            organiser la formation la plus adaptée à vos équipes.</span
+          >
         </p>
 
         <NuxtLink
           to="/"
-          class="mt-sm inline-block text-small font-semibold text-accent-text hover:text-accent"
+          class="mt-2.5 inline-block text-body font-bold text-accent-text underline underline-offset-4 decoration-accent-text/40 hover:opacity-80"
         >
           Confier ma formation →
         </NuxtLink>
@@ -77,27 +77,28 @@
     </section>
 
     <!-- Stats ticker -->
-    <div class="overflow-hidden bg-primary-dark py-md">
+    <div class="overflow-hidden bg-primary-dark py-3">
       <div class="marquee flex whitespace-nowrap">
-        <div class="flex items-center gap-2xl px-lg text-small font-medium text-ink-inverse-muted">
-          <span v-for="item in tickerItems" :key="item.key" class="inline-flex items-center gap-sm">
-            <span v-if="item.key === 'live'" class="h-xs w-xs rounded-full bg-success" />
-            <strong v-if="item.key !== 'live'" class="text-ink-inverse">{{ item.value }}</strong>
-            {{ item.label }}
+        <div class="flex items-center gap-14 px-lg text-small text-ink-inverse">
+          <span v-for="item in tickerItems" :key="item.key" class="inline-flex items-center">
+            <span v-if="item.key === 'live'" class="h-2.5 w-2.5 rounded-full bg-ink-inverse/60" />
+            <strong v-if="item.key !== 'live'" class="text-button text-ink-inverse">{{
+              item.value
+            }}</strong>
+            <span class="text-ink-inverse/60">&nbsp;{{ item.label }}</span>
           </span>
         </div>
-        <div
-          class="flex items-center gap-2xl px-lg text-small font-medium text-ink-inverse-muted"
-          aria-hidden="true"
-        >
+        <div class="flex items-center gap-14 px-lg text-small text-ink-inverse" aria-hidden="true">
           <span
             v-for="item in tickerItems"
             :key="`${item.key}-dup`"
-            class="inline-flex items-center gap-sm"
+            class="inline-flex items-center"
           >
-            <span v-if="item.key === 'live'" class="h-xs w-xs rounded-full bg-success" />
-            <strong v-if="item.key !== 'live'" class="text-ink-inverse">{{ item.value }}</strong>
-            {{ item.label }}
+            <span v-if="item.key === 'live'" class="h-2.5 w-2.5 rounded-full bg-ink-inverse/60" />
+            <strong v-if="item.key !== 'live'" class="text-button text-ink-inverse">{{
+              item.value
+            }}</strong>
+            <span class="text-ink-inverse/60">&nbsp;{{ item.label }}</span>
           </span>
         </div>
       </div>
@@ -126,7 +127,7 @@
 
       <p class="mt-xl text-center text-small text-ink-muted">
         Vous êtes un particulier ? Certaines sessions sont ouvertes aux inscriptions individuelles —
-        <NuxtLink to="/" class="font-semibold text-accent-text hover:text-accent"
+        <NuxtLink to="/" class="font-bold text-primary hover:text-primary-muted"
           >contactez le centre le plus proche →</NuxtLink
         >
       </p>
@@ -134,11 +135,13 @@
 
     <!-- How it works -->
     <section class="mx-auto max-w-container px-gutter-mobile md:px-gutter pb-section">
-      <p class="text-center text-overline text-accent-text">Comment ça marche</p>
+      <p class="text-center text-h4 font-bold uppercase leading-3 tracking-widest text-accent-text">
+        Comment ça marche
+      </p>
 
-      <ol class="relative mt-2xl grid gap-2xl md:grid-cols-4">
+      <ol class="relative mt-2.5 grid gap-2xl md:grid-cols-4">
         <div
-          class="absolute top-1/2 left-0 right-0 z-0 mx-auto hidden h-px w-3/4 -translate-y-1/2 bg-rule md:block"
+          class="absolute top-[calc(theme(spacing.control-sm)/2-0.5px)] left-0 right-0 z-0 mx-auto hidden h-px w-4/5 bg-rule-strong md:block"
           aria-hidden="true"
         />
 
@@ -148,13 +151,15 @@
           class="relative flex flex-col items-center text-center"
         >
           <span
-            class="z-10 flex h-control w-control items-center justify-center rounded-full text-small font-bold text-paper"
-            :class="step.number === 4 ? 'bg-success' : 'bg-ink'"
+            class="z-10 flex h-control-sm w-control-sm items-center justify-center rounded-full text-small font-bold text-paper"
+            :class="step.number === 4 ? 'bg-success' : 'bg-primary'"
           >
             {{ step.number }}
           </span>
-          <h3 class="mt-md font-sans text-h4 font-semibold text-ink">{{ step.title }}</h3>
-          <p class="mt-xs text-small text-ink-muted">{{ step.body }}</p>
+          <h3 class="mt-2.5 font-sans text-body font-bold text-ink">{{ step.title }}</h3>
+          <p class="mx-auto mt-1 text-small text-ink-muted" :class="step.maxWidth">
+            {{ step.body }}
+          </p>
         </li>
       </ol>
     </section>
@@ -171,7 +176,7 @@
           </div>
           <NuxtLink
             to="/"
-            class="hidden whitespace-nowrap text-small font-semibold text-ink hover:text-accent-text md:block"
+            class="hidden whitespace-nowrap text-body font-bold text-primary hover:text-ink md:block"
           >
             Voir tout le catalogue →
           </NuxtLink>
@@ -189,7 +194,7 @@
 
         <NuxtLink
           to="/"
-          class="mt-xl inline-block text-small font-semibold text-ink hover:text-accent-text md:hidden"
+          class="mt-xl inline-block text-body font-bold text-primary hover:text-ink md:hidden"
         >
           Voir tout le catalogue →
         </NuxtLink>
@@ -202,22 +207,20 @@
         <div>
           <h2 class="font-display text-h2 font-extrabold text-ink">Le réseau Learn Up Academy</h2>
           <p class="mt-sm font-sans text-body text-ink-muted">
-            <strong class="text-ink">+400 centres partenaires</strong> dans
-            <strong class="text-ink">96 départements</strong>
+            <span class="font-bold text-primary">+400 centres partenaires</span>
+            dans
+            <span class="font-bold text-primary">96 départements</span>
             — en centre, sur votre site ou en intra-entreprise.
           </p>
         </div>
-        <NuxtLink
-          to="/"
-          class="whitespace-nowrap text-small font-semibold text-ink hover:text-accent-text"
-        >
+        <NuxtLink to="/" class="whitespace-nowrap text-body font-bold text-primary hover:text-ink">
           Explorer la carte des centres →
         </NuxtLink>
       </div>
 
       <div class="mt-xl grid gap-grid lg:grid-cols-3">
         <div
-          class="lg:col-span-2 flex aspect-square items-center justify-center rounded-md border border-rule bg-surface-alt text-center text-small text-ink-muted px-md"
+          class="lg:col-span-2 flex aspect-[2/1] items-center justify-center rounded-md border border-dashed border-outline bg-surface text-center text-meta text-ink-muted px-md"
         >
           Carte de France interactive<br />départements + pins centres — lisible, pas un outil SIG
         </div>
@@ -228,7 +231,7 @@
             <input
               type="text"
               placeholder="Ville, code postal ou département"
-              class="w-full rounded-full border border-rule bg-paper px-lg py-md font-sans text-small text-ink placeholder:text-ink-placeholder focus:outline-none focus:ring-2 focus:ring-outline"
+              class="w-full rounded-full border border-outline bg-paper px-lg py-md font-sans text-body text-ink placeholder:text-ink-placeholder focus:outline-none focus:ring-2 focus:ring-outline"
             />
           </label>
 
@@ -238,7 +241,6 @@
             :name="centre.name"
             :distance="centre.distance"
             :formations="centre.formations"
-            :departments="centre.departments"
             :tags="centre.tags"
           />
         </div>
@@ -246,15 +248,15 @@
     </section>
 
     <!-- Confier -->
-    <section id="confier" class="bg-primary-dark py-section text-ink-inverse">
+    <section id="confier" class="bg-primary-muted py-section text-ink-inverse">
       <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter">
-        <p class="text-overline text-accent">Confier mes formations</p>
+        <p class="text-h4 font-bold uppercase text-accent">Confier mes formations</p>
 
-        <div class="mt-sm flex flex-col gap-md lg:flex-row lg:items-start lg:justify-between">
-          <h2 class="max-w-prose font-display text-h2 font-extrabold leading-snug">
+        <div class="mt-sm flex flex-col gap-md lg:flex-row lg:items-baseline lg:justify-between">
+          <h2 class="max-w-prose font-display text-h2 font-extrabold">
             Un interlocuteur unique orchestre votre plan de formation
           </h2>
-          <p class="max-w-prose text-small text-ink-inverse-muted">
+          <p class="max-w-[400px] text-body text-ink-inverse/65">
             Pensé pour les RH, responsables formation, QHSE et directions d'exploitation : vous
             gardez la maîtrise, nous portons l'exécution.
           </p>
@@ -268,19 +270,20 @@
             :title="card.title"
             :body="card.body"
             :image-label="card.imageLabel"
+            :image-sub="card.imageSub"
           />
         </div>
 
         <div class="mt-2xl flex flex-wrap gap-md">
           <NuxtLink
             to="/"
-            class="rounded-full bg-accent px-lg py-md text-small font-semibold text-ink hover:bg-accent-text transition"
+            class="rounded-full bg-accent px-lg py-md text-button text-ink hover:bg-accent-text transition"
           >
             Confier mes formations
           </NuxtLink>
           <NuxtLink
             to="/"
-            class="rounded-full border border-outline-inverse px-lg py-md text-small font-semibold text-ink-inverse hover:bg-ink-inverse/10 transition"
+            class="rounded-full border border-outline-inverse px-lg py-md text-button text-ink-inverse hover:bg-ink-inverse/10 transition"
           >
             Parler à un conseiller
           </NuxtLink>
@@ -289,7 +292,7 @@
     </section>
 
     <!-- Stats -->
-    <section class="border-b border-rule">
+    <section class="border-b border-rule bg-surface">
       <div
         class="mx-auto grid max-w-container grid-cols-2 gap-xl px-gutter-mobile md:px-gutter py-section md:grid-cols-4"
       >
@@ -299,6 +302,7 @@
           :value="stat.value"
           :unit="stat.unit"
           :label="stat.label"
+          class="border-b border-rule md:border-b-0 md:border-r last:border-r-0 md:last:border-r-0"
         />
       </div>
     </section>
@@ -308,9 +312,9 @@
       <div class="flex flex-wrap items-end justify-between gap-sm">
         <h2 class="font-display text-h2 font-extrabold text-ink">
           Ce qu'en disent les entreprises
-          <span class="ml-sm text-meta font-medium text-ink-subtle">4,7/5 · 312 avis Google</span>
+          <span class="ml-sm text-small font-medium text-ink-muted">4,7/5 · 312 avis Google</span>
         </h2>
-        <NuxtLink to="/" class="text-small font-semibold text-ink hover:text-accent-text"
+        <NuxtLink to="/" class="text-small font-bold text-primary hover:text-ink"
           >Voir tous les avis →</NuxtLink
         >
       </div>
@@ -333,7 +337,7 @@
           <h2 class="font-display text-h2 font-extrabold text-ink">Actualités</h2>
           <NuxtLink
             to="/"
-            class="whitespace-nowrap text-small font-semibold text-ink hover:text-accent-text"
+            class="whitespace-nowrap text-small font-bold text-primary hover:text-ink"
             >Tout le blog →</NuxtLink
           >
         </div>
@@ -420,14 +424,30 @@ const networkCards = [
 ]
 
 const steps = [
-  { number: 1, title: 'Décrivez votre besoin', body: 'en une phrase, avec vos mots' },
+  {
+    number: 1,
+    title: 'Décrivez votre besoin',
+    body: 'en une phrase, avec vos mots',
+    maxWidth: 'max-w-44'
+  },
   {
     number: 2,
     title: 'Recevez la solution',
-    body: 'formation, centre et dates identifiés près de vos équipes'
+    body: 'formation, centre et dates identifiés près de vos équipes',
+    maxWidth: 'max-w-56'
   },
-  { number: 3, title: 'Validez la session', body: 'demande envoyée, prise en charge sécurisée' },
-  { number: 4, title: 'Formez vos équipes', body: "accompagnement jusqu'aux attestations" }
+  {
+    number: 3,
+    title: 'Validez la session',
+    body: 'demande envoyée, prise en charge sécurisée',
+    maxWidth: 'max-w-48'
+  },
+  {
+    number: 4,
+    title: 'Formez vos équipes',
+    body: "accompagnement jusqu'aux attestations",
+    maxWidth: 'max-w-48'
+  }
 ]
 
 const formations = [
@@ -458,15 +478,13 @@ const centres = [
     name: 'Centre de Créteil',
     distance: 'à 6 km',
     formations: 'CACES · Habilitations électriques · SST',
-    departments: 'Départements : 94, 75, 77',
     tags: ['Sessions cette semaine', 'Intra sur site']
   },
   {
     name: 'Centre de Villeneuve-le-Roi',
     distance: 'à 14 km',
     formations: 'Travaux en hauteur · Échafaudages · PEMP',
-    departments: 'Départements : 94, 78',
-    tags: ['⚠ Prochaine session le 14/09']
+    tags: ['▲ Prochaine session le 14/09']
   }
 ]
 
@@ -475,19 +493,22 @@ const confierCards = [
     tag: 'Conseil',
     title: 'Qualifier le besoin réglementaire',
     body: "Diagnostic des obligations et des recyclages à échéance, même à partir d'une demande imprécise.",
-    imageLabel: 'Photo terrain à fournir'
+    imageLabel: 'Photo terrain à fournir',
+    imageSub: 'chantier BTP — casque & harnais'
   },
   {
     tag: 'Externalisation',
     title: "Déléguer l'exécution du plan",
     body: 'Sessions programmées, convocations envoyées, attestations suivies, budget consolidé.',
-    imageLabel: 'Photo terrain à fournir'
+    imageLabel: 'Photo terrain à fournir',
+    imageSub: 'entrepôt logistique — cariste en formation'
   },
   {
     tag: 'Multi-sites',
     title: 'Piloter la conformité partout',
     body: 'Reporting site par site, alertes avant expiration, un seul point de contact national.',
-    imageLabel: 'Photo terrain à fournir'
+    imageLabel: 'Photo terrain à fournir',
+    imageSub: 'formateur en situation avec équipe RH'
   }
 ]
 

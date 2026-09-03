@@ -1,10 +1,10 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect } from 'vitest'
-import AppLogo from '~/components/AppLogo.vue'
+import Logo from '~/components/Logo.vue'
 
-describe('AppLogo', () => {
+describe('Logo', () => {
   it('renders the SVG logo', () => {
-    const wrapper = mount(AppLogo)
+    const wrapper = mount(Logo)
     expect(wrapper.find('svg').exists()).toBe(true)
   })
 })

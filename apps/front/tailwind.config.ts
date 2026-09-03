@@ -33,7 +33,6 @@ const config: Config = {
     screens: { ...breakpoints },
     extend: {
       colors: {
-        navy: { ...colors.navy },
         primary: {
           DEFAULT: colors.primary.default,
           dark: colors.primary.dark,

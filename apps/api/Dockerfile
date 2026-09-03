@@ -7,7 +7,9 @@ FROM base AS build
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY apps/api/package.json apps/api/
 COPY apps/api/prisma apps/api/prisma
+COPY packages/types/package.json packages/types/package.json
 RUN pnpm install --filter @learnup/api... --frozen-lockfile
+COPY packages/types packages/types
 COPY apps/api apps/api
 RUN pnpm --filter @learnup/api build
 
@@ -28,4 +30,4 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=5 \
   CMD wget -qO- http://127.0.0.1:3001/health || exit 1
 
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]

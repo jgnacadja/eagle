@@ -69,7 +69,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     const oldVersion = newVersion - 1
     this.currentVersion = newVersion
     await this.deleteByPattern(`catalog:v${oldVersion}:*`)
-    this.logger.log(`Cache catalogue invalidé, nouvelle version v${this.currentVersion}`)
+    this.logger.log(`Catalog cache invalidated, new version v${this.currentVersion}`)
   }
 
   key(path: string): string {

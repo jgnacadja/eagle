@@ -4,7 +4,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { CronJob, validateCronExpression } from 'cron'
 import { SchedulerRegistry } from '@nestjs/schedule'
-import type { Prisma } from '../generated/prisma/client'
+import { Prisma } from '../../prisma/generated/client'
 import { CacheService } from '../common/cache/cache.service'
 import { DigiformaClient, type Program } from '../digiforma/digiforma.client'
 import { mapProgramToCourse } from '../digiforma/digiforma.mapper'
@@ -21,7 +21,7 @@ export class SyncService {
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
     private readonly scheduler: SchedulerRegistry
-  ) { }
+  ) {}
 
   onModuleInit(): void {
     const expression = this.config.get<string>('SYNC_CRON') ?? '0 * * * *'
@@ -129,9 +129,7 @@ export class SyncService {
     }
   }
 
-  private async upsertCourse(
-    input: Prisma.CourseCreateInput
-  ): Promise<'inserted' | 'updated'> {
+  private async upsertCourse(input: Prisma.CourseCreateInput): Promise<'inserted' | 'updated'> {
     const existing = await this.prisma.course.findUnique({
       where: { digiformaId: input.digiformaId }
     })

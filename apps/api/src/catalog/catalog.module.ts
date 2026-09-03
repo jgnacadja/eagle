@@ -9,4 +9,4 @@ import { CatalogService } from './catalog.service'
   controllers: [CatalogController],
   providers: [CatalogService]
 })
-export class CatalogModule { }
+export class CatalogModule {}

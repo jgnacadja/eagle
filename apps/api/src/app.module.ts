@@ -61,4 +61,4 @@ function isAdminRoute(context: ExecutionContext): boolean {
     }
   ]
 })
-export class AppModule { }
+export class AppModule {}

@@ -21,8 +21,13 @@ const sampleProgram: Program = {
   status: 'published'
 }
 
-function mockResponse(programs: Program[] = [sampleProgram], hasNextPage = false, endCursor?: string | null) {
-  const resolvedEndCursor = endCursor === undefined ? (hasNextPage ? 'cursor-1' : undefined) : endCursor
+function mockResponse(
+  programs: Program[] = [sampleProgram],
+  hasNextPage = false,
+  endCursor?: string | null
+) {
+  const resolvedEndCursor =
+    endCursor === undefined ? (hasNextPage ? 'cursor-1' : undefined) : endCursor
 
   return {
     ok: true,

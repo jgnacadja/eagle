@@ -1,4 +1,5 @@
 import js from '@eslint/js'
+import { defineConfig } from 'eslint/config'
 import tseslint from 'typescript-eslint'
 import vue from 'eslint-plugin-vue'
 import prettier from 'eslint-config-prettier'
@@ -88,7 +89,7 @@ const vueGlobals = {
   withDefaults: 'readonly'
 }
 
-export default tseslint.config(
+export default defineConfig(
   {
     ignores: [
       '**/dist/**',
@@ -98,7 +99,7 @@ export default tseslint.config(
       '**/coverage/**',
       '**/playwright-report/**',
       '**/test-results/**',
-      'apps/api/src/generated/prisma/**'
+      'apps/api/prisma/generated/**'
     ]
   },
   js.configs.recommended,

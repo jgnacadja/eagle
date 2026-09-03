@@ -16,7 +16,12 @@ class InMemoryThrottlerStorage implements ThrottlerStorage {
     limit: number,
     blockDuration: number,
     throttlerName: string
-  ): Promise<{ totalHits: number; timeToExpire: number; isBlocked: boolean; timeToBlockExpire: number }> {
+  ): Promise<{
+    totalHits: number
+    timeToExpire: number
+    isBlocked: boolean
+    timeToBlockExpire: number
+  }> {
     const fullKey = `${key}:${throttlerName}`
     const totalHits = (this.hits.get(fullKey) ?? 0) + 1
     this.hits.set(fullKey, totalHits)

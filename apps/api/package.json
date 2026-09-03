@@ -6,8 +6,8 @@
     "build": "nest build",
     "dev": "nest start --watch",
     "dev:debug": "nest start --watch --debug",
-    "start": "node dist/main.js",
-    "start:prod": "node dist/main.js",
+    "start": "node dist/src/main.js",
+    "start:prod": "node dist/src/main.js",
     "lint": "eslint \"src/**/*.ts\"",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
@@ -52,6 +52,7 @@
     "pg": "^8.23.0",
     "prisma": "7.10.0",
     "supertest": "^7.0.0",
+    "tsx": "^4.23.13",
     "typescript": "^5.7.2",
     "unplugin-swc": "^1.5.1",
     "vitest": "^3.0.5"

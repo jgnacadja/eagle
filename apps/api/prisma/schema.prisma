@@ -1,7 +1,8 @@
 generator client {
-  provider     = "prisma-client"
-  output       = "../src/generated/prisma"
-  moduleFormat = "cjs"
+  provider        = "prisma-client"
+  output          = "./generated"
+  moduleFormat    = "cjs"
+  previewFeatures = ["fullTextSearchPostgres"]
 }
 
 datasource db {
@@ -31,6 +32,8 @@ model Course {
   seoDescription  String?  @map("seo_description") @db.Text
   seoCanonical    String?  @map("seo_canonical")
   raw             Json?    @map("raw")
+  titleTsv        Unsupported("tsvector")? @map("title_tsv")
+  descriptionTsv  Unsupported("tsvector")? @map("description_tsv")
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 

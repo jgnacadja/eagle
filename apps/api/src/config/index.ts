@@ -5,13 +5,15 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 
 export function configureApp(app: INestApplication): void {
   app.use(helmet())
-  const allowedOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:3000')
-    .split(',')
-    .map((o) => o.trim())
-    .filter(Boolean)
+  const allowedOrigins = new Set(
+    (process.env.CORS_ORIGIN ?? 'http://localhost:3000')
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean)
+  )
 
   const corsOrigin: CustomOrigin = (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.has(origin)) {
       callback(null, true)
     } else {
       callback(null, false)

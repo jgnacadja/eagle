@@ -1,15 +1,31 @@
-import { Prisma } from '../generated/prisma/client'
+import { Prisma } from '../../prisma/generated/client'
 import type { Program } from './digiforma.client'
 
 export type CourseInput = Prisma.CourseCreateInput
 
+const DIACRITIC_PATTERN = /[\u0300-\u036f]/g
+
 function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+  const normalized = input.toLowerCase().normalize('NFD').replace(DIACRITIC_PATTERN, '')
+
+  let slug = ''
+  let endsWithHyphen = false
+
+  for (const char of normalized) {
+    if ((char >= 'a' && char <= 'z') || (char >= '0' && char <= '9')) {
+      slug += char
+      endsWithHyphen = false
+    } else if (!endsWithHyphen) {
+      slug += '-'
+      endsWithHyphen = true
+    }
+  }
+
+  if (slug.endsWith('-')) {
+    slug = slug.slice(0, -1)
+  }
+
+  return slug
 }
 
 function mapFamilySlug(category?: string | null, programCategory?: string | null): string | null {
@@ -26,7 +42,7 @@ function mapDescription(description?: string | null): string | null {
 }
 
 function toJsonValue(value: unknown): Prisma.InputJsonValue {
-  return JSON.parse(JSON.stringify(value ?? Prisma.JsonNull)) as Prisma.InputJsonValue
+  return structuredClone(value ?? Prisma.JsonNull) as Prisma.InputJsonValue
 }
 
 export function mapProgramToCourse(program: Program): CourseInput {

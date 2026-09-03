@@ -9,7 +9,7 @@ describe('AppHeader', () => {
       global: {
         stubs: {
           NuxtLink: { template: '<a><slot /></a>' },
-          AppLogo: { template: '<svg></svg>' },
+          Logo: { template: '<svg></svg>' },
           ClientOnly: { template: '<slot />' }
         }
       }
@@ -28,7 +28,7 @@ describe('AppHeader', () => {
       global: {
         stubs: {
           NuxtLink: { template: '<a><slot /></a>' },
-          AppLogo: { template: '<svg></svg>' },
+          Logo: { template: '<svg></svg>' },
           ClientOnly: { template: '<slot />' }
         }
       }
@@ -48,7 +48,7 @@ describe('AppHeader', () => {
       global: {
         stubs: {
           NuxtLink: { template: '<a><slot /></a>' },
-          AppLogo: { template: '<svg></svg>' },
+          Logo: { template: '<svg></svg>' },
           ClientOnly: { template: '<slot />' }
         }
       }

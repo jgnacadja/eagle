@@ -1,34 +1,40 @@
 <template>
   <header class="border-b border-rule bg-paper">
-    <div class="mx-auto flex max-w-container items-center justify-between px-6 py-4">
+    <div
+      class="mx-auto flex max-w-container items-center justify-between px-gutter-mobile md:px-gutter py-md"
+    >
       <NuxtLink to="/" class="flex items-center gap-2">
-        <AppLogo />
+        <Logo />
         <div class="leading-tight">
-          <p class="text-xs font-extrabold tracking-wide text-ink">LEARN UP ACADEMY</p>
-          <p class="text-[9px] tracking-widest text-ink-subtle uppercase">Réseau de formation</p>
+          <p class="text-meta font-extrabold tracking-wide text-ink">LEARN UP ACADEMY</p>
+          <p class="text-overline text-ink-subtle uppercase">Réseau de formation</p>
         </div>
       </NuxtLink>
 
-      <nav class="hidden items-center gap-8 text-sm font-medium text-ink-muted md:flex">
-        <NuxtLink to="/formations" class="hover:text-ink">Formations</NuxtLink>
-        <NuxtLink to="/centres" class="hover:text-ink">Centres</NuxtLink>
-        <NuxtLink to="/a-propos" class="hover:text-ink">À propos</NuxtLink>
-        <NuxtLink to="/actualites" class="hover:text-ink">Actualités</NuxtLink>
+      <nav
+        class="hidden items-center gap-xl text-small font-medium text-ink-muted md:flex"
+        aria-label="Navigation principale"
+      >
+        <NuxtLink to="/" class="hover:text-ink">Formations</NuxtLink>
+        <NuxtLink to="/" class="hover:text-ink">Centres</NuxtLink>
+        <NuxtLink to="/" class="hover:text-ink">À propos</NuxtLink>
+        <NuxtLink to="/" class="hover:text-ink">Actualités</NuxtLink>
       </nav>
 
       <NuxtLink
-        to="/rejoindre"
-        class="hidden text-sm font-semibold text-accent-text hover:text-accent md:inline underline underline-offset-4"
+        to="/"
+        class="hidden text-small font-semibold text-accent-text hover:text-accent md:inline underline underline-offset-4"
       >
         Rejoindre le réseau
       </NuxtLink>
 
       <button
+        ref="openBtn"
         type="button"
         aria-controls="mobile-menu"
-        aria-expanded="false"
+        :aria-expanded="isOpen"
         aria-label="Ouvrir le menu"
-        class="flex h-11 w-11 items-center justify-center rounded-md border border-rule text-ink md:hidden"
+        class="flex h-touch w-touch items-center justify-center rounded-md border border-rule text-ink md:hidden"
         @click="openMenu"
       >
         <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -39,27 +45,27 @@
   </header>
 
   <ClientOnly>
-    <div
+    <dialog
       v-if="isOpen"
       id="mobile-menu"
-      class="fixed inset-0 z-50 flex flex-col bg-paper md:hidden"
-      role="dialog"
-      aria-modal="true"
+      open
+      class="fixed inset-0 z-50 m-0 flex h-screen w-screen max-w-none flex-col border-0 bg-paper p-0 md:hidden"
       aria-label="Menu principal"
     >
-      <div class="flex items-center justify-between border-b border-rule px-6 py-4">
+      <div class="flex items-center justify-between border-b border-rule px-gutter-mobile py-md">
         <NuxtLink to="/" class="flex items-center gap-2" @click="closeMenu">
-          <AppLogo />
+          <Logo />
           <div class="leading-tight">
-            <p class="text-xs font-extrabold tracking-wide text-ink">LEARN UP ACADEMY</p>
-            <p class="text-[9px] tracking-widest text-ink-subtle uppercase">Réseau de formation</p>
+            <p class="text-meta font-extrabold tracking-wide text-ink">LEARN UP ACADEMY</p>
+            <p class="text-overline text-ink-subtle uppercase">Réseau de formation</p>
           </div>
         </NuxtLink>
 
         <button
+          ref="closeBtn"
           type="button"
           aria-label="Fermer le menu"
-          class="flex h-11 w-11 items-center justify-center rounded-md bg-ink text-paper"
+          class="flex h-touch w-touch items-center justify-center rounded-md bg-ink text-paper"
           @click="closeMenu"
         >
           <svg
@@ -74,12 +80,12 @@
         </button>
       </div>
 
-      <nav class="flex-1 overflow-y-auto px-6">
+      <nav class="flex-1 overflow-y-auto px-gutter-mobile" aria-label="Menu de navigation">
         <ul class="divide-y divide-rule">
           <li v-for="link in mobileLinks" :key="link.to">
             <NuxtLink
               :to="link.to"
-              class="flex items-center justify-between py-5 text-xl font-bold text-ink"
+              class="flex items-center justify-between py-md text-h3 text-ink"
               @click="closeMenu"
             >
               {{ link.label }}
@@ -97,53 +103,61 @@
         </ul>
 
         <NuxtLink
-          to="/rejoindre"
-          class="mt-6 inline-block text-base font-semibold text-ink underline underline-offset-4"
+          to="/"
+          class="mt-lg inline-block text-body font-semibold text-ink underline underline-offset-4"
           @click="closeMenu"
         >
           Rejoindre le réseau
         </NuxtLink>
       </nav>
 
-      <div class="sticky bottom-0 flex flex-col gap-3 border-t border-rule bg-surface px-6 py-6">
+      <div
+        class="sticky bottom-0 flex flex-col gap-sm border-t border-rule bg-surface px-gutter-mobile py-lg"
+      >
         <NuxtLink
-          to="/confier"
-          class="rounded-full bg-accent px-6 py-3.5 text-center text-sm font-semibold text-ink hover:bg-accent-text"
+          to="/"
+          class="rounded-full bg-accent px-lg py-md text-center text-small font-semibold text-ink hover:bg-accent-text"
         >
           Confier ma formation
         </NuxtLink>
         <NuxtLink
-          to="/contact"
-          class="rounded-full border border-rule bg-paper px-6 py-3.5 text-center text-sm font-semibold text-ink hover:bg-paper"
+          to="/"
+          class="rounded-full border border-rule bg-paper px-lg py-md text-center text-small font-semibold text-ink hover:bg-paper"
         >
           Parler à un conseiller
         </NuxtLink>
-        <p class="mt-1 text-center text-sm text-ink-muted">
+        <p class="mt-xs text-center text-small text-ink-muted">
           01 84 60 00 00 <span class="mx-1">·</span> contact@learnup.fr
         </p>
       </div>
-    </div>
+    </dialog>
   </ClientOnly>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 
 const isOpen = ref(false)
+const openBtn = ref<HTMLButtonElement>()
+const closeBtn = ref<HTMLButtonElement>()
 
 const mobileLinks = [
-  { to: '/formations', label: 'Formations' },
-  { to: '/centres', label: 'Centres' },
-  { to: '/a-propos', label: 'À propos' },
-  { to: '/actualites', label: 'Actualités' }
+  { to: '/', label: 'Formations' },
+  { to: '/', label: 'Centres' },
+  { to: '/', label: 'À propos' },
+  { to: '/', label: 'Actualités' }
 ]
 
 function openMenu() {
   isOpen.value = true
+  document.body.classList.add('overflow-hidden')
+  nextTick(() => closeBtn.value?.focus())
 }
 
 function closeMenu() {
   isOpen.value = false
+  document.body.classList.remove('overflow-hidden')
+  nextTick(() => openBtn.value?.focus())
 }
 
 function onKeydown(event: KeyboardEvent): void {
@@ -158,5 +172,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeydown)
+  document.body.classList.remove('overflow-hidden')
 })
 </script>

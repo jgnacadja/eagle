@@ -7,7 +7,7 @@ describe('AppFooter', () => {
       global: {
         stubs: {
           NuxtLink: { template: '<a><slot /></a>' },
-          AppLogo: { template: '<svg></svg>' }
+          Logo: { template: '<svg></svg>' }
         }
       }
     })

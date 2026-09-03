@@ -4,7 +4,7 @@ import { SwaggerModule } from '@nestjs/swagger'
 import { configureApp } from './index'
 
 function makeApp() {
-  return { enableCors: vi.fn() } as unknown as INestApplication
+  return { enableCors: vi.fn(), use: vi.fn() } as unknown as INestApplication
 }
 
 function getCorsOrigin(app: INestApplication): CustomOrigin {

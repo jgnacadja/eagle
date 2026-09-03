@@ -18,6 +18,7 @@ WORKDIR /app/apps/api
 COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/apps/api/node_modules ./node_modules
 COPY --from=build /app/apps/api/dist ./dist
+COPY --from=build /app/apps/api/test/fixtures ./test/fixtures
 COPY --from=build /app/apps/api/package.json ./package.json
 
 RUN addgroup -S app && adduser -S app -G app && chown -R app:app /app

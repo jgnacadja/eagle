@@ -10,6 +10,9 @@ build
 .nuxtrc
 .turbo
 
+# Generated code
+apps/api/src/generated/prisma
+
 # Tests / coverage
 coverage
 playwright-report
@@ -30,6 +33,9 @@ lerna-debug.log*
 .env.test
 .env.production
 .env.local
+
+# docker compose local overrides (ports, env spécifiques machine)
+docker-compose.override.yml
 
 # temp directory
 .temp

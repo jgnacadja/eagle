@@ -1,42 +1,19 @@
 <template>
   <main class="bg-paper">
-    <HomeHero />
-    <HomeStatsTicker :items="stats" />
-    <HomeNetwork />
-    <HomeHowItWorks />
-    <HomeFormations :familles="familles" />
-    <HomeCenters :centres="centres" />
-    <HomeConfier />
-    <HomeStats :items="stats" />
-    <HomeTestimonials />
-    <HomeNews :articles="articles" />
+    <SectionHero />
+    <SectionStatsTicker />
+    <SectionNetwork />
+    <SectionHowItWorks />
+    <SectionFormations />
+    <SectionCentres />
+    <SectionConfier />
+    <SectionStats />
+    <SectionTestimonials />
+    <SectionNews />
   </main>
 </template>
 
 <script setup lang="ts">
-import type { Article, Centre, FamilleFormation, Stat } from '@learnup/types'
-
-const familles = await useDirectusList<FamilleFormation>('familles_formation', 'home-familles', {
-  limit: 4,
-  filter: { status: { _eq: 'published' } }
-})
-
-const centres = await useDirectusList<Centre>('centres', 'home-centres', {
-  limit: 2,
-  filter: { status: { _eq: 'published' } }
-})
-
-const articles = await useDirectusList<Article>('articles', 'home-articles', {
-  limit: 3,
-  filter: { status: { _eq: 'published' } },
-  sort: ['-publish_at']
-})
-
-const stats = await useDirectusList<Stat>('stats', 'home-stats', {
-  filter: { status: { _eq: 'published' } },
-  sort: ['sort']
-})
-
 useContentSeo(
   {
     seo_title: 'LEARN UP ACADEMY — Plateforme de conseil en formation professionnelle',

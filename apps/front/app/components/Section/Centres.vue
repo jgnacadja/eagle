@@ -11,12 +11,9 @@
           — en centre, sur votre site ou en intra-entreprise.
         </p>
       </div>
-      <NuxtLink
-        to="/centres"
-        class="whitespace-nowrap text-sm font-semibold text-ink hover:text-accent-text"
-      >
+      <a href="#" class="whitespace-nowrap text-sm font-semibold text-ink hover:text-accent-text">
         Explorer la carte des centres →
-      </NuxtLink>
+      </a>
     </div>
 
     <div class="mt-8 grid gap-6 lg:grid-cols-[1fr_360px]">
@@ -30,7 +27,6 @@
         <label class="relative block">
           <span class="sr-only">Rechercher une ville, code postal ou département</span>
           <input
-            v-model="centerQuery"
             type="text"
             placeholder="Ville, code postal ou département"
             class="w-full rounded-full border border-rule bg-paper px-5 py-3 font-sans text-sm text-ink placeholder:text-ink-placeholder focus:outline-none focus:ring-2 focus:ring-outline"
@@ -38,25 +34,24 @@
         </label>
 
         <article
-          v-for="centre in displayedCentres"
-          :key="centre.id"
+          v-for="centre in centres"
+          :key="centre.name"
           class="rounded-md border border-rule bg-paper p-5 shadow-sm"
         >
           <div class="flex items-start justify-between gap-3">
             <h3 class="font-sans font-semibold text-ink">{{ centre.name }}</h3>
-            <span v-if="centre.city" class="shrink-0 text-xs text-ink-subtle">{{
-              centre.city
-            }}</span>
+            <span class="shrink-0 text-xs text-ink-subtle">{{ centre.distance }}</span>
           </div>
-          <p class="mt-1 text-sm text-ink-muted">{{ centreSummary(centre) }}</p>
-          <div v-if="centre.departments_covered?.length" class="mt-3 flex flex-wrap gap-2">
+          <p class="mt-1 text-sm text-ink-muted">{{ centre.formations }}</p>
+          <p class="mt-1 text-sm text-ink-subtle">{{ centre.departments }}</p>
+          <div class="mt-3 flex flex-wrap gap-2">
             <span
-              class="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-3 py-1 text-xs font-medium text-success"
+              v-for="tag in centre.tags"
+              :key="tag"
+              class="rounded-full px-3 py-1 text-xs font-medium"
+              :class="tagClasses(tag)"
             >
-              <span class="h-1.5 w-1.5 rounded-full bg-success" /> Sessions accessibles
-            </span>
-            <span class="rounded-full bg-surface-alt px-3 py-1 text-xs font-medium text-ink-muted">
-              {{ centre.departments_covered.slice(0, 3).join(', ') }}
+              {{ tag }}
             </span>
           </div>
         </article>
@@ -66,21 +61,26 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import type { Centre } from '@learnup/types'
+const centres = [
+  {
+    name: 'Centre de Créteil',
+    distance: 'à 6 km',
+    formations: 'CACES · Habilitations électriques · SST',
+    departments: 'Départements : 94, 75, 77',
+    tags: ['Sessions cette semaine', 'Intra sur site']
+  },
+  {
+    name: 'Centre de Villeneuve-le-Roi',
+    distance: 'à 14 km',
+    formations: 'Travaux en hauteur · Échafaudages · PEMP',
+    departments: 'Départements : 94, 78',
+    tags: ['⚠ Prochaine session le 14/09']
+  }
+]
 
-const props = defineProps<{
-  centres: Centre[]
-}>()
-
-const centerQuery = ref('')
-
-const displayedCentres = computed(() => props.centres.slice(0, 2))
-
-function centreSummary(centre: Centre): string {
-  const parts: string[] = []
-  if (centre.address) parts.push(centre.address)
-  if (centre.phone) parts.push(centre.phone)
-  return parts.length ? parts.join(' · ') : 'Coordonnées sur demande'
+function tagClasses(tag: string): string {
+  if (tag.startsWith('⚠')) return 'bg-warning-soft text-warning'
+  if (tag === 'Intra sur site') return 'bg-surface-alt text-ink-muted'
+  return 'bg-success-soft text-success'
 }
 </script>

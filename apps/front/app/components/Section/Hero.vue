@@ -7,7 +7,7 @@
       class="pointer-events-none absolute -top-10 -right-24 h-80 w-80 rounded-full bg-warning-soft blur-3xl"
     />
 
-    <div class="relative mx-auto max-w-4xl px-6 py-16 pb-20 text-center md:pt-16">
+    <div class="relative mx-auto max-w-5xl px-6 pb-20 pt-16 text-center md:pt-16">
       <span
         class="inline-block rounded-full border border-rule bg-paper px-4 py-1.5 text-xs font-semibold tracking-wide text-ink-muted"
       >
@@ -23,7 +23,7 @@
         La bonne formation. Au bon endroit. Au bon moment.
       </p>
 
-      <form class="mx-auto mt-8 max-w-2xl" @submit.prevent="onSearch">
+      <form class="mx-auto mt-8 max-w-2xl" @submit.prevent>
         <div
           class="flex items-center gap-3 rounded-full border border-rule bg-paper px-5 py-3 shadow-sm focus-within:ring-2 focus-within:ring-outline"
         >
@@ -33,7 +33,6 @@
             />
           </svg>
           <input
-            v-model="query"
             type="text"
             placeholder="« Je dois former 8 salariés au CACES près de Lyon avant septembre »"
             class="flex-1 bg-transparent font-sans text-sm text-ink placeholder:text-ink-placeholder focus:outline-none"
@@ -62,25 +61,12 @@
         vos équipes.
       </p>
 
-      <NuxtLink
-        to="/confier"
+      <a
+        href="#confier"
         class="mt-3 inline-block text-sm font-semibold text-accent-text hover:text-accent"
       >
         Confier ma formation →
-      </NuxtLink>
+      </a>
     </div>
   </section>
 </template>
-
-<script setup lang="ts">
-import { ref } from 'vue'
-
-const query = ref('')
-
-function onSearch() {
-  if (!query.value.trim()) return
-  if (typeof navigateTo === 'function') {
-    navigateTo({ path: '/formations', query: { search: query.value.trim() } })
-  }
-}
-</script>

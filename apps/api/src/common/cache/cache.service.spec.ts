@@ -77,28 +77,28 @@ describe('CacheService', () => {
   })
 
   it('returns null for missing keys', async () => {
-    const value = await service.get('formations')
+    const value = await service.get('courses')
     expect(value).toBeNull()
   })
 
   it('sets and gets JSON values', async () => {
-    await service.set('formations', { id: 1 })
-    const value = await service.get('formations')
+    await service.set('courses', { id: 1 })
+    const value = await service.get('courses')
     expect(value).toEqual({ id: 1 })
   })
 
   it('deletes a key by pattern', async () => {
-    await service.set('formations', { id: 1 })
-    await service.del('formations')
-    const value = await service.get('formations')
+    await service.set('courses', { id: 1 })
+    await service.del('courses')
+    const value = await service.get('courses')
     expect(value).toBeNull()
   })
 
   it('invalidates the catalogue and bumps the version', async () => {
-    await service.set('formations', { id: 1 })
+    await service.set('courses', { id: 1 })
     await service.invalidateCatalog()
 
-    const value = await service.get('formations')
+    const value = await service.get('courses')
     expect(value).toBeNull()
   })
 
@@ -112,5 +112,39 @@ describe('CacheService', () => {
 
     const value = await service.get('broken')
     expect(value).toBeNull()
+  })
+
+  it('returns null when Redis get fails', async () => {
+    const redis = Reflect.get(service, 'client') as { get: ReturnType<typeof vi.fn> }
+    redis.get = vi.fn().mockRejectedValue(new Error('redis down'))
+
+    const value = await service.get('courses')
+    expect(value).toBeNull()
+  })
+
+  it('does not throw when Redis set fails', async () => {
+    const redis = Reflect.get(service, 'client') as { setex: ReturnType<typeof vi.fn> }
+    redis.setex = vi.fn().mockRejectedValue(new Error('redis down'))
+
+    await expect(service.set('courses', { id: 1 })).resolves.toBeUndefined()
+  })
+
+  it('defaults the cache version to 0 when Redis is unreachable at boot', async () => {
+    const redis = Reflect.get(service, 'client') as { get: ReturnType<typeof vi.fn> }
+    redis.get = vi.fn().mockRejectedValue(new Error('redis down'))
+
+    await expect(service.onModuleInit()).resolves.toBeUndefined()
+    expect(service.key('courses')).toBe('catalog:v0:courses')
+  })
+
+  it('does not throw when delete by pattern fails', async () => {
+    const redis = Reflect.get(service, 'client') as {
+      scanStream: ReturnType<typeof vi.fn>
+    }
+    redis.scanStream = vi.fn().mockImplementation(() => {
+      throw new Error('scan error')
+    })
+
+    await expect(service.del('courses')).resolves.toBeUndefined()
   })
 })

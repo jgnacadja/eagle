@@ -24,4 +24,16 @@ describe('PrismaService', () => {
   it('should be defined', () => {
     expect(service).toBeDefined()
   })
+
+  it('connects on module init', async () => {
+    vi.spyOn(service, '$connect').mockResolvedValue(undefined)
+    await service.onModuleInit()
+    expect(service.$connect).toHaveBeenCalled()
+  })
+
+  it('disconnects on module destroy', async () => {
+    vi.spyOn(service, '$disconnect').mockResolvedValue(undefined)
+    await service.onModuleDestroy()
+    expect(service.$disconnect).toHaveBeenCalled()
+  })
 })

@@ -1,5 +1,5 @@
 -- CreateTable
-CREATE TABLE "public"."formations" (
+CREATE TABLE "public"."courses" (
     "id" SERIAL NOT NULL,
     "digiforma_id" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE "public"."formations" (
     "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ(6) NOT NULL,
 
-    CONSTRAINT "formations_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "courses_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -45,19 +45,19 @@ CREATE TABLE "public"."sync_runs" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "formations_digiforma_id_key" ON "public"."formations"("digiforma_id");
+CREATE UNIQUE INDEX "courses_digiforma_id_key" ON "public"."courses"("digiforma_id");
 
 -- CreateIndex
-CREATE INDEX "formations_family_slug_idx" ON "public"."formations"("family_slug");
+CREATE INDEX "courses_family_slug_idx" ON "public"."courses"("family_slug");
 
 -- CreateIndex
-CREATE INDEX "formations_status_idx" ON "public"."formations"("status");
+CREATE INDEX "courses_status_idx" ON "public"."courses"("status");
 
 -- CreateIndex
-CREATE INDEX "formations_slug_idx" ON "public"."formations"("slug");
+CREATE INDEX "courses_slug_idx" ON "public"."courses"("slug");
 
 -- CreateIndex
-CREATE INDEX "formations_category_idx" ON "public"."formations"("category");
+CREATE INDEX "courses_category_idx" ON "public"."courses"("category");
 
 -- CreateIndex
 CREATE INDEX "sync_runs_status_idx" ON "public"."sync_runs"("status");

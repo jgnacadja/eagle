@@ -7,13 +7,14 @@ describe('AppFooter', () => {
       global: {
         stubs: {
           NuxtLink: { template: '<a><slot /></a>' },
-          Logo: { template: '<svg></svg>' }
+          Logo: { template: '<svg></svg>' },
+          LogoWhite: { template: '<svg></svg>' }
         }
       }
     })
     const year = new Date().getFullYear()
 
-    expect(wrapper.text()).toContain('LEARN UP ACADEMY')
+    expect(wrapper.find('[aria-label="LEARN UP ACADEMY — Accueil"]').exists()).toBe(true)
     expect(wrapper.text()).toContain(String(year))
   })
 })

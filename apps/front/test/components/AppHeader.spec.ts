@@ -15,7 +15,7 @@ describe('AppHeader', () => {
       }
     })
 
-    expect(wrapper.text()).toContain('LEARN UP ACADEMY')
+    expect(wrapper.find('[aria-label="LEARN UP ACADEMY — Accueil"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Formations')
     expect(wrapper.text()).toContain('Centres')
     expect(wrapper.text()).toContain('À propos')

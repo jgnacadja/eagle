@@ -1,4 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { typography } from '@learnup/ui'
 
 const apiBase = process.env.NUXT_API_BASE ?? 'http://localhost:3001'
 // Deux valeurs distinctes : le rendu SSR tourne dans le conteneur front et
@@ -14,7 +15,13 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   app: {
     head: {
-      htmlAttrs: { lang: 'fr' }
+      htmlAttrs: { lang: 'fr' },
+      link: [
+        // Figtree (charte §03) — l'URL vit dans @learnup/ui avec les autres tokens.
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+        { rel: 'stylesheet', href: typography.googleFontsUrl }
+      ]
     }
   },
   modules: ['@nuxtjs/tailwindcss'],

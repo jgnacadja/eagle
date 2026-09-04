@@ -11,7 +11,6 @@ const props = defineProps<{
 <template>
   <li
     data-slot="breadcrumb-separator"
-    role="presentation"
     aria-hidden="true"
     :class="cn('flex items-center text-ink-subtle', props.class)"
   >

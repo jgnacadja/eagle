@@ -24,8 +24,15 @@ export default defineNuxtConfig({
       ]
     }
   },
-  modules: ['@nuxtjs/tailwindcss'],
+  modules: ['@nuxtjs/tailwindcss', 'shadcn-nuxt'],
   css: ['~/assets/css/main.css'],
+  tailwindcss: {
+    cssPath: '~/assets/css/tailwind.css'
+  },
+  shadcn: {
+    prefix: '',
+    componentDir: '@/components/ui'
+  },
   runtimeConfig: {
     directusUrl: directusUrlServer,
     public: {

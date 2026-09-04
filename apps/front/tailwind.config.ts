@@ -1,5 +1,6 @@
 import type { Config } from 'tailwindcss'
 import { breakpoints, colors, layout, radii, shadows, spacing, typography } from '@learnup/ui'
+import tailwindcssAnimate from 'tailwindcss-animate'
 
 /**
  * Toute valeur de style vient de @learnup/ui — rien n'est écrit en dur ici.
@@ -20,6 +21,54 @@ const fontSize = Object.fromEntries(
   ])
 ) satisfies NonNullable<NonNullable<Config['theme']>['extend']>['fontSize']
 
+const shadcnColors = {
+  background: colors.surface,
+  foreground: colors.ink.default,
+  primary: {
+    ...colors.primary,
+    foreground: colors.paper
+  },
+  secondary: {
+    DEFAULT: colors.surfaceAlt,
+    foreground: colors.ink.default
+  },
+  muted: {
+    DEFAULT: colors.surfaceAlt,
+    foreground: colors.ink.muted
+  },
+  accent: {
+    ...colors.accent,
+    foreground: colors.ink.default
+  },
+  destructive: {
+    DEFAULT: colors.danger.default,
+    foreground: colors.paper
+  },
+  border: colors.rule,
+  input: colors.outline,
+  ring: colors.primary.default,
+  card: {
+    DEFAULT: colors.paper,
+    foreground: colors.ink.default
+  },
+  popover: {
+    DEFAULT: colors.paper,
+    foreground: colors.ink.default
+  },
+  success: {
+    ...colors.success,
+    foreground: colors.paper
+  },
+  warning: {
+    ...colors.warning,
+    foreground: colors.paper
+  },
+  info: {
+    ...colors.info,
+    foreground: colors.paper
+  }
+} satisfies NonNullable<NonNullable<Config['theme']>['extend']>['colors']
+
 const config: Config = {
   content: [
     './app/components/**/*.{vue,ts}',
@@ -33,18 +82,7 @@ const config: Config = {
     screens: { ...breakpoints },
     extend: {
       colors: {
-        primary: {
-          DEFAULT: colors.primary.default,
-          dark: colors.primary.dark,
-          muted: colors.primary.muted,
-          card: colors.primary.card,
-          soft: colors.primary.soft
-        },
-        accent: {
-          DEFAULT: colors.accent.default,
-          text: colors.accent.text,
-          soft: colors.accent.soft
-        },
+        ...shadcnColors,
         ink: {
           DEFAULT: colors.ink.default,
           body: colors.ink.body,
@@ -62,10 +100,7 @@ const config: Config = {
           soft: colors.outlineSoft,
           inverse: colors.outlineInverse
         },
-        success: { DEFAULT: colors.success.default, soft: colors.success.soft },
-        warning: { DEFAULT: colors.warning.default, soft: colors.warning.soft },
-        danger: { DEFAULT: colors.danger.default, soft: colors.danger.soft },
-        info: { DEFAULT: colors.info.default, soft: colors.info.soft }
+        danger: { DEFAULT: colors.danger.default, soft: colors.danger.soft }
       },
       fontFamily: {
         display: [...typography.fontFamily.display],
@@ -89,9 +124,22 @@ const config: Config = {
       },
       gap: { grid: layout.gridGap },
       borderRadius: { ...radii },
-      boxShadow: { ...shadows }
+      boxShadow: {
+        ...shadows,
+        xs: '0 1px 2px 0 rgb(0 0 0 / 0.05)'
+      },
+      ringWidth: {
+        0: '0px',
+        1: '1px',
+        2: '2px',
+        3: '3px',
+        4: '4px',
+        8: '8px',
+        DEFAULT: '3px'
+      }
     }
-  }
+  },
+  plugins: [tailwindcssAnimate]
 }
 
 export default config

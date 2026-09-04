@@ -34,6 +34,7 @@ export default defineNuxtConfig({
     prefix: '',
     componentDir: '@/components/ui'
   },
+  components: [{ path: '~/components', pathPrefix: false }],
   runtimeConfig: {
     directusUrl: directusUrlServer,
     public: {

@@ -10,7 +10,7 @@
         aria-label="Navigation principale"
       >
         <NuxtLink to="/" class="hover:text-ink">Formations</NuxtLink>
-        <NuxtLink to="/" class="hover:text-ink">Centres</NuxtLink>
+        <NuxtLink to="/centres" class="hover:text-ink">Centres</NuxtLink>
         <NuxtLink to="/" class="hover:text-ink">À propos</NuxtLink>
         <NuxtLink to="/" class="hover:text-ink">Actualités</NuxtLink>
       </nav>
@@ -85,7 +85,7 @@
 
       <nav class="flex-1 overflow-y-auto px-gutter-mobile" aria-label="Menu de navigation">
         <ul class="divide-y divide-rule">
-          <li v-for="link in mobileLinks" :key="link.to">
+          <li v-for="link in mobileLinks" :key="`${link.to}-${link.label}`">
             <NuxtLink
               :to="link.to"
               class="flex items-center justify-between py-md text-h3 text-ink"
@@ -146,7 +146,7 @@ const closeBtn = ref<HTMLButtonElement>()
 
 const mobileLinks = [
   { to: '/', label: 'Formations' },
-  { to: '/', label: 'Centres' },
+  { to: '/centres', label: 'Centres' },
   { to: '/', label: 'À propos' },
   { to: '/', label: 'Actualités' }
 ]

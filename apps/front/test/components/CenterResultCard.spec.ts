@@ -56,7 +56,9 @@ describe('CenterResultCard', () => {
       }
     })
 
-    expect(wrapper.find('article').classes()).toContain('border-ink')
+    expect(wrapper.find('article').classes()).toContain('border-2')
+    expect(wrapper.find('article').classes()).toContain('border-primary')
     expect(wrapper.find('article').classes()).toContain('bg-surface')
+    expect(wrapper.find('article').classes()).toContain('shadow-md')
   })
 })

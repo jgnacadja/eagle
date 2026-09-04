@@ -1,11 +1,11 @@
 <template>
   <div
-    class="map-canvas relative min-h-[560px] overflow-hidden rounded-md border border-rule"
+    class="map-canvas relative min-h-[56rem] overflow-hidden rounded-md border border-rule"
     :class="{ 'flex items-center justify-center': !centers.length }"
   >
     <p
       v-if="centers.length"
-      class="pointer-events-none absolute left-md top-md z-10 rounded-full bg-paper/90 px-md py-xs text-meta font-medium text-ink-muted shadow-sm"
+      class="pointer-events-none absolute left-md top-md z-10 rounded-xs bg-paper/90 px-md py-xs text-meta text-ink-subtle"
     >
       Carte Leaflet · OpenStreetMap — <span>{{ caption }}</span>
     </p>
@@ -57,7 +57,7 @@
         >
           <path
             d="M12 22s7-7.58 7-13A7 7 0 0 0 5 9c0 5.42 7 13 7 13z"
-            :fill="activeId === center.id ? 'var(--color-accent)' : 'var(--color-ink)'"
+            :fill="activeId === center.id ? 'var(--color-accent)' : 'var(--color-primary)'"
           />
           <circle cx="12" cy="9" r="2.6" fill="white" />
         </svg>
@@ -65,7 +65,7 @@
 
       <div
         v-if="activeCenter"
-        class="absolute z-30 w-64 -translate-x-1/2 -translate-y-full rounded-md bg-paper p-md shadow-md"
+        class="absolute z-30 w-80 -translate-x-1/2 -translate-y-full rounded-md bg-paper p-md shadow-lg"
         :style="{ top: `calc(${activeCenter.pos.top} - 12px)`, left: activeCenter.pos.left }"
       >
         <button
@@ -74,26 +74,29 @@
           class="absolute right-sm top-sm text-ink-subtle transition hover:text-ink"
           @click.stop="$emit('select', '')"
         >
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <svg
+            class="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
             <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round" />
           </svg>
         </button>
-        <h4 class="pr-6 font-sans text-h4 font-semibold text-ink">{{ activeCenter.name }}</h4>
-        <p class="mt-xs text-meta text-ink-muted">{{ mapLocationLabel }}</p>
-        <p class="mt-sm text-small text-ink-body">{{ activeCenter.tagsShort }}</p>
+        <h4 class="pr-6 font-sans text-h4 text-ink">{{ activeCenter.name }}</h4>
+        <p class="mt-xs text-meta text-ink-subtle">{{ mapLocationLabel }}</p>
+        <p class="mt-sm text-small font-medium text-ink-body">{{ activeCenter.tagsShort }}</p>
         <NuxtLink
           :to="`/centres/${activeCenter.id}`"
-          class="mt-md inline-block rounded-full bg-ink px-md py-sm text-small font-semibold text-paper transition hover:bg-primary-dark"
+          class="mt-md inline-block rounded-full bg-primary px-md py-sm text-small font-bold text-paper transition hover:bg-primary-dark"
         >
           Voir le centre
         </NuxtLink>
       </div>
     </div>
 
-    <p
-      v-if="!centers.length"
-      class="px-gutter text-center text-small text-ink-muted"
-    >
+    <p v-if="!centers.length" class="px-gutter text-center text-small text-ink-muted">
       Aucun centre à afficher sur la carte pour ce département.
     </p>
   </div>
@@ -135,7 +138,7 @@ function zoomOut() {
 
 <style scoped>
 .map-canvas {
-  background-color: var(--color-surface);
+  background-color: var(--color-surface-alt);
   background-image:
     linear-gradient(var(--color-rule) 1px, transparent 1px),
     linear-gradient(90deg, var(--color-rule) 1px, transparent 1px);

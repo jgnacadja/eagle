@@ -30,20 +30,28 @@
         </svg>
         {{ center.status.label }}
       </span>
-      <NuxtLink
-        :to="`/centres/${center.id}`"
-        :class="buttonClasses"
-        class="shrink-0 rounded-full px-md py-sm text-small font-bold transition"
-        @click.stop
+      <Button
+        as-child
+        :variant="active ? 'default' : 'outline'"
+        :class="
+          cn(
+            'shrink-0 rounded-full px-md py-sm text-small font-bold transition',
+            active
+              ? 'bg-primary text-paper hover:bg-primary-dark'
+              : 'border border-outline bg-paper text-primary hover:bg-surface'
+          )
+        "
       >
-        Voir le centre
-      </NuxtLink>
+        <NuxtLink :to="`/centres/${center.id}`" @click.stop>Voir le centre</NuxtLink>
+      </Button>
     </div>
   </article>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import type { CenterResult } from '~/types/center-result'
 
 const props = defineProps<{
@@ -70,10 +78,4 @@ const dotClass = computed(() => {
   if (props.center.status.type === 'success') return 'bg-success'
   return ''
 })
-
-const buttonClasses = computed(() =>
-  props.active
-    ? 'bg-primary text-paper hover:bg-primary-dark'
-    : 'border border-outline text-primary hover:bg-surface'
-)
 </script>

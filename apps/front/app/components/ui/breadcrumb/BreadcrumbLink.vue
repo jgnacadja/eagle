@@ -1,3 +1,14 @@
+<template>
+  <Primitive
+    data-slot="breadcrumb-link"
+    :as="as"
+    :as-child="asChild"
+    :class="cn('transition hover:text-ink', props.class)"
+  >
+    <slot />
+  </Primitive>
+</template>
+
 <script setup lang="ts">
 import type { PrimitiveProps } from 'reka-ui'
 import type { HTMLAttributes } from 'vue'
@@ -9,14 +20,3 @@ const props = withDefaults(defineProps<PrimitiveProps & { class?: HTMLAttributes
   class: undefined
 })
 </script>
-
-<template>
-  <Primitive
-    data-slot="breadcrumb-link"
-    :as="as"
-    :as-child="asChild"
-    :class="cn('transition hover:text-ink', props.class)"
-  >
-    <slot />
-  </Primitive>
-</template>

@@ -28,35 +28,15 @@
         </p>
 
         <form class="mx-auto mt-xl w-full max-w-prose" @submit.prevent>
-          <div
-            class="flex items-center gap-sm rounded-full border-2 border-primary bg-paper py-2.5 pl-6 pr-2.5 shadow-sm focus-within:ring-2 focus-within:ring-outline"
+          <SearchInput
+            input-id="hero-search"
+            sr-label="Rechercher une formation"
+            placeholder="« Je dois former 8 salariés au CACES près de Lyon avant septembre »"
           >
-            <svg class="h-5 w-5 shrink-0 text-accent" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10 0l2.5 7.5L20 10l-7.5 2.5L10 20l-2.5-7.5L0 10l7.5-2.5L10 0z" />
-            </svg>
-            <label for="hero-search" class="sr-only">Rechercher une formation</label>
-            <input
-              id="hero-search"
-              type="text"
-              placeholder="« Je dois former 8 salariés au CACES près de Lyon avant septembre »"
-              class="flex-1 bg-transparent font-sans text-lead leading-tight text-ink placeholder:text-ink-placeholder focus:outline-none"
-            />
-            <button
-              type="submit"
-              class="flex h-control w-control shrink-0 items-center justify-center rounded-full bg-primary text-paper transition hover:bg-primary-dark"
-            >
-              <svg
-                class="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-              >
-                <circle cx="11" cy="11" r="7" />
-                <path d="M21 21l-4.35-4.35" stroke-linecap="round" />
-              </svg>
-            </button>
-          </div>
+            <template #icon>
+              <IconSparkle :size="20" class="shrink-0 text-accent" />
+            </template>
+          </SearchInput>
         </form>
 
         <p class="mx-auto mt-5 max-w-5xl text-body md:whitespace-nowrap">
@@ -213,7 +193,10 @@
             — en centre, sur votre site ou en intra-entreprise.
           </p>
         </div>
-        <NuxtLink to="/centres" class="whitespace-nowrap text-body font-bold text-primary hover:text-ink">
+        <NuxtLink
+          to="/centres"
+          class="whitespace-nowrap text-body font-bold text-primary hover:text-ink"
+        >
           Explorer la carte des centres →
         </NuxtLink>
       </div>
@@ -226,14 +209,16 @@
         </div>
 
         <div class="flex flex-col gap-md lg:col-span-1">
-          <label class="relative block">
-            <span class="sr-only">Rechercher une ville, code postal ou département</span>
-            <input
-              type="text"
-              placeholder="Ville, code postal ou département"
-              class="w-full rounded-full border border-outline bg-paper px-lg py-md font-sans text-body text-ink placeholder:text-ink-placeholder focus:outline-none focus:ring-2 focus:ring-outline"
-            />
-          </label>
+          <SearchInput
+            v-model="mapSearch"
+            input-id="map-search"
+            sr-label="Rechercher une ville, code postal ou département"
+            placeholder="Ville, code postal ou département"
+          >
+            <template #icon>
+              <IconSearch :size="20" class="shrink-0 text-primary" />
+            </template>
+          </SearchInput>
 
           <CenterCard
             v-for="centre in centres"
@@ -357,6 +342,8 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
+
 useContentSeo(
   {
     seo_title: 'LEARN UP ACADEMY — Plateforme de conseil en formation professionnelle',
@@ -394,6 +381,8 @@ useHead({
     }
   ]
 })
+
+const mapSearch = ref('')
 
 const tickerItems = [
   { key: 'sessions', value: '312', label: 'sessions ouvertes' },

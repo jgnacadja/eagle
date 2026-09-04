@@ -1,6 +1,6 @@
 <template>
   <div
-    class="map-canvas relative min-h-224 overflow-hidden rounded-md border border-rule"
+    class="relative h-full min-h-full overflow-hidden bg-surface-alt"
     :class="{ 'flex items-center justify-center': !centers.length }"
   >
     <p
@@ -11,26 +11,26 @@
     </p>
 
     <div class="absolute right-md top-md z-20 flex flex-col gap-sm">
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="icon"
         aria-label="Zoomer"
-        class="flex h-control-sm w-control-sm items-center justify-center rounded-sm bg-paper text-ink shadow-sm transition hover:bg-surface"
+        class="h-control-sm w-control-sm rounded-sm bg-paper text-ink shadow-sm hover:bg-surface"
         @click="zoomIn"
       >
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path d="M12 5v14M5 12h14" stroke-linecap="round" />
-        </svg>
-      </button>
-      <button
+        <IconPlus :size="16" />
+      </Button>
+      <Button
         type="button"
+        variant="outline"
+        size="icon"
         aria-label="Dézoomer"
-        class="flex h-control-sm w-control-sm items-center justify-center rounded-sm bg-paper text-ink shadow-sm transition hover:bg-surface"
+        class="h-control-sm w-control-sm rounded-sm bg-paper text-ink shadow-sm hover:bg-surface"
         @click="zoomOut"
       >
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path d="M5 12h14" stroke-linecap="round" />
-        </svg>
-      </button>
+        <IconMinus :size="16" />
+      </Button>
     </div>
 
     <div
@@ -47,53 +47,22 @@
         :aria-label="center.name"
         @click="$emit('select', center.id)"
       >
-        <svg
+        <IconMapPin
           class="pin-svg"
-          :class="{ active: activeId === center.id }"
-          :width="activeId === center.id ? 38 : 30"
-          :height="activeId === center.id ? 38 : 30"
-          viewBox="0 0 24 24"
-          fill="none"
-        >
-          <path
-            d="M12 22s7-7.58 7-13A7 7 0 0 0 5 9c0 5.42 7 13 7 13z"
-            :fill="activeId === center.id ? 'var(--color-accent)' : 'var(--color-primary)'"
-          />
-          <circle cx="12" cy="9" r="2.6" fill="white" />
-        </svg>
+          :class="activeId === center.id ? 'text-accent' : 'text-primary'"
+          :size="activeId === center.id ? 38 : 30"
+        />
       </button>
 
-      <div
+      <CenterMapPopup
         v-if="activeCenter"
-        class="absolute z-30 w-80 -translate-x-1/2 -translate-y-full rounded-md bg-paper p-md shadow-lg"
-        :style="{ top: activeCenter.pos.top, left: activeCenter.pos.left }"
-      >
-        <button
-          type="button"
-          aria-label="Fermer"
-          class="absolute right-sm top-sm text-ink-subtle transition hover:text-ink"
-          @click.stop="$emit('select', '')"
-        >
-          <svg
-            class="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-          >
-            <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round" />
-          </svg>
-        </button>
-        <h4 class="pr-6 font-sans text-h4 text-ink">{{ activeCenter.name }}</h4>
-        <p class="mt-xs text-meta text-ink-subtle">{{ mapLocationLabel }}</p>
-        <p class="mt-sm text-small font-medium text-ink-body">{{ activeCenter.tagsShort }}</p>
-        <NuxtLink
-          :to="`/centres/${activeCenter.id}`"
-          class="mt-md inline-block rounded-full bg-primary px-md py-sm text-small font-bold text-paper transition hover:bg-primary-dark"
-        >
-          Voir le centre
-        </NuxtLink>
-      </div>
+        :id="activeCenter.id"
+        :name="activeCenter.name"
+        :location-label="mapLocationLabel"
+        :tags-short="activeCenter.tagsShort"
+        :pos="activeCenter.pos"
+        @close="$emit('select', '')"
+      />
     </div>
 
     <p v-if="!centers.length" class="px-gutter text-center text-small text-ink-muted">
@@ -104,6 +73,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { Button } from '@/components/ui/button'
 import type { CenterResult } from '~/types/center-result'
 
 const props = defineProps<{
@@ -137,14 +107,6 @@ function zoomOut() {
 </script>
 
 <style scoped>
-.map-canvas {
-  background-color: var(--color-surface-alt);
-  background-image:
-    linear-gradient(var(--color-rule) 1px, transparent 1px),
-    linear-gradient(90deg, var(--color-rule) 1px, transparent 1px);
-  background-size: 2rem 2rem;
-}
-
 .pin {
   transition: transform 0.15s ease;
 }

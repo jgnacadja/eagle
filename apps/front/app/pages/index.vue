@@ -1,7 +1,7 @@
 <template>
   <div class="bg-paper">
     <!-- Hero -->
-    <section class="relative overflow-hidden bg-gradient-to-b from-paper to-surface">
+    <section class="relative overflow-hidden bg-linear-to-b from-paper to-surface">
       <div
         class="pointer-events-none absolute -bottom-44 -left-32 h-96 w-96 rounded-full bg-primary/5"
       />
@@ -141,7 +141,7 @@
 
       <ol class="relative mt-2.5 grid gap-2xl md:grid-cols-4">
         <div
-          class="absolute top-[calc(theme(spacing.control-sm)/2-0.5px)] left-0 right-0 z-0 mx-auto hidden h-px w-4/5 bg-rule-strong md:block"
+          class="absolute top-[calc(var(--spacing-control-sm)/2-0.5px)] left-0 right-0 z-0 mx-auto hidden h-px w-4/5 bg-rule-strong md:block"
           aria-hidden="true"
         />
 
@@ -220,7 +220,7 @@
 
       <div class="mt-xl grid gap-grid lg:grid-cols-3">
         <div
-          class="lg:col-span-2 flex aspect-[2/1] items-center justify-center rounded-md border border-dashed border-outline bg-surface text-center text-meta text-ink-muted px-md"
+          class="lg:col-span-2 flex aspect-2/1 items-center justify-center rounded-md border border-dashed border-outline bg-surface text-center text-meta text-ink-muted px-md"
         >
           Carte de France interactive<br />départements + pins centres — lisible, pas un outil SIG
         </div>
@@ -256,7 +256,7 @@
           <h2 class="max-w-prose font-display text-h2 font-extrabold">
             Un interlocuteur unique orchestre votre plan de formation
           </h2>
-          <p class="max-w-[400px] text-body text-ink-inverse/65">
+          <p class="max-w-(--layout-callout-max) text-body text-ink-inverse/65">
             Pensé pour les RH, responsables formation, QHSE et directions d'exploitation : vous
             gardez la maîtrise, nous portons l'exécution.
           </p>

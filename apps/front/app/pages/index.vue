@@ -105,7 +105,7 @@
     </div>
 
     <!-- Network -->
-    <section class="mx-auto max-w-container px-gutter-mobile md:px-gutter py-section">
+    <section class="bg-white mx-auto max-w-container px-gutter-mobile md:px-gutter py-section">
       <h2 class="text-center font-display text-h2 font-extrabold text-ink">
         Construisons ensemble le réseau Learn Up Academy
       </h2>
@@ -134,7 +134,7 @@
     </section>
 
     <!-- How it works -->
-    <section class="mx-auto max-w-container px-gutter-mobile md:px-gutter pb-section">
+    <section class="bg-white mx-auto max-w-container px-gutter-mobile md:px-gutter pb-section">
       <p class="text-center text-h4 font-bold uppercase leading-3 tracking-widest text-accent-text">
         Comment ça marche
       </p>

@@ -14,3 +14,16 @@ body {
   color: var(--color-ink);
   background: var(--color-surface);
 }
+
+.marquee {
+  animation: scroll-left 30s linear infinite;
+}
+
+@keyframes scroll-left {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}

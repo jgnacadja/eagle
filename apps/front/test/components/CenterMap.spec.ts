@@ -36,7 +36,7 @@ describe('CenterMap', () => {
       }
     })
 
-    expect(wrapper.text()).toContain('Carte Leaflet · OpenStreetMap — département 94 cadré')
+    expect(wrapper.text()).toContain('Carte des centres — département 94 cadré')
     expect(wrapper.findAll('.pin')).toHaveLength(2)
   })
 
@@ -50,9 +50,12 @@ describe('CenterMap', () => {
       }
     })
 
-    await wrapper.findAll('.pin')[0].trigger('click')
+    const [firstPin] = wrapper.findAll('.pin')
+    if (!firstPin) throw new Error('No pin rendered')
+    await firstPin.trigger('click')
+
     expect(wrapper.emitted('select')).toHaveLength(1)
-    expect(wrapper.emitted('select')![0]).toEqual(['creteil'])
+    expect(wrapper.emitted('select')?.[0]).toEqual(['creteil'])
   })
 
   it('shows the popup for the active center', () => {

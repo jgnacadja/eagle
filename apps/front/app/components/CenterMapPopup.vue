@@ -27,6 +27,7 @@
 
 <script setup lang="ts">
 import { Button } from '@/components/ui/button'
+import IconClose from '@/components/icons/IconClose.vue'
 
 defineProps<{
   id: string

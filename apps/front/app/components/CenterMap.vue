@@ -7,7 +7,7 @@
       v-if="centers.length"
       class="pointer-events-none absolute left-md top-md z-10 rounded-xs bg-paper/90 px-md py-xs text-meta text-ink-subtle"
     >
-      Carte Leaflet · OpenStreetMap — <span>{{ caption }}</span>
+      Carte des centres — <span>{{ caption }}</span>
     </p>
 
     <div class="absolute right-md top-md z-20 flex flex-col gap-sm">
@@ -74,6 +74,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Button } from '@/components/ui/button'
+import CenterMapPopup from '@/components/CenterMapPopup.vue'
+import IconPlus from '@/components/icons/IconPlus.vue'
+import IconMinus from '@/components/icons/IconMinus.vue'
+import IconMapPin from '@/components/icons/IconMapPin.vue'
 import type { CenterResult } from '~/types/center-result'
 
 const props = defineProps<{

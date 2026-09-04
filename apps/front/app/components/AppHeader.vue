@@ -85,7 +85,7 @@
 
       <nav class="flex-1 overflow-y-auto px-gutter-mobile" aria-label="Menu de navigation">
         <ul class="divide-y divide-rule">
-          <li v-for="link in mobileLinks" :key="link.to">
+          <li v-for="link in mobileLinks" :key="`${link.to}-${link.label}`">
             <NuxtLink
               :to="link.to"
               class="flex items-center justify-between py-md text-h3 text-ink"

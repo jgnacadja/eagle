@@ -41,21 +41,23 @@
 
             <div class="flex items-center justify-between gap-sm">
               <p class="text-small text-ink">
-                <span class="font-extrabold">{{
-                  department.centers.length ? filteredCenters.length : 0
-                }}</span>
-                <span v-if="department.centers.length" class="text-ink">
+                <template v-if="department.centers.length === 0">
+                  Aucun centre en
+                  <span class="font-extrabold">{{ department.label }}</span>
+                </template>
+                <template v-else-if="filteredCenters.length === 0">
+                  Aucun centre dans le
+                  <span class="font-extrabold">{{ department.label }}</span>
+                </template>
+                <template v-else>
+                  <span class="font-extrabold">{{ filteredCenters.length }}</span>
                   {{ ' ' }}
                   <span class="font-extrabold">{{
                     filteredCenters.length > 1 ? 'centres' : 'centre'
                   }}</span>
-                  {{ ' dans le ' + department.label }}
-                </span>
-                <span v-else class="text-ink">
-                  {{ ' ' }}
-                  <span class="font-extrabold">centre</span>
-                  {{ ' en ' + department.label }}
-                </span>
+                  dans le
+                  <span class="font-extrabold">{{ department.label }}</span>
+                </template>
               </p>
               <Button
                 type="button"
@@ -257,12 +259,14 @@ const CENTERS: Record<string, Department> = {
   }
 }
 
+const DEFAULT_DEPARTMENT: Department = { label: '', caption: '', centers: [] }
+
 const selectedDept = ref('94')
 const searchQuery = ref('')
 const activeCenterId = ref<string | null>(null)
 const isMobileMapOpen = ref(false)
 
-const department = computed(() => CENTERS[selectedDept.value])
+const department = computed(() => CENTERS[selectedDept.value] ?? DEFAULT_DEPARTMENT)
 
 const filteredCenters = computed(() => {
   const query = searchQuery.value.toLowerCase()
@@ -281,8 +285,7 @@ const activeCenter = computed(() =>
 )
 
 const selectedDeptLabel = computed(() => {
-  const dept = CENTERS[selectedDept.value]
-  return `${selectedDept.value} — ${dept?.label ?? ''}`
+  return `${selectedDept.value} — ${department.value.label}`
 })
 
 watch(

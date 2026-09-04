@@ -31,6 +31,11 @@ describe('NetworkCard', () => {
         subtitle: '',
         body: '',
         cta: ''
+      },
+      global: {
+        stubs: {
+          NuxtLink: { template: '<a><slot /></a>' }
+        }
       }
     })
 

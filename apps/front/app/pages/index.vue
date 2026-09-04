@@ -104,6 +104,42 @@
       </div>
     </div>
   </div>
+
+  <!-- Formations -->
+  <section id="formations" class="py-section">
+    <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter">
+      <div class="flex items-end justify-between">
+        <div>
+          <h2 class="font-display text-h2 font-extrabold text-ink">Nos formations</h2>
+          <p class="mt-sm font-sans text-body text-ink-muted">
+            Nous vous accompagnons grâce à un catalogue varié.
+          </p>
+        </div>
+        <NuxtLink
+          to="/"
+          class="hidden whitespace-nowrap text-body font-bold text-primary hover:text-ink md:block"
+        >
+          Voir tout le catalogue →
+        </NuxtLink>
+      </div>
+
+      <div class="mt-2xl grid gap-grid sm:grid-cols-2 lg:grid-cols-4">
+        <FormationCard
+          v-for="item in formations"
+          :key="item.title"
+          :title="item.title"
+          :image="item.image"
+        />
+      </div>
+
+      <NuxtLink
+        to="/"
+        class="mt-xl inline-block text-body font-bold text-primary hover:text-ink md:hidden"
+      >
+        Voir tout le catalogue →
+      </NuxtLink>
+    </div>
+  </section>
 </template>
 
 <script setup lang="ts">
@@ -114,5 +150,24 @@ const tickerItems = [
   { key: 'places', value: '1 480', label: 'places disponibles' },
   { key: 'deps', value: '96', label: 'départements couverts' },
   { key: 'live', value: '', label: 'données actualisées en continu' }
+]
+
+const formations = [
+  {
+    title: "CACES & conduite d'engins",
+    image: 'Photo à fournir'
+  },
+  {
+    title: 'Habilitations électriques',
+    image: 'Photo à fournir'
+  },
+  {
+    title: 'Santé, secours & incendie',
+    image: 'Photo à fournir'
+  },
+  {
+    title: 'Travaux en hauteur',
+    image: 'Photo à fournir'
+  }
 ]
 </script>

@@ -1,4 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import tailwindcss from '@tailwindcss/vite'
 import { typography } from '@learnup/ui'
 
 const apiBase = process.env.NUXT_API_BASE ?? 'http://localhost:3001'
@@ -24,10 +25,10 @@ export default defineNuxtConfig({
       ]
     }
   },
-  modules: ['@nuxtjs/tailwindcss', 'shadcn-nuxt'],
+  modules: ['shadcn-nuxt'],
   css: ['~/assets/css/main.css'],
-  tailwindcss: {
-    cssPath: '~/assets/css/tailwind.css'
+  vite: {
+    plugins: [tailwindcss()]
   },
   shadcn: {
     prefix: '',

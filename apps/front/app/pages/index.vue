@@ -213,7 +213,7 @@
             — en centre, sur votre site ou en intra-entreprise.
           </p>
         </div>
-        <NuxtLink to="/" class="whitespace-nowrap text-body font-bold text-primary hover:text-ink">
+        <NuxtLink to="/centres" class="whitespace-nowrap text-body font-bold text-primary hover:text-ink">
           Explorer la carte des centres →
         </NuxtLink>
       </div>
@@ -235,7 +235,7 @@
             />
           </label>
 
-          <CentreCard
+          <CenterCard
             v-for="centre in centres"
             :key="centre.name"
             :name="centre.name"

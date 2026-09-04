@@ -1,10 +1,10 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect } from 'vitest'
-import CentreCard from '~/components/CentreCard.vue'
+import CenterCard from '~/components/CenterCard.vue'
 
-describe('CentreCard', () => {
+describe('CenterCard', () => {
   it('renders name, distance, formations and tags without departments', () => {
-    const wrapper = mount(CentreCard, {
+    const wrapper = mount(CenterCard, {
       props: {
         name: 'Centre de Créteil',
         distance: 'à 6 km',

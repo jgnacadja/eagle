@@ -27,7 +27,7 @@
           La bonne formation. Au bon endroit. Au bon moment.
         </p>
 
-        <form class="mx-auto mt-xl w-full max-w-2xl" @submit.prevent>
+        <form class="mx-auto mt-xl w-full max-w-prose" @submit.prevent>
           <div
             class="flex items-center gap-sm rounded-full border-2 border-primary bg-paper py-2.5 pl-6 pr-2.5 shadow-sm focus-within:ring-2 focus-within:ring-outline"
           >

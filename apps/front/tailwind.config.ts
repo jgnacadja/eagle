@@ -37,6 +37,7 @@ const config: Config = {
         primary: {
           DEFAULT: colors.primary.default,
           dark: colors.primary.dark,
+          muted: colors.primary.muted,
           soft: colors.primary.soft
         },
         accent: {
@@ -79,7 +80,8 @@ const config: Config = {
         'gutter-mobile': layout.gutterMobile,
         section: layout.sectionY,
         touch: layout.touchTarget,
-        control: layout.controlHeight
+        control: layout.controlHeight,
+        'control-sm': layout.controlHeightSm
       },
       maxWidth: {
         container: layout.containerMax,

@@ -12,6 +12,7 @@
   --color-navy-card: #395680;
   --color-primary: #1e3a6e;
   --color-primary-dark: #14264a;
+  --color-primary-muted: #2e4a76;
   --color-primary-soft: #edf2fa;
 
   /* Couleurs — ambre */
@@ -126,6 +127,7 @@
   --layout-grid-gap: 16px;
   --layout-touch-target: 44px;
   --layout-control-height: 48px;
+  --layout-control-height-sm: 36px;
 
   /* Rayons */
   --radius-xs: 8px;

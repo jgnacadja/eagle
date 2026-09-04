@@ -103,6 +103,66 @@
         </div>
       </div>
     </div>
+
+    <!-- Network -->
+    <section class="mx-auto max-w-container px-gutter-mobile md:px-gutter py-section">
+      <h2 class="text-center font-display text-h2 font-extrabold text-ink">
+        Construisons ensemble le réseau Learn Up Academy
+      </h2>
+      <p class="mx-auto mt-sm max-w-prose text-center font-sans text-body text-ink-muted">
+        Rejoignez un réseau national dédié aux formations réglementaires et participez à son
+        développement partout en France.
+      </p>
+
+      <div class="mt-2xl grid gap-grid text-left md:grid-cols-3">
+        <NetworkCard
+          v-for="card in networkCards"
+          :key="card.title"
+          :title="card.title"
+          :subtitle="card.subtitle"
+          :body="card.body"
+          :cta="card.cta"
+        />
+      </div>
+
+      <p class="mt-xl text-center text-small text-ink-muted">
+        Vous êtes un particulier ? Certaines sessions sont ouvertes aux inscriptions individuelles —
+        <NuxtLink to="/" class="font-bold text-primary hover:text-primary-muted"
+          >contactez le centre le plus proche →</NuxtLink
+        >
+      </p>
+    </section>
+
+    <!-- How it works -->
+    <section class="mx-auto max-w-container px-gutter-mobile md:px-gutter pb-section">
+      <p class="text-center text-h4 font-bold uppercase leading-3 tracking-widest text-accent-text">
+        Comment ça marche
+      </p>
+
+      <ol class="relative mt-2.5 grid gap-2xl md:grid-cols-4">
+        <div
+          class="absolute top-[calc(theme(spacing.control-sm)/2-0.5px)] left-0 right-0 z-0 mx-auto hidden h-px w-4/5 bg-rule-strong md:block"
+          aria-hidden="true"
+        />
+
+        <li
+          v-for="step in steps"
+          :key="step.number"
+          class="relative flex flex-col items-center text-center"
+        >
+          <span
+            class="z-10 flex h-control-sm w-control-sm items-center justify-center rounded-full text-small font-bold text-paper"
+            :class="step.number === 4 ? 'bg-success' : 'bg-primary'"
+          >
+            {{ step.number }}
+          </span>
+          <h3 class="mt-2.5 font-sans text-body font-bold text-ink">{{ step.title }}</h3>
+          <p class="mx-auto mt-1 text-small text-ink-muted" :class="step.maxWidth">
+            {{ step.body }}
+          </p>
+        </li>
+      </ol>
+    </section>
   </div>
 </template>
 
@@ -114,5 +174,53 @@ const tickerItems = [
   { key: 'places', value: '1 480', label: 'places disponibles' },
   { key: 'deps', value: '96', label: 'départements couverts' },
   { key: 'live', value: '', label: 'données actualisées en continu' }
+]
+
+const networkCards = [
+  {
+    title: 'Devenir franchisé',
+    subtitle: 'Rejoignez un réseau en pleine croissance',
+    body: "Ouvrez votre centre Learn Up Academy avec l'appui de la marque, des outils et du réseau national.",
+    cta: 'Découvrir la franchise →'
+  },
+  {
+    title: 'Organisme partenaire',
+    subtitle: 'Référencez vos centres, développez votre activité',
+    body: 'Rendez vos sessions visibles et recevez des demandes qualifiées de tout le territoire.',
+    cta: 'Référencer mon organisme →'
+  },
+  {
+    title: 'Formateur indépendant',
+    subtitle: 'Intervenez sur les sessions du réseau',
+    body: 'Missions en centre, sur site ou en intra, au plus près de chez vous.',
+    cta: 'Devenir formateur partenaire →'
+  }
+]
+
+const steps = [
+  {
+    number: 1,
+    title: 'Décrivez votre besoin',
+    body: 'en une phrase, avec vos mots',
+    maxWidth: 'max-w-44'
+  },
+  {
+    number: 2,
+    title: 'Recevez la solution',
+    body: 'formation, centre et dates identifiés près de vos équipes',
+    maxWidth: 'max-w-56'
+  },
+  {
+    number: 3,
+    title: 'Validez la session',
+    body: 'demande envoyée, prise en charge sécurisée',
+    maxWidth: 'max-w-48'
+  },
+  {
+    number: 4,
+    title: 'Formez vos équipes',
+    body: "accompagnement jusqu'aux attestations",
+    maxWidth: 'max-w-48'
+  }
 ]
 </script>

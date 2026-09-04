@@ -10,7 +10,7 @@
         aria-label="Navigation principale"
       >
         <NuxtLink to="/" class="hover:text-ink">Formations</NuxtLink>
-        <NuxtLink to="/" class="hover:text-ink">Centres</NuxtLink>
+        <NuxtLink to="/centres" class="hover:text-ink">Centres</NuxtLink>
         <NuxtLink to="/" class="hover:text-ink">À propos</NuxtLink>
         <NuxtLink to="/" class="hover:text-ink">Actualités</NuxtLink>
       </nav>
@@ -146,7 +146,7 @@ const closeBtn = ref<HTMLButtonElement>()
 
 const mobileLinks = [
   { to: '/', label: 'Formations' },
-  { to: '/', label: 'Centres' },
+  { to: '/centres', label: 'Centres' },
   { to: '/', label: 'À propos' },
   { to: '/', label: 'Actualités' }
 ]

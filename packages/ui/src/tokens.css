@@ -122,6 +122,7 @@
   /* Mise en page */
   --layout-container-max: 1280px;
   --layout-prose-max: 640px;
+  --layout-callout-max: 400px;
   --layout-gutter-desktop: 48px;
   --layout-gutter-mobile: 20px;
   --layout-section-y: 56px;

@@ -3,7 +3,7 @@ import { APP_GUARD } from '@nestjs/core'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis'
-import { createHmac } from 'node:crypto'
+import { scryptSync } from 'node:crypto'
 import { HealthController } from './health/health.controller'
 import { PrismaModule } from './prisma/prisma.module'
 import { DigiformaModule } from './digiforma/digiforma.module'
@@ -42,8 +42,9 @@ function isAdminRoute(context: ExecutionContext): boolean {
               skipIf: (context) => !isAdminRoute(context),
               getTracker: (req) => {
                 const key = req.headers?.['x-api-key']
-                return key
-                  ? createHmac('sha256', adminApiKey).update(key).digest('hex')
+                const raw = Array.isArray(key) ? key[0] : key
+                return typeof raw === 'string' && raw.length > 0
+                  ? scryptSync(raw, adminApiKey, 32).toString('hex')
                   : 'anonymous'
               }
             }

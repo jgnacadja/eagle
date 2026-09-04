@@ -10,7 +10,7 @@
     </div>
     <p class="mt-xs text-small text-ink-muted">{{ center.address }}</p>
     <p class="mt-sm text-small font-medium text-ink-body">{{ center.tags }}</p>
-    <div class="mt-md flex items-center justify-between gap-sm">
+    <div class="mt-sm flex items-center justify-between gap-sm">
       <span
         class="inline-flex items-center gap-xs rounded-full px-md py-xs text-badge"
         :class="statusClasses"

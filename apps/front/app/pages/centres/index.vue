@@ -2,23 +2,28 @@
   <div class="bg-surface">
     <section class="mx-auto max-w-container px-gutter-mobile md:px-gutter py-section">
       <!-- Breadcrumb -->
-      <nav aria-label="Fil d'ariane" class="text-small text-ink-muted">
-        <ol class="flex items-center gap-sm">
-          <li>
-            <NuxtLink to="/" class="hover:text-ink">Accueil</NuxtLink>
-          </li>
-          <li aria-hidden="true">›</li>
-          <li class="font-semibold text-ink" aria-current="page">Réseau de centres</li>
-        </ol>
-      </nav>
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink as-child>
+              <NuxtLink to="/">Accueil</NuxtLink>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>Réseau de centres</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
       <!-- Heading -->
       <div class="mt-2xl max-w-prose">
         <p class="text-overline text-accent-text">LE RÉSEAU LEARN UP</p>
         <h1 class="mt-sm font-display text-h1 font-extrabold text-ink">Réseau de centres</h1>
         <p class="mt-sm text-body text-ink-body">
-          Plus de 400 centres couvrent 96 départements. La sélection d'un département affiche les
-          centres de ce territoire.
+          Plus de <span class="font-bold text-ink-body">400</span> centres couvrent
+          <span class="font-bold text-ink-body">96</span> départements. La sélection d'un
+          département affiche les centres de ce territoire.
         </p>
       </div>
 
@@ -69,7 +74,22 @@
             </label>
           </div>
           <div class="flex items-center gap-sm">
-            <p class="text-small font-extrabold text-ink">{{ resultsText }}</p>
+            <p class="text-small text-ink">
+              <span class="font-extrabold">{{
+                department.centers.length ? filteredCenters.length : 0
+              }}</span>
+              <span v-if="department.centers.length" class="text-ink">
+                {{
+                  ' ' +
+                  (filteredCenters.length > 1 ? 'centres' : 'centre') +
+                  ' dans le ' +
+                  department.label
+                }}
+              </span>
+              <span v-else class="text-ink">
+                {{ ' centre en ' + department.label }}
+              </span>
+            </p>
             <button
               type="button"
               class="inline-flex h-control shrink-0 items-center gap-sm rounded-full border border-outline bg-paper px-md text-small font-semibold text-ink transition hover:bg-surface lg:hidden"
@@ -155,7 +175,17 @@
           <div
             class="flex items-center justify-between gap-sm border-b border-rule px-gutter-mobile py-md"
           >
-            <p class="text-small font-semibold text-ink">{{ mobileMapCount }}</p>
+            <p class="text-small text-ink">
+              <span class="font-extrabold">{{ filteredCenters.length }}</span>
+              <span>
+                {{
+                  ' ' +
+                  (filteredCenters.length > 1 ? 'centres' : 'centre') +
+                  ' · ' +
+                  department.label
+                }}
+              </span>
+            </p>
             <button
               type="button"
               class="inline-flex h-control shrink-0 items-center gap-sm rounded-full bg-ink px-md text-small font-semibold text-paper transition hover:bg-primary-dark"
@@ -211,6 +241,14 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator
+} from '@/components/ui/breadcrumb'
 import type { CenterResult } from '~/types/center-result'
 
 useContentSeo(
@@ -314,20 +352,6 @@ const filteredCenters = computed(() => {
 const activeCenter = computed(() =>
   filteredCenters.value.find((c) => c.id === activeCenterId.value)
 )
-
-const resultsText = computed(() => {
-  const count = filteredCenters.value.length
-  const noun = count > 1 ? 'centres' : 'centre'
-  return department.value.centers.length
-    ? `${count} ${noun} dans le ${department.value.label}`
-    : `0 centre en ${department.value.label}`
-})
-
-const mobileMapCount = computed(() => {
-  const count = filteredCenters.value.length
-  const noun = count > 1 ? 'centres' : 'centre'
-  return `${count} ${noun} · ${department.value.label}`
-})
 
 watch(
   department,

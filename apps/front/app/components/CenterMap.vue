@@ -66,7 +66,7 @@
       <div
         v-if="activeCenter"
         class="absolute z-30 w-80 -translate-x-1/2 -translate-y-full rounded-md bg-paper p-md shadow-lg"
-        :style="{ top: `calc(${activeCenter.pos.top} - 12px)`, left: activeCenter.pos.left }"
+        :style="{ top: activeCenter.pos.top, left: activeCenter.pos.left }"
       >
         <button
           type="button"

@@ -107,13 +107,6 @@
 </template>
 
 <script setup lang="ts">
-import type { Centre, FamilleFormation } from '@learnup/types'
-
-const centres = await useDirectusList<Centre>('centres', 'home-centres', { limit: 3 })
-const familles = await useDirectusList<FamilleFormation>('familles_formation', 'home-familles', {
-  limit: 6
-})
-
 useContentSeo({}, 'LEARN UP ACADEMY')
 
 const tickerItems = [

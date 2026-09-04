@@ -339,7 +339,7 @@ watch(
 )
 
 watch(filteredCenters, (list) => {
-  if (activeCenterId.value && !list.find((c) => c.id === activeCenterId.value)) {
+  if (activeCenterId.value && !list.some((c) => c.id === activeCenterId.value)) {
     activeCenterId.value = list[0]?.id ?? null
   }
 })

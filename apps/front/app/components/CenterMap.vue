@@ -1,6 +1,6 @@
 <template>
   <div
-    class="map-canvas relative min-h-[56rem] overflow-hidden rounded-md border border-rule"
+    class="map-canvas relative min-h-224 overflow-hidden rounded-md border border-rule"
     :class="{ 'flex items-center justify-center': !centers.length }"
   >
     <p

@@ -1,5 +1,5 @@
 <template>
-  <article class="mx-auto max-w-3xl px-6 py-16">
+  <article class="mx-auto max-w-prose px-6 py-16">
     <h1 class="font-display text-2xl font-bold text-ink">{{ centre.name }}</h1>
     <p v-if="centre.address || centre.city" class="mt-2 font-sans text-ink-muted">
       {{ [centre.address, centre.postal_code, centre.city].filter(Boolean).join(', ') }}
@@ -17,7 +17,8 @@
       <div v-if="centre.contact_name">
         <dt class="font-sans text-sm text-ink-muted">Interlocuteur</dt>
         <dd class="font-sans text-ink">
-          {{ centre.contact_name }}<span v-if="centre.contact_role"> — {{ centre.contact_role }}</span>
+          {{ centre.contact_name
+          }}<span v-if="centre.contact_role"> — {{ centre.contact_role }}</span>
         </dd>
       </div>
       <div v-if="centre.qualiopi_certified">

@@ -1,0 +1,62 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "./generated"
+  moduleFormat    = "cjs"
+  previewFeatures = ["fullTextSearchPostgres"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Course {
+  id              Int      @id @default(autoincrement())
+  digiformaId     String   @unique @map("digiforma_id")
+  slug            String   @map("slug")
+  title           String   @map("title")
+  description     String?  @map("description") @db.Text
+  durationDays    Int?     @map("duration_days")
+  durationHours   Int?     @map("duration_hours")
+  price           Decimal? @map("price") @db.Decimal(10, 2)
+  cpf             Boolean? @map("cpf")
+  cpfCode         String?  @map("cpf_code")
+  certification   String?  @map("certification")
+  certifierName   String?  @map("certifier_name")
+  category        String?  @map("category")
+  familySlug      String?  @map("family_slug")
+  centerSlug      String?  @map("center_slug")
+  blocks          Json?    @map("blocks")
+  imageUrl        String?  @map("image_url")
+  status          String   @map("status") @default("draft")
+  seoTitle        String?  @map("seo_title")
+  seoDescription  String?  @map("seo_description") @db.Text
+  seoCanonical    String?  @map("seo_canonical")
+  raw             Json?    @map("raw")
+  titleTsv        Unsupported("tsvector")? @map("title_tsv")
+  descriptionTsv  Unsupported("tsvector")? @map("description_tsv")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([familySlug])
+  @@index([status])
+  @@index([slug])
+  @@index([category])
+  @@map("courses")
+}
+
+model SyncRun {
+  id         Int       @id @default(autoincrement())
+  startedAt  DateTime  @default(now()) @map("started_at") @db.Timestamptz(6)
+  finishedAt DateTime? @map("finished_at") @db.Timestamptz(6)
+  status     String    @map("status")
+  inserted   Int       @default(0) @map("inserted")
+  updated    Int       @default(0) @map("updated")
+  unchanged  Int       @default(0) @map("unchanged")
+  failed     Int       @default(0) @map("failed")
+  error      String?   @map("error") @db.Text
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([status])
+  @@index([startedAt])
+  @@map("sync_runs")
+}

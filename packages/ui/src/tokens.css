@@ -12,6 +12,8 @@
   --color-navy-card: #395680;
   --color-primary: #1e3a6e;
   --color-primary-dark: #14264a;
+  --color-primary-muted: #2e4a76;
+  --color-primary-card: #395680;
   --color-primary-soft: #edf2fa;
 
   /* Couleurs — ambre */
@@ -120,12 +122,14 @@
   /* Mise en page */
   --layout-container-max: 1280px;
   --layout-prose-max: 640px;
+  --layout-callout-max: 400px;
   --layout-gutter-desktop: 48px;
   --layout-gutter-mobile: 20px;
   --layout-section-y: 56px;
   --layout-grid-gap: 16px;
   --layout-touch-target: 44px;
   --layout-control-height: 48px;
+  --layout-control-height-sm: 36px;
 
   /* Rayons */
   --radius-xs: 8px;

@@ -8,6 +8,8 @@ export const colors = {
   primary: {
     default: '#1e3a6e',
     dark: '#14264a',
+    muted: '#2e4a76',
+    card: '#395680',
     soft: '#edf2fa'
   },
   accent: {

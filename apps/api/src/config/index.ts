@@ -1,15 +1,19 @@
 import type { INestApplication } from '@nestjs/common'
 import type { CustomOrigin } from '@nestjs/common/interfaces/external/cors-options.interface'
+import helmet from 'helmet'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 
 export function configureApp(app: INestApplication): void {
-  const allowedOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:3000')
-    .split(',')
-    .map((o) => o.trim())
-    .filter(Boolean)
+  app.use(helmet())
+  const allowedOrigins = new Set(
+    (process.env.CORS_ORIGIN ?? 'http://localhost:3000')
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean)
+  )
 
   const corsOrigin: CustomOrigin = (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.has(origin)) {
       callback(null, true)
     } else {
       callback(null, false)
@@ -27,6 +31,7 @@ export function configureApp(app: INestApplication): void {
       .setTitle('Backend API')
       .setDescription('API LEARN UP ACADEMY — documentation OpenAPI')
       .setVersion('0.0.1')
+      .addApiKey({ type: 'apiKey', name: 'x-api-key', in: 'header' }, 'x-api-key')
       .build()
     SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, swaggerConfig))
   }

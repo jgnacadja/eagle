@@ -1,5 +1,5 @@
 <template>
-  <div class="mx-auto max-w-3xl px-6 py-16">
+  <div class="mx-auto max-w-prose px-6 py-16">
     <h1 class="mb-8 font-display text-2xl font-bold text-ink">Blog</h1>
 
     <p v-if="!articles?.length" class="font-sans text-ink-muted">Aucun article pour le moment.</p>

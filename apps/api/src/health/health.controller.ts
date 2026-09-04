@@ -5,9 +5,9 @@ import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
 @Controller('health')
 export class HealthController {
   @Get()
-  @ApiOperation({ summary: 'Liveness probe — vérifie que l’API répond' })
+  @ApiOperation({ summary: 'Liveness probe — checks that the API is responding' })
   @ApiOkResponse({
-    description: 'Service opérationnel',
+    description: 'Service operational',
     schema: {
       type: 'object',
       properties: {

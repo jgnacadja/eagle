@@ -5,6 +5,7 @@
     "moduleResolution": "Node",
     "target": "ES2022",
     "outDir": "./dist",
+    "rootDir": ".",
     "baseUrl": "./",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
@@ -13,6 +14,6 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node", "vitest/globals"]
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "prisma/generated/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

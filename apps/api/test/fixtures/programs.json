@@ -1,0 +1,456 @@
+[
+  {
+    "id": "prog-001",
+    "slug": "course-pilotage-projet",
+    "title": "Pilotage de projet",
+    "description": "Apprendre à piloter des projets complexes en équipe, de la planification à la livraison.",
+    "durationInDays": 3,
+    "durationInHours": 21,
+    "price": 1800,
+    "cpf": true,
+    "cpfCode": "CPF-12345",
+    "certificationType": "Certificat de compétence",
+    "certifierName": "LEARN UP ACADEMY",
+    "category": "Management",
+    "programCategory": "Management",
+    "blocks": [
+      {
+        "type": "objectif",
+        "content": "Comprendre les méthodes de pilotage"
+      },
+      {
+        "type": "pedagogie",
+        "content": "Cas pratiques et ateliers"
+      },
+      {
+        "type": "prerequis",
+        "content": "Aucun"
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=800&h=600&fit=crop&q=80",
+    "generatedProgramUrl": "https://app.digiforma.com/prog-001",
+    "createdAt": "2026-01-15T10:00:00Z",
+    "updatedAt": "2026-01-20T10:00:00Z",
+    "status": "published"
+  },
+  {
+    "id": "prog-002",
+    "slug": "developpement-durable",
+    "title": "Développement durable et RSE",
+    "description": "Intégrer les enjeux environnementaux et sociaux dans la stratégie d'entreprise.",
+    "durationInDays": 2,
+    "durationInHours": 14,
+    "price": 1200,
+    "cpf": true,
+    "cpfCode": "CPF-23456",
+    "certificationType": "Attestation",
+    "certifierName": "EcoFormation",
+    "category": "RSE",
+    "programCategory": "RSE",
+    "blocks": [
+      {
+        "type": "objectif",
+        "content": "Identifier les leviers RSE"
+      },
+      {
+        "type": "pedagogie",
+        "content": "Études de cas et benchmark"
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1569227997603-33b9f12af927?w=800&h=600&fit=crop&q=80",
+    "generatedProgramUrl": "https://app.digiforma.com/prog-002",
+    "createdAt": "2026-02-01T10:00:00Z",
+    "updatedAt": "2026-02-10T10:00:00Z",
+    "status": "published"
+  },
+  {
+    "id": "prog-003",
+    "slug": "cybersecurite-fondamentaux",
+    "title": "Cybersécurité : les fondamentaux",
+    "description": "Comprendre les menaces, sécuriser les accès et appliquer les bonnes pratiques.",
+    "durationInDays": 5,
+    "durationInHours": 35,
+    "price": 2500,
+    "cpf": true,
+    "cpfCode": "CPF-34567",
+    "certificationType": "Certificat professionnel",
+    "certifierName": "ANSSI",
+    "category": "Informatique",
+    "programCategory": "Informatique",
+    "blocks": [
+      {
+        "type": "objectif",
+        "content": "Maîtriser les bases de la sécurité"
+      },
+      {
+        "type": "pedagogie",
+        "content": "Labs et simulations d'attaques"
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&h=600&fit=crop&q=80",
+    "generatedProgramUrl": "https://app.digiforma.com/prog-003",
+    "createdAt": "2026-02-05T10:00:00Z",
+    "updatedAt": "2026-02-18T10:00:00Z",
+    "status": "published"
+  },
+  {
+    "id": "prog-004",
+    "slug": "marketing-digital",
+    "title": "Marketing digital : stratégie et opérationnel",
+    "description": "Construire une stratégie digitale, animer les réseaux sociaux et optimiser l'acquisition.",
+    "durationInDays": 4,
+    "durationInHours": 28,
+    "price": 2100,
+    "cpf": true,
+    "cpfCode": "CPF-45678",
+    "certificationType": "Certificat",
+    "certifierName": "LEARN UP ACADEMY",
+    "category": "Marketing",
+    "programCategory": "Marketing",
+    "blocks": [
+      {
+        "type": "objectif",
+        "content": "Créer un plan marketing digital"
+      },
+      {
+        "type": "pedagogie",
+        "content": "Mise en pratique sur cas réels"
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop&q=80",
+    "generatedProgramUrl": "https://app.digiforma.com/prog-004",
+    "createdAt": "2026-02-12T10:00:00Z",
+    "updatedAt": "2026-02-25T10:00:00Z",
+    "status": "published"
+  },
+  {
+    "id": "prog-005",
+    "slug": "sante-qualite-vie",
+    "title": "Santé et qualité de vie au travail",
+    "description": "Prévenir les risques psychosociaux et améliorer le bien-être des collaborateurs.",
+    "durationInDays": 2,
+    "durationInHours": 14,
+    "price": 950,
+    "cpf": false,
+    "cpfCode": null,
+    "certificationType": "Attestation",
+    "certifierName": "INRS",
+    "category": "Santé",
+    "programCategory": "Santé",
+    "blocks": [
+      {
+        "type": "objectif",
+        "content": "Repérer les signes de souffrance"
+      },
+      {
+        "type": "pedagogie",
+        "content": "Rôle-play et entretiens"
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1603206004639-22635b71ac08?w=800&h=600&fit=crop&q=80",
+    "generatedProgramUrl": "https://app.digiforma.com/prog-005",
+    "createdAt": "2026-02-15T10:00:00Z",
+    "updatedAt": "2026-02-20T10:00:00Z",
+    "status": "published"
+  },
+  {
+    "id": "prog-006",
+    "slug": "finance-analyse-gestion",
+    "title": "Finance pour managers",
+    "description": "Lire et construire les outils de gestion pour piloter la performance économique.",
+    "durationInDays": 3,
+    "durationInHours": 21,
+    "price": 1650,
+    "cpf": true,
+    "cpfCode": "CPF-56789",
+    "certificationType": "Certificat",
+    "certifierName": "LEARN UP ACADEMY",
+    "category": "Finance",
+    "programCategory": "Finance",
+    "blocks": [
+      {
+        "type": "objectif",
+        "content": "Décrypter les états financiers"
+      },
+      {
+        "type": "pedagogie",
+        "content": "Exercices Excel et business cases"
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&h=600&fit=crop&q=80",
+    "generatedProgramUrl": "https://app.digiforma.com/prog-006",
+    "createdAt": "2026-02-20T10:00:00Z",
+    "updatedAt": "2026-02-28T10:00:00Z",
+    "status": "published"
+  },
+  {
+    "id": "prog-007",
+    "slug": "communication-non-violente",
+    "title": "Communication non-violente",
+    "description": "Oser des échanges constructifs et apaisés dans des situations tendues.",
+    "durationInDays": 2,
+    "durationInHours": 14,
+    "price": 1100,
+    "cpf": false,
+    "cpfCode": null,
+    "certificationType": null,
+    "certifierName": null,
+    "category": "Management",
+    "programCategory": "Management",
+    "blocks": [
+      {
+        "type": "objectif",
+        "content": "Identifier les besoins derrière les mots"
+      },
+      {
+        "type": "pedagogie",
+        "content": "Ateliers de mise en situation"
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?w=800&h=600&fit=crop&q=80",
+    "generatedProgramUrl": "https://app.digiforma.com/prog-007",
+    "createdAt": "2026-03-01T10:00:00Z",
+    "updatedAt": "2026-03-05T10:00:00Z",
+    "status": "published"
+  },
+  {
+    "id": "prog-008",
+    "slug": "cloud-aws-fondamentaux",
+    "title": "Cloud AWS : fondamentaux",
+    "description": "Comprendre le cloud computing et déployer une première architecture sur AWS.",
+    "durationInDays": 5,
+    "durationInHours": 35,
+    "price": 2900,
+    "cpf": true,
+    "cpfCode": "CPF-67890",
+    "certificationType": "Certificat",
+    "certifierName": "AWS",
+    "category": "Informatique",
+    "programCategory": "Informatique",
+    "blocks": [
+      {
+        "type": "objectif",
+        "content": "Déployer une instance EC2"
+      },
+      {
+        "type": "pedagogie",
+        "content": "Travaux pratiques sur AWS"
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1695668548342-c0c1ad479aee?w=800&h=600&fit=crop&q=80",
+    "generatedProgramUrl": "https://app.digiforma.com/prog-008",
+    "createdAt": "2026-03-05T10:00:00Z",
+    "updatedAt": "2026-03-15T10:00:00Z",
+    "status": "published"
+  },
+  {
+    "id": "prog-009",
+    "slug": "data-analyse-python",
+    "title": "Analyse de données avec Python",
+    "description": "Manipuler, visualiser et interpréter des jeux de données avec pandas et matplotlib.",
+    "durationInDays": 4,
+    "durationInHours": 28,
+    "price": 2200,
+    "cpf": true,
+    "cpfCode": "CPF-78901",
+    "certificationType": "Certificat",
+    "certifierName": "LEARN UP ACADEMY",
+    "category": "Informatique",
+    "programCategory": "Informatique",
+    "blocks": [
+      {
+        "type": "objectif",
+        "content": "Produire un dashboard data"
+      },
+      {
+        "type": "pedagogie",
+        "content": "Notebook et challenges"
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1666875753105-c63a6f3bdc86?w=800&h=600&fit=crop&q=80",
+    "generatedProgramUrl": "https://app.digiforma.com/prog-009",
+    "createdAt": "2026-03-10T10:00:00Z",
+    "updatedAt": "2026-03-20T10:00:00Z",
+    "status": "published"
+  },
+  {
+    "id": "prog-010",
+    "slug": "gestion-conflits",
+    "title": "Gestion des conflits en équipe",
+    "description": "Apaiser les tensions et transformer les conflits en opportunités d'amélioration.",
+    "durationInDays": 2,
+    "durationInHours": 14,
+    "price": 1050,
+    "cpf": false,
+    "cpfCode": null,
+    "certificationType": null,
+    "certifierName": null,
+    "category": "Management",
+    "programCategory": "Management",
+    "blocks": [
+      {
+        "type": "objectif",
+        "content": "Désamorcer les situations conflictuelles"
+      },
+      {
+        "type": "pedagogie",
+        "content": "Jeu de rôles et retours d'expérience"
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1626447269096-f8665509589c?w=800&h=600&fit=crop&q=80",
+    "generatedProgramUrl": "https://app.digiforma.com/prog-010",
+    "createdAt": "2026-03-12T10:00:00Z",
+    "updatedAt": "2026-03-18T10:00:00Z",
+    "status": "published"
+  },
+  {
+    "id": "prog-011",
+    "slug": "ecriture-web-seo",
+    "title": "Rédaction web et SEO",
+    "description": "Rédiger des contenus engageants, optimisés pour le référencement naturel.",
+    "durationInDays": 3,
+    "durationInHours": 21,
+    "price": 1450,
+    "cpf": true,
+    "cpfCode": "CPF-89012",
+    "certificationType": "Certificat",
+    "certifierName": "LEARN UP ACADEMY",
+    "category": "Marketing",
+    "programCategory": "Marketing",
+    "blocks": [
+      {
+        "type": "objectif",
+        "content": "Écrire pour les moteurs et les lecteurs"
+      },
+      {
+        "type": "pedagogie",
+        "content": "Ateliers de réécriture"
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=800&h=600&fit=crop&q=80",
+    "generatedProgramUrl": "https://app.digiforma.com/prog-011",
+    "createdAt": "2026-03-18T10:00:00Z",
+    "updatedAt": "2026-03-25T10:00:00Z",
+    "status": "published"
+  },
+  {
+    "id": "prog-012",
+    "slug": "droit-social-managers",
+    "title": "Droit social pour managers",
+    "description": "Maîtriser les bases du droit du travail pour sécuriser la relation employeur-salarié.",
+    "durationInDays": 3,
+    "durationInHours": 21,
+    "price": 1700,
+    "cpf": true,
+    "cpfCode": "CPF-90123",
+    "certificationType": "Certificat",
+    "certifierName": "LEARN UP ACADEMY",
+    "category": "Ressources humaines",
+    "programCategory": "Ressources humaines",
+    "blocks": [
+      {
+        "type": "objectif",
+        "content": "Connaître les règles essentielles"
+      },
+      {
+        "type": "pedagogie",
+        "content": "Analyse de jurisprudence"
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&h=600&fit=crop&q=80",
+    "generatedProgramUrl": "https://app.digiforma.com/prog-012",
+    "createdAt": "2026-03-22T10:00:00Z",
+    "updatedAt": "2026-03-30T10:00:00Z",
+    "status": "published"
+  },
+  {
+    "id": "prog-013",
+    "slug": "fondamentaux-ia",
+    "title": "Fondamentaux de l'intelligence artificielle",
+    "description": "Comprendre les principes du machine learning et les cas d'usage métier.",
+    "durationInDays": 4,
+    "durationInHours": 28,
+    "price": 2400,
+    "cpf": true,
+    "cpfCode": "CPF-01234",
+    "certificationType": "Certificat",
+    "certifierName": "LEARN UP ACADEMY",
+    "category": "Informatique",
+    "programCategory": "Informatique",
+    "blocks": [
+      {
+        "type": "objectif",
+        "content": "Identifier les cas d'usage IA"
+      },
+      {
+        "type": "pedagogie",
+        "content": "Démos et coding simple"
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1697577418970-95d99b5a55cf?w=800&h=600&fit=crop&q=80",
+    "generatedProgramUrl": "https://app.digiforma.com/prog-013",
+    "createdAt": "2026-03-25T10:00:00Z",
+    "updatedAt": "2026-04-02T10:00:00Z",
+    "status": "draft"
+  },
+  {
+    "id": "prog-014",
+    "slug": "comptabilite-gestion",
+    "title": "Comptabilité de gestion",
+    "description": "Décrypter les coûts, analyser les marges et piloter la rentabilité.",
+    "durationInDays": 3,
+    "durationInHours": 21,
+    "price": 1550,
+    "cpf": true,
+    "cpfCode": "CPF-11111",
+    "certificationType": "Certificat",
+    "certifierName": "Ordre des experts-comptables",
+    "category": "Finance",
+    "programCategory": "Finance",
+    "blocks": [
+      {
+        "type": "objectif",
+        "content": "Calculer les coûts complets"
+      },
+      {
+        "type": "pedagogie",
+        "content": "Exercices et cas d'entreprise"
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1709880945165-d2208c6ad2ec?w=800&h=600&fit=crop&q=80",
+    "generatedProgramUrl": "https://app.digiforma.com/prog-014",
+    "createdAt": "2026-04-01T10:00:00Z",
+    "updatedAt": "2026-04-05T10:00:00Z",
+    "status": "published"
+  },
+  {
+    "id": "prog-015",
+    "slug": "prevention-risques-professionnels",
+    "title": "Prévention des risques professionnels",
+    "description": "Évaluer les risques et mettre en place un plan de prévention efficace.",
+    "durationInDays": 2,
+    "durationInHours": 14,
+    "price": 900,
+    "cpf": true,
+    "cpfCode": "CPF-22222",
+    "certificationType": "Attestation",
+    "certifierName": "INRS",
+    "category": "Santé",
+    "programCategory": "Santé",
+    "blocks": [
+      {
+        "type": "objectif",
+        "content": "Réaliser un document unique"
+      },
+      {
+        "type": "pedagogie",
+        "content": "Visites terrain et groupes de travail"
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1768158988512-ad31657fe5b8?w=800&h=600&fit=crop&q=80",
+    "generatedProgramUrl": "https://app.digiforma.com/prog-015",
+    "createdAt": "2026-04-03T10:00:00Z",
+    "updatedAt": "2026-04-08T10:00:00Z",
+    "status": "published"
+  }
+]

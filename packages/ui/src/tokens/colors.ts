@@ -10,7 +10,8 @@ export const colors = {
     dark: '#14264a',
     muted: '#2e4a76',
     card: '#395680',
-    soft: '#edf2fa'
+    soft: '#edf2fa',
+    faint: 'rgb(30 58 110 / 8%)'
   },
   accent: {
     default: '#f0a030',

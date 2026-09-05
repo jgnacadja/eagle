@@ -334,6 +334,8 @@
             :category="article.category"
             :title="article.title"
             :date="article.date"
+            :excerpt="article.excerpt"
+            :image-label="article.imageLabel"
           />
         </div>
       </div>
@@ -531,17 +533,24 @@ const articles = [
   {
     category: 'Réglementation',
     title: 'Recyclage CACES : les échéances 2026 à anticiper',
-    date: '28 août 2026 · 4 min'
+    date: '28 août 2026 · 4 min',
+    excerpt:
+      'Calendrier de recyclage et points de vigilance pour garder vos équipes en conformité.',
+    imageLabel: 'Visuel article à fournir'
   },
   {
     category: 'Conformité',
     title: 'Habilitations électriques : quelles obligations pour vos sous-traitants ?',
-    date: '21 août 2026 · 6 min'
+    date: '21 août 2026 · 6 min',
+    excerpt: 'Ce que dit la norme NF C18-510 et comment organiser le suivi des habilitations.',
+    imageLabel: 'Visuel article à fournir'
   },
   {
     category: 'Financement',
     title: 'OPCO : optimiser la prise en charge de votre plan de formation',
-    date: '12 août 2026 · 5 min'
+    date: '12 août 2026 · 5 min',
+    excerpt: 'Les leviers de financement mobilisables et les délais à respecter.',
+    imageLabel: 'Visuel article à fournir'
   }
 ]
 </script>

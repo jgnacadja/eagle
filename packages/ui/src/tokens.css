@@ -15,6 +15,7 @@
   --color-primary-muted: #2e4a76;
   --color-primary-card: #395680;
   --color-primary-soft: #edf2fa;
+  --color-primary-faint: rgb(30 58 110 / 8%);
 
   /* Couleurs — ambre */
   --color-accent: #f0a030;
@@ -93,7 +94,7 @@
   --text-body-line: 1.55;
   --text-body-tracking: 0;
   --text-body-weight: 400;
-  --text-small-size: 13px;
+  --text-small-size: 13.5px;
   --text-small-line: 1.5;
   --text-small-tracking: 0;
   --text-small-weight: 400;
@@ -105,7 +106,7 @@
   --text-button-line: 1;
   --text-button-tracking: 0;
   --text-button-weight: 700;
-  --text-badge-size: 11.5px;
+  --text-badge-size: 12px;
   --text-badge-line: 1;
   --text-badge-tracking: 0;
   --text-badge-weight: 700;

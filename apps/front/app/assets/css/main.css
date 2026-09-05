@@ -126,6 +126,7 @@
   --color-primary-muted: var(--color-primary-muted);
   --color-primary-card: var(--color-primary-card);
   --color-primary-soft: var(--color-primary-soft);
+  --color-primary-faint: var(--color-primary-faint);
 
   /* Couleurs — accent */
   --color-accent: var(--color-accent);

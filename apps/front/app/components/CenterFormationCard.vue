@@ -7,11 +7,13 @@
       </CardTitle>
     </CardHeader>
     <CardContent class="flex-1 px-md py-sm">
-      <p class="hidden flex-1 text-small text-ink-body lg:block">{{ description }}</p>
+      <p v-if="description" class="hidden flex-1 text-small text-ink-body lg:block">
+        {{ description }}
+      </p>
       <CardDescription class="mt-sm">{{ meta }}</CardDescription>
     </CardContent>
     <CardFooter class="flex items-center justify-between px-md pb-md pt-sm">
-      <Badge :variant="status.type">
+      <Badge v-if="status" :variant="status.type">
         <span
           v-if="status.type !== 'warning'"
           class="h-sm w-sm rounded-full bg-current"
@@ -36,11 +38,11 @@ withDefaults(
   defineProps<{
     family: string
     title: string
-    description: string
+    description?: string
     meta: string
-    status: { type: 'success' | 'warning' | 'neutral'; label: string }
+    status?: { type: 'success' | 'warning' | 'neutral'; label: string }
     to?: string
   }>(),
-  { to: '#' }
+  { to: '#', description: '', status: undefined }
 )
 </script>

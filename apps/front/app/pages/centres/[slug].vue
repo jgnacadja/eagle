@@ -211,7 +211,7 @@
 
           <!-- Formations disponibles -->
           <section id="formations" aria-labelledby="formations-title">
-            <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <div class="flex flex-wrap items-baseline justify-between gap-sm">
               <h2 id="formations-title" class="font-display text-h2 font-extrabold text-ink">
                 Les formations disponibles dans ce centre
               </h2>
@@ -245,37 +245,14 @@
             <p class="mt-sm text-small text-ink-muted">Disponibilités actualisées en continu.</p>
             <ul class="mt-md space-y-md">
               <li v-for="session in sessions" :key="session.title">
-                <Card class="rounded-md">
-                  <CardContent class="flex flex-wrap items-center gap-md p-md">
-                    <div class="w-3xl shrink-0 rounded-md bg-surface py-sm text-center">
-                      <p class="font-display text-h3 font-bold leading-none text-ink">
-                        {{ session.day }}
-                      </p>
-                      <p class="text-overline text-ink-muted uppercase">{{ session.month }}</p>
-                    </div>
-                    <div class="flex-1">
-                      <p class="font-sans text-h4 font-semibold text-ink">{{ session.title }}</p>
-                      <p class="text-small text-ink-muted">{{ session.meta }}</p>
-                    </div>
-                    <Badge :variant="session.type">
-                      <span
-                        v-if="session.type !== 'warning'"
-                        class="h-sm w-sm rounded-full bg-current"
-                        aria-hidden="true"
-                      />
-                      <span v-else aria-hidden="true">▲</span>
-                      <span class="hidden sm:inline">{{ placesLabel(session.places, true) }}</span>
-                      <span class="sm:hidden">{{ placesLabel(session.places, false) }}</span>
-                    </Badge>
-                    <Button
-                      as-child
-                      variant="outline"
-                      class="h-auto rounded-full border-outline bg-paper px-md py-xs text-small font-bold text-ink transition hover:border-primary hover:bg-paper"
-                    >
-                      <NuxtLink to="#">Voir la session</NuxtLink>
-                    </Button>
-                  </CardContent>
-                </Card>
+                <SessionCard
+                  :day="session.day"
+                  :month="session.month"
+                  :title="session.title"
+                  :meta="session.meta"
+                  :places="session.places"
+                  :type="session.type"
+                />
               </li>
             </ul>
             <Button
@@ -318,7 +295,7 @@
 
           <!-- Actualités -->
           <section aria-labelledby="actus-title">
-            <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <div class="flex flex-wrap items-baseline justify-between gap-sm">
               <h2 id="actus-title" class="font-display text-h2 font-extrabold text-ink">
                 Actualités de ce centre
               </h2>
@@ -354,39 +331,29 @@
       </div>
 
       <!-- Bandeau CTA -->
-      <section
-        class="mt-2xl flex flex-wrap items-center justify-between gap-2xl rounded-md bg-primary-dark px-lg py-xl text-ink-inverse"
-        aria-labelledby="cta-title"
+      <CtaBanner
+        class="mt-2xl"
+        title="Un besoin de formation sur ce territoire ?"
+        text="La demande transmet automatiquement le centre, la ville et la formation concernée — sans ressaisie."
       >
-        <div class="max-w-prose">
-          <h2 id="cta-title" class="font-display text-h3 font-bold text-ink-inverse">
-            Un besoin de formation sur ce territoire ?
-          </h2>
-          <p class="mt-sm text-small text-ink-inverse/70">
-            La demande transmet automatiquement le centre, la ville et la formation concernée — sans
-            ressaisie.
-          </p>
-        </div>
-        <div class="flex w-full flex-col gap-md sm:w-auto sm:flex-row">
-          <Button
-            as-child
-            class="h-control w-full rounded-full bg-paper px-lg py-sm text-center text-button font-bold text-ink transition hover:bg-surface sm:w-auto"
-          >
-            <NuxtLink to="#">Demander une formation</NuxtLink>
-          </Button>
-          <Button
-            as-child
-            variant="outline"
-            class="h-control w-full rounded-full border-outline-inverse bg-transparent px-lg py-sm text-center text-button font-medium text-ink-inverse transition hover:border-ink-inverse hover:bg-ink-inverse/10 sm:w-auto"
-          >
-            <NuxtLink to="#">Parler à un conseiller</NuxtLink>
-          </Button>
-        </div>
-      </section>
+        <Button
+          as-child
+          class="h-control w-full rounded-full bg-paper px-lg py-sm text-center text-button font-bold text-ink transition hover:bg-surface sm:w-auto"
+        >
+          <NuxtLink to="#">Demander une formation</NuxtLink>
+        </Button>
+        <Button
+          as-child
+          variant="outline"
+          class="h-control w-full rounded-full border-outline-inverse bg-transparent px-lg py-sm text-center text-button font-medium text-ink-inverse transition hover:border-ink-inverse hover:bg-ink-inverse/10 sm:w-auto"
+        >
+          <NuxtLink to="#">Parler à un conseiller</NuxtLink>
+        </Button>
+      </CtaBanner>
 
       <!-- Autres centres -->
       <section class="mt-2xl" aria-labelledby="autres-title">
-        <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <div class="flex flex-wrap items-baseline justify-between gap-sm">
           <h2 id="autres-title" class="font-display text-h2 font-extrabold text-ink">
             Autres centres en Île-de-France
           </h2>
@@ -548,11 +515,6 @@ const sessions: Session[] = [
     type: 'success'
   }
 ]
-
-function placesLabel(places: number, full: boolean): string {
-  const plural = places > 1 ? 's' : ''
-  return full ? `${places} place${plural} disponible${plural}` : `${places} place${plural}`
-}
 
 const avisList = [
   {

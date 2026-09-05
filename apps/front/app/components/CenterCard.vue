@@ -9,7 +9,7 @@
       <Badge v-for="tag in tags" :key="tag" :variant="tagVariant(tag)">
         <span
           v-if="tag === 'Sessions cette semaine'"
-          class="h-2 w-2 rounded-full bg-current"
+          class="h-sm w-sm rounded-full bg-current"
           aria-hidden="true"
         />
         {{ tag }}

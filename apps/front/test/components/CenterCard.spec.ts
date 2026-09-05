@@ -10,6 +10,11 @@ describe('CenterCard', () => {
         distance: 'à 6 km',
         formations: 'CACES · SST',
         tags: ['Sessions cette semaine', 'Intra sur site']
+      },
+      global: {
+        stubs: {
+          Badge: { template: '<span><slot /></span>' }
+        }
       }
     })
 

@@ -14,7 +14,7 @@
       <Badge :variant="status.type">
         <span
           v-if="status.type !== 'warning'"
-          class="h-2 w-2 rounded-full bg-current"
+          class="h-sm w-sm rounded-full bg-current"
           aria-hidden="true"
         />
         <span v-else aria-hidden="true">▲</span>

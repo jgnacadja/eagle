@@ -8,7 +8,8 @@ describe('ArticleCard', () => {
       props: {
         category: 'Réglementation',
         title: 'Recyclage CACES : les échéances 2026',
-        date: '28 août 2026 · 4 min'
+        date: '28 août 2026 · 4 min',
+        excerpt: 'Calendrier de recyclage et points de vigilance.'
       },
       global: {
         stubs: {

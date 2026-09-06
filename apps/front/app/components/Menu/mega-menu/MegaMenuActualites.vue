@@ -86,7 +86,8 @@ defineEmits<{ close: [] }>()
 // Seules les régions avec de l'actualité publiée apparaissent ici
 const regionsAvecActus = computed(() => regions.filter((r) => actualitesParRegion[r.slug]?.length))
 
-const selectedRegion = ref('ile-de-france')
+// Défaut : première région qui a réellement des actus
+const selectedRegion = ref(regionsAvecActus.value[0]?.slug ?? '')
 const selectedRegionLabel = computed(
   () => regions.find((r) => r.slug === selectedRegion.value)?.label ?? ''
 )

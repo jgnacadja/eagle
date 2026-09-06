@@ -113,14 +113,32 @@ function goToRegion(slug: string) {
 }
 
 function onSearchSubmit() {
-  if (!searchQuery.value.trim()) return
-  // Pas de page recherche dédiée pour l'instant : on renvoie vers l'annuaire.
-  navigateTo('/centres')
+  const q = searchQuery.value.trim()
+  if (!q) return
+  // Pas de page recherche dédiée : on renvoie vers l'annuaire avec la query.
+  navigateTo({ path: '/centres', query: { q } })
   emit('close')
 }
 
 function useGeolocation() {
-  navigateTo('/centres')
-  emit('close')
+  if (!navigator.geolocation) {
+    navigateTo('/centres')
+    emit('close')
+    return
+  }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      navigateTo({
+        path: '/centres',
+        query: { lat: pos.coords.latitude, lng: pos.coords.longitude }
+      })
+      emit('close')
+    },
+    // Refus ou erreur : annuaire simple
+    () => {
+      navigateTo('/centres')
+      emit('close')
+    }
+  )
 }
 </script>

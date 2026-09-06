@@ -34,12 +34,12 @@
     <!-- DÉTAIL FAMILLE SÉLECTIONNÉE -->
     <div class="border-l border-rule pl-lg">
       <h3 class="text-small font-semibold text-ink-muted">
-        {{ selectedFamilleLabel }} — par type d’engin
+        {{ selectedFamilleLabel }}<template v-if="isCaces"> — par type d’engin</template>
       </h3>
-      <ul class="mt-sm space-y-1">
+      <ul v-if="isCaces" class="mt-sm space-y-1">
         <li v-for="engin in enginsCaces" :key="engin.slug">
           <NuxtLink
-            :to="`/formations/${selectedFamille}/${engin.slug}`"
+            :to="`/formations/caces-conduite-engins/${engin.slug}`"
             class="block rounded-md px-2 py-1.5 text-body text-primary transition-colors hover:bg-surface hover:text-ink"
             @click="$emit('close')"
           >
@@ -50,6 +50,9 @@
           </NuxtLink>
         </li>
       </ul>
+      <p v-else class="mt-sm px-2 text-body text-ink-muted">
+        {{ selectedFamilleCount }} formations dans cette famille.
+      </p>
       <NuxtLink
         :to="`/formations/${selectedFamille}`"
         class="mt-sm inline-block text-small font-semibold text-ink underline underline-offset-4"
@@ -102,6 +105,11 @@ const selectedFamille = ref('caces-conduite-engins')
 const selectedFamilleLabel = computed(() => {
   return familles.find((f) => f.slug === selectedFamille.value)?.label ?? ''
 })
+const selectedFamilleCount = computed(() => {
+  return familles.find((f) => f.slug === selectedFamille.value)?.count ?? 0
+})
+// Seule la famille CACES a un découpage par type d'engin
+const isCaces = computed(() => selectedFamille.value === 'caces-conduite-engins')
 
 function goToFamille(slug: string) {
   selectedFamille.value = slug

@@ -1,7 +1,10 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect } from 'vitest'
 import { defineComponent, nextTick } from 'vue'
-import { useMegaMenu } from '~/composables/useMegaMenu'
+import { useMegaMenu, type MegaMenuKey } from '~/composables/useMegaMenu'
+
+// Sur le vm du composant, les refs sont unwrapées : openMenu est un MegaMenuKey.
+type HostVm = { openMenu: MegaMenuKey; close: () => void }
 
 const Host = defineComponent({
   setup() {
@@ -9,7 +12,7 @@ const Host = defineComponent({
     return { ...menu }
   },
   template:
-    '<div ref="rootEl"><button data-test="inside" @click="toggle(\'formations\')">toggle</button></div>'
+    '<div ref="rootEl"><button data-test="inside" @click="openMenu = \'formations\'">open</button></div>'
 })
 
 function mountHost() {
@@ -17,37 +20,36 @@ function mountHost() {
 }
 
 describe('useMegaMenu', () => {
-  it('toggle ouvre puis ferme le même menu', async () => {
+  it('ouvre un menu puis le ferme via close()', async () => {
     const wrapper = mountHost()
-    const vm = wrapper.vm as unknown as ReturnType<typeof useMegaMenu>
+    const vm = wrapper.vm as unknown as HostVm
 
     await wrapper.find('[data-test="inside"]').trigger('click')
     expect(vm.openMenu).toBe('formations')
-    expect(vm.isOpen('formations')).toBe(true)
 
-    await wrapper.find('[data-test="inside"]').trigger('click')
+    vm.close()
+    await nextTick()
     expect(vm.openMenu).toBeNull()
     wrapper.unmount()
   })
 
   it('un seul menu ouvert à la fois', async () => {
     const wrapper = mountHost()
-    const vm = wrapper.vm as unknown as ReturnType<typeof useMegaMenu>
+    const vm = wrapper.vm as unknown as HostVm
 
-    vm.toggle('formations')
-    vm.toggle('centres')
+    vm.openMenu = 'formations'
+    vm.openMenu = 'centres'
     await nextTick()
 
     expect(vm.openMenu).toBe('centres')
-    expect(vm.isOpen('formations')).toBe(false)
     wrapper.unmount()
   })
 
   it('ferme au clic en dehors du menu', async () => {
     const wrapper = mountHost()
-    const vm = wrapper.vm as unknown as ReturnType<typeof useMegaMenu>
+    const vm = wrapper.vm as unknown as HostVm
 
-    vm.toggle('formations')
+    vm.openMenu = 'formations'
     await nextTick()
     document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     await nextTick()
@@ -58,12 +60,11 @@ describe('useMegaMenu', () => {
 
   it('ne ferme pas au clic à l’intérieur du menu', async () => {
     const wrapper = mountHost()
-    const vm = wrapper.vm as unknown as ReturnType<typeof useMegaMenu>
+    const vm = wrapper.vm as unknown as HostVm
 
-    vm.toggle('formations')
+    vm.openMenu = 'formations'
     await nextTick()
-    // Le clic sur le bouton toggle est à l'intérieur de rootEl : il rouvre/referme
-    // via toggle, pas via le listener document. On simule un clic interne neutre.
+    // Un clic à l'intérieur de rootEl ne doit pas fermer le menu.
     wrapper.element.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     await nextTick()
 
@@ -73,9 +74,9 @@ describe('useMegaMenu', () => {
 
   it('ferme avec Échap', async () => {
     const wrapper = mountHost()
-    const vm = wrapper.vm as unknown as ReturnType<typeof useMegaMenu>
+    const vm = wrapper.vm as unknown as HostVm
 
-    vm.toggle('actualites')
+    vm.openMenu = 'actualites'
     await nextTick()
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     await nextTick()
@@ -86,7 +87,7 @@ describe('useMegaMenu', () => {
 
   it('ignore les clics extérieurs quand aucun menu n’est ouvert', async () => {
     const wrapper = mountHost()
-    const vm = wrapper.vm as unknown as ReturnType<typeof useMegaMenu>
+    const vm = wrapper.vm as unknown as HostVm
 
     document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     await nextTick()

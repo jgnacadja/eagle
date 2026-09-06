@@ -73,7 +73,7 @@
 
         <button
           type="button"
-          aria-controls="mobile-menu"
+          :aria-controls="isMobileOpen ? 'mobile-menu' : undefined"
           :aria-expanded="isMobileOpen"
           aria-label="Ouvrir le menu"
           class="flex h-touch w-touch items-center justify-center rounded-md border border-rule text-ink md:hidden"

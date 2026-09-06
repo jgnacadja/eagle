@@ -3,9 +3,11 @@
     <dialog
       v-if="open"
       id="mobile-menu"
-      open
-      class="fixed inset-0 z-50 m-0 flex h-screen w-screen max-w-none flex-col border-0 bg-paper p-0 md:hidden"
+      ref="dialogEl"
+      class="fixed inset-0 z-50 m-0 flex h-dvh w-screen max-w-none flex-col border-0 bg-paper p-0 md:hidden"
       aria-label="Menu principal"
+      aria-modal="true"
+      @cancel.prevent="closeMenu"
     >
       <div class="flex items-center justify-between border-b border-rule px-gutter-mobile py-md">
         <NuxtLink
@@ -44,10 +46,9 @@
             >
             <AccordionContent>
               <Accordion type="multiple" class="pb-sm pl-2">
-                <li
+                <div
                   v-for="famille in familles.filter((f) => f.slug !== 'caces-conduite-engins')"
                   :key="famille.slug"
-                  class="list-none"
                 >
                   <NuxtLink
                     :to="`/formations/${famille.slug}`"
@@ -57,13 +58,13 @@
                     <span>{{ famille.label }}</span>
                     <span class="text-small text-ink-muted">{{ famille.count }}</span>
                   </NuxtLink>
-                </li>
+                </div>
 
                 <AccordionItem value="caces" class="border-b-0">
                   <AccordionTrigger class="py-2 text-body text-primary hover:no-underline">
                     <span class="flex w-full items-center justify-between pr-2">
                       <span>CACES & conduite d’engins</span>
-                      <span class="text-small text-ink-muted">58</span>
+                      <span class="text-small text-ink-muted">{{ cacesCount }}</span>
                     </span>
                   </AccordionTrigger>
                   <AccordionContent>
@@ -90,7 +91,7 @@
                   </AccordionContent>
                 </AccordionItem>
 
-                <li class="list-none">
+                <div>
                   <NuxtLink
                     to="/formations"
                     class="block py-2 text-small font-semibold text-ink underline underline-offset-4"
@@ -98,7 +99,7 @@
                   >
                     Tout le catalogue +
                   </NuxtLink>
-                </li>
+                </div>
               </Accordion>
             </AccordionContent>
           </AccordionItem>
@@ -110,7 +111,7 @@
             >
             <AccordionContent>
               <Accordion type="multiple" class="pb-sm pl-2">
-                <li class="list-none">
+                <div>
                   <NuxtLink
                     to="/centres"
                     class="flex items-center gap-2 py-2 text-body text-primary"
@@ -128,7 +129,7 @@
                     </svg>
                     Autour de moi
                   </NuxtLink>
-                </li>
+                </div>
 
                 <AccordionItem
                   v-for="region in regions.slice(0, 3)"
@@ -170,7 +171,7 @@
                   </AccordionContent>
                 </AccordionItem>
 
-                <li class="list-none">
+                <div>
                   <NuxtLink
                     to="/centres"
                     class="block py-2 text-small font-semibold text-ink underline underline-offset-4"
@@ -178,7 +179,7 @@
                   >
                     Voir la carte de région +
                   </NuxtLink>
-                </li>
+                </div>
               </Accordion>
             </AccordionContent>
           </AccordionItem>
@@ -288,7 +289,7 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   Accordion,
   AccordionContent,
@@ -306,7 +307,13 @@ import {
 } from '~/data/navigation'
 
 const open = defineModel<boolean>('open', { default: false })
+const dialogEl = ref<HTMLDialogElement>()
 const closeBtn = ref<HTMLButtonElement>()
+let previousFocus: Element | null = null
+
+const cacesCount = computed(
+  () => familles.find((f) => f.slug === 'caces-conduite-engins')?.count ?? 0
+)
 
 function closeMenu() {
   open.value = false
@@ -316,14 +323,29 @@ function onKeydown(event: KeyboardEvent): void {
   if (event.key === 'Escape' && open.value) closeMenu()
 }
 
-watch(open, (value) => {
-  document.body.classList.toggle('overflow-hidden', value)
-  if (value) nextTick(() => closeBtn.value?.focus())
-})
+watch(
+  open,
+  (value) => {
+    if (typeof document === 'undefined') return // SSR
+    document.body.classList.toggle('overflow-hidden', value)
+    if (value) {
+      previousFocus = document.activeElement
+      nextTick(() => {
+        // showModal : focus trap + Échap natifs du <dialog>
+        if (dialogEl.value && !dialogEl.value.open) dialogEl.value.showModal?.()
+        closeBtn.value?.focus()
+      })
+    } else {
+      nextTick(() => (previousFocus as HTMLElement | null)?.focus?.())
+    }
+  },
+  { immediate: true }
+)
 
 onMounted(() => window.addEventListener('keydown', onKeydown))
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeydown)
   document.body.classList.remove('overflow-hidden')
+  ;(previousFocus as HTMLElement | null)?.focus?.()
 })
 </script>

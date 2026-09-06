@@ -2,7 +2,7 @@
 // Comportement commun aux 4 mega-menus desktop :
 // - un seul menu ouvert à la fois
 // - fermeture au clic en dehors du menu
-// - fermeture avec Échap, focus rendu au déclencheur
+// - fermeture avec Échap (reka-ui rend le focus au déclencheur)
 // (reprend l'annotation « clic hors menu ou Échap : fermeture » de la maquette)
 
 import { onBeforeUnmount, onMounted, ref } from 'vue'
@@ -13,16 +13,8 @@ export function useMegaMenu() {
   const openMenu = ref<MegaMenuKey>(null)
   const rootEl = ref<HTMLElement>()
 
-  function toggle(key: Exclude<MegaMenuKey, null>) {
-    openMenu.value = openMenu.value === key ? null : key
-  }
-
   function close() {
     openMenu.value = null
-  }
-
-  function isOpen(key: Exclude<MegaMenuKey, null>) {
-    return openMenu.value === key
   }
 
   function onDocumentClick(event: MouseEvent) {
@@ -49,5 +41,5 @@ export function useMegaMenu() {
     document.removeEventListener('keydown', onKeydown)
   })
 
-  return { openMenu, rootEl, toggle, close, isOpen }
+  return { openMenu, rootEl, close }
 }

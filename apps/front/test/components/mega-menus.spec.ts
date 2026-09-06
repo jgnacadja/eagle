@@ -38,7 +38,9 @@ describe('MegaMenuFormations', () => {
     const btn = wrapper.findAll('button').find((b) => b.text().includes('Management'))!
 
     await btn.trigger('mouseenter')
-    expect(wrapper.text()).toContain('Management — par type d’engin')
+    // Hors CACES : pas de découpage par engin, fallback compteur
+    expect(wrapper.text()).toContain('12 formations dans cette famille')
+    expect(wrapper.text()).not.toContain('Management — par type d’engin')
   })
 
   it('émet close au clic sur un lien', async () => {
@@ -87,7 +89,7 @@ describe('MegaMenuCentres', () => {
     await wrapper.find('input').setValue('Lille')
     await wrapper.find('form').trigger('submit.prevent')
 
-    expect(navigateMock).toHaveBeenCalledWith('/centres')
+    expect(navigateMock).toHaveBeenCalledWith({ path: '/centres', query: { q: 'Lille' } })
     expect(wrapper.emitted('close')).toBeTruthy()
   })
 })

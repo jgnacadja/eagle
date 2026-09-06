@@ -19,7 +19,7 @@
         <NavigationMenuList class="gap-1">
           <NavigationMenuItem value="formations">
             <NavigationMenuTrigger
-              class="border-b-2 border-transparent text-body font-semibold text-primary data-[state=open]:border-accent"
+              class="border-b-2 border-transparent text-body rounded-none px-0 mx-sm font-semibold text-primary data-[state=open]:border-accent"
             >
               Formations
             </NavigationMenuTrigger>
@@ -30,7 +30,7 @@
 
           <NavigationMenuItem value="centres">
             <NavigationMenuTrigger
-              class="border-b-2 border-transparent text-body font-semibold text-primary data-[state=open]:border-accent"
+              class="border-b-2 border-transparent text-body rounded-none px-0 mx-sm font-semibold text-primary data-[state=open]:border-accent"
             >
               Centres
             </NavigationMenuTrigger>
@@ -41,7 +41,7 @@
 
           <NavigationMenuItem value="apropos">
             <NavigationMenuTrigger
-              class="border-b-2 border-transparent text-body font-semibold text-primary data-[state=open]:border-accent"
+              class="border-b-2 border-transparent text-body rounded-none px-0 mx-sm font-semibold text-primary data-[state=open]:border-accent"
             >
               À propos
             </NavigationMenuTrigger>
@@ -52,7 +52,7 @@
 
           <NavigationMenuItem value="actualites">
             <NavigationMenuTrigger
-              class="border-b-2 border-transparent text-body font-semibold text-primary data-[state=open]:border-accent"
+              class="border-b-2 border-transparent text-body rounded-none px-0 mx-sm font-semibold text-primary data-[state=open]:border-accent"
             >
               Actualités
             </NavigationMenuTrigger>

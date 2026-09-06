@@ -1,36 +1,83 @@
 <template>
   <header class="border-b border-rule bg-paper">
-    <div class="mx-auto flex max-w-container items-center px-gutter-mobile md:px-gutter py-3">
+    <div
+      ref="rootEl"
+      class="relative mx-auto flex max-w-container items-center px-gutter-mobile md:px-gutter py-3"
+    >
       <NuxtLink to="/" aria-label="LEARN UP ACADEMY — Accueil" class="inline-block">
         <Logo />
       </NuxtLink>
 
-      <nav
-        class="ml-7 hidden items-center gap-7 text-body font-semibold text-primary md:flex"
+      <NavigationMenu
+        class="ml-7 hidden md:flex"
+        :model-value="openMenu ?? ''"
         aria-label="Navigation principale"
+        disable-hover-trigger
+        disable-pointer-leave-close
+        @update:model-value="onMenuUpdate"
       >
-        <NuxtLink to="/formations" class="hover:text-ink">Formations</NuxtLink>
-        <NuxtLink to="/centres" class="hover:text-ink">Centres</NuxtLink>
-        <NuxtLink to="/" class="hover:text-ink">À propos</NuxtLink>
-        <NuxtLink to="/" class="hover:text-ink">Actualités</NuxtLink>
-      </nav>
+        <NavigationMenuList class="gap-1">
+          <NavigationMenuItem value="formations">
+            <NavigationMenuTrigger
+              class="border-b-2 border-transparent text-body font-semibold text-primary data-[state=open]:border-accent"
+            >
+              Formations
+            </NavigationMenuTrigger>
+            <NavigationMenuContent>
+              <MegaMenuFormations @close="close" />
+            </NavigationMenuContent>
+          </NavigationMenuItem>
 
-      <div class="ml-auto">
+          <NavigationMenuItem value="centres">
+            <NavigationMenuTrigger
+              class="border-b-2 border-transparent text-body font-semibold text-primary data-[state=open]:border-accent"
+            >
+              Centres
+            </NavigationMenuTrigger>
+            <NavigationMenuContent>
+              <MegaMenuCentres @close="close" />
+            </NavigationMenuContent>
+          </NavigationMenuItem>
+
+          <NavigationMenuItem value="apropos">
+            <NavigationMenuTrigger
+              class="border-b-2 border-transparent text-body font-semibold text-primary data-[state=open]:border-accent"
+            >
+              À propos
+            </NavigationMenuTrigger>
+            <NavigationMenuContent>
+              <MegaMenuAPropos @close="close" />
+            </NavigationMenuContent>
+          </NavigationMenuItem>
+
+          <NavigationMenuItem value="actualites">
+            <NavigationMenuTrigger
+              class="border-b-2 border-transparent text-body font-semibold text-primary data-[state=open]:border-accent"
+            >
+              Actualités
+            </NavigationMenuTrigger>
+            <NavigationMenuContent>
+              <MegaMenuActualites @close="close" />
+            </NavigationMenuContent>
+          </NavigationMenuItem>
+        </NavigationMenuList>
+      </NavigationMenu>
+
+      <div class="ml-auto flex items-center gap-sm">
         <NuxtLink
-          to="/"
+          to="/rejoindre-le-reseau"
           class="hidden text-body font-bold text-primary hover:text-ink md:inline underline underline-offset-4"
         >
           Rejoindre le réseau
         </NuxtLink>
 
         <button
-          ref="openBtn"
           type="button"
           aria-controls="mobile-menu"
-          :aria-expanded="isOpen"
+          :aria-expanded="isMobileOpen"
           aria-label="Ouvrir le menu"
           class="flex h-touch w-touch items-center justify-center rounded-md border border-rule text-ink md:hidden"
-          @click="openMenu"
+          @click="isMobileOpen = true"
         >
           <svg
             class="h-5 w-5"
@@ -46,135 +93,31 @@
     </div>
   </header>
 
-  <ClientOnly>
-    <dialog
-      v-if="isOpen"
-      id="mobile-menu"
-      open
-      class="fixed inset-0 z-50 m-0 flex h-screen w-screen max-w-none flex-col border-0 bg-paper p-0 md:hidden"
-      aria-label="Menu principal"
-    >
-      <div class="flex items-center justify-between border-b border-rule px-gutter-mobile py-md">
-        <NuxtLink
-          to="/"
-          aria-label="LEARN UP ACADEMY — Accueil"
-          class="inline-block"
-          @click="closeMenu"
-        >
-          <Logo />
-        </NuxtLink>
-
-        <button
-          ref="closeBtn"
-          type="button"
-          aria-label="Fermer le menu"
-          class="flex h-touch w-touch items-center justify-center rounded-md bg-ink text-paper"
-          @click="closeMenu"
-        >
-          <svg
-            class="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-          >
-            <path d="M6 6l12 12M18 6L6 18" />
-          </svg>
-        </button>
-      </div>
-
-      <nav class="flex-1 overflow-y-auto px-gutter-mobile" aria-label="Menu de navigation">
-        <ul class="divide-y divide-rule">
-          <li v-for="link in mobileLinks" :key="`${link.to}-${link.label}`">
-            <NuxtLink
-              :to="link.to"
-              class="flex items-center justify-between py-md text-h3 text-ink"
-              @click="closeMenu"
-            >
-              {{ link.label }}
-              <svg
-                class="h-5 w-5 text-accent"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                viewBox="0 0 24 24"
-              >
-                <path d="M9 6l6 6-6 6" />
-              </svg>
-            </NuxtLink>
-          </li>
-        </ul>
-
-        <NuxtLink
-          to="/"
-          class="mt-lg inline-block text-body font-semibold text-ink underline underline-offset-4"
-          @click="closeMenu"
-        >
-          Rejoindre le réseau
-        </NuxtLink>
-      </nav>
-
-      <div
-        class="sticky bottom-0 flex flex-col gap-sm border-t border-rule bg-surface px-gutter-mobile py-lg"
-      >
-        <NuxtLink
-          to="/"
-          class="rounded-full bg-accent px-lg py-md text-center text-small font-semibold text-ink hover:bg-accent-text"
-        >
-          Confier ma formation
-        </NuxtLink>
-        <NuxtLink
-          to="/"
-          class="rounded-full border border-rule bg-paper px-lg py-md text-center text-small font-semibold text-ink hover:bg-paper"
-        >
-          Parler à un conseiller
-        </NuxtLink>
-        <p class="mt-xs text-center text-small text-ink-muted">
-          01 84 60 00 00 <span class="mx-1">·</span> contact@learnup.fr
-        </p>
-      </div>
-    </dialog>
-  </ClientOnly>
+  <MobileMenu v-model:open="isMobileOpen" />
 </template>
 
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { ref } from 'vue'
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuList,
+  NavigationMenuTrigger
+} from '~/components/ui/navigation-menu'
+import { useMegaMenu, type MegaMenuKey } from '~/composables/useMegaMenu'
+import MegaMenuFormations from '~/components/Menu/mega-menu/MegaMenuFormations.vue'
+import MegaMenuCentres from '~/components/Menu/mega-menu/MegaMenuCentres.vue'
+import MegaMenuAPropos from '~/components/Menu/mega-menu/MegaMenuAPropos.vue'
+import MegaMenuActualites from '~/components/Menu/mega-menu/MegaMenuActualites.vue'
+import MobileMenu from '~/components/Menu/MobileMenu.vue'
 
-const isOpen = ref(false)
-const openBtn = ref<HTMLButtonElement>()
-const closeBtn = ref<HTMLButtonElement>()
+const { openMenu, rootEl, close } = useMegaMenu()
+const isMobileOpen = ref(false)
 
-const mobileLinks = [
-  { to: '/', label: 'Formations' },
-  { to: '/centres', label: 'Centres' },
-  { to: '/', label: 'À propos' },
-  { to: '/', label: 'Actualités' }
-]
-
-function openMenu() {
-  isOpen.value = true
-  document.body.classList.add('overflow-hidden')
-  nextTick(() => closeBtn.value?.focus())
+// reka-ui gère l'ouverture des triggers (clic/survol) : on synchronise
+// simplement l'état partagé, '' signifiant « tout est fermé ».
+function onMenuUpdate(value: string) {
+  openMenu.value = (value || null) as MegaMenuKey
 }
-
-function closeMenu() {
-  isOpen.value = false
-  document.body.classList.remove('overflow-hidden')
-  nextTick(() => openBtn.value?.focus())
-}
-
-function onKeydown(event: KeyboardEvent): void {
-  if (event.key === 'Escape' && isOpen.value) {
-    closeMenu()
-  }
-}
-
-onMounted(() => {
-  window.addEventListener('keydown', onKeydown)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', onKeydown)
-  document.body.classList.remove('overflow-hidden')
-})
 </script>

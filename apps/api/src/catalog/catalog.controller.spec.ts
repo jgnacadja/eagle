@@ -2,8 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { ValidationPipe } from '@nestjs/common'
 import request from 'supertest'
 import type { INestApplication } from '@nestjs/common'
+import { AdminApiKeyGuard } from '../common/guards/admin-api-key.guard'
 import { CatalogController } from './catalog.controller'
 import { CatalogService } from './catalog.service'
+
+const mockGuard = { canActivate: () => true }
 
 describe('CatalogController', () => {
   let app: INestApplication
@@ -11,19 +14,24 @@ describe('CatalogController', () => {
     list: ReturnType<typeof vi.fn>
     findBySlug: ReturnType<typeof vi.fn>
     families: ReturnType<typeof vi.fn>
+    applyFamilies: ReturnType<typeof vi.fn>
   }
 
   beforeEach(async () => {
     service = {
       list: vi.fn(),
       findBySlug: vi.fn(),
-      families: vi.fn()
+      families: vi.fn(),
+      applyFamilies: vi.fn()
     }
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CatalogController],
       providers: [{ provide: CatalogService, useValue: service }]
-    }).compile()
+    })
+      .overrideGuard(AdminApiKeyGuard)
+      .useValue(mockGuard)
+      .compile()
 
     app = module.createNestApplication()
     app.useGlobalPipes(
@@ -143,6 +151,18 @@ describe('CatalogController', () => {
       .expect((res) => {
         expect(res.body).toHaveLength(2)
         expect(res.body[0].slug).toBe('management')
+      })
+  })
+
+  it('POST /admin/families/apply returns assignment counts', async () => {
+    service.applyFamilies.mockResolvedValue({ assigned: 3, cleared: 1 })
+
+    await request(app.getHttpServer())
+      .post('/admin/families/apply')
+      .expect(201)
+      .expect((res) => {
+        expect(res.body.assigned).toBe(3)
+        expect(res.body.cleared).toBe(1)
       })
   })
 })

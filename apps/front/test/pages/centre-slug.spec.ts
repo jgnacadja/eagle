@@ -9,6 +9,7 @@ const navigateToMock = vi.fn()
 const refreshMock = vi.fn()
 const setResponseStatusMock = vi.fn()
 const seoMock = vi.fn()
+const directusRequestMock = vi.fn()
 
 interface RouteMock {
   params: { slug: string }
@@ -19,6 +20,93 @@ interface RouteMock {
 
 let routeMock: RouteMock
 let forceError: Error | null = null
+
+const centreCreteil = {
+  id: 1,
+  status: 'published',
+  slug: 'creteil',
+  name: 'Centre LEARN UP ACADEMY de Créteil',
+  address: '14 rue des Refuzniks',
+  city: 'Créteil',
+  postal_code: '94000',
+  department: 'Val-de-Marne',
+  region: 'Île-de-France',
+  description: '<p>Centre de Créteil.</p>',
+  specialties: ['CACES', 'SST'],
+  opening_hours: 'Lundi–vendredi · 8h30–17h30',
+  transport: 'Métro 8',
+  parking: 'Parking visiteurs',
+  pmr_accessible: true,
+  phone: '01 84 20 45 30',
+  email: 'creteil@learnupacademy.fr',
+  contact_name: null,
+  contact_role: null,
+  departments_covered: ['94'],
+  digiforma_url: null,
+  qualiopi_certified: true,
+  qualiopi_certificate_number: 'QUAL-2026-CRETEIL',
+  image: null,
+  seo_title: null,
+  seo_description: null,
+  seo_canonical: null
+}
+
+const centreVitry = {
+  ...centreCreteil,
+  id: 2,
+  slug: 'vitry',
+  name: 'Centre de Vitry-sur-Seine',
+  region: 'Île-de-France'
+}
+
+const catalogueCourses = {
+  items: [
+    {
+      id: 1,
+      slug: 'sst-initial',
+      title: 'SST — Sauveteur secouriste du travail',
+      description: 'Formation initiale SST.',
+      durationDays: 2,
+      durationHours: 14,
+      price: 350,
+      cpf: false,
+      cpfCode: null,
+      certification: 'Certificat SST',
+      certifierName: 'INRS',
+      category: 'Santé',
+      familySlug: 'sante',
+      centerSlug: 'creteil',
+      centerSlugs: ['creteil'],
+      modalities: ['inter', 'presentiel'],
+      sessions: [
+        {
+          id: 'sess-1',
+          startDate: '2026-10-12',
+          endDate: '2026-10-13',
+          modality: 'presentiel',
+          seatsRemaining: 5,
+          location: {
+            name: 'Centre de Créteil',
+            city: 'Créteil',
+            postalCode: '94000',
+            department: 'Val-de-Marne',
+            region: 'Île-de-France',
+            centreSlug: 'creteil'
+          }
+        }
+      ],
+      imageUrl: null,
+      generatedProgramUrl: null,
+      status: 'published',
+      seoTitle: null,
+      seoDescription: null,
+      seoCanonical: null
+    }
+  ],
+  total: 1,
+  page: 1,
+  pageSize: 12
+}
 
 vi.stubGlobal('computed', computed)
 vi.stubGlobal('ref', ref)
@@ -39,6 +127,35 @@ vi.stubGlobal('useRequestEvent', () => undefined)
 vi.stubGlobal('setResponseStatus', setResponseStatusMock)
 vi.stubGlobal('useContentSeo', seoMock)
 vi.stubGlobal('navigateTo', navigateToMock)
+vi.stubGlobal('logServerError', vi.fn())
+vi.stubGlobal('useDirectusClient', () => ({ request: directusRequestMock }))
+vi.stubGlobal('useDirectusList', async () => ref([centreCreteil, centreVitry]))
+vi.stubGlobal('useMenuFamilles', async () => ref([{ slug: 'sante', label: 'Santé', count: 2 }]))
+
+vi.mock('~/composables/useCatalog', () => ({
+  useCatalog: async () => ({ data: ref(catalogueCourses) }),
+  buildSessionBadge: vi.fn(() => null),
+  mapCourse: (
+    course: {
+      slug: string
+      title: string
+      description?: string | null
+      durationDays?: number | null
+      familySlug?: string | null
+    },
+    familyName?: string
+  ) => ({
+    slug: course.slug,
+    title: course.title,
+    family: familyName ?? course.familySlug ?? 'Autre',
+    description: course.description ?? '',
+    meta: `${course.durationDays} jours`,
+    to: course.familySlug ? `/formations/${course.familySlug}/${course.slug}` : null
+  }),
+  buildDuration: vi.fn(),
+  buildMeta: vi.fn(),
+  buildCertifications: vi.fn()
+}))
 
 const stubs = {
   NuxtLink: { template: '<a><slot /></a>' },
@@ -55,8 +172,6 @@ const stubs = {
   CardFooter: true,
   CenterFormationCard: true,
   SessionCard: true,
-  TestimonialCard: true,
-  ArticleCard: true,
   CtaBanner: true,
   CenterCard: true,
   IconMapPin: true,
@@ -95,6 +210,9 @@ describe('pages/centres/[slug]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     forceError = null
+    directusRequestMock.mockImplementation(async () => {
+      return routeMock.params.slug === 'creteil' ? [centreCreteil] : []
+    })
     routeMock = {
       params: { slug: 'creteil' },
       query: {},
@@ -107,17 +225,29 @@ describe('pages/centres/[slug]', () => {
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain('Centre LEARN UP ACADEMY de Créteil')
+    expect(wrapper.text()).toContain('14 rue des Refuzniks')
+    expect(wrapper.text()).toContain('Île-de-France')
     expect(routeMock.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
       { label: 'Réseau de centres', to: '/centres' },
       { label: 'Île-de-France', to: '/centres' },
-      { label: 'Centre de Créteil' }
+      { label: 'Centre LEARN UP ACADEMY de Créteil' }
     ])
     const [source, fallback] = seoArgs()
     expect(source).toEqual(
-      expect.objectContaining({ seo_title: 'Centre LEARN UP ACADEMY de Créteil' })
+      expect.objectContaining({
+        seo_title: 'Centre LEARN UP ACADEMY de Créteil — LEARN UP ACADEMY'
+      })
     )
     expect(fallback).toBe('Centre LEARN UP ACADEMY de Créteil')
+  })
+
+  it('affiche les formations du centre issues du catalogue API', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Les formations disponibles dans ce centre')
+    expect(wrapper.text()).toContain('1 formation')
+    expect(wrapper.text()).toContain('Prochaines sessions')
   })
 
   it('affiche l’état introuvable et adapte breadcrumb/SEO pour un slug inconnu', async () => {

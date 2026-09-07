@@ -118,10 +118,22 @@ export class ListCoursesDto {
   @Transform(({ value }) => toOptionalTrimmed(value))
   center?: string
 
+  @ApiPropertyOptional({ description: 'Modalities filter (comma-separated)' })
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => toOptionalTrimmed(value))
+  modalities?: string
+
+  @ApiPropertyOptional({ description: 'Location filter (city, department or region)' })
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => toOptionalTrimmed(value))
+  location?: string
+
   @ApiPropertyOptional({ enum: CourseSortField, description: 'Sort field' })
   @IsOptional()
   @IsEnum(CourseSortField)
-  @Transform(({ value }) => toOptionalTrimmed(value)?.toLowerCase() as CourseSortField | undefined)
+  @Transform(({ value }) => toOptionalTrimmed(value) as CourseSortField | undefined)
   sort?: CourseSortField
 
   @ApiPropertyOptional({ enum: CourseSortOrder, description: 'Sort order' })

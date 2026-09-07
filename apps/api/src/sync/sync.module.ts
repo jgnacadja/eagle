@@ -5,9 +5,10 @@ import { SyncService } from './sync.service'
 import { DigiformaModule } from '../digiforma/digiforma.module'
 import { PrismaModule } from '../prisma/prisma.module'
 import { CacheModule } from '../common/cache/cache.module'
+import { DirectusModule } from '../directus/directus.module'
 
 @Module({
-  imports: [ScheduleModule.forRoot(), DigiformaModule, PrismaModule, CacheModule],
+  imports: [ScheduleModule.forRoot(), DigiformaModule, PrismaModule, CacheModule, DirectusModule],
   controllers: [SyncController],
   providers: [SyncService]
 })

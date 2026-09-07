@@ -46,10 +46,7 @@
             >
             <AccordionContent>
               <Accordion type="multiple" class="pb-sm pl-2">
-                <div
-                  v-for="famille in familles.filter((f) => f.slug !== 'caces-conduite-engins')"
-                  :key="famille.slug"
-                >
+                <div v-for="famille in familles ?? []" :key="famille.slug">
                   <NuxtLink
                     :to="`/formations/${famille.slug}`"
                     class="flex items-center justify-between py-2 text-body text-primary"
@@ -59,37 +56,6 @@
                     <span class="text-small text-ink-muted">{{ famille.count }}</span>
                   </NuxtLink>
                 </div>
-
-                <AccordionItem value="caces" class="border-b-0">
-                  <AccordionTrigger class="py-2 text-body text-primary hover:no-underline">
-                    <span class="flex w-full items-center justify-between pr-2">
-                      <span>CACES & conduite d’engins</span>
-                      <span class="text-small text-ink-muted">{{ cacesCount }}</span>
-                    </span>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <ul class="pl-2">
-                      <li v-for="engin in enginsCaces" :key="engin.slug">
-                        <NuxtLink
-                          :to="`/formations/caces-conduite-engins/${engin.slug}`"
-                          class="block py-2 text-body text-primary"
-                          @click="closeMenu"
-                        >
-                          {{ engin.label }}
-                        </NuxtLink>
-                      </li>
-                      <li>
-                        <NuxtLink
-                          to="/formations/caces-conduite-engins"
-                          class="block py-2 text-small font-semibold text-ink underline underline-offset-4"
-                          @click="closeMenu"
-                        >
-                          Voir la famille +
-                        </NuxtLink>
-                      </li>
-                    </ul>
-                  </AccordionContent>
-                </AccordionItem>
 
                 <div>
                   <NuxtLink
@@ -132,7 +98,7 @@
                 </div>
 
                 <AccordionItem
-                  v-for="region in regions.slice(0, 3)"
+                  v-for="region in (regions ?? []).slice(0, 3)"
                   :key="region.slug"
                   :value="region.slug"
                   class="border-b-0"
@@ -146,7 +112,7 @@
                   <AccordionContent>
                     <ul class="pl-2">
                       <li
-                        v-for="centre in (centresParRegion[region.slug] ?? []).slice(0, 3)"
+                        v-for="centre in centresForRegion(region.label).slice(0, 3)"
                         :key="centre.slug"
                       >
                         <NuxtLink
@@ -155,7 +121,9 @@
                           @click="closeMenu"
                         >
                           <span>{{ centre.name }}</span>
-                          <span class="text-small text-ink-muted">{{ centre.departement }}</span>
+                          <span class="text-small text-ink-muted">
+                            {{ centre.department ?? centre.city }}
+                          </span>
                         </NuxtLink>
                       </li>
                       <li>
@@ -232,7 +200,7 @@
               </ul>
               <p class="pb-1 pl-2 text-small font-semibold text-ink-muted">Par région</p>
               <ul class="pb-sm pl-2">
-                <li v-for="region in regions.slice(0, 2)" :key="region.slug">
+                <li v-for="region in (regions ?? []).slice(0, 2)" :key="region.slug">
                   <NuxtLink
                     to="/actualites"
                     class="block py-2 text-body text-primary"
@@ -297,31 +265,27 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger
 } from '~/components/ui/accordion'
-import {
-  familles,
-  enginsCaces,
-  regions,
-  centresParRegion,
-  aproposLiens,
-  legalLiens,
-  rubriquesActualites
-} from '~/data/navigation'
+import { aproposLiens, legalLiens, rubriquesActualites } from '~/data/navigation'
+import { useMenuCentres, useMenuFamilles } from '~/composables/useMenuData'
 
 const open = defineModel<boolean>('open', { default: false })
 const dialogEl = ref<HTMLDialogElement>()
 const closeBtn = ref<HTMLButtonElement>()
 let previousFocus: Element | null = null
 
-const cacesCount = computed(
-  () => familles.find((f) => f.slug === 'caces-conduite-engins')?.count ?? 0
-)
+const familles = await useMenuFamilles()
+const { regions, centresParRegion } = await useMenuCentres()
+
+function centresForRegion(label: string) {
+  return centresParRegion.value.get(label) ?? []
+}
 
 function closeMenu() {
   open.value = false

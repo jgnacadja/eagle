@@ -7,13 +7,25 @@
 // policy par rôle ici — mapping le plus simple pour ce cas d'usage.
 
 export const roles = [
-  { name: 'admin', icon: 'admin_panel_settings', description: 'Accès complet au contenu, hors administration système.' },
+  {
+    name: 'admin',
+    icon: 'admin_panel_settings',
+    description: 'Accès complet au contenu, hors administration système.'
+  },
   { name: 'editeur', icon: 'edit', description: 'Crée et édite le contenu en brouillon.' },
   { name: 'moderateur', icon: 'fact_check', description: 'Relit et publie le contenu.' },
   { name: 'lecteur', icon: 'visibility', description: 'Lecture seule, aucune écriture.' }
 ]
 
-const CONTENT_COLLECTIONS = ['centres', 'familles_formation', 'articles', 'pages', 'page_blocks', 'stats']
+const CONTENT_COLLECTIONS = [
+  'centres',
+  'familles_formation',
+  'articles',
+  'pages',
+  'page_blocks',
+  'stats',
+  'formations'
+]
 
 function grants(collection, actions) {
   return actions.map((action) => ({ collection, action }))
@@ -31,13 +43,17 @@ export function permissionsFor(roleName) {
       return [
         ...['articles', 'page_blocks'].flatMap((c) => grants(c, ['create', 'read', 'update'])),
         ...['centres', 'familles_formation', 'pages', 'stats'].flatMap((c) => grants(c, ['read'])),
-        ...grants('directus_files', ['create', 'read'])
+        ...grants('directus_files', ['create', 'read']),
+        { collection: 'formations', action: 'read' },
+        { collection: 'formations', action: 'update', fields: ['famille'] }
       ]
 
     case 'moderateur':
       return [
         ...['articles', 'page_blocks'].flatMap((c) => grants(c, ['read', 'update'])),
-        ...['centres', 'familles_formation', 'pages', 'stats', 'directus_files'].flatMap((c) => grants(c, ['read']))
+        ...['centres', 'familles_formation', 'pages', 'stats', 'directus_files'].flatMap((c) =>
+          grants(c, ['read'])
+        )
       ]
 
     case 'lecteur':

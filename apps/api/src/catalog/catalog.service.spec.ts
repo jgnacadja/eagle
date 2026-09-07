@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import type { Course, CourseListItem, FamilyWithCount, Paginated } from '@learnup/types'
 import { CatalogService } from './catalog.service'
 import { CacheService } from '../common/cache/cache.service'
+import { DirectusMirrorService } from '../directus/directus.mirror.service'
 import { PrismaService } from '../prisma/prisma.service'
 import { CourseSortField, CourseSortOrder, type ListCoursesDto } from './catalog.dto'
 
@@ -20,7 +21,11 @@ const rawListItem = {
   category: 'Management',
   familySlug: 'management',
   centerSlug: null,
+  centerSlugs: [] as string[],
+  modalities: [] as string[],
+  sessions: null,
   imageUrl: null,
+  generatedProgramUrl: null,
   status: 'published',
   seoTitle: 'Pilotage de projet',
   seoDescription: 'Apprendre à piloter.',
@@ -37,8 +42,16 @@ const rawCourse = {
 const cachedCourse: Course = {
   ...rawListItem,
   blocks: [{ title: 'Objectif' }],
+  targets: ['Managers'],
+  prerequisites: ['Aucun'],
+  evaluation: null,
   createdAt: '2026-01-15T10:00:00.000Z',
   updatedAt: '2026-01-20T10:00:00.000Z'
+}
+
+const mockMirror = {
+  fetchAssignments: vi.fn(),
+  upsertMany: vi.fn()
 }
 
 function mockPrisma() {
@@ -98,7 +111,8 @@ describe('CatalogService', () => {
       providers: [
         CatalogService,
         { provide: PrismaService, useValue: prismaMock },
-        { provide: CacheService, useValue: cacheMock }
+        { provide: CacheService, useValue: cacheMock },
+        { provide: DirectusMirrorService, useValue: mockMirror }
       ]
     }).compile()
 
@@ -188,6 +202,8 @@ describe('CatalogService', () => {
       priceMin: 500,
       priceMax: 2000,
       center: 'paris',
+      modalities: 'presentiel,distanciel',
+      location: 'Val-de-Marne',
       page: 1,
       limit: 20
     } as ListCoursesDto)
@@ -201,10 +217,33 @@ describe('CatalogService', () => {
           certification: { not: null },
           durationHours: { gte: 10, lte: 100 },
           price: { gte: 500, lte: 2000 },
-          centerSlug: 'paris'
+          OR: [{ centerSlug: 'paris' }, { centerSlugs: { has: 'paris' } }],
+          modalities: { hasSome: ['presentiel', 'distanciel'] },
+          locationsText: { contains: 'Val-de-Marne', mode: 'insensitive' }
         }
       })
     )
+  })
+
+  it('applies modalities and location filters in the raw search path', async () => {
+    cache.get.mockResolvedValue(null)
+    prisma.$queryRawUnsafe.mockResolvedValueOnce([{ count: 0 }]).mockResolvedValueOnce([])
+
+    await service.list({
+      search: 'pilot',
+      modalities: 'inter',
+      location: 'Lyon',
+      center: 'creteil',
+      page: 1,
+      limit: 20
+    } as ListCoursesDto)
+
+    const countCall = prisma.$queryRawUnsafe.mock.calls[0]
+
+    expect(countCall[0]).toContain('modalities && ')
+    expect(countCall[0]).toContain('unaccent(locations_text) ILIKE')
+    expect(countCall[0]).toContain('ANY(center_slugs)')
+    expect(countCall.slice(1)).toEqual(expect.arrayContaining([['inter'], '%Lyon%', 'creteil']))
   })
 
   it.each([

@@ -5,20 +5,19 @@ import { SyncService } from './sync.service'
 import { DigiformaClient } from '../digiforma/digiforma.client'
 import { PrismaService } from '../prisma/prisma.service'
 import { CacheService } from '../common/cache/cache.service'
+import { DirectusMirrorService } from '../directus/directus.mirror.service'
 
 const sampleProgram = {
   id: 'prog-001',
-  title: 'Pilotage de projet',
+  name: 'Pilotage de projet',
   durationInDays: 3,
   durationInHours: 21,
-  price: 1800,
   cpf: true,
   cpfCode: 'CPF-12345',
   certificationType: 'Certificat',
   certifierName: 'LEARN UP',
-  category: 'Management',
-  programCategory: 'Management',
-  status: 'published'
+  category: { id: 'cat-1', name: 'Management' },
+  costsInter: [{ cost: 1800, vat: 20, type: 'inter' }]
 }
 
 function mockPrisma() {
@@ -41,6 +40,7 @@ describe('SyncService', () => {
   let prisma: PrismaService
   let client: DigiformaClient
   let cache: CacheService
+  let mirror: DirectusMirrorService
   let config: ConfigService
   let scheduler: { addCronJob: ReturnType<typeof vi.fn> }
 
@@ -48,6 +48,7 @@ describe('SyncService', () => {
     prisma = mockPrisma()
     client = { fetchAllPrograms: vi.fn() } as unknown as DigiformaClient
     cache = { invalidateCatalog: vi.fn() } as unknown as CacheService
+    mirror = { upsertMany: vi.fn() } as unknown as DirectusMirrorService
     scheduler = { addCronJob: vi.fn() }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -60,6 +61,7 @@ describe('SyncService', () => {
         { provide: DigiformaClient, useValue: client },
         { provide: PrismaService, useValue: prisma },
         { provide: CacheService, useValue: cache },
+        { provide: DirectusMirrorService, useValue: mirror },
         { provide: SchedulerRegistry, useValue: scheduler }
       ]
     }).compile()
@@ -145,5 +147,27 @@ describe('SyncService', () => {
     const latest = await service.getLatestRun()
     expect(prisma.syncRun.findFirst).toHaveBeenCalledWith({ orderBy: { startedAt: 'desc' } })
     expect(latest).toEqual({ id: 1, status: 'success' })
+  })
+
+  it('pushes synced courses to Directus mirror', async () => {
+    vi.mocked(client.fetchAllPrograms).mockResolvedValue([sampleProgram])
+
+    await service.run()
+
+    expect(mirror.upsertMany).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ digiformaId: 'prog-001' })])
+    )
+  })
+
+  it('does not fail sync when mirror push fails', async () => {
+    vi.mocked(client.fetchAllPrograms).mockResolvedValue([sampleProgram])
+    vi.mocked(mirror.upsertMany).mockRejectedValue(new Error('mirror down'))
+
+    await service.run()
+
+    expect(cache.invalidateCatalog).toHaveBeenCalled()
+    expect(prisma.syncRun.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: 'success' }) })
+    )
   })
 })

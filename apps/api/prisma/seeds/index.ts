@@ -24,12 +24,21 @@ export async function seed(): Promise<void> {
 
   const courses = programs.map((p) => mapProgramToCourse(p))
 
-  const result = await prisma.course.createMany({
-    data: courses,
-    skipDuplicates: true
-  })
+  let upserted = 0
+  for (const course of courses) {
+    // familySlug est exclu de l'update : l'affectation de famille est
+    // éditoriale (Directus → /admin/families/apply), le seed ne doit pas
+    // écraser une affectation existante.
+    const { familySlug, ...updateData } = course
+    await prisma.course.upsert({
+      where: { digiformaId: course.digiformaId },
+      create: course,
+      update: updateData
+    })
+    upserted += 1
+  }
 
-  console.log(`Seeded ${result.count} courses`)
+  console.log(`Seeded ${upserted} courses`)
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

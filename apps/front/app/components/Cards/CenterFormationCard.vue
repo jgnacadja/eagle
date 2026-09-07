@@ -24,14 +24,14 @@
         {{ status.label }}
       </Badge>
       <Button
-        v-if="variant === 'button'"
+        v-if="to && variant === 'button'"
         as-child
         class="mt-md h-control w-full rounded-full px-lg text-small font-semibold hover:bg-primary-dark"
       >
         <NuxtLink :to="to">Voir la formation</NuxtLink>
       </Button>
       <Button
-        v-else
+        v-else-if="to"
         as-child
         variant="link"
         class="mt-md h-auto self-end p-0 text-small font-bold text-primary hover:text-ink hover:no-underline"
@@ -54,6 +54,6 @@ withDefaults(
     eyebrow?: string
     variant?: 'default' | 'button'
   }>(),
-  { to: '#', description: '', status: undefined, eyebrow: '', variant: 'default' }
+  { to: undefined, description: '', status: undefined, eyebrow: '', variant: 'default' }
 )
 </script>

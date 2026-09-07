@@ -1,6 +1,6 @@
 <template>
   <div>
-    <template v-if="formation">
+    <template v-if="course">
       <!-- Hero -->
       <section
         class="border-b border-rule bg-linear-to-b from-paper to-surface"
@@ -10,28 +10,30 @@
           <div class="grid items-start gap-2xl lg:grid-cols-5">
             <div class="lg:col-span-3">
               <p class="text-overline text-accent-text">
-                CACES &amp; conduite d'engins · Formation certifiante
+                {{ familyName }}
+                <template v-if="course.certification"> · Formation certifiante</template>
               </p>
               <h1
                 id="formation-title"
                 class="mt-sm font-display text-h2 font-bold text-ink lg:text-h1"
               >
-                CACES R489 — Conduite de chariots élévateurs
+                {{ course.title }}
               </h1>
-              <p class="mt-md max-w-prose text-body text-ink-body">
-                Conduire en sécurité les chariots de manutention à conducteur porté, catégories 1A à
-                5, conformément à la recommandation R489 de l'Assurance Maladie.
+              <p v-if="course.description" class="mt-md max-w-prose text-body text-ink-body">
+                {{ course.description }}
               </p>
 
               <ul class="mt-md flex flex-wrap gap-sm">
-                <Badge v-for="tag in tags" :key="tag" as="li" variant="chip">{{ tag }}</Badge>
-                <Badge as="li" variant="success">
+                <Badge v-if="durationTag" as="li" variant="chip">{{ durationTag }}</Badge>
+                <Badge v-if="course.cpf" as="li" variant="chip">Éligible CPF</Badge>
+                <Badge v-if="certificationTag" as="li" variant="chip">{{ certificationTag }}</Badge>
+                <Badge v-if="sessionBadge" as="li" variant="success">
                   <span class="h-sm w-sm rounded-full bg-current" aria-hidden="true" />
-                  Sessions ce mois-ci
+                  {{ sessionBadge }}
                 </Badge>
               </ul>
 
-              <!-- CTA desktop — remplacés par la barre fixe en bas d'écran sur mobile -->
+              <!-- CTA desktop -->
               <div class="mt-2xl hidden flex-wrap items-center gap-md lg:flex">
                 <Button
                   as-child
@@ -43,20 +45,28 @@
                   >
                 </Button>
                 <Button
+                  v-if="course.generatedProgramUrl"
                   as-child
                   variant="outline"
                   class="h-control rounded-full border-outline bg-paper px-md py-sm text-button font-semibold text-ink transition hover:border-primary hover:bg-paper"
                 >
-                  <NuxtLink to="#sessions">Voir les sessions</NuxtLink>
+                  <NuxtLink
+                    :to="course.generatedProgramUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Programme sur Digiforma
+                  </NuxtLink>
                 </Button>
                 <Button
+                  v-if="course.imageUrl"
                   as-child
                   variant="link"
                   class="h-auto gap-sm p-0 text-small font-medium text-ink-muted hover:text-ink hover:no-underline"
                 >
-                  <NuxtLink to="#">
-                    <IconDownload :size="16" class="inline" />
-                    Programme (PDF)
+                  <NuxtLink :to="course.imageUrl" target="_blank" rel="noopener noreferrer">
+                    <IconLink :size="16" class="inline" />
+                    Voir l'image
                   </NuxtLink>
                 </Button>
               </div>
@@ -65,10 +75,14 @@
             <figure
               class="flex aspect-video items-center justify-center rounded-md border border-dashed border-outline bg-surface-alt text-center text-small text-ink-muted lg:col-span-2 lg:aspect-4/3"
             >
-              <figcaption>
-                Photo réelle — cariste en manœuvre<span class="hidden lg:inline">
-                  plateau technique (4:3)</span
-                ><span class="lg:hidden"> (16:9)</span>
+              <img
+                v-if="course.imageUrl"
+                :src="course.imageUrl"
+                :alt="course.title"
+                class="h-full w-full rounded-md object-cover"
+              />
+              <figcaption v-else>
+                {{ course.title }}
               </figcaption>
             </figure>
           </div>
@@ -81,47 +95,38 @@
           <!-- Colonne principale -->
           <div class="min-w-0 flex-1 space-y-2xl">
             <!-- À propos -->
-            <section aria-labelledby="apropos-title">
+            <section v-if="course.description" aria-labelledby="apropos-title">
               <h2 id="apropos-title" class="font-display text-h2 font-extrabold text-ink">
                 À propos de cette formation
               </h2>
               <div class="mt-md space-y-md text-body text-ink-body">
-                <p>
-                  La conduite de chariots à conducteur porté est encadrée par la recommandation
-                  R489. Le CACES® atteste des connaissances et du savoir-faire du conducteur pour la
-                  ou les catégories concernées.
-                </p>
-                <p>
-                  La formation alterne apports théoriques et conduite sur plateau technique. Elle
-                  couvre la formation initiale et le recyclage, en inter-entreprises dans le centre
-                  du réseau ou en intra sur votre site.
-                </p>
+                <p>{{ course.description }}</p>
               </div>
             </section>
 
             <!-- Objectifs -->
-            <section aria-labelledby="objectifs-title">
+            <section v-if="objectives.length" aria-labelledby="objectifs-title">
               <h2 id="objectifs-title" class="font-display text-h2 font-extrabold text-ink">
                 Objectifs pédagogiques
               </h2>
               <ul class="mt-md space-y-sm">
-                <li v-for="objectif in objectifs" :key="objectif" class="flex gap-sm">
+                <li v-for="(objectif, idx) in objectives" :key="idx" class="flex gap-sm">
                   <IconCheck :size="20" class="mt-xs shrink-0 text-success" />
-                  <span class="text-body text-ink-body">{{ objectif }}</span>
+                  <span class="text-body text-ink-body" v-html="sanitizeHtml(objectif)" />
                 </li>
               </ul>
             </section>
 
             <!-- Public & prérequis -->
-            <section aria-label="Public et prérequis">
+            <section v-if="course.targets || course.prerequisites" aria-label="Public et prérequis">
               <div class="grid gap-md sm:grid-cols-2">
-                <Card class="bg-surface">
+                <Card v-if="course.targets?.length" class="bg-surface">
                   <CardHeader class="p-lg pb-0">
                     <h3 class="font-sans text-h4 font-semibold text-ink">Public concerné</h3>
                   </CardHeader>
                   <CardContent class="p-lg pt-sm">
                     <ul class="space-y-sm text-small text-ink-body">
-                      <li v-for="item in publicConcerne" :key="item">· {{ item }}</li>
+                      <li v-for="item in course.targets" :key="item">· {{ item }}</li>
                     </ul>
                   </CardContent>
                 </Card>
@@ -130,27 +135,25 @@
                     <h3 class="font-sans text-h4 font-semibold text-ink">Prérequis</h3>
                   </CardHeader>
                   <CardContent class="p-lg pt-sm">
-                    <ul class="space-y-sm text-small text-ink-body">
-                      <li v-for="item in prerequis" :key="item">· {{ item }}</li>
+                    <ul
+                      v-if="course.prerequisites?.length"
+                      class="space-y-sm text-small text-ink-body"
+                    >
+                      <li v-for="item in course.prerequisites" :key="item">· {{ item }}</li>
                     </ul>
-                    <p class="mt-sm text-meta text-ink-subtle">
-                      Sans prérequis, le bloc affiche « Aucun prérequis particulier » — jamais vide
-                      (§17).
-                    </p>
+                    <p v-else class="text-small text-ink-body">Aucun prérequis particulier.</p>
                   </CardContent>
                 </Card>
               </div>
             </section>
 
             <!-- Programme -->
-            <section aria-labelledby="programme-title">
+            <section v-if="programme.length" aria-labelledby="programme-title">
               <div class="flex flex-wrap items-baseline justify-between gap-md">
                 <h2 id="programme-title" class="font-display text-h2 font-extrabold text-ink">
                   Programme
                 </h2>
-                <p class="text-small text-ink-subtle">
-                  Exemple : initial catégorie 3 — 21 heures — 3 jours
-                </p>
+                <p v-if="durationLabel" class="text-small text-ink-subtle">{{ durationLabel }}</p>
               </div>
 
               <div
@@ -158,7 +161,7 @@
               >
                 <div
                   v-for="(module, index) in programme"
-                  :key="module.title"
+                  :key="index"
                   class="flex items-center gap-md p-lg"
                 >
                   <span
@@ -169,73 +172,29 @@
                   </span>
                   <span class="min-w-0 flex-1">
                     <span class="block font-semibold text-ink">{{ module.title }}</span>
-                    <span class="block text-small text-ink-muted">{{ module.description }}</span>
+                    <span
+                      v-if="module.description"
+                      class="block text-small text-ink-muted"
+                      v-html="sanitizeHtml(module.description)"
+                    />
                   </span>
-                  <span class="shrink-0 text-small text-ink-subtle">{{ module.duration }}</span>
+                  <span v-if="module.duration" class="shrink-0 text-small text-ink-subtle">
+                    {{ module.duration }}
+                  </span>
                 </div>
               </div>
             </section>
 
-            <!-- Modalités & évaluation -->
-            <section aria-label="Modalités pédagogiques et évaluation">
-              <div class="grid gap-md sm:grid-cols-2">
-                <Card>
-                  <CardHeader class="p-lg pb-0">
-                    <h3 class="font-sans text-h4 font-semibold text-ink">Modalités pédagogiques</h3>
-                  </CardHeader>
-                  <CardContent class="space-y-md p-lg pt-md">
-                    <div v-for="modalite in modalites" :key="modalite.title" class="flex gap-sm">
-                      <component
-                        :is="modalite.icon"
-                        :size="20"
-                        class="mt-xs shrink-0 text-primary"
-                      />
-                      <p class="text-small text-ink-body">
-                        <span class="font-medium text-ink">{{ modalite.title }}</span>
-                        {{ modalite.description }}
-                      </p>
-                    </div>
-                    <p class="text-meta text-ink-subtle">
-                      Modalité distancielle non proposée pour cette formation « non affichée »
-                      (RG-CAT-08).
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader class="p-lg pb-0">
-                    <h3 class="font-sans text-h4 font-semibold text-ink">Évaluation</h3>
-                  </CardHeader>
-                  <CardContent class="p-lg pt-md">
-                    <ol class="space-y-sm">
-                      <li v-for="(etape, index) in evaluation" :key="etape" class="flex gap-sm">
-                        <span
-                          class="flex h-lg w-lg shrink-0 items-center justify-center rounded-full text-meta font-semibold text-ink-inverse"
-                          :class="
-                            index === evaluation.length - 1 ? 'bg-success' : 'bg-primary-dark'
-                          "
-                          aria-hidden="true"
-                        >
-                          {{ index + 1 }}
-                        </span>
-                        <span class="text-small text-ink-body">{{ etape }}</span>
-                      </li>
-                    </ol>
-                  </CardContent>
-                </Card>
-              </div>
-            </section>
-
             <!-- Prochaines sessions -->
-            <section id="sessions" aria-labelledby="sessions-title">
-              <h2 id="sessions-title" class="font-display text-h2 font-extrabold text-ink">
-                Prochaines sessions
-              </h2>
-              <p class="mt-xs text-small text-ink-subtle">
-                Sessions inter-entreprises publiées — disponibilités actualisées en continu.
-              </p>
-
+            <section v-if="sessionsList.length" aria-labelledby="sessions-title">
+              <div class="flex flex-wrap items-baseline justify-between gap-md">
+                <h2 id="sessions-title" class="font-display text-h2 font-extrabold text-ink">
+                  Prochaines sessions
+                </h2>
+                <p class="text-small text-ink-subtle">Disponibilités actualisées en continu.</p>
+              </div>
               <ul class="mt-md space-y-md">
-                <li v-for="session in sessions" :key="session.title">
+                <li v-for="session in sessionsList" :key="session.key">
                   <SessionCard
                     :day="session.day"
                     :month="session.month"
@@ -243,90 +202,37 @@
                     :meta="session.meta"
                     :places="session.places"
                     :type="session.type"
-                    :price="session.price"
-                    :price-note="session.priceNote"
+                    :to="session.to"
                   />
                 </li>
               </ul>
-
-              <Button
-                as-child
-                variant="link"
-                class="mt-md h-auto p-0 text-small font-bold text-primary hover:text-ink hover:no-underline"
-              >
-                <NuxtLink to="#">Voir toutes les sessions de cette formation →</NuxtLink>
-              </Button>
             </section>
 
             <!-- Où suivre cette formation -->
-            <section aria-labelledby="centres-title">
-              <h2 id="centres-title" class="font-display text-h2 font-extrabold text-ink">
-                Où suivre cette formation ?
+            <section v-if="lieux.length" aria-labelledby="lieux-title">
+              <h2 id="lieux-title" class="font-display text-h2 font-extrabold text-ink">
+                Où suivre cette formation
               </h2>
-              <p class="mt-xs text-small text-ink-subtle">
-                Centres du réseau proposant cette formation — rattachements actifs uniquement
-                (RG-CAT-04).
-              </p>
-
-              <div class="mt-md grid gap-md sm:grid-cols-3">
-                <NuxtLink
-                  v-for="centre in centres"
-                  :key="centre.slug"
-                  :to="`/centres/${centre.slug}`"
-                  class="block"
-                >
-                  <Card class="h-full rounded-md">
-                    <CardContent class="flex items-center gap-md p-md sm:block sm:p-lg">
-                      <div class="min-w-0 flex-1">
-                        <div class="flex items-start justify-between gap-sm">
-                          <h3 class="font-sans text-h4 font-semibold text-ink">
-                            {{ centre.name }}
-                          </h3>
-                          <span
-                            class="hidden shrink-0 text-right text-meta text-ink-subtle sm:block"
-                          >
-                            {{ centre.department }}
-                          </span>
-                        </div>
-                        <p class="mt-xs text-small text-ink-muted sm:hidden">
-                          {{ centre.department }} · {{ centre.modalitiesShort }}
-                        </p>
-                        <p class="mt-sm hidden text-small text-ink-muted sm:block">
-                          {{ centre.modalities }}
-                        </p>
-                        <p
-                          v-if="centre.statusType !== 'neutral'"
-                          class="mt-sm hidden items-center gap-xs text-small sm:flex"
-                          :class="centre.statusType === 'warning' ? 'text-warning' : 'text-success'"
-                        >
-                          <span class="h-sm w-sm rounded-full bg-current" aria-hidden="true" />
-                          {{ centre.status }}
-                        </p>
-                        <Badge v-else variant="neutral" class="mt-sm hidden sm:inline-flex">
-                          {{ centre.status }}
-                        </Badge>
-                        <span class="mt-sm hidden text-small font-bold text-primary sm:block">
-                          Voir le centre →
-                        </span>
-                      </div>
-                      <div class="flex shrink-0 items-center gap-xs sm:hidden">
-                        <Badge :variant="centre.statusType">
-                          <span
-                            v-if="centre.statusType === 'success'"
-                            class="h-sm w-sm rounded-full bg-current"
-                            aria-hidden="true"
-                          />
-                          <span v-else-if="centre.statusType === 'warning'" aria-hidden="true">
-                            ▲
-                          </span>
-                          {{ centre.statusShort }}
-                        </Badge>
-                        <IconChevronRight :size="15" class="text-primary" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </NuxtLink>
-              </div>
+              <ul class="mt-md grid gap-md sm:grid-cols-2">
+                <li v-for="lieu in lieux" :key="lieu.key">
+                  <NuxtLink
+                    v-if="lieu.to"
+                    :to="lieu.to"
+                    class="block h-full rounded-md border border-rule bg-paper p-md transition hover:shadow-md"
+                  >
+                    <span class="flex items-center gap-sm font-semibold text-ink">
+                      <IconMapPin :size="16" class="shrink-0 text-primary" />{{ lieu.name }}
+                    </span>
+                    <span class="mt-xs block text-small text-ink-muted">{{ lieu.detail }}</span>
+                  </NuxtLink>
+                  <div v-else class="h-full rounded-md border border-rule bg-paper p-md">
+                    <span class="flex items-center gap-sm font-semibold text-ink">
+                      <IconMapPin :size="16" class="shrink-0 text-primary" />{{ lieu.name }}
+                    </span>
+                    <span class="mt-xs block text-small text-ink-muted">{{ lieu.detail }}</span>
+                  </div>
+                </li>
+              </ul>
             </section>
 
             <!-- Bandeau CTA -->
@@ -350,7 +256,7 @@
             </CtaBanner>
 
             <!-- Formations similaires -->
-            <section aria-labelledby="similaires-title">
+            <section v-if="similaires.length" aria-labelledby="similaires-title">
               <div class="flex flex-wrap items-baseline justify-between gap-md">
                 <h2 id="similaires-title" class="font-display text-h2 font-extrabold text-ink">
                   Formations similaires
@@ -360,16 +266,19 @@
                   variant="link"
                   class="h-auto p-0 text-small font-bold text-primary hover:text-ink hover:no-underline"
                 >
-                  <NuxtLink to="#">Voir la famille CACES &amp; conduite d'engins →</NuxtLink>
+                  <NuxtLink :to="`/formations/${famille}`"
+                    >Voir la famille {{ familyName }} →</NuxtLink
+                  >
                 </Button>
               </div>
               <div class="mt-md grid gap-md sm:grid-cols-3">
                 <CenterFormationCard
                   v-for="similaire in similaires"
-                  :key="similaire.title"
+                  :key="similaire.slug"
                   :family="similaire.family"
                   :title="similaire.title"
                   :meta="similaire.meta"
+                  :to="similaire.to ?? undefined"
                 />
               </div>
             </section>
@@ -426,7 +335,7 @@
             </section>
 
             <!-- Certification -->
-            <section aria-labelledby="certification-title">
+            <section v-if="course.certification" aria-labelledby="certification-title">
               <Card>
                 <CardHeader class="p-lg pb-0">
                   <h2 id="certification-title" class="font-sans text-h4 font-semibold text-ink">
@@ -442,12 +351,9 @@
                       <IconAward :size="20" class="text-accent-text" />
                     </span>
                     <div>
-                      <p class="text-small font-medium text-ink">
-                        CACES® R489 — chariots de manutention
-                      </p>
-                      <p class="mt-xs text-small text-ink-muted">
-                        Délivré par un organisme testeur certifié, par catégorie présentée. Validité
-                        5 ans, recyclage avant échéance.
+                      <p class="text-small font-medium text-ink">{{ course.certification }}</p>
+                      <p v-if="course.certifierName" class="mt-xs text-small text-ink-muted">
+                        {{ course.certifierName }}
                       </p>
                     </div>
                   </div>
@@ -455,8 +361,42 @@
               </Card>
             </section>
 
+            <!-- Modalités & évaluation -->
+            <section
+              v-if="modaliteLabels.length || course.evaluation?.length"
+              aria-labelledby="modalites-title"
+            >
+              <Card>
+                <CardHeader class="p-lg pb-0">
+                  <h2 id="modalites-title" class="font-sans text-h4 font-semibold text-ink">
+                    Modalités & évaluation
+                  </h2>
+                </CardHeader>
+                <CardContent class="space-y-md p-lg pt-md">
+                  <div v-if="modaliteLabels.length">
+                    <p class="text-meta font-semibold uppercase tracking-wide text-ink-muted">
+                      Modalités
+                    </p>
+                    <ul class="mt-sm flex flex-wrap gap-sm">
+                      <Badge v-for="m in modaliteLabels" :key="m" as="li" variant="chip">
+                        {{ m }}
+                      </Badge>
+                    </ul>
+                  </div>
+                  <div v-if="course.evaluation?.length">
+                    <p class="text-meta font-semibold uppercase tracking-wide text-ink-muted">
+                      Évaluation
+                    </p>
+                    <ul class="mt-sm space-y-xs text-small text-ink-body">
+                      <li v-for="item in course.evaluation" :key="item">· {{ item }}</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+
             <!-- Formation en intra -->
-            <section class="bg-primary-dark p-lg" aria-labelledby="intra-title">
+            <Card class="bg-primary-dark p-lg" aria-labelledby="intra-title">
               <h2 id="intra-title" class="font-sans text-h4 font-semibold text-ink-inverse">
                 Formation en intra
               </h2>
@@ -472,15 +412,16 @@
                   >Organiser cette formation dans mon entreprise</NuxtLink
                 >
               </Button>
-            </section>
+            </Card>
 
             <!-- Programme PDF -->
             <Button
+              v-if="course.generatedProgramUrl"
               as-child
               variant="outline"
               class="h-control w-full gap-sm rounded-md border-rule bg-paper px-md py-sm text-small font-medium text-ink transition hover:border-outline hover:bg-paper"
             >
-              <NuxtLink to="#">
+              <NuxtLink :to="course.generatedProgramUrl" target="_blank" rel="noopener noreferrer">
                 <IconDownload :size="16" />
                 Télécharger le programme détaillé (PDF)
               </NuxtLink>
@@ -496,8 +437,8 @@
       >
         <div class="flex items-center justify-between gap-md">
           <div class="min-w-0">
-            <p class="font-semibold text-ink">{{ stickyPrice }}</p>
-            <p class="text-small text-ink-muted">{{ stickySessions }}</p>
+            <p v-if="priceLabel" class="font-semibold text-ink">{{ priceLabel }}</p>
+            <p class="text-small text-ink-muted">Demander un devis ou une session</p>
           </div>
           <Button
             as-child
@@ -548,79 +489,85 @@
 
 <script setup lang="ts">
 import { useElementSize } from '@vueuse/core'
-import IconBuilding from '~/components/icons/IconBuilding.vue'
-import IconFactory from '~/components/icons/IconFactory.vue'
+import { readItems } from '@directus/sdk'
+import type { Course, FamilleFormation } from '@learnup/types'
+import { useDirectusClient } from '~/composables/useDirectus'
+import {
+  buildSessionBadge,
+  mapCourse,
+  useCatalog,
+  type FormationItem
+} from '~/composables/useCatalog'
+import { sanitizeHtml } from '~/utils/sanitizeHtml'
+import { MODALITY_LABELS } from '~/utils/catalog-filters'
+import { sessionSeatType } from '~/utils/placesLabel'
 
-const mobileCta = ref<HTMLElement | null>(null)
-const { height: mobileCtaHeight } = useElementSize(mobileCta)
-const spacerStyle = computed(() =>
-  mobileCtaHeight.value > 0 ? { height: `${mobileCtaHeight.value}px` } : {}
-)
-
-interface Session {
-  day: string
-  month: string
+interface ProgrammeModule {
   title: string
-  meta: string
-  price: string
-  priceNote: string
-  places: number
-  type: 'success' | 'warning'
+  description?: string
+  duration?: string
 }
-
-interface CentreItem {
-  name: string
-  slug: string
-  department: string
-  modalities: string
-  modalitiesShort: string
-  status: string
-  statusShort: string
-  statusType: 'success' | 'warning' | 'neutral'
-}
-
-interface Similaire {
-  family: string
-  title: string
-  meta: string
-}
-
-definePageMeta({
-  layout: 'with-breadcrumb',
-  breadcrumb: [
-    { label: 'Accueil', to: '/' },
-    { label: 'Formations', to: '/formations' },
-    { label: 'CACES & conduite d’engins', to: '/formations/caces-conduite-engins' },
-    { label: 'CACES R489 — chariots élévateurs' }
-  ]
-})
 
 const route = useRoute()
 const famille = route.params.famille as string
 const slug = route.params.slug as string
 
-// Maquette : seule la fiche CACES R489 existe tant que le catalogue formations
-// n'est pas branché — null pour tout autre couple famille/slug (état indisponible).
-// ?error=1 simule une erreur de chargement pour prévisualiser l'état 9.
+const config = useRuntimeConfig()
+const directus = useDirectusClient()
+
 const {
-  data: formation,
+  data: course,
   error: loadError,
   refresh
-} = await useAsyncData(`formation-${famille}-${slug}`, () => {
-  if (route.query.error === '1') {
-    return Promise.reject(new Error('Formation load failed'))
+} = await useAsyncData<Course | null>(`course-${famille}-${slug}`, async () => {
+  try {
+    const result = await $fetch<Course>(`${config.public.apiBase}/courses/${famille}/${slug}`)
+    return result
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'statusCode' in error &&
+      (error as { statusCode: number }).statusCode === 404
+    ) {
+      return null
+    }
+    if (import.meta.server) {
+      logServerError(`[formations/slug] ${famille}/${slug} load failed:`, error)
+    }
+    throw error
   }
-  const exists = famille === 'caces-conduite-engins' && slug === 'caces-r489-chariots-elevateurs'
-  return Promise.resolve(exists ? { famille, slug } : null)
 })
+
+const { data: familleData } = await useAsyncData<FamilleFormation | null>(
+  `famille-name-${famille}`,
+  async () => {
+    try {
+      const results = await directus.request<FamilleFormation[]>(
+        readItems('familles_formation', {
+          filter: { slug: { _eq: famille }, status: { _eq: 'published' } },
+          limit: 1,
+          fields: ['name']
+        })
+      )
+      return results[0] ?? null
+    } catch (error) {
+      if (import.meta.server) {
+        logServerError(`[formations/slug] family ${famille} name fetch failed:`, error)
+      }
+      return null
+    }
+  }
+)
+
+const familyName = computed(() => familleData.value?.name ?? famille)
 
 type PageState = 'found' | 'not-found' | 'error'
 const pageState = computed<PageState>(() => {
   if (loadError.value) return 'error'
-  return formation.value ? 'found' : 'not-found'
+  return course.value ? 'found' : 'not-found'
 })
 
-// Statut HTTP côté SSR selon l'état affiché.
 const requestEvent = useRequestEvent()
 if (requestEvent) {
   if (pageState.value === 'error') {
@@ -630,19 +577,18 @@ if (requestEvent) {
   }
 }
 
-// Breadcrumb adapté à l'état affiché. route.meta est partagé entre toutes
-// les routes /formations/:famille/:slug : on réassigne la valeur à chaque
-// changement d'état pour ne pas conserver le breadcrumb d'une fiche précédente.
-const defaultBreadcrumb = [
+const defaultBreadcrumb = computed(() => [
   { label: 'Accueil', to: '/' },
   { label: 'Formations', to: '/formations' },
-  { label: 'CACES & conduite d’engins', to: '/formations/caces-conduite-engins' },
-  { label: 'CACES R489 — chariots élévateurs' }
-]
+  { label: familyName.value, to: `/formations/${famille}` },
+  { label: course.value?.title ?? 'Formation introuvable' }
+])
+
 const stateLabels: Record<Exclude<PageState, 'found'>, string> = {
   'not-found': 'Formation indisponible',
   error: 'Erreur de chargement'
 }
+
 watchEffect(() => {
   const stateLabel = pageState.value === 'found' ? null : stateLabels[pageState.value]
   route.meta.breadcrumb = stateLabel
@@ -651,234 +597,264 @@ watchEffect(() => {
         { label: 'Formations', to: '/formations' },
         { label: stateLabel }
       ]
-    : defaultBreadcrumb
+    : defaultBreadcrumb.value
 })
 
-const seoByState: Record<
-  PageState,
-  { seo_title: string; seo_description: string; seo_noindex?: boolean }
-> = {
-  found: {
-    seo_title: 'CACES R489 — Conduite de chariots élevateurs',
-    seo_description:
-      'Conduire en sécurité les chariots de manutention à conducteur porté, catégories 1A à 5, conformément à la recommandation R489.'
-  },
-  'not-found': {
-    seo_title: 'Formation indisponible',
-    seo_description: "Cette page de formation n'existe pas ou n'est plus publiée.",
-    seo_noindex: true
-  },
-  error: {
-    seo_title: 'Erreur de chargement',
-    seo_description: "Le contenu de la formation n'a pas pu être chargé.",
-    seo_noindex: true
-  }
-}
-// Getter réactif : le SEO suit pageState si refresh() change l'état affiché.
 useContentSeo(
-  () => seoByState[pageState.value],
-  () => seoByState[pageState.value].seo_title
+  () => {
+    const isFound = pageState.value === 'found'
+    const stateLabel = isFound ? null : stateLabels[pageState.value]
+    const title = stateLabel ?? course.value?.title ?? 'Formation — LEARN UP ACADEMY'
+
+    return {
+      seo_title: isFound
+        ? (course.value?.seoTitle ?? course.value?.title ?? 'Formation — LEARN UP ACADEMY')
+        : title,
+      seo_description: isFound
+        ? (course.value?.seoDescription ?? course.value?.description)
+        : undefined,
+      seo_canonical: isFound ? course.value?.seoCanonical : undefined,
+      seo_noindex: !isFound
+    }
+  },
+  () => {
+    const isFound = pageState.value === 'found'
+    const stateLabel = isFound ? null : stateLabels[pageState.value]
+    return stateLabel ?? course.value?.title ?? 'Formation — LEARN UP ACADEMY'
+  }
 )
 
+useHead({
+  script: computed(() => {
+    if (!course.value || pageState.value !== 'found') return []
+    return [
+      {
+        type: 'application/ld+json',
+        innerHTML: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'Course',
+          name: course.value.title,
+          description: course.value.description ?? '',
+          provider: {
+            '@type': 'Organization',
+            name: 'LEARN UP ACADEMY',
+            url: 'https://learnup.fr'
+          },
+          url: `https://learnup.fr/formations/${famille}/${slug}`
+        })
+      }
+    ]
+  })
+})
+
 function retry() {
-  if (route.query.error) {
-    // Retire le paramètre de simulation pour permettre un vrai rechargement.
-    const { error: _error, ...query } = route.query
-    navigateTo({ path: route.path, query })
-  } else {
-    refresh()
+  if (route.query.error === '1') {
+    const cleanQuery = Object.fromEntries(
+      Object.entries(route.query).filter(([key]) => key !== 'error')
+    )
+    navigateTo({ path: route.path, query: cleanQuery })
+    return
   }
+  refresh()
 }
 
 function onErrorSearch(query: string) {
   navigateTo({ path: '/formations', query: query ? { q: query } : {} })
 }
 
-useHead({
-  script: [
-    {
-      type: 'application/ld+json',
-      innerHTML: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'Course',
-        name: 'CACES R489 — Conduite de chariots élevateurs',
-        description:
-          "Conduire en sécurité les chariots de manutention à conducteur porté, catégories 1A à 5, conformément à la recommandation R489 de l'Assurance Maladie.",
-        provider: {
-          '@type': 'Organization',
-          name: 'LEARN UP ACADEMY',
-          url: 'https://learnup.fr'
-        }
-      })
-    }
-  ]
+const mobileCta = ref<HTMLElement | null>(null)
+const { height: mobileCtaHeight } = useElementSize(mobileCta)
+const spacerStyle = computed(() =>
+  mobileCtaHeight.value > 0 ? { height: `${mobileCtaHeight.value}px` } : {}
+)
+
+const durationTag = computed(() => {
+  if (!course.value) return ''
+  const parts: string[] = []
+  if (course.value.durationDays) parts.push(`${course.value.durationDays} jours`)
+  if (course.value.durationHours) parts.push(`${course.value.durationHours} h`)
+  if (parts.length === 0) return ''
+  return parts.join(' · ')
 })
 
-const tags = [
-  '2 à 5 jours selon catégories',
-  'Présentiel · inter / intra',
-  'CACES® — validité 5 ans'
-]
+const sessionBadge = computed(() => (course.value ? buildSessionBadge(course.value) : null))
 
-const objectifs = [
-  'Comprendre la réglementation applicable et les responsabilités du conducteur.',
-  "Identifier les risques liés à l'utilisation d'un chariot de manutention.",
-  'Mettre en œuvre les vérifications de prise et de fin de poste, la conduite et les manœuvres en sécurité.',
-  'Évaluer et rendre compte des anomalies et difficultés rencontrées.'
-]
+const certificationTag = computed(() => {
+  if (!course.value?.certification) return ''
+  return [course.value.certification, course.value.certifierName]
+    .filter((v): v is string => typeof v === 'string' && v.length > 0)
+    .join(' · ')
+})
 
-const publicConcerne = [
-  'Caristes débutants ou expérimentés',
-  'Salariés des fonctions logistique, production, magasinage',
-  'Nouveaux arrivants amenés à conduire un chariot',
-  "Personnes soumises à l'obligation de renouvellement (recyclage)"
-]
+const durationLabel = computed(() => {
+  if (!course.value) return ''
+  const parts: string[] = []
+  if (course.value.durationDays) parts.push(`${course.value.durationDays} jours`)
+  if (course.value.durationHours) parts.push(`${course.value.durationHours} h`)
+  if (parts.length === 0) return ''
+  return parts.join(' — ')
+})
 
-const prerequis = [
-  'Être âgé de 18 ans minimum',
-  'Aptitude médicale à la conduite délivrée par la médecine du travail',
-  'Comprendre le français (consignes écrites et orales)'
-]
+const priceLabel = computed(() => {
+  if (!course.value?.price) return ''
+  return `À partir de ${formatPrice(course.value.price)}`
+})
 
-const programme = [
-  {
-    title: 'Réglementation et prévention des risques',
-    description:
-      'Rôles des instances, responsabilités du conducteur, dispositifs de sécurité, EPI.',
-    duration: '3,5 h · théorie'
-  },
-  {
-    title: 'Technologie et fonctionnement des chariots',
-    description: 'Catégories, organes de service, stabilité, plaque de charge, vérifications.',
-    duration: '3,5 h · théorie'
-  },
-  {
-    title: 'Conduite, circulation et manutention',
-    description: 'Prise de poste, circulation à vide et en charge, gerbage, stockage, chargement.',
-    duration: '10,5 h · pratique'
-  },
-  {
-    title: 'Tests CACES® théorique et pratique',
-    description: 'Épreuves conformes au référentiel R489, par catégorie présentée.',
-    duration: '3,5 h · évaluation'
+const essentiel = computed(() => {
+  if (!course.value) return []
+  const items: { label: string; value: string }[] = []
+  if (course.value.durationDays || course.value.durationHours) {
+    const parts: string[] = []
+    if (course.value.durationDays) parts.push(`${course.value.durationDays} jours`)
+    if (course.value.durationHours) parts.push(`${course.value.durationHours} h`)
+    items.push({ label: 'Durée', value: parts.join(' — ') })
   }
-]
-
-const modalites = [
-  {
-    icon: IconBuilding,
-    title: 'Inter, en centre.',
-    description: 'Sessions planifiées sur plateau technique, engins fournis.'
-  },
-  {
-    icon: IconFactory,
-    title: 'Intra, sur site.',
-    description: 'Dans votre entreprise, sur vos équipements et vos flux réels.'
+  if (course.value.cpf) {
+    items.push({ label: 'CPF', value: course.value.cpfCode ?? 'Éligible' })
   }
-]
-
-const evaluation = [
-  'Test théorique — questionnaire conforme au référentiel R489.',
-  'Épreuve pratique — manœuvres en situation, par catégorie.',
-  'Délivrance du CACES® en cas de réussite aux deux épreuves.'
-]
-
-const sessions: Session[] = [
-  {
-    day: '12',
-    month: 'Sept',
-    title: 'Initial · catégorie 3 — Centre de Créteil (94)',
-    meta: '3 jours · 21 h · 08h30–16h30 · présentiel',
-    price: '690 €',
-    priceNote: 'HT / participant',
-    places: 5,
-    type: 'success'
-  },
-  {
-    day: '19',
-    month: 'Sept',
-    title: 'Recyclage · catégories 1A-3-5 — Centre de Vitry-sur-Seine (94)',
-    meta: '2 jours · 14 h · 08h30–16h30 · présentiel',
-    price: '490 €',
-    priceNote: 'HT / participant',
-    places: 2,
-    type: 'warning'
-  },
-  {
-    day: '03',
-    month: 'Oct',
-    title: 'Initial · catégories 3 + 5 — Centre de Melun (77)',
-    meta: '5 jours · 35 h · 08h30–16h30 · présentiel',
-    price: '1 090 €',
-    priceNote: 'HT / participant',
-    places: 8,
-    type: 'success'
+  if (course.value.certification) {
+    items.push({ label: 'Certification', value: course.value.certification })
   }
-]
-
-const centres: CentreItem[] = [
-  {
-    name: 'Centre de Créteil',
-    slug: 'creteil',
-    department: 'Val-de-Marne',
-    modalities: 'Inter en centre · intra',
-    modalitiesShort: 'inter / intra',
-    status: '4 sessions à venir',
-    statusShort: '4 sessions',
-    statusType: 'success'
-  },
-  {
-    name: 'Centre de Vitry-sur-Seine',
-    slug: 'vitry',
-    department: 'Val-de-Marne',
-    modalities: 'Inter en centre · intra',
-    modalitiesShort: 'inter / intra',
-    status: 'Prochaine session le 19/09',
-    statusShort: 'dès 19/09',
-    statusType: 'warning'
-  },
-  {
-    name: 'Centre de Melun',
-    slug: 'melun',
-    department: 'Seine-et-Marne',
-    modalities: 'Inter en centre · intra',
-    modalitiesShort: 'inter / intra',
-    status: 'Sur demande',
-    statusShort: 'Sur demande',
-    statusType: 'neutral'
+  if (course.value.price) {
+    items.push({ label: 'Tarif', value: formatPrice(course.value.price) })
   }
-]
+  return items
+})
 
-const similaires: Similaire[] = [
-  {
-    family: "CACES · Conduite d'engins",
-    title: 'CACES R485 — gerbeurs à conducteur accompagnant',
-    meta: '1 à 2 jours · Inter / intra'
-  },
-  {
-    family: "CACES · Conduite d'engins",
-    title: 'CACES R482 — engins de chantier',
-    meta: '2 à 10 jours · Inter / intra'
-  },
-  {
-    family: 'Levage · Manutention',
-    title: 'Pont roulant R484 — commande au sol',
-    meta: '1 à 2 jours · Inter / intra'
+const objectives = computed<string[]>(() => {
+  const list: string[] = []
+  if (!course.value?.blocks || !Array.isArray(course.value.blocks)) return list
+
+  for (const block of course.value.blocks) {
+    if (
+      block &&
+      typeof block === 'object' &&
+      'goals' in block &&
+      Array.isArray((block as { goals?: unknown }).goals)
+    ) {
+      for (const goal of (block as { goals: { text?: string }[] }).goals) {
+        if (goal?.text) list.push(goal.text)
+      }
+    }
   }
-]
 
-const essentiel = [
-  { label: 'Durée', value: '14 à 35 h — 2 à 5 jours' },
-  { label: 'Modalité', value: 'Présentiel · inter / intra' },
-  { label: 'Certification', value: 'CACES® R489' },
-  { label: 'Validité', value: '5 ans · recyclage' },
-  { label: 'Tarif inter', value: 'À partir de 490 € HT' },
-  { label: 'Financement', value: 'OPCO · plan de développement' }
-]
+  return list
+})
 
-const stickyPrice = essentiel.find((item) => item.label === 'Tarif inter')?.value ?? ''
-const firstSession = sessions[0]
-const stickySessions = firstSession
-  ? `Sessions dès le ${firstSession.day} ${firstSession.month.toLowerCase()}.`
-  : ''
+const programme = computed<ProgrammeModule[]>(() => {
+  const list: ProgrammeModule[] = []
+  if (!course.value?.blocks || !Array.isArray(course.value.blocks)) return list
+
+  for (const block of course.value.blocks) {
+    if (block && typeof block === 'object') {
+      const typed = block as {
+        name?: string
+        description?: string
+        durationInHours?: number
+        durationInDays?: number
+      }
+      if (typed.name) {
+        const durationParts: string[] = []
+        if (typed.durationInHours) durationParts.push(`${typed.durationInHours} h`)
+        else if (typed.durationInDays) durationParts.push(`${typed.durationInDays} jours`)
+
+        list.push({
+          title: typed.name,
+          description: typed.description,
+          duration: durationParts.join(' · ')
+        })
+      }
+    }
+  }
+
+  return list
+})
+
+const demandeTo = `/centres/demande-de-formation?famille=${famille}&formation=${slug}`
+
+const sessionsList = computed(() => {
+  const raw = [...(course.value?.sessions ?? [])]
+    .filter((s) => s.startDate)
+    .sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? ''))
+
+  return raw.map((s, index) => {
+    const date = s.startDate ? new Date(`${s.startDate}T00:00:00Z`) : null
+    const day = date ? String(date.getUTCDate()).padStart(2, '0') : ''
+    const month = date
+      ? new Intl.DateTimeFormat('fr-FR', { month: 'short', timeZone: 'UTC' })
+          .format(date)
+          .replace('.', '')
+      : ''
+    const modality = s.modality ? (MODALITY_LABELS[s.modality] ?? s.modality) : ''
+    const meta = [
+      course.value?.durationDays ? `${course.value.durationDays} jours` : '',
+      modality,
+      s.location?.city ?? ''
+    ]
+      .filter(Boolean)
+      .join(' · ')
+    const places = s.seatsRemaining ?? undefined
+    const type = sessionSeatType(places)
+
+    return {
+      key: s.id ?? `${s.startDate}-${index}`,
+      day,
+      month,
+      title: `Session ${modality.toLowerCase() || 'planifiée'}`,
+      meta,
+      places,
+      type,
+      to: s.id ? `${demandeTo}&session=${s.id}` : demandeTo
+    }
+  })
+})
+
+const lieux = computed(() => {
+  const seen = new Map<string, { key: string; name: string; detail: string; to: string | null }>()
+
+  for (const session of course.value?.sessions ?? []) {
+    const loc = session.location
+    if (!loc) continue
+    const key = loc.centreSlug ?? loc.name ?? loc.city ?? ''
+    if (!key || seen.has(key)) continue
+
+    seen.set(key, {
+      key,
+      name: loc.name ?? loc.city ?? 'Lieu de formation',
+      detail: [loc.city, loc.department ?? loc.region].filter(Boolean).join(' · '),
+      to: loc.centreSlug ? `/centres/${loc.centreSlug}` : null
+    })
+  }
+
+  return [...seen.values()]
+})
+
+const modaliteLabels = computed(() =>
+  (course.value?.modalities ?? []).map((m) => MODALITY_LABELS[m] ?? m)
+)
+
+const similarQuery = computed(() => ({
+  family: course.value?.familySlug,
+  limit: 3,
+  page: 1,
+  sort: 'updatedAt' as const,
+  order: 'desc' as const
+}))
+
+const similarCatalog = await useCatalog(similarQuery)
+
+const similaires = computed<FormationItem[]>(
+  () =>
+    similarCatalog.data.value?.items
+      .map((course) => mapCourse(course, familyName.value))
+      .filter((f) => f.slug !== slug) ?? []
+)
+
+function formatPrice(value: number): string {
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'EUR',
+    maximumFractionDigits: 0
+  }).format(value)
+}
 </script>

@@ -9,9 +9,10 @@
       <span class="shrink-0 text-meta text-ink-subtle">{{ center.cp }}</span>
     </div>
     <p class="mt-xs text-small text-ink-muted">{{ center.address }}</p>
-    <p class="mt-sm text-small font-medium text-ink-body">{{ center.tags }}</p>
+    <p v-if="center.tags" class="mt-sm text-small font-medium text-ink-body">{{ center.tags }}</p>
     <div class="mt-sm flex items-center justify-between gap-sm">
       <span
+        v-if="center.status"
         class="inline-flex items-center gap-xs rounded-full px-md py-xs text-badge"
         :class="statusClasses"
       >
@@ -30,6 +31,7 @@
         </svg>
         {{ center.status.label }}
       </span>
+      <span v-else />
       <Button
         as-child
         :variant="active ? 'default' : 'outline'"
@@ -64,7 +66,7 @@ defineEmits<{
 }>()
 
 const statusClasses = computed(() => {
-  switch (props.center.status.type) {
+  switch (props.center.status?.type) {
     case 'success':
       return 'bg-success-soft text-success'
     case 'warning':
@@ -75,7 +77,7 @@ const statusClasses = computed(() => {
 })
 
 const dotClass = computed(() => {
-  if (props.center.status.type === 'success') return 'bg-success'
+  if (props.center.status?.type === 'success') return 'bg-success'
   return ''
 })
 </script>

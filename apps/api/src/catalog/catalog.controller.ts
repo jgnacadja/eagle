@@ -1,12 +1,14 @@
-import { Controller, Get, NotFoundException, Param, Query } from '@nestjs/common'
+import { Controller, Get, NotFoundException, Param, Post, Query, UseGuards } from '@nestjs/common'
 import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiSecurity,
   ApiTags
 } from '@nestjs/swagger'
 import type { Course, CourseListItem, FamilyWithCount, Paginated } from '@learnup/types'
+import { AdminApiKeyGuard } from '../common/guards/admin-api-key.guard'
 import { CatalogService } from './catalog.service'
 import { FamilyCourseParams, ListCoursesDto } from './catalog.dto'
 
@@ -41,5 +43,14 @@ export class CatalogController {
   @ApiOkResponse({ description: 'Families with course counts' })
   async families(): Promise<FamilyWithCount[]> {
     return this.catalogService.families()
+  }
+
+  @Post('admin/families/apply')
+  @UseGuards(AdminApiKeyGuard)
+  @ApiSecurity('x-api-key')
+  @ApiOperation({ summary: 'Apply family assignments from Directus mirror' })
+  @ApiOkResponse({ description: 'Assignments applied' })
+  async applyFamilies(): Promise<{ assigned: number; cleared: number }> {
+    return this.catalogService.applyFamilies()
   }
 }

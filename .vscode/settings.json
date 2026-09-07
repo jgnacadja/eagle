@@ -13,6 +13,7 @@
   "eslint.useFlatConfig": true,
   "sonarlint.analysisExcludesStandalone": "apps/api/prisma/generated/**",
   "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
   "files.exclude": {
     "**/node_modules": true,
     "**/.nuxt": true,

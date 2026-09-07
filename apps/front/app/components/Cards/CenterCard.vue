@@ -15,7 +15,13 @@
         {{ tag }}
       </Badge>
     </div>
-    <span class="mt-md block text-small font-bold text-primary">Voir le centre →</span>
+    <NuxtLink
+      v-if="to"
+      :to="to"
+      class="mt-md block text-small font-bold text-primary hover:text-ink"
+    >
+      Voir le centre →
+    </NuxtLink>
   </article>
 </template>
 
@@ -25,6 +31,7 @@ defineProps<{
   distance: string
   formations: string
   tags: string[]
+  to?: string | null
 }>()
 
 function tagVariant(tag: string): 'success' | 'warning' | 'neutral' {

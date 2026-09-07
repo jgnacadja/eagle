@@ -32,7 +32,9 @@
     <!-- CENTRES DE LA RÉGION SÉLECTIONNÉE -->
     <div class="border-l border-rule pl-lg">
       <h3 class="text-small font-semibold text-ink-muted">
-        {{ selectedRegionLabel }} — {{ selectedRegionCount }} centres
+        {{ selectedRegionLabel }} — {{ selectedRegionCount }} centre{{
+          selectedRegionCount > 1 ? 's' : ''
+        }}
       </h3>
       <ul class="mt-sm space-y-2">
         <li v-for="centre in centresAffiches" :key="centre.slug">
@@ -42,9 +44,9 @@
             @click="$emit('close')"
           >
             <span class="font-medium">{{ centre.name }}</span>
-            <span class="block text-small text-ink-muted"
-              >{{ centre.departement }} · {{ centre.specialites }}</span
-            >
+            <span class="block text-small text-ink-muted">{{
+              centre.department ?? centre.city
+            }}</span>
           </NuxtLink>
         </li>
       </ul>
@@ -55,7 +57,6 @@
       >
         Tous les centres {{ selectedRegionLabel }} →
       </NuxtLink>
-      <p class="mt-1 text-small text-ink-muted">Ouverture(s) prévue(s) 2026</p>
     </div>
 
     <!-- TROUVER UN CENTRE + CTA -->
@@ -69,9 +70,6 @@
           type="text"
           placeholder="Ville ou code postal"
         />
-        <Button type="button" variant="outline" class="rounded-full" @click="useGeolocation">
-          Autour de moi
-        </Button>
       </form>
 
       <div class="mt-md rounded-lg bg-ink px-md py-md text-paper">
@@ -89,24 +87,38 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { Button } from '~/components/ui/button'
+import { computed, ref, watch } from 'vue'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
-import { regions, centresParRegion } from '~/data/navigation'
+import { useMenuCentres } from '~/composables/useMenuData'
 
 const emit = defineEmits<{ close: [] }>()
 
-const selectedRegion = ref('ile-de-france')
+const { regions, centresParRegion } = await useMenuCentres()
+
+const selectedRegion = ref(regions.value?.[0]?.slug ?? '')
 const searchQuery = ref('')
 
+watch(
+  regions,
+  (list) => {
+    if (!selectedRegion.value && list?.length) {
+      selectedRegion.value = list[0]!.slug
+    }
+  },
+  { immediate: true }
+)
+
 const selectedRegionLabel = computed(
-  () => regions.find((r) => r.slug === selectedRegion.value)?.label ?? ''
+  () => regions.value?.find((r) => r.slug === selectedRegion.value)?.label ?? ''
 )
 const selectedRegionCount = computed(
-  () => regions.find((r) => r.slug === selectedRegion.value)?.count ?? 0
+  () => regions.value?.find((r) => r.slug === selectedRegion.value)?.count ?? 0
 )
-const centresAffiches = computed(() => (centresParRegion[selectedRegion.value] ?? []).slice(0, 4))
+const centresAffiches = computed(() => {
+  const region = regions.value?.find((r) => r.slug === selectedRegion.value)
+  return (region ? (centresParRegion.value.get(region.label) ?? []) : []).slice(0, 4)
+})
 
 function goToRegion(slug: string) {
   selectedRegion.value = slug
@@ -118,27 +130,5 @@ function onSearchSubmit() {
   // Pas de page recherche dédiée : on renvoie vers l'annuaire avec la query.
   navigateTo({ path: '/centres', query: { q } })
   emit('close')
-}
-
-function useGeolocation() {
-  if (!navigator.geolocation) {
-    navigateTo('/centres')
-    emit('close')
-    return
-  }
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      navigateTo({
-        path: '/centres',
-        query: { lat: pos.coords.latitude, lng: pos.coords.longitude }
-      })
-      emit('close')
-    },
-    // Refus ou erreur : annuaire simple
-    () => {
-      navigateTo('/centres')
-      emit('close')
-    }
-  )
 }
 </script>

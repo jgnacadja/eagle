@@ -144,6 +144,8 @@ services:
       SYNC_CRON: ${SYNC_CRON}
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/learnup_api
       REDIS_URL: redis://redis:6379
+      DIRECTUS_INTERNAL_URL: http://directus:8055
+      DIRECTUS_SYNC_TOKEN: ${DIRECTUS_SYNC_TOKEN}
     depends_on:
       postgres:
         condition: service_healthy

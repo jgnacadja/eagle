@@ -17,6 +17,14 @@ export interface Centre extends SeoFields {
   address: string | null
   city: string | null
   postal_code: string | null
+  department: string | null
+  region: string | null
+  description: string | null
+  specialties: string[] | null
+  opening_hours: string | null
+  transport: string | null
+  parking: string | null
+  pmr_accessible: boolean | null
   phone: string | null
   email: string | null
   contact_name: string | null
@@ -35,6 +43,8 @@ export interface FamilleFormation extends SeoFields {
   name: string
   intro: string | null
   icon: string | null
+  /** UUID du fichier Directus — rendre via `${directusUrl}/assets/{id}`. */
+  image: string | null
 }
 
 export interface Article extends SeoFields {

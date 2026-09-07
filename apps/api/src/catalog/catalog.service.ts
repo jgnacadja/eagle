@@ -1,9 +1,21 @@
 import { Injectable } from '@nestjs/common'
-import type { Course, CourseListItem, FamilyWithCount, Paginated } from '@learnup/types'
+import type {
+  Course,
+  CourseListItem,
+  CourseSession,
+  FamilyWithCount,
+  Paginated
+} from '@learnup/types'
 import { Prisma } from '../../prisma/generated/client'
 import { CacheService } from '../common/cache/cache.service'
+import { DirectusMirrorService } from '../directus/directus.mirror.service'
 import { PrismaService } from '../prisma/prisma.service'
 import { CourseSortField, CourseSortOrder, type ListCoursesDto } from './catalog.dto'
+
+export interface FamilyApplyResult {
+  assigned: number
+  cleared: number
+}
 
 const listSelect = {
   id: true,
@@ -20,7 +32,11 @@ const listSelect = {
   category: true,
   familySlug: true,
   centerSlug: true,
+  centerSlugs: true,
+  modalities: true,
+  sessions: true,
   imageUrl: true,
+  generatedProgramUrl: true,
   status: true,
   seoTitle: true,
   seoDescription: true,
@@ -30,6 +46,7 @@ const listSelect = {
 const detailSelect = {
   ...listSelect,
   blocks: true,
+  raw: true,
   createdAt: true,
   updatedAt: true
 } satisfies Prisma.CourseSelect
@@ -127,7 +144,11 @@ function mapListItem(raw: ListResult): CourseListItem {
     category: raw.category,
     familySlug: raw.familySlug,
     centerSlug: raw.centerSlug,
+    centerSlugs: raw.centerSlugs ?? [],
+    modalities: raw.modalities ?? [],
+    sessions: mapSessions(raw.sessions),
     imageUrl: raw.imageUrl,
+    generatedProgramUrl: raw.generatedProgramUrl,
     status: raw.status,
     seoTitle: raw.seoTitle,
     seoDescription: raw.seoDescription,
@@ -135,10 +156,66 @@ function mapListItem(raw: ListResult): CourseListItem {
   }
 }
 
+function mapSessions(value: unknown): CourseSession[] | null {
+  if (!Array.isArray(value)) return null
+
+  const sessions = value
+    .map((entry): CourseSession | null => {
+      if (!entry || typeof entry !== 'object') return null
+      const raw = entry as Record<string, unknown>
+      const location =
+        raw['location'] && typeof raw['location'] === 'object'
+          ? (raw['location'] as Record<string, unknown>)
+          : null
+
+      return {
+        id: typeof raw['id'] === 'string' ? raw['id'] : null,
+        startDate: typeof raw['startDate'] === 'string' ? raw['startDate'] : null,
+        endDate: typeof raw['endDate'] === 'string' ? raw['endDate'] : null,
+        modality: typeof raw['modality'] === 'string' ? raw['modality'] : null,
+        seatsRemaining: typeof raw['seatsRemaining'] === 'number' ? raw['seatsRemaining'] : null,
+        location: location
+          ? {
+              name: typeof location['name'] === 'string' ? location['name'] : null,
+              city: typeof location['city'] === 'string' ? location['city'] : null,
+              postalCode:
+                typeof location['postalCode'] === 'string' ? location['postalCode'] : null,
+              department:
+                typeof location['department'] === 'string' ? location['department'] : null,
+              region: typeof location['region'] === 'string' ? location['region'] : null,
+              centreSlug: typeof location['centreSlug'] === 'string' ? location['centreSlug'] : null
+            }
+          : null
+      }
+    })
+    .filter((s): s is CourseSession => s !== null)
+
+  return sessions.length > 0 ? sessions : null
+}
+
+function extractTexts(rawPayload: unknown, key: string): string[] | null {
+  if (!rawPayload || typeof rawPayload !== 'object') return null
+  const entries = (rawPayload as Record<string, unknown>)[key]
+  if (!Array.isArray(entries)) return null
+
+  const texts = entries
+    .map((entry) =>
+      entry && typeof entry === 'object' && 'text' in entry
+        ? (entry as { text?: unknown }).text
+        : null
+    )
+    .filter((text): text is string => typeof text === 'string' && text.trim().length > 0)
+
+  return texts.length > 0 ? texts : null
+}
+
 function mapCourse(raw: DetailResult): Course {
   return {
     ...mapListItem(raw),
     blocks: Array.isArray(raw.blocks) ? (raw.blocks as unknown[]) : null,
+    targets: extractTexts(raw.raw, 'targets'),
+    prerequisites: extractTexts(raw.raw, 'prerequisites'),
+    evaluation: extractTexts(raw.raw, 'evaluation'),
     createdAt: toIsoString(raw.createdAt),
     updatedAt: toIsoString(raw.updatedAt)
   }
@@ -181,7 +258,16 @@ function buildWhere(query: ListCoursesDto): Prisma.CourseWhereInput {
   }
 
   if (query.center) {
-    where.centerSlug = query.center
+    where.OR = [{ centerSlug: query.center }, { centerSlugs: { has: query.center } }]
+  }
+
+  const modalities = parseModalities(query.modalities)
+  if (modalities.length > 0) {
+    where.modalities = { hasSome: modalities }
+  }
+
+  if (query.location) {
+    where.locationsText = { contains: query.location, mode: 'insensitive' }
   }
 
   return where
@@ -214,7 +300,15 @@ function buildOrderBy(
   return { updatedAt: CourseSortOrder.desc }
 }
 
-const listColumnsSql = `id, slug, title, description, duration_days AS "durationDays", duration_hours AS "durationHours", price, cpf, cpf_code AS "cpfCode", certification, certifier_name AS "certifierName", category, family_slug AS "familySlug", center_slug AS "centerSlug", image_url AS "imageUrl", status, seo_title AS "seoTitle", seo_description AS "seoDescription", seo_canonical AS "seoCanonical"`
+const listColumnsSql = `id, slug, title, description, duration_days AS "durationDays", duration_hours AS "durationHours", price, cpf, cpf_code AS "cpfCode", certification, certifier_name AS "certifierName", category, family_slug AS "familySlug", center_slug AS "centerSlug", center_slugs AS "centerSlugs", modalities, sessions, image_url AS "imageUrl", generated_program_url AS "generatedProgramUrl", status, seo_title AS "seoTitle", seo_description AS "seoDescription", seo_canonical AS "seoCanonical"`
+
+function parseModalities(value: string | undefined): string[] {
+  if (!value) return []
+  return value
+    .split(',')
+    .map((m) => m.trim())
+    .filter((m) => m.length > 0)
+}
 
 function escapeLikePattern(raw: string): string {
   const escaped = raw.replaceAll('!', '!!').replaceAll('%', '!%').replaceAll('_', '!_')
@@ -265,7 +359,20 @@ function buildSearchWhere(
 
   if (query.center) {
     values.push(query.center)
-    conditions.push(`center_slug = $${values.length}`)
+    const param = `$${values.length}`
+    conditions.push(`(center_slug = ${param} OR ${param} = ANY(center_slugs))`)
+  }
+
+  const modalities = parseModalities(query.modalities)
+  if (modalities.length > 0) {
+    values.push(modalities)
+    conditions.push(`modalities && $${values.length}::text[]`)
+  }
+
+  if (query.location) {
+    values.push(escapeLikePattern(query.location))
+    const param = `$${values.length}`
+    conditions.push(`unaccent(locations_text) ILIKE unaccent(${param}) ESCAPE '!'`)
   }
 
   if (tsQuery) {
@@ -354,7 +461,8 @@ function buildSearchCountSql(
 export class CatalogService {
   constructor(
     private readonly cache: CacheService,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
+    private readonly mirror: DirectusMirrorService
   ) {}
 
   async list(query: ListCoursesDto): Promise<Paginated<CourseListItem>> {
@@ -458,6 +566,62 @@ export class CatalogService {
     }))
 
     await this.cache.set(cacheKey, result)
+    return result
+  }
+
+  async applyFamilies(): Promise<FamilyApplyResult> {
+    const assignments = await this.mirror.fetchAssignments()
+    const digiformaIds = Array.from(assignments.keys())
+
+    // Inclure aussi les courses actuellement rattachées : une affectation
+    // retirée dans Directus (famille = null) doit être répercutée ici.
+    const courses = await this.prisma.course.findMany({
+      where: {
+        OR: [{ digiformaId: { in: digiformaIds } }, { familySlug: { not: null } }]
+      },
+      select: { id: true, digiformaId: true, familySlug: true }
+    })
+
+    const byFamily = new Map<string, string[]>()
+    for (const course of courses) {
+      const familySlug = assignments.get(course.digiformaId)
+      if (!familySlug) continue
+
+      const list = byFamily.get(familySlug) ?? []
+      list.push(course.digiformaId)
+      byFamily.set(familySlug, list)
+    }
+
+    const toClear = courses
+      .filter((c) => !assignments.has(c.digiformaId) && c.familySlug !== null)
+      .map((c) => c.digiformaId)
+
+    const result = { assigned: 0, cleared: 0 }
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const [familySlug, ids] of byFamily.entries()) {
+        // `not: familySlug` seul exclut les NULL en SQL : ajouter le cas null
+        // pour rattraper les formations sans famille.
+        const update = await tx.course.updateMany({
+          where: {
+            digiformaId: { in: ids },
+            OR: [{ familySlug: { not: familySlug } }, { familySlug: null }]
+          },
+          data: { familySlug }
+        })
+        result.assigned += update.count
+      }
+
+      if (toClear.length > 0) {
+        const clear = await tx.course.updateMany({
+          where: { digiformaId: { in: toClear }, familySlug: { not: null } },
+          data: { familySlug: null }
+        })
+        result.cleared += clear.count
+      }
+    })
+
+    await this.cache.invalidateCatalog()
     return result
   }
 }

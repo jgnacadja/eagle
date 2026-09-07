@@ -46,7 +46,7 @@
         </p>
 
         <NuxtLink
-          to="/"
+          to="/centres/demande-de-formation"
           class="mt-2.5 inline-block text-sm font-bold text-accent-text underline underline-offset-4 decoration-accent-text/40 hover:opacity-80"
         >
           Confier ma formation →
@@ -102,12 +102,13 @@
           :subtitle="card.subtitle"
           :body="card.body"
           :cta="card.cta"
+          :to="card.to"
         />
       </div>
 
       <p class="mt-xl text-center text-meta md:text-small text-ink-muted">
         Vous êtes un particulier ? Certaines sessions sont ouvertes aux inscriptions individuelles —
-        <NuxtLink to="/" class="font-bold text-primary hover:text-primary-muted"
+        <NuxtLink to="/centres" class="font-bold text-primary hover:text-primary-muted"
           >contactez le centre le plus proche →</NuxtLink
         >
       </p>
@@ -123,11 +124,11 @@
 
       <ol class="relative mt-2.5 flex flex-col gap-xl md:grid md:grid-cols-4 md:gap-2xl">
         <div
-          class="absolute left-[calc(var(--spacing-control-sm)/2_-_0.5px)] top-[calc(var(--spacing-control-sm)/2)] bottom-[calc(var(--spacing-control-sm)/2)] z-0 w-px bg-rule-strong md:hidden"
+          class="absolute left-[calc(var(--spacing-control-sm)/2-0.5px)] top-[calc(var(--spacing-control-sm)/2)] bottom-[calc(var(--spacing-control-sm)/2)] z-0 w-px bg-rule-strong md:hidden"
           aria-hidden="true"
         />
         <div
-          class="absolute top-[calc(var(--spacing-control-sm)/2_-_0.5px)] left-0 right-0 z-0 mx-auto hidden h-px w-4/5 bg-rule-strong md:block"
+          class="absolute top-[calc(var(--spacing-control-sm)/2-0.5px)] left-0 right-0 z-0 mx-auto hidden h-px w-4/5 bg-rule-strong md:block"
           aria-hidden="true"
         />
 
@@ -163,7 +164,7 @@
             </p>
           </div>
           <NuxtLink
-            to="/"
+            to="/formations"
             class="hidden whitespace-nowrap text-body font-bold text-primary hover:text-ink md:block"
           >
             Voir tout le catalogue →
@@ -172,17 +173,19 @@
 
         <div class="mt-2xl grid gap-grid sm:grid-cols-2 lg:grid-cols-4">
           <FormationCard
-            v-for="item in formations"
-            :key="item.title"
+            v-for="item in dernieresFormations"
+            :key="item.slug"
             :title="item.title"
-            :image-top="item.imageTop"
-            :image-bottom="item.imageBottom"
+            :image-top="item.family"
+            :image-bottom="item.meta"
+            :image="item.image"
+            :to="item.to"
           />
         </div>
 
         <div class="flex justify-center mt-lg">
           <NuxtLink
-            to="/"
+            to="/formations"
             class="inline-block text-body font-bold text-primary hover:text-ink md:hidden"
           >
             Voir tout le catalogue →
@@ -233,17 +236,18 @@
           </SearchInput>
 
           <CenterCard
-            v-for="centre in centres"
-            :key="centre.name"
+            v-for="centre in derniersCentres"
+            :key="centre.slug"
             :name="centre.name"
-            :distance="centre.distance"
-            :formations="centre.formations"
-            :tags="centre.tags"
+            :distance="centreDistance(centre)"
+            :formations="centreFormations(centre)"
+            :tags="centreTags(centre)"
+            :to="`/centres/${centre.slug}`"
           />
 
           <div class="flex justify-center mt-lg">
             <NuxtLink
-              to="/"
+              to="/centres"
               class="whitespace-nowrap text-body font-bold text-primary hover:text-ink md:hidden"
             >
               Explorer la carte des centres →
@@ -308,13 +312,13 @@
 
         <div class="mt-lg flex flex-col gap-md md:flex-row md:flex-wrap">
           <NuxtLink
-            to="/"
+            to="/centres/demande-de-formation"
             class="w-full text-center rounded-full bg-accent px-lg py-md text-button text-ink hover:bg-accent-text transition md:w-auto"
           >
             Confier mes formations
           </NuxtLink>
           <NuxtLink
-            to="/"
+            to="/centres/demande-de-formation?sujet=conseiller"
             class="w-full text-center rounded-full border border-outline-inverse px-lg py-md text-button text-ink-inverse hover:bg-ink-inverse/10 transition md:w-auto"
           >
             Parler à un conseiller
@@ -408,7 +412,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import type { Centre } from '@learnup/types'
+import { mapCourse, useCatalog } from '~/composables/useCatalog'
 
 useContentSeo(
   {
@@ -462,19 +468,22 @@ const networkCards = [
     title: 'Devenir franchisé',
     subtitle: 'Rejoignez un réseau en pleine croissance',
     body: "Ouvrez votre centre Learn Up Academy avec l'appui de la marque, des outils et du réseau national.",
-    cta: 'Découvrir la franchise →'
+    cta: 'Découvrir la franchise →',
+    to: '/centres/demande-de-formation?sujet=franchise'
   },
   {
     title: 'Organisme partenaire',
     subtitle: 'Référencez vos centres, développez votre activité',
     body: 'Rendez vos sessions visibles et recevez des demandes qualifiées de tout le territoire.',
-    cta: 'Référencer mon organisme →'
+    cta: 'Référencer mon organisme →',
+    to: '/centres/demande-de-formation?sujet=organisme'
   },
   {
     title: 'Formateur indépendant',
     subtitle: 'Intervenez sur les sessions du réseau',
     body: 'Missions en centre, sur site ou en intra, au plus près de chez vous.',
-    cta: 'Devenir formateur partenaire →'
+    cta: 'Devenir formateur partenaire →',
+    to: '/centres/demande-de-formation?sujet=formateur'
   }
 ]
 
@@ -505,43 +514,33 @@ const steps = [
   }
 ]
 
-const formations = [
-  {
-    title: "CACES & conduite d'engins",
-    imageTop: 'Photo à fournir',
-    imageBottom: 'cariste en manœuvre'
-  },
-  {
-    title: 'Habilitations électriques',
-    imageTop: 'Photo à fournir',
-    imageBottom: 'intervention armoire électrique'
-  },
-  {
-    title: 'Santé, secours & incendie',
-    imageTop: 'Photo à fournir',
-    imageBottom: 'exercice SST / incendie'
-  },
-  {
-    title: 'Travaux en hauteur',
-    imageTop: 'Photo à fournir',
-    imageBottom: 'harnais & travaux en hauteur'
-  }
-]
+// 4 dernières formations du catalogue (API) — la fiche n'est cliquable
+// que si la formation a une famille (slug d'URL complet requis).
+const { data: catalogue } = await useCatalog({ limit: 4, sort: 'updatedAt', order: 'desc' })
+const dernieresFormations = computed(() =>
+  (catalogue.value?.items ?? []).slice(0, 4).map((c) => mapCourse(c))
+)
 
-const centres = [
-  {
-    name: 'Centre de Créteil',
-    distance: 'à 6 km',
-    formations: 'CACES · Habilitations électriques · SST',
-    tags: ['Sessions cette semaine', 'Intra sur site']
-  },
-  {
-    name: 'Centre de Villeneuve-le-Roi',
-    distance: 'à 14 km',
-    formations: 'Travaux en hauteur · Échafaudages · PEMP',
-    tags: ['▲ Prochaine session le 14/09']
-  }
-]
+// 2 derniers centres publiés (Directus) — colonne droite de la section réseau.
+const derniersCentresData = await useDirectusList<Centre>('centres', 'home-centres', {
+  fields: ['slug', 'name', 'city', 'department', 'region', 'specialties'],
+  filter: { status: { _eq: 'published' } },
+  sort: ['-id'],
+  limit: 2
+})
+const derniersCentres = computed(() => derniersCentresData.value ?? [])
+
+function centreDistance(centre: Centre): string {
+  return [centre.city, centre.department].filter(Boolean).join(' · ')
+}
+
+function centreFormations(centre: Centre): string {
+  return centre.specialties?.length ? centre.specialties.join(' · ') : 'Catalogue complet'
+}
+
+function centreTags(centre: Centre): string[] {
+  return centre.region ? [centre.region] : []
+}
 
 const confierCards = [
   {

@@ -255,11 +255,20 @@
             </div>
 
             <ul class="space-y-md text-small">
-              <li class="flex items-start gap-sm">
+              <li v-if="centreSlug" class="flex items-start gap-sm">
                 <IconMapPin :size="20" class="mt-xs shrink-0 text-primary" />
                 <div>
-                  <p class="font-medium text-ink">{{ centreName }}</p>
-                  <p class="text-ink-muted">{{ centreMeta }}</p>
+                  <p class="font-medium text-ink">{{ centreName || 'Centre partenaire' }}</p>
+                  <p v-if="centreMeta" class="text-ink-muted">{{ centreMeta }}</p>
+                </div>
+              </li>
+              <li v-else class="flex items-start gap-sm">
+                <IconMapPin :size="20" class="mt-xs shrink-0 text-primary" />
+                <div>
+                  <p class="font-medium text-ink">Votre projet de formation</p>
+                  <p class="text-ink-muted">
+                    Un conseiller identifie le centre et la session adaptés.
+                  </p>
                 </div>
               </li>
               <li v-if="formationSlug" class="flex items-start gap-sm">
@@ -303,11 +312,15 @@
 </template>
 
 <script setup lang="ts">
+import type { Centre, Course } from '@learnup/types'
+import { MODALITY_LABELS } from '~/utils/catalog-filters'
+
 definePageMeta({
   layout: 'with-breadcrumb'
 })
 
 const route = useRoute()
+const config = useRuntimeConfig()
 
 // Contexte transmis en query params par les CTA (?centre=, ?formation=, ?session=).
 // Maquette : libellés résolus depuis les slugs tant que le catalogue n'est pas branché.
@@ -321,45 +334,84 @@ const formationSlug = computed(() => queryValue(route.query.formation))
 const sessionSlug = computed(() => queryValue(route.query.session))
 const familleSlug = computed(() => queryValue(route.query.famille))
 
-const centreLabels: Record<string, { name: string; meta: string }> = {
-  creteil: { name: 'Centre de Créteil', meta: 'Créteil · Val-de-Marne (94)' }
-}
-const formationLabels: Record<string, { name: string; meta: string }> = {
-  'caces-r489-chariots-elevateurs': {
-    name: 'CACES R489 — chariots élévateurs',
-    meta: 'Catégorie 3 · formation initiale'
-  }
-}
-const sessionLabels: Record<string, { name: string; meta: string }> = {
-  'r489-cat3-creteil-2026-09-12': {
-    name: 'Session du 12 septembre 2026',
-    meta: '3 jours · en centre · 5 places disponibles'
-  }
-}
+// Libellés résolus dynamiquement : le centre vient de Directus,
+// la formation et la session de l'API catalogue.
+const centresData = centreSlug.value
+  ? await useDirectusList<Centre>('centres', `demande-centre-${centreSlug.value}`, {
+      fields: ['name', 'city', 'department', 'postal_code'],
+      filter: { slug: { _eq: centreSlug.value }, status: { _eq: 'published' } },
+      limit: 1
+    })
+  : ref<Centre[]>([])
+const centre = computed(() => centresData.value[0] ?? null)
 
-const centreName = computed(() =>
-  centreSlug.value
-    ? (centreLabels[centreSlug.value]?.name ?? 'Centre partenaire')
-    : 'Centre de Créteil'
+const formationData =
+  familleSlug.value && formationSlug.value
+    ? await useAsyncData(
+        `demande-formation-${familleSlug.value}-${formationSlug.value}`,
+        async () => {
+          try {
+            return await $fetch<Course>(
+              `${config.public.apiBase}/courses/${familleSlug.value}/${formationSlug.value}`
+            )
+          } catch (err) {
+            if (import.meta.server) {
+              logServerError('[demande] formation fetch failed:', err)
+            }
+            return null
+          }
+        }
+      )
+    : { data: ref<Course | null>(null) }
+const formation = formationData.data
+
+const session = computed(
+  () => formation.value?.sessions?.find((s) => s.id === sessionSlug.value) ?? null
 )
+
+const centreName = computed(() => (centreSlug.value ? (centre.value?.name ?? '') : ''))
 const centreMeta = computed(() =>
-  centreSlug.value ? (centreLabels[centreSlug.value]?.meta ?? '') : 'Créteil · Val-de-Marne (94)'
+  centre.value
+    ? [centre.value.city, centre.value.department, centre.value.postal_code]
+        .filter(Boolean)
+        .join(' · ')
+    : ''
 )
 // RG04 : pas de valeur de repli — le bloc n'est rendu que si le slug est transmis.
 const formationName = computed(() =>
-  formationSlug.value
-    ? (formationLabels[formationSlug.value]?.name ?? 'Formation du catalogue')
-    : ''
+  formationSlug.value ? (formation.value?.title ?? 'Formation du catalogue') : ''
 )
-const formationMeta = computed(() =>
-  formationSlug.value ? (formationLabels[formationSlug.value]?.meta ?? '') : ''
-)
-const sessionName = computed(() =>
-  sessionSlug.value ? (sessionLabels[sessionSlug.value]?.name ?? 'Session programmée') : ''
-)
-const sessionMeta = computed(() =>
-  sessionSlug.value ? (sessionLabels[sessionSlug.value]?.meta ?? '') : ''
-)
+const formationMeta = computed(() => {
+  const c = formation.value
+  if (!formationSlug.value || !c) return ''
+  return [c.durationDays ? `${c.durationDays} jours` : null, c.certification, c.certifierName]
+    .filter(Boolean)
+    .join(' · ')
+})
+const sessionName = computed(() => {
+  if (!sessionSlug.value) return ''
+  const start = session.value?.startDate
+  if (!start) return 'Session programmée'
+  const date = new Intl.DateTimeFormat('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC'
+  }).format(new Date(`${start}T00:00:00Z`))
+  return `Session du ${date}`
+})
+const sessionMeta = computed(() => {
+  const s = session.value
+  if (!sessionSlug.value || !s) return ''
+  return [
+    formation.value?.durationDays ? `${formation.value.durationDays} jours` : null,
+    s.modality ? (MODALITY_LABELS[s.modality] ?? s.modality) : null,
+    s.location?.city ?? null,
+    s.seatsRemaining != null ? `${s.seatsRemaining} places disponibles` : null
+  ]
+    .filter(Boolean)
+    .join(' · ')
+})
 
 // RG06 : niveau de contexte le plus profond transmis.
 const contextLevel = computed<'centre' | 'formation' | 'session'>(() => {

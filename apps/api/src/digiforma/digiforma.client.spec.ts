@@ -7,43 +7,32 @@ const apiKey = 'test-key'
 
 const sampleProgram: Program = {
   id: 'prog-001',
-  title: 'Pilotage de projet',
+  code: 'R489',
+  name: 'Pilotage de projet',
   description: 'Apprendre à piloter.',
   durationInDays: 3,
   durationInHours: 21,
-  price: 1800,
   cpf: true,
   cpfCode: 'CPF-12345',
   certificationType: 'Certificat',
   certifierName: 'LEARN UP',
-  category: 'Management',
-  programCategory: 'Management',
-  status: 'published'
+  category: { id: 'cat-1', name: 'Management' },
+  costsInter: [{ cost: 1800, vat: 20, type: 'inter' }]
 }
 
-function mockResponse(
-  programs: Program[] = [sampleProgram],
-  hasNextPage = false,
-  endCursor?: string | null
-) {
-  const resolvedEndCursor =
-    endCursor === undefined ? (hasNextPage ? 'cursor-1' : undefined) : endCursor
-
+function mockResponse(programs: Program[]) {
   return {
     ok: true,
     status: 200,
-    json: vi.fn().mockResolvedValue({
-      data: {
-        programs: {
-          nodes: programs,
-          pageInfo: {
-            hasNextPage,
-            endCursor: resolvedEndCursor
-          }
-        }
-      }
-    })
+    json: vi.fn().mockResolvedValue({ data: { programs } })
   } as unknown as Response
+}
+
+function fullPage(): Program[] {
+  return Array.from({ length: 100 }, (_, index) => ({
+    ...sampleProgram,
+    id: `prog-${index + 1}`
+  }))
 }
 
 describe('DigiformaClient', () => {
@@ -70,8 +59,8 @@ describe('DigiformaClient', () => {
     vi.unstubAllGlobals()
   })
 
-  it('fetches all programs in one page', async () => {
-    vi.mocked(fetch).mockResolvedValue(mockResponse())
+  it('fetches all programs in one page when the page is not full', async () => {
+    vi.mocked(fetch).mockResolvedValue(mockResponse([sampleProgram]))
 
     const programs = await client.fetchAllPrograms()
 
@@ -84,21 +73,36 @@ describe('DigiformaClient', () => {
         headers: expect.objectContaining({ Authorization: `Bearer ${apiKey}` })
       })
     )
+    expect(fetch).toHaveBeenCalledTimes(1)
   })
 
-  it('paginates through multiple pages', async () => {
+  it('sends page and size pagination variables', async () => {
+    vi.mocked(fetch).mockResolvedValue(mockResponse([]))
+
+    await client.fetchAllPrograms()
+
+    const body = JSON.parse(vi.mocked(fetch).mock.calls[0][1]?.body as string)
+    expect(body.variables).toEqual({ page: 1, size: 100 })
+  })
+
+  it('paginates until a short page is returned', async () => {
     vi.mocked(fetch)
-      .mockResolvedValueOnce(mockResponse([sampleProgram], true))
-      .mockResolvedValueOnce(mockResponse([{ ...sampleProgram, id: 'prog-002' }], false))
+      .mockResolvedValueOnce(mockResponse(fullPage()))
+      .mockResolvedValueOnce(mockResponse([{ ...sampleProgram, id: 'prog-101' }]))
 
     const programs = await client.fetchAllPrograms()
 
-    expect(programs).toHaveLength(2)
-    expect(programs[1].id).toBe('prog-002')
+    expect(programs).toHaveLength(101)
+    expect(fetch).toHaveBeenCalledTimes(2)
+
+    const secondBody = JSON.parse(vi.mocked(fetch).mock.calls[1][1]?.body as string)
+    expect(secondBody.variables).toEqual({ page: 2, size: 100 })
   })
 
   it('retries on transient failure and then succeeds', async () => {
-    vi.mocked(fetch).mockRejectedValueOnce(new Error('network')).mockResolvedValue(mockResponse())
+    vi.mocked(fetch)
+      .mockRejectedValueOnce(new Error('network'))
+      .mockResolvedValue(mockResponse([sampleProgram]))
 
     const programs = await client.fetchAllPrograms()
 
@@ -113,32 +117,12 @@ describe('DigiformaClient', () => {
     expect(fetch).toHaveBeenCalledTimes(3)
   })
 
-  it('stops pagination when the cursor is missing', async () => {
-    vi.mocked(fetch).mockResolvedValue(mockResponse([sampleProgram], true, null))
-
-    const programs = await client.fetchAllPrograms()
-
-    expect(programs).toHaveLength(1)
-    expect(fetch).toHaveBeenCalledTimes(1)
-  })
-
-  it('stops pagination when the cursor does not advance', async () => {
-    vi.mocked(fetch)
-      .mockResolvedValueOnce(mockResponse([sampleProgram], true, 'cursor-1'))
-      .mockResolvedValueOnce(mockResponse([{ ...sampleProgram, id: 'prog-002' }], true, 'cursor-1'))
-
-    const programs = await client.fetchAllPrograms()
-
-    expect(programs).toHaveLength(2)
-    expect(fetch).toHaveBeenCalledTimes(2)
-  })
-
   it('warns on GraphQL errors but returns data when a program payload is present', async () => {
     vi.mocked(fetch).mockResolvedValue({
       ok: true,
       status: 200,
       json: vi.fn().mockResolvedValue({
-        data: { programs: { nodes: [sampleProgram], pageInfo: { hasNextPage: false } } },
+        data: { programs: [sampleProgram] },
         errors: [{ message: 'partial' }]
       })
     } as unknown as Response)

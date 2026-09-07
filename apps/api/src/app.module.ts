@@ -10,6 +10,7 @@ import { DigiformaModule } from './digiforma/digiforma.module'
 import { SyncModule } from './sync/sync.module'
 import { CatalogModule } from './catalog/catalog.module'
 import { CacheModule } from './common/cache/cache.module'
+import { DirectusModule } from './directus/directus.module'
 
 function isAdminRoute(context: ExecutionContext): boolean {
   const request = context.switchToHttp().getRequest<{ originalUrl?: string }>()
@@ -57,7 +58,8 @@ function isAdminRoute(context: ExecutionContext): boolean {
     CacheModule,
     DigiformaModule,
     SyncModule,
-    CatalogModule
+    CatalogModule,
+    DirectusModule
   ],
   controllers: [HealthController],
   providers: [

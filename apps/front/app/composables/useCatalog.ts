@@ -1,5 +1,21 @@
 import type { CourseListItem, Paginated } from '@learnup/types'
-import { FAMILY_LABELS, normalizeFamilySlug } from '@/utils/catalog-filters'
+import { toValue, type MaybeRefOrGetter } from 'vue'
+
+export interface CatalogQuery {
+  search?: string
+  family?: string
+  page?: number
+  limit?: number
+  sort?: 'updatedAt' | 'duration' | 'price' | 'name' | 'relevance'
+  order?: 'asc' | 'desc'
+  cpf?: boolean
+  certifying?: boolean
+  durationMin?: number
+  durationMax?: number
+  modalities?: string[]
+  location?: string
+  center?: string
+}
 
 export interface FormationItem {
   slug: string
@@ -9,19 +25,22 @@ export interface FormationItem {
   description: string
   meta: string
   days: number
-  modalities: string[]
   duration: 'courte' | 'moyenne' | 'longue'
   certifications: string[]
-  region: string
   status?: { type: 'success' | 'warning' | 'neutral'; label: string }
-  to: string
+  image: string | null
+  to: string | null
 }
 
-interface CatalogResult {
-  formations: FormationItem[]
-}
+export function buildDuration(course: CourseListItem): 'courte' | 'moyenne' | 'longue' {
+  const hours = course.durationHours ?? 0
+  if (hours > 0) {
+    if (hours <= 8) return 'courte'
+    if (hours <= 40) return 'moyenne'
+    return 'longue'
+  }
 
-export function buildDuration(days: number): 'courte' | 'moyenne' | 'longue' {
+  const days = course.durationDays ?? 1
   if (days <= 1) return 'courte'
   if (days <= 5) return 'moyenne'
   return 'longue'
@@ -52,178 +71,121 @@ export function buildCertifications(course: CourseListItem): string[] {
   return certs
 }
 
-export function mapCourse(course: CourseListItem): FormationItem {
-  const familySlug = course.familySlug ?? 'autre'
-  const familyKey = normalizeFamilySlug(familySlug)
-  const days = course.durationDays ?? 1
+// Tag de disponibilité affiché sur les cartes : priorité aux places
+// restantes faibles (warning), sinon la prochaine session datée.
+// Badge sessions du hero : « Sessions ce mois-ci » si une session démarre
+// dans le mois courant, sinon « Sessions programmées » dès qu'une session
+// future existe. null si aucune session à venir.
+export function buildSessionBadge(course: CourseListItem): string | null {
+  const now = new Date()
+  const upcoming = (course.sessions ?? []).filter((s) => {
+    if (!s.startDate) return false
+    return new Date(`${s.startDate}T00:00:00Z`) >= now
+  })
+  if (!upcoming.length) return null
+
+  const thisMonth = upcoming.some((s) => {
+    const d = new Date(`${s.startDate}T00:00:00Z`)
+    return d.getUTCFullYear() === now.getUTCFullYear() && d.getUTCMonth() === now.getUTCMonth()
+  })
+  return thisMonth ? 'Sessions ce mois-ci' : 'Sessions programmées'
+}
+
+export function buildStatus(
+  course: CourseListItem
+): { type: 'success' | 'warning' | 'neutral'; label: string } | undefined {
+  const upcoming = [...(course.sessions ?? [])]
+    .filter((s) => s.startDate)
+    .sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? ''))[0]
+  if (!upcoming?.startDate) return undefined
+
+  const date = new Date(`${upcoming.startDate}T00:00:00Z`)
+  const short = new Intl.DateTimeFormat('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: 'UTC'
+  }).format(date)
+
+  const seats = upcoming.seatsRemaining
+  if (seats != null && seats <= 3) {
+    return { type: 'warning', label: `${seats} place${seats > 1 ? 's' : ''} le ${short}` }
+  }
+
+  const now = new Date()
+  const thisMonth =
+    date.getUTCFullYear() === now.getUTCFullYear() && date.getUTCMonth() === now.getUTCMonth()
+  return thisMonth
+    ? { type: 'success', label: 'Sessions ce mois-ci' }
+    : { type: 'success', label: `Prochaine session le ${short}` }
+}
+
+export function mapCourse(course: CourseListItem, familyName?: string): FormationItem {
+  const familySlug = course.familySlug
+  const familyKey = familySlug ?? 'autre'
 
   return {
     slug: course.slug,
-    family: FAMILY_LABELS[familyKey] ?? familySlug,
+    family: familyName ?? familySlug ?? 'Autre',
     familyKey,
     title: course.title,
     description: course.description ?? '',
     meta: buildMeta(course),
-    days,
-    modalities: ['presentiel', 'inter', 'intra'],
-    duration: buildDuration(days),
+    days: course.durationDays ?? 0,
+    duration: buildDuration(course),
     certifications: buildCertifications(course),
-    region: 'National',
-    to:
-      familySlug === 'autre'
-        ? `/formations/${course.slug}`
-        : `/formations/${familySlug}/${course.slug}`
+    image: course.imageUrl ?? null,
+    status: buildStatus(course),
+    to: familySlug ? `/formations/${familySlug}/${course.slug}` : null
   }
 }
 
-export const staticCatalog: FormationItem[] = [
-  {
-    slug: 'caces-r489-chariots-elevateurs',
-    family: "CACES · Conduite d'engins",
-    familyKey: 'caces',
-    title: 'CACES R489 — chariots élévateurs',
-    description:
-      'Formation à la conduite en sécurité des chariots de manutention à conducteur non accompagné.',
-    meta: '2 à 5 jours · Inter / intra · Recyclage : 5 ans',
-    days: 3,
-    modalities: ['presentiel', 'inter', 'intra'],
-    duration: 'moyenne',
-    certifications: ['certification', 'reglementaire'],
-    region: 'Île-de-France',
-    status: { type: 'success', label: 'Sessions ce mois-ci' },
-    to: '/formations/caces-conduite-engins/caces-r489-chariots-elevateurs'
-  },
-  {
-    slug: 'sst',
-    family: 'Sécurité & prévention',
-    familyKey: 'securite',
-    title: 'SST — Sauveteur Secouriste du Travail',
-    description: 'Apprendre les gestes de premiers secours et de mise en sécurité en entreprise.',
-    meta: '2 jours · Présentiel · Recyclage : 2 ans',
-    days: 2,
-    modalities: ['presentiel', 'inter'],
-    duration: 'moyenne',
-    certifications: ['certification', 'reglementaire'],
-    region: 'Île-de-France',
-    to: '/formations/securite-prevention/sst'
-  },
-  {
-    slug: 'habilitation-electrique-h0-b0',
-    family: 'Habilitations électriques',
-    familyKey: 'habilitations',
-    title: 'Habilitation électrique H0-B0',
-    description: 'Sensibilisation aux risques électriques pour le personnel non électricien.',
-    meta: '1 jour · Présentiel · Recyclage : 3 ans',
-    days: 1,
-    modalities: ['presentiel', 'intra', 'inter'],
-    duration: 'courte',
-    certifications: ['habilitation', 'reglementaire'],
-    region: 'National',
-    to: '/formations/habilitations-electriques/habilitation-electrique-h0-b0'
-  },
-  {
-    slug: 'incendie-equipier-premiere-intervention',
-    family: 'Sécurité & prévention',
-    familyKey: 'securite',
-    title: 'Incendie — Équipier de première intervention',
-    description: 'Maîtriser les techniques de lutte contre l’incendie et l’évacuation.',
-    meta: '1 jour · Présentiel · Recyclage : 1 an',
-    days: 1,
-    modalities: ['presentiel', 'intra'],
-    duration: 'courte',
-    certifications: ['reglementaire'],
-    region: 'Auvergne-Rhône-Alpes',
-    to: '/formations/securite-prevention/incendie-equipier-premiere-intervention'
-  },
-  {
-    slug: 'travaux-hauteur-pla-forme-elev-mobile',
-    family: 'Sécurité & prévention',
-    familyKey: 'securite',
-    title: 'Travaux en hauteur sur PEMP',
-    description: 'Conduite et utilisation des plates-formes élévateurs mobiles de personnes.',
-    meta: '1 à 3 jours · Présentiel · CACES R486',
-    days: 3,
-    modalities: ['presentiel', 'inter'],
-    duration: 'moyenne',
-    certifications: ['certification', 'reglementaire'],
-    region: 'Île-de-France',
-    status: { type: 'warning', label: 'Session le 18/09' },
-    to: '/formations/securite-prevention/travaux-hauteur-pla-forme-elev-mobile'
-  },
-  {
-    slug: 'gestes-postures',
-    family: 'Santé & secours',
-    familyKey: 'sante',
-    title: 'Gestes & postures en entreprise',
-    description: 'Prévention des troubles musculo-squelettiques par l’adoption de bons gestes.',
-    meta: '1 jour · Présentiel',
-    days: 1,
-    modalities: ['presentiel'],
-    duration: 'courte',
-    certifications: ['reglementaire'],
-    region: 'Occitanie',
-    to: '/formations/sante-secours/gestes-postures'
-  },
-  {
-    slug: 'management-qse',
-    family: 'Management',
-    familyKey: 'management',
-    title: 'Management QSE',
-    description:
-      'Accompagner les managers dans la maîtrise des risques qualité, sécurité et environnement.',
-    meta: '3 jours · Distanciel / hybride',
-    days: 3,
-    modalities: ['distanciel', 'hybride'],
-    duration: 'moyenne',
-    certifications: ['certification'],
-    region: 'National',
-    to: '/formations/management/management-qse'
-  },
-  {
-    slug: 'hauteur-echelles',
-    family: 'Sécurité & prévention',
-    familyKey: 'securite',
-    title: 'Travaux en hauteur sur échelles et escabeaux',
-    description: 'Prévenir les chutes de hauteur lors des interventions sur échelles.',
-    meta: '0,5 jour · Présentiel · Recyclage : 1 an',
-    days: 1,
-    modalities: ['presentiel', 'intra'],
-    duration: 'courte',
-    certifications: ['reglementaire'],
-    region: 'Hauts-de-France',
-    to: '/formations/securite-prevention/hauteur-echelles'
-  }
-]
+export type CatalogApiResult = Paginated<CourseListItem>
 
-export async function useCatalog() {
+export async function useCatalog(query: MaybeRefOrGetter<CatalogQuery>) {
   const config = useRuntimeConfig()
 
-  const { data, pending, error } = await useAsyncData<CatalogResult>(
-    'catalog',
+  // Clé dérivée de la requête : deux pages (catalogue, famille, fiche) ne
+  // doivent pas partager le cache useAsyncData, sinon navigation client =
+  // données périmées de la page précédente.
+  const { data, pending, error, refresh } = await useAsyncData<CatalogApiResult>(
+    `catalog:${JSON.stringify(buildApiQuery(toValue(query)))}`,
     async () => {
       try {
-        const response = await $fetch<Paginated<CourseListItem>>(
-          `${config.public.apiBase}/courses?limit=100`
-        )
-
-        if (!response.items?.length) {
-          throw new Error('catalog api returned empty list')
-        }
-
-        return {
-          formations: response.items.map(mapCourse)
-        }
+        return await $fetch<CatalogApiResult>(`${config.public.apiBase}/courses`, {
+          query: buildApiQuery(toValue(query))
+        })
       } catch (err) {
-        if (process.server) {
+        if (import.meta.server) {
           logServerError('[useCatalog] catalog fetch failed:', err)
         }
         throw err
       }
     },
     {
-      default: () => ({ formations: staticCatalog })
+      watch: [() => toValue(query)]
     }
   )
 
-  return { data, pending, error }
+  return { data, pending, error, refresh }
+}
+
+function buildApiQuery(query: CatalogQuery): Record<string, unknown> {
+  const params: Record<string, unknown> = {
+    limit: query.limit ?? 9,
+    page: query.page ?? 1
+  }
+
+  if (query.search?.trim()) params.search = query.search.trim()
+  if (query.family) params.family = query.family
+  if (query.cpf === true) params.cpf = true
+  if (query.certifying === true) params.certifying = true
+  if (query.durationMin !== undefined) params.durationMin = query.durationMin
+  if (query.durationMax !== undefined) params.durationMax = query.durationMax
+  if (query.modalities?.length) params.modalities = query.modalities.join(',')
+  if (query.location?.trim()) params.location = query.location.trim()
+  if (query.center) params.center = query.center
+  if (query.sort) params.sort = query.sort
+  if (query.order) params.order = query.order
+
+  return params
 }

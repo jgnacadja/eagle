@@ -9,9 +9,9 @@
         >
           Trouvez la formation adaptée à vos besoins professionnels
         </h1>
-        <p class="mt-md max-w-prose text-body text-ink-body">
-          {{ formations.length }} formations réglementaires et professionnelles, en centre partout
-          en France ou dans votre entreprise.
+        <p v-if="catalog.data.value" class="mt-md max-w-prose text-body text-ink-body">
+          {{ catalog.data.value.total }} formations réglementaires et professionnelles, en centre
+          partout en France ou dans votre entreprise.
         </p>
 
         <form
@@ -54,7 +54,7 @@
               {{ activeFilters.length }}
             </span>
           </Button>
-          <Select id="sort-mobile" v-model="sortBy" aria-label="Trier par">
+          <Select v-model="sortBy" aria-label="Trier par">
             <SelectTrigger
               aria-label="Trier par"
               class="h-control w-auto gap-sm rounded-full border-outline bg-paper px-md text-small font-semibold text-ink-body shadow-none"
@@ -78,7 +78,7 @@
         <ul class="mt-2xl hidden grid-cols-1 gap-md sm:grid sm:grid-cols-2 lg:grid-cols-4">
           <li
             v-for="shortcut in familyShortcuts"
-            :key="shortcut.label"
+            :key="shortcut.slug"
             class="rounded-md border border-rule bg-paper p-lg"
           >
             <p class="font-semibold text-ink">{{ shortcut.label }}</p>
@@ -108,9 +108,10 @@
           <CatalogueFilters
             v-model:families="selectedFamilies"
             v-model:modalities="selectedModalities"
-            v-model:location="locationQuery"
+            v-model:location="location"
             v-model:durations="selectedDurations"
-            v-model:certifications="selectedCertifications"
+            v-model:cpf="cpf"
+            v-model:certifying="certifying"
             :family-options="familyOptions"
             location-input-id="loc-desktop"
           />
@@ -151,8 +152,8 @@
 
           <div class="mt-lg flex flex-wrap items-center justify-between gap-md">
             <h2 class="font-sans text-h4 font-bold text-ink">
-              {{ filteredFormations.length }}
-              {{ filteredFormations.length > 1 ? 'formations' : 'formation' }}
+              {{ resultCount }}
+              {{ resultCount > 1 ? 'formations' : 'formation' }}
               <template v-if="hasActiveCriteria">correspondent</template>
             </h2>
             <div class="hidden items-center gap-sm lg:flex">
@@ -180,13 +181,13 @@
           </div>
 
           <!-- Chargement : squelette de la liste -->
-          <div v-if="showSkeleton" aria-label="Chargement des formations">
+          <div v-if="catalog.pending.value" aria-label="Chargement des formations">
             <output class="sr-only">Chargement des formations</output>
             <div class="mt-lg flex flex-col gap-lg">
               <div class="h-sm w-2xl animate-pulse rounded-full bg-surface" aria-hidden="true" />
               <div class="grid grid-cols-1 gap-md sm:grid-cols-2">
                 <div
-                  v-for="i in 4"
+                  v-for="i in perPage"
                   :key="i"
                   class="flex flex-col gap-sm rounded-md border border-rule p-lg"
                   aria-hidden="true"
@@ -202,7 +203,7 @@
 
           <!-- État vide -->
           <div
-            v-else-if="filteredFormations.length === 0"
+            v-else-if="!catalog.error.value && formations.length === 0"
             class="mt-lg flex flex-col items-center rounded-md border border-dashed border-rule bg-surface-soft px-lg py-4xl text-center"
           >
             <IconSearchMinus :size="30" class="text-ink-muted" />
@@ -238,16 +239,28 @@
             </div>
           </div>
 
+          <!-- État erreur -->
+          <LoadError
+            v-else-if="catalog.error.value"
+            class="mt-lg"
+            title="Le catalogue n'a pas pu être chargé."
+            link-to="/formations"
+            link-label="Réessayer"
+            @retry="catalog.refresh()"
+          >
+            Vérifiez votre connexion, puis réessayez. Si le problème persiste, le catalogue reste
+            accessible.
+          </LoadError>
+
           <!-- Grille résultats -->
           <ul v-else class="mt-lg grid grid-cols-1 gap-md sm:grid-cols-2 xl:grid-cols-3">
-            <li v-for="formation in paginatedFormations" :key="formation.slug">
+            <li v-for="formation in formations" :key="formation.slug">
               <CenterFormationCard
                 :family="formation.family"
                 :title="formation.title"
                 :description="formation.description"
                 :meta="formation.meta"
-                :status="formation.status"
-                :to="formation.to"
+                :to="formation.to ?? undefined"
                 class="h-full"
               />
             </li>
@@ -255,9 +268,9 @@
 
           <!-- Pagination desktop -->
           <Pagination
-            v-if="filteredFormations.length"
+            v-if="!catalog.pending.value && formations.length && catalog.data.value"
             v-model:page="currentPage"
-            :total="sortedFormations.length"
+            :total="catalog.data.value.total"
             :items-per-page="perPage"
             :sibling-count="1"
             class="mt-2xl hidden items-center justify-center lg:flex"
@@ -291,7 +304,7 @@
             v-if="hasMoreMobile"
             type="button"
             class="mx-auto mt-lg block rounded-full border border-outline px-lg py-sm text-small font-semibold text-ink-body hover:bg-surface lg:hidden"
-            @click="showMore"
+            @click="currentPage += 1"
           >
             Afficher plus de résultats
           </button>
@@ -353,9 +366,10 @@
         <CatalogueFilters
           v-model:families="selectedFamilies"
           v-model:modalities="selectedModalities"
-          v-model:location="locationQuery"
+          v-model:location="location"
           v-model:durations="selectedDurations"
-          v-model:certifications="selectedCertifications"
+          v-model:cpf="cpf"
+          v-model:certifying="certifying"
           :family-options="familyOptions"
           location-input-id="loc-mobile"
         />
@@ -376,7 +390,7 @@
             class="h-control flex-1 rounded-full bg-primary px-lg text-small font-semibold text-paper hover:bg-primary-dark"
             @click="closeFilterPanel"
           >
-            Afficher {{ filteredFormations.length }} formation(s)
+            Afficher {{ resultCount }} formation(s)
           </button>
         </div>
       </div>
@@ -386,8 +400,33 @@
 
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, watch } from 'vue'
-import { useCatalog, type FormationItem } from '~/composables/useCatalog'
-import { FAMILY_LABELS, getFilterLabel } from '~/utils/catalog-filters'
+import type { FamilyWithCount, FamilleFormation } from '@learnup/types'
+import {
+  mapCourse,
+  useCatalog,
+  type CatalogQuery,
+  type FormationItem
+} from '~/composables/useCatalog'
+import { durationBucketToHours, DURATION_LABELS, MODALITY_LABELS } from '~/utils/catalog-filters'
+import { useDirectusClient } from '~/composables/useDirectus'
+import { readItems } from '@directus/sdk'
+
+interface SortOption {
+  value: 'pertinence' | 'editorial' | 'duree'
+  label: string
+}
+
+interface ActiveFilter {
+  group: 'families' | 'modalities' | 'location' | 'durations' | 'cpf' | 'certifying'
+  key: string
+  label: string
+}
+
+interface FilterOption {
+  key: string
+  label: string
+  count?: number
+}
 
 definePageMeta({
   layout: 'with-breadcrumb',
@@ -403,200 +442,261 @@ useContentSeo(
   'Catalogue de formations — LEARN UP ACADEMY'
 )
 
-// useRoute avant le premier await : le contexte Nuxt n'est pas garanti après.
 const route = useRoute()
+const router = useRouter()
 
-const catalog = await useCatalog()
-const formations = computed(() => catalog.data.value?.formations ?? [])
-
-// ?loading=1 force l'affichage du squelette pour prévisualiser l'état de
-// chargement (pending est déjà résolu après le SSR).
-const showSkeleton = computed(() => catalog.pending.value || route.query.loading === '1')
-
-const familyShortcuts = [
-  {
-    label: 'Sécurité & prévention',
-    caption: '38 formations',
-    linkLabel: 'Voir la famille',
-    to: '/formations/securite-prevention'
-  },
-  {
-    label: "CACES & conduite d'engins",
-    caption: '24 formations',
-    linkLabel: 'Voir la famille',
-    to: '/formations/caces-conduite-engins'
-  },
-  {
-    label: 'Habilitations électriques',
-    caption: '17 formations',
-    linkLabel: 'Voir la famille',
-    to: '/formations/habilitations-electriques'
-  },
-  {
-    label: 'Toutes les familles',
-    caption: 'Management, bureautique, qualité…',
-    linkLabel: 'Parcourir',
-    to: '#'
-  }
-]
-
-// ?q= alimente la recherche (liens depuis les états introuvable/erreur).
 const searchQuery = ref(typeof route.query.q === 'string' ? route.query.q : '')
-const selectedFamilies = ref<string[]>([])
-const selectedModalities = ref<string[]>([])
-const locationQuery = ref('')
-const selectedDurations = ref<string[]>([])
-const selectedCertifications = ref<string[]>([])
-const sortBy = ref(searchQuery.value ? 'pertinence' : 'editorial')
-const sortOptions = [
-  { value: 'pertinence', label: 'Pertinence' },
-  { value: 'editorial', label: 'Ordre éditorial' },
-  { value: 'duree', label: 'Durée' }
-]
-const sortLabel = computed(
-  () => sortOptions.find((option) => option.value === sortBy.value)?.label ?? ''
+const selectedFamilies = ref<string[]>(
+  typeof route.query.famille === 'string' ? [route.query.famille] : []
 )
+const selectedModalities = ref<string[]>([])
+const location = ref('')
+const selectedDurations = ref<string[]>([])
+const cpf = ref(false)
+const certifying = ref(false)
+const sortBy = ref<SortOption['value']>('editorial')
 const isFilterPanelOpen = ref(false)
 const filterPanel = ref<HTMLDialogElement | null>(null)
 const closeFilterButton = ref<HTMLButtonElement | null>(null)
 
-const perPage = ref(9)
+const perPage = 9
 const currentPage = ref(1)
 
-const familyOptions = computed(() => {
-  const knownFamilies = Object.keys(FAMILY_LABELS)
-  const presentFamilies = [...new Set(formations.value.map((f) => f.familyKey))]
-  const keys = [...new Set([...knownFamilies, ...presentFamilies])]
+const sortOptions: SortOption[] = [
+  { value: 'pertinence', label: 'Pertinence' },
+  { value: 'editorial', label: 'Ordre éditorial' },
+  { value: 'duree', label: 'Durée' }
+]
+const sortLabel = computed(() => sortOptions.find((o) => o.value === sortBy.value)?.label ?? '')
 
-  return keys.map((key) => ({
-    key,
-    label: FAMILY_LABELS[key] ?? key,
-    count: formations.value.filter((f) => f.familyKey === key).length
-  }))
-})
-
-const filteredFormations = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase()
-  const location = locationQuery.value.trim().toLowerCase()
-  return formations.value.filter((f) => {
-    if (query && !`${f.title} ${f.family} ${f.description}`.toLowerCase().includes(query)) {
-      return false
-    }
-    if (selectedFamilies.value.length && !selectedFamilies.value.includes(f.familyKey)) {
-      return false
-    }
-    if (
-      selectedModalities.value.length &&
-      !selectedModalities.value.some((m) => f.modalities.includes(m))
-    ) {
-      return false
-    }
-    if (location && !f.region.toLowerCase().includes(location)) {
-      return false
-    }
-    if (selectedDurations.value.length && !selectedDurations.value.includes(f.duration)) {
-      return false
-    }
-    if (
-      selectedCertifications.value.length &&
-      !selectedCertifications.value.some((c) => f.certifications.includes(c))
-    ) {
-      return false
-    }
-    return true
-  })
-})
-
-const sortedFormations = computed(() => {
-  const list = [...filteredFormations.value]
-  const query = searchQuery.value.trim().toLowerCase()
-
-  if (sortBy.value === 'duree') {
-    list.sort((a, b) => a.days - b.days)
-  } else if (sortBy.value === 'pertinence' && query) {
-    const score = (f: FormationItem) => {
-      let s = 0
-      if (f.title.toLowerCase().includes(query)) s += 3
-      if (f.family.toLowerCase().includes(query)) s += 2
-      if (f.description.toLowerCase().includes(query)) s += 1
-      return s
-    }
-    list.sort((a, b) => score(b) - score(a))
-  }
-
-  return list
-})
-
-const paginatedFormations = computed(() => {
-  const start = (currentPage.value - 1) * perPage.value
-  return sortedFormations.value.slice(start, start + perPage.value)
-})
-
-const hasMoreMobile = computed(
-  () => paginatedFormations.value.length < sortedFormations.value.length
-)
-
-interface ActiveFilter {
-  group: 'families' | 'modalities' | 'location' | 'durations' | 'certifications'
-  key: string
-  label: string
+// Sync from URL
+function parseListParam(value: unknown): string[] {
+  if (typeof value === 'string') return value.split(',').filter(Boolean)
+  if (Array.isArray(value)) return value.map(String).filter(Boolean)
+  return []
 }
 
-const activeFilters = computed<ActiveFilter[]>(() => [
-  ...selectedFamilies.value.map((key) => ({
-    group: 'families' as const,
-    key,
-    label: getFilterLabel('families', key)
-  })),
-  ...selectedModalities.value.map((key) => ({
-    group: 'modalities' as const,
-    key,
-    label: getFilterLabel('modalities', key)
-  })),
-  ...(locationQuery.value.trim()
-    ? [{ group: 'location' as const, key: 'location', label: locationQuery.value.trim() }]
-    : []),
-  ...selectedDurations.value.map((key) => ({
-    group: 'durations' as const,
-    key,
-    label: getFilterLabel('durations', key)
-  })),
-  ...selectedCertifications.value.map((key) => ({
-    group: 'certifications' as const,
-    key,
-    label: getFilterLabel('certifications', key)
+function parseStringParam(value: unknown): string {
+  return typeof value === 'string' ? value : ''
+}
+
+const VALID_SORTS: Set<SortOption['value']> = new Set(['pertinence', 'editorial', 'duree'])
+
+function parseSortParam(value: unknown, hasSearch: boolean): SortOption['value'] {
+  if (typeof value === 'string' && VALID_SORTS.has(value as SortOption['value'])) {
+    return value as SortOption['value']
+  }
+  return hasSearch ? 'pertinence' : 'editorial'
+}
+
+function parsePageParam(value: unknown): number {
+  const page = Number(value)
+  return Number.isInteger(page) && page > 0 ? page : 1
+}
+
+function parseUrl() {
+  searchQuery.value = parseStringParam(route.query.q)
+  const famille = route.query.famille
+  selectedFamilies.value = typeof famille === 'string' ? [famille] : []
+  selectedModalities.value = parseListParam(route.query.modalites)
+  location.value = parseStringParam(route.query.lieu)
+  selectedDurations.value = parseListParam(route.query.duree)
+  cpf.value = route.query.cpf === 'true'
+  certifying.value = route.query.certifiant === 'true'
+  sortBy.value = parseSortParam(route.query.tri, searchQuery.value)
+  currentPage.value = parsePageParam(route.query.page)
+}
+
+parseUrl()
+
+const catalogQuery = computed<CatalogQuery>(() => {
+  const sortMap: Record<
+    SortOption['value'],
+    { sort?: CatalogQuery['sort']; order?: CatalogQuery['order'] }
+  > = {
+    pertinence: searchQuery.value ? { sort: 'relevance' } : { sort: 'updatedAt', order: 'desc' },
+    editorial: { sort: 'updatedAt', order: 'desc' },
+    duree: { sort: 'duration', order: 'asc' }
+  }
+
+  const buckets =
+    selectedDurations.value.length > 0 ? durationBucketToHours(selectedDurations.value) : undefined
+
+  return {
+    search: searchQuery.value || undefined,
+    family: selectedFamilies.value[0],
+    page: currentPage.value,
+    limit: perPage,
+    ...sortMap[sortBy.value],
+    cpf: cpf.value || undefined,
+    certifying: certifying.value || undefined,
+    durationMin: buckets?.min,
+    durationMax: buckets?.max,
+    modalities: selectedModalities.value.length ? selectedModalities.value : undefined,
+    location: location.value.trim() || undefined
+  }
+})
+
+const catalog = await useCatalog(catalogQuery)
+
+const formations = computed<FormationItem[]>(
+  () =>
+    catalog.data.value?.items.map((course) =>
+      mapCourse(course, course.familySlug ? familyNames.value.get(course.familySlug) : undefined)
+    ) ?? []
+)
+const resultCount = computed(() => catalog.data.value?.total ?? 0)
+const hasMoreMobile = computed(
+  () =>
+    !catalog.pending.value &&
+    !!catalog.data.value &&
+    currentPage.value * perPage < catalog.data.value.total
+)
+
+const directus = useDirectusClient()
+
+const { data: directusFamilies } = await useAsyncData<FamilleFormation[]>(
+  'catalog-families',
+  async () => {
+    try {
+      return await directus.request(
+        readItems('familles_formation', {
+          fields: ['slug', 'name'],
+          filter: { status: { _eq: 'published' } },
+          limit: -1
+        })
+      )
+    } catch (error) {
+      if (import.meta.server) {
+        logServerError('[formations/index] familles_formation fetch failed:', error)
+      }
+      return []
+    }
+  }
+)
+
+const { data: familyCounts } = await useAsyncData<FamilyWithCount[]>('family-counts', async () => {
+  const config = useRuntimeConfig()
+  try {
+    return await $fetch<FamilyWithCount[]>(`${config.public.apiBase}/families`)
+  } catch (error) {
+    if (import.meta.server) {
+      logServerError('[formations/index] family counts fetch failed:', error)
+    }
+    return []
+  }
+})
+
+const familyNames = computed(() => {
+  const map = new Map<string, string>()
+  for (const family of directusFamilies.value ?? []) {
+    map.set(family.slug, family.name)
+  }
+  return map
+})
+
+const familyOptions = computed<FilterOption[]>(() => {
+  const counts = new Map<string, number>()
+  for (const item of familyCounts.value ?? []) {
+    counts.set(item.slug, item.count)
+  }
+
+  const slugs = new Set<string>([
+    ...Array.from(familyNames.value.keys()),
+    ...Array.from(counts.keys())
+  ])
+
+  return Array.from(slugs)
+    .map((slug) => ({
+      key: slug,
+      label: familyNames.value.get(slug) ?? slug,
+      count: counts.get(slug) ?? 0
+    }))
+    .sort((a, b) => b.count - a.count)
+})
+
+const familyShortcuts = computed(() => {
+  const top = familyOptions.value.slice(0, 3).map((family) => ({
+    slug: family.key,
+    label: family.label,
+    caption: `${family.count} formation${family.count > 1 ? 's' : ''}`,
+    linkLabel: 'Voir la famille',
+    to: `/formations/${family.key}`
   }))
-])
+
+  return [
+    ...top,
+    {
+      slug: 'all',
+      label: 'Toutes les familles',
+      caption: 'Management, bureautique, qualité…',
+      linkLabel: 'Parcourir',
+      to: '/formations'
+    }
+  ]
+})
+
+const activeFilters = computed<ActiveFilter[]>(() => {
+  const filters: ActiveFilter[] = []
+
+  for (const key of selectedFamilies.value) {
+    const option = familyOptions.value.find((f) => f.key === key)
+    filters.push({ group: 'families', key, label: option?.label ?? key })
+  }
+
+  for (const key of selectedModalities.value) {
+    filters.push({ group: 'modalities', key, label: MODALITY_LABELS[key] ?? key })
+  }
+
+  if (location.value.trim()) {
+    filters.push({ group: 'location', key: location.value, label: location.value })
+  }
+
+  for (const key of selectedDurations.value) {
+    filters.push({ group: 'durations', key, label: DURATION_LABELS[key] ?? key })
+  }
+
+  if (cpf.value) {
+    filters.push({ group: 'cpf', key: 'cpf', label: 'Éligible CPF' })
+  }
+
+  if (certifying.value) {
+    filters.push({ group: 'certifying', key: 'certifying', label: 'Formation certifiante' })
+  }
+
+  return filters
+})
 
 const hasActiveCriteria = computed(
   () => activeFilters.value.length > 0 || searchQuery.value.trim().length > 0
 )
 
 function removeFilter(filter: ActiveFilter) {
-  if (filter.group === 'location') {
-    locationQuery.value = ''
-    return
+  if (filter.group === 'families') {
+    selectedFamilies.value = selectedFamilies.value.filter((key) => key !== filter.key)
+  } else if (filter.group === 'modalities') {
+    selectedModalities.value = selectedModalities.value.filter((key) => key !== filter.key)
+  } else if (filter.group === 'location') {
+    location.value = ''
+  } else if (filter.group === 'durations') {
+    selectedDurations.value = selectedDurations.value.filter((key) => key !== filter.key)
+  } else if (filter.group === 'cpf') {
+    cpf.value = false
+  } else if (filter.group === 'certifying') {
+    certifying.value = false
   }
-  const models = {
-    families: selectedFamilies,
-    modalities: selectedModalities,
-    durations: selectedDurations,
-    certifications: selectedCertifications
-  } as const
-  const model = models[filter.group]
-  model.value = model.value.filter((key) => key !== filter.key)
 }
 
 function resetFilters() {
   searchQuery.value = ''
   selectedFamilies.value = []
   selectedModalities.value = []
-  locationQuery.value = ''
+  location.value = ''
   selectedDurations.value = []
-  selectedCertifications.value = []
+  cpf.value = false
+  certifying.value = false
   sortBy.value = 'editorial'
   currentPage.value = 1
-  perPage.value = 9
 }
 
 function openFilterPanel() {
@@ -612,15 +712,10 @@ function closeFilterPanel() {
   isFilterPanelOpen.value = false
 }
 
-function showMore() {
-  perPage.value += 9
-}
-
-function triggerSearch(query?: string) {
-  searchQuery.value = (query ?? searchQuery.value).trim()
+function triggerSearch() {
+  searchQuery.value = searchQuery.value.trim()
   sortBy.value = searchQuery.value ? 'pertinence' : 'editorial'
   currentPage.value = 1
-  perPage.value = 9
 }
 
 watch(
@@ -628,13 +723,28 @@ watch(
     searchQuery,
     selectedFamilies,
     selectedModalities,
-    locationQuery,
+    location,
     selectedDurations,
-    selectedCertifications
+    () => cpf.value,
+    () => certifying.value,
+    sortBy,
+    currentPage
   ],
   () => {
-    currentPage.value = 1
-    perPage.value = 9
+    if (currentPage.value < 1) currentPage.value = 1
+
+    const query: Record<string, unknown> = {}
+    if (searchQuery.value) query.q = searchQuery.value
+    if (selectedFamilies.value.length) query.famille = selectedFamilies.value[0]
+    if (selectedModalities.value.length) query.modalites = selectedModalities.value.join(',')
+    if (location.value.trim()) query.lieu = location.value.trim()
+    if (selectedDurations.value.length) query.duree = selectedDurations.value.join(',')
+    if (cpf.value) query.cpf = 'true'
+    if (certifying.value) query.certifiant = 'true'
+    if (sortBy.value !== 'editorial' || searchQuery.value) query.tri = sortBy.value
+    if (currentPage.value > 1) query.page = String(currentPage.value)
+
+    router.replace({ path: route.path, query })
   }
 )
 

@@ -4,6 +4,19 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'happy-dom',
+    environmentOptions: {
+      happyDOM: {
+        url: 'https://localhost/',
+        settings: {
+          fetch: {
+            virtualServers: [
+              { url: 'https://js.hsforms.net', directory: './test/fixtures/hubspot' },
+              { url: 'https://js.hs-scripts.com', directory: './test/fixtures/hubspot' }
+            ]
+          }
+        }
+      }
+    },
     include: ['src/**/*.spec.ts'],
     coverage: {
       provider: 'v8',

@@ -13,7 +13,7 @@
               :id="`family-${family.key}`"
               :model-value="families.includes(family.key)"
               class="h-md w-md rounded border-outline data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-paper"
-              @update:model-value="toggle(families, family.key, (v) => (families = v))"
+              @update:model-value="toggleFamily(family.key)"
             />
             <Label :for="`family-${family.key}`" class="text-small font-normal text-ink-body">
               {{ family.label }}
@@ -30,7 +30,7 @@
       </NuxtLink>
     </div>
 
-    <div class="mt-lg border-t border-rule pt-lg">
+    <div v-if="modalities !== undefined" class="mt-lg border-t border-rule pt-lg">
       <h3 class="text-meta font-bold tracking-wide text-ink-muted">Modalité</h3>
       <div class="mt-md flex flex-wrap gap-sm">
         <Button
@@ -52,7 +52,7 @@
       </div>
     </div>
 
-    <div class="mt-lg border-t border-rule pt-lg">
+    <div v-if="location !== undefined" class="mt-lg border-t border-rule pt-lg">
       <h3 class="text-meta font-bold tracking-wide text-ink-muted">Localisation</h3>
       <label :for="locationInputId" class="sr-only">Ville, département, région</label>
       <div class="mt-md flex items-center gap-sm rounded-full border border-outline px-md py-sm">
@@ -95,7 +95,7 @@
       </ul>
     </div>
 
-    <div class="mt-lg border-t border-rule pt-lg">
+    <div v-if="certifications !== undefined" class="mt-lg border-t border-rule pt-lg">
       <h3 class="text-meta font-bold tracking-wide text-ink-muted">Certification</h3>
       <ul class="mt-md space-y-sm">
         <li v-for="certification in certificationOptions" :key="certification.key">
@@ -118,6 +118,32 @@
         </li>
       </ul>
     </div>
+
+    <div v-if="cpf !== undefined" class="mt-lg border-t border-rule pt-lg">
+      <div class="flex items-center gap-sm">
+        <Checkbox
+          id="filter-cpf"
+          :model-value="cpf"
+          class="h-md w-md rounded border-outline data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-paper"
+          @update:model-value="(v) => (cpf = v as boolean)"
+        />
+        <Label for="filter-cpf" class="text-small font-normal text-ink-body"> Éligible CPF </Label>
+      </div>
+    </div>
+
+    <div v-if="certifying !== undefined" class="mt-lg border-t border-rule pt-lg">
+      <div class="flex items-center gap-sm">
+        <Checkbox
+          id="filter-certifying"
+          :model-value="certifying"
+          class="h-md w-md rounded border-outline data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-paper"
+          @update:model-value="(v) => (certifying = v as boolean)"
+        />
+        <Label for="filter-certifying" class="text-small font-normal text-ink-body">
+          Formation certifiante
+        </Label>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -138,10 +164,12 @@ const props = withDefaults(
 )
 
 const families = defineModel<string[]>('families', { required: true })
-const modalities = defineModel<string[]>('modalities', { required: true })
-const location = defineModel<string>('location', { required: true })
+const modalities = defineModel<string[] | undefined>('modalities')
+const location = defineModel<string | undefined>('location')
 const durations = defineModel<string[]>('durations', { required: true })
-const certifications = defineModel<string[]>('certifications', { required: true })
+const certifications = defineModel<string[] | undefined>('certifications')
+const cpf = defineModel<boolean | undefined>('cpf')
+const certifying = defineModel<boolean | undefined>('certifying')
 
 const fallbackId = useId()
 const locationInputId = computed(() => props.locationInputId ?? `loc-${fallbackId}`)
@@ -152,5 +180,9 @@ const certificationOptions = CERTIFICATION_OPTIONS
 
 function toggle(list: string[], key: string, apply: (next: string[]) => void) {
   apply(list.includes(key) ? list.filter((item) => item !== key) : [...list, key])
+}
+
+function toggleFamily(key: string) {
+  families.value = families.value.includes(key) ? [] : [key]
 }
 </script>

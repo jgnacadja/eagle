@@ -5,6 +5,6 @@ export interface CenterResult {
   address: string
   tags: string
   tagsShort: string
-  status: { type: 'success' | 'warning' | 'neutral'; label: string }
-  pos: { top: string; left: string }
+  status?: { type: 'success' | 'warning' | 'neutral'; label: string }
+  pos?: { top: string; left: string }
 }

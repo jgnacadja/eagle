@@ -6,6 +6,7 @@ import { CronJob, validateCronExpression } from 'cron'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { Prisma } from '../../prisma/generated/client'
 import { CacheService } from '../common/cache/cache.service'
+import { DirectusMirrorService, type MirrorCourse } from '../directus/directus.mirror.service'
 import { DigiformaClient, type Program } from '../digiforma/digiforma.client'
 import { mapProgramToCourse } from '../digiforma/digiforma.mapper'
 import { PrismaService } from '../prisma/prisma.service'
@@ -20,7 +21,8 @@ export class SyncService {
     private readonly client: DigiformaClient,
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
-    private readonly scheduler: SchedulerRegistry
+    private readonly scheduler: SchedulerRegistry,
+    private readonly mirror: DirectusMirrorService
   ) {}
 
   onModuleInit(): void {
@@ -62,6 +64,7 @@ export class SyncService {
 
     try {
       const programs = await this.loadPrograms()
+      const syncedCourses: MirrorCourse[] = []
 
       for (const program of programs) {
         try {
@@ -70,12 +73,24 @@ export class SyncService {
 
           if (result === 'inserted') counts.inserted += 1
           else if (result === 'updated') counts.updated += 1
+
+          syncedCourses.push({
+            digiformaId: input.digiformaId,
+            slug: input.slug,
+            title: input.title,
+            categoryName: input.category ?? null
+          })
         } catch (error) {
           counts.failed += 1
           this.logger.warn({ error, programId: program.id }, 'Failed to sync program')
         }
       }
 
+      try {
+        await this.mirror.upsertMany(syncedCourses)
+      } catch (error) {
+        this.logger.warn(error, 'Mirror push failed, continuing sync')
+      }
       await this.cache.invalidateCatalog()
 
       await this.prisma.syncRun.update({
@@ -123,7 +138,7 @@ export class SyncService {
         throw error
       }
       this.logger.warn(error, 'Digiforma call failed, falling back to fixture')
-      const fixturePath = resolve(__dirname, '..', '..', 'test', 'fixtures', 'programs.json')
+      const fixturePath = resolve(process.cwd(), 'test', 'fixtures', 'programs.json')
       const raw = await fs.readFile(fixturePath, 'utf-8')
       return JSON.parse(raw) as Program[]
     }
@@ -139,9 +154,13 @@ export class SyncService {
       return 'inserted'
     }
 
+    // familySlug est exclu de l'update : l'affectation de famille est
+    // éditoriale (Directus → /admin/families/apply) et ne doit pas être
+    // écrasée par la dérivation catégorie→famille à chaque sync.
+    const { familySlug: _editorialFamily, ...updateInput } = input
     await this.prisma.course.update({
       where: { digiformaId: input.digiformaId },
-      data: input
+      data: updateInput
     })
     return 'updated'
   }

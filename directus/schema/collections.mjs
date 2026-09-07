@@ -57,22 +57,66 @@ export const collections = [
       statusField(),
       sortField(),
       slugField(),
-      { field: 'name', type: 'string', meta: { interface: 'input', width: 'half', required: true } },
+      {
+        field: 'name',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', required: true }
+      },
       { field: 'address', type: 'text', meta: { interface: 'input-multiline', width: 'full' } },
       { field: 'city', type: 'string', meta: { interface: 'input', width: 'half' } },
       { field: 'postal_code', type: 'string', meta: { interface: 'input', width: 'half' } },
+      { field: 'department', type: 'string', meta: { interface: 'input', width: 'half' } },
+      { field: 'region', type: 'string', meta: { interface: 'input', width: 'half' } },
+      {
+        field: 'description',
+        type: 'text',
+        meta: { interface: 'input-rich-text-html', width: 'full', note: 'Présentation du centre' }
+      },
+      {
+        field: 'specialties',
+        type: 'json',
+        meta: { interface: 'tags', width: 'full', note: 'Spécialités du centre (badges)' }
+      },
+      { field: 'opening_hours', type: 'string', meta: { interface: 'input', width: 'half' } },
+      {
+        field: 'transport',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', note: 'Accès transports' }
+      },
+      { field: 'parking', type: 'string', meta: { interface: 'input', width: 'half' } },
+      {
+        field: 'pmr_accessible',
+        type: 'boolean',
+        meta: { interface: 'boolean', width: 'half', note: 'Locaux accessibles PMR' }
+      },
       { field: 'phone', type: 'string', meta: { interface: 'input', width: 'half' } },
       { field: 'email', type: 'string', meta: { interface: 'input', width: 'half' } },
-      { field: 'contact_name', type: 'string', meta: { interface: 'input', width: 'half', note: 'Interlocuteur' } },
+      {
+        field: 'contact_name',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', note: 'Interlocuteur' }
+      },
       { field: 'contact_role', type: 'string', meta: { interface: 'input', width: 'half' } },
       {
         field: 'departments_covered',
         type: 'json',
         meta: { interface: 'tags', width: 'full', note: 'Départements couverts (codes ou noms)' }
       },
-      { field: 'digiforma_url', type: 'string', meta: { interface: 'input', width: 'half', note: 'Lien Digiforma' } },
-      { field: 'qualiopi_certified', type: 'boolean', meta: { interface: 'boolean', width: 'half' } },
-      { field: 'qualiopi_certificate_number', type: 'string', meta: { interface: 'input', width: 'half' } },
+      {
+        field: 'digiforma_url',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', note: 'Lien Digiforma' }
+      },
+      {
+        field: 'qualiopi_certified',
+        type: 'boolean',
+        meta: { interface: 'boolean', width: 'half' }
+      },
+      {
+        field: 'qualiopi_certificate_number',
+        type: 'string',
+        meta: { interface: 'input', width: 'half' }
+      },
       ...seoFields()
     ]
   },
@@ -85,8 +129,21 @@ export const collections = [
       statusField(),
       sortField(),
       slugField(),
-      { field: 'name', type: 'string', meta: { interface: 'input', width: 'half', required: true } },
-      { field: 'intro', type: 'text', meta: { interface: 'input-rich-text-html', width: 'full', note: 'Intro éditoriale' } },
+      {
+        field: 'name',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', required: true }
+      },
+      {
+        field: 'intro',
+        type: 'text',
+        meta: { interface: 'input-rich-text-html', width: 'full', note: 'Intro éditoriale' }
+      },
+      {
+        field: 'image',
+        type: 'uuid',
+        meta: { interface: 'file-image', width: 'half', note: 'Visuel du hero de la page famille' }
+      },
       ...seoFields()
     ]
   },
@@ -99,11 +156,27 @@ export const collections = [
       statusField(),
       sortField(),
       slugField(),
-      { field: 'title', type: 'string', meta: { interface: 'input', width: 'full', required: true } },
+      {
+        field: 'title',
+        type: 'string',
+        meta: { interface: 'input', width: 'full', required: true }
+      },
       { field: 'excerpt', type: 'text', meta: { interface: 'input-multiline', width: 'full' } },
-      { field: 'content', type: 'text', meta: { interface: 'input-rich-text-html', width: 'full' } },
-      { field: 'category', type: 'string', meta: { interface: 'input', width: 'half', note: 'Catégorie thématique' } },
-      { field: 'publish_at', type: 'timestamp', meta: { interface: 'datetime', width: 'half', note: 'Publication planifiée' } },
+      {
+        field: 'content',
+        type: 'text',
+        meta: { interface: 'input-rich-text-html', width: 'full' }
+      },
+      {
+        field: 'category',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', note: 'Catégorie thématique' }
+      },
+      {
+        field: 'publish_at',
+        type: 'timestamp',
+        meta: { interface: 'datetime', width: 'half', note: 'Publication planifiée' }
+      },
       ...seoFields()
     ]
   },
@@ -115,7 +188,11 @@ export const collections = [
       primaryKey(),
       statusField(),
       slugField(),
-      { field: 'title', type: 'string', meta: { interface: 'input', width: 'full', required: true } },
+      {
+        field: 'title',
+        type: 'string',
+        meta: { interface: 'input', width: 'full', required: true }
+      },
       ...seoFields()
     ]
   },
@@ -154,8 +231,52 @@ export const collections = [
     fields: [
       primaryKey(),
       sortField(),
-      { field: 'label', type: 'string', meta: { interface: 'input', width: 'half', required: true } },
-      { field: 'value', type: 'string', meta: { interface: 'input', width: 'half', required: true, note: 'Ex: "500+"' } }
+      {
+        field: 'label',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', required: true }
+      },
+      {
+        field: 'value',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', required: true, note: 'Ex: "500+"' }
+      }
+    ]
+  },
+  {
+    collection: 'formations',
+    icon: 'school',
+    note: 'Miroir lecture seule du catalogue API — les éditeurs affectent la famille.',
+    fields: [
+      primaryKey(),
+      sortField(),
+      {
+        field: 'digiforma_id',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', readonly: true, note: 'ID Digiforma' },
+        schema: { is_unique: true }
+      },
+      {
+        field: 'slug',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', readonly: true }
+      },
+      {
+        field: 'title',
+        type: 'string',
+        meta: { interface: 'input', width: 'full', readonly: true }
+      },
+      {
+        field: 'category_name',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          readonly: true,
+          note: 'Catégorie Digiforma brute'
+        }
+      }
+      // famille = SEUL champ éditable (relation M2O, voir relations)
     ]
   }
 ]
@@ -188,6 +309,12 @@ export const relations = [
     meta: { interface: 'file-image', note: 'Picto' }
   },
   {
+    collection: 'familles_formation',
+    field: 'image',
+    related_collection: 'directus_files',
+    meta: { interface: 'file-image' }
+  },
+  {
     collection: 'page_blocks',
     field: 'page',
     related_collection: 'pages',
@@ -204,5 +331,14 @@ export const relations = [
     field: 'icon',
     related_collection: 'directus_files',
     meta: { interface: 'file-image' }
+  },
+  {
+    collection: 'formations',
+    field: 'famille',
+    related_collection: 'familles_formation',
+    meta: {
+      interface: 'select-dropdown-m2o',
+      note: 'Affectation éditoriale — seul champ modifiable'
+    }
   }
 ]

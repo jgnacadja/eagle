@@ -3,8 +3,9 @@ import {
   MODALITY_OPTIONS,
   DURATION_OPTIONS,
   CERTIFICATION_OPTIONS,
+  DURATION_BUCKETS,
   getFilterLabel,
-  normalizeFamilySlug
+  durationBucketToHours
 } from '~/utils/catalog-filters'
 
 describe('catalog-filters', () => {
@@ -31,9 +32,16 @@ describe('catalog-filters', () => {
     ])
   })
 
-  it('returns family labels', () => {
-    expect(getFilterLabel('families', 'caces')).toBe("CACES & conduite d'engins")
-    expect(getFilterLabel('families', 'securite')).toBe('Sécurité & prévention')
+  it('returns the correct duration buckets in hours', () => {
+    expect(DURATION_BUCKETS.courte).toEqual({ min: 0, max: 8 })
+    expect(DURATION_BUCKETS.moyenne).toEqual({ min: 9, max: 40 })
+    expect(DURATION_BUCKETS.longue).toEqual({ min: 41 })
+  })
+
+  it('converts duration keys to min and max hours', () => {
+    expect(durationBucketToHours(['courte'])).toEqual({ min: 0, max: 8 })
+    expect(durationBucketToHours(['moyenne', 'longue'])).toEqual({ min: 9, max: 40 })
+    expect(durationBucketToHours([])).toBeUndefined()
   })
 
   it('returns modality and certification labels', () => {
@@ -42,18 +50,10 @@ describe('catalog-filters', () => {
   })
 
   it('returns the key itself when label is unknown', () => {
-    expect(getFilterLabel('families', 'unknown')).toBe('unknown')
     expect(getFilterLabel('durations', 'unknown')).toBe('unknown')
   })
 
   it('returns location key as-is', () => {
     expect(getFilterLabel('location', 'Île-de-France')).toBe('Île-de-France')
-  })
-
-  it('normalizes family slugs to first segment', () => {
-    expect(normalizeFamilySlug('caces-conduite-engins')).toBe('caces')
-    expect(normalizeFamilySlug('securite-prevention')).toBe('securite')
-    expect(normalizeFamilySlug('only')).toBe('only')
-    expect(normalizeFamilySlug('')).toBe('')
   })
 })

@@ -1,5 +1,6 @@
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { describe, it, expect, vi } from 'vitest'
+import { defineComponent, h, Suspense } from 'vue'
 import MegaMenuFormations from '~/components/Menu/mega-menu/MegaMenuFormations.vue'
 import MegaMenuCentres from '~/components/Menu/mega-menu/MegaMenuCentres.vue'
 import MegaMenuAPropos from '~/components/Menu/mega-menu/MegaMenuAPropos.vue'
@@ -7,6 +8,71 @@ import MegaMenuActualites from '~/components/Menu/mega-menu/MegaMenuActualites.v
 
 const navigateMock = vi.fn()
 vi.stubGlobal('navigateTo', navigateMock)
+
+vi.mock('~/composables/useMenuData', async () => {
+  const { ref } = await import('vue')
+  return {
+    useMenuFamilles: async () =>
+      ref([
+        { slug: 'securite-prevention', label: 'Sécurité & prévention', count: 32 },
+        { slug: 'management', label: 'Management', count: 12 },
+        { slug: 'caces-conduite-engins', label: 'CACES & conduite d’engins', count: 58 }
+      ]),
+    useMenuFormationsALaUne: async () =>
+      ref([
+        {
+          slug: 'caces-r489',
+          label: 'CACES R489 — chariots élévateurs',
+          to: '/formations/caces-conduite-engins/caces-r489'
+        }
+      ]),
+    useMenuCentres: async () => ({
+      regions: ref([
+        { slug: 'ile-de-france', label: 'Île-de-France', count: 2 },
+        { slug: 'occitanie', label: 'Occitanie', count: 1 }
+      ]),
+      centresParRegion: ref(
+        new Map([
+          [
+            'Île-de-France',
+            [
+              {
+                slug: 'creteil',
+                name: 'Centre de Créteil',
+                city: 'Créteil',
+                department: 'Val-de-Marne',
+                region: 'Île-de-France'
+              }
+            ]
+          ],
+          [
+            'Occitanie',
+            [
+              {
+                slug: 'toulouse',
+                name: 'Centre de Toulouse',
+                city: 'Toulouse',
+                department: 'Haute-Garonne',
+                region: 'Occitanie'
+              }
+            ]
+          ]
+        ])
+      )
+    })
+  }
+})
+
+async function mountMenu(component: object) {
+  const Host = defineComponent({
+    render() {
+      return h(Suspense, () => h(component))
+    }
+  })
+  const wrapper = mount(Host, { global: { stubs } })
+  await flushPromises()
+  return wrapper
+}
 
 const nuxtLinkStub = { props: ['to'], template: '<a :href="to"><slot /></a>' }
 
@@ -23,74 +89,71 @@ const stubs = {
 }
 
 describe('MegaMenuFormations', () => {
-  it('liste les familles avec CACES sélectionné par défaut', () => {
-    const wrapper = mount(MegaMenuFormations, { global: { stubs } })
+  it('liste les familles dynamiques et la première sélectionnée par défaut', async () => {
+    const wrapper = await mountMenu(MegaMenuFormations)
 
     expect(wrapper.text()).toContain('Familles')
     expect(wrapper.text()).toContain('Sécurité & prévention')
-    expect(wrapper.text()).toContain('CACES & conduite d’engins — par type d’engin')
-    expect(wrapper.text()).toContain('Chariots & gerbeurs')
-    expect(wrapper.text()).toContain('Les plus consultés')
+    expect(wrapper.text()).toContain('À la une')
+    expect(wrapper.text()).toContain('CACES R489 — chariots élévateurs')
   })
 
   it('change de famille au survol', async () => {
-    const wrapper = mount(MegaMenuFormations, { global: { stubs } })
+    const wrapper = await mountMenu(MegaMenuFormations)
     const btn = wrapper.findAll('button').find((b) => b.text().includes('Management'))!
 
     await btn.trigger('mouseenter')
-    // Hors CACES : pas de découpage par engin, fallback compteur
     expect(wrapper.text()).toContain('12 formations dans cette famille')
-    expect(wrapper.text()).not.toContain('Management — par type d’engin')
   })
 
   it('émet close au clic sur un lien', async () => {
-    const wrapper = mount(MegaMenuFormations, { global: { stubs } })
+    const wrapper = await mountMenu(MegaMenuFormations)
 
     await wrapper.find('a[href="/formations"]').trigger('click')
-    expect(wrapper.emitted('close')).toBeTruthy()
+    expect(wrapper.findComponent(MegaMenuFormations).emitted('close')).toBeTruthy()
   })
 })
 
 describe('MegaMenuCentres', () => {
-  it('liste les régions et les centres Île-de-France par défaut', () => {
-    const wrapper = mount(MegaMenuCentres, { global: { stubs } })
+  it('liste les régions et les centres Île-de-France par défaut', async () => {
+    const wrapper = await mountMenu(MegaMenuCentres)
 
     expect(wrapper.text()).toContain('Régions')
-    expect(wrapper.text()).toContain('Île-de-France — 43 centres')
+    expect(wrapper.text()).toContain('Île-de-France — 2 centres')
     expect(wrapper.text()).toContain('Centre de Créteil')
   })
 
   it('change de région au clic et met à jour les centres', async () => {
-    const wrapper = mount(MegaMenuCentres, { global: { stubs } })
+    const wrapper = await mountMenu(MegaMenuCentres)
     const btn = wrapper.findAll('button').find((b) => b.text().includes('Occitanie'))!
 
     await btn.trigger('click')
-    expect(wrapper.text()).toContain('Occitanie — 27 centres')
+    expect(wrapper.text()).toContain('Occitanie — 1 centre')
     expect(wrapper.text()).toContain('Centre de Toulouse')
     expect(wrapper.text()).not.toContain('Centre de Créteil')
   })
 
-  it('les liens centre pointent vers /centres/{slug}', () => {
-    const wrapper = mount(MegaMenuCentres, { global: { stubs } })
+  it('les liens centre pointent vers /centres/{slug}', async () => {
+    const wrapper = await mountMenu(MegaMenuCentres)
 
     expect(wrapper.find('a[href="/centres/creteil"]').exists()).toBe(true)
   })
 
   it('la recherche vide ne navigue pas', async () => {
-    const wrapper = mount(MegaMenuCentres, { global: { stubs } })
+    const wrapper = await mountMenu(MegaMenuCentres)
 
     await wrapper.find('form').trigger('submit.prevent')
     expect(navigateMock).not.toHaveBeenCalled()
   })
 
   it('la recherche renseignée navigue vers /centres et ferme', async () => {
-    const wrapper = mount(MegaMenuCentres, { global: { stubs } })
+    const wrapper = await mountMenu(MegaMenuCentres)
 
     await wrapper.find('input').setValue('Lille')
     await wrapper.find('form').trigger('submit.prevent')
 
     expect(navigateMock).toHaveBeenCalledWith({ path: '/centres', query: { q: 'Lille' } })
-    expect(wrapper.emitted('close')).toBeTruthy()
+    expect(wrapper.findComponent(MegaMenuCentres).emitted('close')).toBeTruthy()
   })
 })
 

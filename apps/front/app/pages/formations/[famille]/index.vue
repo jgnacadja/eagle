@@ -10,98 +10,61 @@
               <h1
                 class="mt-sm font-display text-h2 font-extrabold leading-tight text-ink lg:text-h1"
               >
-                CACES® &amp; conduite d'engins
+                {{ familleData?.name }}
               </h1>
-              <p class="mt-md max-w-prose text-body text-ink-body">
-                La conduite d'équipements de travail mobiles est encadrée par les recommandations
-                CACES® de l'Assurance Maladie. Ces formations couvrent la délivrance initiale et le
-                renouvellement, par catégorie d'engin, en centre ou sur site.
-              </p>
+              <div
+                v-if="familleData?.intro"
+                class="mt-md max-w-prose text-body text-ink-body"
+                v-html="sanitizeHtml(familleData.intro)"
+              />
 
               <ul class="mt-lg flex flex-wrap gap-sm">
-                <Badge as="li" variant="chip">{{ formations.length }} formations</Badge>
-                <Badge as="li" variant="chip">Recommandations R482 à R490</Badge>
-                <Badge as="li" variant="chip">Initial &amp; recyclage</Badge>
-                <Badge as="li" variant="success">
+                <Badge as="li" variant="chip">{{ resultCount }} formations</Badge>
+                <Badge v-for="m in familyModalities" :key="m" as="li" variant="chip">
+                  {{ m }}
+                </Badge>
+                <Badge v-if="familySessionBadge" as="li" variant="success">
                   <span class="h-sm w-sm rounded-full bg-current" aria-hidden="true" />
-                  Sessions ce mois-ci
+                  {{ familySessionBadge }}
                 </Badge>
               </ul>
             </div>
 
             <figure
-              class="flex aspect-video w-full items-center justify-center rounded-md border border-dashed border-outline bg-surface-alt lg:col-span-2 lg:aspect-4/3"
+              class="aspect-video w-full rounded-md lg:col-span-2 lg:aspect-4/3"
+              :class="
+                heroImage
+                  ? 'overflow-hidden'
+                  : 'flex items-center justify-center border border-dashed border-outline bg-surface-alt'
+              "
             >
-              <figcaption class="px-lg text-center text-meta text-ink-muted">
-                Photo réelle — plateau technique<br />engins de manutention (4:3)
+              <img
+                v-if="heroImage"
+                :src="heroImage"
+                :alt="familleData?.name ?? ''"
+                class="h-full w-full object-cover"
+              />
+              <figcaption v-else class="px-lg text-center text-meta text-ink-muted">
+                {{ familleData?.name }}
               </figcaption>
             </figure>
           </div>
         </div>
       </section>
 
-      <!-- Parcourir par type d'engin -->
-      <section
-        class="mx-auto w-full px-gutter-mobile py-section md:px-gutter"
-        aria-labelledby="sous-familles-title"
-      >
-        <h2 id="sous-familles-title" class="font-sans text-h4 font-bold text-ink">
-          Parcourir par type d'engin
-        </h2>
-
-        <ul class="mt-lg grid grid-cols-1 gap-md sm:grid-cols-2 lg:grid-cols-4">
-          <li
-            v-for="subFamily in subFamilies"
-            :key="subFamily.key"
-            class="flex flex-col gap-md rounded-md border border-rule bg-surface p-lg"
-          >
-            <div>
-              <h3 class="font-semibold text-ink">{{ subFamily.label }}</h3>
-              <p class="mt-xs text-small text-ink-muted">{{ subFamily.caption }}</p>
-            </div>
-            <button
-              type="button"
-              class="mt-auto self-start text-small font-semibold text-primary hover:underline"
-              @click="selectSubFamily(subFamily.key)"
-            >
-              Voir la sous-famille →
-            </button>
-          </li>
-        </ul>
-      </section>
-
-      <!-- Liste des formations + filtres -->
+      <!-- Liste des formations -->
       <section
         id="liste-formations"
-        class="mx-auto w-full scroll-mt-lg px-gutter-mobile pb-section md:px-gutter"
+        class="mx-auto w-full scroll-mt-lg px-gutter-mobile py-section md:px-gutter"
         aria-labelledby="liste-title"
       >
         <div class="flex flex-col gap-md md:flex-row md:items-center md:justify-between">
           <h2 id="liste-title" class="font-sans text-h4 font-bold text-ink">
-            {{ filteredFormations.length }}
-            {{ filteredFormations.length > 1 ? 'formations' : 'formation' }} dans cette famille
+            {{ resultCount }}
+            {{ resultCount > 1 ? 'formations' : 'formation' }} dans cette famille
           </h2>
 
           <div class="flex flex-wrap gap-sm">
-            <Select v-model="selectedSubFamily" aria-label="Filtrer par sous-famille">
-              <SelectTrigger
-                aria-label="Sous-famille"
-                class="h-control w-auto gap-sm rounded-full border-outline bg-paper px-md text-small font-semibold text-ink-body shadow-none"
-              >
-                <span class="truncate">{{ subFamilyFilterLabel }}</span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem
-                  v-for="option in subFamilyOptions"
-                  :key="option.value"
-                  :value="option.value"
-                  class="text-small"
-                >
-                  {{ option.label }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-
             <Select v-model="selectedModality" aria-label="Filtrer par modalité">
               <SelectTrigger
                 aria-label="Modalité"
@@ -139,36 +102,12 @@
                 </SelectItem>
               </SelectContent>
             </Select>
-
-            <Select v-model="selectedAvailability" aria-label="Filtrer par disponibilité">
-              <SelectTrigger
-                aria-label="Disponibilité"
-                class="h-control w-auto gap-sm rounded-full border-outline bg-paper px-md text-small font-semibold text-ink-body shadow-none"
-              >
-                <span class="truncate">{{ availabilityFilterLabel }}</span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem
-                  v-for="option in availabilityOptions"
-                  :key="option.value"
-                  :value="option.value"
-                  class="text-small"
-                >
-                  {{ option.label }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
 
-        <p class="mt-sm text-meta text-ink-subtle">
-          Filtres limités au périmètre de la famille (RG-FAM-05) — pas de filtre « famille » ici.
-          Famille conservée dans le contexte analytique (RG-FAM-06).
-        </p>
-
         <!-- État vide -->
         <div
-          v-if="filteredFormations.length === 0"
+          v-if="!catalog.pending.value && formations.length === 0"
           class="mt-lg flex flex-col items-center rounded-md border border-dashed border-rule bg-surface-soft px-lg py-4xl text-center"
         >
           <IconSearchMinus :size="30" class="text-ink-muted" />
@@ -182,65 +121,89 @@
           <button
             type="button"
             class="mt-lg text-small font-semibold text-primary underline"
-            @click="resetFilters"
+            @click="resetPage"
           >
-            Réinitialiser les filtres
+            Réinitialiser
           </button>
         </div>
 
+        <!-- État erreur -->
+        <LoadError
+          v-else-if="catalog.error.value"
+          class="mt-lg"
+          title="Le catalogue n'a pas pu être chargé."
+          link-to="/formations"
+          link-label="Voir le catalogue"
+          @retry="catalog.refresh()"
+        >
+          Vérifiez votre connexion, puis réessayez. Si le problème persiste, le catalogue reste
+          accessible.
+        </LoadError>
+
         <!-- Grille résultats -->
-        <ul v-else class="mt-lg grid grid-cols-1 gap-md md:grid-cols-2 lg:grid-cols-3">
-          <li v-for="formation in visibleFormations" :key="formation.slug">
+        <ul
+          v-else-if="!catalog.pending.value"
+          class="mt-lg grid grid-cols-1 gap-md md:grid-cols-2 lg:grid-cols-3"
+        >
+          <li v-for="formation in formations" :key="formation.slug">
             <CenterFormationCard
-              :family="formation.subFamilyLabel"
+              :family="formation.family"
               :title="formation.title"
               :description="formation.description"
               :meta="formation.meta"
               :status="formation.status"
-              :to="formation.to"
+              :to="formation.to ?? undefined"
               class="h-full"
             />
           </li>
         </ul>
 
-        <div v-if="hasMore" class="mt-2xl flex justify-center">
-          <Button
-            type="button"
-            variant="outline"
-            class="h-control rounded-full border-outline px-lg text-small font-semibold text-ink hover:bg-surface"
-            @click="showMore"
+        <!-- Skeleton -->
+        <div v-else class="mt-lg grid grid-cols-1 gap-md md:grid-cols-2 lg:grid-cols-3">
+          <div
+            v-for="i in perPage"
+            :key="i"
+            class="flex flex-col gap-sm rounded-md border border-rule p-lg"
+            aria-hidden="true"
           >
-            Afficher les {{ filteredFormations.length - visibleFormations.length }} autres
-            formations
-          </Button>
+            <div class="h-xs w-3xl animate-pulse rounded-full bg-accent/30" />
+            <div class="h-xs w-full animate-pulse rounded-full bg-surface" />
+            <div class="h-xs w-3/4 animate-pulse rounded-full bg-surface" />
+            <div class="h-xs w-1/2 animate-pulse rounded-full bg-surface" />
+          </div>
         </div>
-      </section>
 
-      <!-- Blocs d'information -->
-      <section
-        class="mx-auto w-full px-gutter-mobile pb-section md:px-gutter"
-        aria-label="Informations sur la famille"
-      >
-        <div class="grid grid-cols-1 gap-lg md:grid-cols-2">
-          <article class="rounded-md bg-surface p-lg">
-            <h2 class="font-semibold text-ink">Qui est concerné ?</h2>
-            <p class="mt-md text-small leading-relaxed text-ink-body">
-              Tout salarié amené à conduire un engin de la famille concernée : caristes, conducteurs
-              d'engins de chantier, opérateurs nacelle, grutiers. L'employeur délivre une
-              autorisation de conduite sur la base du CACES®, de l'aptitude médicale et de la
-              connaissance des lieux.
-            </p>
-          </article>
-
-          <article class="rounded-md bg-surface p-lg">
-            <h2 class="font-semibold text-ink">Validité et renouvellement</h2>
-            <p class="mt-md text-small leading-relaxed text-ink-body">
-              Les CACES® de cette famille sont valables 5 ans (10 ans pour le R482). Le
-              renouvellement passe par une formation de recyclage et de nouveaux tests. Les sessions
-              de recyclage sont identifiées comme telles dans la liste ci-dessus.
-            </p>
-          </article>
-        </div>
+        <Pagination
+          v-if="!catalog.pending.value && catalog.data.value && catalog.data.value.total > perPage"
+          v-model:page="currentPage"
+          :total="catalog.data.value.total"
+          :items-per-page="perPage"
+          :sibling-count="1"
+          class="mt-2xl flex items-center justify-center"
+          aria-label="Pagination du catalogue"
+        >
+          <PaginationContent v-slot="{ items }" class="gap-sm">
+            <PaginationPrevious
+              class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-subtle hover:bg-surface"
+            />
+            <template v-for="item in items" :key="item.value">
+              <PaginationItem
+                v-if="item.type === 'page'"
+                :value="item.value"
+                :is-active="item.value === currentPage"
+              >
+                {{ item.value }}
+              </PaginationItem>
+              <PaginationEllipsis
+                v-else-if="item.type === 'ellipsis'"
+                class="h-control-sm w-control-sm text-ink-subtle"
+              />
+            </template>
+            <PaginationNext
+              class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-body hover:bg-surface"
+            />
+          </PaginationContent>
+        </Pagination>
       </section>
 
       <!-- Bandeau CTA -->
@@ -303,43 +266,43 @@
 </template>
 
 <script setup lang="ts">
-interface FamilleFormationItem {
-  slug: string
-  subFamily: string
-  subFamilyLabel: string
-  title: string
-  description: string
-  meta: string
-  modalities: string[]
-  region: string
-  status?: { type: 'success' | 'warning' | 'neutral'; label: string }
-  to: string
-}
-
-definePageMeta({
-  layout: 'with-breadcrumb',
-  breadcrumb: [
-    { label: 'Accueil', to: '/' },
-    { label: 'Formations', to: '/formations' },
-    { label: 'CACES & conduite d’engins' }
-  ]
-})
+import { readItems } from '@directus/sdk'
+import type { FamilleFormation } from '@learnup/types'
+import {
+  buildSessionBadge,
+  mapCourse,
+  useCatalog,
+  type CatalogQuery,
+  type FormationItem
+} from '~/composables/useCatalog'
+import { useDirectusClient } from '~/composables/useDirectus'
+import { MODALITY_LABELS, MODALITY_OPTIONS } from '~/utils/catalog-filters'
+import { sanitizeHtml } from '~/utils/sanitizeHtml'
 
 const route = useRoute()
 const famille = route.params.famille as string
 
-// Maquette : seule la famille CACES existe tant que le catalogue familles
-// n'est pas branché — null pour tout autre slug (état introuvable).
-// ?error=1 simule une erreur de chargement pour prévisualiser l'état erreur.
+const directus = useDirectusClient()
+
 const {
   data: familleData,
   error: loadError,
   refresh
-} = await useAsyncData(`famille-${famille}`, () => {
-  if (route.query.error === '1') {
-    return Promise.reject(new Error('Famille load failed'))
+} = await useAsyncData<FamilleFormation | null>(`famille-${famille}`, async () => {
+  try {
+    const results = await directus.request<FamilleFormation[]>(
+      readItems('familles_formation', {
+        filter: { slug: { _eq: famille }, status: { _eq: 'published' } },
+        limit: 1
+      })
+    )
+    return results[0] ?? null
+  } catch (error) {
+    if (import.meta.server) {
+      logServerError(`[formations/famille] ${famille} load failed:`, error)
+    }
+    throw error
   }
-  return Promise.resolve(famille === 'caces-conduite-engins' ? { slug: famille } : null)
 })
 
 type PageState = 'found' | 'not-found' | 'error'
@@ -348,7 +311,6 @@ const pageState = computed<PageState>(() => {
   return familleData.value ? 'found' : 'not-found'
 })
 
-// Statut HTTP côté SSR selon l'état affiché.
 const requestEvent = useRequestEvent()
 if (requestEvent) {
   if (pageState.value === 'error') {
@@ -358,18 +320,17 @@ if (requestEvent) {
   }
 }
 
-// Breadcrumb adapté à l'état affiché. route.meta est partagé entre toutes
-// les routes /formations/:famille : on réassigne la valeur à chaque
-// changement d'état pour ne pas conserver le breadcrumb d'une famille précédente.
-const defaultBreadcrumb = [
-  { label: 'Accueil', to: '/' },
-  { label: 'Formations', to: '/formations' },
-  { label: 'CACES & conduite d’engins' }
-]
 const stateLabels: Record<Exclude<PageState, 'found'>, string> = {
   'not-found': 'Famille introuvable',
   error: 'Erreur de chargement'
 }
+
+const defaultBreadcrumb = computed(() => [
+  { label: 'Accueil', to: '/' },
+  { label: 'Formations', to: '/formations' },
+  { label: familleData.value?.name ?? famille }
+])
+
 watchEffect(() => {
   const stateLabel = pageState.value === 'found' ? null : stateLabels[pageState.value]
   route.meta.breadcrumb = stateLabel
@@ -378,236 +339,140 @@ watchEffect(() => {
         { label: 'Formations', to: '/formations' },
         { label: stateLabel }
       ]
-    : defaultBreadcrumb
+    : defaultBreadcrumb.value
 })
 
-const seoByState: Record<
-  PageState,
-  { seo_title: string; seo_description: string; seo_noindex?: boolean }
-> = {
-  found: {
-    seo_title: 'CACES & conduite d’engins — Formations | LEARN UP ACADEMY',
-    seo_description:
-      'Formations CACES® initiales et recyclage, par catégorie d’engin, en centre ou sur site.'
-  },
-  'not-found': {
-    seo_title: 'Famille introuvable',
-    seo_description: "Cette famille de formations n'existe pas ou n'est plus publiée.",
-    seo_noindex: true
-  },
-  error: {
-    seo_title: 'Erreur de chargement',
-    seo_description: "Le contenu de la famille n'a pas pu être chargé.",
-    seo_noindex: true
-  }
-}
-// Getter réactif : le SEO suit pageState si refresh() change l'état affiché.
 useContentSeo(
-  () => seoByState[pageState.value],
-  () => seoByState[pageState.value].seo_title
+  () => {
+    const isFound = pageState.value === 'found'
+    const stateLabel = isFound ? null : stateLabels[pageState.value]
+    const title = stateLabel ?? familleData.value?.name ?? famille
+
+    return {
+      seo_title: isFound
+        ? (familleData.value?.seo_title ?? `${title} — Formations | LEARN UP ACADEMY`)
+        : title,
+      seo_description: isFound
+        ? (familleData.value?.seo_description ??
+          `Formations ${familleData.value?.name ?? famille} en centre ou sur site.`)
+        : undefined,
+      seo_canonical: isFound ? familleData.value?.seo_canonical : undefined,
+      seo_noindex: !isFound
+    }
+  },
+  () => {
+    const isFound = pageState.value === 'found'
+    const stateLabel = isFound ? null : stateLabels[pageState.value]
+    return stateLabel ?? `${familleData.value?.name ?? famille} — Formations | LEARN UP ACADEMY`
+  }
 )
 
 function retry() {
-  if (route.query.error) {
-    // Retire le paramètre de simulation pour permettre un vrai rechargement.
-    const { error: _error, ...query } = route.query
-    navigateTo({ path: route.path, query })
-  } else {
-    refresh()
+  if (route.query.error === '1') {
+    const cleanQuery = Object.fromEntries(
+      Object.entries(route.query).filter(([key]) => key !== 'error')
+    )
+    navigateTo({ path: route.path, query: cleanQuery })
+    return
   }
+  refresh()
 }
 
 function onErrorSearch(query: string) {
   navigateTo({ path: '/formations', query: query ? { q: query } : {} })
 }
 
-const subFamilies = [
-  { key: 'chariots', label: 'Chariots & gerbeurs', caption: 'R489 · R485 — 3 formations' },
-  { key: 'chantier', label: 'Engins de chantier', caption: 'R482 — 2 formations' },
-  { key: 'nacelles', label: 'Nacelles — PEMP', caption: 'R486 — 2 formations' },
-  { key: 'levage', label: 'Grues & levage', caption: 'R490 · R484 — 1 formation' }
-]
+const perPage = 9
+const currentPage = ref(1)
 
-const formations: FamilleFormationItem[] = [
-  {
-    slug: 'caces-r489-chariots-elevateurs',
-    subFamily: 'chariots',
-    subFamilyLabel: 'Chariots & gerbeurs',
-    title: 'CACES R489 — chariots élévateurs',
-    description: 'Conduite en sécurité des chariots de manutention, catégories 1A à 5.',
-    meta: '2 à 5 jours · Inter / intra · CACES®',
-    modalities: ['inter', 'intra', 'presentiel'],
-    region: 'Île-de-France',
-    status: { type: 'success', label: 'Sessions ce mois-ci' },
-    to: '/formations/caces-conduite-engins/caces-r489-chariots-elevateurs'
-  },
-  {
-    slug: 'caces-r485-gerbeurs',
-    subFamily: 'chariots',
-    subFamilyLabel: 'Chariots & gerbeurs',
-    title: 'CACES R485 — gerbeurs à conducteur accompagnant',
-    description: 'Catégories 1 et 2, levée supérieure à 1,20 m.',
-    meta: '1 à 2 jours · Inter / intra · CACES®',
-    modalities: ['inter', 'intra', 'presentiel'],
-    region: 'National',
-    status: { type: 'warning', label: 'Prochaine le 26/09' },
-    to: '#'
-  },
-  {
-    slug: 'caces-r482-engins-chantier',
-    subFamily: 'chantier',
-    subFamilyLabel: 'Engins de chantier',
-    title: 'CACES R482 — engins de chantier',
-    description: 'Catégories A à G : pelles, chargeuses, compacteurs, engins de transport.',
-    meta: '2 à 10 jours · Inter / intra · CACES®',
-    modalities: ['inter', 'intra', 'presentiel'],
-    region: 'National',
-    status: { type: 'success', label: 'Sessions ce mois-ci' },
-    to: '#'
-  },
-  {
-    slug: 'caces-r486-pemp',
-    subFamily: 'nacelles',
-    subFamilyLabel: 'Nacelles — PEMP',
-    title: 'CACES R486 — plateformes élévatrices',
-    description: 'Catégories A et B, conduite hors production et vérifications.',
-    meta: '2 à 3 jours · Inter / intra · CACES®',
-    modalities: ['inter', 'intra', 'presentiel'],
-    region: 'Île-de-France',
-    status: { type: 'success', label: 'Sessions ce mois-ci' },
-    to: '#'
-  },
-  {
-    slug: 'caces-r490-grues',
-    subFamily: 'levage',
-    subFamilyLabel: 'Grues & levage',
-    title: 'CACES R490 — grues de chargement',
-    description: 'Grues auxiliaires de chargement de véhicules, avec ou sans télécommande.',
-    meta: '2 à 3 jours · Inter / intra · CACES®',
-    modalities: ['inter', 'intra', 'presentiel'],
-    region: 'National',
-    status: { type: 'neutral', label: 'Sur demande' },
-    to: '#'
-  },
-  {
-    slug: 'caces-r489-recyclage',
-    subFamily: 'chariots',
-    subFamilyLabel: 'Chariots & gerbeurs',
-    title: 'Recyclage CACES R489 — toutes catégories',
-    description: 'Renouvellement avant échéance de validité, théorie et pratique.',
-    meta: '2 jours · Inter / intra · CACES®',
-    modalities: ['inter', 'intra', 'presentiel'],
-    region: 'Île-de-France',
-    status: { type: 'warning', label: '2 places le 19/09' },
-    to: '#'
-  },
-  {
-    slug: 'caces-r482-recyclage',
-    subFamily: 'chantier',
-    subFamilyLabel: 'Engins de chantier',
-    title: 'Recyclage CACES R482 — engins de chantier',
-    description: 'Maintien des compétences et renouvellement de la recommandation.',
-    meta: '1 à 3 jours · Inter / intra · CACES®',
-    modalities: ['inter', 'intra', 'presentiel'],
-    region: 'National',
-    status: { type: 'neutral', label: 'Sur demande' },
-    to: '#'
-  },
-  {
-    slug: 'caces-r486-recyclage',
-    subFamily: 'nacelles',
-    subFamilyLabel: 'Nacelles — PEMP',
-    title: 'Recyclage CACES R486 — PEMP',
-    description: 'Renouvellement périodique pour opérateurs nacelle en poste.',
-    meta: '1 à 2 jours · Inter / intra · CACES®',
-    modalities: ['inter', 'intra', 'presentiel'],
-    region: 'Occitanie',
-    status: { type: 'success', label: 'Sessions ce mois-ci' },
-    to: '#'
-  }
-]
-
-const selectedSubFamily = ref('all')
+// Filtres inline au-dessus de la liste — modalité et localisation sont
+// appliqués côté API (params `modalities` et `location`).
 const selectedModality = ref('all')
 const selectedLocation = ref('all')
-const selectedAvailability = ref('all')
-const visibleCount = ref(6)
 
-const subFamilyOptions = [
-  { value: 'all', label: 'Sous-famille' },
-  ...subFamilies.map((s) => ({ value: s.key, label: s.label }))
-]
 const modalityOptions = [
   { value: 'all', label: 'Modalité' },
-  { value: 'inter', label: 'Inter' },
-  { value: 'intra', label: 'Intra' },
-  { value: 'presentiel', label: 'Présentiel' }
-]
-const locationOptions = [
-  { value: 'all', label: 'Localisation' },
-  { value: 'Île-de-France', label: 'Île-de-France' },
-  { value: 'Occitanie', label: 'Occitanie' },
-  { value: 'National', label: 'National' }
-]
-const availabilityOptions = [
-  { value: 'all', label: 'Disponibilité' },
-  { value: 'success', label: 'Sessions ce mois-ci' },
-  { value: 'warning', label: 'Prochaine session' },
-  { value: 'neutral', label: 'Sur demande' }
+  ...MODALITY_OPTIONS.map((o) => ({ value: o.key, label: o.label }))
 ]
 
-const subFamilyFilterLabel = computed(
-  () => subFamilyOptions.find((o) => o.value === selectedSubFamily.value)?.label ?? 'Sous-famille'
-)
+// Options de localisation découvertes au fil des réponses API — la liste
+// ne rétrécit pas quand un filtre est actif pour permettre de revenir en arrière.
+const seenLocations = ref<string[]>([])
+
+const locationOptions = computed(() => [
+  { value: 'all', label: 'Localisation' },
+  ...seenLocations.value.map((loc) => ({ value: loc, label: loc }))
+])
+
 const modalityFilterLabel = computed(
   () => modalityOptions.find((o) => o.value === selectedModality.value)?.label ?? 'Modalité'
 )
 const locationFilterLabel = computed(
-  () => locationOptions.find((o) => o.value === selectedLocation.value)?.label ?? 'Localisation'
-)
-const availabilityFilterLabel = computed(
   () =>
-    availabilityOptions.find((o) => o.value === selectedAvailability.value)?.label ??
-    'Disponibilité'
+    locationOptions.value.find((o) => o.value === selectedLocation.value)?.label ?? 'Localisation'
 )
 
-const filteredFormations = computed(() =>
-  formations.filter((f) => {
-    if (selectedSubFamily.value !== 'all' && f.subFamily !== selectedSubFamily.value) return false
-    if (selectedModality.value !== 'all' && !f.modalities.includes(selectedModality.value)) {
-      return false
-    }
-    if (selectedLocation.value !== 'all' && f.region !== selectedLocation.value) return false
-    if (selectedAvailability.value !== 'all' && f.status?.type !== selectedAvailability.value) {
-      return false
-    }
-    return true
-  })
-)
+const catalogQuery = computed<CatalogQuery>(() => ({
+  family: famille,
+  page: currentPage.value,
+  limit: perPage,
+  sort: 'updatedAt',
+  order: 'desc',
+  modalities: selectedModality.value !== 'all' ? [selectedModality.value] : undefined,
+  location: selectedLocation.value !== 'all' ? selectedLocation.value : undefined
+}))
 
-const visibleFormations = computed(() => filteredFormations.value.slice(0, visibleCount.value))
-const hasMore = computed(() => visibleFormations.value.length < filteredFormations.value.length)
+const catalog = await useCatalog(catalogQuery)
 
-function selectSubFamily(key: string) {
-  selectedSubFamily.value = key
-  if (import.meta.client) {
-    document.getElementById('liste-formations')?.scrollIntoView({ behavior: 'smooth' })
+watch(catalog.data, (data) => {
+  const next = new Set(seenLocations.value)
+  for (const item of data?.items ?? []) {
+    for (const session of item.sessions ?? []) {
+      const loc = session.location?.region ?? session.location?.city
+      if (loc) next.add(loc)
+    }
   }
-}
-
-function resetFilters() {
-  selectedSubFamily.value = 'all'
-  selectedModality.value = 'all'
-  selectedLocation.value = 'all'
-  selectedAvailability.value = 'all'
-  visibleCount.value = 6
-}
-
-function showMore() {
-  visibleCount.value += 6
-}
-
-watch([selectedSubFamily, selectedModality, selectedLocation, selectedAvailability], () => {
-  visibleCount.value = 6
+  seenLocations.value = [...next].sort((a, b) => a.localeCompare(b))
 })
+
+const familyName = computed(() => familleData.value?.name ?? famille)
+
+const formations = computed<FormationItem[]>(
+  () => catalog.data.value?.items.map((course) => mapCourse(course, familyName.value)) ?? []
+)
+const resultCount = computed(() => catalog.data.value?.total ?? 0)
+
+// Visuel éditorial de la famille — champ `image` (fichier Directus)
+// résolu via l'endpoint /assets. Repli : placeholder avec le nom.
+const config = useRuntimeConfig()
+const heroImage = computed(() =>
+  familleData.value?.image ? `${config.public.directusUrl}/assets/${familleData.value.image}` : null
+)
+
+// Tags du hero : modalités présentes dans la famille + badge sessions
+// (« ce mois-ci » / « programmées ») dérivé des sessions API.
+const familyModalities = computed(() => {
+  const set = new Set<string>()
+  for (const item of catalog.data.value?.items ?? []) {
+    for (const m of item.modalities ?? []) set.add(m)
+  }
+  return [...set].map((m) => MODALITY_LABELS[m] ?? m)
+})
+
+const familySessionBadge = computed(() => {
+  for (const course of catalog.data.value?.items ?? []) {
+    const badge = buildSessionBadge(course)
+    if (badge === 'Sessions ce mois-ci') return badge
+  }
+  for (const course of catalog.data.value?.items ?? []) {
+    const badge = buildSessionBadge(course)
+    if (badge) return badge
+  }
+  return null
+})
+
+function resetPage() {
+  currentPage.value = 1
+  catalog.refresh()
+}
 </script>

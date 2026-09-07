@@ -61,6 +61,9 @@ const nuxtGlobals = {
   useContentSeo: 'readonly',
   useDirectusItemBySlug: 'readonly',
   useDirectusList: 'readonly',
+  useMenuFamilles: 'readonly',
+  useMenuCentres: 'readonly',
+  useMenuFormationsALaUne: 'readonly',
   sanitizeHtml: 'readonly',
   logServerError: 'readonly'
 }
@@ -162,7 +165,10 @@ export default defineConfig(
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }
       ],
-      'vue/multi-word-component-names': 'off'
+      'vue/multi-word-component-names': 'off',
+      // v-html autorisé uniquement après sanitizeHtml() (convention AGENTS,
+      // règle de revue bloquante) — la règle eslint ne voit pas le sanitiser.
+      'vue/no-v-html': 'off'
     }
   },
   {

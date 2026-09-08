@@ -41,7 +41,7 @@
         <!-- Filtres catégories -->
         <nav
           aria-label="Filtrer les actualités par catégorie"
-          class="-mx-gutter-mobile md:mt-xl overflow-x-auto px-gutter-mobile lg:mx-0 lg:px-0 mt-lg"
+          class="-mx-gutter-mobile md:mt-xl hide-scrollbar overflow-x-auto px-gutter-mobile lg:mx-0 lg:px-0 mt-lg"
         >
           <ul class="flex gap-sm whitespace-nowrap">
             <li v-for="category in categoryOptions" :key="category">
@@ -137,7 +137,7 @@
           <!-- Afficher plus — mobile -->
           <div
             v-if="mobileVisibleCount < filteredArticles.length"
-            class="flex justify-center lg:hidden my-lg"
+            class="flex justify-center lg:hidden my-3.5"
           >
             <Button
               type="button"

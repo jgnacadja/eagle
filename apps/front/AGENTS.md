@@ -4,7 +4,7 @@ Lire d'abord `AGENTS.md` à la racine.
 
 ## Architecture
 
-- `app/app.vue` avec `<NuxtPage :page-key="(route) => route.fullPath" />` — obligatoire pour que les routes dynamiques se rechargent.
+- `app/app.vue` avec `<NuxtPage :page-key="(route) => route.path" />` — remount sur changement de route dynamique, mais pas sur changement de query params (filtres/pagination).
 - `app/pages/` : routing Nuxt 4 (`index.vue`, `[famille].vue`, `[famille]/[slug].vue`).
 - `app/components/` : composants Vue, nommés PascalCase.
 - `app/layouts/default.vue` : layout racine.

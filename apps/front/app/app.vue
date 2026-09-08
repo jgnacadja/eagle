@@ -1,10 +1,11 @@
 <template>
   <NuxtRouteAnnouncer />
   <NuxtLayout>
-    <!-- Sans ceci, Nuxt réutilise l'instance entre deux pages de la même
-         route dynamique (ex: /blog/a -> /blog/b) et le setup() ne se
-         relance pas : les données affichées resteraient celles du slug
-         précédent. -->
-    <NuxtPage :page-key="(route) => route.fullPath" />
+    <!-- route.path (et non fullPath) : on veut un remount quand le slug
+         change (ex: /formations/a -> /formations/b) mais PAS quand seuls
+         les query params changent (filtres, pagination) — sinon chaque
+         frappe dans la recherche remonte la page (focus perdu, scroll
+         réinitialisé). -->
+    <NuxtPage :page-key="(route) => route.path" />
   </NuxtLayout>
 </template>

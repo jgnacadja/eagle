@@ -29,7 +29,7 @@ export async function seed(): Promise<void> {
     // familySlug est exclu de l'update : l'affectation de famille est
     // éditoriale (Directus → /admin/families/apply), le seed ne doit pas
     // écraser une affectation existante.
-    const { familySlug, ...updateData } = course
+    const { familySlug: _familySlug, ...updateData } = course
     await prisma.course.upsert({
       where: { digiformaId: course.digiformaId },
       create: course,

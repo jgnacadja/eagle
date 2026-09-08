@@ -395,14 +395,24 @@ const modalityOptions = [
   ...MODALITY_OPTIONS.map((o) => ({ value: o.key, label: o.label }))
 ]
 
-// Options de localisation découvertes au fil des réponses API — la liste
-// ne rétrécit pas quand un filtre est actif pour permettre de revenir en arrière.
-const seenLocations = ref<string[]>([])
+// Options de localisation dérivées de la requête facettes (toute la
+// famille, pas seulement la page courante). La valeur active est conservée
+// dans la liste pour permettre de revenir en arrière.
+const locationOptions = computed(() => {
+  const set = new Set<string>()
+  for (const item of facets.data.value?.items ?? []) {
+    for (const session of item.sessions ?? []) {
+      const loc = session.location?.region ?? session.location?.city
+      if (loc) set.add(loc)
+    }
+  }
+  if (selectedLocation.value !== 'all') set.add(selectedLocation.value)
 
-const locationOptions = computed(() => [
-  { value: 'all', label: 'Localisation' },
-  ...seenLocations.value.map((loc) => ({ value: loc, label: loc }))
-])
+  return [
+    { value: 'all', label: 'Localisation' },
+    ...[...set].sort((a, b) => a.localeCompare(b)).map((loc) => ({ value: loc, label: loc }))
+  ]
+})
 
 const modalityFilterLabel = computed(
   () => modalityOptions.find((o) => o.value === selectedModality.value)?.label ?? 'Modalité'
@@ -422,18 +432,11 @@ const catalogQuery = computed<CatalogQuery>(() => ({
   location: selectedLocation.value !== 'all' ? selectedLocation.value : undefined
 }))
 
-const catalog = await useCatalog(catalogQuery)
+// Requête « facettes » : badges du hero et options de localisation doivent
+// refléter toute la famille, pas seulement les 9 items de la page courante.
+const facets = await useCatalog({ family: famille, page: 1, limit: 100 })
 
-watch(catalog.data, (data) => {
-  const next = new Set(seenLocations.value)
-  for (const item of data?.items ?? []) {
-    for (const session of item.sessions ?? []) {
-      const loc = session.location?.region ?? session.location?.city
-      if (loc) next.add(loc)
-    }
-  }
-  seenLocations.value = [...next].sort((a, b) => a.localeCompare(b))
-})
+const catalog = await useCatalog(catalogQuery)
 
 const familyName = computed(() => familleData.value?.name ?? famille)
 
@@ -450,21 +453,23 @@ const heroImage = computed(() =>
 )
 
 // Tags du hero : modalités présentes dans la famille + badge sessions
-// (« ce mois-ci » / « programmées ») dérivé des sessions API.
+// (« ce mois-ci » / « programmées ») dérivé des sessions API — calculés
+// sur la requête facettes pour couvrir toute la famille.
 const familyModalities = computed(() => {
   const set = new Set<string>()
-  for (const item of catalog.data.value?.items ?? []) {
+  for (const item of facets.data.value?.items ?? []) {
     for (const m of item.modalities ?? []) set.add(m)
   }
   return [...set].map((m) => MODALITY_LABELS[m] ?? m)
 })
 
 const familySessionBadge = computed(() => {
-  for (const course of catalog.data.value?.items ?? []) {
+  const items = facets.data.value?.items ?? []
+  for (const course of items) {
     const badge = buildSessionBadge(course)
     if (badge === 'Sessions ce mois-ci') return badge
   }
-  for (const course of catalog.data.value?.items ?? []) {
+  for (const course of items) {
     const badge = buildSessionBadge(course)
     if (badge) return badge
   }
@@ -472,7 +477,13 @@ const familySessionBadge = computed(() => {
 })
 
 function resetPage() {
+  // Le watch de catalogQuery relance déjà la requête quand la page ou les
+  // filtres changent : n'appeler refresh() que si rien n'a changé.
+  const queryWillChange =
+    currentPage.value !== 1 || selectedModality.value !== 'all' || selectedLocation.value !== 'all'
+  selectedModality.value = 'all'
+  selectedLocation.value = 'all'
   currentPage.value = 1
-  catalog.refresh()
+  if (!queryWillChange) catalog.refresh()
 }
 </script>

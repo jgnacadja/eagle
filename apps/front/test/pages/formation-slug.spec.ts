@@ -238,7 +238,14 @@ vi.mock('~/composables/useCatalog', () => ({
   buildDuration: vi.fn(),
   buildMeta: vi.fn(),
   buildCertifications: vi.fn(),
-  buildSessionBadge: vi.fn(() => null)
+  buildSessionBadge: vi.fn(() => null),
+  upcomingSessions: (course: { sessions?: { startDate?: string | null }[] | null }) => {
+    const today = new Date()
+    today.setUTCHours(0, 0, 0, 0)
+    return (course.sessions ?? []).filter(
+      (s) => s.startDate && new Date(`${s.startDate}T00:00:00Z`) >= today
+    )
+  }
 }))
 
 vi.mock('~/composables/useDirectus', () => ({
@@ -350,7 +357,7 @@ describe('pages/formations/[famille]/[slug]', () => {
 
     expect(wrapper.text()).toContain('Prochaines sessions')
     expect(wrapper.findAll('.session-card')).toHaveLength(1)
-    expect(wrapper.text()).toContain('Session présentiel')
+    expect(wrapper.text()).toContain('Session en présentiel')
     expect(wrapper.text()).toContain('Où suivre cette formation')
     expect(wrapper.find('a[href="/centres/creteil"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Modalités & évaluation')

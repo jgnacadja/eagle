@@ -98,6 +98,14 @@ export class ListCoursesDto {
   @Transform(({ value }) => toOptionalInt(value))
   durationMax?: number
 
+  @ApiPropertyOptional({
+    description: 'Duration buckets filter (comma-separated: courte, moyenne, longue)'
+  })
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => toOptionalTrimmed(value))
+  durations?: string
+
   @ApiPropertyOptional({ description: 'Minimum price' })
   @IsOptional()
   @IsNumber()

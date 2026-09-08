@@ -179,13 +179,17 @@ const centreCards = computed<CenterResult[]>(() =>
   })
 )
 
+// Index slug → centre : évite un find() O(n) par carte dans le filtre
+// département (O(n²) sinon).
+const centresBySlug = computed(() => new Map((centres.value ?? []).map((c) => [c.slug, c])))
+
 const filteredCenters = computed(() => {
   let list = centreCards.value
 
   if (selectedDept.value !== 'all') {
     const dept = selectedDept.value
     list = list.filter((card) => {
-      const centre = centres.value?.find((c) => c.slug === card.id)
+      const centre = centresBySlug.value.get(card.id)
       return centre?.department === dept || (centre?.departments_covered ?? []).includes(dept)
     })
   }
@@ -206,6 +210,15 @@ const filteredCenters = computed(() => {
 
 const selectedDeptLabel = computed(() =>
   selectedDept.value === 'all' ? 'Tous les départements' : selectedDept.value
+)
+
+// La page ne se remonte plus sur changement de query (page-key = path) :
+// resynchroniser la recherche quand ?q= change (retour arrière, lien).
+watch(
+  () => route.query.q,
+  (q) => {
+    searchQuery.value = typeof q === 'string' ? q : ''
+  }
 )
 
 watch(

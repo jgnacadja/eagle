@@ -180,12 +180,12 @@ describe('CatalogService', () => {
 
     expect(countCall[0]).toContain("to_tsquery('french'")
     expect(countCall[0]).toContain('title_tsv')
-    expect(countCall.slice(1)).toEqual(expect.arrayContaining(['management', 'pilot']))
+    expect(countCall.slice(1)).toEqual(expect.arrayContaining(['management', 'pilot:*']))
 
     expect(listCall[0]).toContain('ts_rank_cd')
     expect(listCall[0]).toContain('LIMIT')
     expect(listCall[0]).toContain('OFFSET')
-    expect(listCall.slice(1)).toEqual(expect.arrayContaining(['management', 'pilot', 10, 10]))
+    expect(listCall.slice(1)).toEqual(expect.arrayContaining(['management', 'pilot:*', 10, 10]))
   })
 
   it('applies all filters', async () => {

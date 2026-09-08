@@ -231,7 +231,9 @@ function toTsQuery(raw: string): string | undefined {
     return undefined
   }
 
-  return tokens.join(' & ')
+  // `:*` = match préfixe : « pre » doit retrouver « prévention »,
+  // « prévenir », etc. Sans ça to_tsquery exige le lexème exact.
+  return tokens.map((token) => `${token}:*`).join(' & ')
 }
 
 function buildWhere(query: ListCoursesDto): Prisma.CourseWhereInput {
@@ -251,6 +253,11 @@ function buildWhere(query: ListCoursesDto): Prisma.CourseWhereInput {
 
   if (query.durationMin !== undefined || query.durationMax !== undefined) {
     where.durationHours = { gte: query.durationMin, lte: query.durationMax }
+  }
+
+  const durationWhere = buildDurationWhere(parseDurations(query.durations))
+  if (durationWhere) {
+    where.AND = [...(Array.isArray(where.AND) ? where.AND : []), durationWhere]
   }
 
   if (query.priceMin !== undefined || query.priceMax !== undefined) {
@@ -310,6 +317,60 @@ function parseModalities(value: string | undefined): string[] {
     .filter((m) => m.length > 0)
 }
 
+const DURATION_BUCKET_KEYS = new Set(['courte', 'moyenne', 'longue'])
+
+function parseDurations(value: string | undefined): string[] {
+  if (!value) return []
+  return value
+    .split(',')
+    .map((d) => d.trim())
+    .filter((d) => DURATION_BUCKET_KEYS.has(d))
+}
+
+// Mêmes seuils que buildDuration côté front : duration_hours > 0 pilote
+// (≤ 8 h courte, ≤ 40 h moyenne, > 40 h longue) ; sinon repli sur
+// duration_days (null → 1 jour : ≤ 1 j courte, ≤ 5 j moyenne, > 5 j longue).
+const NO_HOURS_SQL = `(duration_hours IS NULL OR duration_hours <= 0)`
+
+const DURATION_BUCKET_SQL: Record<string, string> = {
+  courte: `((duration_hours > 0 AND duration_hours <= 8) OR (${NO_HOURS_SQL} AND COALESCE(duration_days, 1) <= 1))`,
+  moyenne: `((duration_hours >= 9 AND duration_hours <= 40) OR (${NO_HOURS_SQL} AND COALESCE(duration_days, 1) BETWEEN 2 AND 5))`,
+  longue: `(duration_hours > 40 OR (${NO_HOURS_SQL} AND COALESCE(duration_days, 1) > 5))`
+}
+
+function buildDurationWhere(buckets: string[]): Prisma.CourseWhereInput | undefined {
+  if (buckets.length === 0) return undefined
+
+  const noHours: Prisma.CourseWhereInput = {
+    OR: [{ durationHours: null }, { durationHours: { lte: 0 } }]
+  }
+  const conditions: Prisma.CourseWhereInput[] = []
+
+  if (buckets.includes('courte')) {
+    conditions.push({
+      OR: [
+        { durationHours: { gt: 0, lte: 8 } },
+        { AND: [noHours, { OR: [{ durationDays: null }, { durationDays: { lte: 1 } }] }] }
+      ]
+    })
+  }
+  if (buckets.includes('moyenne')) {
+    conditions.push({
+      OR: [
+        { durationHours: { gte: 9, lte: 40 } },
+        { AND: [noHours, { durationDays: { gte: 2, lte: 5 } }] }
+      ]
+    })
+  }
+  if (buckets.includes('longue')) {
+    conditions.push({
+      OR: [{ durationHours: { gt: 40 } }, { AND: [noHours, { durationDays: { gt: 5 } }] }]
+    })
+  }
+
+  return conditions.length === 1 ? conditions[0] : { OR: conditions }
+}
+
 function escapeLikePattern(raw: string): string {
   const escaped = raw.replaceAll('!', '!!').replaceAll('%', '!%').replaceAll('_', '!_')
   return `%${escaped}%`
@@ -345,6 +406,11 @@ function buildSearchWhere(
   if (query.durationMax !== undefined) {
     values.push(query.durationMax)
     conditions.push(`duration_hours <= $${values.length}`)
+  }
+
+  const durationBuckets = parseDurations(query.durations)
+  if (durationBuckets.length > 0) {
+    conditions.push(`(${durationBuckets.map((d) => DURATION_BUCKET_SQL[d]).join(' OR ')})`)
   }
 
   if (query.priceMin !== undefined) {

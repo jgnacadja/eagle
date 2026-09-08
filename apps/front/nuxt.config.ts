@@ -9,6 +9,7 @@ const apiBase = process.env.NUXT_API_BASE ?? 'http://localhost:3001'
 // publique. Sans Docker, les deux valeurs par défaut sont identiques.
 const directusUrlServer = process.env.NUXT_DIRECTUS_URL ?? 'http://localhost:8055'
 const directusUrlPublic = process.env.NUXT_PUBLIC_DIRECTUS_URL ?? 'http://localhost:8055'
+const siteUrl = process.env.NUXT_PUBLIC_SITE_URL ?? 'https://learnup.fr'
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-01-01',
@@ -39,7 +40,8 @@ export default defineNuxtConfig({
     directusUrl: directusUrlServer,
     public: {
       apiBase,
-      directusUrl: directusUrlPublic
+      directusUrl: directusUrlPublic,
+      siteUrl
     }
   }
 })

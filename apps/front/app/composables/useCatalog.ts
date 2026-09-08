@@ -1,4 +1,4 @@
-import type { CourseListItem, Paginated } from '@learnup/types'
+import type { CourseListItem, CourseSession, Paginated } from '@learnup/types'
 import { toValue, type MaybeRefOrGetter } from 'vue'
 
 export interface CatalogQuery {
@@ -10,8 +10,7 @@ export interface CatalogQuery {
   order?: 'asc' | 'desc'
   cpf?: boolean
   certifying?: boolean
-  durationMin?: number
-  durationMax?: number
+  durations?: string[]
   modalities?: string[]
   location?: string
   center?: string
@@ -71,6 +70,23 @@ export function buildCertifications(course: CourseListItem): string[] {
   return certs
 }
 
+// Une session est « à venir » si sa date de début est aujourd'hui ou plus
+// tard : on compare au début du jour courant (UTC) pour ne pas exclure les
+// sessions du jour même.
+function startOfTodayUtc(): Date {
+  const today = new Date()
+  today.setUTCHours(0, 0, 0, 0)
+  return today
+}
+
+export function upcomingSessions(course: CourseListItem): CourseSession[] {
+  const today = startOfTodayUtc()
+  return (course.sessions ?? []).filter((s) => {
+    if (!s.startDate) return false
+    return new Date(`${s.startDate}T00:00:00Z`) >= today
+  })
+}
+
 // Tag de disponibilité affiché sur les cartes : priorité aux places
 // restantes faibles (warning), sinon la prochaine session datée.
 // Badge sessions du hero : « Sessions ce mois-ci » si une session démarre
@@ -78,10 +94,7 @@ export function buildCertifications(course: CourseListItem): string[] {
 // future existe. null si aucune session à venir.
 export function buildSessionBadge(course: CourseListItem): string | null {
   const now = new Date()
-  const upcoming = (course.sessions ?? []).filter((s) => {
-    if (!s.startDate) return false
-    return new Date(`${s.startDate}T00:00:00Z`) >= now
-  })
+  const upcoming = upcomingSessions(course)
   if (!upcoming.length) return null
 
   const thisMonth = upcoming.some((s) => {
@@ -94,9 +107,9 @@ export function buildSessionBadge(course: CourseListItem): string | null {
 export function buildStatus(
   course: CourseListItem
 ): { type: 'success' | 'warning' | 'neutral'; label: string } | undefined {
-  const upcoming = [...(course.sessions ?? [])]
-    .filter((s) => s.startDate)
-    .sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? ''))[0]
+  const upcoming = upcomingSessions(course).sort((a, b) =>
+    (a.startDate ?? '').localeCompare(b.startDate ?? '')
+  )[0]
   if (!upcoming?.startDate) return undefined
 
   const date = new Date(`${upcoming.startDate}T00:00:00Z`)
@@ -179,8 +192,7 @@ function buildApiQuery(query: CatalogQuery): Record<string, unknown> {
   if (query.family) params.family = query.family
   if (query.cpf === true) params.cpf = true
   if (query.certifying === true) params.certifying = true
-  if (query.durationMin !== undefined) params.durationMin = query.durationMin
-  if (query.durationMax !== undefined) params.durationMax = query.durationMax
+  if (query.durations?.length) params.durations = query.durations.join(',')
   if (query.modalities?.length) params.modalities = query.modalities.join(',')
   if (query.location?.trim()) params.location = query.location.trim()
   if (query.center) params.center = query.center

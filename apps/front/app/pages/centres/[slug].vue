@@ -325,7 +325,12 @@
 <script setup lang="ts">
 import { readItems } from '@directus/sdk'
 import type { Centre, CourseListItem, CourseSession } from '@learnup/types'
-import { mapCourse, useCatalog, type FormationItem } from '~/composables/useCatalog'
+import {
+  mapCourse,
+  upcomingSessions,
+  useCatalog,
+  type FormationItem
+} from '~/composables/useCatalog'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
@@ -436,14 +441,16 @@ useContentSeo(
 const centreCatalog = await useCatalog({ center: slug, limit: 12, page: 1 })
 
 const familyNames = await useMenuFamilles()
-const familyLabel = new Map((familyNames.value ?? []).map((f) => [f.slug, f.label]))
+// computed : familyNames peut se résoudre après le premier rendu — un Map
+// figé garderait des libellés de famille manquants.
+const familyLabel = computed(() => new Map((familyNames.value ?? []).map((f) => [f.slug, f.label])))
 
 const formations = computed<FormationItem[]>(
   () =>
     centreCatalog.data.value?.items
       .slice(0, 4)
       .map((course) =>
-        mapCourse(course, course.familySlug ? familyLabel.get(course.familySlug) : undefined)
+        mapCourse(course, course.familySlug ? familyLabel.value.get(course.familySlug) : undefined)
       ) ?? []
 )
 
@@ -497,7 +504,9 @@ function toCentreSession(
 
 const sessions = computed<CentreSession[]>(() =>
   (centreCatalog.data.value?.items ?? [])
-    .flatMap((course) => (course.sessions ?? []).map((session) => toCentreSession(course, session)))
+    .flatMap((course) =>
+      upcomingSessions(course).map((session) => toCentreSession(course, session))
+    )
     .filter((s): s is CentreSession & { startDate: string } => s !== null)
     .sort((a, b) => a.startDate.localeCompare(b.startDate))
     .slice(0, 4)

@@ -138,7 +138,10 @@ export class SyncService {
         throw error
       }
       this.logger.warn(error, 'Digiforma call failed, falling back to fixture')
-      const fixturePath = resolve(process.cwd(), 'test', 'fixtures', 'programs.json')
+      // Relatif au fichier (src/sync ou dist/sync → apps/api/test/fixtures) :
+      // process.cwd() dépend du répertoire de lancement (racine du monorepo
+      // vs apps/api) et casserait le repli fixture.
+      const fixturePath = resolve(__dirname, '..', '..', 'test', 'fixtures', 'programs.json')
       const raw = await fs.readFile(fixturePath, 'utf-8')
       return JSON.parse(raw) as Program[]
     }

@@ -31,14 +31,26 @@ export class DirectusMirrorService {
   private readonly baseUrl: string
   private readonly timeoutMs = 10_000
   private readonly maxRetries = 2
+  private readonly updateConcurrency = 10
 
   constructor(config: ConfigService) {
-    this.token = config.getOrThrow<string>('DIRECTUS_SYNC_TOKEN')
-    this.baseUrl = config.getOrThrow<string>('DIRECTUS_INTERNAL_URL')
+    // Token facultatif : l'API doit démarrer sans accès Directus (dev,
+    // environnements sans sync). Le miroir est alors simplement désactivé.
+    this.token = config.get<string>('DIRECTUS_SYNC_TOKEN') ?? ''
+    this.baseUrl = config.get<string>('DIRECTUS_INTERNAL_URL') ?? ''
+    if (!this.token || !this.baseUrl) {
+      this.logger.warn(
+        'DIRECTUS_SYNC_TOKEN or DIRECTUS_INTERNAL_URL missing: Directus mirror disabled'
+      )
+    }
+  }
+
+  private get enabled(): boolean {
+    return Boolean(this.token && this.baseUrl)
   }
 
   async upsertMany(courses: MirrorCourse[]): Promise<void> {
-    if (courses.length === 0) {
+    if (courses.length === 0 || !this.enabled) {
       return
     }
 
@@ -62,6 +74,15 @@ export class DirectusMirrorService {
   }
 
   async fetchAssignments(): Promise<Map<string, string>> {
+    // Ne jamais retourner une map vide quand le miroir est désactivé :
+    // applyFamilies interpréterait ça comme « toutes les affectations ont
+    // été retirées » et viderait family_slug.
+    if (!this.enabled) {
+      throw new Error(
+        'Directus mirror disabled: missing DIRECTUS_SYNC_TOKEN or DIRECTUS_INTERNAL_URL'
+      )
+    }
+
     const map = new Map<string, string>()
 
     try {
@@ -136,14 +157,17 @@ export class DirectusMirrorService {
   }
 
   private async updateMany(rows: UpsertBatch['update']): Promise<void> {
-    if (rows.length === 0) return
-
-    await Promise.all(
-      rows.map((row) => {
-        const { id, ...data } = row
-        return this.request(`${this.baseUrl}/items/formations/${id}`, 'PATCH', data)
-      })
-    )
+    // PATCH par lots : un Promise.all sur tout le tableau ouvrirait autant
+    // de requêtes concurrentes que de formations.
+    for (let i = 0; i < rows.length; i += this.updateConcurrency) {
+      const slice = rows.slice(i, i + this.updateConcurrency)
+      await Promise.all(
+        slice.map((row) => {
+          const { id, ...data } = row
+          return this.request(`${this.baseUrl}/items/formations/${id}`, 'PATCH', data)
+        })
+      )
+    }
   }
 
   private async request<T>(

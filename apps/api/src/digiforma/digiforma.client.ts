@@ -92,9 +92,20 @@ export class DigiformaClient {
   async fetchAllPrograms(): Promise<Program[]> {
     const programs: Program[] = []
     let page = 1
+    let previousFirstId: string | undefined
 
     while (page <= MAX_PAGES) {
       const nodes = await this.queryPrograms(page)
+
+      // Garde-fou : si l'API boucle (même premier id que la page
+      // précédente), on arrête au lieu de paginer jusqu'à MAX_PAGES.
+      const firstId = nodes[0]?.id
+      if (firstId !== undefined && firstId === previousFirstId) {
+        this.logger.warn(`Digiforma pagination loop detected at page ${page}, stopping`)
+        break
+      }
+      previousFirstId = firstId
+
       programs.push(...nodes)
 
       if (nodes.length < PAGE_SIZE) {
@@ -119,7 +130,7 @@ export class DigiformaClient {
         },
         body: JSON.stringify({
           query,
-          variables: { page, size: 100 }
+          variables: { page, size: PAGE_SIZE }
         }),
         signal: AbortSignal.timeout(30_000)
       })

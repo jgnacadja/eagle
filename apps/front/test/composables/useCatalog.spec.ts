@@ -5,6 +5,8 @@ import {
   buildCertifications,
   buildDuration,
   buildMeta,
+  buildSessionBadge,
+  buildStatus,
   mapCourse,
   useCatalog
 } from '~/composables/useCatalog'
@@ -103,6 +105,63 @@ describe('useCatalog helpers', () => {
     expect(mapped.familyKey).toBe('autre')
     expect(mapped.to).toBeNull()
   })
+
+  it('buildStatus ignores past sessions and keeps today', () => {
+    const today = new Date()
+    const todayIso = today.toISOString().slice(0, 10)
+    const past = new Date(today)
+    past.setUTCDate(past.getUTCDate() - 10)
+    const future = new Date(today)
+    future.setUTCDate(future.getUTCDate() + 30)
+
+    const session = (startDate: string) => ({
+      id: startDate,
+      startDate,
+      endDate: null,
+      modality: null,
+      seatsRemaining: null,
+      location: null
+    })
+
+    // Seule une session passée : pas de statut.
+    expect(
+      buildStatus({ ...course, sessions: [session(past.toISOString().slice(0, 10))] })
+    ).toBeUndefined()
+
+    // Session passée + session du jour : la session du jour est retenue.
+    const status = buildStatus({
+      ...course,
+      sessions: [session(past.toISOString().slice(0, 10)), session(todayIso)]
+    })
+    expect(status?.type).toBe('success')
+    expect(status?.label).toBe('Sessions ce mois-ci')
+
+    // La prochaine session future est affichée, pas la passée.
+    const futureStatus = buildStatus({
+      ...course,
+      sessions: [
+        session(past.toISOString().slice(0, 10)),
+        session(future.toISOString().slice(0, 10))
+      ]
+    })
+    expect(futureStatus?.label).toContain('Prochaine session le')
+  })
+
+  it('buildSessionBadge returns null when all sessions are past', () => {
+    const past = new Date()
+    past.setUTCDate(past.getUTCDate() - 5)
+    const sessions = [
+      {
+        id: 's1',
+        startDate: past.toISOString().slice(0, 10),
+        endDate: null,
+        modality: null,
+        seatsRemaining: null,
+        location: null
+      }
+    ]
+    expect(buildSessionBadge({ ...course, sessions })).toBeNull()
+  })
 })
 
 describe('useCatalog composable', () => {
@@ -135,5 +194,31 @@ describe('useCatalog composable', () => {
 
     expect(data.value).toEqual(listResponse)
     expect(requestedUrl).toBe('http://api.test/courses')
+  })
+
+  it('forwards duration buckets as a comma-separated durations param', async () => {
+    vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
+    vi.stubGlobal('logServerError', vi.fn())
+
+    let requestedQuery: Record<string, unknown> = {}
+    vi.stubGlobal(
+      '$fetch',
+      vi.fn().mockImplementation((_url: string, options: { query: Record<string, unknown> }) => {
+        requestedQuery = options.query
+        return { items: [], total: 0, page: 1, pageSize: 9 }
+      })
+    )
+    vi.stubGlobal('useAsyncData', async (_key: unknown, handler: () => Promise<unknown>) => ({
+      data: ref(await handler()),
+      pending: ref(false),
+      error: ref(null),
+      refresh: vi.fn()
+    }))
+
+    await useCatalog(ref({ durations: ['courte', 'longue'] }))
+
+    expect(requestedQuery.durations).toBe('courte,longue')
+    expect(requestedQuery.durationMin).toBeUndefined()
+    expect(requestedQuery.durationMax).toBeUndefined()
   })
 })

@@ -39,10 +39,7 @@
                   as-child
                   class="h-control rounded-full bg-accent px-md py-sm text-button font-semibold text-ink transition hover:bg-accent-text"
                 >
-                  <NuxtLink
-                    :to="`/centres/demande-de-formation?famille=${famille}&formation=${slug}`"
-                    >Demander cette formation</NuxtLink
-                  >
+                  <NuxtLink :to="demandeTo">Demander cette formation</NuxtLink>
                 </Button>
                 <Button
                   v-if="course.generatedProgramUrl"
@@ -313,10 +310,7 @@
                       as-child
                       class="h-control w-full rounded-md bg-primary-dark px-md py-sm text-button font-semibold text-ink-inverse transition hover:bg-primary"
                     >
-                      <NuxtLink
-                        :to="`/centres/demande-de-formation?famille=${famille}&formation=${slug}`"
-                        >Demander cette formation</NuxtLink
-                      >
+                      <NuxtLink :to="demandeTo">Demander cette formation</NuxtLink>
                     </Button>
                     <Button
                       as-child
@@ -408,9 +402,7 @@
                 as-child
                 class="mt-md h-control w-full rounded-md bg-paper px-md py-sm text-button font-semibold text-ink transition hover:bg-surface"
               >
-                <NuxtLink :to="`/centres/demande-de-formation?famille=${famille}&formation=${slug}`"
-                  >Organiser cette formation dans mon entreprise</NuxtLink
-                >
+                <NuxtLink :to="demandeTo">Organiser cette formation dans mon entreprise</NuxtLink>
               </Button>
             </Card>
 
@@ -444,9 +436,7 @@
             as-child
             class="h-control shrink-0 rounded-full bg-accent px-md py-sm text-button font-semibold text-ink transition hover:bg-accent-text"
           >
-            <NuxtLink :to="`/centres/demande-de-formation?famille=${famille}&formation=${slug}`"
-              >Demander cette formation</NuxtLink
-            >
+            <NuxtLink :to="demandeTo">Demander cette formation</NuxtLink>
           </Button>
         </div>
       </div>
@@ -495,6 +485,7 @@ import { useDirectusClient } from '~/composables/useDirectus'
 import {
   buildSessionBadge,
   mapCourse,
+  upcomingSessions,
   useCatalog,
   type FormationItem
 } from '~/composables/useCatalog'
@@ -638,9 +629,9 @@ useHead({
           provider: {
             '@type': 'Organization',
             name: 'LEARN UP ACADEMY',
-            url: 'https://learnup.fr'
+            url: config.public.siteUrl
           },
-          url: `https://learnup.fr/formations/${famille}/${slug}`
+          url: `${config.public.siteUrl}/formations/${famille}/${slug}`
         })
       }
     ]
@@ -770,11 +761,22 @@ const programme = computed<ProgrammeModule[]>(() => {
   return list
 })
 
-const demandeTo = `/centres/demande-de-formation?famille=${famille}&formation=${slug}`
+// Params encodés : famille/slug/id de session peuvent contenir des
+// caractères spéciaux — ne jamais les interpoler bruts dans la query.
+const demandeTo = `/centres/demande-de-formation?famille=${encodeURIComponent(famille)}&formation=${encodeURIComponent(slug)}`
+
+// Titre de session par modalité (label déjà traduit via MODALITY_LABELS).
+const SESSION_TITLES: Record<string, string> = {
+  presentiel: 'Session en présentiel',
+  distanciel: 'Session en distanciel',
+  hybride: 'Session hybride',
+  intra: 'Session intra',
+  inter: 'Session inter'
+}
 
 const sessionsList = computed(() => {
-  const raw = [...(course.value?.sessions ?? [])]
-    .filter((s) => s.startDate)
+  const raw = (course.value ? upcomingSessions(course.value) : [])
+    .slice()
     .sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? ''))
 
   return raw.map((s, index) => {
@@ -800,11 +802,13 @@ const sessionsList = computed(() => {
       key: s.id ?? `${s.startDate}-${index}`,
       day,
       month,
-      title: `Session ${modality.toLowerCase() || 'planifiée'}`,
+      title:
+        (s.modality && SESSION_TITLES[s.modality]) ||
+        (modality ? `Session ${modality.toLowerCase()}` : 'Session planifiée'),
       meta,
       places,
       type,
-      to: s.id ? `${demandeTo}&session=${s.id}` : demandeTo
+      to: s.id ? `${demandeTo}&session=${encodeURIComponent(s.id)}` : demandeTo
     }
   })
 })

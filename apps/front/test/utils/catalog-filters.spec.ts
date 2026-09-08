@@ -3,9 +3,7 @@ import {
   MODALITY_OPTIONS,
   DURATION_OPTIONS,
   CERTIFICATION_OPTIONS,
-  DURATION_BUCKETS,
-  getFilterLabel,
-  durationBucketToHours
+  getFilterLabel
 } from '~/utils/catalog-filters'
 
 describe('catalog-filters', () => {
@@ -30,18 +28,6 @@ describe('catalog-filters', () => {
       'recyclage',
       'reglementaire'
     ])
-  })
-
-  it('returns the correct duration buckets in hours', () => {
-    expect(DURATION_BUCKETS.courte).toEqual({ min: 0, max: 8 })
-    expect(DURATION_BUCKETS.moyenne).toEqual({ min: 9, max: 40 })
-    expect(DURATION_BUCKETS.longue).toEqual({ min: 41 })
-  })
-
-  it('converts duration keys to min and max hours', () => {
-    expect(durationBucketToHours(['courte'])).toEqual({ min: 0, max: 8 })
-    expect(durationBucketToHours(['moyenne', 'longue'])).toEqual({ min: 9, max: 40 })
-    expect(durationBucketToHours([])).toBeUndefined()
   })
 
   it('returns modality and certification labels', () => {

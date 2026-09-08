@@ -154,7 +154,14 @@ vi.mock('~/composables/useCatalog', () => ({
   }),
   buildDuration: vi.fn(),
   buildMeta: vi.fn(),
-  buildCertifications: vi.fn()
+  buildCertifications: vi.fn(),
+  upcomingSessions: (course: { sessions?: { startDate?: string | null }[] | null }) => {
+    const today = new Date()
+    today.setUTCHours(0, 0, 0, 0)
+    return (course.sessions ?? []).filter(
+      (s) => s.startDate && new Date(`${s.startDate}T00:00:00Z`) >= today
+    )
+  }
 }))
 
 const stubs = {

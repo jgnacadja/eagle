@@ -304,7 +304,7 @@
             v-if="hasMoreMobile"
             type="button"
             class="mx-auto mt-lg block rounded-full border border-outline px-lg py-sm text-small font-semibold text-ink-body hover:bg-surface lg:hidden"
-            @click="currentPage += 1"
+            @click="loadMore"
           >
             Afficher plus de résultats
           </button>
@@ -399,15 +399,15 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, watch } from 'vue'
-import type { FamilyWithCount, FamilleFormation } from '@learnup/types'
+import { nextTick, onBeforeUnmount, watch, type Ref } from 'vue'
+import type { CourseListItem, FamilyWithCount, FamilleFormation } from '@learnup/types'
 import {
   mapCourse,
   useCatalog,
   type CatalogQuery,
   type FormationItem
 } from '~/composables/useCatalog'
-import { durationBucketToHours, DURATION_LABELS, MODALITY_LABELS } from '~/utils/catalog-filters'
+import { DURATION_LABELS, MODALITY_LABELS } from '~/utils/catalog-filters'
 import { useDirectusClient } from '~/composables/useDirectus'
 import { readItems } from '@directus/sdk'
 
@@ -494,13 +494,23 @@ function parsePageParam(value: unknown): number {
   return Number.isInteger(page) && page > 0 ? page : 1
 }
 
+// N'assigne le tableau que si le contenu change : une nouvelle identité
+// déclencherait le watch des filtres (reset page) alors que la valeur est
+// identique — c'est ce qui cassait la pagination via le watch route.query.
+function assignList(target: Ref<string[]>, next: string[]) {
+  const current = target.value
+  if (current.length !== next.length || current.some((v, i) => v !== next[i])) {
+    target.value = next
+  }
+}
+
 function parseUrl() {
   searchQuery.value = parseStringParam(route.query.q)
   const famille = route.query.famille
-  selectedFamilies.value = typeof famille === 'string' ? [famille] : []
-  selectedModalities.value = parseListParam(route.query.modalites)
+  assignList(selectedFamilies, typeof famille === 'string' ? [famille] : [])
+  assignList(selectedModalities, parseListParam(route.query.modalites))
   location.value = parseStringParam(route.query.lieu)
-  selectedDurations.value = parseListParam(route.query.duree)
+  assignList(selectedDurations, parseListParam(route.query.duree))
   cpf.value = route.query.cpf === 'true'
   certifying.value = route.query.certifiant === 'true'
   sortBy.value = parseSortParam(route.query.tri, searchQuery.value)
@@ -519,9 +529,6 @@ const catalogQuery = computed<CatalogQuery>(() => {
     duree: { sort: 'duration', order: 'asc' }
   }
 
-  const buckets =
-    selectedDurations.value.length > 0 ? durationBucketToHours(selectedDurations.value) : undefined
-
   return {
     search: searchQuery.value || undefined,
     family: selectedFamilies.value[0],
@@ -530,8 +537,7 @@ const catalogQuery = computed<CatalogQuery>(() => {
     ...sortMap[sortBy.value],
     cpf: cpf.value || undefined,
     certifying: certifying.value || undefined,
-    durationMin: buckets?.min,
-    durationMax: buckets?.max,
+    durations: selectedDurations.value.length ? [...selectedDurations.value] : undefined,
     modalities: selectedModalities.value.length ? selectedModalities.value : undefined,
     location: location.value.trim() || undefined
   }
@@ -539,18 +545,46 @@ const catalogQuery = computed<CatalogQuery>(() => {
 
 const catalog = await useCatalog(catalogQuery)
 
-const formations = computed<FormationItem[]>(
-  () =>
-    catalog.data.value?.items.map((course) =>
-      mapCourse(course, course.familySlug ? familyNames.value.get(course.familySlug) : undefined)
-    ) ?? []
+// « Afficher plus » (mobile) doit cumuler les pages au lieu de remplacer la
+// liste : loadedItems conserve les items déjà chargés, loadMore() arme le
+// mode append avant de passer à la page suivante.
+const loadedItems = ref<CourseListItem[]>([])
+const appendNextPage = ref(false)
+
+function loadMore() {
+  appendNextPage.value = true
+  currentPage.value += 1
+}
+
+watch(
+  () => catalog.data.value,
+  (data) => {
+    if (!data) return
+    if (appendNextPage.value && data.page > 1) {
+      const seen = new Set(loadedItems.value.map((item) => item.slug))
+      loadedItems.value = [
+        ...loadedItems.value,
+        ...data.items.filter((item) => !seen.has(item.slug))
+      ]
+    } else {
+      loadedItems.value = data.items
+    }
+    appendNextPage.value = false
+  },
+  { immediate: true }
+)
+
+const formations = computed<FormationItem[]>(() =>
+  loadedItems.value.map((course) =>
+    mapCourse(course, course.familySlug ? familyNames.value.get(course.familySlug) : undefined)
+  )
 )
 const resultCount = computed(() => catalog.data.value?.total ?? 0)
 const hasMoreMobile = computed(
   () =>
     !catalog.pending.value &&
     !!catalog.data.value &&
-    currentPage.value * perPage < catalog.data.value.total
+    loadedItems.value.length < catalog.data.value.total
 )
 
 const directus = useDirectusClient()
@@ -718,6 +752,16 @@ function triggerSearch() {
   currentPage.value = 1
 }
 
+// La page ne se remonte plus sur changement de query (page-key = path) :
+// il faut resynchroniser l'état quand l'URL change sans venir de notre
+// propre router.replace (retour arrière, lien partagé, etc.).
+watch(
+  () => route.query,
+  () => {
+    parseUrl()
+  }
+)
+
 watch(
   [
     searchQuery,
@@ -730,8 +774,19 @@ watch(
     sortBy,
     currentPage
   ],
-  () => {
+  (newValues, oldValues) => {
     if (currentPage.value < 1) currentPage.value = 1
+
+    // Tout changement de filtre/recherche/tri repart en page 1 — sauf si
+    // c'est la page elle-même qui vient de changer (pagination, « Afficher
+    // plus ») ou si la mise à jour vient de l'URL (parseUrl restaure page
+    // et filtres ensemble).
+    const filtersChanged = newValues.slice(0, 8).some((value, i) => value !== oldValues[i])
+    const pageChanged = newValues[8] !== oldValues[8]
+    if (filtersChanged && !pageChanged && currentPage.value !== 1) {
+      currentPage.value = 1
+      return
+    }
 
     const query: Record<string, unknown> = {}
     if (searchQuery.value) query.q = searchQuery.value

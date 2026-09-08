@@ -18,12 +18,6 @@ export const DURATION_OPTIONS: FilterOption[] = [
   { key: 'longue', label: 'Longue (> 40 h)' }
 ]
 
-export const DURATION_BUCKETS: Record<string, { min: number; max?: number }> = {
-  courte: { min: 0, max: 8 },
-  moyenne: { min: 9, max: 40 },
-  longue: { min: 41 }
-}
-
 export const CERTIFICATION_OPTIONS: FilterOption[] = [
   { key: 'certification', label: 'Certification' },
   { key: 'habilitation', label: 'Habilitation' },
@@ -60,19 +54,4 @@ export function getFilterLabel(
   if (group === 'durations') return DURATION_LABELS[key] ?? key
   if (group === 'certifications') return CERTIFICATION_LABELS[key] ?? key
   return key
-}
-
-export function durationBucketToHours(keys: string[]): { min?: number; max?: number } | undefined {
-  if (keys.length === 0) return undefined
-
-  const buckets = keys
-    .map((k) => DURATION_BUCKETS[k])
-    .filter((b): b is { min: number; max?: number } => !!b)
-  const mins = buckets.map((b) => b.min)
-  const maxs = buckets.map((b) => b.max).filter((v): v is number => v !== undefined)
-
-  return {
-    min: Math.min(...mins),
-    max: maxs.length ? Math.max(...maxs) : undefined
-  }
 }

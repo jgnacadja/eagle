@@ -2,7 +2,7 @@
   <div class="flex flex-1 flex-col">
     <!-- Bandeau d'intro : titre, filtre région, catégories -->
     <section class="bg-primary-dark text-paper">
-      <div class="mx-auto max-w-container px-gutter-mobile py-2xl md:px-gutter">
+      <div class="mx-auto max-w-container px-gutter-mobile py-lg md:py-2xl md:px-gutter">
         <p class="text-overline text-accent font-extrabold">ACTUALITÉS DU RÉSEAU</p>
 
         <div class="mt-md flex flex-col gap-lg lg:flex-row lg:items-end lg:justify-between">
@@ -41,7 +41,7 @@
         <!-- Filtres catégories -->
         <nav
           aria-label="Filtrer les actualités par catégorie"
-          class="-mx-gutter-mobile mt-xl overflow-x-auto px-gutter-mobile lg:mx-0 lg:px-0"
+          class="-mx-gutter-mobile md:mt-xl overflow-x-auto px-gutter-mobile lg:mx-0 lg:px-0 mt-lg"
         >
           <ul class="flex gap-sm whitespace-nowrap">
             <li v-for="category in categoryOptions" :key="category">
@@ -111,12 +111,12 @@
         </section>
 
         <!-- Grille d'articles -->
-        <section aria-label="Dernières actualités" class="mt-2xl">
+        <section aria-label="Dernières actualités" class="mt-4 md:mt-2xl">
           <p v-if="filteredArticles.length === 0" class="text-body text-ink-muted">
             Aucun article dans cette catégorie pour le moment.
           </p>
 
-          <ul v-else class="grid grid-cols-1 gap-lg sm:grid-cols-2 lg:grid-cols-3">
+          <ul v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <li
               v-for="(article, index) in filteredArticles"
               :key="article.slug"
@@ -137,7 +137,7 @@
           <!-- Afficher plus — mobile -->
           <div
             v-if="mobileVisibleCount < filteredArticles.length"
-            class="mt-2xl flex justify-center lg:hidden"
+            class="flex justify-center lg:hidden my-lg"
           >
             <Button
               type="button"
@@ -151,7 +151,7 @@
           <!-- Bandeau newsletter -->
           <section
             aria-labelledby="newsletter-heading"
-            class="mt-2xl rounded-md bg-accent/14 p-xl lg:mt-3xl lg:flex lg:items-center lg:justify-between lg:p-2xl"
+            class="rounded-md bg-accent/14 p-xl lg:mt-3xl lg:flex lg:items-center lg:justify-between lg:p-2xl"
           >
             <div class="max-w-prose">
               <h2

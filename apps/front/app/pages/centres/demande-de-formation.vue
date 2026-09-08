@@ -1,6 +1,6 @@
 <template>
   <div class="flex-1">
-    <div class="mx-auto px-gutter-mobile py-section md:px-gutter">
+    <div class="mx-auto max-w-container px-gutter-mobile py-section md:px-gutter">
       <!-- En-tête de page + stepper -->
       <div class="mb-2xl flex items-start justify-between gap-lg">
         <div>

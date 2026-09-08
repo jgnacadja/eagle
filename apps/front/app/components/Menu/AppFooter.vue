@@ -1,6 +1,6 @@
 <template>
   <footer class="bg-primary-dark text-ink-inverse">
-    <div class="mx-auto px-gutter-mobile md:px-gutter py-section">
+    <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter py-section">
       <div class="grid grid-cols-2 gap-10 md:grid-cols-6">
         <div class="col-span-2 md:col-span-2">
           <NuxtLink to="/" aria-label="LEARN UP ACADEMY — Accueil" class="inline-block">

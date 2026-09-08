@@ -9,7 +9,9 @@
         class="pointer-events-none absolute -right-36 -top-32 h-96 w-96 rounded-full bg-accent/5"
       />
 
-      <div class="relative mx-auto px-gutter-mobile md:px-gutter pb-section pt-4xl text-center">
+      <div
+        class="relative mx-auto max-w-container px-gutter-mobile md:px-gutter pb-section pt-4xl text-center"
+      >
         <span
           class="inline-block rounded-full border border-primary bg-paper px-4 py-2 text-h4 font-bold uppercase tracking-widest text-primary"
         >
@@ -83,7 +85,7 @@
     </div>
 
     <!-- Network -->
-    <section class="mx-auto px-gutter-mobile md:px-gutter py-section">
+    <section class="mx-auto max-w-container px-gutter-mobile md:px-gutter py-section">
       <h2 class="text-center font-display text-h3 md:text-h2 font-extrabold text-ink">
         Construisons ensemble le réseau Learn Up Academy
       </h2>
@@ -115,7 +117,7 @@
     </section>
 
     <!-- How it works -->
-    <section class="mx-auto px-gutter-mobile md:px-gutter pb-section">
+    <section class="mx-auto max-w-container px-gutter-mobile md:px-gutter pb-section">
       <p
         class="text-center text-h4 font-bold uppercase leading-3 tracking-widest text-accent-text my-4"
       >
@@ -155,7 +157,7 @@
 
     <!-- Formations -->
     <section id="formations" class="bg-surface py-section">
-      <div class="mx-auto px-gutter-mobile md:px-gutter">
+      <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter">
         <div class="flex items-end justify-between">
           <div>
             <h2 class="font-display text-h2 font-extrabold text-ink">Nos formations</h2>
@@ -195,7 +197,7 @@
     </section>
 
     <!-- Centres -->
-    <section id="centres" class="mx-auto px-gutter-mobile md:px-gutter py-section">
+    <section id="centres" class="mx-auto max-w-container px-gutter-mobile md:px-gutter py-section">
       <div class="flex flex-col gap-md sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 class="font-display text-h3 md:text-h2 font-extrabold text-ink">
@@ -259,7 +261,7 @@
 
     <!-- Confier -->
     <section id="confier" class="bg-primary-muted py-section text-ink-inverse">
-      <div class="mx-auto px-gutter-mobile md:px-gutter">
+      <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter">
         <p class="text-h4 font-bold uppercase text-accent">Confier mes formations</p>
 
         <div class="mt-sm flex flex-col gap-md lg:flex-row lg:items-baseline lg:justify-between">
@@ -330,7 +332,7 @@
     <!-- Stats -->
     <section class="border-b border-rule bg-surface">
       <div
-        class="mx-auto grid grid-cols-2 gap-y-xl gap-x-0 px-gutter-mobile md:px-gutter py-section md:grid-cols-4 md:gap-xl"
+        class="mx-auto grid max-w-container grid-cols-2 gap-y-xl gap-x-0 px-gutter-mobile md:px-gutter py-section md:grid-cols-4 md:gap-xl"
       >
         <StatItem
           v-for="stat in stats"
@@ -344,7 +346,7 @@
     </section>
 
     <!-- Testimonials -->
-    <section class="mx-auto px-gutter-mobile md:px-gutter py-section">
+    <section class="mx-auto max-w-container px-gutter-mobile md:px-gutter py-section">
       <div class="flex flex-wrap items-end justify-between gap-sm">
         <h2 class="font-display text-h3 md:text-h2 font-extrabold text-ink">
           Ce qu'en disent les entreprises
@@ -376,7 +378,7 @@
 
     <!-- News -->
     <section id="actualites" class="bg-surface py-section">
-      <div class="mx-auto px-gutter-mobile md:px-gutter">
+      <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter">
         <div class="flex items-end justify-between">
           <h2 class="font-display text-h2 font-extrabold text-ink">Actualités</h2>
           <NuxtLink

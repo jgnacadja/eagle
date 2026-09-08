@@ -2,7 +2,7 @@
   <div class="flex flex-1 flex-col">
     <!-- Top surface section: heading, description and filters -->
     <section class="bg-surface-soft">
-      <div class="mx-auto px-gutter-mobile md:px-gutter py-section">
+      <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter py-section">
         <p class="text-overline text-accent-text">LE RÉSEAU LEARN UP</p>
         <h1 class="mt-sm font-display text-h2 font-extrabold text-ink lg:text-h1">
           Réseau de centres

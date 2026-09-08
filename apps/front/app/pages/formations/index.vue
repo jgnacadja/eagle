@@ -2,7 +2,7 @@
   <div class="flex flex-1 flex-col">
     <!-- Hero / recherche -->
     <section class="border-b border-rule bg-linear-to-b from-paper to-surface">
-      <div class="mx-auto px-gutter-mobile py-2xl md:px-gutter">
+      <div class="mx-auto max-w-container px-gutter-mobile py-2xl md:px-gutter">
         <p class="text-overline text-accent-text">Catalogue de formations</p>
         <h1
           class="mt-sm max-w-prose font-display text-h2 font-extrabold leading-tight text-ink lg:text-h1"
@@ -95,7 +95,9 @@
     </section>
 
     <!-- Filtres + résultats -->
-    <section class="mx-auto w-full px-gutter-mobile max-md:pt-0 py-section md:px-gutter">
+    <section
+      class="mx-auto w-full max-w-container px-gutter-mobile max-md:pt-0 py-section md:px-gutter"
+    >
       <div class="grid grid-cols-1 gap-2xl lg:grid-cols-[260px_1fr]">
         <!-- Sidebar filtres desktop -->
         <aside aria-label="Filtres du catalogue" class="hidden lg:block">
@@ -377,7 +379,7 @@
 
       <!-- Barre d'action fixe -->
       <div class="shrink-0 border-t border-rule bg-paper p-md">
-        <div class="mx-auto flex w-full gap-md">
+        <div class="mx-auto flex w-full max-w-container gap-md">
           <button
             type="button"
             class="rounded-full border border-outline px-lg py-sm text-small font-semibold text-ink-body hover:bg-surface"

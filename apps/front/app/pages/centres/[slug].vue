@@ -6,7 +6,7 @@
         class="border-b border-rule bg-linear-to-b from-paper to-surface"
         aria-labelledby="hero-title"
       >
-        <div class="mx-auto px-gutter-mobile md:px-gutter py-2xl">
+        <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter py-2xl">
           <div class="grid items-start gap-2xl lg:grid-cols-5">
             <div class="lg:col-span-3">
               <p class="text-overline text-accent-text uppercase">
@@ -60,7 +60,7 @@
       </section>
 
       <!-- Contenu principal -->
-      <div class="mx-auto px-gutter-mobile md:px-gutter py-section">
+      <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter py-section">
         <div class="flex flex-col gap-2xl lg:flex-row">
           <!-- Barre latérale -->
           <aside

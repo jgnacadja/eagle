@@ -1,7 +1,7 @@
 <template>
   <div class="bg-paper-warm flex flex-1 flex-col">
     <template v-if="pageState === 'found'">
-      <div class="mx-auto w-full px-gutter-mobile py-2xl md:px-gutter">
+      <div class="mx-auto w-full max-w-container px-gutter-mobile py-2xl md:px-gutter">
         <div class="lg:grid lg:grid-cols-12 lg:gap-2xl">
           <!-- Colonne article -->
           <article class="lg:col-span-8">
@@ -180,7 +180,7 @@
 
       <!-- À lire ensuite — pleine largeur, fond blanc -->
       <section aria-labelledby="lire-ensuite-heading" class="bg-paper">
-        <div class="mx-auto w-full px-gutter-mobile py-2xl md:px-gutter">
+        <div class="mx-auto w-full max-w-container px-gutter-mobile py-2xl md:px-gutter">
           <div class="flex items-center justify-between">
             <h2 id="lire-ensuite-heading" class="font-display text-h3 font-extrabold text-ink">
               À lire ensuite

@@ -3,7 +3,7 @@
     <AppHeader />
     <main class="flex flex-1 flex-col">
       <section v-if="items?.length" class="border-b border-rule bg-surface">
-        <div class="mx-auto px-gutter-mobile md:px-gutter py-md">
+        <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter py-md">
           <Breadcrumbs :items="items" />
         </div>
       </section>

@@ -310,8 +310,8 @@ const articles: ActuArticle[] = [
   },
   {
     slug: 'habilitations-nf-c-18-510',
-    category: 'Réglementation',
-    source: 'Réglementation',
+    category: 'Réglementation & obligations',
+    source: 'Réglementation & obligations',
     region: '',
     date: '14 août 2026',
     title: 'Habilitations électriques : ce que change la nouvelle NF C 18-510',

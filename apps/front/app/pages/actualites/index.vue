@@ -3,10 +3,12 @@
     <!-- Bandeau d'intro : titre, filtre région, catégories -->
     <section class="bg-primary-dark text-paper">
       <div class="mx-auto max-w-container px-gutter-mobile py-2xl md:px-gutter">
-        <p class="text-overline text-accent">Actualités du réseau</p>
+        <p class="text-overline text-accent font-extrabold">ACTUALITÉS DU RÉSEAU</p>
 
         <div class="mt-md flex flex-col gap-lg lg:flex-row lg:items-end lg:justify-between">
-          <h1 class="max-w-prose font-display text-h2 font-extrabold leading-tight lg:text-h1">
+          <h1
+            class="max-w-prose font-display text-h2 font-extrabold leading-tight text-lg lg:text-h1"
+          >
             Réglementation, formations et vie du réseau
           </h1>
 
@@ -15,9 +17,12 @@
             <Select v-model="selectedRegion">
               <SelectTrigger
                 id="region-select"
-                class="h-control w-full rounded-full border border-paper/20 bg-transparent px-lg text-small text-paper focus:ring-paper lg:w-56"
+                class="h-control w-full rounded-full border border-white/40 bg-transparent px-lg text-small text-paper focus:ring-paper lg:w-56 font-semibold"
               >
-                <span class="truncate">{{ selectedRegionLabel }}</span>
+                <span class="flex min-w-0 items-center gap-sm">
+                  <IconMapPin :size="20" class="shrink-0" />
+                  <span class="truncate">{{ selectedRegionLabel }}</span>
+                </span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem
@@ -42,11 +47,11 @@
             <li v-for="category in categoryOptions" :key="category">
               <button
                 type="button"
-                class="rounded-full border px-lg py-sm text-small"
+                class="rounded-full border px-lg py-3 text-meta font-semibold"
                 :class="
                   category === selectedCategory
                     ? 'border-paper bg-paper font-semibold text-ink'
-                    : 'border-paper/20 bg-transparent font-medium text-paper/80 hover:border-paper/40 hover:text-paper'
+                    : 'border-white/35 bg-transparent font-medium text-paper/80 hover:border-paper/40 hover:text-paper'
                 "
                 :aria-current="category === selectedCategory ? 'true' : undefined"
                 @click="selectedCategory = category"
@@ -64,22 +69,27 @@
         <!-- À la une -->
         <section v-if="featuredArticle" aria-labelledby="a-la-une-heading">
           <div class="flex items-center gap-md">
-            <h2 id="a-la-une-heading" class="text-overline uppercase text-accent-text">À la une</h2>
+            <h2
+              id="a-la-une-heading"
+              class="text-overline uppercase text-accent-text font-extrabold"
+            >
+              À la une
+            </h2>
             <div class="h-px flex-1 bg-accent-text/30" aria-hidden="true" />
           </div>
 
-          <Card class="mt-md overflow-hidden lg:flex">
+          <Card class="mt-md overflow-hidden shadow-md lg:flex">
             <div
               class="flex aspect-16/10 items-center justify-center border-b border-dashed border-outline bg-surface-alt text-center text-small text-ink-muted lg:aspect-auto lg:w-2/5 lg:border-b-0 lg:border-r"
             >
               {{ featuredArticle.imageLabel }}
             </div>
-            <div class="flex flex-1 flex-col justify-center gap-md p-lg lg:p-2xl">
+            <div class="flex flex-1 flex-col justify-center gap-md bg-paper p-lg lg:p-xl">
               <p class="text-overline text-accent-text">
                 <span class="font-bold uppercase">{{ featuredArticle.category }}</span>
-                <span class="font-medium text-ink-subtle">
-                  <span class="mx-xs">·</span>{{ featuredArticle.date }} <span class="mx-xs">·</span
-                  >{{ featuredArticle.readingTime }}
+                <span class="font-medium text-ink-subtle leading-4">
+                  <span class="mx-xs leading-2.5">·</span>{{ featuredArticle.date }}
+                  <span class="mx-xs">·</span>{{ featuredArticle.readingTime }}
                 </span>
               </p>
               <h3 class="font-display text-h3 font-extrabold leading-snug text-ink lg:text-h2">
@@ -141,6 +151,51 @@
             </Button>
           </div>
 
+          <!-- Bandeau newsletter -->
+          <section
+            aria-labelledby="newsletter-heading"
+            class="mt-2xl rounded-md bg-accent/14 p-xl lg:mt-3xl lg:flex lg:items-center lg:justify-between lg:p-2xl"
+          >
+            <div class="max-w-prose">
+              <h2
+                id="newsletter-heading"
+                class="font-display text-button md:text-h3 font-extrabold text-ink"
+              >
+                Recevez les échéances réglementaires
+                <span class="hidden md:inline">qui vous concernent</span>
+              </h2>
+              <p class="text-small text-ink-body my-3">
+                <span class="md:hidden text-meta"
+                  >Un e-mail par mois. Désinscription en un clic.</span
+                >
+                <span class="hidden md:inline"
+                  >Un e-mail par mois : obligations, dates limites, nouvelles sessions.
+                  Désinscription en un clic.</span
+                >
+              </p>
+            </div>
+            <form
+              class="flex flex-col gap-md sm:flex-row lg:mt-0 lg:w-auto lg:shrink-0"
+              @submit.prevent="onSubscribe"
+            >
+              <Label for="newsletter-email" class="sr-only">Adresse e-mail professionnelle</Label>
+              <Input
+                id="newsletter-email"
+                v-model="newsletterEmail"
+                type="email"
+                required
+                placeholder="votre@email-professionnel.fr"
+                class="h-control w-full rounded-full border-outline bg-paper px-lg text-small placeholder:text-ink-placeholder sm:w-72"
+              />
+              <Button
+                type="submit"
+                class="h-control shrink-0 rounded-full bg-accent px-xl text-small font-bold text-ink hover:bg-accent-text hover:text-paper"
+              >
+                S'abonner
+              </Button>
+            </form>
+          </section>
+
           <!-- Pagination desktop -->
           <Pagination
             v-if="filteredArticles.length > perPage"
@@ -160,6 +215,7 @@
                   v-if="item.type === 'page'"
                   :value="item.value"
                   :is-active="item.value === currentPage"
+                  class="rounded-full border border-primary/25 p-0 hover:bg-surface"
                 >
                   {{ item.value }}
                 </PaginationItem>
@@ -173,42 +229,6 @@
               />
             </PaginationContent>
           </Pagination>
-        </section>
-
-        <!-- Bandeau newsletter -->
-        <section
-          aria-labelledby="newsletter-heading"
-          class="mt-2xl rounded-md bg-accent/14 p-xl lg:mt-3xl lg:flex lg:items-center lg:justify-between lg:p-2xl"
-        >
-          <div class="max-w-prose">
-            <h2 id="newsletter-heading" class="font-display text-h3 font-extrabold text-ink">
-              Recevez les échéances réglementaires qui vous concernent
-            </h2>
-            <p class="mt-xs text-small text-ink-body">
-              Un e-mail par mois : obligations, dates limites, nouvelles sessions. Désinscription en
-              un clic.
-            </p>
-          </div>
-          <form
-            class="mt-lg flex flex-col gap-md sm:flex-row lg:mt-0 lg:w-auto lg:shrink-0"
-            @submit.prevent="onSubscribe"
-          >
-            <Label for="newsletter-email" class="sr-only">Adresse e-mail professionnelle</Label>
-            <Input
-              id="newsletter-email"
-              v-model="newsletterEmail"
-              type="email"
-              required
-              placeholder="votre@email-professionnel.fr"
-              class="h-control w-full rounded-full border-outline bg-paper px-lg text-small placeholder:text-ink-placeholder sm:w-72"
-            />
-            <Button
-              type="submit"
-              class="h-control shrink-0 rounded-full bg-accent px-xl text-small font-semibold text-ink hover:bg-accent-text hover:text-paper"
-            >
-              S'abonner
-            </Button>
-          </form>
         </section>
       </div>
     </div>
@@ -293,8 +313,8 @@ const articles: ActuArticle[] = [
   },
   {
     slug: 'habilitations-nf-c-18-510',
-    category: 'Réglementation & obligations',
-    source: 'Réglementation & obligations',
+    category: 'Réglementation',
+    source: 'Réglementation',
     region: '',
     date: '14 août 2026',
     title: 'Habilitations électriques : ce que change la nouvelle NF C 18-510',

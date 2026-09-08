@@ -2,7 +2,7 @@
   <div class="flex min-h-screen flex-col bg-paper">
     <AppHeader />
     <main class="flex flex-1 flex-col">
-      <section v-if="items?.length" class="border-b border-rule bg-surface">
+      <section v-if="items?.length" class="border-b border-rule" :class="color">
         <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter py-md">
           <Breadcrumbs :items="items" />
         </div>
@@ -15,6 +15,15 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+
+withDefaults(
+  defineProps<{
+    color?: string
+  }>(),
+  {
+    color: 'bg-surface'
+  }
+)
 
 export interface BreadcrumbItem {
   label: string

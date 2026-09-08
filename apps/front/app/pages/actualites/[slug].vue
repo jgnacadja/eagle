@@ -14,7 +14,7 @@
                 </span>
               </p>
               <h1
-                class="mt-sm font-display text-h2 font-extrabold leading-tight text-ink lg:text-h1"
+                class="mt-sm font-display text-2xl font-extrabold leading-tight text-ink lg:text-4xl"
               >
                 {{ article.title }}
               </h1>
@@ -30,9 +30,9 @@
                   aria-hidden="true"
                   >LU</span
                 >
-                <div class="text-small">
-                  <p class="font-semibold text-ink">{{ article.author }}</p>
-                  <p class="text-ink-muted">{{ article.dates }}</p>
+                <div class="text-meta">
+                  <p class="font-semibold text-ink leading-5">{{ article.author }}</p>
+                  <p class="text-ink-muted leading-5">{{ article.dates }}</p>
                 </div>
               </div>
               <div class="flex items-center gap-md text-ink-subtle">
@@ -130,7 +130,10 @@
           <aside class="hidden lg:col-span-4 lg:block" aria-label="Informations complémentaires">
             <div class="sticky top-lg space-y-lg">
               <Card class="p-lg" role="navigation" aria-labelledby="dans-cet-article-heading">
-                <h2 id="dans-cet-article-heading" class="text-overline text-ink-subtle uppercase">
+                <h2
+                  id="dans-cet-article-heading"
+                  class="text-overline text-ink-subtle uppercase font-bold"
+                >
                   Dans cet article
                 </h2>
                 <ul class="mt-md space-y-md text-small">
@@ -140,7 +143,7 @@
                       :class="
                         index === 0
                           ? 'font-bold text-ink'
-                          : 'text-ink-body transition-colors hover:text-accent-text'
+                          : 'text-ink-body hover:text-ink hover:underline font-semibold text-sm'
                       "
                       :aria-current="index === 0 ? 'true' : undefined"
                     >
@@ -161,14 +164,14 @@
               />
 
               <Card class="bg-primary-dark p-lg text-paper">
-                <h3 class="text-small font-bold">Un doute sur vos échéances ?</h3>
-                <p class="mt-sm text-small text-paper/70">
+                <h3 class="text-sm font-bold">Un doute sur vos échéances ?</h3>
+                <p class="mt-sm text-meta leading-5 text-white/72">
                   Transmettez vos dates de délivrance : un conseiller planifie les recyclages en
                   série avec vos équipes.
                 </p>
                 <NuxtLink
                   to="/centres/demande-de-formation"
-                  class="mt-lg block h-control rounded-full bg-paper px-lg text-center text-small font-semibold leading-11 text-ink hover:bg-paper/90"
+                  class="mt-lg block h-control rounded-full bg-white px-lg text-center text-small font-semibold leading-11 text-ink hover:bg-paper/90"
                 >
                   Parler à un conseiller
                 </NuxtLink>
@@ -254,7 +257,10 @@
 
 <script setup lang="ts">
 definePageMeta({
-  layout: 'with-breadcrumb'
+  layout: 'with-breadcrumb',
+  layoutProps: {
+    color: 'bg-paper-warm'
+  }
 })
 
 const route = useRoute()

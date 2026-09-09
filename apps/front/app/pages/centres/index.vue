@@ -107,6 +107,7 @@
             :centers="filteredCenters"
             :active-id="activeCenterId"
             :caption="selectedDeptLabel"
+            :user-position="geolocation.position"
             @select="selectCenter"
           />
         </div>
@@ -215,6 +216,7 @@
             :centers="filteredCenters"
             :active-id="activeCenterId"
             :caption="selectedDeptLabel"
+            :user-position="geolocation.position"
             @select="selectCenter"
           />
         </div>
@@ -225,6 +227,8 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useGeolocation } from '~/composables/useGeolocation'
+import { distanceKm } from '~/utils/geo'
 import type { CentresQuery } from '~/composables/useCentres'
 import type { CenterResult } from '~/types/center-result'
 
@@ -250,6 +254,8 @@ const searchQuery = ref(appliedSearch.value)
 const activeCenterId = ref<string | null>(null)
 const isMobileMapOpen = ref(false)
 
+const geolocation = useGeolocation()
+
 const centresFilters = computed<CentresQuery>(() => ({
   department: selectedDept.value === 'all' ? undefined : selectedDept.value,
   search: appliedSearch.value.trim() || undefined
@@ -270,6 +276,10 @@ const { data: departments } = departmentsResult
 const centresCount = computed(() => centres.value?.length ?? 0)
 const departmentsCount = computed(() => departments.value?.length ?? 0)
 
+onMounted(() => {
+  geolocation.request()
+})
+
 const LIST_CHUNK_SIZE = 12
 const visibleCount = ref(LIST_CHUNK_SIZE)
 const listEl = ref<HTMLElement | null>(null)
@@ -278,12 +288,19 @@ const isLoadingMore = ref(false)
 const hasListOverflowed = ref(false)
 let loadMoreObserver: IntersectionObserver | null = null
 
-const filteredCenters = computed<CenterResult[]>(() =>
-  (centres.value ?? []).map((centre) => {
+const filteredCenters = computed<CenterResult[]>(() => {
+  const userPos = geolocation.position.value
+  const mapped = (centres.value ?? []).map((centre) => {
     const location = [centre.address, centre.postal_code, centre.city, centre.department]
       .filter(Boolean)
       .join(', ')
     const tags = (centre.specialties ?? []).join(' · ')
+
+    const distance =
+      userPos && centre.latitude != null && centre.longitude != null
+        ? distanceKm(userPos, { lat: centre.latitude, lng: centre.longitude })
+        : undefined
+
     return {
       id: centre.slug,
       name: centre.name,
@@ -292,10 +309,21 @@ const filteredCenters = computed<CenterResult[]>(() =>
       tags,
       tagsShort: tags,
       lat: centre.latitude ?? undefined,
-      lng: centre.longitude ?? undefined
+      lng: centre.longitude ?? undefined,
+      distanceKm: distance
     }
   })
-)
+
+  if (userPos) {
+    mapped.sort((a, b) => {
+      if (a.distanceKm == null) return 1
+      if (b.distanceKm == null) return -1
+      return a.distanceKm - b.distanceKm
+    })
+  }
+
+  return mapped
+})
 
 const selectedDeptLabel = computed(() =>
   selectedDept.value === 'all' ? 'Tous les départements' : selectedDept.value

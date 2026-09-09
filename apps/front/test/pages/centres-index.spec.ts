@@ -18,7 +18,9 @@ const directusCentres = [
     department: 'Val-de-Marne',
     region: 'Île-de-France',
     specialties: ['CACES', 'SST'],
-    departments_covered: ['94', '93']
+    departments_covered: ['94', '93'],
+    latitude: 48.7909,
+    longitude: 2.4534
   },
   {
     id: 2,
@@ -31,7 +33,9 @@ const directusCentres = [
     department: 'Val-de-Marne',
     region: 'Île-de-France',
     specialties: ['CACES'],
-    departments_covered: ['94']
+    departments_covered: ['94'],
+    latitude: 48.7938,
+    longitude: 2.3899
   },
   {
     id: 3,
@@ -44,7 +48,9 @@ const directusCentres = [
     department: 'Rhône',
     region: 'Auvergne-Rhône-Alpes',
     specialties: ['Informatique'],
-    departments_covered: ['69']
+    departments_covered: ['69'],
+    latitude: 45.764,
+    longitude: 4.8357
   }
 ]
 
@@ -344,5 +350,53 @@ describe('pages/centres/index', () => {
       expect.objectContaining({ seo_title: 'Réseau de centres — LEARN UP ACADEMY' }),
       'Réseau de centres — LEARN UP ACADEMY'
     )
+  })
+
+  it('demande la géolocalisation au montage et trie les centres par distance', async () => {
+    interface MockPosition {
+      coords: {
+        latitude: number
+        longitude: number
+        altitude: null
+        accuracy: number
+        altitudeAccuracy: null
+        heading: null
+        speed: null
+      }
+      timestamp: number
+    }
+
+    const getCurrentPosition = vi.fn((success: (position: MockPosition) => void) => {
+      success({
+        coords: {
+          latitude: 48.8589,
+          longitude: 2.347,
+          altitude: null,
+          accuracy: 10,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null
+        },
+        timestamp: Date.now()
+      })
+    })
+
+    const originalNavigator = globalThis.navigator
+    vi.stubGlobal('navigator', {
+      geolocation: { getCurrentPosition }
+    })
+
+    try {
+      const wrapper = await mountPage()
+
+      expect(getCurrentPosition).toHaveBeenCalledOnce()
+
+      const cards = wrapper.findAll('.center-card').map((w) => w.text())
+      expect(cards[0]).toContain('Vitry-sur-Seine')
+      expect(cards[1]).toContain('Créteil')
+      expect(cards[2]).toContain('Lyon')
+    } finally {
+      vi.stubGlobal('navigator', originalNavigator)
+    }
   })
 })

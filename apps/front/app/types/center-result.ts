@@ -9,4 +9,5 @@ export interface CenterResult {
   pos?: { top: string; left: string }
   lat?: number
   lng?: number
+  distanceKm?: number
 }

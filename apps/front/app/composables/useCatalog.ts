@@ -1,5 +1,6 @@
 import type { CourseListItem, CourseSession, Paginated } from '@learnup/types'
 import { toValue, type MaybeRefOrGetter } from 'vue'
+import { nonEmptyCachedData } from '~/utils/asyncDataCache'
 
 export interface CatalogQuery {
   search?: string
@@ -177,8 +178,7 @@ export async function useCatalog(query: MaybeRefOrGetter<CatalogQuery>) {
     },
     {
       watch: [() => toValue(query)],
-      getCachedData: (key, nuxtApp) =>
-        (nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as CatalogApiResult | undefined
+      getCachedData: (key, nuxtApp) => nonEmptyCachedData<CatalogApiResult>(key, nuxtApp)
     }
   )
 

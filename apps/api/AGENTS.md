@@ -15,7 +15,7 @@ Lire d'abord `AGENTS.md` à la racine.
 - `HttpExceptionFilter` global (dans `main.ts`) — conserver la structure `{ statusCode, message, timestamp, path }`.
 - Helmet, `@nestjs/throttler` + stockage Redis (`@nest-lab/throttler-storage-redis`) à mettre en place pour le catalog.
 - Limites cibles :
-  - lecture publique `/courses*` : 100 requêtes/min par IP
+  - lecture publique `/courses*` : 300 requêtes/min par IP (le SSR du front déclenche ~6 appels API par page vue depuis la même IP)
   - admin `/admin/*` : 10 requêtes/min par clé API
 - Routes admin : protégées par `ADMIN_API_KEY` (header `x-api-key`). Guard dédié.
 
@@ -40,6 +40,7 @@ Lire d'abord `AGENTS.md` à la racine.
 - ioredis, service générique `get`/`set`/`del`.
 - Clés versionnées : `catalog:v{n}:...`. Incrémenter `n` en fin de sync réussie.
 - TTL 1 h par défaut, configurable.
+- **Jamais cacher un résultat vide** (catalogue sans formations) : si Directus est vide ou indisponible au démarrage, un catalogue vide ne doit pas être gelé pendant le TTL.
 
 ## Sync Digiforma
 

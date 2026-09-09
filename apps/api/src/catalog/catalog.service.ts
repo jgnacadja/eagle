@@ -428,7 +428,11 @@ export class CatalogService {
       pageSize: query.limit
     }
 
-    await this.cache.set(cacheKey, result)
+    // Un résultat vide n'est jamais caché : si Directus est vide/indisponible
+    // au démarrage, il ne faut pas geler un catalogue vide pendant le TTL.
+    if (rows.length > 0) {
+      await this.cache.set(cacheKey, result)
+    }
     return result
   }
 
@@ -476,7 +480,9 @@ export class CatalogService {
       .map(([slug, count]) => ({ slug, count }))
       .sort((a, b) => a.slug.localeCompare(b.slug))
 
-    await this.cache.set(cacheKey, result)
+    if (result.length > 0) {
+      await this.cache.set(cacheKey, result)
+    }
     return result
   }
 
@@ -513,7 +519,9 @@ export class CatalogService {
 
     const all = await this.getAllFormations()
     const rows = all.map(toCatalogRow)
-    await this.cache.set(ROWS_CACHE_KEY, rows)
+    if (rows.length > 0) {
+      await this.cache.set(ROWS_CACHE_KEY, rows)
+    }
     return rows
   }
 
@@ -525,7 +533,9 @@ export class CatalogService {
     }
 
     const rows = await this.catalog.fetchAllFormations()
-    await this.cache.set(cacheKey, rows)
+    if (rows.length > 0) {
+      await this.cache.set(cacheKey, rows)
+    }
     return rows
   }
 }

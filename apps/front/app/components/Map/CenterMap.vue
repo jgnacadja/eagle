@@ -240,8 +240,9 @@ function buildMarkers(L: typeof import('leaflet')) {
     }
   })
 
-  if (props.userPosition && mapInstance.value) {
-    const marker = L.marker([props.userPosition.lat, props.userPosition.lng], {
+  const up = props.userPosition
+  if (up && Number.isFinite(up.lat) && Number.isFinite(up.lng) && mapInstance.value) {
+    const marker = L.marker([up.lat, up.lng], {
       icon: userPinIcon(L),
       zIndexOffset: 1000
     })
@@ -255,7 +256,11 @@ function fitToMarkers(L: typeof import('leaflet')) {
     .filter((c) => c.lat != null && c.lng != null)
     .map((c) => [c.lat, c.lng] as [number, number])
 
-  if (props.userPosition) {
+  if (
+    props.userPosition &&
+    Number.isFinite(props.userPosition.lat) &&
+    Number.isFinite(props.userPosition.lng)
+  ) {
     coords.push([props.userPosition.lat, props.userPosition.lng])
   }
 

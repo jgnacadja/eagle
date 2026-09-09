@@ -36,10 +36,12 @@ export default defineNuxtConfig({
     componentDir: '@/components/ui'
   },
   components: [{ path: '~/components', pathPrefix: false }],
+  // SWR court : une page rendue pendant une panne API (données vides) ne doit
+  // pas rester figée 10 min — 60 s max de contenu potentiellement dégradé.
   routeRules: {
-    '/': { swr: 600 },
-    '/formations/**': { swr: 600 },
-    '/centres/**': { swr: 600 }
+    '/': { swr: 60 },
+    '/formations/**': { swr: 60 },
+    '/centres/**': { swr: 60 }
   },
   runtimeConfig: {
     apiBase,

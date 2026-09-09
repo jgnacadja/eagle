@@ -30,8 +30,10 @@ function isAdminRoute(context: ExecutionContext): boolean {
         return {
           throttlers: [
             {
+              // SSR : chaque page vue déclenche ~6 appels API depuis la même IP
+              // (menu familles, centres, à la une, liste). 300/min ≈ 40 pages/min.
               ttl: 60_000,
-              limit: 100,
+              limit: 300,
               skipIf: (context) => isAdminRoute(context),
               getTracker: (req) => req.ip ?? req.socket?.remoteAddress ?? 'anonymous'
             },

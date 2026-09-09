@@ -107,7 +107,7 @@
             :centers="filteredCenters"
             :active-id="activeCenterId"
             :caption="selectedDeptLabel"
-            :user-position="geolocation.position"
+            :user-position="userPosition"
             @select="selectCenter"
           />
         </div>
@@ -216,7 +216,7 @@
             :centers="filteredCenters"
             :active-id="activeCenterId"
             :caption="selectedDeptLabel"
-            :user-position="geolocation.position"
+            :user-position="userPosition"
             @select="selectCenter"
           />
         </div>
@@ -254,7 +254,10 @@ const searchQuery = ref(appliedSearch.value)
 const activeCenterId = ref<string | null>(null)
 const isMobileMapOpen = ref(false)
 
-const geolocation = useGeolocation()
+// Destructuration : `position` devient un binding top-level, donc auto-déplié
+// dans le template (un Ref imbriqué dans un objet ne l'est pas — CenterMap
+// recevrait le Ref lui-même et non { lat, lng }).
+const { position: userPosition, request: requestGeolocation } = useGeolocation()
 
 const centresFilters = computed<CentresQuery>(() => ({
   department: selectedDept.value === 'all' ? undefined : selectedDept.value,
@@ -277,7 +280,7 @@ const centresCount = computed(() => centres.value?.length ?? 0)
 const departmentsCount = computed(() => departments.value?.length ?? 0)
 
 onMounted(() => {
-  geolocation.request()
+  requestGeolocation()
 })
 
 const LIST_CHUNK_SIZE = 12
@@ -289,7 +292,7 @@ const hasListOverflowed = ref(false)
 let loadMoreObserver: IntersectionObserver | null = null
 
 const filteredCenters = computed<CenterResult[]>(() => {
-  const userPos = geolocation.position.value
+  const userPos = userPosition.value
   const mapped = (centres.value ?? []).map((centre) => {
     const location = [centre.address, centre.postal_code, centre.city, centre.department]
       .filter(Boolean)

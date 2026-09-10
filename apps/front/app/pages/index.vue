@@ -442,7 +442,7 @@ const config = useRuntimeConfig()
 
 function assetUrl(id: string | null): string | null {
   if (!id) return null
-  return `${config.public.directusUrl}/assets/${id}`
+  return `${config.public.apiBase}/directus/assets/${id}`
 }
 
 function formatArticleDate(value: string | null): string {

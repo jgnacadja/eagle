@@ -66,188 +66,210 @@
 
     <div class="bg-paper-warm">
       <div class="mx-auto w-full max-w-container px-gutter-mobile py-2xl md:px-gutter">
-        <!-- À la une -->
-        <section v-if="featuredArticle" aria-labelledby="a-la-une-heading">
-          <div class="flex items-center gap-md">
-            <h2
-              id="a-la-une-heading"
-              class="text-overline uppercase text-accent-text font-extrabold"
-            >
-              À la une
-            </h2>
-            <div class="h-px flex-1 bg-accent-text/30" aria-hidden="true" />
+        <div v-if="articlesPending" aria-label="Chargement des actualités">
+          <output class="sr-only">Chargement des actualités</output>
+          <div class="grid grid-cols-1 gap-lg lg:grid-cols-3" aria-hidden="true">
+            <div class="h-3xl animate-pulse rounded-md bg-surface lg:col-span-3" />
+            <div v-for="i in 6" :key="i" class="h-2xl animate-pulse rounded-md bg-surface" />
           </div>
+        </div>
 
-          <Card class="mt-md overflow-hidden shadow-md lg:flex">
-            <div
-              class="flex aspect-16/10 items-center justify-center border-b border-dashed border-outline bg-surface-alt text-center text-small text-ink-muted lg:aspect-auto lg:w-2/5 lg:border-b-0 lg:border-r"
-            >
-              <NuxtImg
-                :src="assetUrl(featuredArticle.cover_image)"
-                :alt="featuredArticle.title"
-                class="h-full w-full object-cover"
-              />
+        <LoadError
+          v-else-if="articlesError"
+          title="Les actualités n'ont pas pu être chargées."
+          link-to="/actualites"
+          link-label="Réessayer"
+          @retry="refreshArticles"
+        >
+          Vérifiez votre connexion, puis réessayez. Si le problème persiste, revenez un peu plus
+          tard.
+        </LoadError>
+
+        <template v-else>
+          <!-- À la une -->
+          <section v-if="featuredArticle" aria-labelledby="a-la-une-heading">
+            <div class="flex items-center gap-md">
+              <h2
+                id="a-la-une-heading"
+                class="text-overline uppercase text-accent-text font-extrabold"
+              >
+                À la une
+              </h2>
+              <div class="h-px flex-1 bg-accent-text/30" aria-hidden="true" />
             </div>
-            <div class="flex flex-1 flex-col justify-center gap-md bg-paper p-lg lg:p-xl">
-              <p class="text-overline text-accent-text">
-                <span class="font-bold uppercase">{{ featuredArticle.category }}</span>
-                <span class="font-medium text-ink-subtle leading-4">
-                  <span class="mx-xs leading-2.5">·</span
-                  >{{ formatArticleDate(featuredArticle.publish_at) }}
-                  <span class="mx-xs leading-2.5">·</span> {{ readingTime }} min
-                </span>
-              </p>
-              <h3 class="font-display text-h3 font-extrabold leading-snug text-ink lg:text-h2">
+
+            <Card class="mt-md overflow-hidden shadow-md lg:flex">
+              <div
+                class="flex aspect-16/10 items-center justify-center border-b border-dashed border-outline bg-surface-alt text-center text-small text-ink-muted lg:aspect-auto lg:w-2/5 lg:border-b-0 lg:border-r"
+              >
+                <NuxtImg
+                  :src="assetUrl(featuredArticle.cover_image)"
+                  :alt="featuredArticle.title"
+                  class="h-full w-full object-cover"
+                />
+              </div>
+              <div class="flex flex-1 flex-col justify-center gap-md bg-paper p-lg lg:p-xl">
+                <p class="text-overline text-accent-text">
+                  <span class="font-bold uppercase">{{ featuredArticle.category }}</span>
+                  <span class="font-medium text-ink-subtle leading-4">
+                    <span class="mx-xs leading-2.5">·</span
+                    >{{ formatArticleDate(featuredArticle.publish_at) }}
+                    <span class="mx-xs leading-2.5">·</span> {{ readingTime }} min
+                  </span>
+                </p>
+                <h3 class="font-display text-h3 font-extrabold leading-snug text-ink lg:text-h2">
+                  <NuxtLink
+                    :to="`/actualites/${featuredArticle.slug}`"
+                    class="transition-colors hover:text-accent-text"
+                  >
+                    {{ featuredArticle.title }}
+                  </NuxtLink>
+                </h3>
+                <p class="text-small text-ink-body lg:text-body">
+                  {{ featuredArticle.excerpt }}
+                </p>
                 <NuxtLink
                   :to="`/actualites/${featuredArticle.slug}`"
-                  class="transition-colors hover:text-accent-text"
+                  class="mt-xs text-small font-semibold text-ink transition-colors hover:text-accent-text"
                 >
-                  {{ featuredArticle.title }}
+                  Lire l'article →
                 </NuxtLink>
-              </h3>
-              <p class="text-small text-ink-body lg:text-body">
-                {{ featuredArticle.excerpt }}
-              </p>
-              <NuxtLink
-                :to="`/actualites/${featuredArticle.slug}`"
-                class="mt-xs text-small font-semibold text-ink transition-colors hover:text-accent-text"
-              >
-                Lire l'article →
-              </NuxtLink>
-            </div>
-          </Card>
-        </section>
-
-        <!-- Grille d'articles -->
-        <section aria-label="Dernières actualités" class="mt-4 md:mt-2xl">
-          <p v-if="filteredArticles.length === 0" class="text-body text-ink-muted">
-            Aucun article dans cette catégorie pour le moment.
-          </p>
-
-          <ul v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <li
-              v-for="(article, index) in filteredArticles"
-              :key="article.slug"
-              :class="articleClass(index)"
-            >
-              <ArticleCard
-                :category="article.category ?? 'Actualité'"
-                :title="article.title"
-                :date="formatArticleDate(article.publish_at)"
-                :excerpt="article.excerpt ?? ''"
-                :image-url="assetUrl(article.cover_image) ?? undefined"
-                :to="`/actualites/${article.slug}`"
-                class="h-full"
-              />
-            </li>
-          </ul>
-
-          <!-- Afficher plus — mobile -->
-          <div
-            v-if="mobileVisibleCount < filteredArticles.length"
-            class="flex justify-center lg:hidden my-3.5"
-          >
-            <Button
-              type="button"
-              class="h-control rounded-full border border-outline bg-transparent px-xl text-small font-semibold text-ink hover:bg-paper"
-              @click="mobileVisibleCount = filteredArticles.length"
-            >
-              Afficher plus d'articles
-            </Button>
-          </div>
-
-          <!-- Bandeau newsletter -->
-          <section
-            aria-labelledby="newsletter-heading"
-            class="rounded-md bg-accent/14 p-xl mt-xl lg:mt-3xl lg:flex lg:items-center lg:justify-between lg:p-2xl"
-          >
-            <div class="max-w-prose">
-              <h2
-                id="newsletter-heading"
-                class="font-display text-button md:text-h3 font-extrabold text-ink"
-              >
-                Recevez les échéances réglementaires
-                <span class="hidden md:inline">qui vous concernent</span>
-              </h2>
-              <p class="text-small text-ink-body my-3">
-                <span class="md:hidden text-meta"
-                  >Un e-mail par mois. Désinscription en un clic.</span
-                >
-                <span class="hidden md:inline"
-                  >Un e-mail par mois : obligations, dates limites, nouvelles sessions.
-                  Désinscription en un clic.</span
-                >
-              </p>
-            </div>
-            <form
-              class="flex flex-col gap-md sm:flex-row lg:mt-0 lg:w-auto lg:shrink-0"
-              @submit.prevent="onSubscribe"
-            >
-              <Label for="newsletter-email" class="sr-only">Adresse e-mail professionnelle</Label>
-              <Input
-                id="newsletter-email"
-                v-model="newsletterEmail"
-                type="email"
-                required
-                placeholder="votre@email-professionnel.fr"
-                class="h-control w-full rounded-full border-outline bg-paper px-lg text-small placeholder:text-ink-placeholder sm:w-72"
-              />
-              <Button
-                type="submit"
-                class="h-control shrink-0 rounded-full bg-accent px-xl text-small font-bold text-ink hover:bg-accent-text hover:text-paper"
-              >
-                S'abonner
-              </Button>
-            </form>
+              </div>
+            </Card>
           </section>
 
-          <!-- Pagination desktop -->
-          <Pagination
-            v-if="filteredArticles.length > perPage"
-            v-model:page="currentPage"
-            :total="filteredArticles.length"
-            :items-per-page="perPage"
-            :sibling-count="1"
-            class="mt-2xl hidden items-center justify-center lg:flex"
-            aria-label="Pagination des actualités"
-          >
-            <PaginationContent v-slot="{ items }" class="gap-sm">
-              <PaginationPrevious
-                class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-subtle hover:bg-surface"
-              />
-              <template v-for="item in items" :key="item.type">
-                <PaginationItem
-                  v-if="item.type === 'page'"
-                  :value="item.value"
-                  :is-active="item.value === currentPage"
-                  class="rounded-full border border-primary/25 p-0 hover:bg-surface"
-                >
-                  {{ item.value }}
-                </PaginationItem>
-                <PaginationEllipsis
-                  v-else-if="item.type === 'ellipsis'"
-                  class="h-control-sm w-control-sm text-ink-subtle"
+          <!-- Grille d'articles -->
+          <section aria-label="Dernières actualités" class="mt-4 md:mt-2xl">
+            <p v-if="filteredArticles.length === 0" class="text-body text-ink-muted">
+              Aucun article dans cette catégorie pour le moment.
+            </p>
+
+            <ul v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <li
+                v-for="(article, index) in filteredArticles"
+                :key="article.slug"
+                :class="articleClass(index)"
+              >
+                <ArticleCard
+                  :category="article.category ?? 'Actualité'"
+                  :title="article.title"
+                  :date="formatArticleDate(article.publish_at)"
+                  :excerpt="article.excerpt ?? ''"
+                  :image-url="assetUrl(article.cover_image) ?? undefined"
+                  :to="`/actualites/${article.slug}`"
+                  class="h-full"
                 />
-              </template>
-              <PaginationNext
-                class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-body hover:bg-surface"
-              />
-            </PaginationContent>
-          </Pagination>
-        </section>
+              </li>
+            </ul>
+
+            <!-- Afficher plus — mobile -->
+            <div
+              v-if="mobileVisibleCount < filteredArticles.length"
+              class="flex justify-center lg:hidden my-3.5"
+            >
+              <Button
+                type="button"
+                class="h-control rounded-full border border-outline bg-transparent px-xl text-small font-semibold text-ink hover:bg-paper"
+                @click="mobileVisibleCount = filteredArticles.length"
+              >
+                Afficher plus d'articles
+              </Button>
+            </div>
+
+            <!-- Bandeau newsletter -->
+            <section
+              aria-labelledby="newsletter-heading"
+              class="rounded-md bg-accent/14 p-xl mt-xl lg:mt-3xl lg:flex lg:items-center lg:justify-between lg:p-2xl"
+            >
+              <div class="max-w-prose">
+                <h2
+                  id="newsletter-heading"
+                  class="font-display text-button md:text-h3 font-extrabold text-ink"
+                >
+                  Recevez les échéances réglementaires
+                  <span class="hidden md:inline">qui vous concernent</span>
+                </h2>
+                <p class="text-small text-ink-body my-3">
+                  <span class="md:hidden text-meta"
+                    >Un e-mail par mois. Désinscription en un clic.</span
+                  >
+                  <span class="hidden md:inline"
+                    >Un e-mail par mois : obligations, dates limites, nouvelles sessions.
+                    Désinscription en un clic.</span
+                  >
+                </p>
+              </div>
+              <form
+                class="flex flex-col gap-md sm:flex-row lg:mt-0 lg:w-auto lg:shrink-0"
+                @submit.prevent="onSubscribe"
+              >
+                <Label for="newsletter-email" class="sr-only">Adresse e-mail professionnelle</Label>
+                <Input
+                  id="newsletter-email"
+                  v-model="newsletterEmail"
+                  type="email"
+                  required
+                  placeholder="votre@email-professionnel.fr"
+                  class="h-control w-full rounded-full border-outline bg-paper px-lg text-small placeholder:text-ink-placeholder sm:w-72"
+                />
+                <Button
+                  type="submit"
+                  class="h-control shrink-0 rounded-full bg-accent px-xl text-small font-bold text-ink hover:bg-accent-text hover:text-paper"
+                >
+                  S'abonner
+                </Button>
+              </form>
+            </section>
+
+            <!-- Pagination desktop -->
+            <Pagination
+              v-if="filteredArticles.length > perPage"
+              v-model:page="currentPage"
+              :total="filteredArticles.length"
+              :items-per-page="perPage"
+              :sibling-count="1"
+              class="mt-2xl hidden items-center justify-center lg:flex"
+              aria-label="Pagination des actualités"
+            >
+              <PaginationContent v-slot="{ items }" class="gap-sm">
+                <PaginationPrevious
+                  class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-subtle hover:bg-surface"
+                />
+                <template v-for="item in items" :key="item.type">
+                  <PaginationItem
+                    v-if="item.type === 'page'"
+                    :value="item.value"
+                    :is-active="item.value === currentPage"
+                    class="rounded-full border border-primary/25 p-0 hover:bg-surface"
+                  >
+                    {{ item.value }}
+                  </PaginationItem>
+                  <PaginationEllipsis
+                    v-else-if="item.type === 'ellipsis'"
+                    class="h-control-sm w-control-sm text-ink-subtle"
+                  />
+                </template>
+                <PaginationNext
+                  class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-body hover:bg-surface"
+                />
+              </PaginationContent>
+            </Pagination>
+          </section>
+        </template>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { readItems } from '@directus/sdk'
 import type { Article } from '@learnup/types'
 
 const config = useRuntimeConfig()
 
 function assetUrl(id: string | null): string | null {
   if (!id) return null
-  return `${config.public.directusUrl}/assets/${id}`
+  return `${config.public.apiBase}/directus/assets/${id}`
 }
 
 useContentSeo(
@@ -262,31 +284,55 @@ useContentSeo(
 const CATEGORY_ALL = 'Tout'
 
 const REGION_ALL = 'all'
+const directus = useDirectusClient()
 
-const articles = await useDirectusList<Article>('articles', 'actualites-list', {
-  fields: [
-    'id',
-    'status',
-    'slug',
-    'title',
-    'excerpt',
-    'content',
-    'category',
-    'author_name',
-    'author_image',
-    'region',
-    'related_formation_slug',
-    'publish_at',
-    'centre',
-    'cover_image',
-    'seo_title',
-    'seo_description',
-    'seo_canonical'
-  ],
-  filter: { status: { _eq: 'published' } },
-  sort: ['-publish_at'],
-  limit: -1
-})
+const {
+  data: articles,
+  pending: articlesPending,
+  error: articlesError,
+  refresh: refreshArticles
+} = await useAsyncData<Article[]>(
+  'actualites-list',
+  async () => {
+    try {
+      return await directus.request<Article[]>(
+        readItems('articles', {
+          fields: [
+            'id',
+            'status',
+            'slug',
+            'title',
+            'excerpt',
+            'content',
+            'category',
+            'author_name',
+            'author_image',
+            'region',
+            'related_formation_slug',
+            'publish_at',
+            'centre',
+            'cover_image',
+            'seo_title',
+            'seo_description',
+            'seo_canonical'
+          ],
+          filter: { status: { _eq: 'published' } },
+          sort: ['-publish_at'],
+          limit: -1
+        })
+      )
+    } catch (error) {
+      if (import.meta.server) {
+        logServerError('[actualites] articles fetch failed:', error)
+      }
+      throw error
+    }
+  },
+  {
+    getCachedData: (key, nuxtApp) =>
+      (nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as Article[] | undefined
+  }
+)
 
 const categoryOptions = computed(() => {
   const categories = new Set(

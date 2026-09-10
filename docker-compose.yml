@@ -95,7 +95,7 @@ services:
       STORAGE_S3_FORCE_PATH_STYLE: 'true'
       CORS_ENABLED: 'true'
       CORS_ORIGIN: ${CORS_ORIGIN}
-      PUBLIC_URL: http://localhost:8055
+      PUBLIC_URL: ${DIRECTUS_PUBLIC_URL:-http://localhost:8055}
     ports:
       - '8055:8055'
     depends_on:

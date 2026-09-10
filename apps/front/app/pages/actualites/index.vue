@@ -47,7 +47,7 @@
             <li v-for="category in categoryOptions" :key="category">
               <button
                 type="button"
-                class="rounded-full border px-lg py-3 text-meta font-semibold"
+                class="rounded-full border px-lg py-3 text-meta font-semibold capitalize"
                 :class="
                   category === selectedCategory
                     ? 'border-paper bg-paper font-semibold text-ink'
@@ -82,14 +82,18 @@
             <div
               class="flex aspect-16/10 items-center justify-center border-b border-dashed border-outline bg-surface-alt text-center text-small text-ink-muted lg:aspect-auto lg:w-2/5 lg:border-b-0 lg:border-r"
             >
-              {{ featuredArticle.imageLabel }}
+              <NuxtImg
+                :src="assetUrl(featuredArticle.cover_image)"
+                :alt="featuredArticle.title"
+                class="h-full w-full object-cover"
+              />
             </div>
             <div class="flex flex-1 flex-col justify-center gap-md bg-paper p-lg lg:p-xl">
               <p class="text-overline text-accent-text">
                 <span class="font-bold uppercase">{{ featuredArticle.category }}</span>
                 <span class="font-medium text-ink-subtle leading-4">
-                  <span class="mx-xs leading-2.5">·</span>{{ featuredArticle.date }}
-                  <span class="mx-xs">·</span>{{ featuredArticle.readingTime }}
+                  <span class="mx-xs leading-2.5">·</span
+                  >{{ formatArticleDate(featuredArticle.publish_at) }}
                 </span>
               </p>
               <h3 class="font-display text-h3 font-extrabold leading-snug text-ink lg:text-h2">
@@ -126,11 +130,11 @@
               :class="articleClass(index)"
             >
               <ArticleCard
-                :category="article.category"
+                :category="article.category ?? 'Actualité'"
                 :title="article.title"
-                :date="article.date"
-                :excerpt="article.excerpt"
-                :image-label="article.imageLabel"
+                :date="formatArticleDate(article.publish_at)"
+                :excerpt="article.excerpt ?? ''"
+                :image-url="assetUrl(article.cover_image) ?? undefined"
                 :to="`/actualites/${article.slug}`"
                 class="h-full"
               />
@@ -210,7 +214,7 @@
               <PaginationPrevious
                 class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-subtle hover:bg-surface"
               />
-              <template v-for="item in items" :key="item.value">
+              <template v-for="item in items" :key="item.type">
                 <PaginationItem
                   v-if="item.type === 'page'"
                   :value="item.value"
@@ -236,6 +240,15 @@
 </template>
 
 <script setup lang="ts">
+import type { Article } from '@learnup/types'
+
+const config = useRuntimeConfig()
+
+function assetUrl(id: string | null): string | null {
+  if (!id) return null
+  return `${config.public.directusUrl}/assets/${id}`
+}
+
 useContentSeo(
   {
     seo_title: 'Actualités — LEARN UP ACADEMY',
@@ -245,125 +258,61 @@ useContentSeo(
   'Actualités — LEARN UP ACADEMY'
 )
 
-interface ActuArticle {
-  slug: string
-  category: string
-  source: string
-  region: string
-  date: string
-  readingTime?: string
-  title: string
-  excerpt: string
-  imageLabel: string
-}
-
-// Maquette : données statiques en attendant le branchement Directus (collection articles).
 const CATEGORY_ALL = 'Tout'
-const categoryOptions = [
-  CATEGORY_ALL,
-  'Réglementation & obligations',
-  'Nouvelles formations',
-  'Vie du réseau'
-]
 
 const REGION_ALL = 'all'
 
-const regionOptions = [
-  { value: REGION_ALL, label: 'Toutes les régions' },
-  { value: 'ile-de-france', label: 'Île-de-France' },
-  { value: 'occitanie', label: 'Occitanie' },
-  { value: 'auvergne-rhone-alpes', label: 'Auvergne-Rhône-Alpes' }
-]
+const articles = await useDirectusList<Article>('articles', 'actualites-list', {
+  fields: [
+    'id',
+    'status',
+    'slug',
+    'title',
+    'excerpt',
+    'content',
+    'category',
+    'author_name',
+    'author_image',
+    'region',
+    'related_formation_slug',
+    'publish_at',
+    'centre',
+    'cover_image',
+    'seo_title',
+    'seo_description',
+    'seo_canonical'
+  ],
+  filter: { status: { _eq: 'published' } },
+  sort: ['-publish_at'],
+  limit: -1
+})
 
-const featuredArticle: ActuArticle = {
-  slug: 'recyclage-caces-echeances-2027',
-  category: 'Réglementation & obligations',
-  source: 'Réglementation & obligations',
-  region: '',
-  date: '2 septembre 2026',
-  readingTime: '4 min',
-  title: 'Recyclage CACES : comment anticiper les échéances 2027 sans immobiliser vos équipes',
-  excerpt:
-    'Un volume important de CACES® délivrés en 2022 arrive à échéance en 2027. Planifier les recyclages dès maintenant permet d’étaler les absences et de garantir la continuité des autorisations de conduite.',
-  imageLabel: 'Photo réelle — plateau technique'
-}
+const categoryOptions = computed(() => {
+  const categories = new Set(
+    (articles.value ?? [])
+      .map((article) => article.category)
+      .filter((category): category is string => Boolean(category?.trim()))
+  )
 
-const articles: ActuArticle[] = [
-  {
-    slug: 'plateau-pemp-creteil',
-    category: 'Vie du réseau',
-    source: 'Centre de Créteil',
-    region: 'ile-de-france',
-    date: '26 août 2026',
-    title: 'Nouveau plateau technique nacelles PEMP à Créteil',
-    excerpt:
-      'Quatre nacelles de catégories A et B pour les formations R486, en initial et recyclage.',
-    imageLabel: 'Photo — nouvelle PEMP'
-  },
-  {
-    slug: 'ouverture-centre-cergy',
-    category: 'Vie du réseau',
-    source: 'Vie du réseau',
-    region: 'ile-de-france',
-    date: '21 août 2026',
-    title: 'Un nouveau centre ouvre à Cergy-Pontoise',
-    excerpt:
-      'Le réseau compte un 43e centre en Île-de-France, orienté logistique et conduite d’engins.',
-    imageLabel: 'Photo — ouverture de centre'
-  },
-  {
-    slug: 'habilitations-nf-c-18-510',
-    category: 'Réglementation & obligations',
-    source: 'Réglementation & obligations',
-    region: '',
-    date: '14 août 2026',
-    title: 'Habilitations électriques : ce que change la nouvelle NF C 18-510',
-    excerpt: 'Points de vigilance pour les employeurs de vos calendriers d’application.',
-    imageLabel: 'Photo — habilitation électrique'
-  },
-  {
-    slug: 'mac-sst-occitanie',
-    category: 'Nouvelles formations',
-    source: 'Nouvelles formations',
-    region: 'occitanie',
-    date: '7 août 2026',
-    title: 'MAC SST : de nouvelles sessions chaque semaine en Occitanie',
-    excerpt:
-      'Le maintien-actualisation des compétences passe à un rythme hebdomadaire à Toulouse et Montpellier.',
-    imageLabel: 'Photo — session SST'
-  },
-  {
-    slug: 'aipr-qui-former',
-    category: 'Réglementation & obligations',
-    source: 'Réglementation & obligations',
-    region: '',
-    date: '31 juillet 2026',
-    title: 'AIPR : qui doit être formé sur vos chantiers ?',
-    excerpt: 'Opérateur, encadrant, concepteur : les bons profils et leurs obligations.',
-    imageLabel: 'Photo — chantier AIPR'
-  },
-  {
-    slug: 'portes-ouvertes-vitry',
-    category: 'Vie du réseau',
-    source: 'Centre de Vitry-sur-Seine',
-    region: 'ile-de-france',
-    date: '24 juillet 2026',
-    title: 'Portes ouvertes : découvrez le plateau logistique de Vitry',
-    excerpt: 'Démonstrations R485 et R489, échanges avec les formateurs le 20 septembre.',
-    imageLabel: 'Photo — entrepôt logistique'
-  },
-  {
-    slug: 'session-caces-lyon-septembre',
-    category: 'Nouvelles formations',
-    source: 'Nouvelles formations',
-    region: 'auvergne-rhone-alpes',
-    date: '1 sept. 2026',
-    title: 'Nouvelles sessions CACES ouvertes à Lyon',
-    excerpt:
-      'Le centre de Lyon ouvre de nouvelles dates en septembre pour les recyclages R489, R482 et R486.',
-    imageLabel: 'Photo — session CACES Lyon'
-  }
-]
+  return [CATEGORY_ALL, ...Array.from(categories)]
+})
+
+const regionOptions = computed(() => {
+  const regions = new Set(
+    (articles.value ?? [])
+      .map((article) => article.region)
+      .filter((region): region is string => Boolean(region?.trim()))
+  )
+
+  return [
+    { value: REGION_ALL, label: 'Toutes les régions' },
+    ...Array.from(regions).map((region) => ({ value: region, label: region }))
+  ]
+})
+
+const featuredArticle = computed<Article | null>(
+  () => (articles.value ?? []).find((a) => a.status === 'published') ?? null
+)
 
 const selectedCategory = ref(CATEGORY_ALL)
 const selectedRegion = ref(REGION_ALL)
@@ -371,13 +320,16 @@ const currentPage = ref(1)
 const perPage = 6
 const mobileVisibleCount = ref(3)
 
-const selectedRegionLabel = computed(
-  () => regionOptions.find((r) => r.value === selectedRegion.value)?.label ?? regionOptions[0].label
-)
+const selectedRegionLabel = computed(() => {
+  return (
+    regionOptions.value.find((r) => r.value === selectedRegion.value)?.label ?? 'Toutes les régions'
+  )
+})
 
 const filteredArticles = computed(() =>
-  articles.filter(
+  (articles.value ?? []).filter(
     (a) =>
+      a.status === 'published' &&
       (selectedCategory.value === CATEGORY_ALL || a.category === selectedCategory.value) &&
       (selectedRegion.value === REGION_ALL || a.region === selectedRegion.value)
   )
@@ -393,6 +345,15 @@ function articleClass(index: number): string {
   if (visibleDesktop) return 'hidden lg:block'
   if (visibleMobile) return 'block lg:hidden'
   return 'hidden'
+}
+
+function formatArticleDate(value: string | null): string {
+  if (!value) return 'Date à préciser'
+  return new Date(value).toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  })
 }
 
 watch([selectedCategory, selectedRegion], () => {

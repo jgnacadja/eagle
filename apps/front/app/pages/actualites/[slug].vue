@@ -3,36 +3,44 @@
     <template v-if="pageState === 'found'">
       <div class="mx-auto w-full max-w-container px-gutter-mobile py-2xl md:px-gutter">
         <div class="lg:grid lg:grid-cols-12 lg:gap-2xl">
-          <!-- Colonne article -->
           <article class="lg:col-span-8">
             <header class="max-w-prose">
               <p class="text-overline text-accent-text">
-                <span class="font-bold uppercase">{{ article.category }}</span>
+                <span class="font-bold uppercase">{{ article?.category }}</span>
                 <span class="font-medium text-ink-subtle">
-                  <span class="mx-xs">·</span>{{ article.date }} <span class="mx-xs">·</span
-                  >{{ article.readingTime }}
+                  <span class="mx-xs">·</span>{{ formatArticleDate(article?.publish_at) }}
+                  <span class="mx-xs">· <span class="md:inline hidden">lecture</span></span
+                  >{{ article?.readingTime }}
                 </span>
               </p>
               <h1
                 class="mt-sm font-display text-2xl font-extrabold leading-tight text-ink lg:text-4xl"
               >
-                {{ article.title }}
+                {{ article?.title }}
               </h1>
               <div class="mt-md h-0.75 flex-1 bg-accent w-16" aria-hidden="true" />
-              <p class="mt-md text-body text-ink-body">{{ article.excerpt }}</p>
+              <p class="mt-md text-body text-ink-body">{{ article?.excerpt }}</p>
             </header>
 
-            <!-- Auteur + actions -->
             <div class="mt-lg flex items-center justify-between border-y border-rule py-md">
               <div class="flex items-center gap-md">
+                <NuxtImg
+                  v-if="article?.author_image"
+                  class="h-10 w-10 rounded-full border border-outline object-cover"
+                  :src="assetUrl(article.author_image)"
+                  :alt="article?.author_name ?? 'Auteur'"
+                />
                 <span
+                  v-else
                   class="flex h-xl w-xl items-center justify-center rounded-full bg-primary text-meta font-semibold text-paper"
                   aria-hidden="true"
-                  >LU</span
+                  >{{ article?.author_name?.slice(0, 2).toUpperCase() || 'LU' }}</span
                 >
                 <div class="text-meta">
-                  <p class="font-semibold text-ink leading-5">{{ article.author }}</p>
-                  <p class="text-ink-muted leading-5">{{ article.dates }}</p>
+                  <p class="font-semibold text-ink leading-5">{{ article?.author_name }}</p>
+                  <p class="text-ink-muted leading-5">
+                    Publié le {{ formatArticleDate(article?.publish_at) }}
+                  </p>
                 </div>
               </div>
               <div class="flex items-center gap-md text-ink-subtle">
@@ -57,76 +65,39 @@
               </div>
             </div>
 
-            <!-- Image de couverture -->
             <figure class="mt-lg">
               <div
+                v-if="!article?.cover_image"
                 class="flex aspect-video items-center justify-center rounded-md border border-dashed border-outline bg-surface-alt text-center text-small text-ink-muted"
               >
-                {{ article.imageLabel }}
+                Visuel article à fournir
               </div>
-              <figcaption class="mt-sm text-meta text-ink-subtle">
-                {{ article.imageCaption }}
-              </figcaption>
+              <NuxtImg
+                v-else
+                class="aspect-video w-full rounded-md border border-outline object-cover"
+                :src="assetUrl(article.cover_image)"
+                :alt="article.title"
+              />
             </figure>
 
-            <!-- Corps de l'article -->
-            <div class="mt-2xl max-w-prose space-y-xl text-body text-ink-body">
-              <section
-                v-for="section in article.sections"
-                :id="section.id"
-                :key="section.id"
-                :aria-labelledby="`${section.id}-heading`"
-              >
-                <h2 :id="`${section.id}-heading`" class="text-h3 font-extrabold text-ink">
-                  {{ section.heading }}
-                </h2>
-                <p v-for="paragraph in section.paragraphs" :key="paragraph" class="mt-md">
-                  {{ paragraph }}
-                </p>
-              </section>
+            <!-- <div class="mt-2xl max-w-prose space-y-xl text-body text-ink-body">
+              <div class="article-content" v-html="sanitizeHtml(article?.content ?? '')"></div>
 
-              <!-- Encart « À retenir » -->
-              <aside
-                class="rounded-sm border border-accent/40 bg-accent-soft p-lg"
-                aria-labelledby="a-retenir-heading"
-              >
-                <h2
-                  id="a-retenir-heading"
-                  class="text-small font-bold uppercase tracking-wide text-ink"
-                >
-                  À retenir
-                </h2>
-                <ul class="mt-sm list-disc space-y-xs pl-lg text-small text-ink-body">
-                  <li v-for="point in article.keyPoints" :key="point">{{ point }}</li>
-                </ul>
-              </aside>
-
-              <!-- Formation liée — mobile uniquement -->
-              <Card class="p-lg lg:hidden">
+              <Card v-if="article?.related_formation_slug" class="p-lg lg:hidden">
                 <p class="text-overline text-ink-subtle">Formation liée</p>
                 <p class="mt-xs text-meta font-medium text-ink-muted">
-                  {{ article.relatedFormation.family }}
+                  {{ article.related_formation_slug }}
                 </p>
-                <h3 class="mt-xs text-h4 font-bold text-ink">
-                  {{ article.relatedFormation.title }}
-                </h3>
-                <p class="mt-xs text-meta text-ink-muted">{{ article.relatedFormation.meta }}</p>
                 <NuxtLink
-                  :to="article.relatedFormation.to"
+                  :to="`/formations/${article.related_formation_slug}`"
                   class="mt-lg block h-control rounded-full bg-primary px-lg text-center text-small font-semibold leading-11 text-paper hover:bg-primary-dark"
                 >
                   Voir la formation
                 </NuxtLink>
               </Card>
-
-              <!-- Mots-clés -->
-              <nav aria-label="Mots-clés de l'article" class="flex flex-wrap gap-sm pt-sm">
-                <Badge v-for="tag in article.tags" :key="tag" variant="chip">{{ tag }}</Badge>
-              </nav>
-            </div>
+            </div> -->
           </article>
 
-          <!-- Sidebar — desktop uniquement -->
           <aside class="hidden lg:col-span-4 lg:block" aria-label="Informations complémentaires">
             <div class="sticky top-lg space-y-lg">
               <Card class="p-lg" role="navigation" aria-labelledby="dans-cet-article-heading">
@@ -137,23 +108,24 @@
                   Dans cet article
                 </h2>
                 <ul class="mt-md space-y-md text-small">
-                  <li v-for="(section, index) in article.sections" :key="section.id">
+                  <li v-for="heading in articleHeadings" :key="heading.id">
                     <a
-                      :href="`#${section.id}`"
-                      :class="
-                        index === 0
-                          ? 'font-bold text-ink'
-                          : 'text-ink-body hover:text-ink hover:underline font-semibold text-sm'
-                      "
-                      :aria-current="index === 0 ? 'true' : undefined"
+                      :href="`#${heading.id}`"
+                      :class="[
+                        activeHeading === heading.id
+                          ? 'font-extrabold text-ink'
+                          : 'text-ink-body hover:text-ink hover:underline font-semibold text-sm',
+                        'hover:underline'
+                      ]"
+                      @click="activeHeading = heading.id"
                     >
-                      {{ section.heading }}
+                      {{ heading.label }}
                     </a>
                   </li>
                 </ul>
               </Card>
 
-              <CenterFormationCard
+              <!-- <CenterFormationCard
                 eyebrow="Formation liée"
                 variant="button"
                 :family="article.relatedFormation.family"
@@ -161,7 +133,7 @@
                 :meta="article.relatedFormation.meta"
                 :status="article.relatedFormation.status"
                 :to="article.relatedFormation.to"
-              />
+              /> -->
 
               <Card class="bg-primary-dark p-lg text-paper">
                 <h3 class="text-sm font-bold">Un doute sur vos échéances ?</h3>
@@ -181,7 +153,6 @@
         </div>
       </div>
 
-      <!-- À lire ensuite — pleine largeur, fond blanc -->
       <section aria-labelledby="lire-ensuite-heading" class="bg-paper">
         <div class="mx-auto w-full max-w-container px-gutter-mobile py-2xl md:px-gutter">
           <div class="flex items-center justify-between">
@@ -197,15 +168,15 @@
           </div>
           <ul class="mt-lg grid grid-cols-1 gap-lg sm:grid-cols-3">
             <li
-              v-for="related in article.related"
+              v-for="related in relatedArticles"
               :key="related.slug"
               class="border-t border-accent-text/30 pt-md"
             >
               <article>
                 <p class="text-overline text-accent-text">
-                  <span class="font-bold uppercase">{{ related.source }}</span>
+                  <span class="font-bold uppercase">{{ related.category ?? 'Actualité' }}</span>
                   <span class="font-medium text-ink-subtle">
-                    <span class="mx-xs">·</span>{{ related.date }}
+                    <span class="mx-xs">·</span>{{ formatArticleDate(related.publish_at) }}
                   </span>
                 </p>
                 <h3 class="mt-xs text-small font-bold leading-snug text-ink">
@@ -220,7 +191,6 @@
       </section>
     </template>
 
-    <!-- État : erreur de chargement -->
     <LoadError
       v-else-if="loadError"
       title="L'article n'a pas pu être chargé."
@@ -231,7 +201,6 @@
       Le problème est temporaire. Vous pouvez réessayer, ou consulter toute l'actualité du réseau.
     </LoadError>
 
-    <!-- État : article introuvable -->
     <NotFound
       v-else
       title="Cet article n'est pas disponible."
@@ -253,6 +222,10 @@
 </template>
 
 <script setup lang="ts">
+import { readItems } from '@directus/sdk'
+import type { Article } from '@learnup/types'
+import { sanitizeHtml } from '~/utils/sanitizeHtml'
+
 definePageMeta({
   layout: 'with-breadcrumb',
   layoutProps: {
@@ -262,116 +235,126 @@ definePageMeta({
 
 const route = useRoute()
 const slug = route.params.slug as string
+const directus = useDirectusClient()
+const config = useRuntimeConfig()
 
-// Maquette : seul l'article « recyclage-caces-echeances-2027 » existe tant que la
-// collection articles n'est pas branchée — null pour tout autre slug (état introuvable).
-// ?error=1 simule une erreur de chargement pour prévisualiser l'état erreur.
-const KNOWN_SLUG = 'recyclage-caces-echeances-2027'
 const {
   data: articleData,
   error: loadError,
   refresh
-} = await useAsyncData(`article-${slug}`, () => {
+} = await useAsyncData<Article | null>(`article-${slug}`, async () => {
   if (route.query.error === '1') {
-    return Promise.reject(new Error('Article load failed'))
+    throw new Error('Article load failed')
   }
-  return Promise.resolve(slug === KNOWN_SLUG ? { slug } : null)
+
+  try {
+    const results = await directus.request<Article[]>(
+      readItems('articles', {
+        fields: [
+          'id',
+          'status',
+          'slug',
+          'title',
+          'excerpt',
+          'content',
+          'category',
+          'author_name',
+          'author_image',
+          'region',
+          'related_formation_slug',
+          'publish_at',
+          'centre',
+          'cover_image',
+          'seo_title',
+          'seo_description',
+          'seo_canonical'
+        ],
+        filter: { slug: { _eq: slug }, status: { _eq: 'published' } },
+        limit: 1
+      })
+    )
+    return results[0] ?? null
+  } catch (error) {
+    if (import.meta.server) {
+      logServerError(`[actualites/slug] ${slug} load failed:`, error)
+    }
+    throw error
+  }
+})
+
+type ArticleWithReadingTime = Article & { readingTime: string }
+
+const article = computed<ArticleWithReadingTime | null>(() => {
+  const base = articleData.value
+  if (!base) return null
+
+  return {
+    ...base,
+    readingTime: getReadingTime(base.content)
+  }
+})
+
+const activeHeading = ref<string | null>(null)
+
+const articleHeadings = computed(() => extractArticleHeadings(article.value?.content ?? ''))
+
+const relatedArticles = await useDirectusList<Article>('articles', `actualites-related-${slug}`, {
+  fields: ['id', 'slug', 'title', 'category', 'publish_at'],
+  filter: { status: { _eq: 'published' }, slug: { _neq: slug } },
+  sort: ['-publish_at'],
+  limit: 3
 })
 
 type PageState = 'found' | 'not-found' | 'error'
 const pageState = computed<PageState>(() => {
   if (loadError.value) return 'error'
-  return articleData.value ? 'found' : 'not-found'
+  return article.value ? 'found' : 'not-found'
 })
 
-// Statut HTTP côté SSR selon l'état affiché.
-const requestEvent = useRequestEvent()
-if (requestEvent) {
-  if (pageState.value === 'error') {
-    setResponseStatus(requestEvent, 500, "Erreur de chargement de l'article")
-  } else if (pageState.value === 'not-found') {
-    setResponseStatus(requestEvent, 404, 'Article introuvable')
+if (import.meta.server) {
+  const requestEvent = useRequestEvent()
+  if (requestEvent) {
+    if (pageState.value === 'error') {
+      setResponseStatus(requestEvent, 500, "Erreur de chargement de l'article")
+    } else if (pageState.value === 'not-found') {
+      setResponseStatus(requestEvent, 404, 'Article introuvable')
+    }
   }
 }
 
-// Maquette : contenu statique en attendant le branchement Directus (collection articles).
-const article = {
-  category: 'Réglementation & obligations',
-  date: '2 sept. 2026',
-  readingTime: '4 min',
-  title: 'Recyclage CACES : comment anticiper les échéances 2027 sans immobiliser vos équipes',
-  excerpt:
-    "Un volume important de CACES® délivrés en 2022 arrive à échéance en 2027. Planifier les recyclages dès maintenant permet d'étaler les absences, de sécuriser les autorisations de conduite et de lisser le budget formation.",
-  author: 'Équipe réglementation LEARN UP ACADEMY',
-  dates: 'Publié le 2 sept. 2026 · mis à jour le 3 sept. 2026',
-  imageLabel: 'Photo réelle — atelier d’évaluation pratique CACES',
-  imageCaption: 'Session d’évaluation pratique, centre administratif.',
-  sections: [
-    {
-      id: 'pourquoi',
-      heading: 'Pourquoi 2027 concentre les échéances',
-      paragraphs: [
-        'Les CACES® délivrés lors de la vague de reprise de 2022 ont une validité de 5 ans (10 ans pour le R482). Mécaniquement, les renouvellements se concentrent donc sur 2027, avec un risque de saturation des sessions au premier semestre.',
-        'Un conducteur dont le CACES® expire ne peut plus recevoir d’autorisation de conduite. L’anticipation évite l’arrêt de poste et le passage en formation initiale, plus longue et plus coûteuse qu’un recyclage.'
-      ]
-    },
-    {
-      id: 'etaler',
-      heading: 'Comment étaler les recyclages',
-      paragraphs: [
-        'Recenser les échéances par site et par catégorie, puis constituer des groupes mixtes, et compléter avec les sessions inter du réseau pour les effectifs isolés.',
-        'Les sessions inter du réseau permettent de compléter les groupes intra sans immobiliser vos équipes le temps de remplir des sessions dédiées à votre entreprise — un calendrier planifié près de chez vous, sans attendre un groupe complet.'
-      ]
-    }
-  ],
-  keyPoints: [
-    'Vérifiez les dates de délivrance dès cet automne',
-    'Le recyclage se planifie 3 à 6 mois avant l’échéance',
-    '2 jours suffisent en multi-catégories'
-  ],
-  tags: ['CACES R489', 'Recyclage', 'Autorisation de conduite'],
-  relatedFormation: {
-    family: 'CACES · Conduite d’engins',
-    title: 'Recyclage CACES R489 — toutes catégories',
-    meta: '2 jours · Inter / Intra',
-    status: { type: 'success' as const, label: 'Sessions ce mois-ci' },
-    to: '/formations/caces-conduite-engins/caces-r489-chariots-elevateurs'
-  },
-  related: [
-    {
-      slug: 'habilitations-nf-c-18-510',
-      source: 'Réglementation',
-      date: '14 août 2026',
-      title: 'Habilitations électriques : ce que change la nouvelle NF C 18-510'
-    },
-    {
-      slug: 'aipr-qui-former',
-      source: 'Réglementation',
-      date: '31 juillet 2026',
-      title: 'AIPR : qui doit être formé sur vos chantiers ?'
-    },
-    {
-      slug: 'plateau-pemp-creteil',
-      source: 'Centre de Créteil',
-      date: '26 août 2026',
-      title: 'Nouveau plateau technique nacelles PEMP à Créteil'
-    }
-  ]
-}
+const sourceRoute = computed(() => {
+  const from = typeof route.query.from === 'string' ? route.query.from : '/actualites'
 
-// Breadcrumb adapté à l'état affiché. route.meta est partagé entre toutes
-// les routes /actualites/:slug : on réassigne la valeur à chaque changement
-// d'état pour ne pas conserver le breadcrumb d'un slug précédent.
-const defaultBreadcrumb = [
-  { label: 'Accueil', to: '/' },
-  { label: 'Actualités', to: '/actualites' },
-  { label: article.category },
-  { label: article.title }
-]
+  if (from.startsWith('/formations')) {
+    return { label: 'Formations', to: '/formations' }
+  }
+
+  if (from.startsWith('/centres')) {
+    return { label: 'Réseau de centres', to: '/centres' }
+  }
+
+  return { label: 'Actualités', to: '/actualites' }
+})
+
+const defaultBreadcrumb = computed(() => {
+  const category =
+    (typeof route.query.category === 'string' && route.query.category.length > 0
+      ? route.query.category
+      : article.value?.category) ?? 'Article'
+
+  return [
+    { label: 'Accueil', to: '/' },
+    { label: sourceRoute.value.label, to: sourceRoute.value.to },
+    { label: category },
+    { label: article.value?.title ?? 'Article' }
+  ]
+})
+
 const stateLabels: Record<Exclude<PageState, 'found'>, string> = {
   'not-found': 'Article introuvable',
   error: 'Erreur de chargement'
 }
+
 watchEffect(() => {
   const stateLabel = pageState.value === 'found' ? null : stateLabels[pageState.value]
   route.meta.breadcrumb = stateLabel
@@ -380,7 +363,7 @@ watchEffect(() => {
         { label: 'Actualités', to: '/actualites' },
         { label: stateLabel }
       ]
-    : defaultBreadcrumb
+    : defaultBreadcrumb.value
 })
 
 const seoByState: Record<
@@ -388,8 +371,8 @@ const seoByState: Record<
   { seo_title: string; seo_description: string; seo_noindex?: boolean }
 > = {
   found: {
-    seo_title: `${article.title} | LEARN UP ACADEMY`,
-    seo_description: article.excerpt
+    seo_title: `${article.value?.title ?? 'Article'} | LEARN UP ACADEMY`,
+    seo_description: article.value?.excerpt ?? ''
   },
   'not-found': {
     seo_title: 'Article introuvable',
@@ -402,7 +385,7 @@ const seoByState: Record<
     seo_noindex: true
   }
 }
-// Getter réactif : le SEO suit pageState si refresh() change l'état affiché.
+
 useContentSeo(
   () => seoByState[pageState.value],
   () => seoByState[pageState.value].seo_title
@@ -410,7 +393,6 @@ useContentSeo(
 
 function retry() {
   if (route.query.error) {
-    // Retire le paramètre de simulation pour permettre un vrai rechargement.
     const { error: _error, ...query } = route.query
     navigateTo({ path: route.path, query })
   } else {
@@ -422,8 +404,68 @@ function onErrorSearch(query: string) {
   navigateTo({ path: '/actualites', query: query ? { q: query } : {} })
 }
 
+function getReadingTime(content: string | null): string {
+  const text = stripHtmlToText(content ?? '')
+  const words = text.trim().length ? text.trim().split(/\s+/).length : 0
+  const minutes = Math.max(1, Math.ceil(words / 200))
+
+  return `${minutes} min`
+}
+
+function stripHtmlToText(content: string): string {
+  return content
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&rsquo;|&ldquo;|&rdquo;|&lsquo;|&mdash;|&ndash;|&hellip;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function extractArticleHeadings(
+  content: string
+): Array<{ id: string; label: string; level: number }> {
+  const parser = typeof window !== 'undefined' ? new DOMParser() : null
+  if (!parser) return []
+
+  const doc = parser.parseFromString(content, 'text/html')
+  return Array.from(doc.querySelectorAll('h1,h2,h3')).map((node) => {
+    const label = (node.textContent ?? '').trim()
+    return {
+      id: slugifyHeading(label || node.tagName.toLowerCase()),
+      label,
+      level: Number(node.tagName.replace(/H/i, ''))
+    }
+  })
+}
+
+function slugifyHeading(label: string): string {
+  return label
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+}
+
+function assetUrl(id: string | null): string | null {
+  if (!id) return null
+  return `${config.public.directusUrl}/assets/${id}`
+}
+
+function formatArticleDate(value: string | null): string {
+  if (!value) return 'Date à préciser'
+  return new Date(value).toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  })
+}
+
 function onShare() {
-  // Branchement à venir — la maquette se contente de l'action simulée.
+  if (typeof window !== 'undefined') {
+    navigator.share?.({ title: article.value?.title, url: window.location.href })
+  }
 }
 
 function onCopyLink() {

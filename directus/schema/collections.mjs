@@ -183,6 +183,26 @@ export const collections = [
         meta: { interface: 'input', width: 'half', note: 'Catégorie thématique' }
       },
       {
+        field: 'author_name',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', note: 'Auteur identifié de l’article' }
+      },
+      {
+        field: 'author_image',
+        type: 'uuid',
+        meta: { interface: 'file-image', width: 'half', note: 'Image auteur / signature' }
+      },
+      {
+        field: 'region',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', note: 'Région concernée' }
+      },
+      {
+        field: 'related_formation_slug',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', note: 'Slug de la formation liée' }
+      },
+      {
         field: 'publish_at',
         type: 'timestamp',
         meta: { interface: 'datetime', width: 'half', note: 'Publication planifiée' }
@@ -433,6 +453,12 @@ export const relations = [
     field: 'centre',
     related_collection: 'centres',
     meta: { interface: 'select-dropdown-m2o' }
+  },
+  {
+    collection: 'articles',
+    field: 'author_image',
+    related_collection: 'directus_files',
+    meta: { interface: 'file-image', note: 'Image auteur' }
   },
   {
     collection: 'articles',

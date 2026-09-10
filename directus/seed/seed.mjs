@@ -130,10 +130,28 @@ async function seedDataset(token, { collection, items }) {
   const existingBySlug = await fetchExistingBySlug(token, collection)
   const results = { created: 0, updated: 0 }
   for (const rawItem of items) {
-    const { imageUrl, ...item } = rawItem
+    const { imageUrl, author_imageUrl, cover_imageUrl, ...item } = rawItem
+
     if (imageUrl) {
       item.image = await ensureFile(token, imageUrl, `seed-${collection}-${item.slug}.jpg`)
     }
+
+    if (author_imageUrl) {
+      item.author_image = await ensureFile(
+        token,
+        author_imageUrl,
+        `seed-${collection}-${item.slug}-author.jpg`
+      )
+    }
+
+    if (cover_imageUrl) {
+      item.cover_image = await ensureFile(
+        token,
+        cover_imageUrl,
+        `seed-${collection}-${item.slug}-cover.jpg`
+      )
+    }
+
     const outcome = await upsertItem(token, collection, item, existingBySlug.get(item.slug))
     results[outcome] += 1
   }

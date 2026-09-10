@@ -261,7 +261,73 @@ export const famillesFormation = [
 ]
 
 export const articles = [
-  { slug: 'article-demo-1', title: 'Article de démonstration 1', status: 'published' },
-  { slug: 'article-demo-2', title: 'Article de démonstration 2', status: 'published' },
-  { slug: 'article-demo-3', title: 'Article de démonstration 3', status: 'published' }
+  {
+    slug: 'formation-sst-sensibilisation-risque',
+    title: 'La sensibilisation aux risques au cœur de la formation SST',
+    status: 'published',
+    excerpt:
+      'Découvrez comment la sensibilisation aux risques transforme la culture sécurité dans les équipes opérationnelles.',
+    content:
+      '<p>La formation SST permet aux équipes de mieux comprendre les risques professionnels, repérer les situations à vigilance et agir avant qu’un incident ne survienne.</p><p>Au-delà de la conformité, l’objectif est de faire grandir une culture de prévention partagée par tous.</p>',
+    category: 'SST & sécurité',
+    author_name: 'Claire Martin',
+    author_imageUrl:
+      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=600&q=80',
+    region: 'Île-de-France',
+    related_formation_slug: 'sst-securite-travail',
+    publish_at: '2026-09-01T09:00:00+00:00',
+    centre: 1,
+    cover_imageUrl:
+      'https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=1400&q=80',
+    seo_title: 'Sensibilisation SST et prévention des risques',
+    seo_description:
+      'Apprenez comment la sensibilisation aux risques renforce la culture sécurité dans les organisations.',
+    seo_canonical: 'https://learnup.fr/actualites/formation-sst-sensibilisation-risque'
+  },
+  {
+    slug: 'management-formation-pilotage-equipe',
+    title: 'Manager une équipe à plusieurs niveaux d’exigence',
+    status: 'published',
+    excerpt:
+      'Le management de proximité s’appuie sur des repères clairs, une cadence de suivi et une culture de confiance.',
+    content:
+      '<p>Les managers modernes doivent articuler objectifs, qualité de service et bien-être au travail.</p><p>Une équipe performante part d’un cadre partagé, de feedbacks réguliers et d’une pédagogie adaptée aux situations rencontrées.</p>',
+    category: 'Management',
+    author_name: 'Lucie Bernard',
+    author_imageUrl:
+      'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=600&q=80',
+    region: 'Paris',
+    related_formation_slug: 'management',
+    publish_at: '2026-09-05T09:00:00+00:00',
+    centre: 2,
+    cover_imageUrl:
+      'https://images.unsplash.com/photo-1521737852567-6949f3f9f2b5?auto=format&fit=crop&w=1400&q=80',
+    seo_title: 'Management et pilotage d’équipe',
+    seo_description:
+      'Des leviers concrets pour accompagner une équipe, clarifier les priorités et sécuriser la performance.',
+    seo_canonical: 'https://learnup.fr/actualites/management-formation-pilotage-equipe'
+  },
+  {
+    slug: 'digitalisation-competences-ia',
+    title: 'La donnée et l’IA au service de la transformation digitale',
+    status: 'published',
+    excerpt:
+      'La transformation digitale s’appuie sur la qualité des usages, la capacité d’analyse et la confiance des équipes.',
+    content:
+      '<p>Les organisations qui réussissent leur transition numérique donnent du sens aux usages de la donnée et de l’intelligence artificielle.</p><p>Pour aller plus loin, il faut résoudre les compétences, organiser les processus et sécuriser les usages.</p>',
+    category: 'Informatique & Digital',
+    author_name: 'Nicolas Fabre',
+    author_imageUrl:
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80',
+    region: 'Lyon',
+    related_formation_slug: 'informatique-digital',
+    publish_at: '2026-09-10T09:00:00+00:00',
+    centre: 3,
+    cover_imageUrl:
+      'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1400&q=80',
+    seo_title: 'Digitalisation, données et IA pour les équipes',
+    seo_description:
+      'Comment faire de la transformation digitale un levier pédagogique, opérationnel et durable.',
+    seo_canonical: 'https://learnup.fr/actualites/digitalisation-competences-ia'
+  }
 ]

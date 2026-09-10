@@ -10,7 +10,7 @@
                 <span class="font-medium text-ink-subtle">
                   <span class="mx-xs">·</span>{{ formatArticleDate(article?.publish_at) }}
                   <span class="mx-xs">· <span class="md:inline hidden">lecture</span></span
-                  >{{ article?.readingTime }}
+                  >{{ readingTime }} min
                 </span>
               </p>
               <h1
@@ -80,11 +80,11 @@
               />
             </figure>
 
-            <!-- <div class="mt-2xl max-w-prose space-y-xl text-body text-ink-body">
+            <div class="mt-2xl max-w-prose space-y-xl text-body text-ink-body">
               <div class="article-content" v-html="sanitizeHtml(article?.content ?? '')"></div>
 
-              <Card v-if="article?.related_formation_slug" class="p-lg lg:hidden">
-                <p class="text-overline text-ink-subtle">Formation liée</p>
+              <!-- <Card v-if="article?.related_formation_slug" class="p-lg lg:hidden">
+                <p class="mb-md text-overline text-ink-subtle font-bold">Formation liée</p>
                 <p class="mt-xs text-meta font-medium text-ink-muted">
                   {{ article.related_formation_slug }}
                 </p>
@@ -94,13 +94,18 @@
                 >
                   Voir la formation
                 </NuxtLink>
-              </Card>
-            </div> -->
+              </Card> -->
+            </div>
           </article>
 
           <aside class="hidden lg:col-span-4 lg:block" aria-label="Informations complémentaires">
             <div class="sticky top-lg space-y-lg">
-              <Card class="p-lg" role="navigation" aria-labelledby="dans-cet-article-heading">
+              <Card
+                v-if="articleHeadings.length > 0"
+                class="p-lg"
+                role="navigation"
+                aria-labelledby="dans-cet-article-heading"
+              >
                 <h2
                   id="dans-cet-article-heading"
                   class="text-overline text-ink-subtle uppercase font-bold"
@@ -282,16 +287,13 @@ const {
   }
 })
 
-type ArticleWithReadingTime = Article & { readingTime: string }
+const article = computed(() => {
+  return articleData.value
+})
 
-const article = computed<ArticleWithReadingTime | null>(() => {
-  const base = articleData.value
-  if (!base) return null
-
-  return {
-    ...base,
-    readingTime: getReadingTime(base.content)
-  }
+const readingTime = computed(() => {
+  const content = article.value?.content ?? ''
+  return Math.ceil(content.length / 200)
 })
 
 const activeHeading = ref<string | null>(null)
@@ -402,23 +404,6 @@ function retry() {
 
 function onErrorSearch(query: string) {
   navigateTo({ path: '/actualites', query: query ? { q: query } : {} })
-}
-
-function getReadingTime(content: string | null): string {
-  const text = stripHtmlToText(content ?? '')
-  const words = text.trim().length ? text.trim().split(/\s+/).length : 0
-  const minutes = Math.max(1, Math.ceil(words / 200))
-
-  return `${minutes} min`
-}
-
-function stripHtmlToText(content: string): string {
-  return content
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&rsquo;|&ldquo;|&rdquo;|&lsquo;|&mdash;|&ndash;|&hellip;/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
 }
 
 function extractArticleHeadings(

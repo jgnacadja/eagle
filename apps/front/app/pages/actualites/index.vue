@@ -159,7 +159,7 @@
           <!-- Bandeau newsletter -->
           <section
             aria-labelledby="newsletter-heading"
-            class="rounded-md bg-accent/14 p-xl lg:mt-3xl lg:flex lg:items-center lg:justify-between lg:p-2xl"
+            class="rounded-md bg-accent/14 p-xl mt-xl lg:mt-3xl lg:flex lg:items-center lg:justify-between lg:p-2xl"
           >
             <div class="max-w-prose">
               <h2

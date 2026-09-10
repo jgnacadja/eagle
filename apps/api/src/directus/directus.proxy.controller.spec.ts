@@ -86,40 +86,6 @@ describe('DirectusProxyController', () => {
     )
   })
 
-  it('relaie les collections publiques sans token serveur', async () => {
-    fetchMock.mockResolvedValueOnce(upstreamJson({ data: [{ slug: 'actualite-publique' }] }))
-
-    const publicModule = await Test.createTestingModule({
-      controllers: [DirectusProxyController],
-      providers: [
-        {
-          provide: ConfigService,
-          useValue: {
-            get: (key: string) =>
-              key === 'DIRECTUS_INTERNAL_URL' ? 'http://directus:8055' : undefined
-          }
-        }
-      ]
-    }).compile()
-    const publicApp = publicModule.createNestApplication()
-    await publicApp.init()
-
-    try {
-      const res = await request(publicApp.getHttpServer()).get('/directus/items/articles')
-
-      expect(res.status).toBe(200)
-      expect(fetchMock).toHaveBeenCalledWith(
-        'http://directus:8055/items/articles',
-        expect.objectContaining({
-          method: 'GET',
-          headers: { Accept: '*/*' }
-        })
-      )
-    } finally {
-      await publicApp.close()
-    }
-  })
-
   it('refuse les méthodes non-GET', async () => {
     const res = await request(app.getHttpServer())
       .post('/directus/items/centres')

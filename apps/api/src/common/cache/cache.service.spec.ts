@@ -6,6 +6,7 @@ import { CacheService } from './cache.service'
 vi.mock('ioredis', () => ({
   default: class MockRedis {
     private readonly store = new Map<string, string>()
+    status?: string
 
     get = vi.fn((key: string) => Promise.resolve(this.store.get(key) ?? null))
 
@@ -72,6 +73,8 @@ describe('CacheService', () => {
     }).compile()
 
     service = module.get<CacheService>(CacheService)
+    const client = Reflect.get(service, 'client') as { status?: string }
+    client.status = 'ready'
     await service.onModuleInit()
   })
 

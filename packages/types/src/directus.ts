@@ -85,5 +85,4 @@ export interface Article extends SeoFields {
   publish_at: string | null
   centre: number | null
   cover_image: string | null
-  readingTime?: string
 }

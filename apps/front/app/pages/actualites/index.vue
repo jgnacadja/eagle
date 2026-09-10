@@ -94,6 +94,7 @@
                 <span class="font-medium text-ink-subtle leading-4">
                   <span class="mx-xs leading-2.5">·</span
                   >{{ formatArticleDate(featuredArticle.publish_at) }}
+                  <span class="mx-xs leading-2.5">·</span> {{ readingTime }} min
                 </span>
               </p>
               <h3 class="font-display text-h3 font-extrabold leading-snug text-ink lg:text-h2">
@@ -313,6 +314,11 @@ const regionOptions = computed(() => {
 const featuredArticle = computed<Article | null>(
   () => (articles.value ?? []).find((a) => a.status === 'published') ?? null
 )
+
+const readingTime = computed(() => {
+  const content = featuredArticle.value?.content ?? ''
+  return Math.ceil(content.length / 200)
+})
 
 const selectedCategory = ref(CATEGORY_ALL)
 const selectedRegion = ref(REGION_ALL)

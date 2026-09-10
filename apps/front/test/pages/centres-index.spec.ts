@@ -50,8 +50,8 @@ const directusCentres = [
 
 const centresFixture = { value: directusCentres }
 
-// Rejoue côté mock le filtrage que Directus applique via buildCentresQuery :
-// le composable reçoit la query réactive de la page et dérive la liste.
+// Rejoue côté mock le filtrage que l'API /centres applique : le composable
+// reçoit la query réactive de la page et dérive la liste.
 function filterFixture(query: CentresQuery) {
   let list = centresFixture.value
   const department = query.department?.trim()

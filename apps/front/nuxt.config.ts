@@ -36,12 +36,31 @@ export default defineNuxtConfig({
     componentDir: '@/components/ui'
   },
   components: [{ path: '~/components', pathPrefix: false }],
+  nitro: {
+    externals: {
+      // Bundler plutôt que tracer dans node_modules : le runtime Vercel
+      // bloque require() de modules ESM (htmlparser2 est ESM-only).
+      inline: [
+        'sanitize-html',
+        'htmlparser2',
+        'entities',
+        'domutils',
+        'domhandler',
+        'dom-serializer'
+      ]
+    }
+  },
   routeRules: {
-    '/': { swr: 600 },
-    '/formations': { swr: 600 },
-    '/formations/**': { swr: 600 },
-    '/centres': { swr: 600 },
-    '/centres/**': { swr: 600 }
+    // isr + passQuery (pas swr) : sans ça, Vercel met en cache par path en
+    // ignorant la query — /formations?q=x servirait le HTML/payload non
+    // filtré et la recherche/filtres/pagination ne feraient rien. Pas de
+    // passQuery sur '/' : la home n'a pas de query, chaque paramètre
+    // arbitraire (?utm_*, …) créerait une entrée ISR distincte.
+    '/': { isr: { expiration: 600 } },
+    '/formations': { isr: { expiration: 600, passQuery: true } },
+    '/formations/**': { isr: { expiration: 600, passQuery: true } },
+    '/centres': { isr: { expiration: 600, passQuery: true } },
+    '/centres/**': { isr: { expiration: 600, passQuery: true } }
   },
   runtimeConfig: {
     apiBase,

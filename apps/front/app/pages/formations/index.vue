@@ -26,6 +26,7 @@
             sr-label="Rechercher une formation"
             placeholder="CACES, SST, habilitation électrique, hauteur…"
             button-label="Lancer la recherche"
+            :loading="catalog.pending.value"
             class="w-full"
             @submit="triggerSearch"
           >

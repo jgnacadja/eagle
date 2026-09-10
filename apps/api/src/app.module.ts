@@ -9,6 +9,7 @@ import { HealthController } from './health/health.controller'
 import { DigiformaModule } from './digiforma/digiforma.module'
 import { SyncModule } from './sync/sync.module'
 import { CatalogModule } from './catalog/catalog.module'
+import { CentresModule } from './centres/centres.module'
 import { CacheModule } from './common/cache/cache.module'
 import { DirectusModule } from './directus/directus.module'
 
@@ -101,6 +102,7 @@ function createRedisThrottlerStorage(url: string): ThrottlerStorage {
     DigiformaModule,
     SyncModule,
     CatalogModule,
+    CentresModule,
     DirectusModule
   ],
   controllers: [HealthController],

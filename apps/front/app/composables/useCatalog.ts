@@ -177,8 +177,15 @@ export async function useCatalog(query: MaybeRefOrGetter<CatalogQuery>) {
     },
     {
       watch: [() => toValue(query)],
-      getCachedData: (key, nuxtApp) =>
-        (nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as CatalogApiResult | undefined
+      // Nuxt consulte getCachedData à CHAQUE execute() — y compris les
+      // refetches déclenchés par le watch ci-dessus. Ne servir le payload
+      // qu'à l'initialisation : sinon une query qui change (recherche,
+      // filtres, pagination) retourne les données périmées sans refetch.
+      getCachedData: (key, nuxtApp, ctx) =>
+        ctx.cause === 'initial'
+          ? ((nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as
+              CatalogApiResult | undefined)
+          : undefined
     }
   )
 

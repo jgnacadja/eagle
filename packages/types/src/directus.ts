@@ -38,6 +38,27 @@ export interface Centre extends SeoFields {
   longitude: number | null
 }
 
+/**
+ * Sous-ensemble de `Centre` exposé par `GET /centres` (apps/api) — les
+ * champs de contact, SEO et horaires ne sont renvoyés que par la fiche.
+ */
+export type CentreListItem = Pick<
+  Centre,
+  | 'id'
+  | 'status'
+  | 'slug'
+  | 'name'
+  | 'address'
+  | 'city'
+  | 'postal_code'
+  | 'department'
+  | 'departments_covered'
+  | 'region'
+  | 'specialties'
+  | 'latitude'
+  | 'longitude'
+>
+
 export interface FamilleFormation extends SeoFields {
   id: number
   status: ContentStatus

@@ -221,4 +221,40 @@ describe('useCatalog composable', () => {
     expect(requestedQuery.durationMin).toBeUndefined()
     expect(requestedQuery.durationMax).toBeUndefined()
   })
+
+  it('serves the Nuxt payload only on initial cause, not on watch refetches', async () => {
+    vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
+    vi.stubGlobal('logServerError', vi.fn())
+    vi.stubGlobal(
+      '$fetch',
+      vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 9 })
+    )
+
+    let options:
+      | { getCachedData?: (key: string, nuxtApp: unknown, ctx: { cause: string }) => unknown }
+      | undefined
+    vi.stubGlobal(
+      'useAsyncData',
+      async (_key: unknown, handler: () => Promise<unknown>, opts?: typeof options) => {
+        options = opts
+        return {
+          data: ref(await handler()),
+          pending: ref(false),
+          error: ref(null),
+          refresh: vi.fn()
+        }
+      }
+    )
+
+    await useCatalog(ref({}))
+
+    const key = `catalog:${JSON.stringify({ limit: 9, page: 1 })}`
+    const cached = { items: [{ slug: 'cached' }], total: 1, page: 1, pageSize: 9 }
+    const nuxtApp = { payload: { data: { [key]: cached } }, static: { data: {} } }
+    const getCachedData = options?.getCachedData
+
+    expect(getCachedData?.(key, nuxtApp, { cause: 'initial' })).toEqual(cached)
+    expect(getCachedData?.(key, nuxtApp, { cause: 'watch' })).toBeUndefined()
+    expect(getCachedData?.(key, nuxtApp, { cause: 'refresh:manual' })).toBeUndefined()
+  })
 })

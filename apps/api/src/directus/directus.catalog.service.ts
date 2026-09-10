@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import type { CentreListItem } from '@learnup/types'
 import type { FormationDirectusPayload } from '../digiforma/digiforma.mapper'
 
 export interface FamilyApplyResult {
@@ -14,6 +15,8 @@ export interface DirectusFormation extends FormationDirectusPayload {
   updated_at: string | null
 }
 
+export type DirectusCentre = CentreListItem
+
 interface FetchLikeResponse {
   ok: boolean
   status: number
@@ -25,6 +28,22 @@ interface UpsertBatch {
   create: FormationDirectusPayload[]
   update: (FormationDirectusPayload & { id: number })[]
 }
+
+const ALL_CENTRE_FIELDS = [
+  'id',
+  'status',
+  'slug',
+  'name',
+  'address',
+  'city',
+  'postal_code',
+  'department',
+  'departments_covered',
+  'region',
+  'specialties',
+  'latitude',
+  'longitude'
+]
 
 const ALL_FORMATION_FIELDS = [
   'id',
@@ -118,6 +137,29 @@ export class DirectusCatalogService {
     }
 
     const response = await this.request<{ data: DirectusFormation[] }>(url.toString())
+    return response.data ?? []
+  }
+
+  /**
+   * Récupère l'intégralité des centres publiés. Le filtrage métier se fait
+   * en mémoire côté API : les champs JSON (`departments_covered`,
+   * `specialties`) ne supportent ni `_contains` ni `_icontains` dans
+   * Directus, et l'opérateur `_json` n'a pas de wildcard tableau.
+   */
+  async fetchAllCentres(): Promise<DirectusCentre[]> {
+    if (!this.enabled) {
+      return []
+    }
+
+    const url = new URL(`${this.baseUrl}/items/centres`)
+    url.searchParams.set('filter[status][_eq]', 'published')
+    url.searchParams.set('limit', '-1')
+    url.searchParams.set('sort', 'sort,name')
+    for (const field of ALL_CENTRE_FIELDS) {
+      url.searchParams.append('fields[]', field)
+    }
+
+    const response = await this.request<{ data: DirectusCentre[] }>(url.toString())
     return response.data ?? []
   }
 

@@ -1,114 +1,114 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { buildCentresQuery, useCentres, useCentreDepartments } from '~/composables/useCentres'
+import { buildCentresParams, useCentres, useCentreDepartments } from '~/composables/useCentres'
 
-vi.mock('@directus/sdk', () => ({
-  readItems: vi.fn((collection: string, query: unknown) => ({ collection, query }))
-}))
+const fetchMock = vi.fn()
 
-const requestMock = vi.fn()
+interface AsyncDataOptions {
+  getCachedData?: (key: string, nuxtApp: unknown, ctx: { cause: string }) => unknown
+}
 
-vi.stubGlobal('useDirectusClient', () => ({ request: requestMock }))
+let capturedOptions: AsyncDataOptions | undefined
+
+vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
 vi.stubGlobal('logServerError', vi.fn())
-vi.stubGlobal('useAsyncData', async (_key: unknown, handler: () => Promise<unknown>) => ({
-  data: ref(await handler()),
-  pending: ref(false),
-  error: ref(null),
-  refresh: vi.fn()
-}))
+vi.stubGlobal('$fetch', fetchMock)
+vi.stubGlobal(
+  'useAsyncData',
+  async (_key: unknown, handler: () => Promise<unknown>, options?: AsyncDataOptions) => {
+    capturedOptions = options
+    return {
+      data: ref(await handler()),
+      pending: ref(false),
+      error: ref(null),
+      refresh: vi.fn()
+    }
+  }
+)
 
 beforeEach(() => {
   vi.clearAllMocks()
-  requestMock.mockResolvedValue([])
+  fetchMock.mockResolvedValue([])
 })
 
-describe('buildCentresQuery', () => {
-  it('filtre sur le statut published seul par défaut', () => {
-    const query = buildCentresQuery({})
-
-    expect(query.filter).toEqual({ status: { _eq: 'published' } })
-    expect(query.limit).toBe(-1)
-    expect(query.sort).toEqual(['sort', 'name'])
+describe('buildCentresParams', () => {
+  it('retourne un objet vide sans critère', () => {
+    expect(buildCentresParams({})).toEqual({})
   })
 
-  it('filtre le département sur department OU departments_covered', () => {
-    const query = buildCentresQuery({ department: 'Rhône' }) as {
-      filter: { _and: Array<Record<string, unknown>> }
-    }
-
-    expect(query.filter._and[1]).toEqual({
-      _or: [{ department: { _eq: 'Rhône' } }, { departments_covered: { _contains: 'Rhône' } }]
+  it('passe department et search trimmés', () => {
+    expect(buildCentresParams({ department: ' Rhône ', search: ' lyon ' })).toEqual({
+      department: 'Rhône',
+      search: 'lyon'
     })
-  })
-
-  it('recherche insensible à la casse sur nom, ville, CP, adresse et specialties', () => {
-    const query = buildCentresQuery({ search: ' vitry ' }) as {
-      filter: { _and: Array<Record<string, unknown>> }
-    }
-
-    expect(query.filter._and[1]).toEqual({
-      _or: [
-        { name: { _icontains: 'vitry' } },
-        { city: { _icontains: 'vitry' } },
-        { postal_code: { _icontains: 'vitry' } },
-        { address: { _icontains: 'vitry' } },
-        { specialties: { _contains: 'vitry' } }
-      ]
-    })
-  })
-
-  it('combine département et recherche dans un _and', () => {
-    const query = buildCentresQuery({ department: 'Rhône', search: 'Lyon' }) as {
-      filter: { _and: Array<Record<string, unknown>> }
-    }
-
-    expect(query.filter._and).toHaveLength(3)
-    expect(query.filter._and[0]).toEqual({ status: { _eq: 'published' } })
   })
 })
 
 describe('useCentres', () => {
-  it('interroge la collection centres avec la query construite', async () => {
-    requestMock.mockResolvedValue([{ slug: 'lyon' }])
+  it('interroge l’API /centres avec les params de la query', async () => {
+    fetchMock.mockResolvedValue([{ slug: 'lyon' }])
 
-    const { data } = await useCentres(ref({ search: 'Lyon' }))
+    const { data } = await useCentres(ref({ search: 'Lyon', department: 'Rhône' }))
 
-    expect(requestMock).toHaveBeenCalledWith(expect.objectContaining({ collection: 'centres' }))
+    expect(fetchMock).toHaveBeenCalledWith('http://api.test/centres', {
+      query: { search: 'Lyon', department: 'Rhône' }
+    })
     expect(data.value).toEqual([{ slug: 'lyon' }])
   })
 
-  it('dégrade à [] en cas d’erreur Directus', async () => {
-    requestMock.mockRejectedValue(new Error('network'))
+  it('dégrade à [] en cas d’erreur API', async () => {
+    fetchMock.mockRejectedValue(new Error('network'))
 
     const { data } = await useCentres(ref({}))
 
     expect(data.value).toEqual([])
   })
+
+  it('ne sert le payload Nuxt que sur la cause initiale (pas sur les refetches watch)', async () => {
+    await useCentres(ref({}))
+
+    const nuxtApp = {
+      payload: { data: { 'centres:{}': [{ slug: 'cached' }] } },
+      static: { data: {} }
+    }
+    const getCachedData = capturedOptions?.getCachedData
+
+    expect(getCachedData?.('centres:{}', nuxtApp, { cause: 'initial' })).toEqual([
+      { slug: 'cached' }
+    ])
+    expect(getCachedData?.('centres:{}', nuxtApp, { cause: 'watch' })).toBeUndefined()
+    expect(getCachedData?.('centres:{}', nuxtApp, { cause: 'refresh:manual' })).toBeUndefined()
+  })
 })
 
 describe('useCentreDepartments', () => {
-  it('déduplique department et departments_covered, trié fr', async () => {
-    requestMock.mockResolvedValue([
-      { department: 'Rhône', departments_covered: ['69', '01'] },
-      { department: 'Val-de-Marne', departments_covered: ['94'] },
-      { department: null, departments_covered: null }
-    ])
+  it('interroge l’API /centres/departments', async () => {
+    fetchMock.mockResolvedValue(['Paris', 'Rhône'])
 
-    const { data: departments } = await useCentreDepartments()
+    const { data } = await useCentreDepartments()
 
-    expect(requestMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        query: expect.objectContaining({ fields: ['department', 'departments_covered'] })
-      })
-    )
-    expect(departments.value).toEqual(['01', '69', '94', 'Rhône', 'Val-de-Marne'])
+    expect(fetchMock).toHaveBeenCalledWith('http://api.test/centres/departments')
+    expect(data.value).toEqual(['Paris', 'Rhône'])
   })
 
-  it('dégrade à [] en cas d’erreur Directus', async () => {
-    requestMock.mockRejectedValue(new Error('network'))
+  it('dégrade à [] en cas d’erreur API', async () => {
+    fetchMock.mockRejectedValue(new Error('network'))
 
-    const { data: departments } = await useCentreDepartments()
+    const { data } = await useCentreDepartments()
 
-    expect(departments.value).toEqual([])
+    expect(data.value).toEqual([])
+  })
+
+  it('ne sert le payload Nuxt que sur la cause initiale', async () => {
+    await useCentreDepartments()
+
+    const nuxtApp = {
+      payload: { data: { 'centres-departments': ['Paris'] } },
+      static: { data: {} }
+    }
+    const getCachedData = capturedOptions?.getCachedData
+
+    expect(getCachedData?.('centres-departments', nuxtApp, { cause: 'initial' })).toEqual(['Paris'])
+    expect(getCachedData?.('centres-departments', nuxtApp, { cause: 'watch' })).toBeUndefined()
   })
 })

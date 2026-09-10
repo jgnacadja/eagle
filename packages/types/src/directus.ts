@@ -57,6 +57,10 @@ export interface Article extends SeoFields {
   excerpt: string | null
   content: string | null
   category: string | null
+  author_name: string | null
+  author_image: string | null
+  region: string | null
+  related_formation_slug: string | null
   publish_at: string | null
   centre: number | null
   cover_image: string | null

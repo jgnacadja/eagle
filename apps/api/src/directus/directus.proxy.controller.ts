@@ -17,7 +17,7 @@ import { Readable } from 'node:stream'
  * Collections Directus autorisées pour le front en lecture via le proxy.
  * Pas d'endpoints d'administration ni de collections système.
  */
-const ALLOWED_ITEM_COLLECTIONS = new Set(['centres', 'familles_formation'])
+const ALLOWED_ITEM_COLLECTIONS = new Set(['articles', 'centres', 'familles_formation'])
 const UPSTREAM_TIMEOUT_MS = 10_000
 
 function isAllowedPath(pathname: string): boolean {

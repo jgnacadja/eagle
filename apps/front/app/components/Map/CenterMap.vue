@@ -76,8 +76,9 @@ const props = withDefaults(
     activeId: string | null
     caption: string
     mode?: 'network' | 'single'
+    userPosition?: { lat: number; lng: number } | null
   }>(),
-  { mode: 'network' }
+  { mode: 'network', userPosition: null }
 )
 
 const emit = defineEmits<{
@@ -87,6 +88,7 @@ const emit = defineEmits<{
 const mapEl = ref<HTMLElement | null>(null)
 const mapInstance = shallowRef<Leaflet.Map | null>(null)
 const markers = new Map<string, Leaflet.Marker>()
+const userMarker = shallowRef<Leaflet.Marker | null>(null)
 let clusterGroup: Leaflet.MarkerClusterGroup | null = null
 let Leaf: typeof import('leaflet') | null = null
 let popupApp: ReturnType<typeof createApp> | null = null
@@ -120,6 +122,22 @@ function pinIcon(L: typeof import('leaflet'), selected: boolean): Leaflet.DivIco
     iconSize: [size, size],
     iconAnchor: [size / 2, size],
     popupAnchor: [0, -size]
+  })
+}
+
+function userPinIcon(L: typeof import('leaflet')): Leaflet.DivIcon {
+  const color = cssColor('--color-primary', '#16305A')
+  const pulse = cssColor('--color-accent', '#F5A623')
+  return L.divIcon({
+    html: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="11" fill="${color}" fill-opacity="0.2"/>
+      <circle cx="12" cy="12" r="9" fill="${pulse}" fill-opacity="0.25"/>
+      <circle cx="12" cy="12" r="5" fill="${color}"/>
+      <circle cx="12" cy="12" r="2.5" fill="white"/>
+    </svg>`,
+    className: 'center-map-user-pin',
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
   })
 }
 
@@ -204,6 +222,12 @@ function buildMarkers(L: typeof import('leaflet')) {
     })
   }
   markers.clear()
+
+  if (userMarker.value) {
+    userMarker.value.remove()
+    userMarker.value = null
+  }
+
   props.centers.forEach((c) => {
     if (c.lat == null || c.lng == null) return
     const marker = L.marker([c.lat, c.lng], { icon: pinIcon(L, c.id === props.activeId) })
@@ -215,12 +239,31 @@ function buildMarkers(L: typeof import('leaflet')) {
       marker.addTo(mapInstance.value)
     }
   })
+
+  const up = props.userPosition
+  if (up && Number.isFinite(up.lat) && Number.isFinite(up.lng) && mapInstance.value) {
+    const marker = L.marker([up.lat, up.lng], {
+      icon: userPinIcon(L),
+      zIndexOffset: 1000
+    })
+    marker.addTo(mapInstance.value)
+    userMarker.value = marker
+  }
 }
 
 function fitToMarkers(L: typeof import('leaflet')) {
   const coords = props.centers
     .filter((c) => c.lat != null && c.lng != null)
     .map((c) => [c.lat, c.lng] as [number, number])
+
+  if (
+    props.userPosition &&
+    Number.isFinite(props.userPosition.lat) &&
+    Number.isFinite(props.userPosition.lng)
+  ) {
+    coords.push([props.userPosition.lat, props.userPosition.lng])
+  }
+
   if (!coords.length || !mapInstance.value) return
   if (coords.length === 1) {
     mapInstance.value.setView(coords[0], props.mode === 'single' ? 15 : 13)
@@ -312,6 +355,16 @@ watch(
 
 watch(
   () => props.centers,
+  async () => {
+    if (!mapInstance.value) return
+    const L = await ensureLeaflet()
+    buildMarkers(L)
+    fitToMarkers(L)
+  }
+)
+
+watch(
+  () => props.userPosition,
   async () => {
     if (!mapInstance.value) return
     const L = await ensureLeaflet()

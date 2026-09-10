@@ -5,6 +5,7 @@
 // Dégradation gracieuse : [] en cas d'erreur, log serveur.
 
 import { readItems } from '@directus/sdk'
+import { nonEmptyCachedData } from '~/utils/asyncDataCache'
 import type {
   Centre,
   CourseListItem,
@@ -59,10 +60,6 @@ function slugify(input: string): string {
 function humanizeSlug(slug: string): string {
   if (!slug) return ''
   return slug.replaceAll('-', ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-}
-
-function getCachedData<T>(key: string, nuxtApp: ReturnType<typeof useNuxtApp>): T | undefined {
-  return nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]
 }
 
 /** Familles depuis le catalogue API (`/families`) + noms Directus — max MAX_FAMILLES. */
@@ -120,7 +117,7 @@ export function useMenuFamilles() {
         .slice(0, MAX_FAMILLES)
     },
     {
-      getCachedData: (key, nuxtApp) => getCachedData<MenuFamille[]>(key, nuxtApp)
+      getCachedData: (key, nuxtApp) => nonEmptyCachedData<MenuFamille[]>(key, nuxtApp)
     }
   )
 
@@ -199,7 +196,7 @@ export function useMenuFormationsALaUne() {
       }
     },
     {
-      getCachedData: (key, nuxtApp) => getCachedData<MenuFormation[]>(key, nuxtApp)
+      getCachedData: (key, nuxtApp) => nonEmptyCachedData<MenuFormation[]>(key, nuxtApp)
     }
   )
 

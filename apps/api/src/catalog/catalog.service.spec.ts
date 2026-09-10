@@ -282,4 +282,16 @@ describe('CatalogService', () => {
 
     expect(result).toEqual([])
   })
+
+  it('does not cache an empty catalog', async () => {
+    cache.get.mockResolvedValue(null)
+    catalog.fetchAllFormations.mockResolvedValue([])
+
+    const families = await service.families()
+    const list = await service.list({ page: 1, limit: 20 } as ListCoursesDto)
+
+    expect(families).toEqual([])
+    expect(list.items).toEqual([])
+    expect(cache.set).not.toHaveBeenCalled()
+  })
 })

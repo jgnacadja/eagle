@@ -1,8 +1,5 @@
 import { readItems } from '@directus/sdk'
-
-function getCachedData<T>(key: string, nuxtApp: ReturnType<typeof useNuxtApp>): T | undefined {
-  return nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]
-}
+import { nonEmptyCachedData } from '~/utils/asyncDataCache'
 
 /**
  * Fetch une liste d'items Directus, dégradée à [] en cas d'erreur — mais
@@ -30,7 +27,7 @@ export function useDirectusList<T>(
       }
     },
     {
-      getCachedData: (key, nuxtApp) => getCachedData<T[]>(key, nuxtApp)
+      getCachedData: (key, nuxtApp) => nonEmptyCachedData<T[]>(key, nuxtApp)
     }
   )
 

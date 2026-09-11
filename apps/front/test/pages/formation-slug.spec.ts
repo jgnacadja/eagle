@@ -300,6 +300,11 @@ const stubs = {
     props: ['title', 'meta', 'places'],
     template: '<div class="session-card">{{ title }} — {{ meta }} — {{ places }}</div>'
   },
+  CenterCard: {
+    props: ['name', 'distance', 'formations', 'status', 'to'],
+    template:
+      '<div class="lieu-card"><a :href="to">{{ name }} — {{ distance }} — {{ formations }} — {{ status?.label }}</a></div>'
+  },
   IconMapPin: true,
   IconDownload: true,
   IconCheck: true,
@@ -349,7 +354,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     expect(wrapper.text()).toContain('Conduite sécurisée')
     expect(wrapper.text()).toContain('Formations similaires')
     expect(wrapper.findAll('.similaire-card')).toHaveLength(similar.length - 1)
-    expect(wrapper.text()).toContain('Programme sur Digiforma')
+    expect(wrapper.text()).toContain('Télécharger le programme détaillé')
   })
 
   it('restaure les sections sessions, lieux et modalités/évaluation', async () => {
@@ -360,6 +365,9 @@ describe('pages/formations/[famille]/[slug]', () => {
     expect(wrapper.text()).toContain('Session en présentiel')
     expect(wrapper.text()).toContain('Où suivre cette formation')
     expect(wrapper.find('a[href="/centres/creteil"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Centre de Créteil')
+    expect(wrapper.text()).toContain('Val-de-Marne')
+    expect(wrapper.text()).toContain('Prochaine session le 12/10')
     expect(wrapper.text()).toContain('Modalités & évaluation')
     expect(wrapper.text()).toContain('Épreuve pratique de conduite')
   })

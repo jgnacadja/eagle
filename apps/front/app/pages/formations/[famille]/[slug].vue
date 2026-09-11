@@ -215,27 +215,16 @@
                   (RG-CAT-04).
                 </p>
               </div>
-              <ul class="mt-md grid gap-md sm:grid-cols-2">
+              <ul class="mt-md grid gap-md sm:grid-cols-2 xl:grid-cols-3">
                 <li v-for="lieu in lieux" :key="lieu.key">
-                  <NuxtLink
-                    v-if="lieu.to"
+                  <CenterCard
+                    :name="lieu.name"
+                    :distance="lieu.department"
+                    :formations="lieu.modalities"
+                    :status="lieu.status"
                     :to="lieu.to"
-                    class="block h-full rounded-md border border-rule bg-paper p-md transition hover:shadow-md"
-                  >
-                    <span class="flex items-center gap-sm font-semibold text-ink">
-                      {{ lieu.name }}
-                    </span>
-                    <span class="mt-xs block text-small text-ink-muted">{{ lieu.detail }}</span>
-                    <div href="#" class="text-ink font-bold text-h4 mt-2 hover:underline">
-                      Voir le centre →
-                    </div>
-                  </NuxtLink>
-                  <div v-else class="h-full rounded-md border border-rule bg-paper p-md">
-                    <span class="flex items-center gap-sm font-semibold text-ink">
-                      <IconMapPin :size="16" class="shrink-0 text-primary" />{{ lieu.name }}
-                    </span>
-                    <span class="mt-xs block text-small text-ink-muted">{{ lieu.detail }}</span>
-                  </div>
+                    class="h-full transition hover:shadow-md"
+                  />
                 </li>
               </ul>
             </section>
@@ -488,7 +477,7 @@
 <script setup lang="ts">
 import { useElementSize } from '@vueuse/core'
 import { readItems } from '@directus/sdk'
-import type { Course, FamilleFormation } from '@learnup/types'
+import type { Course, CourseSession, FamilleFormation } from '@learnup/types'
 import { useDirectusClient } from '~/composables/useDirectus'
 import {
   buildSessionBadge,
@@ -823,24 +812,78 @@ const sessionsList = computed(() => {
   })
 })
 
+interface LieuAggregat {
+  key: string
+  name: string
+  department: string
+  modalities: Set<string>
+  sessions: CourseSession[]
+  to: string | null
+}
+
+// Une carte par centre : statut calculé sur les sessions à venir du centre
+// (≥2 → compteur vert, 1 → date en warning, 0 → « Sur demande »).
 const lieux = computed(() => {
-  const seen = new Map<string, { key: string; name: string; detail: string; to: string | null }>()
+  const grouped = new Map<string, LieuAggregat>()
 
   for (const session of course.value?.sessions ?? []) {
     const loc = session.location
     if (!loc) continue
     const key = loc.centreSlug ?? loc.name ?? loc.city ?? ''
-    if (!key || seen.has(key)) continue
+    if (!key) continue
 
-    seen.set(key, {
-      key,
-      name: loc.name ?? loc.city ?? 'Lieu de formation',
-      detail: [loc.city, loc.department ?? loc.region].filter(Boolean).join(' · '),
-      to: loc.centreSlug ? `/centres/${loc.centreSlug}` : null
-    })
+    let lieu = grouped.get(key)
+    if (!lieu) {
+      lieu = {
+        key,
+        name: loc.name ?? loc.city ?? 'Lieu de formation',
+        department: loc.department ?? loc.region ?? '',
+        modalities: new Set(),
+        sessions: [],
+        to: loc.centreSlug ? `/centres/${loc.centreSlug}` : null
+      }
+      grouped.set(key, lieu)
+    }
+    if (session.modality) lieu.modalities.add(session.modality)
+    lieu.sessions.push(session)
   }
 
-  return [...seen.values()]
+  const today = new Date()
+  today.setUTCHours(0, 0, 0, 0)
+  const dateFmt = new Intl.DateTimeFormat('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: 'UTC'
+  })
+
+  return [...grouped.values()].map((lieu) => {
+    const upcoming = lieu.sessions
+      .filter((s) => s.startDate && new Date(`${s.startDate}T00:00:00Z`) >= today)
+      .sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? ''))
+
+    let status: { type: 'success' | 'warning' | 'neutral'; label: string }
+    if (upcoming.length >= 2) {
+      status = { type: 'success', label: `${upcoming.length} sessions à venir` }
+    } else if (upcoming.length === 1) {
+      const date = new Date(`${upcoming[0]!.startDate}T00:00:00Z`)
+      status = { type: 'warning', label: `Prochaine session le ${dateFmt.format(date)}` }
+    } else {
+      status = { type: 'neutral', label: 'Sur demande' }
+    }
+
+    const modalities = lieu.modalities.size
+      ? [...lieu.modalities]
+      : (course.value?.modalities ?? [])
+
+    return {
+      key: lieu.key,
+      name: lieu.name,
+      department: lieu.department,
+      modalities: modalities.map((m) => MODALITY_LABELS[m] ?? m).join(' · '),
+      status,
+      to: lieu.to
+    }
+  })
 })
 
 const modaliteLabels = computed(() =>

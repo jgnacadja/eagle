@@ -28,7 +28,7 @@ describe('SessionCard', () => {
     expect(wrapper.text()).toContain('Sept')
     expect(wrapper.text()).toContain('CACES R489')
     expect(wrapper.text()).toContain('5 places disponibles')
-    expect(wrapper.text()).toContain('Voir la session')
+    expect(wrapper.text()).toContain("S'inscrire")
   })
 
   it('renders the price above the badge and the warning marker', () => {

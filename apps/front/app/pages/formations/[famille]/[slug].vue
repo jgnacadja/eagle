@@ -52,7 +52,7 @@
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Programme sur Digiforma
+                    Voir les sessions
                   </NuxtLink>
                 </Button>
                 <Button
@@ -62,8 +62,8 @@
                   class="h-auto gap-sm p-0 text-small font-medium text-ink-muted hover:text-ink hover:no-underline"
                 >
                   <NuxtLink :to="course.imageUrl" target="_blank" rel="noopener noreferrer">
-                    <IconLink :size="16" class="inline" />
-                    Voir l'image
+                    <IconDownload :size="16" class="inline" />
+                    Programme (PDF)
                   </NuxtLink>
                 </Button>
               </div>

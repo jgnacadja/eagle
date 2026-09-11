@@ -55,7 +55,7 @@
       <!-- Liste des formations -->
       <section
         id="liste-formations"
-        class="mx-auto w-full scroll-mt-lg px-gutter-mobile py-section md:px-gutter"
+        class="mx-auto w-full max-w-container scroll-mt-lg px-gutter-mobile py-section md:px-gutter"
         aria-labelledby="liste-title"
       >
         <div class="flex flex-col gap-md md:flex-row md:items-center md:justify-between">

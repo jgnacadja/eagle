@@ -10,6 +10,7 @@ const navigateMock = vi.fn()
 vi.stubGlobal('useContentSeo', seoMock)
 vi.stubGlobal('useHead', headMock)
 vi.stubGlobal('navigateTo', navigateMock)
+vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
 
 vi.mock('~/composables/useCatalog', () => ({
   mapCourse: (c: { slug: string; title: string; familySlug?: string | null }) => ({
@@ -64,9 +65,44 @@ const directusCentres = ref([
   }
 ])
 
+const directusArticles = ref([
+  {
+    id: 1,
+    status: 'published',
+    slug: 'article-1',
+    title: 'Article 1',
+    excerpt: 'Extrait article 1',
+    category: 'Réglementation',
+    publish_at: '2026-01-01T00:00:00.000Z',
+    cover_image: 'cover-1'
+  },
+  {
+    id: 2,
+    status: 'published',
+    slug: 'article-2',
+    title: 'Article 2',
+    excerpt: 'Extrait article 2',
+    category: 'Conseil',
+    publish_at: '2026-01-02T00:00:00.000Z',
+    cover_image: 'cover-2'
+  },
+  {
+    id: 3,
+    status: 'published',
+    slug: 'article-3',
+    title: 'Article 3',
+    excerpt: 'Extrait article 3',
+    category: 'Formation',
+    publish_at: '2026-01-03T00:00:00.000Z',
+    cover_image: 'cover-3'
+  }
+])
+
 vi.stubGlobal(
   'useDirectusList',
-  vi.fn(async () => directusCentres)
+  vi.fn(async (_collection: string, _cacheKey: string) =>
+    _collection === 'articles' ? directusArticles : directusCentres
+  )
 )
 
 const stubs = {

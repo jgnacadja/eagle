@@ -401,7 +401,7 @@
           <h2 class="font-display text-h2 font-extrabold text-ink">Actualités</h2>
           <NuxtLink
             to="/actualites"
-            class="hidden md:block whitespace-nowrap text-small font-bold text-primary transition-colors hover:text-accent-text"
+            class="hidden md:block whitespace-nowrap text-small font-bold text-primary hover:text-accent-text hover:scale-105 transition-all"
             >Tout le blog →</NuxtLink
           >
         </div>
@@ -409,12 +409,13 @@
         <div class="mt-lg grid gap-grid md:grid-cols-3">
           <ArticleCard
             v-for="article in articles"
-            :key="article.title"
-            :category="article.category"
+            :key="article.slug"
+            :category="article.category ?? 'Actualité'"
             :title="article.title"
-            :date="article.date"
-            :excerpt="article.excerpt"
-            :image-label="article.imageLabel"
+            :date="formatArticleDate(article.publish_at)"
+            :excerpt="article.excerpt ?? ''"
+            :image-url="assetUrl(article.cover_image) ?? undefined"
+            :to="`/actualites/${article.slug}`"
           />
         </div>
 
@@ -433,9 +434,25 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { Centre } from '@learnup/types'
+import type { Article, Centre } from '@learnup/types'
 import { mapCourse, useCatalog } from '~/composables/useCatalog'
 import type { CenterResult } from '~/types/center-result'
+
+const config = useRuntimeConfig()
+
+function assetUrl(id: string | null): string | null {
+  if (!id) return null
+  return `${config.public.apiBase}/directus/assets/${id}`
+}
+
+function formatArticleDate(value: string | null): string {
+  if (!value) return 'Date à préciser'
+  return new Date(value).toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  })
+}
 
 useContentSeo(
   {
@@ -650,28 +667,12 @@ const testimonials = [
   }
 ]
 
-const articles = [
-  {
-    category: 'Réglementation',
-    title: 'Recyclage CACES : les échéances 2026 à anticiper',
-    date: '28 août 2026 · 4 min',
-    excerpt:
-      'Calendrier de recyclage et points de vigilance pour garder vos équipes en conformité.',
-    imageLabel: 'Visuel article à fournir'
-  },
-  {
-    category: 'Conformité',
-    title: 'Habilitations électriques : quelles obligations pour vos sous-traitants ?',
-    date: '21 août 2026 · 6 min',
-    excerpt: 'Ce que dit la norme NF C18-510 et comment organiser le suivi des habilitations.',
-    imageLabel: 'Visuel article à fournir'
-  },
-  {
-    category: 'Financement',
-    title: 'OPCO : optimiser la prise en charge de votre plan de formation',
-    date: '12 août 2026 · 5 min',
-    excerpt: 'Les leviers de financement mobilisables et les délais à respecter.',
-    imageLabel: 'Visuel article à fournir'
-  }
-]
+const homeArticlesData = await useDirectusList<Article>('articles', 'home-actualites-list', {
+  fields: ['id', 'status', 'slug', 'title', 'excerpt', 'category', 'publish_at', 'cover_image'],
+  filter: { status: { _eq: 'published' } },
+  sort: ['-publish_at'],
+  limit: 3
+})
+
+const articles = computed(() => (homeArticlesData.value ?? []).slice(0, 3))
 </script>

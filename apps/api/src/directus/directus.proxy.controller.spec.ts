@@ -73,6 +73,19 @@ describe('DirectusProxyController', () => {
     expect(res.status).toBe(403)
   })
 
+  it('autorise la collection des articles', async () => {
+    fetchMock.mockResolvedValueOnce(upstreamJson({ data: [{ slug: 'actualite-test' }] }))
+
+    const res = await request(app.getHttpServer()).get('/directus/items/articles?limit=-1')
+
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ data: [{ slug: 'actualite-test' }] })
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://directus:8055/items/articles?limit=-1',
+      expect.objectContaining({ method: 'GET' })
+    )
+  })
+
   it('refuse les méthodes non-GET', async () => {
     const res = await request(app.getHttpServer())
       .post('/directus/items/centres')

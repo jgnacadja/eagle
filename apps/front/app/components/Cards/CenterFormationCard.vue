@@ -1,23 +1,25 @@
 <template>
-  <Card class="flex flex-col">
+  <Card
+    class="flex flex-col hover:shadow-md duration-500 hover:z-5 hover:scale-[1.03] transition-all"
+  >
     <CardHeader class="space-y-sm p-md pb-0">
-      <p v-if="eyebrow" class="mb-md text-overline text-ink-subtle">{{ eyebrow }}</p>
+      <p v-if="eyebrow" class="mb-md text-overline text-ink-subtle font-bold">{{ eyebrow }}</p>
       <p class="text-overline text-accent-text uppercase">{{ family }}</p>
-      <CardTitle class="font-sans text-h4 font-semibold leading-tight tracking-normal text-ink">
+      <CardTitle class="font-sans text-h4 font-extrabold leading-tight tracking-normal text-ink">
         {{ title }}
       </CardTitle>
     </CardHeader>
     <CardContent class="flex-1 px-md py-sm">
-      <p v-if="description" class="hidden flex-1 text-small text-ink-body lg:block">
+      <p v-if="description" class="hidden flex-1 text-small text-ink-body lg:block font-bold">
         {{ description }}
       </p>
-      <CardDescription class="mt-sm">{{ meta }}</CardDescription>
+      <CardDescription class="font-bold">{{ meta }}</CardDescription>
     </CardContent>
     <CardFooter class="flex flex-col items-start px-md pb-md pt-sm">
-      <Badge v-if="status" :variant="status.type" class="w-fit">
+      <Badge v-if="status" :variant="status.type" class="w-fit flex justify-center items-center">
         <span
           v-if="status.type !== 'warning'"
-          class="h-sm w-sm rounded-full bg-current"
+          class="h-sm w-sm rounded-full bg-current p-1"
           aria-hidden="true"
         />
         <span v-else aria-hidden="true">▲</span>
@@ -26,7 +28,7 @@
       <Button
         v-if="to && variant === 'button'"
         as-child
-        class="mt-md h-control w-full rounded-full px-lg text-small font-semibold hover:bg-primary-dark"
+        class="mt-md h-control w-full rounded-full px-lg text-small font-bold hover:bg-primary-dark"
       >
         <NuxtLink :to="to">Voir la formation</NuxtLink>
       </Button>

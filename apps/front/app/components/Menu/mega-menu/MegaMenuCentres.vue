@@ -48,7 +48,7 @@
         </li>
         <li class="col-span-2">
           <NuxtLink
-            to="/centres"
+            :to="{ path: '/centres', query: { q: selectedRegionLabel } }"
             class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >

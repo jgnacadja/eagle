@@ -132,7 +132,7 @@
                       </li>
                       <li>
                         <NuxtLink
-                          to="/centres"
+                          :to="{ path: '/centres', query: { q: region.label } }"
                           class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                           @click="closeMenu"
                         >

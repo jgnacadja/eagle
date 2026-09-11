@@ -282,6 +282,10 @@ import { useDirectusClient } from '~/composables/useDirectus'
 import { MODALITY_LABELS, MODALITY_OPTIONS } from '~/utils/catalog-filters'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
 
+definePageMeta({
+  layout: 'with-breadcrumb'
+})
+
 const route = useRoute()
 const famille = route.params.famille as string
 

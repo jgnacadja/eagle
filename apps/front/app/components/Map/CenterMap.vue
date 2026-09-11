@@ -67,6 +67,7 @@ import { Button } from '@/components/ui/button'
 import IconPlus from '@/components/icons/IconPlus.vue'
 import IconMinus from '@/components/icons/IconMinus.vue'
 import CenterMapPopup from '@/components/Map/CenterMapPopup.vue'
+import franceOutline from '~/assets/geo-france-outline.json'
 import type { CenterResult } from '~/types/center-result'
 import type * as Leaflet from 'leaflet'
 
@@ -76,8 +77,9 @@ const props = withDefaults(
     activeId: string | null
     caption: string
     mode?: 'network' | 'single'
+    minZoom?: number
   }>(),
-  { mode: 'network' }
+  { mode: 'network', minZoom: 5 }
 )
 
 const emit = defineEmits<{
@@ -94,6 +96,26 @@ let popupMarker: Leaflet.Marker | null = null
 let pendingReveal: (() => void) | null = null
 
 const hasVisibleCenters = computed(() => props.centers.some((c) => c.lat != null && c.lng != null))
+
+// France métropolitaine + Corse, au plus juste : le réseau est national,
+// l'utilisateur ne doit ni sortir du territoire ni voir les pays voisins
+// (le tileLayer ne charge pas de tuiles hors de ces limites).
+const FRANCE_MAX_BOUNDS: [[number, number], [number, number]] = [
+  [41.3, -5.2],
+  [51.2, 9.7]
+]
+
+const WORLD_RING: [number, number][] = [
+  [-90, -180],
+  [-90, 180],
+  [90, 180],
+  [90, -180]
+]
+
+// Import statique (pas de fetch) : le contour doit être disponible dès
+// l'init de la carte, sinon le monde entier apparaît brièvement au premier
+// drag avant que le masque n'arrive.
+const FRANCE_OUTLINE = franceOutline as [number, number][][]
 
 const directionsUrl = computed(() => {
   const center = props.centers[0]
@@ -275,10 +297,34 @@ function syncActive(L: typeof import('leaflet'), id: string | null) {
 onMounted(async () => {
   if (!mapEl.value || !props.centers.length) return
   const L = await ensureLeaflet()
-  mapInstance.value = L.map(mapEl.value, { zoomControl: false })
+  mapInstance.value = L.map(mapEl.value, {
+    zoomControl: false,
+    minZoom: props.minZoom,
+    maxBounds: L.latLngBounds(FRANCE_MAX_BOUNDS),
+    maxBoundsViscosity: 1.0,
+    // Le renderer SVG ne couvre que le viewport + padding et n'est redessiné
+    // qu'au moveend : pendant un drag, la bande révélée n'a plus de masque et
+    // les pays voisins apparaissent un instant. padding 1 = 3× le viewport.
+    renderer: L.svg({ padding: 1 })
+  })
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors',
-    maxZoom: 19
+    maxZoom: 19,
+    bounds: L.latLngBounds(FRANCE_MAX_BOUNDS)
+  }).addTo(mapInstance.value)
+
+  // Masque opaque hors de France : à petit zoom les tuiles OSM couvrent des
+  // pays entiers, `bounds` ne suffit pas — on couvre le reste du monde de la
+  // couleur de fond, avec un trou à la forme réelle du territoire. Appliqué
+  // de façon synchrone à l'init (import statique) pour ne jamais laisser
+  // apparaître les pays voisins. Le polygone va dans l'overlayPane
+  // (z < markerPane) : les pins et clusters restent visibles au-dessus.
+  L.polygon([WORLD_RING, ...FRANCE_OUTLINE], {
+    stroke: false,
+    fillColor: cssColor('--color-surface-alt', '#edf2fa'),
+    fillOpacity: 1,
+    interactive: false,
+    noClip: true
   }).addTo(mapInstance.value)
 
   if (props.mode === 'network') {

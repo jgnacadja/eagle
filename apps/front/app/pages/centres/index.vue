@@ -107,6 +107,7 @@
             :centers="filteredCenters"
             :active-id="activeCenterId"
             :caption="selectedDeptLabel"
+            :min-zoom="8"
             @select="selectCenter"
           />
         </div>
@@ -215,6 +216,7 @@
             :centers="filteredCenters"
             :active-id="activeCenterId"
             :caption="selectedDeptLabel"
+            :min-zoom="8"
             @select="selectCenter"
           />
         </div>

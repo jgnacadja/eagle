@@ -10,6 +10,7 @@ const navigateMock = vi.fn()
 vi.stubGlobal('useContentSeo', seoMock)
 vi.stubGlobal('useHead', headMock)
 vi.stubGlobal('navigateTo', navigateMock)
+vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
 
 vi.mock('~/composables/useCatalog', () => ({
   mapCourse: (c: { slug: string; title: string; familySlug?: string | null }) => ({

@@ -13,7 +13,8 @@ describe('ArticleCard', () => {
       },
       global: {
         stubs: {
-          NuxtLink: { template: '<a><slot /></a>' }
+          NuxtLink: { template: '<a><slot /></a>' },
+          NuxtImg: { template: '<img />' }
         }
       }
     })

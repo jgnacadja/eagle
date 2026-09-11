@@ -349,7 +349,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     expect(wrapper.text()).toContain('Conduite sécurisée')
     expect(wrapper.text()).toContain('Formations similaires')
     expect(wrapper.findAll('.similaire-card')).toHaveLength(similar.length - 1)
-    expect(wrapper.text()).toContain('Programme sur Digiforma')
+    expect(wrapper.text()).toContain('Voir les sessions')
   })
 
   it('restaure les sections sessions, lieux et modalités/évaluation', async () => {

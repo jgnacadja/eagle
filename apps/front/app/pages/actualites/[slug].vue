@@ -83,18 +83,17 @@
             <div class="mt-2xl max-w-prose space-y-xl text-body text-ink-body">
               <div class="article-content" v-html="sanitizeHtml(article?.content ?? '')"></div>
 
-              <!-- <Card v-if="article?.related_formation_slug" class="p-lg lg:hidden">
-                <p class="mb-md text-overline text-ink-subtle font-bold">Formation liée</p>
-                <p class="mt-xs text-meta font-medium text-ink-muted">
-                  {{ article.related_formation_slug }}
-                </p>
-                <NuxtLink
-                  :to="`/formations/${article.related_formation_slug}`"
-                  class="mt-lg block h-control rounded-full bg-primary px-lg text-center text-small font-semibold leading-11 text-paper hover:bg-primary-dark"
-                >
-                  Voir la formation
-                </NuxtLink>
-              </Card> -->
+              <CenterFormationCard
+                v-if="relatedFormationCard"
+                class="lg:hidden"
+                eyebrow="Formation liée"
+                variant="button"
+                :family="relatedFormationCard.family"
+                :title="relatedFormationCard.title"
+                :meta="relatedFormationCard.meta"
+                :status="relatedFormationCard.status"
+                :to="relatedFormationCard.to ?? undefined"
+              />
             </div>
           </article>
 
@@ -130,15 +129,16 @@
                 </ul>
               </Card>
 
-              <!-- <CenterFormationCard
+              <CenterFormationCard
+                v-if="relatedFormationCard"
                 eyebrow="Formation liée"
                 variant="button"
-                :family="article.relatedFormation.family"
-                :title="article.relatedFormation.title"
-                :meta="article.relatedFormation.meta"
-                :status="article.relatedFormation.status"
-                :to="article.relatedFormation.to"
-              /> -->
+                :family="relatedFormationCard.family"
+                :title="relatedFormationCard.title"
+                :meta="relatedFormationCard.meta"
+                :status="relatedFormationCard.status"
+                :to="relatedFormationCard.to ?? undefined"
+              />
 
               <Card class="bg-primary-dark p-lg text-paper">
                 <h3 class="text-sm font-bold">Un doute sur vos échéances ?</h3>
@@ -231,7 +231,8 @@
 
 <script setup lang="ts">
 import { readItems } from '@directus/sdk'
-import type { Article } from '@learnup/types'
+import type { Article, Course } from '@learnup/types'
+import { mapCourse, type FormationItem } from '~/composables/useCatalog'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
 
 definePageMeta({
@@ -292,6 +293,48 @@ const {
 
 const article = computed(() => {
   return articleData.value
+})
+
+interface RelatedFormationFamily {
+  slug: string
+  famille: { slug: string } | null
+}
+
+const { data: relatedFormation } = await useAsyncData<Course | null>(
+  `article-related-formation-${slug}`,
+  async () => {
+    const formationSlug = article.value?.related_formation_slug
+    if (!formationSlug) return null
+
+    try {
+      const familyResult = await directus.request<RelatedFormationFamily[]>(
+        readItems('formations', {
+          fields: ['slug', 'famille.slug'],
+          filter: { slug: { _eq: formationSlug }, status: { _eq: 'published' } },
+          limit: 1
+        })
+      )
+      const formation = familyResult[0]
+      const familySlug = formation?.famille?.slug
+      if (!familySlug) return null
+
+      return await $fetch<Course>(
+        `${import.meta.server ? config.apiBase : config.public.apiBase}/courses/${familySlug}/${formation.slug}`
+      )
+    } catch (error) {
+      if (import.meta.server) {
+        logServerError(`[actualites/slug] related formation ${formationSlug} load failed:`, error)
+      }
+      return null
+    }
+  }
+)
+
+const relatedFormationCard = computed<FormationItem | null>(() => {
+  const formation = relatedFormation.value
+  if (!formation) return null
+
+  return mapCourse(formation, formation.familySlug ?? undefined)
 })
 
 const readingTime = computed(() => {

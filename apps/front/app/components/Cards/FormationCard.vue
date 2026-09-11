@@ -1,5 +1,7 @@
 <template>
-  <article class="rounded-md border border-rule bg-paper p-md">
+  <article
+    class="rounded-md border border-rule bg-paper p-md transition hover:border-primary/40 hover:shadow-md"
+  >
     <img
       v-if="image"
       :src="image"

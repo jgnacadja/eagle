@@ -223,7 +223,7 @@
                     :formations="lieu.modalities"
                     :status="lieu.status"
                     :to="lieu.to"
-                    class="h-full transition hover:shadow-md"
+                    class="h-full"
                   />
                 </li>
               </ul>

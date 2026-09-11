@@ -1,5 +1,5 @@
 <template>
-  <Card>
+  <Card class="transition hover:border-primary/40 hover:shadow-md">
     <CardContent class="flex flex-col gap-md p-md sm:flex-row sm:items-center">
       <div class="flex min-w-0 flex-1 items-center gap-md">
         <div class="w-3xl shrink-0 rounded-md bg-surface py-sm text-center">

@@ -1,5 +1,7 @@
 <template>
-  <article class="rounded-md border border-rule bg-paper p-md shadow-sm">
+  <article
+    class="rounded-md border border-rule bg-paper p-md shadow-sm transition hover:border-primary/40 hover:shadow-md"
+  >
     <div class="flex items-start justify-between gap-sm">
       <h3 class="font-sans text-h4 font-semibold text-ink">{{ name }}</h3>
       <span class="shrink-0 text-meta text-ink-subtle">{{ distance }}</span>

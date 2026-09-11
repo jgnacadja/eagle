@@ -1,7 +1,11 @@
 <template>
   <article
     class="cursor-pointer rounded-md border p-md transition"
-    :class="active ? 'border-2 border-primary bg-surface shadow-md' : 'border border-rule bg-paper'"
+    :class="
+      active
+        ? 'border-2 border-primary bg-surface shadow-md'
+        : 'border border-rule bg-paper hover:border-primary/40 hover:shadow-md'
+    "
     @click="$emit('select')"
   >
     <div class="flex items-start justify-between gap-sm">

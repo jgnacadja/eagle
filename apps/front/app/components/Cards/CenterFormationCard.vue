@@ -1,5 +1,7 @@
 <template>
-  <Card class="flex flex-col">
+  <Card
+    class="flex flex-col hover:shadow-md duration-500 hover:z-5 hover:scale-[1.03] transition-all"
+  >
     <CardHeader class="space-y-sm p-md pb-0">
       <p v-if="eyebrow" class="mb-md text-overline text-ink-subtle font-bold">{{ eyebrow }}</p>
       <p class="text-overline text-accent-text uppercase">{{ family }}</p>

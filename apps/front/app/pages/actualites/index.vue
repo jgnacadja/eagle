@@ -130,7 +130,7 @@
                 </p>
                 <NuxtLink
                   :to="`/actualites/${featuredArticle.slug}`"
-                  class="mt-xs text-small font-semibold text-ink transition-colors hover:text-accent-text"
+                  class="mt-xs text-small font-semibold text-ink hover:underline hover:text-accent-text transition-all"
                 >
                   Lire l'article →
                 </NuxtLink>
@@ -214,7 +214,7 @@
                 />
                 <Button
                   type="submit"
-                  class="h-control shrink-0 rounded-full bg-accent px-xl text-small font-bold text-ink hover:bg-accent-text hover:text-paper"
+                  class="h-control shrink-0 rounded-full bg-accent px-xl text-small font-bold text-ink hover:bg-accent-text hover:text-paper transition duration-300 self-start cursor-pointer"
                 >
                   S'abonner
                 </Button>

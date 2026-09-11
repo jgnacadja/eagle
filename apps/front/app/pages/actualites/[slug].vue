@@ -166,7 +166,7 @@
             </h2>
             <NuxtLink
               to="/actualites"
-              class="hidden text-small font-semibold text-ink transition-colors hover:text-accent-text sm:inline"
+              class="hidden text-small font-bold text-ink hover:underline sm:inline hover:text-accent-text hover:scale-105 transition-all"
             >
               Toute l'actualité →
             </NuxtLink>
@@ -175,7 +175,7 @@
             <li
               v-for="related in relatedArticles"
               :key="related.slug"
-              class="border-t border-accent-text/30 pt-md"
+              class="border-t border-accent-text/30 pt-md duration-500 hover:scale-[1.03] transition-all"
             >
               <article>
                 <p class="text-overline text-accent-text">

@@ -5,6 +5,7 @@
 // Dégradation gracieuse : [] en cas d'erreur, log serveur.
 
 import { readItems } from '@directus/sdk'
+import { buildMeta } from '~/composables/useCatalog'
 import type {
   Centre,
   CourseListItem,
@@ -23,6 +24,7 @@ export interface MenuFormation {
   slug: string
   label: string
   to: string
+  meta?: string
 }
 
 export interface MenuCentre {
@@ -46,6 +48,7 @@ const MAX_FAMILLES = 4
 const MAX_REGIONS = 4
 const MAX_CENTRES_PER_REGION = 4
 const MAX_FORMATIONS_A_LA_UNE = 6
+const MAX_FORMATIONS_PAR_FAMILLE = 4
 
 function slugify(input: string): string {
   return input
@@ -65,13 +68,49 @@ function getCachedData<T>(key: string, nuxtApp: ReturnType<typeof useNuxtApp>): 
   return nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]
 }
 
-/** Familles depuis le catalogue API (`/families`) + noms Directus — max MAX_FAMILLES. */
-export function useMenuFamilles() {
+interface MenuFamillesData {
+  familles: MenuFamille[]
+  formationsParFamille: Record<string, MenuFormation[]>
+}
+
+/** Formations d'une famille pour la colonne centrale du méga-menu. */
+async function fetchFormationsParFamille(
+  apiBase: string,
+  familles: MenuFamille[]
+): Promise<Record<string, MenuFormation[]>> {
+  const entries = await Promise.all(
+    familles.map(async (famille) => {
+      try {
+        const result = await $fetch<Paginated<CourseListItem>>(`${apiBase}/courses`, {
+          query: { family: famille.slug, limit: MAX_FORMATIONS_PAR_FAMILLE, page: 1 }
+        })
+        return [
+          famille.slug,
+          result.items.map((course) => ({
+            slug: course.slug,
+            label: course.title,
+            to: `/formations/${famille.slug}/${course.slug}`,
+            meta: buildMeta(course)
+          }))
+        ] as const
+      } catch (error) {
+        if (import.meta.server) {
+          logServerError('[useMenuFamilles] /courses fetch failed:', error)
+        }
+        return [famille.slug, []] as const
+      }
+    })
+  )
+  return Object.fromEntries(entries)
+}
+
+/** Familles + formations par famille — un seul useAsyncData partagé (payload SSR). */
+function useMenuFamillesData() {
   const config = useRuntimeConfig()
   const apiBase = import.meta.server ? config.apiBase : config.public.apiBase
   const directus = useDirectusClient()
 
-  const { data } = useAsyncData<MenuFamille[]>(
+  const { data } = useAsyncData<MenuFamillesData>(
     'menu-familles',
     async () => {
       const [names, counts] = await Promise.all([
@@ -103,28 +142,42 @@ export function useMenuFamilles() {
       }
 
       // Si /families échoue mais Directus a des noms, on affiche quand même les familles (count = 0).
-      if (counts === null && nameBySlug.size > 0) {
-        return [...nameBySlug.entries()]
-          .map(([slug, label]) => ({ slug, label, count: 0 }))
-          .sort((a, b) => a.label.localeCompare(b.label))
-          .slice(0, MAX_FAMILLES)
-      }
+      const familles =
+        counts === null && nameBySlug.size > 0
+          ? [...nameBySlug.entries()]
+              .map(([slug, label]) => ({ slug, label, count: 0 }))
+              .sort((a, b) => a.label.localeCompare(b.label))
+              .slice(0, MAX_FAMILLES)
+          : (counts ?? [])
+              .map((family) => ({
+                slug: family.slug,
+                label: nameBySlug.get(family.slug) ?? humanizeSlug(family.slug),
+                count: family.count
+              }))
+              .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+              .slice(0, MAX_FAMILLES)
 
-      return (counts ?? [])
-        .map((family) => ({
-          slug: family.slug,
-          label: nameBySlug.get(family.slug) ?? humanizeSlug(family.slug),
-          count: family.count
-        }))
-        .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
-        .slice(0, MAX_FAMILLES)
+      const formationsParFamille = await fetchFormationsParFamille(apiBase, familles)
+      return { familles, formationsParFamille }
     },
     {
-      getCachedData: (key, nuxtApp) => getCachedData<MenuFamille[]>(key, nuxtApp)
+      getCachedData: (key, nuxtApp) => getCachedData<MenuFamillesData>(key, nuxtApp)
     }
   )
 
   return data
+}
+
+/** Familles depuis le catalogue API (`/families`) + noms Directus — max MAX_FAMILLES. */
+export function useMenuFamilles() {
+  const data = useMenuFamillesData()
+  return computed(() => data.value?.familles ?? [])
+}
+
+/** Formations de chaque famille affichée — colonne centrale du méga-menu. */
+export function useMenuFormationsParFamille() {
+  const data = useMenuFamillesData()
+  return computed(() => data.value?.formationsParFamille ?? {})
 }
 
 /** Centres publiés, groupés par région pour les menus. */

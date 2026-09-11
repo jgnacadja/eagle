@@ -26,6 +26,23 @@ vi.mock('~/composables/useMenuData', async () => {
           to: '/formations/caces-conduite-engins/caces-r489'
         }
       ]),
+    useMenuFormationsParFamille: () =>
+      ref({
+        'securite-prevention': [
+          {
+            slug: 'sst-initial',
+            label: 'SST — Sauveteur secouriste du travail',
+            to: '/formations/securite-prevention/sst-initial'
+          }
+        ],
+        management: [
+          {
+            slug: 'manager-equipe',
+            label: 'Manager une équipe',
+            to: '/formations/management/manager-equipe'
+          }
+        ]
+      }),
     useMenuCentres: () => ({
       regions: ref([
         { slug: 'ile-de-france', label: 'Île-de-France', count: 2 },
@@ -98,12 +115,27 @@ describe('MegaMenuFormations', () => {
     expect(wrapper.text()).toContain('CACES R489 — chariots élévateurs')
   })
 
-  it('change de famille au survol', async () => {
+  it('change de famille au clic', async () => {
     const wrapper = await mountMenu(MegaMenuFormations)
     const btn = wrapper.findAll('button').find((b) => b.text().includes('Management'))!
 
-    await btn.trigger('mouseenter')
-    expect(wrapper.text()).toContain('12 formations dans cette famille')
+    await btn.trigger('click')
+    expect(wrapper.find('a[href="/formations/management/manager-equipe"]').exists()).toBe(true)
+  })
+
+  it('liste les formations de la famille sélectionnée', async () => {
+    const wrapper = await mountMenu(MegaMenuFormations)
+
+    expect(wrapper.find('a[href="/formations/securite-prevention/sst-initial"]').exists()).toBe(
+      true
+    )
+
+    const btn = wrapper.findAll('button').find((b) => b.text().includes('Management'))!
+    await btn.trigger('click')
+    expect(wrapper.find('a[href="/formations/management/manager-equipe"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/formations/securite-prevention/sst-initial"]').exists()).toBe(
+      false
+    )
   })
 
   it('émet close au clic sur un lien', async () => {

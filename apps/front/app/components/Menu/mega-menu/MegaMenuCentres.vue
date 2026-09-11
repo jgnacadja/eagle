@@ -1,5 +1,5 @@
 <template>
-  <div class="grid w-full grid-cols-3 gap-lg p-lg">
+  <div class="grid w-full grid-cols-4 gap-lg p-lg">
     <!-- RÉGIONS -->
     <div>
       <h3 class="text-small font-semibold text-ink-muted">Régions</h3>
@@ -11,7 +11,6 @@
             :class="
               region.slug === selectedRegion ? 'bg-surface font-semibold text-ink' : 'text-primary'
             "
-            @mouseenter="selectedRegion = region.slug"
             @focus="selectedRegion = region.slug"
             @click="goToRegion(region.slug)"
           >
@@ -30,24 +29,20 @@
     </div>
 
     <!-- CENTRES DE LA RÉGION SÉLECTIONNÉE -->
-    <div class="border-l border-rule pl-lg">
-      <h3 class="text-small font-semibold text-ink-muted">
+    <div class="col-span-2 border-l border-rule pl-lg">
+      <h3 class="text-overline uppercase text-ink-muted">
         {{ selectedRegionLabel }} — {{ selectedRegionCount }} centre{{
           selectedRegionCount > 1 ? 's' : ''
         }}
       </h3>
-      <ul class="mt-sm space-y-2">
+      <ul v-if="centresAffiches.length" class="mt-sm grid grid-cols-2 gap-sm">
         <li v-for="centre in centresAffiches" :key="centre.slug">
-          <NuxtLink
+          <MegaMenuCard
             :to="`/centres/${centre.slug}`"
-            class="block rounded-md px-2 py-1.5 text-body text-primary transition-colors hover:bg-surface hover:text-ink"
-            @click="$emit('close')"
-          >
-            <span class="font-medium">{{ centre.name }}</span>
-            <span class="block text-small text-ink-muted">{{
-              centre.department ?? centre.city
-            }}</span>
-          </NuxtLink>
+            :title="centre.name"
+            :meta="centre.department ?? centre.city"
+            @select="$emit('close')"
+          />
         </li>
       </ul>
       <NuxtLink
@@ -91,6 +86,7 @@ import { computed, ref, watch } from 'vue'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { useMenuCentres } from '~/composables/useMenuData'
+import MegaMenuCard from '~/components/Menu/mega-menu/MegaMenuCard.vue'
 
 const emit = defineEmits<{ close: [] }>()
 

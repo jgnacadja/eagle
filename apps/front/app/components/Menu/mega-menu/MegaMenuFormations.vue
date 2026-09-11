@@ -1,5 +1,5 @@
 <template>
-  <div class="grid w-full grid-cols-3 gap-lg p-lg">
+  <div class="grid w-full grid-cols-4 gap-lg p-lg">
     <!-- FAMILLES -->
     <div>
       <h3 class="text-small font-semibold text-ink-muted">Familles</h3>
@@ -13,7 +13,6 @@
                 ? 'bg-surface font-semibold text-ink'
                 : 'text-primary'
             "
-            @mouseenter="selectedFamille = famille.slug"
             @focus="selectedFamille = famille.slug"
             @click="goToFamille(famille.slug)"
           >
@@ -31,13 +30,19 @@
       </NuxtLink>
     </div>
 
-    <!-- DÉTAIL FAMILLE SÉLECTIONNÉE -->
-    <div class="border-l border-rule pl-lg">
-      <h3 class="text-small font-semibold text-ink-muted">{{ selectedFamilleLabel }}</h3>
-      <p class="mt-sm px-2 text-body text-ink-muted">
-        {{ selectedFamilleCount }} formation{{ selectedFamilleCount > 1 ? 's' : '' }} dans cette
-        famille.
-      </p>
+    <!-- FORMATIONS DE LA FAMILLE SÉLECTIONNÉE -->
+    <div class="col-span-2 border-l border-rule pl-lg">
+      <h3 class="text-overline uppercase text-ink-muted">{{ selectedFamilleLabel }}</h3>
+      <ul v-if="formationsFamille.length" class="mt-sm grid grid-cols-2 gap-sm">
+        <li v-for="formation in formationsFamille" :key="formation.slug">
+          <MegaMenuCard
+            :to="formation.to"
+            :title="formation.label"
+            :meta="formation.meta"
+            @select="$emit('close')"
+          />
+        </li>
+      </ul>
       <NuxtLink
         v-if="selectedFamille"
         :to="`/formations/${selectedFamille}`"
@@ -80,11 +85,17 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useMenuFamilles, useMenuFormationsALaUne } from '~/composables/useMenuData'
+import {
+  useMenuFamilles,
+  useMenuFormationsALaUne,
+  useMenuFormationsParFamille
+} from '~/composables/useMenuData'
+import MegaMenuCard from '~/components/Menu/mega-menu/MegaMenuCard.vue'
 
 defineEmits<{ close: [] }>()
 
 const familles = useMenuFamilles()
+const formationsParFamille = useMenuFormationsParFamille()
 const formationsALaUne = useMenuFormationsALaUne()
 
 const selectedFamille = ref(familles.value?.[0]?.slug ?? '')
@@ -103,8 +114,8 @@ watch(
 const selectedFamilleLabel = computed(() => {
   return familles.value?.find((f) => f.slug === selectedFamille.value)?.label ?? ''
 })
-const selectedFamilleCount = computed(() => {
-  return familles.value?.find((f) => f.slug === selectedFamille.value)?.count ?? 0
+const formationsFamille = computed(() => {
+  return formationsParFamille.value[selectedFamille.value] ?? []
 })
 
 function goToFamille(slug: string) {

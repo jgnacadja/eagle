@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { computed, ref } from 'vue'
-import { useMenuCentres, useMenuFamilles, useMenuFormationsALaUne } from '~/composables/useMenuData'
+import {
+  useMenuCentres,
+  useMenuFamilles,
+  useMenuFormationsALaUne,
+  useMenuFormationsParFamille
+} from '~/composables/useMenuData'
 
 const fetchMock = vi.fn()
 const directusRequestMock = vi.fn()
@@ -114,6 +119,71 @@ describe('useMenuData', () => {
       expect(familles.value).toEqual([
         { slug: 'unknown-family', label: 'Unknown Family', count: 1 }
       ])
+    })
+  })
+
+  describe('useMenuFormationsParFamille', () => {
+    it('charge les formations de chaque famille affichée via /courses?family=', async () => {
+      directusRequestMock.mockResolvedValue([
+        { slug: 'caces', name: 'CACES' },
+        { slug: 'sante', name: 'Santé & secours' }
+      ])
+      fetchMock.mockImplementation((url: string) => {
+        if (url.endsWith('/families')) {
+          return Promise.resolve([
+            { slug: 'caces', count: 12 },
+            { slug: 'sante', count: 8 }
+          ])
+        }
+        return Promise.resolve({
+          items: [{ slug: 'caces-r489', title: 'CACES R489', familySlug: 'caces' }],
+          total: 1,
+          page: 1,
+          pageSize: 6
+        })
+      })
+
+      const formationsParFamille = useMenuFormationsParFamille()
+      await flushPromises()
+
+      expect(formationsParFamille.value).toEqual({
+        caces: [
+          {
+            slug: 'caces-r489',
+            label: 'CACES R489',
+            to: '/formations/caces/caces-r489',
+            meta: ''
+          }
+        ],
+        sante: [
+          {
+            slug: 'caces-r489',
+            label: 'CACES R489',
+            to: '/formations/sante/caces-r489',
+            meta: ''
+          }
+        ]
+      })
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://api.test/courses',
+        expect.objectContaining({
+          query: expect.objectContaining({ family: 'caces', limit: 4, page: 1 })
+        })
+      )
+    })
+
+    it('dégrade en liste vide par famille si /courses échoue', async () => {
+      directusRequestMock.mockResolvedValue([{ slug: 'caces', name: 'CACES' }])
+      fetchMock.mockImplementation((url: string) =>
+        url.endsWith('/families')
+          ? Promise.resolve([{ slug: 'caces', count: 12 }])
+          : Promise.reject(new Error('api down'))
+      )
+
+      const formationsParFamille = useMenuFormationsParFamille()
+      await flushPromises()
+
+      expect(formationsParFamille.value).toEqual({ caces: [] })
     })
   })
 

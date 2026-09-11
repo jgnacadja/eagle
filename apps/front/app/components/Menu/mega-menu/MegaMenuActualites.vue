@@ -1,5 +1,7 @@
 <template>
-  <div class="grid w-full grid-cols-3 gap-lg p-lg">
+  <div
+    class="mx-auto grid w-full max-w-container grid-cols-3 gap-lg px-gutter-mobile py-lg md:px-gutter"
+  >
     <!-- RUBRIQUES -->
     <div>
       <h3 class="text-small font-semibold text-ink-muted">Rubriques</h3>

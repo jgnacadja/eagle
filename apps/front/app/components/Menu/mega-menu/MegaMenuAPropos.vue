@@ -1,5 +1,7 @@
 <template>
-  <div class="grid w-full grid-cols-2 gap-lg p-lg">
+  <div
+    class="mx-auto grid w-full max-w-container grid-cols-2 gap-lg px-gutter-mobile py-lg md:px-gutter"
+  >
     <div>
       <h3 class="text-small font-semibold text-ink-muted">Learn Up Academy</h3>
       <ul class="mt-sm space-y-2">

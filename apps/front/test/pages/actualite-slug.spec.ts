@@ -106,6 +106,7 @@ vi.stubGlobal('$fetch', fetchMock)
 
 const stubs = {
   NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
+  NuxtImg: { props: ['src', 'alt'], template: '<img :src="src" :alt="alt" />' },
   Button: { template: '<button><slot /></button>' },
   Card: { template: '<div><slot /></div>' },
   CenterFormationCard: {
@@ -167,8 +168,8 @@ describe('pages/actualites/[slug]', () => {
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain('Réglementation & obligations')
-    expect(wrapper.text()).toContain('2 sept. 2026')
-    expect(wrapper.text()).toContain('4 min')
+    expect(wrapper.text()).toContain('02 septembre 2026')
+    expect(wrapper.text()).toContain('1 min')
     expect(wrapper.text()).toContain('Recyclage CACES')
     expect(wrapper.text()).toContain('échéance en 2027')
   })
@@ -177,7 +178,7 @@ describe('pages/actualites/[slug]', () => {
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain('Équipe réglementation LEARN UP ACADEMY')
-    expect(wrapper.text()).toContain('Publié le 2 sept. 2026')
+    expect(wrapper.text()).toContain('Publié le 02 septembre 2026')
     const labels = wrapper.findAll('button').map((b) => b.attributes('aria-label'))
     expect(labels).toContain("Partager l'article")
     expect(labels).toContain("Copier le lien de l'article")
@@ -216,8 +217,8 @@ describe('pages/actualites/[slug]', () => {
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain('Dans cet article')
-    expect(wrapper.find('a[href="#pourquoi"]').exists()).toBe(true)
-    expect(wrapper.find('a[href="#etaler"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="#pourquoi-2027-concentre-les-echeances"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="#comment-etaler-les-recyclages"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('À lire ensuite')
     expect(wrapper.find('a[href="/actualites/aipr-qui-former"]').exists()).toBe(true)
   })

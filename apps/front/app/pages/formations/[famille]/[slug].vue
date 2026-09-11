@@ -840,7 +840,7 @@ const modaliteLabels = computed(() =>
 )
 
 const similarQuery = computed(() => ({
-  family: course.value?.familySlug,
+  family: course.value?.familySlug ?? undefined,
   limit: 3,
   page: 1,
   sort: 'updatedAt' as const,

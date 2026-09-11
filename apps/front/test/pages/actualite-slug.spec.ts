@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, ref, Suspense, watchEffect } from 'vue'
+import type { Article, Course } from '@learnup/types'
 import LoadError from '~/components/ErrorState/LoadError.vue'
 import NotFound from '~/components/ErrorState/NotFound.vue'
 import ArticlePage from '~/pages/actualites/[slug].vue'
@@ -19,6 +20,63 @@ interface RouteMock {
 
 let routeMock: RouteMock
 let forceError: Error | null = null
+let directusCallIndex = 0
+
+const articleFixture: Article = {
+  id: 1,
+  status: 'published',
+  slug: 'recyclage-caces-echeances-2027',
+  title: 'Recyclage CACES : échéance en 2027',
+  excerpt: 'Les échéances de recyclage se rapprochent.',
+  content:
+    '<h2>Pourquoi 2027 concentre les échéances</h2><p>À retenir : 3 à 6 mois avant l’échéance.</p><h2>Comment étaler les recyclages</h2><p>CACES R489 — Autorisation de conduite</p>',
+  category: 'Réglementation & obligations',
+  author_name: 'Équipe réglementation LEARN UP ACADEMY',
+  author_image: null,
+  region: null,
+  related_formation_slug: 'caces-r489-chariots-elevateurs',
+  publish_at: '2026-09-02T00:00:00.000Z',
+  centre: null,
+  cover_image: null,
+  seo_title: 'Recyclage CACES | LEARN UP ACADEMY',
+  seo_description: null,
+  seo_canonical: null
+}
+
+const relatedCourse = {
+  id: 2,
+  slug: 'caces-r489-chariots-elevateurs',
+  title: 'Recyclage CACES R489 — toutes catégories',
+  description: null,
+  durationDays: 3,
+  durationHours: 21,
+  price: null,
+  cpf: false,
+  cpfCode: null,
+  certification: 'Certification CACES',
+  certifierName: null,
+  category: null,
+  familySlug: 'caces-conduite-engins',
+  centerSlug: null,
+  centerSlugs: [],
+  modalities: [],
+  sessions: null,
+  imageUrl: null,
+  generatedProgramUrl: null,
+  status: 'published',
+  seoTitle: null,
+  seoDescription: null,
+  seoCanonical: null,
+  blocks: null,
+  targets: null,
+  prerequisites: null,
+  evaluation: null,
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z'
+} satisfies Course
+
+const directusRequestMock = vi.fn()
+const fetchMock = vi.fn()
 
 vi.stubGlobal('computed', computed)
 vi.stubGlobal('ref', ref)
@@ -39,11 +97,21 @@ vi.stubGlobal('useRequestEvent', () => undefined)
 vi.stubGlobal('setResponseStatus', setResponseStatusMock)
 vi.stubGlobal('useContentSeo', seoMock)
 vi.stubGlobal('navigateTo', navigateToMock)
+vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
+vi.stubGlobal('useDirectusClient', () => ({ request: directusRequestMock }))
+vi.stubGlobal('useDirectusList', () =>
+  ref([{ slug: 'aipr-qui-former', title: 'AIPR : qui former ?' }])
+)
+vi.stubGlobal('$fetch', fetchMock)
 
 const stubs = {
   NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
   Button: { template: '<button><slot /></button>' },
   Card: { template: '<div><slot /></div>' },
+  CenterFormationCard: {
+    props: ['title', 'to'],
+    template: '<div><a v-if="to" :href="to">{{ title }}</a></div>'
+  },
   SearchInput: {
     props: ['modelValue'],
     emits: ['update:modelValue', 'submit'],
@@ -78,6 +146,15 @@ describe('pages/actualites/[slug]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     forceError = null
+    directusCallIndex = 0
+    directusRequestMock.mockImplementation(async () => {
+      if (routeMock.params.slug === 'inconnu') return []
+      directusCallIndex += 1
+      return directusCallIndex === 1
+        ? [articleFixture]
+        : [{ slug: relatedCourse.slug, famille: { slug: relatedCourse.familySlug } }]
+    })
+    fetchMock.mockResolvedValue(relatedCourse)
     routeMock = {
       params: { slug: 'recyclage-caces-echeances-2027' },
       query: {},

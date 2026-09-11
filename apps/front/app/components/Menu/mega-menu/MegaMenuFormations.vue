@@ -20,20 +20,22 @@
             <span class="text-small text-ink-muted">{{ famille.count }}</span>
           </button>
         </li>
+        <li>
+          <NuxtLink
+            to="/formations"
+            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink underline underline-offset-4 transition-colors hover:bg-surface"
+            @click="$emit('close')"
+          >
+            Tout le catalogue →
+          </NuxtLink>
+        </li>
       </ul>
-      <NuxtLink
-        to="/formations"
-        class="mt-sm inline-block text-small font-semibold text-ink underline underline-offset-4"
-        @click="$emit('close')"
-      >
-        Tout le catalogue →
-      </NuxtLink>
     </div>
 
     <!-- FORMATIONS DE LA FAMILLE SÉLECTIONNÉE -->
     <div class="col-span-2 border-l border-rule pl-lg">
       <h3 class="text-overline uppercase text-ink-muted">{{ selectedFamilleLabel }}</h3>
-      <ul v-if="formationsFamille.length" class="mt-sm grid grid-cols-2 gap-sm">
+      <ul class="mt-sm grid grid-cols-2 gap-sm">
         <li v-for="formation in formationsFamille" :key="formation.slug">
           <MegaMenuCard
             :to="formation.to"
@@ -42,15 +44,16 @@
             @select="$emit('close')"
           />
         </li>
+        <li v-if="selectedFamille" class="col-span-2">
+          <NuxtLink
+            :to="`/formations/${selectedFamille}`"
+            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink underline underline-offset-4 transition-colors hover:bg-surface"
+            @click="$emit('close')"
+          >
+            Voir la famille →
+          </NuxtLink>
+        </li>
       </ul>
-      <NuxtLink
-        v-if="selectedFamille"
-        :to="`/formations/${selectedFamille}`"
-        class="mt-sm inline-block text-small font-semibold text-ink underline underline-offset-4"
-        @click="$emit('close')"
-      >
-        Voir la famille →
-      </NuxtLink>
     </div>
 
     <!-- À LA UNE + CTA -->

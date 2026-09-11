@@ -18,14 +18,16 @@
             <span class="text-small text-ink-muted">{{ region.count }}</span>
           </button>
         </li>
+        <li>
+          <NuxtLink
+            to="/centres"
+            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink underline underline-offset-4 transition-colors hover:bg-surface"
+            @click="$emit('close')"
+          >
+            Toutes les régions →
+          </NuxtLink>
+        </li>
       </ul>
-      <NuxtLink
-        to="/centres"
-        class="mt-sm inline-block text-small font-semibold text-ink underline underline-offset-4"
-        @click="$emit('close')"
-      >
-        Toutes les régions →
-      </NuxtLink>
     </div>
 
     <!-- CENTRES DE LA RÉGION SÉLECTIONNÉE -->
@@ -35,7 +37,7 @@
           selectedRegionCount > 1 ? 's' : ''
         }}
       </h3>
-      <ul v-if="centresAffiches.length" class="mt-sm grid grid-cols-2 gap-sm">
+      <ul class="mt-sm grid grid-cols-2 gap-sm">
         <li v-for="centre in centresAffiches" :key="centre.slug">
           <MegaMenuCard
             :to="`/centres/${centre.slug}`"
@@ -44,14 +46,16 @@
             @select="$emit('close')"
           />
         </li>
+        <li class="col-span-2">
+          <NuxtLink
+            to="/centres"
+            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink underline underline-offset-4 transition-colors hover:bg-surface"
+            @click="$emit('close')"
+          >
+            Tous les centres {{ selectedRegionLabel }} →
+          </NuxtLink>
+        </li>
       </ul>
-      <NuxtLink
-        to="/centres"
-        class="mt-sm inline-block text-small font-semibold text-ink underline underline-offset-4"
-        @click="$emit('close')"
-      >
-        Tous les centres {{ selectedRegionLabel }} →
-      </NuxtLink>
     </div>
 
     <!-- TROUVER UN CENTRE + CTA -->

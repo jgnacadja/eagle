@@ -34,14 +34,16 @@
             <span>{{ region.label }}</span>
           </button>
         </li>
+        <li>
+          <NuxtLink
+            to="/centres"
+            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink underline underline-offset-4 transition-colors hover:bg-surface"
+            @click="$emit('close')"
+          >
+            Toutes les régions →
+          </NuxtLink>
+        </li>
       </ul>
-      <NuxtLink
-        to="/centres"
-        class="mt-sm inline-block text-small font-semibold text-ink underline underline-offset-4"
-        @click="$emit('close')"
-      >
-        Toutes les régions →
-      </NuxtLink>
     </div>
 
     <!-- DERNIÈRES PUBLICATIONS DE LA RÉGION -->
@@ -65,14 +67,16 @@
         <li v-if="!actusAffichees.length" class="px-2 py-1.5 text-small text-ink-muted">
           Aucune publication récente pour cette région.
         </li>
+        <li>
+          <NuxtLink
+            to="/actualites"
+            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink underline underline-offset-4 transition-colors hover:bg-surface"
+            @click="$emit('close')"
+          >
+            Toutes les actualités {{ selectedRegionLabel }} →
+          </NuxtLink>
+        </li>
       </ul>
-      <NuxtLink
-        to="/actualites"
-        class="mt-sm inline-block text-small font-semibold text-ink underline underline-offset-4"
-        @click="$emit('close')"
-      >
-        Toutes les actualités {{ selectedRegionLabel }} →
-      </NuxtLink>
     </div>
   </div>
 </template>

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="bg-white">
     <template v-if="course">
       <!-- Hero -->
       <section

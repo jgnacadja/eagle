@@ -35,7 +35,7 @@
           variant="outline"
           class="h-auto shrink-0 rounded-full border-outline bg-paper px-md py-xs text-small font-bold text-ink transition hover:border-primary hover:bg-paper"
         >
-          <NuxtLink :to="to">Voir la session</NuxtLink>
+          <NuxtLink :to="to">S'inscrire</NuxtLink>
         </Button>
       </div>
     </CardContent>

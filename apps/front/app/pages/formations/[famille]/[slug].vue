@@ -47,13 +47,7 @@
                   variant="outline"
                   class="h-control rounded-full border-outline bg-paper px-md py-sm text-button font-semibold text-ink transition hover:border-primary hover:bg-paper"
                 >
-                  <NuxtLink
-                    :to="course.generatedProgramUrl"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Voir les sessions
-                  </NuxtLink>
+                  <NuxtLink href="#sessionsList"> Voir les sessions </NuxtLink>
                 </Button>
                 <Button
                   v-if="course.imageUrl"
@@ -183,7 +177,7 @@
             </section>
 
             <!-- Prochaines sessions -->
-            <section v-if="sessionsList.length" aria-labelledby="sessions-title">
+            <section v-if="sessionsList.length" id="sessionsList" aria-labelledby="sessions-title">
               <div class="flex flex-wrap items-baseline justify-between gap-md">
                 <h2 id="sessions-title" class="font-display text-h2 font-extrabold text-ink">
                   Prochaines sessions
@@ -203,6 +197,11 @@
                   />
                 </li>
               </ul>
+              <div class="mt-1">
+                <NuxtLink href="#" class="text-ink-muted font-bold text-h4"
+                  >Voir toutes les sessions de cette formation →</NuxtLink
+                >
+              </div>
             </section>
 
             <!-- Où suivre cette formation -->
@@ -210,6 +209,12 @@
               <h2 id="lieux-title" class="font-display text-h2 font-extrabold text-ink">
                 Où suivre cette formation
               </h2>
+              <div class="mt-md space-y-md text-body text-ink-body">
+                <p>
+                  Centres du réseau proposant cette formation — rattachements actifs uniquement
+                  (RG-CAT-04).
+                </p>
+              </div>
               <ul class="mt-md grid gap-md sm:grid-cols-2">
                 <li v-for="lieu in lieux" :key="lieu.key">
                   <NuxtLink
@@ -218,9 +223,12 @@
                     class="block h-full rounded-md border border-rule bg-paper p-md transition hover:shadow-md"
                   >
                     <span class="flex items-center gap-sm font-semibold text-ink">
-                      <IconMapPin :size="16" class="shrink-0 text-primary" />{{ lieu.name }}
+                      {{ lieu.name }}
                     </span>
                     <span class="mt-xs block text-small text-ink-muted">{{ lieu.detail }}</span>
+                    <div href="#" class="text-ink font-bold text-h4 mt-2 hover:underline">
+                      Voir le centre →
+                    </div>
                   </NuxtLink>
                   <div v-else class="h-full rounded-md border border-rule bg-paper p-md">
                     <span class="flex items-center gap-sm font-semibold text-ink">

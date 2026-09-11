@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-1 flex-col">
+  <div class="bg-white flex flex-1 flex-col">
     <template v-if="pageState === 'found'">
       <!-- Hero / intro famille -->
       <section class="border-b border-rule bg-linear-to-b from-paper to-surface">
@@ -186,7 +186,10 @@
             <PaginationPrevious
               class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-subtle hover:bg-surface"
             />
-            <template v-for="item in items" :key="item.value">
+            <template
+              v-for="(item, index) in items"
+              :key="item.type === 'page' ? item.value : `ellipsis-${index}`"
+            >
               <PaginationItem
                 v-if="item.type === 'page'"
                 :value="item.value"

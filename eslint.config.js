@@ -1,4 +1,5 @@
 import js from '@eslint/js'
+import { defineConfig } from 'eslint/config'
 import tseslint from 'typescript-eslint'
 import vue from 'eslint-plugin-vue'
 import prettier from 'eslint-config-prettier'
@@ -49,6 +50,8 @@ const nuxtGlobals = {
   useRouter: 'readonly',
   useHead: 'readonly',
   useState: 'readonly',
+  useRequestEvent: 'readonly',
+  setResponseStatus: 'readonly',
   createError: 'readonly',
   clearError: 'readonly',
   showError: 'readonly',
@@ -58,6 +61,8 @@ const nuxtGlobals = {
   useContentSeo: 'readonly',
   useDirectusItemBySlug: 'readonly',
   useDirectusList: 'readonly',
+  useCentres: 'readonly',
+  useCentreDepartments: 'readonly',
   sanitizeHtml: 'readonly',
   logServerError: 'readonly'
 }
@@ -84,11 +89,12 @@ const vueGlobals = {
   defineComponent: 'readonly',
   defineProps: 'readonly',
   defineEmits: 'readonly',
+  useId: 'readonly',
   defineExpose: 'readonly',
   withDefaults: 'readonly'
 }
 
-export default tseslint.config(
+export default defineConfig(
   {
     ignores: [
       '**/dist/**',
@@ -97,7 +103,8 @@ export default tseslint.config(
       '**/node_modules/**',
       '**/coverage/**',
       '**/playwright-report/**',
-      '**/test-results/**'
+      '**/test-results/**',
+      'apps/api/prisma/generated/**'
     ]
   },
   js.configs.recommended,
@@ -157,7 +164,10 @@ export default tseslint.config(
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }
       ],
-      'vue/multi-word-component-names': 'off'
+      'vue/multi-word-component-names': 'off',
+      // v-html autorisé uniquement après sanitizeHtml() (convention AGENTS,
+      // règle de revue bloquante) — la règle eslint ne voit pas le sanitiser.
+      'vue/no-v-html': 'off'
     }
   },
   {

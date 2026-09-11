@@ -12,7 +12,10 @@
   --color-navy-card: #395680;
   --color-primary: #1e3a6e;
   --color-primary-dark: #14264a;
+  --color-primary-muted: #2e4a76;
+  --color-primary-card: #395680;
   --color-primary-soft: #edf2fa;
+  --color-primary-faint: rgb(30 58 110 / 8%);
 
   /* Couleurs — ambre */
   --color-accent: #f0a030;
@@ -30,8 +33,10 @@
 
   /* Couleurs — fonds, bordures */
   --color-paper: #ffffff;
+  --color-paper-warm: #fbf8f2;
   --color-surface: #f4f7fc;
   --color-surface-alt: #edf2fa;
+  --color-surface-soft: #f8fafe;
   --color-rule: rgb(20 42 82 / 12%);
   --color-rule-strong: rgb(20 42 82 / 15%);
   --color-outline: rgb(30 58 110 / 45%);
@@ -90,7 +95,7 @@
   --text-body-line: 1.55;
   --text-body-tracking: 0;
   --text-body-weight: 400;
-  --text-small-size: 13px;
+  --text-small-size: 13.5px;
   --text-small-line: 1.5;
   --text-small-tracking: 0;
   --text-small-weight: 400;
@@ -102,7 +107,7 @@
   --text-button-line: 1;
   --text-button-tracking: 0;
   --text-button-weight: 700;
-  --text-badge-size: 11.5px;
+  --text-badge-size: 12px;
   --text-badge-line: 1;
   --text-badge-tracking: 0;
   --text-badge-weight: 700;
@@ -120,12 +125,14 @@
   /* Mise en page */
   --layout-container-max: 1280px;
   --layout-prose-max: 640px;
+  --layout-callout-max: 400px;
   --layout-gutter-desktop: 48px;
   --layout-gutter-mobile: 20px;
   --layout-section-y: 56px;
   --layout-grid-gap: 16px;
   --layout-touch-target: 44px;
   --layout-control-height: 48px;
+  --layout-control-height-sm: 36px;
 
   /* Rayons */
   --radius-xs: 8px;

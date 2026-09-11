@@ -19,6 +19,8 @@ export const layout = {
   containerMax: '1280px',
   /** Largeur de lecture des textes longs (Figma `width/640`). */
   proseMax: '640px',
+  /** Largeur des textes secondaires / encadrés (Figma `width/400`). */
+  calloutMax: '400px',
   /** Marges latérales desktop. */
   gutterDesktop: '48px',
   /** Marges latérales mobile (gabarit 390 px). */
@@ -30,5 +32,7 @@ export const layout = {
   /** Cible tactile minimale. */
   touchTarget: '44px',
   /** Hauteur des boutons (48–52 px) et du bouton icône. */
-  controlHeight: '48px'
+  controlHeight: '48px',
+  /** Hauteur des petites pastilles (étapes numérotées, 36 px). */
+  controlHeightSm: '36px'
 } as const

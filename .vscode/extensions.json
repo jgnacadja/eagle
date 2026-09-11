@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "vue.volar",
+    "antfu.vite",
+    "bradlc.vscode-tailwindcss",
+    "Prisma.prisma",
+    "sonarsource.sonarlint-vscodeplus",
+    "ms-playwright.playwright",
+    "ms-vscode.vscode-typescript-next"
+  ]
+}

@@ -4,7 +4,7 @@ import { SwaggerModule } from '@nestjs/swagger'
 import { configureApp } from './index'
 
 function makeApp() {
-  return { enableCors: vi.fn() } as unknown as INestApplication
+  return { enableCors: vi.fn(), use: vi.fn() } as unknown as INestApplication
 }
 
 function getCorsOrigin(app: INestApplication): CustomOrigin {
@@ -71,6 +71,21 @@ describe('configureApp', () => {
     const callback = vi.fn()
     getCorsOrigin(app)('https://evil.example.com', callback)
     expect(callback).toHaveBeenCalledWith(null, false)
+  })
+
+  it('allows wildcard subdomains in CORS_ORIGIN', () => {
+    process.env.CORS_ORIGIN = 'https://*.vercel.app'
+    const app = makeApp()
+
+    configureApp(app)
+
+    const allow = vi.fn()
+    getCorsOrigin(app)('https://my-project-abc.vercel.app', allow)
+    expect(allow).toHaveBeenCalledWith(null, true)
+
+    const reject = vi.fn()
+    getCorsOrigin(app)('https://evil.vercel.app.other.com', reject)
+    expect(reject).toHaveBeenCalledWith(null, false)
   })
 
   it('exposes Swagger docs outside production', () => {

@@ -6,15 +6,17 @@ ACADEMY).
 ## Contenu
 
 - `schema/snapshot.yaml` — snapshot du schéma (collections, champs, relations),
-  exporté via `directus schema snapshot`. **Ne contient ni rôles/permissions,
-  ni données** — ce sont deux mécanismes Directus distincts, restaurés
-  séparément (voir procédure ci-dessous).
+  exporté via `directus schema snapshot`. **Actuellement obsolète** : il date de
+  ST-11 et ne reflète pas les champs ajoutés ensuite (`latitude`/`longitude`,
+  `department`, `region`, etc.). Il ne doit pas être utilisé pour `schema apply`
+  tant qu'il n'a pas été régénéré (voir Maintenance du snapshot ci-dessous).
 - `schema/collections.mjs`, `schema/roles.mjs` — définitions source des
   collections et de la matrice de rôles/permissions, lisibles par un humain
   (le YAML du snapshot est dense et peu adapté à la revue).
 - `schema/build.mjs` — script de construction : crée les collections/relations
   si absentes, puis les rôles, policies, permissions. Idempotent (sûr à
-  ré-exécuter — vérifié sur plusieurs runs consécutifs).
+  ré-exécuter — vérifié sur plusieurs runs consécutifs). C'est le mécanisme de
+  restauration automatique au démarrage.
 - `seed/` — script de seed de contenu de démonstration (voir sa propre section
   dans le README racine).
 
@@ -25,14 +27,14 @@ Directus 11 sépare le rôle de ses permissions : `role` → `directus_access` �
 simple pour ce cas d'usage, mais ce n'est pas obligatoire (une policy peut
 être partagée entre plusieurs rôles).
 
-| Rôle | Périmètre |
-|---|---|
-| **Administrator** (natif Directus) | Super-admin, accès total, bypass complet. |
-| **admin** | CRUD complet sur tout le contenu (centres, familles, articles, pages, blocs, stats, médiathèque). |
-| **editeur** | Crée/édite articles et blocs de contenu (brouillon). Lecture seule sur centres/familles/pages/stats. Pas de suppression. |
-| **moderateur** | Lecture + édition sur articles et blocs (relecture, publication). Lecture seule ailleurs. Ni création ni suppression. |
-| **lecteur** | Lecture seule sur tout, aucune écriture. |
-| **Public** (natif Directus, visiteurs non connectés) | Lecture seule, uniquement le contenu `status: published`. |
+| Rôle                                                 | Périmètre                                                                                                                |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Administrator** (natif Directus)                   | Super-admin, accès total, bypass complet.                                                                                |
+| **admin**                                            | CRUD complet sur tout le contenu (centres, familles, articles, pages, blocs, stats, médiathèque).                        |
+| **editeur**                                          | Crée/édite articles et blocs de contenu (brouillon). Lecture seule sur centres/familles/pages/stats. Pas de suppression. |
+| **moderateur**                                       | Lecture + édition sur articles et blocs (relecture, publication). Lecture seule ailleurs. Ni création ni suppression.    |
+| **lecteur**                                          | Lecture seule sur tout, aucune écriture.                                                                                 |
+| **Public** (natif Directus, visiteurs non connectés) | Lecture seule, uniquement le contenu `status: published`.                                                                |
 
 Matrice vérifiée empiriquement (utilisateurs de test créés/testés/supprimés) :
 lecture toujours OK pour les 4 rôles internes, écriture/suppression refusées
@@ -45,25 +47,45 @@ entrée dans `directus_roles`. Sans permissions dessus, un visiteur du site
 découvert en branchant le front (ST-12) : le manque avait échappé à la revue
 initiale de ST-11, qui n'avait modélisé que les rôles internes.
 
-## Procédure de restauration — environnement vierge
+## Déploiement
+
+Le schéma (collections, champs, relations, rôles, policies, permissions) est
+appliqué automatiquement au démarrage par le service `directus-init`.
 
 ```bash
 docker compose up -d
-# attendre que directus soit healthy (docker compose ps)
-
-# 1. Schéma (collections, champs, relations)
-docker cp directus/schema/snapshot.yaml <container_directus>:/directus/uploads/snapshot.yaml
-docker exec <container_directus> npx directus schema apply --yes /directus/uploads/snapshot.yaml
-
-# 2. Rôles, policies, permissions (le snapshot ne les couvre pas)
-pnpm directus:build
-
-# 3. (optionnel) Contenu de démonstration
-pnpm seed
 ```
 
-Testé de bout en bout sur un environnement vierge (volumes détruits et
-recréés) : les 3 étapes s'enchaînent sans intervention manuelle.
+L'API et le front attendent que `directus-init` ait terminé avant de démarrer.
+
+### Données de démonstration
+
+Le contenu de démo (`centres`, `familles_formation`, `articles`) est injecté
+via un service à part, désactivé par défaut pour ne pas écraser de la vraie
+donnée en recette/prod :
+
+```bash
+docker compose --profile seed up -d directus-seed
+```
+
+### Attention aux données réelles
+
+`docker compose down -v` détruit **définitivement** le volume `pgdata` et donc
+tout le contenu saisi dans Directus. Pour un redéploiement, utiliser
+`docker compose down` **sans** `-v`, ou prévoir une restauration PostgreSQL.
+
+## Maintenance du snapshot
+
+Après toute modification de `schema/collections.mjs` ou `schema/roles.mjs`,
+reconstruire le schéma puis régénérer `snapshot.yaml` :
+
+```bash
+docker compose up -d
+# attendre que directus-init ait terminé (docker compose ps)
+pnpm directus:snapshot
+```
+
+Puis commiter `directus/schema/snapshot.yaml`.
 
 ## Journal d'audit
 

@@ -76,6 +76,32 @@ async function fetchExistingBySlug(token, collection) {
   return new Map(data.map((row) => [row.slug, row.id]))
 }
 
+// Les champs `imageUrl` de data.mjs ne sont pas des champs de collection :
+// le seed importe le fichier dans directus_files (endpoint /files/import)
+// et renseigne le champ `image` avec l'id retourné. Idempotent : le fichier
+// est retrouvé par `filename_download` avant réimport.
+async function ensureFile(token, url, filename) {
+  const lookup = await fetch(
+    `${DIRECTUS_URL}/files?filter[filename_download][_eq]=${encodeURIComponent(filename)}&limit=1`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  )
+  if (lookup.ok) {
+    const { data } = await lookup.json()
+    if (data[0]?.id) return data[0].id
+  }
+  const res = await fetch(`${DIRECTUS_URL}/files/import`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ url, data: { title: filename, filename_download: filename } })
+  })
+  if (!res.ok) throw new Error(`Import du fichier ${filename} échoué (${res.status})`)
+  const { data } = await res.json()
+  return data.id
+}
+
 async function upsertItem(token, collection, item, existingId) {
   const url = existingId
     ? `${DIRECTUS_URL}/items/${collection}/${existingId}`
@@ -103,7 +129,29 @@ async function seedDataset(token, { collection, items }) {
 
   const existingBySlug = await fetchExistingBySlug(token, collection)
   const results = { created: 0, updated: 0 }
-  for (const item of items) {
+  for (const rawItem of items) {
+    const { imageUrl, author_imageUrl, cover_imageUrl, ...item } = rawItem
+
+    if (imageUrl) {
+      item.image = await ensureFile(token, imageUrl, `seed-${collection}-${item.slug}.jpg`)
+    }
+
+    if (author_imageUrl) {
+      item.author_image = await ensureFile(
+        token,
+        author_imageUrl,
+        `seed-${collection}-${item.slug}-author.jpg`
+      )
+    }
+
+    if (cover_imageUrl) {
+      item.cover_image = await ensureFile(
+        token,
+        cover_imageUrl,
+        `seed-${collection}-${item.slug}-cover.jpg`
+      )
+    }
+
     const outcome = await upsertItem(token, collection, item, existingBySlug.get(item.slug))
     results[outcome] += 1
   }
@@ -122,7 +170,9 @@ async function main() {
   log('Seed terminé.')
 }
 
-main().catch((error) => {
+try {
+  await main()
+} catch (error) {
   logError('Seed échoué :', error.message)
   process.exitCode = 1
-})
+}

@@ -34,7 +34,7 @@
         v-else-if="to"
         as-child
         variant="link"
-        class="mt-md h-auto self-end p-0 text-small font-bold text-primary hover:text-ink hover:no-underline"
+        class="mt-md h-auto self-end p-0 text-small font-bold text-primary transition-colors hover:text-accent-text"
       >
         <NuxtLink :to="to">Voir la formation →</NuxtLink>
       </Button>

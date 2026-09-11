@@ -53,7 +53,7 @@
                   v-if="course.imageUrl"
                   as-child
                   variant="link"
-                  class="h-auto gap-sm p-0 text-small font-medium text-ink-muted hover:text-ink hover:no-underline"
+                  class="h-auto gap-sm p-0 text-small font-medium text-ink-muted transition-colors hover:text-accent-text"
                 >
                   <NuxtLink :to="course.imageUrl" target="_blank" rel="noopener noreferrer">
                     <IconDownload :size="16" class="inline" />
@@ -258,7 +258,7 @@
                 <Button
                   as-child
                   variant="link"
-                  class="h-auto p-0 text-small font-bold text-primary hover:text-ink hover:no-underline"
+                  class="h-auto p-0 text-small font-bold text-primary transition-colors hover:text-accent-text"
                 >
                   <NuxtLink :to="`/formations/${famille}`"
                     >Voir la famille {{ familyName }} →</NuxtLink

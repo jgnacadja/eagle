@@ -49,7 +49,7 @@
 
         <NuxtLink
           to="/centres/demande-de-formation"
-          class="mt-2.5 inline-block text-sm font-bold text-accent-text underline underline-offset-4 decoration-accent-text/40 hover:opacity-80"
+          class="mt-2.5 inline-block text-sm font-bold text-primary transition-colors hover:text-accent-text"
         >
           Confier ma formation →
         </NuxtLink>
@@ -110,7 +110,9 @@
 
       <p class="mt-xl text-center text-meta md:text-small text-ink-muted">
         Vous êtes un particulier ? Certaines sessions sont ouvertes aux inscriptions individuelles —
-        <NuxtLink to="/centres" class="font-bold text-primary hover:text-primary-muted"
+        <NuxtLink
+          to="/centres"
+          class="font-bold text-primary transition-colors hover:text-accent-text"
           >contactez le centre le plus proche →</NuxtLink
         >
       </p>
@@ -167,7 +169,7 @@
           </div>
           <NuxtLink
             to="/formations"
-            class="hidden whitespace-nowrap text-body font-bold text-primary hover:text-ink md:block"
+            class="hidden whitespace-nowrap text-body font-bold text-primary transition-colors hover:text-accent-text md:block"
           >
             Voir tout le catalogue →
           </NuxtLink>
@@ -188,7 +190,7 @@
         <div class="flex justify-center mt-lg">
           <NuxtLink
             to="/formations"
-            class="inline-block text-body font-bold text-primary hover:text-ink md:hidden"
+            class="inline-block text-body font-bold text-primary transition-colors hover:text-accent-text md:hidden"
           >
             Voir tout le catalogue →
           </NuxtLink>
@@ -212,7 +214,7 @@
         </div>
         <NuxtLink
           to="/centres"
-          class="hidden whitespace-nowrap text-body font-bold text-primary hover:text-ink md:block"
+          class="hidden whitespace-nowrap text-body font-bold text-primary transition-colors hover:text-accent-text md:block"
         >
           Explorer la carte des centres →
         </NuxtLink>
@@ -262,7 +264,7 @@
           <div class="flex justify-center mt-lg">
             <NuxtLink
               to="/centres"
-              class="whitespace-nowrap text-body font-bold text-primary hover:text-ink md:hidden"
+              class="whitespace-nowrap text-body font-bold text-primary transition-colors hover:text-accent-text md:hidden"
             >
               Explorer la carte des centres →
             </NuxtLink>
@@ -366,7 +368,9 @@
             >4,7/5 · 312 avis Google</span
           >
         </h2>
-        <NuxtLink to="/" class="hidden md:block text-small font-bold text-primary hover:text-ink"
+        <NuxtLink
+          to="/"
+          class="hidden md:block text-small font-bold text-primary transition-colors hover:text-accent-text"
           >Voir tous les avis →</NuxtLink
         >
       </div>
@@ -382,7 +386,9 @@
       </div>
 
       <div class="flex justify-center mt-lg">
-        <NuxtLink to="/" class="md:hidden text-small font-bold text-primary hover:text-ink"
+        <NuxtLink
+          to="/"
+          class="md:hidden text-small font-bold text-primary transition-colors hover:text-accent-text"
           >Voir tous les avis →</NuxtLink
         >
       </div>
@@ -395,7 +401,7 @@
           <h2 class="font-display text-h2 font-extrabold text-ink">Actualités</h2>
           <NuxtLink
             to="/actualites"
-            class="hidden md:block whitespace-nowrap text-small font-bold text-primary hover:text-ink"
+            class="hidden md:block whitespace-nowrap text-small font-bold text-primary transition-colors hover:text-accent-text"
             >Tout le blog →</NuxtLink
           >
         </div>
@@ -415,7 +421,7 @@
         <div class="flex justify-center">
           <NuxtLink
             to="/actualites"
-            class="mt-lg inline-block text-small font-bold text-primary hover:text-ink md:hidden"
+            class="mt-lg inline-block text-small font-bold text-primary transition-colors hover:text-accent-text md:hidden"
           >
             Tout le blog →
           </NuxtLink>

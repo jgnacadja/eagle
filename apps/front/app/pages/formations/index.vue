@@ -86,7 +86,7 @@
             <p class="mt-xs text-small text-ink-muted">{{ shortcut.caption }}</p>
             <NuxtLink
               :to="shortcut.to"
-              class="mt-md inline-block text-small font-semibold text-primary hover:underline"
+              class="mt-md inline-block text-small font-semibold text-primary transition-colors hover:text-accent-text"
             >
               {{ shortcut.linkLabel }} →
             </NuxtLink>
@@ -146,7 +146,7 @@
             </div>
             <button
               type="button"
-              class="mt-sm text-small font-semibold text-primary underline"
+              class="mt-sm text-small font-semibold text-primary transition-colors hover:text-accent-text"
               @click="resetFilters"
             >
               Réinitialiser
@@ -233,10 +233,18 @@
               </Button>
             </div>
             <div class="mt-lg flex gap-lg text-small font-semibold">
-              <button type="button" class="text-primary hover:underline" @click="resetFilters">
+              <button
+                type="button"
+                class="text-primary transition-colors hover:text-accent-text"
+                @click="resetFilters"
+              >
                 Réinitialiser les filtres
               </button>
-              <NuxtLink to="/formations" class="text-primary hover:underline" @click="resetFilters">
+              <NuxtLink
+                to="/formations"
+                class="text-primary transition-colors hover:text-accent-text"
+                @click="resetFilters"
+              >
                 Voir le catalogue complet
               </NuxtLink>
             </div>

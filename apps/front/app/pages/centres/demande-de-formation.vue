@@ -216,7 +216,10 @@
                 <Label for="consentement" class="text-small font-normal text-ink-muted">
                   J'accepte que ces informations soient utilisées pour le traitement de ma demande
                   de formation.
-                  <NuxtLink to="#" class="font-medium text-primary underline underline-offset-2">
+                  <NuxtLink
+                    to="#"
+                    class="font-medium text-primary transition-colors hover:text-accent-text"
+                  >
                     Politique de confidentialité
                   </NuxtLink>
                 </Label>
@@ -247,7 +250,7 @@
               </h2>
               <NuxtLink
                 :to="modifierTo"
-                class="text-small font-medium text-primary underline underline-offset-2"
+                class="text-small font-medium text-primary transition-colors hover:text-accent-text"
                 @click="saveDraft"
               >
                 Modifier

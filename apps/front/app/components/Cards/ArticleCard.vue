@@ -11,7 +11,10 @@
     </div>
     <h3 class="mt-sm font-sans text-h4 font-semibold text-ink">{{ title }}</h3>
     <p class="mt-sm text-small text-ink-body">{{ excerpt }}</p>
-    <NuxtLink :to="to" class="mt-md text-small font-bold text-primary hover:text-ink">
+    <NuxtLink
+      :to="to"
+      class="mt-md text-small font-bold text-primary transition-colors hover:text-accent-text"
+    >
       Lire l'article →
     </NuxtLink>
   </article>

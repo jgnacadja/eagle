@@ -140,7 +140,7 @@
                       :class="
                         index === 0
                           ? 'font-bold text-ink'
-                          : 'text-ink-body hover:text-ink hover:underline'
+                          : 'text-ink-body transition-colors hover:text-accent-text'
                       "
                       :aria-current="index === 0 ? 'true' : undefined"
                     >
@@ -187,7 +187,7 @@
             </h2>
             <NuxtLink
               to="/actualites"
-              class="hidden text-small font-semibold text-ink hover:underline sm:inline"
+              class="hidden text-small font-semibold text-ink transition-colors hover:text-accent-text sm:inline"
             >
               Toute l'actualité →
             </NuxtLink>
@@ -206,7 +206,10 @@
                   </span>
                 </p>
                 <h3 class="mt-xs text-small font-bold leading-snug text-ink">
-                  <NuxtLink :to="`/actualites/${related.slug}`" class="hover:underline">
+                  <NuxtLink
+                    :to="`/actualites/${related.slug}`"
+                    class="transition-colors hover:text-accent-text"
+                  >
                     {{ related.title }}
                   </NuxtLink>
                 </h3>

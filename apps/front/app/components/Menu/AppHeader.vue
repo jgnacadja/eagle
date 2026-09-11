@@ -19,7 +19,7 @@
         <NavigationMenuList class="gap-1">
           <NavigationMenuItem value="formations">
             <NavigationMenuTrigger
-              class="border-b-2 border-transparent text-body rounded-none px-0 mx-sm font-semibold text-primary data-[state=open]:border-accent"
+              class="border-b-2 border-transparent text-body rounded-none px-0 mx-sm font-semibold text-primary transition-colors hover:text-accent-text data-[state=open]:border-accent"
             >
               Formations
             </NavigationMenuTrigger>
@@ -30,7 +30,7 @@
 
           <NavigationMenuItem value="centres">
             <NavigationMenuTrigger
-              class="border-b-2 border-transparent text-body rounded-none px-0 mx-sm font-semibold text-primary data-[state=open]:border-accent"
+              class="border-b-2 border-transparent text-body rounded-none px-0 mx-sm font-semibold text-primary transition-colors hover:text-accent-text data-[state=open]:border-accent"
             >
               Centres
             </NavigationMenuTrigger>
@@ -41,7 +41,7 @@
 
           <NavigationMenuItem value="apropos">
             <NavigationMenuTrigger
-              class="border-b-2 border-transparent text-body rounded-none px-0 mx-sm font-semibold text-primary data-[state=open]:border-accent"
+              class="border-b-2 border-transparent text-body rounded-none px-0 mx-sm font-semibold text-primary transition-colors hover:text-accent-text data-[state=open]:border-accent"
             >
               À propos
             </NavigationMenuTrigger>
@@ -52,7 +52,7 @@
 
           <NavigationMenuItem value="actualites">
             <NavigationMenuTrigger
-              class="border-b-2 border-transparent text-body rounded-none px-0 mx-sm font-semibold text-primary data-[state=open]:border-accent"
+              class="border-b-2 border-transparent text-body rounded-none px-0 mx-sm font-semibold text-primary transition-colors hover:text-accent-text data-[state=open]:border-accent"
             >
               Actualités
             </NavigationMenuTrigger>
@@ -66,7 +66,7 @@
       <div class="ml-auto flex items-center gap-sm">
         <NuxtLink
           to="/rejoindre-le-reseau"
-          class="hidden text-body font-bold text-primary hover:text-ink md:inline underline underline-offset-4"
+          class="hidden text-body font-bold text-primary transition-colors hover:text-accent-text md:inline"
         >
           Rejoindre le réseau
         </NuxtLink>

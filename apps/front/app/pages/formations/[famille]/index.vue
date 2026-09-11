@@ -120,7 +120,7 @@
           </p>
           <button
             type="button"
-            class="mt-lg text-small font-semibold text-primary underline"
+            class="mt-lg text-small font-semibold text-primary transition-colors hover:text-accent-text"
             @click="resetPage"
           >
             Réinitialiser

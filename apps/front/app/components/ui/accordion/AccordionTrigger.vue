@@ -4,7 +4,7 @@
       v-bind="delegatedProps"
       :class="
         cn(
-          'flex flex-1 items-center justify-between py-4 text-sm font-medium transition-all hover:underline [&[data-state=open]>svg]:rotate-180',
+          'flex flex-1 items-center justify-between py-4 text-sm font-medium transition-all hover:text-accent-text [&[data-state=open]>svg]:rotate-180',
           props.class
         )
       "

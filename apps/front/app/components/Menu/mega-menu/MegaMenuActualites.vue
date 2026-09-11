@@ -7,7 +7,7 @@
         <li v-for="rubrique in rubriquesActualites" :key="rubrique.slug">
           <NuxtLink
             to="/actualites"
-            class="block rounded-md px-2 py-1.5 text-body text-primary transition-colors hover:bg-surface hover:text-ink"
+            class="block rounded-md px-2 py-1.5 text-body text-primary transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
             {{ rubrique.label }}
@@ -23,7 +23,7 @@
         <li v-for="region in regionsAvecActus" :key="region.slug">
           <button
             type="button"
-            class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-body transition-colors hover:bg-surface"
+            class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-body transition-colors hover:text-accent-text"
             :class="
               region.slug === selectedRegion ? 'bg-surface font-semibold text-ink' : 'text-primary'
             "
@@ -37,7 +37,7 @@
         <li>
           <NuxtLink
             to="/centres"
-            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink underline underline-offset-4 transition-colors hover:bg-surface"
+            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
             Toutes les régions →
@@ -55,13 +55,15 @@
         <li v-for="actu in actusAffichees" :key="actu.slug">
           <NuxtLink
             :to="`/actualites/${actu.slug}`"
-            class="block rounded-md px-2 py-1.5 transition-colors hover:bg-surface"
+            class="group block rounded-md px-2 py-1.5 transition-colors"
             @click="$emit('close')"
           >
             <span class="block text-small font-semibold text-ink-muted"
               >{{ actu.tag }} · {{ actu.date }}</span
             >
-            <span class="text-body text-ink">{{ actu.title }}</span>
+            <span class="text-body text-ink transition-colors group-hover:text-accent-text">{{
+              actu.title
+            }}</span>
           </NuxtLink>
         </li>
         <li v-if="!actusAffichees.length" class="px-2 py-1.5 text-small text-ink-muted">
@@ -70,7 +72,7 @@
         <li>
           <NuxtLink
             to="/actualites"
-            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink underline underline-offset-4 transition-colors hover:bg-surface"
+            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
             Toutes les actualités {{ selectedRegionLabel }} →

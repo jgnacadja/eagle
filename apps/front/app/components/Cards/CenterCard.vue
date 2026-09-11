@@ -27,7 +27,7 @@
     <NuxtLink
       v-if="to"
       :to="to"
-      class="mt-md block text-small font-bold text-primary hover:text-ink"
+      class="mt-md block text-small font-bold text-primary transition-colors hover:text-accent-text"
     >
       Voir le centre →
     </NuxtLink>

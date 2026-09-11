@@ -40,7 +40,7 @@
             'shrink-0 rounded-full px-md py-sm text-small font-bold transition',
             active
               ? 'bg-primary text-paper hover:bg-primary-dark'
-              : 'border border-outline bg-paper text-primary hover:bg-surface'
+              : 'border border-outline bg-paper text-primary transition-colors hover:text-accent-text'
           )
         "
       >

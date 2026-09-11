@@ -41,7 +41,8 @@
         <Accordion type="multiple" class="divide-y divide-rule">
           <!-- FORMATIONS -->
           <AccordionItem value="formations" class="border-b-0">
-            <AccordionTrigger class="py-md text-h3 text-ink hover:no-underline"
+            <AccordionTrigger
+              class="py-md text-h3 text-ink transition-colors hover:text-accent-text hover:no-underline"
               >Formations</AccordionTrigger
             >
             <AccordionContent>
@@ -49,7 +50,7 @@
                 <div v-for="famille in familles ?? []" :key="famille.slug">
                   <NuxtLink
                     :to="`/formations/${famille.slug}`"
-                    class="flex items-center justify-between py-2 text-body text-primary"
+                    class="flex items-center justify-between py-2 text-body text-primary transition-colors hover:text-accent-text"
                     @click="closeMenu"
                   >
                     <span>{{ famille.label }}</span>
@@ -60,7 +61,7 @@
                 <div>
                   <NuxtLink
                     to="/formations"
-                    class="block py-2 text-small font-semibold text-ink underline underline-offset-4"
+                    class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                     @click="closeMenu"
                   >
                     Tout le catalogue +
@@ -72,7 +73,8 @@
 
           <!-- CENTRES -->
           <AccordionItem value="centres" class="border-b-0">
-            <AccordionTrigger class="py-md text-h3 text-ink hover:no-underline"
+            <AccordionTrigger
+              class="py-md text-h3 text-ink transition-colors hover:text-accent-text hover:no-underline"
               >Centres</AccordionTrigger
             >
             <AccordionContent>
@@ -80,7 +82,7 @@
                 <div>
                   <NuxtLink
                     to="/centres"
-                    class="flex items-center gap-2 py-2 text-body text-primary"
+                    class="flex items-center gap-2 py-2 text-body text-primary transition-colors hover:text-accent-text"
                     @click="closeMenu"
                   >
                     <svg
@@ -103,7 +105,9 @@
                   :value="region.slug"
                   class="border-b-0"
                 >
-                  <AccordionTrigger class="py-2 text-body text-primary hover:no-underline">
+                  <AccordionTrigger
+                    class="py-2 text-body text-primary transition-colors hover:text-accent-text hover:no-underline"
+                  >
                     <span class="flex w-full items-center justify-between pr-2">
                       <span>{{ region.label }}</span>
                       <span class="text-small text-ink-muted">{{ region.count }}</span>
@@ -117,7 +121,7 @@
                       >
                         <NuxtLink
                           :to="`/centres/${centre.slug}`"
-                          class="flex items-center justify-between py-2 text-body text-primary"
+                          class="flex items-center justify-between py-2 text-body text-primary transition-colors hover:text-accent-text"
                           @click="closeMenu"
                         >
                           <span>{{ centre.name }}</span>
@@ -129,7 +133,7 @@
                       <li>
                         <NuxtLink
                           to="/centres"
-                          class="block py-2 text-small font-semibold text-ink underline underline-offset-4"
+                          class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                           @click="closeMenu"
                         >
                           Tous les centres {{ region.label }} +
@@ -142,7 +146,7 @@
                 <div>
                   <NuxtLink
                     to="/centres"
-                    class="block py-2 text-small font-semibold text-ink underline underline-offset-4"
+                    class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                     @click="closeMenu"
                   >
                     Voir la carte de région +
@@ -154,7 +158,8 @@
 
           <!-- À PROPOS -->
           <AccordionItem value="apropos" class="border-b-0">
-            <AccordionTrigger class="py-md text-h3 text-ink hover:no-underline"
+            <AccordionTrigger
+              class="py-md text-h3 text-ink transition-colors hover:text-accent-text hover:no-underline"
               >À propos</AccordionTrigger
             >
             <AccordionContent>
@@ -162,7 +167,7 @@
                 <li v-for="lien in aproposLiens" :key="lien.slug">
                   <NuxtLink
                     :to="`/a-propos/${lien.slug}`"
-                    class="block py-2 text-body text-primary"
+                    class="block py-2 text-body text-primary transition-colors hover:text-accent-text"
                     @click="closeMenu"
                   >
                     {{ lien.label }}
@@ -171,7 +176,7 @@
                 <li v-for="lien in legalLiens" :key="lien.slug">
                   <NuxtLink
                     :to="`/legal/${lien.slug}`"
-                    class="block py-2 text-body text-primary"
+                    class="block py-2 text-body text-primary transition-colors hover:text-accent-text"
                     @click="closeMenu"
                   >
                     {{ lien.label }}
@@ -183,7 +188,8 @@
 
           <!-- ACTUALITÉS -->
           <AccordionItem value="actualites" class="border-b-0">
-            <AccordionTrigger class="py-md text-h3 text-ink hover:no-underline"
+            <AccordionTrigger
+              class="py-md text-h3 text-ink transition-colors hover:text-accent-text hover:no-underline"
               >Actualités</AccordionTrigger
             >
             <AccordionContent>
@@ -191,7 +197,7 @@
                 <li v-for="rubrique in rubriquesActualites" :key="rubrique.slug">
                   <NuxtLink
                     to="/actualites"
-                    class="block py-2 text-body text-primary"
+                    class="block py-2 text-body text-primary transition-colors hover:text-accent-text"
                     @click="closeMenu"
                   >
                     {{ rubrique.label }}
@@ -203,7 +209,7 @@
                 <li v-for="region in (regions ?? []).slice(0, 2)" :key="region.slug">
                   <NuxtLink
                     to="/actualites"
-                    class="block py-2 text-body text-primary"
+                    class="block py-2 text-body text-primary transition-colors hover:text-accent-text"
                     @click="closeMenu"
                   >
                     {{ region.label }}
@@ -212,7 +218,7 @@
                 <li>
                   <NuxtLink
                     to="/centres"
-                    class="block py-2 text-small font-semibold text-ink underline underline-offset-4"
+                    class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                     @click="closeMenu"
                   >
                     Toutes les régions +
@@ -225,7 +231,7 @@
 
         <NuxtLink
           to="/rejoindre-le-reseau"
-          class="mt-lg inline-block text-body font-semibold text-ink underline underline-offset-4"
+          class="mt-lg inline-block text-body font-semibold text-ink transition-colors hover:text-accent-text"
           @click="closeMenu"
         >
           Rejoindre le réseau

@@ -6,7 +6,7 @@
         <li v-for="lien in aproposLiens" :key="lien.slug">
           <NuxtLink
             :to="`/a-propos/${lien.slug}`"
-            class="block rounded-md px-2 py-1.5 text-primary transition-colors hover:bg-surface hover:text-ink"
+            class="block rounded-md px-2 py-1.5 text-primary transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
             <span class="block text-body font-medium">{{ lien.label }}</span>
@@ -22,7 +22,7 @@
         <li v-for="lien in legalLiens" :key="lien.slug">
           <NuxtLink
             :to="`/legal/${lien.slug}`"
-            class="block rounded-md px-2 py-1.5 text-body text-primary transition-colors hover:bg-surface hover:text-ink"
+            class="block rounded-md px-2 py-1.5 text-body text-primary transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
             {{ lien.label }}

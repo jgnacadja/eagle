@@ -7,7 +7,7 @@
         <li v-for="region in regions" :key="region.slug">
           <button
             type="button"
-            class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-body transition-colors hover:bg-surface"
+            class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-body transition-colors hover:text-accent-text"
             :class="
               region.slug === selectedRegion ? 'bg-surface font-semibold text-ink' : 'text-primary'
             "
@@ -21,7 +21,7 @@
         <li>
           <NuxtLink
             to="/centres"
-            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink underline underline-offset-4 transition-colors hover:bg-surface"
+            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
             Toutes les régions →
@@ -49,7 +49,7 @@
         <li class="col-span-2">
           <NuxtLink
             to="/centres"
-            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink underline underline-offset-4 transition-colors hover:bg-surface"
+            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
             Tous les centres {{ selectedRegionLabel }} →
@@ -75,7 +75,7 @@
         <p class="text-body font-semibold">Besoin d’une formation sur votre site ?</p>
         <NuxtLink
           to="/formation-intra"
-          class="mt-sm inline-block rounded-full bg-paper px-lg py-2 text-small font-semibold text-ink hover:bg-surface"
+          class="w-full text-center mt-sm inline-block rounded-full bg-paper px-lg py-2 text-small font-semibold text-ink hover:bg-surface"
           @click="$emit('close')"
         >
           Organiser une formation intra

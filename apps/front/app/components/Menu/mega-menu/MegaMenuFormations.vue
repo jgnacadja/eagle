@@ -7,7 +7,7 @@
         <li v-for="famille in familles" :key="famille.slug">
           <button
             type="button"
-            class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-body transition-colors hover:bg-surface"
+            class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-body transition-colors hover:text-accent-text"
             :class="
               famille.slug === selectedFamille
                 ? 'bg-surface font-semibold text-ink'
@@ -23,7 +23,7 @@
         <li>
           <NuxtLink
             to="/formations"
-            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink underline underline-offset-4 transition-colors hover:bg-surface"
+            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
             Tout le catalogue →
@@ -47,7 +47,7 @@
         <li v-if="selectedFamille" class="col-span-2">
           <NuxtLink
             :to="`/formations/${selectedFamille}`"
-            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink underline underline-offset-4 transition-colors hover:bg-surface"
+            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
             Voir la famille →
@@ -63,7 +63,7 @@
         <li v-for="formation in formationsALaUne" :key="formation.slug">
           <NuxtLink
             :to="formation.to"
-            class="flex items-center justify-between rounded-md px-2 py-1.5 text-body text-primary transition-colors hover:bg-surface hover:text-ink"
+            class="flex items-center justify-between rounded-md px-2 py-1.5 text-body text-primary transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
             <span>{{ formation.label }}</span>
@@ -76,7 +76,7 @@
         <p class="text-body font-semibold">Vous ne savez pas quelle formation choisir ?</p>
         <NuxtLink
           to="/etre-guide"
-          class="mt-sm inline-block rounded-full bg-accent px-lg py-2 text-small font-semibold text-ink hover:bg-accent-text"
+          class="w-full text-center mt-sm inline-block rounded-full bg-paper px-lg py-2 text-small font-semibold text-ink hover:bg-surface"
           @click="$emit('close')"
         >
           Être guidé dans mon choix

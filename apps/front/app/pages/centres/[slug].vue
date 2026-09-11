@@ -89,14 +89,17 @@
                       <IconPhone :size="17" class="mt-xs shrink-0 text-primary" />
                       <NuxtLink
                         :to="`tel:${centre.phone.replace(/\s/g, '')}`"
-                        class="font-medium text-ink hover:underline"
+                        class="font-medium text-ink transition-colors hover:text-accent-text"
                       >
                         {{ centre.phone }}
                       </NuxtLink>
                     </li>
                     <li v-if="centre.email" class="flex gap-sm">
                       <IconMail :size="17" class="mt-xs shrink-0 text-primary" />
-                      <NuxtLink :to="`mailto:${centre.email}`" class="text-ink hover:underline">
+                      <NuxtLink
+                        :to="`mailto:${centre.email}`"
+                        class="text-ink transition-colors hover:text-accent-text"
+                      >
                         {{ centre.email }}
                       </NuxtLink>
                     </li>
@@ -204,7 +207,7 @@
                 v-if="(centreCatalog.data.value?.total ?? 0) > formations.length"
                 as-child
                 variant="link"
-                class="mt-md h-auto p-0 text-small font-bold text-primary hover:text-ink hover:no-underline"
+                class="mt-md h-auto p-0 text-small font-bold text-primary transition-colors hover:text-accent-text"
               >
                 <NuxtLink :to="`/formations?lieu=${centre.city ?? ''}`"
                   >Voir toutes les formations du centre →</NuxtLink
@@ -267,7 +270,7 @@
             <Button
               as-child
               variant="link"
-              class="hidden h-auto p-0 text-small font-bold text-primary hover:text-ink hover:no-underline sm:inline"
+              class="hidden h-auto p-0 text-small font-bold text-primary transition-colors hover:text-accent-text sm:inline"
             >
               <NuxtLink to="/centres">Voir le réseau de centres →</NuxtLink>
             </Button>
@@ -291,7 +294,7 @@
           <Button
             as-child
             variant="link"
-            class="mt-md h-auto p-0 text-small font-bold text-primary hover:text-ink hover:no-underline sm:hidden"
+            class="mt-md h-auto p-0 text-small font-bold text-primary transition-colors hover:text-accent-text sm:hidden"
           >
             <NuxtLink to="/centres">Voir le réseau de centres →</NuxtLink>
           </Button>

@@ -52,7 +52,7 @@
         :href="directionsUrl"
         target="_blank"
         rel="noopener"
-        class="whitespace-nowrap font-semibold text-primary hover:underline"
+        class="whitespace-nowrap font-semibold text-primary transition-colors hover:text-accent-text"
       >
         Ouvrir l'itinéraire →
       </a>

@@ -24,7 +24,7 @@
       </ul>
       <NuxtLink
         to="#"
-        class="mt-md inline-block text-small font-semibold text-primary hover:underline"
+        class="mt-md inline-block text-small font-semibold text-primary transition-colors hover:text-accent-text"
       >
         Toutes les familles →
       </NuxtLink>
@@ -67,7 +67,7 @@
         <button
           v-if="location"
           type="button"
-          class="text-ink-subtle hover:text-ink"
+          class="text-ink-subtle transition-colors hover:text-accent-text"
           aria-label="Effacer la localisation"
           @click="location = ''"
         >

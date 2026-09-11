@@ -16,19 +16,23 @@
           <h3 class="text-badge md:text-xs font-bold text-ink-inverse uppercase">Formations</h3>
           <ul class="mt-md space-y-sm text-small">
             <li>
-              <NuxtLink to="/" class="text-small text-ink-inverse-muted hover:text-ink-inverse"
+              <NuxtLink
+                to="/"
+                class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >CACES &amp; conduite d'engins</NuxtLink
               >
             </li>
             <li>
-              <NuxtLink to="/" class="text-small text-ink-inverse-muted hover:text-ink-inverse"
+              <NuxtLink
+                to="/"
+                class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Habilitations électriques</NuxtLink
               >
             </li>
             <li>
               <NuxtLink
                 to="/formations"
-                class="text-small text-ink-inverse-muted hover:text-ink-inverse"
+                class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Tout le catalogue</NuxtLink
               >
             </li>
@@ -39,17 +43,23 @@
           <h3 class="text-badge md:text-xs font-bold text-ink-inverse uppercase">Entreprises</h3>
           <ul class="mt-md space-y-sm text-small">
             <li>
-              <NuxtLink to="/" class="text-small text-ink-inverse-muted hover:text-ink-inverse"
+              <NuxtLink
+                to="/"
+                class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Confier mes formations</NuxtLink
               >
             </li>
             <li>
-              <NuxtLink to="/" class="text-small text-ink-inverse-muted hover:text-ink-inverse"
+              <NuxtLink
+                to="/"
+                class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Formation intra &amp; sur site</NuxtLink
               >
             </li>
             <li>
-              <NuxtLink to="/" class="text-small text-ink-inverse-muted hover:text-ink-inverse"
+              <NuxtLink
+                to="/"
+                class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Gestion multi-sites</NuxtLink
               >
             </li>
@@ -60,17 +70,23 @@
           <h3 class="text-badge md:text-xs font-bold text-ink-inverse uppercase">Rejoindre</h3>
           <ul class="mt-md space-y-sm text-small">
             <li>
-              <NuxtLink to="/" class="text-small text-ink-inverse-muted hover:text-ink-inverse"
+              <NuxtLink
+                to="/"
+                class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Devenir franchisé</NuxtLink
               >
             </li>
             <li>
-              <NuxtLink to="/" class="text-small text-ink-inverse-muted hover:text-ink-inverse"
+              <NuxtLink
+                to="/"
+                class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Référencer mon organisme</NuxtLink
               >
             </li>
             <li>
-              <NuxtLink to="/" class="text-small text-ink-inverse-muted hover:text-ink-inverse"
+              <NuxtLink
+                to="/"
+                class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Formateur indépendant</NuxtLink
               >
             </li>
@@ -81,19 +97,23 @@
           <h3 class="text-badge md:text-xs font-bold text-ink-inverse uppercase">À propos</h3>
           <ul class="mt-md space-y-sm text-small">
             <li>
-              <NuxtLink to="/" class="text-small text-ink-inverse-muted hover:text-ink-inverse"
+              <NuxtLink
+                to="/"
+                class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Qui sommes-nous</NuxtLink
               >
             </li>
             <li>
               <NuxtLink
                 to="/actualites"
-                class="text-small text-ink-inverse-muted hover:text-ink-inverse"
+                class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Actualités</NuxtLink
               >
             </li>
             <li>
-              <NuxtLink to="/" class="text-small text-ink-inverse-muted hover:text-ink-inverse"
+              <NuxtLink
+                to="/"
+                class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Contact</NuxtLink
               >
             </li>
@@ -105,13 +125,19 @@
         class="mt-2xl flex flex-wrap items-center gap-x-lg gap-y-sm border-t border-outline-inverse pt-lg text-small text-ink-inverse-muted"
       >
         <p class="text-small">© {{ year }} LEARN UP ACADEMY</p>
-        <NuxtLink to="/" class="text-small text-ink-inverse-muted hover:text-ink-inverse"
+        <NuxtLink
+          to="/"
+          class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
           >Mentions légales</NuxtLink
         >
-        <NuxtLink to="/" class="text-small text-ink-inverse-muted hover:text-ink-inverse"
+        <NuxtLink
+          to="/"
+          class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
           >Confidentialité</NuxtLink
         >
-        <NuxtLink to="/" class="text-small text-ink-inverse-muted hover:text-ink-inverse"
+        <NuxtLink
+          to="/"
+          class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
           >Accessibilité — RGAA AA</NuxtLink
         >
       </div>

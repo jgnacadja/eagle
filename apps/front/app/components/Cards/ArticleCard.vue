@@ -1,6 +1,6 @@
 <template>
   <article
-    class="flex flex-row gap-lg rounded-md bg-paper p-md shadow-md md:flex-col md:gap-0 md:overflow-hidden md:p-0"
+    class="flex flex-row gap-lg rounded-md bg-paper p-md shadow-md md:flex-col md:gap-0 md:overflow-hidden md:p-0 duration-500 hover:z-5 hover:scale-[1.03] transition-all object-cover"
   >
     <div
       class="flex aspect-square w-2/5 shrink-0 items-center justify-center rounded-sm border border-dashed border-outline bg-surface-alt text-center text-small text-ink-muted md:aspect-3/1 md:w-auto md:rounded-none md:border-b md:border-x-0 md:border-t-0"

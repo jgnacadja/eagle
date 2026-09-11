@@ -401,7 +401,7 @@
           <h2 class="font-display text-h2 font-extrabold text-ink">Actualités</h2>
           <NuxtLink
             to="/actualites"
-            class="hidden md:block whitespace-nowrap text-small font-bold text-primary transition-colors hover:text-accent-text"
+            class="hidden md:block whitespace-nowrap text-small font-bold text-primary hover:text-accent-text hover:scale-105 transition-all"
             >Tout le blog →</NuxtLink
           >
         </div>

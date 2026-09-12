@@ -20,7 +20,7 @@
     "test:coverage": "turbo run test:coverage -- --passWithNoTests",
     "test:e2e": "turbo run test:e2e",
     "directus:build": "node --env-file=.env directus/schema/build.mjs",
-    "directus:snapshot": "docker compose exec directus npx directus schema snapshot /directus/uploads/snapshot.yaml && docker compose cp directus:/directus/uploads/snapshot.yaml directus/schema/snapshot.yaml",
+    "directus:snapshot": "docker compose exec -T directus npx directus schema snapshot /directus/uploads/snapshot.yaml --yes && docker compose cp directus:/directus/uploads/snapshot.yaml directus/schema/snapshot.yaml",
     "seed": "node --env-file=.env directus/seed/seed.mjs"
   },
   "lint-staged": {

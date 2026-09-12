@@ -162,6 +162,7 @@ services:
       REDIS_URL: redis://redis:6379
       DIRECTUS_INTERNAL_URL: http://directus:8055
       DIRECTUS_TOKEN: ${DIRECTUS_TOKEN}
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
     depends_on:
       directus:
         condition: service_healthy
@@ -181,6 +182,8 @@ services:
       NODE_ENV: production
       NUXT_API_BASE: http://api:3001
       NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE}
+      NUXT_INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
+      NUXT_CACHE_PURGE_SECRET: ${NUXT_CACHE_PURGE_SECRET:-}
     ports:
       - '3000:3000'
     depends_on:

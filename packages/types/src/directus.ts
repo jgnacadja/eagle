@@ -33,6 +33,7 @@ export interface Centre extends SeoFields {
   digiforma_url: string | null
   qualiopi_certified: boolean | null
   qualiopi_certificate_number: string | null
+  qualiopi_certificate: string | null
   image: string | null
   latitude: number | null
   longitude: number | null
@@ -68,6 +69,18 @@ export interface FamilleFormation extends SeoFields {
   icon: string | null
   /** UUID du fichier Directus — rendre via `${directusUrl}/assets/{id}`. */
   image: string | null
+  /** Titre éditorial de la section sous-familles (repli : « Parcourir par sous-famille »). */
+  subnav_title: string | null
+}
+
+export interface SousFamilleFormation {
+  id: number
+  status: ContentStatus
+  slug: string
+  name: string
+  caption: string | null
+  /** Relation M2O — id brut ou objet { slug } selon les fields demandés. */
+  famille: number | { slug: string } | null
 }
 
 export interface Article extends SeoFields {

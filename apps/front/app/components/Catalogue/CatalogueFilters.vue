@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div>
+    <div v-if="familyOptions.length">
       <h3 class="text-meta font-bold tracking-wide text-ink-muted">Famille</h3>
       <ul class="mt-md space-y-sm">
         <li
@@ -26,11 +26,14 @@
         to="#"
         class="mt-md inline-block text-small font-semibold text-primary transition-colors hover:text-accent-text"
       >
-        Toutes les familles →
+        Toutes les familles <span class="link-arrow">→</span>
       </NuxtLink>
     </div>
 
-    <div v-if="modalities !== undefined" class="mt-lg border-t border-rule pt-lg">
+    <div
+      v-if="modalities !== undefined && modalityOptions.length"
+      class="mt-lg border-t border-rule pt-lg"
+    >
       <h3 class="text-meta font-bold tracking-wide text-ink-muted">Modalité</h3>
       <div class="mt-md flex flex-wrap gap-sm">
         <Button
@@ -39,15 +42,19 @@
           type="button"
           variant="outline"
           :aria-pressed="modalities.includes(modality.key)"
+          :disabled="modality.disabled"
           class="h-auto rounded-full px-md py-xs text-small font-normal transition"
           :class="
             modalities.includes(modality.key)
-              ? 'border-primary bg-primary font-semibold text-paper hover:bg-primary hover:text-paper'
-              : 'border-outline bg-paper text-ink-body hover:border-primary hover:bg-paper hover:text-ink-body'
+              ? 'border-primary-dark bg-primary-dark font-semibold text-paper hover:bg-primary-dark hover:text-paper'
+              : modality.disabled
+                ? 'cursor-not-allowed border-rule bg-paper text-ink-subtle opacity-60 hover:border-rule hover:bg-paper hover:text-ink-subtle'
+                : 'border-outline bg-paper text-ink-body hover:border-primary hover:bg-paper hover:text-ink-body'
           "
           @click="toggle(modalities, modality.key, (v) => (modalities = v))"
         >
           {{ modality.label }}
+          <IconClose v-if="modalities.includes(modality.key)" :size="12" aria-hidden="true" />
         </Button>
       </div>
     </div>
@@ -55,28 +62,10 @@
     <div v-if="location !== undefined" class="mt-lg border-t border-rule pt-lg">
       <h3 class="text-meta font-bold tracking-wide text-ink-muted">Localisation</h3>
       <label :for="locationInputId" class="sr-only">Ville, département, région</label>
-      <div class="mt-md flex items-center gap-sm rounded-full border border-outline px-md py-sm">
-        <IconMapPin :size="16" class="shrink-0 text-ink-subtle" />
-        <input
-          :id="locationInputId"
-          v-model="location"
-          type="text"
-          placeholder="Ville, département, région"
-          class="min-w-0 flex-1 border-0 bg-transparent text-small text-ink-body placeholder:text-ink-placeholder focus:outline-none focus:ring-0"
-        />
-        <button
-          v-if="location"
-          type="button"
-          class="text-ink-subtle transition-colors hover:text-accent-text"
-          aria-label="Effacer la localisation"
-          @click="location = ''"
-        >
-          <IconClose :size="14" />
-        </button>
-      </div>
+      <LocationSuggest v-model="location" :input-id="locationInputId" class="mt-md" />
     </div>
 
-    <div class="mt-lg border-t border-rule pt-lg">
+    <div v-if="durationOptions.length" class="mt-lg border-t border-rule pt-lg">
       <h3 class="text-meta font-bold tracking-wide text-ink-muted">Durée</h3>
       <ul class="mt-md space-y-sm">
         <li v-for="duration in durationOptions" :key="duration.key">
@@ -95,7 +84,10 @@
       </ul>
     </div>
 
-    <div v-if="certifications !== undefined" class="mt-lg border-t border-rule pt-lg">
+    <div
+      v-if="certifications !== undefined && certificationOptions.length"
+      class="mt-lg border-t border-rule pt-lg"
+    >
       <h3 class="text-meta font-bold tracking-wide text-ink-muted">Certification</h3>
       <ul class="mt-md space-y-sm">
         <li v-for="certification in certificationOptions" :key="certification.key">
@@ -152,6 +144,7 @@ import { computed, useId } from 'vue'
 import { Button } from '~/components/ui/button'
 import { Checkbox } from '~/components/ui/checkbox'
 import { Label } from '~/components/ui/label'
+import IconClose from '~/components/icons/IconClose.vue'
 import type { FilterOption } from '~/utils/catalog-filters'
 import { CERTIFICATION_OPTIONS, DURATION_OPTIONS, MODALITY_OPTIONS } from '~/utils/catalog-filters'
 
@@ -159,8 +152,16 @@ const props = withDefaults(
   defineProps<{
     familyOptions: FilterOption[]
     locationInputId?: string
+    modalityOptions?: FilterOption[]
+    durationOptions?: FilterOption[]
+    certificationOptions?: FilterOption[]
   }>(),
-  { locationInputId: undefined }
+  {
+    locationInputId: undefined,
+    modalityOptions: () => MODALITY_OPTIONS,
+    durationOptions: () => DURATION_OPTIONS,
+    certificationOptions: () => CERTIFICATION_OPTIONS
+  }
 )
 
 const families = defineModel<string[]>('families', { required: true })
@@ -174,9 +175,9 @@ const certifying = defineModel<boolean | undefined>('certifying')
 const fallbackId = useId()
 const locationInputId = computed(() => props.locationInputId ?? `loc-${fallbackId}`)
 
-const modalityOptions = MODALITY_OPTIONS
-const durationOptions = DURATION_OPTIONS
-const certificationOptions = CERTIFICATION_OPTIONS
+const modalityOptions = computed(() => props.modalityOptions)
+const durationOptions = computed(() => props.durationOptions)
+const certificationOptions = computed(() => props.certificationOptions)
 
 function toggle(list: string[], key: string, apply: (next: string[]) => void) {
   apply(list.includes(key) ? list.filter((item) => item !== key) : [...list, key])

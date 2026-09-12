@@ -2,13 +2,10 @@
   <article
     class="rounded-md border border-rule bg-paper p-md transition hover:border-primary/40 hover:shadow-md"
   >
-    <img
-      v-if="image"
-      :src="image"
-      :alt="title"
-      class="aspect-video w-full rounded-sm object-cover"
-      loading="lazy"
-    />
+    <div v-if="image" class="relative aspect-video overflow-hidden rounded-sm">
+      <img :src="image" :alt="title" class="h-full w-full object-cover" loading="lazy" />
+      <span class="absolute inset-0 bg-ink/15" aria-hidden="true" />
+    </div>
     <div
       v-else
       class="flex aspect-video items-center justify-center rounded-sm border border-dashed border-outline bg-surface-alt text-center text-meta text-ink-muted"
@@ -22,7 +19,7 @@
         :to="to"
         class="mt-xs inline-block text-small font-bold text-primary transition-colors hover:text-accent-text"
       >
-        Voir le détail →
+        Voir le détail <span class="link-arrow">→</span>
       </NuxtLink>
     </div>
   </article>

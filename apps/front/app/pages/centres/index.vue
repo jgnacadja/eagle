@@ -134,9 +134,10 @@
           class="flex flex-col gap-md px-gutter-mobile py-lg md:pl-gutter lg:h-full lg:min-h-0 lg:overflow-y-auto lg:pl-[max(48px,calc((100vw-var(--layout-container-max))/2+48px))] lg:pr-md"
         >
           <CenterResultCard
-            v-for="center in visibleCenters"
+            v-for="(center, i) in visibleCenters"
             :id="`center-${center.id}`"
             :key="center.id"
+            v-reveal="revealStagger(i % 3)"
             :center="center"
             :active="activeCenterId === center.id"
             @select="selectCenter(center.id)"
@@ -228,7 +229,9 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { CentresQuery } from '~/composables/useCentres'
+import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
+import { availabilityStatus, useCentreSessionDates } from '~/composables/useCentres'
 
 const route = useRoute()
 
@@ -259,6 +262,9 @@ const centresFilters = computed<CentresQuery>(() => ({
 
 const centresResult = useCentres(centresFilters)
 const departmentsResult = useCentreDepartments()
+// Sessions du catalogue agrégées par centre → badge de disponibilité sur
+// chaque carte (dégradation silencieuse si l'API catalogue échoue).
+const centreSessionDates = await useCentreSessionDates()
 
 // SSR : on attend le fetch pour embarquer les données dans le payload.
 // En navigation client (ex. redirection /centres?q=… depuis l'accueil) la
@@ -293,6 +299,7 @@ const filteredCenters = computed<CenterResult[]>(() =>
       address: location,
       tags,
       tagsShort: tags,
+      status: availabilityStatus(centreSessionDates.value.get(centre.slug) ?? []),
       lat: centre.latitude ?? undefined,
       lng: centre.longitude ?? undefined
     }

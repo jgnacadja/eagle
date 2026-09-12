@@ -54,7 +54,7 @@
         rel="noopener"
         class="whitespace-nowrap font-semibold text-primary transition-colors hover:text-accent-text"
       >
-        Ouvrir l'itinéraire →
+        Ouvrir l'itinéraire <span class="link-arrow">→</span>
       </a>
     </div>
   </div>

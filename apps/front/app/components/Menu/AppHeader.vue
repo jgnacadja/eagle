@@ -1,5 +1,5 @@
 <template>
-  <header class="border-b border-rule bg-paper">
+  <header class="relative z-50 border-b border-rule bg-paper">
     <div
       ref="rootEl"
       class="relative mx-auto flex items-center px-gutter-mobile md:px-gutter py-3 text-sm"

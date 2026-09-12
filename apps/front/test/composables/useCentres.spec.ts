@@ -68,6 +68,7 @@ describe('useCentres', () => {
     await useCentres(ref({}))
 
     const nuxtApp = {
+      isHydrating: true,
       payload: { data: { 'centres:{}': [{ slug: 'cached' }] } },
       static: { data: {} }
     }
@@ -76,6 +77,9 @@ describe('useCentres', () => {
     expect(getCachedData?.('centres:{}', nuxtApp, { cause: 'initial' })).toEqual([
       { slug: 'cached' }
     ])
+    expect(
+      getCachedData?.('centres:{}', { ...nuxtApp, isHydrating: false }, { cause: 'initial' })
+    ).toBeUndefined()
     expect(getCachedData?.('centres:{}', nuxtApp, { cause: 'watch' })).toBeUndefined()
     expect(getCachedData?.('centres:{}', nuxtApp, { cause: 'refresh:manual' })).toBeUndefined()
   })
@@ -103,12 +107,20 @@ describe('useCentreDepartments', () => {
     await useCentreDepartments()
 
     const nuxtApp = {
+      isHydrating: true,
       payload: { data: { 'centres-departments': ['Paris'] } },
       static: { data: {} }
     }
     const getCachedData = capturedOptions?.getCachedData
 
     expect(getCachedData?.('centres-departments', nuxtApp, { cause: 'initial' })).toEqual(['Paris'])
+    expect(
+      getCachedData?.(
+        'centres-departments',
+        { ...nuxtApp, isHydrating: false },
+        { cause: 'initial' }
+      )
+    ).toBeUndefined()
     expect(getCachedData?.('centres-departments', nuxtApp, { cause: 'watch' })).toBeUndefined()
   })
 })

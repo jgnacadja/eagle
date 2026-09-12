@@ -218,6 +218,196 @@
   }
 }
 
+@layer utilities {
+  .link-arrow {
+    @apply inline-block transition-transform duration-200 ease-out motion-reduce:transition-none;
+  }
+
+  a:hover .link-arrow,
+  a:focus-visible .link-arrow,
+  button:hover .link-arrow,
+  button:focus-visible .link-arrow {
+    transform: translateX(var(--spacing-xs));
+  }
+}
+
+@keyframes mega-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--spacing-sm)));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mega-menu-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--spacing-sm)));
+  }
+}
+
+@keyframes nav-enter-from-start {
+  from {
+    opacity: 0;
+    transform: translateX(calc(-1 * var(--spacing-lg)));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes nav-enter-from-end {
+  from {
+    opacity: 0;
+    transform: translateX(var(--spacing-lg));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes nav-exit-to-start {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(calc(-1 * var(--spacing-lg)));
+  }
+}
+
+@keyframes nav-exit-to-end {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(var(--spacing-lg));
+  }
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--reka-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--reka-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+.mega-menu-viewport {
+  transition: height 200ms ease-out;
+}
+
+.mega-menu-viewport[data-state='open'] {
+  animation: mega-menu-in 200ms ease-out;
+}
+
+.mega-menu-viewport[data-state='closed'] {
+  animation: mega-menu-out 150ms ease-in;
+}
+
+[data-motion='from-start'] {
+  animation: nav-enter-from-start 200ms ease-out;
+}
+
+[data-motion='from-end'] {
+  animation: nav-enter-from-end 200ms ease-out;
+}
+
+[data-motion='to-start'] {
+  animation: nav-exit-to-start 150ms ease-in;
+}
+
+[data-motion='to-end'] {
+  animation: nav-exit-to-end 150ms ease-in;
+}
+
+.menu-panel-enter-active,
+.menu-panel-leave-active {
+  transition:
+    opacity 150ms ease-out,
+    transform 150ms ease-out;
+}
+
+.menu-panel-enter-from {
+  opacity: 0;
+  transform: translateX(var(--spacing-sm));
+}
+
+.menu-panel-leave-to {
+  opacity: 0;
+}
+
+.mobile-menu-enter-active,
+.mobile-menu-leave-active {
+  transition:
+    opacity 200ms ease-out,
+    transform 200ms ease-out;
+}
+
+.mobile-menu-enter-from,
+.mobile-menu-leave-to {
+  opacity: 0;
+  transform: translateY(calc(-1 * var(--spacing-md)));
+}
+
+.page-enter-active,
+.page-leave-active,
+.layout-enter-active,
+.layout-leave-active {
+  transition:
+    opacity 250ms ease-out,
+    transform 250ms ease-out;
+}
+
+.page-enter-from,
+.layout-enter-from {
+  opacity: 0;
+  transform: translateY(var(--spacing-sm));
+}
+
+.page-leave-to,
+.layout-leave-to {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mega-menu-viewport,
+  [data-motion],
+  .menu-panel-enter-active,
+  .menu-panel-leave-active,
+  .mobile-menu-enter-active,
+  .mobile-menu-leave-active,
+  .page-enter-active,
+  .page-leave-active,
+  .layout-enter-active,
+  .layout-leave-active {
+    animation: none;
+    transition: none;
+  }
+}
+
 .marquee {
   animation: scroll-left 30s linear infinite;
 }

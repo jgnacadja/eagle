@@ -1,4 +1,4 @@
-import type { CourseListItem, FamilleFormation } from '@learnup/types'
+import type { CourseListItem, FamilleFormation, SousFamilleFormation } from '@learnup/types'
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, ref, Suspense, watch, watchEffect } from 'vue'
@@ -16,8 +16,21 @@ const family: FamilleFormation = {
   image: null,
   seo_title: 'CACES & conduite d’engins — LEARN UP ACADEMY',
   seo_description: 'Formations CACES.',
-  seo_canonical: null
+  seo_canonical: null,
+  subnav_title: "Parcourir par type d'engin"
 }
+
+const sousFamilles: SousFamilleFormation[] = [
+  {
+    id: 1,
+    status: 'published',
+    slug: 'chariots',
+    name: 'Chariots & gerbeurs',
+    caption: 'R489 · R485',
+    famille: 1
+  },
+  { id: 2, status: 'published', slug: 'grues', name: 'Grues & levage', caption: null, famille: 1 }
+]
 
 const courses: CourseListItem[] = [
   {
@@ -34,10 +47,13 @@ const courses: CourseListItem[] = [
     certifierName: 'Opérateur réglementaire',
     category: null,
     familySlug: 'caces-conduite-engins',
+    subFamilySlug: 'chariots',
+    subFamilyName: 'Chariots & gerbeurs',
     centerSlug: null,
     centerSlugs: [],
     modalities: [],
     sessions: null,
+    image: null,
     imageUrl: null,
     generatedProgramUrl: null,
     status: 'published',
@@ -59,10 +75,13 @@ const courses: CourseListItem[] = [
     certifierName: null,
     category: null,
     familySlug: 'caces-conduite-engins',
+    subFamilySlug: 'grues',
+    subFamilyName: 'Grues & levage',
     centerSlug: null,
     centerSlugs: [],
     modalities: [],
     sessions: null,
+    image: null,
     imageUrl: null,
     generatedProgramUrl: null,
     status: 'published',
@@ -105,6 +124,7 @@ const catalogMocks = vi.hoisted(() => {
       title: course.title,
       family: familyName ?? course.familySlug ?? 'Autre',
       familyKey: course.familySlug ?? 'autre',
+      subFamily: course.subFamilyName ?? null,
       description: course.description ?? '',
       meta: `${course.durationDays} jours`,
       days: course.durationDays ?? 0,
@@ -116,17 +136,22 @@ const catalogMocks = vi.hoisted(() => {
 
   return {
     useCatalog: vi.fn((query) => {
-      const q = 'value' in query ? query.value : query
-      let items = [...courses]
-      if (q.family && typeof q.family === 'string') {
-        items = items.filter((c) => c.familySlug === q.family)
-      }
-      const data = computed(() => ({
-        items: items.map((c) => mapCourse(c, family.name)),
-        total: items.length,
-        page: q.page ?? 1,
-        pageSize: q.limit ?? 9
-      }))
+      const data = computed(() => {
+        const q = 'value' in query ? query.value : query
+        let items = [...courses]
+        if (q.family && typeof q.family === 'string') {
+          items = items.filter((c) => c.familySlug === q.family)
+        }
+        if (q.subFamily && typeof q.subFamily === 'string') {
+          items = items.filter((c) => c.subFamilySlug === q.subFamily)
+        }
+        return {
+          items,
+          total: items.length,
+          page: q.page ?? 1,
+          pageSize: q.limit ?? 9
+        }
+      })
       return { data, pending: ref(false), error: ref(null), refresh: vi.fn() }
     }),
     mapCourse
@@ -146,6 +171,10 @@ vi.mock('~/composables/useDirectus', () => ({
   useDirectusClient: () => ({ request: vi.fn() })
 }))
 
+vi.stubGlobal('useDirectusList', async (_collection: string, key: string) =>
+  ref(key.startsWith('sous-familles-') ? sousFamilles : [])
+)
+
 vi.stubGlobal('useAsyncData', async (key: string) => {
   if (key === `famille-caces-conduite-engins`) {
     return { data: ref(family), pending: ref(false), error: ref(null), refresh: vi.fn() }
@@ -156,10 +185,17 @@ vi.stubGlobal('useAsyncData', async (key: string) => {
 const stubs = {
   NuxtLink: { template: '<a><slot /></a>' },
   Button: { template: '<button><slot /></button>' },
+  SubFamilyCard: {
+    props: ['name', 'caption'],
+    emits: ['select'],
+    template:
+      '<div class="subfamily-card"><h3>{{ name }}</h3><p>{{ caption }}</p>' +
+      '<button @click="$emit(\'select\')">Voir la sous-famille →</button></div>'
+  },
   Badge: { template: '<span><slot /></span>' },
   CenterFormationCard: {
-    props: ['title', 'family'],
-    template: '<div class="formation-card">{{ family }} — {{ title }}</div>'
+    props: ['title', 'subFamily'],
+    template: '<div class="formation-card">{{ subFamily }} — {{ title }}</div>'
   },
   CtaBanner: { template: '<div><slot /></div>' },
   SearchInput: {
@@ -211,6 +247,26 @@ describe('pages/formations/[famille]', () => {
     expect(wrapper.findAll('.formation-card')).toHaveLength(courses.length)
     expect(wrapper.text()).toContain('CACES R489 — chariots élévateurs')
     expect(wrapper.text()).toContain('CACES R490 — grues de chargement')
+  })
+
+  it('affiche la section sous-familles et filtre la liste via les cartes', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain("Parcourir par type d'engin")
+    expect(wrapper.text()).toContain('Chariots & gerbeurs')
+    expect(wrapper.text()).toContain('R489 · R485')
+    expect(wrapper.text()).toContain('Grues & levage')
+    expect(wrapper.findAll('.formation-card')).toHaveLength(2)
+
+    const buttons = wrapper
+      .findAll('button')
+      .filter((b) => b.text().includes('Voir la sous-famille'))
+    await buttons[0]!.trigger('click')
+    await flushPromises()
+
+    const cards = wrapper.findAll('.formation-card')
+    expect(cards).toHaveLength(1)
+    expect(cards[0]!.text()).toContain('Chariots & gerbeurs')
   })
 
   it('définit le breadcrumb et le SEO', async () => {

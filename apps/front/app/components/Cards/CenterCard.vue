@@ -31,7 +31,7 @@
       :to="to"
       class="mt-md block text-small font-bold text-primary transition-colors hover:text-accent-text"
     >
-      Voir le centre →
+      Voir le centre <span class="link-arrow">→</span>
     </NuxtLink>
   </article>
 </template>

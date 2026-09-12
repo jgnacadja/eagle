@@ -28,7 +28,27 @@ config.global.stubs = {
     template: '<div class="center-map" />'
   },
   CenterFormationCard: {
-    props: ['title', 'family'],
-    template: '<div class="formation-card">{{ family }} — {{ title }}</div>'
+    props: ['title', 'subFamily'],
+    template: '<div class="formation-card">{{ subFamily }} — {{ title }}</div>'
   }
 }
+
+// Auto-imports Nuxt absents sous Vitest : le header interne SSR n'a pas à
+// exister en environnement de test.
+vi.stubGlobal('internalSsrHeaders', () => undefined)
+
+// Directives motion-v (enregistrées par le module Nuxt, absentes ici) et
+// utilitaires de reveal utilisés dans les templates.
+config.global.directives = {
+  ...config.global.directives,
+  motion: {},
+  reveal: {}
+}
+
+// happy-dom n'expose pas IntersectionObserver (requis par motion-v/inView).
+class IntersectionObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+vi.stubGlobal('IntersectionObserver', IntersectionObserverStub)

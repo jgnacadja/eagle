@@ -1,5 +1,8 @@
 <template>
-  <AccordionContent v-bind="delegatedProps" class="overflow-hidden text-small">
+  <AccordionContent
+    v-bind="delegatedProps"
+    class="overflow-hidden text-small data-[state=closed]:animate-[accordion-up_150ms_ease-in] data-[state=open]:animate-[accordion-down_200ms_ease-out]"
+  >
     <div :class="cn('pb-4 pt-0', props.class)">
       <slot />
     </div>

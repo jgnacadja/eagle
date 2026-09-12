@@ -88,7 +88,7 @@
                 class="lg:hidden"
                 eyebrow="Formation liée"
                 variant="button"
-                :family="relatedFormationCard.family"
+                :sub-family="relatedFormationCard.subFamily"
                 :title="relatedFormationCard.title"
                 :meta="relatedFormationCard.meta"
                 :status="relatedFormationCard.status"
@@ -133,7 +133,7 @@
                 v-if="relatedFormationCard"
                 eyebrow="Formation liée"
                 variant="button"
-                :family="relatedFormationCard.family"
+                :sub-family="relatedFormationCard.subFamily"
                 :title="relatedFormationCard.title"
                 :meta="relatedFormationCard.meta"
                 :status="relatedFormationCard.status"
@@ -168,7 +168,7 @@
               to="/actualites"
               class="hidden text-small font-bold text-ink transition-colors hover:text-accent-text hover:underline sm:inline"
             >
-              Toute l'actualité →
+              Toute l'actualité <span class="link-arrow">→</span>
             </NuxtLink>
           </div>
           <ul class="mt-lg grid grid-cols-1 gap-lg sm:grid-cols-3">

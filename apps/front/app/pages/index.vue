@@ -51,7 +51,7 @@
           to="/centres/demande-de-formation"
           class="mt-sm inline-block text-small font-bold text-primary transition-colors hover:text-accent-text"
         >
-          Confier ma formation →
+          Confier ma formation <span class="link-arrow">→</span>
         </NuxtLink>
       </div>
     </section>
@@ -98,8 +98,9 @@
 
       <div class="mt-2xl grid gap-grid text-left md:grid-cols-3">
         <NetworkCard
-          v-for="card in networkCards"
+          v-for="(card, i) in networkCards"
           :key="card.title"
+          v-reveal="revealStagger(i)"
           :title="card.title"
           :subtitle="card.subtitle"
           :body="card.body"
@@ -113,7 +114,7 @@
         <NuxtLink
           to="/centres"
           class="font-bold text-primary transition-colors hover:text-accent-text"
-          >contactez le centre le plus proche →</NuxtLink
+          >contactez le centre le plus proche <span class="link-arrow">→</span></NuxtLink
         >
       </p>
     </section>
@@ -137,8 +138,9 @@
         />
 
         <li
-          v-for="step in steps"
+          v-for="(step, i) in steps"
           :key="step.number"
+          v-reveal="revealStagger(i)"
           class="relative flex flex-row items-start gap-md text-left md:flex-col md:items-center md:text-center md:gap-0"
         >
           <span
@@ -171,14 +173,15 @@
             to="/formations"
             class="hidden whitespace-nowrap text-body font-bold text-primary transition-colors hover:text-accent-text md:block"
           >
-            Voir tout le catalogue →
+            Voir tout le catalogue <span class="link-arrow">→</span>
           </NuxtLink>
         </div>
 
         <div class="mt-2xl grid gap-grid sm:grid-cols-2 lg:grid-cols-4">
           <FormationCard
-            v-for="item in dernieresFormations"
+            v-for="(item, i) in dernieresFormations"
             :key="item.slug"
+            v-reveal="revealStagger(i)"
             :title="item.title"
             :image-top="item.family"
             :image-bottom="item.meta"
@@ -192,7 +195,7 @@
             to="/formations"
             class="inline-block text-body font-bold text-primary transition-colors hover:text-accent-text md:hidden"
           >
-            Voir tout le catalogue →
+            Voir tout le catalogue <span class="link-arrow">→</span>
           </NuxtLink>
         </div>
       </div>
@@ -216,7 +219,7 @@
           to="/centres"
           class="hidden whitespace-nowrap text-body font-bold text-primary transition-colors hover:text-accent-text md:block"
         >
-          Explorer la carte des centres →
+          Explorer la carte des centres <span class="link-arrow">→</span>
         </NuxtLink>
       </div>
 
@@ -252,8 +255,9 @@
           </SearchInput>
 
           <CenterCard
-            v-for="centre in derniersCentres"
+            v-for="(centre, i) in derniersCentres"
             :key="centre.slug"
+            v-reveal="revealStagger(i)"
             :name="centre.name"
             :distance="centreDistance(centre)"
             :formations="centreFormations(centre)"
@@ -266,7 +270,7 @@
               to="/centres"
               class="whitespace-nowrap text-body font-bold text-primary transition-colors hover:text-accent-text md:hidden"
             >
-              Explorer la carte des centres →
+              Explorer la carte des centres <span class="link-arrow">→</span>
             </NuxtLink>
           </div>
         </div>
@@ -290,8 +294,9 @@
 
         <div class="mt-2xl hidden gap-grid md:grid md:grid-cols-3">
           <ConfierCard
-            v-for="card in confierCards"
+            v-for="(card, i) in confierCards"
             :key="card.title"
+            v-reveal="revealStagger(i)"
             :tag="card.tag"
             :title="card.title"
             :body="card.body"
@@ -302,8 +307,9 @@
 
         <div class="mt-2xl flex snap-x snap-mandatory gap-grid overflow-x-auto pb-sm md:hidden">
           <ConfierCard
-            v-for="card in confierCards"
+            v-for="(card, i) in confierCards"
             :key="`${card.title}-image`"
+            v-reveal="revealStagger(i)"
             variant="image"
             :tag="card.tag"
             :title="card.title"
@@ -315,8 +321,9 @@
 
         <div class="mt-md flex flex-col gap-md md:hidden">
           <ConfierCard
-            v-for="card in confierCards"
+            v-for="(card, i) in confierCards"
             :key="`${card.title}-detail`"
+            v-reveal="revealStagger(i)"
             variant="detail"
             :tag="card.tag"
             :title="card.title"
@@ -371,14 +378,15 @@
         <NuxtLink
           to="/"
           class="hidden md:block text-small font-bold text-primary transition-colors hover:text-accent-text"
-          >Voir tous les avis →</NuxtLink
+          >Voir tous les avis <span class="link-arrow">→</span></NuxtLink
         >
       </div>
 
       <div class="mt-lg grid gap-grid md:grid-cols-3">
         <TestimonialCard
-          v-for="t in testimonials"
+          v-for="(t, i) in testimonials"
           :key="t.author"
+          v-reveal="revealStagger(i)"
           :stars="t.stars"
           :quote="t.quote"
           :author="t.author"
@@ -389,7 +397,7 @@
         <NuxtLink
           to="/"
           class="md:hidden text-small font-bold text-primary transition-colors hover:text-accent-text"
-          >Voir tous les avis →</NuxtLink
+          >Voir tous les avis <span class="link-arrow">→</span></NuxtLink
         >
       </div>
     </section>
@@ -402,14 +410,15 @@
           <NuxtLink
             to="/actualites"
             class="hidden md:block whitespace-nowrap text-small font-bold text-primary transition-colors hover:text-accent-text"
-            >Tout le blog →</NuxtLink
+            >Tout le blog <span class="link-arrow">→</span></NuxtLink
           >
         </div>
 
         <div class="mt-lg grid gap-grid md:grid-cols-3">
           <ArticleCard
-            v-for="article in articles"
+            v-for="(article, i) in articles"
             :key="article.slug"
+            v-reveal="revealStagger(i)"
             :category="article.category ?? 'Actualité'"
             :title="article.title"
             :date="formatArticleDate(article.publish_at)"
@@ -424,7 +433,7 @@
             to="/actualites"
             class="mt-lg inline-block text-small font-bold text-primary transition-colors hover:text-accent-text md:hidden"
           >
-            Tout le blog →
+            Tout le blog <span class="link-arrow">→</span>
           </NuxtLink>
         </div>
       </div>
@@ -436,6 +445,7 @@
 import { computed, ref } from 'vue'
 import type { Article, Centre } from '@learnup/types'
 import { mapCourse, useCatalog } from '~/composables/useCatalog'
+import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
 import { articleAssetUrl, formatArticleDate } from '~/utils/article'
 
@@ -497,21 +507,21 @@ const networkCards = [
     title: 'Devenir franchisé',
     subtitle: 'Rejoignez un réseau en pleine croissance',
     body: "Ouvrez votre centre Learn Up Academy avec l'appui de la marque, des outils et du réseau national.",
-    cta: 'Découvrir la franchise →',
+    cta: 'Découvrir la franchise',
     to: '/centres/demande-de-formation?sujet=franchise'
   },
   {
     title: 'Organisme partenaire',
     subtitle: 'Référencez vos centres, développez votre activité',
     body: 'Rendez vos sessions visibles et recevez des demandes qualifiées de tout le territoire.',
-    cta: 'Référencer mon organisme →',
+    cta: 'Référencer mon organisme',
     to: '/centres/demande-de-formation?sujet=organisme'
   },
   {
     title: 'Formateur indépendant',
     subtitle: 'Intervenez sur les sessions du réseau',
     body: 'Missions en centre, sur site ou en intra, au plus près de chez vous.',
-    cta: 'Devenir formateur partenaire →',
+    cta: 'Devenir formateur partenaire',
     to: '/centres/demande-de-formation?sujet=formateur'
   }
 ]

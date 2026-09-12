@@ -1,5 +1,8 @@
 <template>
-  <Card class="transition hover:border-primary/40 hover:shadow-md">
+  <Card
+    class="transition hover:border-primary/40 hover:shadow-md"
+    :class="{ 'bg-surface': type === 'neutral' }"
+  >
     <CardContent class="flex flex-col gap-md p-md sm:flex-row sm:items-center">
       <div class="flex min-w-0 flex-1 items-center gap-md">
         <div class="w-3xl shrink-0 rounded-md bg-surface py-sm text-center">
@@ -21,11 +24,11 @@
           </p>
           <Badge v-if="type && places !== undefined" :variant="type">
             <span
-              v-if="type !== 'warning'"
+              v-if="type === 'success'"
               class="h-sm w-sm rounded-full bg-current"
               aria-hidden="true"
             />
-            <span v-else aria-hidden="true">▲</span>
+            <span v-else-if="type === 'warning'" aria-hidden="true">▲</span>
             <span class="hidden sm:inline">{{ placesLabel(places, true) }}</span>
             <span class="sm:hidden">{{ placesLabel(places, false) }}</span>
           </Badge>
@@ -35,7 +38,7 @@
           variant="outline"
           class="h-auto shrink-0 rounded-full border-outline bg-paper px-md py-xs text-small font-bold text-ink transition hover:border-primary hover:bg-paper"
         >
-          <NuxtLink :to="to">S'inscrire</NuxtLink>
+          <NuxtLink :to="to">{{ ctaLabel }}</NuxtLink>
         </Button>
       </div>
     </CardContent>
@@ -52,11 +55,12 @@ withDefaults(
     title: string
     meta: string
     to?: string
+    ctaLabel?: string
     places?: number
-    type?: 'success' | 'warning'
+    type?: 'success' | 'warning' | 'neutral'
     price?: string
     priceNote?: string
   }>(),
-  { to: '#', places: undefined, type: undefined, price: '', priceNote: '' }
+  { to: '#', ctaLabel: "S'inscrire", places: undefined, type: undefined, price: '', priceNote: '' }
 )
 </script>

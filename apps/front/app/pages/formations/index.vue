@@ -9,9 +9,11 @@
         >
           Trouvez la formation adaptée à vos besoins professionnels
         </h1>
-        <p v-if="catalog.data.value" class="mt-md max-w-prose text-body text-ink-body">
-          {{ catalog.data.value.total }} formations réglementaires et professionnelles, en centre
-          partout en France ou dans votre entreprise.
+        <p class="mt-md max-w-prose text-body text-ink-body">
+          <template v-if="(catalog.data.value?.total ?? 0) > 0"
+            >{{ catalog.data.value?.total }} formations réglementaires et professionnelles,
+          </template>
+          en centre partout en France ou dans votre entreprise.
         </p>
 
         <form
@@ -78,8 +80,9 @@
         <!-- Raccourcis familles -->
         <ul class="mt-2xl hidden grid-cols-1 gap-md sm:grid sm:grid-cols-2 lg:grid-cols-4">
           <li
-            v-for="shortcut in familyShortcuts"
+            v-for="(shortcut, i) in familyShortcuts"
             :key="shortcut.slug"
+            v-reveal="revealStagger(i)"
             class="rounded-md border border-rule bg-paper p-lg transition hover:border-primary/40 hover:shadow-md"
           >
             <p class="font-semibold text-ink">{{ shortcut.label }}</p>
@@ -88,7 +91,7 @@
               :to="shortcut.to"
               class="mt-md inline-block text-small font-semibold text-primary transition-colors hover:text-accent-text"
             >
-              {{ shortcut.linkLabel }} →
+              {{ shortcut.linkLabel }} <span class="link-arrow">→</span>
             </NuxtLink>
           </li>
         </ul>
@@ -111,12 +114,15 @@
           <CatalogueFilters
             v-model:families="selectedFamilies"
             v-model:modalities="selectedModalities"
-            v-model:location="location"
             v-model:durations="selectedDurations"
-            v-model:cpf="cpf"
-            v-model:certifying="certifying"
+            :location="locationFilterVisible ? location : undefined"
+            :cpf="cpfFilterVisible ? cpf : undefined"
+            :certifying="certifyingFilterVisible ? certifying : undefined"
             :family-options="familyOptions"
+            :modality-options="modalityOptions"
+            :duration-options="durationOptions"
             location-input-id="loc-desktop"
+            @update:location="location = $event ?? ''"
           />
         </aside>
 
@@ -131,7 +137,7 @@
               <span
                 v-for="filter in activeFilters"
                 :key="`${filter.group}:${filter.key}`"
-                class="inline-flex items-center gap-sm rounded-full bg-primary px-md py-xs text-small text-paper"
+                class="inline-flex items-center gap-sm rounded-full bg-primary-dark px-md py-xs text-small text-paper"
               >
                 {{ filter.label }}
                 <button
@@ -154,12 +160,12 @@
           </div>
 
           <div class="mt-lg flex flex-wrap items-center justify-between gap-md">
-            <h2 class="font-sans text-h4 font-bold text-ink">
+            <h2 v-if="resultCount > 0" class="font-sans text-h4 font-bold text-ink">
               {{ resultCount }}
               {{ resultCount > 1 ? 'formations' : 'formation' }}
               <template v-if="hasActiveCriteria">correspondent</template>
             </h2>
-            <div class="hidden items-center gap-sm lg:flex">
+            <div class="ml-auto hidden items-center gap-sm lg:flex">
               <Label for="sort-desktop" class="text-small font-normal text-ink-body">
                 Trier par
               </Label>
@@ -265,12 +271,17 @@
 
           <!-- Grille résultats -->
           <ul v-else class="mt-lg grid grid-cols-1 gap-md sm:grid-cols-2 xl:grid-cols-3">
-            <li v-for="formation in formations" :key="formation.slug">
+            <li
+              v-for="(formation, i) in formations"
+              :key="formation.slug"
+              v-reveal="revealStagger(i % 3)"
+            >
               <CenterFormationCard
-                :family="formation.family"
+                :sub-family="formation.subFamily"
                 :title="formation.title"
                 :description="formation.description"
                 :meta="formation.meta"
+                :status="formation.status"
                 :to="formation.to ?? undefined"
                 class="h-full"
               />
@@ -279,7 +290,9 @@
 
           <!-- Pagination desktop -->
           <Pagination
-            v-if="!catalog.pending.value && formations.length && catalog.data.value"
+            v-if="
+              !catalog.pending.value && catalog.data.value && catalog.data.value.total > perPage
+            "
             v-model:page="currentPage"
             :total="catalog.data.value.total"
             :items-per-page="perPage"
@@ -377,12 +390,15 @@
         <CatalogueFilters
           v-model:families="selectedFamilies"
           v-model:modalities="selectedModalities"
-          v-model:location="location"
           v-model:durations="selectedDurations"
-          v-model:cpf="cpf"
-          v-model:certifying="certifying"
+          :location="locationFilterVisible ? location : undefined"
+          :cpf="cpfFilterVisible ? cpf : undefined"
+          :certifying="certifyingFilterVisible ? certifying : undefined"
           :family-options="familyOptions"
+          :modality-options="modalityOptions"
+          :duration-options="durationOptions"
           location-input-id="loc-mobile"
+          @update:location="location = $event ?? ''"
         />
       </div>
 
@@ -401,7 +417,9 @@
             class="h-control flex-1 rounded-full bg-primary px-lg text-small font-semibold text-paper hover:bg-primary-dark"
             @click="closeFilterPanel"
           >
-            Afficher {{ resultCount }} formation(s)
+            {{
+              resultCount > 0 ? `Afficher ${resultCount} formation(s)` : 'Afficher les résultats'
+            }}
           </button>
         </div>
       </div>
@@ -418,8 +436,14 @@ import {
   type CatalogQuery,
   type FormationItem
 } from '~/composables/useCatalog'
-import { DURATION_LABELS, MODALITY_LABELS } from '~/utils/catalog-filters'
+import {
+  DURATION_LABELS,
+  DURATION_OPTIONS,
+  MODALITY_LABELS,
+  MODALITY_OPTIONS
+} from '~/utils/catalog-filters'
 import { useDirectusClient } from '~/composables/useDirectus'
+import { revealStagger } from '~/utils/reveal'
 import { readItems } from '@directus/sdk'
 
 interface SortOption {
@@ -600,6 +624,19 @@ const hasMoreMobile = computed(
 
 const directus = useDirectusClient()
 
+// Le payload SSR n'est servi que pendant l'hydratation : en navigation
+// client, on refetch pour ne pas figer un résultat vide/transitoire.
+const freshOnClient = {
+  getCachedData: <T,>(
+    key: string,
+    nuxtApp: ReturnType<typeof useNuxtApp>,
+    ctx: { cause?: string }
+  ) =>
+    ctx.cause === 'initial' && nuxtApp.isHydrating
+      ? ((nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as T | undefined)
+      : undefined
+}
+
 const { data: directusFamilies } = await useAsyncData<FamilleFormation[]>(
   'catalog-families',
   async () => {
@@ -617,21 +654,28 @@ const { data: directusFamilies } = await useAsyncData<FamilleFormation[]>(
       }
       return []
     }
-  }
+  },
+  freshOnClient
 )
 
-const { data: familyCounts } = await useAsyncData<FamilyWithCount[]>('family-counts', async () => {
-  const config = useRuntimeConfig()
-  const apiBase = import.meta.server ? config.apiBase : config.public.apiBase
-  try {
-    return await $fetch<FamilyWithCount[]>(`${apiBase}/families`)
-  } catch (error) {
-    if (import.meta.server) {
-      logServerError('[formations/index] family counts fetch failed:', error)
+const { data: familyCounts } = await useAsyncData<FamilyWithCount[]>(
+  'family-counts',
+  async () => {
+    const config = useRuntimeConfig()
+    const apiBase = import.meta.server ? config.apiBase : config.public.apiBase
+    try {
+      return await $fetch<FamilyWithCount[]>(`${apiBase}/families`, {
+        ...(internalSsrHeaders(config) && { headers: internalSsrHeaders(config) })
+      })
+    } catch (error) {
+      if (import.meta.server) {
+        logServerError('[formations/index] family counts fetch failed:', error)
+      }
+      return []
     }
-    return []
-  }
-})
+  },
+  freshOnClient
+)
 
 const familyNames = computed(() => {
   const map = new Map<string, string>()
@@ -641,7 +685,13 @@ const familyNames = computed(() => {
   return map
 })
 
+// Facettes servies par l'API dans la réponse /courses : chaque dimension
+// est comptée sur le résultat courant en ignorant son propre filtre, donc
+// une option à 0 résultat n'est pas proposée (sauf si déjà sélectionnée).
+const facets = computed(() => catalog.data.value?.facets)
+
 const familyOptions = computed<FilterOption[]>(() => {
+  const facetCounts = facets.value?.families
   const counts = new Map<string, number>()
   for (const item of familyCounts.value ?? []) {
     counts.set(item.slug, item.count)
@@ -649,17 +699,60 @@ const familyOptions = computed<FilterOption[]>(() => {
 
   const slugs = new Set<string>([
     ...Array.from(familyNames.value.keys()),
-    ...Array.from(counts.keys())
+    ...Array.from(counts.keys()),
+    ...Object.keys(facetCounts ?? {})
   ])
 
   return Array.from(slugs)
     .map((slug) => ({
       key: slug,
       label: familyNames.value.get(slug) ?? slug,
-      count: counts.get(slug) ?? 0
+      // Facettes servies : une clé absente = 0 résultat. Sans facettes
+      // (réponse dégradée), repli sur les compteurs globaux /families.
+      count: facetCounts ? (facetCounts[slug] ?? 0) : (counts.get(slug) ?? 0)
     }))
+    .filter(
+      (option) => !facetCounts || option.count > 0 || selectedFamilies.value.includes(option.key)
+    )
     .sort((a, b) => b.count - a.count)
 })
+
+function optionsWithResults(
+  options: FilterOption[],
+  counts: Record<string, number> | undefined,
+  selected: string[]
+): FilterOption[] {
+  if (!counts) return options
+  return options.filter((o) => (counts[o.key] ?? 0) > 0 || selected.includes(o.key))
+}
+
+// Chips modalité : une option à 0 résultat reste visible mais grisée
+// (RG-CAT-07) — sauf si déjà sélectionnée.
+const modalityOptions = computed<FilterOption[]>(() => {
+  const counts = facets.value?.modalities
+  return MODALITY_OPTIONS.map((o) => ({
+    ...o,
+    disabled: counts
+      ? (counts[o.key] ?? 0) === 0 && !selectedModalities.value.includes(o.key)
+      : false
+  }))
+})
+
+const durationOptions = computed(() =>
+  optionsWithResults(DURATION_OPTIONS, facets.value?.durations, selectedDurations.value)
+)
+
+const locationFilterVisible = computed(
+  () =>
+    !facets.value ||
+    Object.keys(facets.value.locations).length > 0 ||
+    location.value.trim().length > 0
+)
+
+const cpfFilterVisible = computed(() => !facets.value || facets.value.cpf > 0 || cpf.value)
+const certifyingFilterVisible = computed(
+  () => !facets.value || facets.value.certifying > 0 || certifying.value
+)
 
 const familyShortcuts = computed(() => {
   const top = familyOptions.value.slice(0, 3).map((family) => ({

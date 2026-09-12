@@ -15,7 +15,7 @@ const stubs = {
 }
 
 const baseProps = {
-  family: "Caces · Conduite d'engins",
+  subFamily: 'Chariots élévateurs',
   title: 'CACES R489 — chariots élévateurs',
   description: 'Conduite en sécurité des chariots de manutention.',
   meta: '2 à 5 jours · Inter / intra · Recyclage : 5 ans',
@@ -23,13 +23,13 @@ const baseProps = {
 }
 
 describe('CenterFormationCard', () => {
-  it('renders family, title, meta and status label', () => {
+  it('renders sub-family, title, meta and status label', () => {
     const wrapper = mount(CenterFormationCard, {
       props: baseProps,
       global: { stubs }
     })
 
-    expect(wrapper.text()).toContain("Caces · Conduite d'engins")
+    expect(wrapper.text()).toContain('Chariots élévateurs')
     expect(wrapper.text()).toContain('CACES R489 — chariots élévateurs')
     expect(wrapper.text()).toContain('2 à 5 jours')
     expect(wrapper.text()).toContain('Sessions ce mois-ci')

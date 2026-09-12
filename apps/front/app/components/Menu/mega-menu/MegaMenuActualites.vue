@@ -40,7 +40,7 @@
             class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
-            Toutes les régions →
+            Toutes les régions <span class="link-arrow">→</span>
           </NuxtLink>
         </li>
       </ul>
@@ -51,34 +51,36 @@
       <h3 class="text-small font-semibold text-ink-muted">
         {{ selectedRegionLabel }} — dernières publications
       </h3>
-      <ul class="mt-sm space-y-sm">
-        <li v-for="actu in actusAffichees" :key="actu.slug">
-          <NuxtLink
-            :to="`/actualites/${actu.slug}`"
-            class="group block rounded-md px-2 py-1.5 transition-colors"
-            @click="$emit('close')"
-          >
-            <span class="block text-small font-semibold text-ink-muted"
-              >{{ actu.tag }} · {{ actu.date }}</span
+      <Transition name="menu-panel" mode="out-in">
+        <ul :key="selectedRegion" class="mt-sm space-y-sm">
+          <li v-for="actu in actusAffichees" :key="actu.slug">
+            <NuxtLink
+              :to="`/actualites/${actu.slug}`"
+              class="group block rounded-md px-2 py-1.5 transition-colors"
+              @click="$emit('close')"
             >
-            <span class="text-body text-ink transition-colors group-hover:text-accent-text">{{
-              actu.title
-            }}</span>
-          </NuxtLink>
-        </li>
-        <li v-if="!actusAffichees.length" class="px-2 py-1.5 text-small text-ink-muted">
-          Aucune publication récente pour cette région.
-        </li>
-        <li>
-          <NuxtLink
-            to="/actualites"
-            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
-            @click="$emit('close')"
-          >
-            Toutes les actualités {{ selectedRegionLabel }} →
-          </NuxtLink>
-        </li>
-      </ul>
+              <span class="block text-small font-semibold text-ink-muted"
+                >{{ actu.tag }} · {{ actu.date }}</span
+              >
+              <span class="text-body text-ink transition-colors group-hover:text-accent-text">{{
+                actu.title
+              }}</span>
+            </NuxtLink>
+          </li>
+          <li v-if="!actusAffichees.length" class="px-2 py-1.5 text-small text-ink-muted">
+            Aucune publication récente pour cette région.
+          </li>
+          <li>
+            <NuxtLink
+              to="/actualites"
+              class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
+              @click="$emit('close')"
+            >
+              Toutes les actualités {{ selectedRegionLabel }} <span class="link-arrow">→</span>
+            </NuxtLink>
+          </li>
+        </ul>
+      </Transition>
     </div>
   </div>
 </template>

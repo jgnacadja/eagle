@@ -4,7 +4,7 @@
       v-bind="forwardedProps"
       :class="
         cn(
-          'relative h-(--reka-navigation-menu-viewport-height) w-full overflow-hidden border border-t-0 border-rule bg-paper text-ink shadow-md',
+          'mega-menu-viewport relative h-(--reka-navigation-menu-viewport-height) w-full overflow-hidden border border-t-0 border-rule bg-paper text-ink shadow-md',
           props.class
         )
       "

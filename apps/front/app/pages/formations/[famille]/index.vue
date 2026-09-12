@@ -19,7 +19,9 @@
               />
 
               <ul class="mt-lg flex flex-wrap gap-sm">
-                <Badge as="li" variant="chip">{{ resultCount }} formations</Badge>
+                <Badge v-if="familyTotal > 0" as="li" variant="chip">
+                  {{ familyTotal }} formations
+                </Badge>
                 <Badge v-for="m in familyModalities" :key="m" as="li" variant="chip">
                   {{ m }}
                 </Badge>
@@ -34,7 +36,7 @@
               class="aspect-video w-full rounded-md lg:col-span-2 lg:aspect-4/3"
               :class="
                 heroImage
-                  ? 'overflow-hidden'
+                  ? 'relative overflow-hidden'
                   : 'flex items-center justify-center border border-dashed border-outline bg-surface-alt'
               "
             >
@@ -44,12 +46,35 @@
                 :alt="familleData?.name ?? ''"
                 class="h-full w-full object-cover"
               />
+              <span v-if="heroImage" class="absolute inset-0 bg-ink/15" aria-hidden="true" />
               <figcaption v-else class="px-lg text-center text-meta text-ink-muted">
                 {{ familleData?.name }}
               </figcaption>
             </figure>
           </div>
         </div>
+      </section>
+
+      <!-- Sous-familles : navigation éditoriale + filtre rapide -->
+      <section
+        v-if="subFamilyCards.length"
+        class="mx-auto w-full max-w-container px-gutter-mobile py-section md:px-gutter"
+        aria-labelledby="sous-familles-title"
+      >
+        <h2 id="sous-familles-title" class="font-sans text-h4 font-bold text-ink">
+          {{ subnavTitle }}
+        </h2>
+
+        <ul class="mt-lg grid grid-cols-1 gap-md sm:grid-cols-2 lg:grid-cols-4">
+          <li v-for="subFamily in subFamilyCards" :key="subFamily.slug">
+            <SubFamilyCard
+              :name="subFamily.name"
+              :caption="subFamily.caption"
+              class="h-full"
+              @select="selectSubFamily(subFamily.slug)"
+            />
+          </li>
+        </ul>
       </section>
 
       <!-- Liste des formations -->
@@ -59,13 +84,40 @@
         aria-labelledby="liste-title"
       >
         <div class="flex flex-col gap-md md:flex-row md:items-center md:justify-between">
-          <h2 id="liste-title" class="font-sans text-h4 font-bold text-ink">
+          <h2 v-if="resultCount > 0" id="liste-title" class="font-sans text-h4 font-bold text-ink">
             {{ resultCount }}
             {{ resultCount > 1 ? 'formations' : 'formation' }} dans cette famille
           </h2>
 
-          <div class="flex flex-wrap gap-sm">
-            <Select v-model="selectedModality" aria-label="Filtrer par modalité">
+          <div class="flex flex-wrap gap-sm md:ml-auto">
+            <Select
+              v-if="subFamilyOptions.length > 1"
+              v-model="selectedSubFamily"
+              aria-label="Filtrer par sous-famille"
+            >
+              <SelectTrigger
+                aria-label="Sous-famille"
+                class="h-control w-auto gap-sm rounded-full border-outline bg-paper px-md text-small font-semibold text-ink-body shadow-none"
+              >
+                <span class="truncate">{{ subFamilyFilterLabel }}</span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem
+                  v-for="option in subFamilyOptions"
+                  :key="option.value"
+                  :value="option.value"
+                  class="text-small"
+                >
+                  {{ option.label }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              v-if="modalityOptions.length > 1"
+              v-model="selectedModality"
+              aria-label="Filtrer par modalité"
+            >
               <SelectTrigger
                 aria-label="Modalité"
                 class="h-control w-auto gap-sm rounded-full border-outline bg-paper px-md text-small font-semibold text-ink-body shadow-none"
@@ -84,7 +136,11 @@
               </SelectContent>
             </Select>
 
-            <Select v-model="selectedLocation" aria-label="Filtrer par localisation">
+            <Select
+              v-if="locationOptions.length > 1"
+              v-model="selectedLocation"
+              aria-label="Filtrer par localisation"
+            >
               <SelectTrigger
                 aria-label="Localisation"
                 class="h-control w-auto gap-sm rounded-full border-outline bg-paper px-md text-small font-semibold text-ink-body shadow-none"
@@ -107,7 +163,7 @@
 
         <!-- État vide -->
         <div
-          v-if="!catalog.pending.value && formations.length === 0"
+          v-if="!catalog.pending.value && !catalog.error.value && formations.length === 0"
           class="mt-lg flex flex-col items-center rounded-md border border-dashed border-rule bg-surface-soft px-lg py-4xl text-center"
         >
           <IconSearchMinus :size="30" class="text-ink-muted" />
@@ -118,13 +174,13 @@
             Élargissez vos critères ou transmettez votre besoin : une réponse adaptée vous sera
             proposée.
           </p>
-          <button
-            type="button"
-            class="mt-lg text-small font-semibold text-primary transition-colors hover:text-accent-text"
+          <Button
+            variant="link"
+            class="mt-lg h-auto p-0 text-small font-semibold"
             @click="resetPage"
           >
             Réinitialiser
-          </button>
+          </Button>
         </div>
 
         <!-- État erreur -->
@@ -147,7 +203,7 @@
         >
           <li v-for="formation in formations" :key="formation.slug">
             <CenterFormationCard
-              :family="formation.family"
+              :sub-family="formation.subFamily"
               :title="formation.title"
               :description="formation.description"
               :meta="formation.meta"
@@ -270,7 +326,7 @@
 
 <script setup lang="ts">
 import { readItems } from '@directus/sdk'
-import type { FamilleFormation } from '@learnup/types'
+import type { FamilleFormation, SousFamilleFormation } from '@learnup/types'
 import {
   buildSessionBadge,
   mapCourse,
@@ -280,6 +336,7 @@ import {
 } from '~/composables/useCatalog'
 import { useDirectusClient } from '~/composables/useDirectus'
 import { MODALITY_LABELS, MODALITY_OPTIONS } from '~/utils/catalog-filters'
+import { directusAssetUrl } from '~/utils/directusAsset'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
 
 definePageMeta({
@@ -295,22 +352,34 @@ const {
   data: familleData,
   error: loadError,
   refresh
-} = await useAsyncData<FamilleFormation | null>(`famille-${famille}`, async () => {
-  try {
-    const results = await directus.request<FamilleFormation[]>(
-      readItems('familles_formation', {
-        filter: { slug: { _eq: famille }, status: { _eq: 'published' } },
-        limit: 1
-      })
-    )
-    return results[0] ?? null
-  } catch (error) {
-    if (import.meta.server) {
-      logServerError(`[formations/famille] ${famille} load failed:`, error)
+} = await useAsyncData<FamilleFormation | null>(
+  `famille-${famille}`,
+  async () => {
+    try {
+      const results = await directus.request<FamilleFormation[]>(
+        readItems('familles_formation', {
+          filter: { slug: { _eq: famille }, status: { _eq: 'published' } },
+          limit: 1
+        })
+      )
+      return results[0] ?? null
+    } catch (error) {
+      if (import.meta.server) {
+        logServerError(`[formations/famille] ${famille} load failed:`, error)
+      }
+      throw error
     }
-    throw error
+  },
+  {
+    // Payload SSR uniquement pendant l'hydratation — au-delà, chaque
+    // navigation repart sur des données fraîches (cf. useCatalog).
+    getCachedData: (key, nuxtApp, ctx) =>
+      ctx.cause === 'initial' && nuxtApp.isHydrating
+        ? ((nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as
+            FamilleFormation | null | undefined)
+        : undefined
   }
-})
+)
 
 type PageState = 'found' | 'not-found' | 'error'
 const pageState = computed<PageState>(() => {
@@ -389,30 +458,48 @@ function onErrorSearch(query: string) {
   navigateTo({ path: '/formations', query: query ? { q: query } : {} })
 }
 
+// Sous-familles publiées de la famille courante — affichées en cartes
+// et proposées comme filtre de la liste.
+const sousFamilles = await useDirectusList<SousFamilleFormation>(
+  'sous_familles_formation',
+  `sous-familles-${famille}`,
+  {
+    fields: ['id', 'slug', 'name', 'caption'],
+    filter: { status: { _eq: 'published' }, famille: { slug: { _eq: famille } } },
+    sort: ['sort', 'name'],
+    limit: -1
+  }
+)
+
 const perPage = 9
 const currentPage = ref(1)
 
-// Filtres inline au-dessus de la liste — modalité et localisation sont
-// appliqués côté API (params `modalities` et `location`).
+// Filtres inline au-dessus de la liste — sous-famille, modalité et
+// localisation sont appliqués côté API (params `subFamily`, `modalities`
+// et `location`).
+const selectedSubFamily = ref('all')
 const selectedModality = ref('all')
 const selectedLocation = ref('all')
 
-const modalityOptions = [
-  { value: 'all', label: 'Modalité' },
-  ...MODALITY_OPTIONS.map((o) => ({ value: o.key, label: o.label }))
-]
+// Options dérivées des facettes de la réponse /courses : chaque dimension
+// est comptée sur le résultat courant en ignorant son propre filtre — une
+// option sans résultat n'est pas proposée (sauf si déjà sélectionnée).
+const catalogFacets = computed(() => catalog.data.value?.facets)
 
-// Options de localisation dérivées de la requête facettes (toute la
-// famille, pas seulement la page courante). La valeur active est conservée
-// dans la liste pour permettre de revenir en arrière.
+const modalityOptions = computed(() => {
+  const counts = catalogFacets.value?.modalities
+  const options = MODALITY_OPTIONS.filter(
+    (o) => !counts || (counts[o.key] ?? 0) > 0 || o.key === selectedModality.value
+  )
+  return [
+    { value: 'all', label: 'Modalité' },
+    ...options.map((o) => ({ value: o.key, label: o.label }))
+  ]
+})
+
 const locationOptions = computed(() => {
-  const set = new Set<string>()
-  for (const item of facets.data.value?.items ?? []) {
-    for (const session of item.sessions ?? []) {
-      const loc = session.location?.region ?? session.location?.city
-      if (loc) set.add(loc)
-    }
-  }
+  const counts = catalogFacets.value?.locations
+  const set = new Set<string>(counts ? Object.keys(counts) : [])
   if (selectedLocation.value !== 'all') set.add(selectedLocation.value)
 
   return [
@@ -421,8 +508,60 @@ const locationOptions = computed(() => {
   ]
 })
 
+const subFamilyOptions = computed(() => {
+  const counts = catalogFacets.value?.subFamilies
+  const visible = (sousFamilles.value ?? []).filter(
+    (s) => !counts || (counts[s.slug] ?? 0) > 0 || s.slug === selectedSubFamily.value
+  )
+  return [
+    { value: 'all', label: 'Sous-famille' },
+    ...visible.map((s) => ({ value: s.slug, label: s.name }))
+  ]
+})
+
+const subFamilyFilterLabel = computed(
+  () =>
+    subFamilyOptions.value.find((o) => o.value === selectedSubFamily.value)?.label ?? 'Sous-famille'
+)
+
+// Nombre de formations par sous-famille, calculé sur la requête facettes
+// (toute la famille, pas seulement la page courante).
+const subFamilyCounts = computed(() => {
+  const counts = new Map<string, number>()
+  for (const item of facets.data.value?.items ?? []) {
+    const slug = item.subFamilySlug
+    if (!slug) continue
+    counts.set(slug, (counts.get(slug) ?? 0) + 1)
+  }
+  return counts
+})
+
+// Titre éditorial de la section (« Parcourir par type d'engin » pour CACES
+// par ex.) — repli générique si le champ n'est pas renseigné.
+const subnavTitle = computed(() => familleData.value?.subnav_title ?? 'Parcourir par sous-famille')
+
+const subFamilyCards = computed(() =>
+  (sousFamilles.value ?? []).map((s) => {
+    const count = subFamilyCounts.value.get(s.slug) ?? 0
+    const countLabel = `${count} formation${count > 1 ? 's' : ''}`
+    return {
+      slug: s.slug,
+      name: s.name,
+      caption: s.caption ? `${s.caption} — ${countLabel}` : countLabel
+    }
+  })
+)
+
+function selectSubFamily(slug: string) {
+  selectedSubFamily.value = slug
+  currentPage.value = 1
+  if (import.meta.client) {
+    document.getElementById('liste-formations')?.scrollIntoView({ behavior: 'smooth' })
+  }
+}
+
 const modalityFilterLabel = computed(
-  () => modalityOptions.find((o) => o.value === selectedModality.value)?.label ?? 'Modalité'
+  () => modalityOptions.value.find((o) => o.value === selectedModality.value)?.label ?? 'Modalité'
 )
 const locationFilterLabel = computed(
   () =>
@@ -431,6 +570,7 @@ const locationFilterLabel = computed(
 
 const catalogQuery = computed<CatalogQuery>(() => ({
   family: famille,
+  subFamily: selectedSubFamily.value !== 'all' ? selectedSubFamily.value : undefined,
   page: currentPage.value,
   limit: perPage,
   sort: 'updatedAt',
@@ -451,15 +591,11 @@ const formations = computed<FormationItem[]>(
   () => catalog.data.value?.items.map((course) => mapCourse(course, familyName.value)) ?? []
 )
 const resultCount = computed(() => catalog.data.value?.total ?? 0)
+const familyTotal = computed(() => facets.data.value?.total ?? 0)
 
-// Visuel éditorial de la famille — champ `image` (fichier Directus)
-// résolu via le proxy /directus/assets de l'API. Repli : placeholder avec le nom.
-const config = useRuntimeConfig()
-const heroImage = computed(() =>
-  familleData.value?.image
-    ? `${config.public.apiBase}/directus/assets/${familleData.value.image}`
-    : null
-)
+// Visuel éditorial de la famille — champ `image` (fichier Directus).
+// Repli : placeholder avec le nom.
+const heroImage = computed(() => directusAssetUrl(familleData.value?.image))
 
 // Tags du hero : modalités présentes dans la famille + badge sessions
 // (« ce mois-ci » / « programmées ») dérivé des sessions API — calculés
@@ -489,7 +625,11 @@ function resetPage() {
   // Le watch de catalogQuery relance déjà la requête quand la page ou les
   // filtres changent : n'appeler refresh() que si rien n'a changé.
   const queryWillChange =
-    currentPage.value !== 1 || selectedModality.value !== 'all' || selectedLocation.value !== 'all'
+    currentPage.value !== 1 ||
+    selectedSubFamily.value !== 'all' ||
+    selectedModality.value !== 'all' ||
+    selectedLocation.value !== 'all'
+  selectedSubFamily.value = 'all'
   selectedModality.value = 'all'
   selectedLocation.value = 'all'
   currentPage.value = 1

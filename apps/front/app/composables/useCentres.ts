@@ -1,9 +1,60 @@
 import type { CentreListItem } from '@learnup/types'
-import { toValue, type MaybeRefOrGetter } from 'vue'
+import { computed, toValue, type MaybeRefOrGetter } from 'vue'
+import { upcomingSessions, useCatalog } from '~/composables/useCatalog'
 
 export interface CentresQuery {
   department?: string
   search?: string
+}
+
+export interface AvailabilityStatus {
+  type: 'success' | 'warning' | 'neutral'
+  label: string
+}
+
+const availabilityDateFmt = new Intl.DateTimeFormat('fr-FR', {
+  day: '2-digit',
+  month: '2-digit',
+  timeZone: 'UTC'
+})
+
+/**
+ * Sémantique unique des badges de disponibilité : ≥2 sessions à venir →
+ * compteur vert, 1 → date en warning, 0 → « Sur demande » neutre.
+ * `dates` = startDate ISO des sessions à venir concernées.
+ */
+export function availabilityStatus(dates: string[]): AvailabilityStatus {
+  const sorted = [...dates].sort((a, b) => a.localeCompare(b))
+  if (sorted.length >= 2) {
+    return { type: 'success', label: `${sorted.length} sessions à venir` }
+  }
+  if (sorted.length === 1) {
+    const date = new Date(`${sorted[0]}T00:00:00Z`)
+    return {
+      type: 'warning',
+      label: `Prochaine session le ${availabilityDateFmt.format(date)}`
+    }
+  }
+  return { type: 'neutral', label: 'Sur demande' }
+}
+
+/**
+ * Sessions à venir du catalogue agrégées par slug de centre — Map vide en
+ * cas d'échec de l'API catalogue (badges « Sur demande » en dégradé).
+ */
+export async function useCentreSessionDates() {
+  const catalog = await useCatalog({ limit: 200 }).catch(() => null)
+  return computed(() => {
+    const grouped = new Map<string, string[]>()
+    for (const course of catalog?.data.value?.items ?? []) {
+      for (const session of upcomingSessions(course)) {
+        const slug = session.location?.centreSlug
+        if (!slug || !session.startDate) continue
+        grouped.set(slug, [...(grouped.get(slug) ?? []), session.startDate])
+      }
+    }
+    return grouped
+  })
 }
 
 /**
@@ -38,7 +89,8 @@ export function useCentres(query: MaybeRefOrGetter<CentresQuery>) {
     async () => {
       try {
         return await $fetch<CentreListItem[]>(`${apiBase}/centres`, {
-          query: buildCentresParams(toValue(query))
+          query: buildCentresParams(toValue(query)),
+          headers: internalSsrHeaders(config)
         })
       } catch (err) {
         if (import.meta.server) {
@@ -49,11 +101,11 @@ export function useCentres(query: MaybeRefOrGetter<CentresQuery>) {
     },
     {
       watch: [() => toValue(query)],
-      // getCachedData est consulté à chaque execute() — ne servir le
-      // payload qu'à l'initialisation, sinon les refetches watch
-      // retournent les données périmées (cf. useCatalog).
+      // Le payload SSR n'est servi que pendant l'hydratation : au-delà,
+      // chaque mount/refetch repart sur des données fraîches — un résultat
+      // vide transitoire ne doit pas rester figé toute la session.
       getCachedData: (key, nuxtApp, ctx) =>
-        ctx.cause === 'initial'
+        ctx.cause === 'initial' && nuxtApp.isHydrating
           ? ((nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as
               CentreListItem[] | undefined)
           : undefined
@@ -73,7 +125,10 @@ export function useCentreDepartments() {
     'centres-departments',
     async () => {
       try {
-        return await $fetch<string[]>(`${apiBase}/centres/departments`)
+        const headers = internalSsrHeaders(config)
+        return await (headers
+          ? $fetch<string[]>(`${apiBase}/centres/departments`, { headers })
+          : $fetch<string[]>(`${apiBase}/centres/departments`))
       } catch (err) {
         if (import.meta.server) {
           logServerError('[useCentreDepartments] departments fetch failed:', err)
@@ -83,7 +138,7 @@ export function useCentreDepartments() {
     },
     {
       getCachedData: (key, nuxtApp, ctx) =>
-        ctx.cause === 'initial'
+        ctx.cause === 'initial' && nuxtApp.isHydrating
           ? ((nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as string[] | undefined)
           : undefined
     }

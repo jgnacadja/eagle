@@ -6,6 +6,12 @@ const stubs = {
   NuxtLink: { template: '<a><slot /></a>' },
   IconMapPin: { template: '<svg />' },
   IconClose: { template: '<svg />' },
+  LocationSuggest: {
+    props: ['modelValue', 'inputId'],
+    emits: ['update:modelValue'],
+    template:
+      '<input type="text" :id="inputId" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />'
+  },
   Button: { template: '<button type="button"><slot /></button>' },
   Label: { template: '<label><slot /></label>' },
   Checkbox: {
@@ -104,11 +110,10 @@ describe('CatalogueFilters', () => {
     expect(wrapper.emitted('update:location')?.[0]).toEqual(['Île-de-France'])
   })
 
-  it('clears the location when the clear button is clicked', async () => {
+  it('clears the location when the input is emptied', async () => {
     const wrapper = mountFilters({ location: 'Île-de-France' })
 
-    const clearButton = wrapper.find('[aria-label="Effacer la localisation"]')
-    await clearButton.trigger('click')
+    await wrapper.find('input[type="text"]').setValue('')
 
     expect(wrapper.emitted('update:location')?.[0]).toEqual([''])
   })

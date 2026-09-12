@@ -9,7 +9,7 @@
       :to="to"
       class="mt-md inline-block text-small font-bold text-primary transition-colors hover:text-accent-text"
     >
-      {{ cta }}
+      {{ cta }} <span class="link-arrow">→</span>
     </NuxtLink>
   </article>
 </template>

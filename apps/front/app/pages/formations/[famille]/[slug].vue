@@ -25,7 +25,7 @@
 
               <ul class="mt-md flex flex-wrap gap-sm">
                 <Badge v-if="durationTag" as="li" variant="chip">{{ durationTag }}</Badge>
-                <Badge v-if="course.cpf" as="li" variant="chip">Éligible CPF</Badge>
+                <Badge v-if="modalitiesTag" as="li" variant="chip">{{ modalitiesTag }}</Badge>
                 <Badge v-if="certificationTag" as="li" variant="chip">{{ certificationTag }}</Badge>
                 <Badge v-if="sessionBadge" as="li" variant="success">
                   <span class="h-sm w-sm rounded-full bg-current" aria-hidden="true" />
@@ -39,10 +39,12 @@
                   as-child
                   class="h-control rounded-full bg-accent px-md py-sm text-button font-semibold text-ink transition hover:bg-accent-text"
                 >
-                  <NuxtLink :to="demandeTo">Demander cette formation</NuxtLink>
+                  <NuxtLink :to="demandeTo">{{
+                    hasSessions ? 'Demander cette formation' : 'Demander une session'
+                  }}</NuxtLink>
                 </Button>
                 <Button
-                  v-if="course.generatedProgramUrl"
+                  v-if="hasSessions"
                   as-child
                   variant="outline"
                   class="h-control rounded-full border-outline bg-paper px-md py-sm text-button font-semibold text-ink transition hover:border-primary hover:bg-paper"
@@ -50,12 +52,16 @@
                   <NuxtLink href="#sessionsList"> Voir les sessions </NuxtLink>
                 </Button>
                 <Button
-                  v-if="course.imageUrl"
+                  v-if="course.generatedProgramUrl"
                   as-child
                   variant="link"
                   class="h-auto gap-sm p-0 text-small font-medium text-ink-muted transition-colors hover:text-accent-text"
                 >
-                  <NuxtLink :to="course.imageUrl" target="_blank" rel="noopener noreferrer">
+                  <NuxtLink
+                    :to="course.generatedProgramUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <IconDownload :size="16" class="inline" />
                     Programme (PDF)
                   </NuxtLink>
@@ -64,15 +70,18 @@
             </div>
 
             <figure
-              class="flex aspect-video items-center justify-center rounded-md border border-dashed border-outline bg-surface-alt text-center text-small text-ink-muted lg:col-span-2 lg:aspect-4/3"
+              class="relative aspect-video overflow-hidden rounded-md bg-surface-alt shadow-lg lg:col-span-2 lg:aspect-4/3"
             >
               <img
-                v-if="course.imageUrl"
-                :src="course.imageUrl"
+                v-if="imageSrc"
+                :src="imageSrc"
                 :alt="course.title"
-                class="h-full w-full rounded-md object-cover"
+                class="h-full w-full object-cover"
               />
-              <figcaption v-else>
+              <figcaption
+                v-else
+                class="flex h-full items-center justify-center text-center text-small text-ink-muted"
+              >
                 {{ course.title }}
               </figcaption>
             </figure>
@@ -147,59 +156,170 @@
                 <p v-if="durationLabel" class="text-small text-ink-subtle">{{ durationLabel }}</p>
               </div>
 
-              <div
-                class="mt-md divide-y divide-rule overflow-hidden rounded-md border border-rule bg-paper"
-              >
-                <div
+              <Accordion type="single" collapsible class="mt-md space-y-sm">
+                <AccordionItem
                   v-for="(module, index) in programme"
                   :key="index"
-                  class="flex items-center gap-md p-lg"
+                  :value="`module-${index}`"
+                  :disabled="!module.content && !module.goals.length"
+                  class="rounded-md border bg-paper px-lg"
                 >
-                  <span
-                    class="flex h-xl w-xl shrink-0 items-center justify-center rounded-full bg-primary-dark text-small font-semibold text-ink-inverse"
-                    aria-hidden="true"
-                  >
-                    {{ index + 1 }}
-                  </span>
-                  <span class="min-w-0 flex-1">
-                    <span class="block font-semibold text-ink">{{ module.title }}</span>
+                  <AccordionTrigger class="gap-md py-lg text-left">
                     <span
-                      v-if="module.description"
-                      class="block text-small text-ink-muted"
-                      v-html="sanitizeHtml(module.description)"
-                    />
-                  </span>
-                  <span v-if="module.duration" class="shrink-0 text-small text-ink-subtle">
-                    {{ module.duration }}
-                  </span>
-                </div>
+                      class="flex h-xl w-xl shrink-0 items-center justify-center rounded-full text-small font-semibold text-ink-inverse"
+                      :class="module.evaluation ? 'bg-success' : 'bg-primary-dark'"
+                      aria-hidden="true"
+                    >
+                      <IconCheck v-if="module.evaluation" :size="16" />
+                      <template v-else>{{ index + 1 }}</template>
+                    </span>
+                    <span class="min-w-0 flex-1">
+                      <span class="block font-semibold text-ink">{{ module.title }}</span>
+                      <span v-if="module.subtitle" class="block text-small text-ink-muted">
+                        {{ module.subtitle }}
+                      </span>
+                    </span>
+                    <span v-if="module.duration" class="shrink-0 text-small text-ink-subtle">
+                      {{ module.duration
+                      }}<template v-if="module.type"> · {{ module.type }}</template>
+                    </span>
+                    <template #icon>
+                      <IconChevronDown
+                        v-if="module.content || module.goals.length"
+                        :size="16"
+                        class="shrink-0 text-ink-muted transition-transform duration-200"
+                      />
+                    </template>
+                  </AccordionTrigger>
+                  <AccordionContent v-if="module.content || module.goals.length">
+                    <div class="flex gap-md">
+                      <span class="w-xl shrink-0" aria-hidden="true" />
+                      <div class="space-y-sm text-small text-ink-muted">
+                        <div
+                          v-if="module.content"
+                          class="programme-content"
+                          v-html="sanitizeHtml(module.content)"
+                        />
+                        <ul v-if="module.goals.length" class="list-disc space-y-xs pl-md">
+                          <li v-for="goal in module.goals" :key="goal">{{ goal }}</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </section>
+
+            <!-- Modalités pédagogiques & évaluation -->
+            <section
+              v-if="pedagogyItems.length || evaluationItems.length"
+              aria-label="Modalités pédagogiques et évaluation"
+            >
+              <div class="grid gap-md sm:grid-cols-2">
+                <Card v-if="pedagogyItems.length">
+                  <CardHeader class="p-lg pb-0">
+                    <h3 class="font-sans text-h4 font-semibold text-ink">Modalités pédagogiques</h3>
+                  </CardHeader>
+                  <CardContent class="space-y-md p-lg pt-md">
+                    <div
+                      v-for="item in pedagogyItems"
+                      :key="item.title"
+                      class="flex items-center gap-sm"
+                    >
+                      <component
+                        :is="pedagogyIcon(item.title)"
+                        :size="20"
+                        class="shrink-0 text-primary"
+                        aria-hidden="true"
+                      />
+                      <p class="text-small text-ink-body">
+                        <span class="font-medium text-ink">{{ item.title }}</span>
+                        {{ item.description }}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card v-if="evaluationItems.length">
+                  <CardHeader class="p-lg pb-0">
+                    <h3 class="font-sans text-h4 font-semibold text-ink">Évaluation</h3>
+                  </CardHeader>
+                  <CardContent class="p-lg pt-md">
+                    <ol class="space-y-sm">
+                      <li v-for="(item, index) in evaluationItems" :key="index" class="flex gap-sm">
+                        <span
+                          class="flex h-lg w-lg shrink-0 items-center justify-center rounded-full text-meta font-semibold text-ink-inverse"
+                          :class="
+                            index === evaluationItems.length - 1 ? 'bg-success' : 'bg-primary-dark'
+                          "
+                          aria-hidden="true"
+                        >
+                          {{ index + 1 }}
+                        </span>
+                        <span class="text-small text-ink-body">{{ item }}</span>
+                      </li>
+                    </ol>
+                  </CardContent>
+                </Card>
               </div>
             </section>
 
             <!-- Prochaines sessions -->
-            <section v-if="sessionsList.length" id="sessionsList" aria-labelledby="sessions-title">
+            <section id="sessionsList" aria-labelledby="sessions-title">
               <div class="flex flex-wrap items-baseline justify-between gap-md">
                 <h2 id="sessions-title" class="font-display text-h2 font-extrabold text-ink">
                   Prochaines sessions
                 </h2>
-                <p class="text-small text-ink-subtle">Disponibilités actualisées en continu.</p>
+                <p class="text-small text-ink-subtle">
+                  Sessions inter-entreprises publiées — disponibilités actualisées en continu.
+                </p>
               </div>
-              <ul class="mt-md space-y-md">
+              <ul v-if="sessionsList.length" class="mt-md space-y-md">
                 <li v-for="session in sessionsList" :key="session.key">
                   <SessionCard
                     :day="session.day"
                     :month="session.month"
                     :title="session.title"
                     :meta="session.meta"
+                    :price="session.price"
+                    price-note="HT / participant"
                     :places="session.places"
                     :type="session.type"
                     :to="session.to"
+                    :cta-label="session.ctaLabel"
                   />
                 </li>
               </ul>
-              <div class="mt-1">
+              <Card v-else class="mt-md">
+                <CardContent class="flex flex-col items-center gap-lg p-2xl text-center">
+                  <IconCalendar :size="32" class="text-ink-muted" aria-hidden="true" />
+                  <div>
+                    <p class="font-semibold text-ink">Aucune session programmée pour le moment.</p>
+                    <p class="mt-sm max-w-prose text-small text-ink-muted">
+                      Cette formation reste organisable sur demande, en inter comme en intra. Le
+                      calendrier est mis à jour dès qu'une session est publiée.
+                    </p>
+                  </div>
+                  <div class="flex flex-wrap items-center justify-center gap-md">
+                    <Button
+                      as-child
+                      class="h-control rounded-full bg-primary-dark px-md py-sm text-button font-semibold text-ink-inverse transition hover:bg-primary"
+                    >
+                      <NuxtLink :to="demandeTo">Demander une session</NuxtLink>
+                    </Button>
+                    <Button
+                      as-child
+                      variant="outline"
+                      class="h-control rounded-full border-outline bg-paper px-md py-sm text-button font-semibold text-ink transition hover:border-primary hover:bg-paper"
+                    >
+                      <NuxtLink :to="demandeTo">Être informé des prochaines dates</NuxtLink>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              <div v-if="sessionsList.length" class="mt-1">
                 <NuxtLink href="#" class="text-ink-muted font-bold text-h4"
-                  >Voir toutes les sessions de cette formation →</NuxtLink
+                  >Voir toutes les sessions de cette formation
+                  <span class="link-arrow">→</span></NuxtLink
                 >
               </div>
             </section>
@@ -207,7 +327,7 @@
             <!-- Où suivre cette formation -->
             <section v-if="lieux.length" aria-labelledby="lieux-title">
               <h2 id="lieux-title" class="font-display text-h2 font-extrabold text-ink">
-                Où suivre cette formation
+                Où suivre cette formation ?
               </h2>
               <div class="mt-md space-y-md text-body text-ink-body">
                 <p>
@@ -227,54 +347,6 @@
                   />
                 </li>
               </ul>
-            </section>
-
-            <!-- Bandeau CTA -->
-            <CtaBanner
-              title="Vous ne savez pas quelle formation choisir ?"
-              text="Décrivez votre besoin : LEARN UP identifie la formation, la catégorie et le format adaptés à votre situation."
-            >
-              <Button
-                as-child
-                class="h-control w-full rounded-md bg-paper px-md py-sm text-button font-semibold text-ink transition hover:bg-surface sm:w-auto"
-              >
-                <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
-              </Button>
-              <Button
-                as-child
-                variant="outline"
-                class="h-control w-full rounded-md border-outline-inverse bg-transparent px-md py-sm text-button font-semibold text-ink-inverse transition hover:bg-transparent hover:text-ink-inverse sm:w-auto"
-              >
-                <NuxtLink to="#">Parler à un conseiller</NuxtLink>
-              </Button>
-            </CtaBanner>
-
-            <!-- Formations similaires -->
-            <section v-if="similaires.length" aria-labelledby="similaires-title">
-              <div class="flex flex-wrap items-baseline justify-between gap-md">
-                <h2 id="similaires-title" class="font-display text-h2 font-extrabold text-ink">
-                  Formations similaires
-                </h2>
-                <Button
-                  as-child
-                  variant="link"
-                  class="h-auto p-0 text-small font-bold text-primary transition-colors hover:text-accent-text"
-                >
-                  <NuxtLink :to="`/formations/${famille}`"
-                    >Voir la famille {{ familyName }} →</NuxtLink
-                  >
-                </Button>
-              </div>
-              <div class="mt-md grid gap-md sm:grid-cols-3">
-                <CenterFormationCard
-                  v-for="similaire in similaires"
-                  :key="similaire.slug"
-                  :family="similaire.family"
-                  :title="similaire.title"
-                  :meta="similaire.meta"
-                  :to="similaire.to ?? undefined"
-                />
-              </div>
             </section>
           </div>
 
@@ -305,14 +377,14 @@
                   <div class="mt-lg space-y-sm">
                     <Button
                       as-child
-                      class="h-control w-full rounded-md bg-primary-dark px-md py-sm text-button font-semibold text-ink-inverse transition hover:bg-primary"
+                      class="h-control w-full rounded-full bg-primary-dark px-md py-sm text-button font-semibold text-ink-inverse transition hover:bg-primary"
                     >
                       <NuxtLink :to="demandeTo">Demander cette formation</NuxtLink>
                     </Button>
                     <Button
                       as-child
                       variant="outline"
-                      class="h-control w-full rounded-md border-outline bg-paper px-md py-sm text-button font-semibold text-ink transition hover:border-primary hover:bg-paper"
+                      class="h-control w-full rounded-full border-outline bg-paper px-md py-sm text-button font-semibold text-ink transition hover:border-primary hover:bg-paper"
                     >
                       <NuxtLink to="#">Parler à un conseiller</NuxtLink>
                     </Button>
@@ -334,53 +406,19 @@
                   </h2>
                 </CardHeader>
                 <CardContent class="p-lg pt-md">
-                  <div class="flex gap-sm">
+                  <div class="flex gap-md">
                     <span
-                      class="flex h-control-sm w-control-sm shrink-0 items-center justify-center rounded-full bg-accent-soft"
+                      class="flex h-control w-control shrink-0 items-center justify-center rounded-md bg-surface-alt"
                       aria-hidden="true"
                     >
-                      <IconAward :size="20" class="text-accent-text" />
+                      <IconAward :size="22" class="text-primary" />
                     </span>
                     <div>
-                      <p class="text-small font-medium text-ink">{{ course.certification }}</p>
-                      <p v-if="course.certifierName" class="mt-xs text-small text-ink-muted">
-                        {{ course.certifierName }}
+                      <p class="text-body font-semibold text-ink">{{ course.certification }}</p>
+                      <p v-if="certificationDetail" class="mt-xs text-small text-ink-muted">
+                        {{ certificationDetail }}
                       </p>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </section>
-
-            <!-- Modalités & évaluation -->
-            <section
-              v-if="modaliteLabels.length || course.evaluation?.length"
-              aria-labelledby="modalites-title"
-            >
-              <Card>
-                <CardHeader class="p-lg pb-0">
-                  <h2 id="modalites-title" class="font-sans text-h4 font-semibold text-ink">
-                    Modalités & évaluation
-                  </h2>
-                </CardHeader>
-                <CardContent class="space-y-md p-lg pt-md">
-                  <div v-if="modaliteLabels.length">
-                    <p class="text-meta font-semibold uppercase tracking-wide text-ink-muted">
-                      Modalités
-                    </p>
-                    <ul class="mt-sm flex flex-wrap gap-sm">
-                      <Badge v-for="m in modaliteLabels" :key="m" as="li" variant="chip">
-                        {{ m }}
-                      </Badge>
-                    </ul>
-                  </div>
-                  <div v-if="course.evaluation?.length">
-                    <p class="text-meta font-semibold uppercase tracking-wide text-ink-muted">
-                      Évaluation
-                    </p>
-                    <ul class="mt-sm space-y-xs text-small text-ink-body">
-                      <li v-for="item in course.evaluation" :key="item">· {{ item }}</li>
-                    </ul>
                   </div>
                 </CardContent>
               </Card>
@@ -397,7 +435,7 @@
               </p>
               <Button
                 as-child
-                class="mt-md h-control w-full rounded-md bg-paper px-md py-sm text-button font-semibold text-ink transition hover:bg-surface"
+                class="mt-md h-control w-full rounded-full bg-paper px-md py-sm text-button font-semibold text-ink transition hover:bg-surface"
               >
                 <NuxtLink :to="demandeTo">Organiser cette formation dans mon entreprise</NuxtLink>
               </Button>
@@ -416,6 +454,55 @@
               </NuxtLink>
             </Button>
           </aside>
+        </div>
+
+        <!-- Bandeau CTA + formations similaires : pleine largeur -->
+        <div class="mt-2xl space-y-2xl">
+          <CtaBanner
+            title="Vous ne savez pas quelle formation choisir ?"
+            text="Décrivez votre besoin : LEARN UP identifie la formation, la catégorie et le format adaptés à votre situation."
+          >
+            <Button
+              as-child
+              class="h-control w-full rounded-md bg-paper px-md py-sm text-button font-semibold text-ink transition hover:bg-surface sm:w-auto"
+            >
+              <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
+            </Button>
+            <Button
+              as-child
+              variant="outline"
+              class="h-control w-full rounded-md border-outline-inverse bg-transparent px-md py-sm text-button font-semibold text-ink-inverse transition hover:bg-transparent hover:text-ink-inverse sm:w-auto"
+            >
+              <NuxtLink to="#">Parler à un conseiller</NuxtLink>
+            </Button>
+          </CtaBanner>
+
+          <section v-if="similaires.length" aria-labelledby="similaires-title">
+            <div class="flex flex-wrap items-baseline justify-between gap-md">
+              <h2 id="similaires-title" class="font-display text-h2 font-extrabold text-ink">
+                Formations similaires
+              </h2>
+              <Button
+                as-child
+                variant="link"
+                class="h-auto p-0 text-small font-bold text-primary transition-colors hover:text-accent-text"
+              >
+                <NuxtLink :to="`/formations/${famille}`"
+                  >Voir la famille {{ familyName }} <span class="link-arrow">→</span></NuxtLink
+                >
+              </Button>
+            </div>
+            <div class="mt-md grid gap-md sm:grid-cols-3">
+              <CenterFormationCard
+                v-for="similaire in similaires"
+                :key="similaire.slug"
+                :sub-family="similaire.subFamily"
+                :title="similaire.title"
+                :meta="similaire.meta"
+                :to="similaire.to ?? undefined"
+              />
+            </div>
+          </section>
         </div>
       </div>
 
@@ -479,6 +566,9 @@ import { useElementSize } from '@vueuse/core'
 import { readItems } from '@directus/sdk'
 import type { Course, CourseSession, FamilleFormation } from '@learnup/types'
 import { useDirectusClient } from '~/composables/useDirectus'
+import IconBook from '~/components/icons/IconBook.vue'
+import IconBuilding from '~/components/icons/IconBuilding.vue'
+import IconFactory from '~/components/icons/IconFactory.vue'
 import {
   buildSessionBadge,
   mapCourse,
@@ -486,14 +576,20 @@ import {
   useCatalog,
   type FormationItem
 } from '~/composables/useCatalog'
+import { directusAssetUrl } from '~/utils/directusAsset'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
+import { availabilityStatus } from '~/composables/useCentres'
 
 interface ProgrammeModule {
   title: string
-  description?: string
+  subtitle: string
+  content?: string
   duration?: string
+  type?: string
+  evaluation?: boolean
+  goals: string[]
 }
 
 const route = useRoute()
@@ -509,9 +605,11 @@ const {
   refresh
 } = await useAsyncData<Course | null>(`course-${famille}-${slug}`, async () => {
   try {
-    const result = await $fetch<Course>(
-      `${import.meta.server ? config.apiBase : config.public.apiBase}/courses/${famille}/${slug}`
-    )
+    const apiBase = import.meta.server ? config.apiBase : config.public.apiBase
+    const headers = internalSsrHeaders(config)
+    const result = headers
+      ? await $fetch<Course>(`${apiBase}/courses/${famille}/${slug}`, { headers })
+      : await $fetch<Course>(`${apiBase}/courses/${famille}/${slug}`)
     return result
   } catch (error: unknown) {
     if (
@@ -671,11 +769,29 @@ const sessionBadge = computed(() => (course.value ? buildSessionBadge(course.val
 
 const certificationTag = computed(() => {
   if (!course.value?.certification) return ''
+  if (course.value.validity) {
+    return `${course.value.certification} — validité ${course.value.validity}`
+  }
   return [course.value.certification, course.value.certifierName]
     .filter((v): v is string => typeof v === 'string' && v.length > 0)
     .join(' · ')
 })
 
+// Détail de la carte certification : « Délivré par X. Validité Y. » —
+// les deux champs restent optionnels et pilotés par Directus/Digiforma.
+const certificationDetail = computed(() => {
+  const parts: string[] = []
+  if (course.value?.certifierName) {
+    parts.push(`Délivré par ${course.value.certifierName}`)
+  }
+  if (course.value?.validity) {
+    parts.push(`Validité ${course.value.validity}`)
+  }
+  return parts.length > 0 ? `${parts.join('. ')}.` : ''
+})
+
+// Durée totale de la formation (durée Digiforma, cumul théorie+pratique) :
+// « 3 jours — 21 h » = 3 jours calendaires pour 21 h de contenu.
 const durationLabel = computed(() => {
   if (!course.value) return ''
   const parts: string[] = []
@@ -693,20 +809,26 @@ const priceLabel = computed(() => {
 const essentiel = computed(() => {
   if (!course.value) return []
   const items: { label: string; value: string }[] = []
-  if (course.value.durationDays || course.value.durationHours) {
+  if (course.value.durationHours || course.value.durationDays) {
     const parts: string[] = []
-    if (course.value.durationDays) parts.push(`${course.value.durationDays} jours`)
     if (course.value.durationHours) parts.push(`${course.value.durationHours} h`)
+    if (course.value.durationDays) parts.push(`${course.value.durationDays} jours`)
     items.push({ label: 'Durée', value: parts.join(' — ') })
   }
-  if (course.value.cpf) {
-    items.push({ label: 'CPF', value: course.value.cpfCode ?? 'Éligible' })
+  if (modalitiesTag.value) {
+    items.push({ label: 'Modalité', value: modalitiesTag.value })
   }
   if (course.value.certification) {
     items.push({ label: 'Certification', value: course.value.certification })
   }
+  if (course.value.validity) {
+    items.push({ label: 'Validité', value: course.value.validity })
+  }
   if (course.value.price) {
-    items.push({ label: 'Tarif', value: formatPrice(course.value.price) })
+    items.push({ label: 'Tarif inter', value: `À partir de ${formatPrice(course.value.price)} HT` })
+  }
+  if (course.value.cpf) {
+    items.push({ label: 'Financement', value: course.value.cpfCode ?? 'Éligible CPF' })
   }
   return items
 })
@@ -731,34 +853,93 @@ const objectives = computed<string[]>(() => {
   return list
 })
 
-const programme = computed<ProgrammeModule[]>(() => {
-  const list: ProgrammeModule[] = []
-  if (!course.value?.blocks || !Array.isArray(course.value.blocks)) return list
+const MODULE_TYPE_LABELS: Record<string, string> = {
+  theorie: 'théorie',
+  pratique: 'pratique',
+  evaluation: 'évaluation'
+}
 
-  for (const block of course.value.blocks) {
-    if (block && typeof block === 'object') {
-      const typed = block as {
-        name?: string
-        description?: string
-        durationInHours?: number
-        durationInDays?: number
-      }
-      if (typed.name) {
-        const durationParts: string[] = []
-        if (typed.durationInHours) durationParts.push(`${typed.durationInHours} h`)
-        else if (typed.durationInDays) durationParts.push(`${typed.durationInDays} jours`)
+interface ProgrammeBlock {
+  name?: string
+  subtitle?: string
+  description?: string
+  durationInHours?: number
+  durationInDays?: number
+  type?: string
+  goals?: { text?: string }[]
+}
 
-        list.push({
-          title: typed.name,
-          description: typed.description,
-          duration: durationParts.join(' · ')
-        })
-      }
-    }
+// La ligne sous le titre est un sous-titre (texte court) ; la description
+// peut être du HTML riche (Directus) affiché dans le contenu déplié.
+function stripHtml(html?: string): string {
+  return (html ?? '')
+    .replace(/<[^<>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function toProgrammeModule(block: ProgrammeBlock): ProgrammeModule | null {
+  if (typeof block.name !== 'string' || !block.name) return null
+
+  const durationParts: string[] = []
+  if (block.durationInHours) durationParts.push(`${block.durationInHours} h`)
+  else if (block.durationInDays) durationParts.push(`${block.durationInDays} jours`)
+
+  const typeKey = typeof block.type === 'string' ? block.type.toLowerCase() : ''
+  const subtitle = block.subtitle?.trim() || stripHtml(block.description)
+  const descriptionText = stripHtml(block.description)
+  // Digiforma duplique parfois la description dans les goals — on ne
+  // répète ni le sous-titre ni la description dans le contenu déplié.
+  const goals = (block.goals ?? [])
+    .map((goal) => goal.text?.trim())
+    .filter(
+      (text): text is string =>
+        typeof text === 'string' && text.length > 0 && text !== subtitle && text !== descriptionText
+    )
+
+  // Sans sous-titre explicite, la description sert déjà de ligne résumée —
+  // on ne la répète pas dans le contenu déplié.
+  const content = block.subtitle ? block.description : undefined
+
+  return {
+    title: block.name,
+    subtitle,
+    content,
+    duration: durationParts.join(' · '),
+    type: MODULE_TYPE_LABELS[typeKey] ?? '',
+    evaluation: typeKey === 'evaluation',
+    goals
   }
+}
 
-  return list
+const programme = computed<ProgrammeModule[]>(() => {
+  if (!course.value?.blocks || !Array.isArray(course.value.blocks)) return []
+
+  return course.value.blocks
+    .filter((block): block is ProgrammeBlock => Boolean(block) && typeof block === 'object')
+    .map(toProgrammeModule)
+    .filter((module): module is ProgrammeModule => module !== null)
 })
+
+const pedagogyItems = computed(() => course.value?.pedagogy ?? [])
+const evaluationItems = computed(() => course.value?.evaluation ?? [])
+
+// Visuel : le fichier éditorial Directus prime sur l'URL synchronisée
+// depuis Digiforma (fallback quand aucun fichier n'a pu être importé).
+const imageSrc = computed(() => {
+  if (!course.value) return null
+  return directusAssetUrl(course.value.image, config.public.apiBase) ?? course.value.imageUrl
+})
+
+// Pictogramme par mot-clé : la donnée éditoriale ne porte pas d'icône.
+function pedagogyIcon(title: string) {
+  const text = title.toLowerCase()
+  if (text.includes('intra') || text.includes('site')) return IconFactory
+  if (text.includes('centre') || text.includes('inter') || text.includes('sentiel')) {
+    return IconBuilding
+  }
+  return IconBook
+}
 
 // Params encodés : famille/slug/id de session peuvent contenir des
 // caractères spéciaux — ne jamais les interpoler bruts dans la query.
@@ -773,44 +954,59 @@ const SESSION_TITLES: Record<string, string> = {
   inter: 'Session inter'
 }
 
+const MONTH_FORMAT = new Intl.DateTimeFormat('fr-FR', { month: 'short', timeZone: 'UTC' })
+
+function sessionDateParts(startDate: string | null): { day: string; month: string } {
+  if (!startDate) return { day: '', month: '' }
+  const date = new Date(`${startDate}T00:00:00Z`)
+  return {
+    day: String(date.getUTCDate()).padStart(2, '0'),
+    month: MONTH_FORMAT.format(date).replace('.', '')
+  }
+}
+
+function sessionTitle(s: CourseSession, modality: string): string {
+  const base =
+    (s.modality && SESSION_TITLES[s.modality]) ||
+    (modality ? `Session ${modality.toLowerCase()}` : 'Session planifiée')
+  const place = s.location?.name ?? s.location?.city ?? ''
+  const department = s.location?.department ? ` (${s.location.department})` : ''
+  return place ? `${base} — ${place}${department}` : base
+}
+
 const sessionsList = computed(() => {
   const raw = (course.value ? upcomingSessions(course.value) : [])
     .slice()
     .sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? ''))
 
   return raw.map((s, index) => {
-    const date = s.startDate ? new Date(`${s.startDate}T00:00:00Z`) : null
-    const day = date ? String(date.getUTCDate()).padStart(2, '0') : ''
-    const month = date
-      ? new Intl.DateTimeFormat('fr-FR', { month: 'short', timeZone: 'UTC' })
-          .format(date)
-          .replace('.', '')
-      : ''
+    const { day, month } = sessionDateParts(s.startDate)
     const modality = s.modality ? (MODALITY_LABELS[s.modality] ?? s.modality) : ''
     const meta = [
       course.value?.durationDays ? `${course.value.durationDays} jours` : '',
-      modality,
-      s.location?.city ?? ''
+      course.value?.durationHours ? `${course.value.durationHours} h` : '',
+      modality
     ]
       .filter(Boolean)
       .join(' · ')
     const places = s.seatsRemaining ?? undefined
-    const type = sessionSeatType(places)
 
     return {
       key: s.id ?? `${s.startDate}-${index}`,
       day,
       month,
-      title:
-        (s.modality && SESSION_TITLES[s.modality]) ||
-        (modality ? `Session ${modality.toLowerCase()}` : 'Session planifiée'),
+      title: sessionTitle(s, modality),
       meta,
+      price: course.value?.price ? formatPrice(course.value.price) : '',
       places,
-      type,
+      type: sessionSeatType(places),
+      ctaLabel: places === 0 ? "Être informé d'une place" : 'Voir la session',
       to: s.id ? `${demandeTo}&session=${encodeURIComponent(s.id)}` : demandeTo
     }
   })
 })
+
+const hasSessions = computed(() => sessionsList.value.length > 0)
 
 interface LieuAggregat {
   key: string
@@ -850,26 +1046,14 @@ const lieux = computed(() => {
 
   const today = new Date()
   today.setUTCHours(0, 0, 0, 0)
-  const dateFmt = new Intl.DateTimeFormat('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    timeZone: 'UTC'
-  })
 
   return [...grouped.values()].map((lieu) => {
     const upcoming = lieu.sessions
       .filter((s) => s.startDate && new Date(`${s.startDate}T00:00:00Z`) >= today)
-      .sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? ''))
+      .map((s) => s.startDate)
+      .filter((d): d is string => Boolean(d))
 
-    let status: { type: 'success' | 'warning' | 'neutral'; label: string }
-    if (upcoming.length >= 2) {
-      status = { type: 'success', label: `${upcoming.length} sessions à venir` }
-    } else if (upcoming.length === 1) {
-      const date = new Date(`${upcoming[0]!.startDate}T00:00:00Z`)
-      status = { type: 'warning', label: `Prochaine session le ${dateFmt.format(date)}` }
-    } else {
-      status = { type: 'neutral', label: 'Sur demande' }
-    }
+    const status = availabilityStatus(upcoming)
 
     const modalities = lieu.modalities.size
       ? [...lieu.modalities]
@@ -889,6 +1073,8 @@ const lieux = computed(() => {
 const modaliteLabels = computed(() =>
   (course.value?.modalities ?? []).map((m) => MODALITY_LABELS[m] ?? m)
 )
+
+const modalitiesTag = computed(() => modaliteLabels.value.join(' · '))
 
 const similarQuery = computed(() => ({
   family: course.value?.familySlug ?? undefined,
@@ -915,3 +1101,23 @@ function formatPrice(value: number): string {
   }).format(value)
 }
 </script>
+
+<style scoped>
+.programme-content :deep(ul) {
+  list-style: disc;
+  padding-left: var(--spacing-md);
+}
+
+.programme-content :deep(ul li + li) {
+  margin-top: var(--spacing-xs);
+}
+
+.programme-content :deep(a) {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.programme-content :deep(p + p) {
+  margin-top: var(--spacing-sm);
+}
+</style>

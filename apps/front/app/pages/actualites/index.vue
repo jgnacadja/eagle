@@ -96,7 +96,7 @@
               <div class="h-px flex-1 bg-accent-text/30" aria-hidden="true" />
             </div>
 
-            <Card class="mt-md overflow-hidden shadow-md lg:flex">
+            <Card v-reveal class="mt-md overflow-hidden shadow-md lg:flex">
               <div
                 class="flex aspect-16/10 items-center justify-center border-b border-dashed border-outline bg-surface-alt text-center text-small text-ink-muted lg:aspect-auto lg:w-2/5 lg:border-b-0 lg:border-r"
               >
@@ -147,6 +147,7 @@
               <li
                 v-for="(article, index) in filteredArticles"
                 :key="article.slug"
+                v-reveal="revealStagger(index % 3)"
                 :class="articleClass(index)"
               >
                 <ArticleCard
@@ -268,6 +269,7 @@ import { readItems } from '@directus/sdk'
 import type { Article } from '@learnup/types'
 import { regions as knownRegions } from '~/data/navigation'
 import { articleAssetUrl, articleReadingTime, formatArticleDate } from '~/utils/article'
+import { revealStagger } from '~/utils/reveal'
 
 const config = useRuntimeConfig()
 

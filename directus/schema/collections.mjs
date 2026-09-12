@@ -62,20 +62,79 @@ export const collections = [
         type: 'string',
         meta: { interface: 'input', width: 'half', required: true }
       },
-      { field: 'address', type: 'text', meta: { interface: 'input-multiline', width: 'full' } },
-      { field: 'city', type: 'string', meta: { interface: 'input', width: 'half' } },
-      { field: 'postal_code', type: 'string', meta: { interface: 'input', width: 'half' } },
-      { field: 'department', type: 'string', meta: { interface: 'input', width: 'half' } },
-      { field: 'region', type: 'string', meta: { interface: 'input', width: 'half' } },
+      {
+        field: 'address',
+        type: 'text',
+        meta: {
+          interface: 'input-multiline',
+          width: 'full',
+          note: 'Seul champ à saisir : ville, CP, département, région et coordonnées sont calculés automatiquement (géocodage BAN).'
+        }
+      },
+      {
+        field: 'city',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          readonly: true,
+          note: 'Calculé depuis l’adresse'
+        }
+      },
+      {
+        field: 'postal_code',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          readonly: true,
+          note: 'Calculé depuis l’adresse'
+        }
+      },
+      {
+        field: 'department',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          readonly: true,
+          note: 'Calculé depuis l’adresse'
+        }
+      },
+      {
+        field: 'region',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          readonly: true,
+          note: 'Calculé depuis l’adresse'
+        }
+      },
       {
         field: 'latitude',
         type: 'float',
-        meta: { interface: 'input', width: 'half', note: 'Latitude (WGS84)' }
+        meta: {
+          interface: 'input',
+          width: 'half',
+          readonly: true,
+          note: 'Calculée depuis l’adresse (WGS84)'
+        }
       },
       {
         field: 'longitude',
         type: 'float',
-        meta: { interface: 'input', width: 'half', note: 'Longitude (WGS84)' }
+        meta: {
+          interface: 'input',
+          width: 'half',
+          readonly: true,
+          note: 'Calculée depuis l’adresse (WGS84)'
+        }
+      },
+      {
+        field: 'geocoded_address',
+        type: 'string',
+        meta: { hidden: true, readonly: true, note: 'Adresse utilisée pour le dernier géocodage' }
       },
       {
         field: 'description',
@@ -127,6 +186,11 @@ export const collections = [
         type: 'string',
         meta: { interface: 'input', width: 'half' }
       },
+      {
+        field: 'qualiopi_certificate',
+        type: 'uuid',
+        meta: { interface: 'file', width: 'half', note: 'Certificat Qualiopi (PDF)' }
+      },
       ...seoFields()
     ]
   },
@@ -154,7 +218,42 @@ export const collections = [
         type: 'uuid',
         meta: { interface: 'file-image', width: 'half', note: 'Visuel du hero de la page famille' }
       },
+      {
+        field: 'subnav_title',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          note: "Titre de la section sous-familles (ex: « Parcourir par type d'engin »)"
+        }
+      },
       ...seoFields()
+    ]
+  },
+  {
+    collection: 'sous_familles_formation',
+    icon: 'account_tree',
+    note: "Sous-familles éditoriales — regroupent les formations au sein d'une famille.",
+    fields: [
+      primaryKey(),
+      statusField(),
+      sortField(),
+      slugField(),
+      {
+        field: 'name',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', required: true }
+      },
+      {
+        field: 'caption',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          note: 'Accroche courte sur la carte (ex: « R489 · R485 »)'
+        }
+      }
+      // famille = relation M2O vers familles_formation (voir relations)
     ]
   },
   {
@@ -276,7 +375,7 @@ export const collections = [
   {
     collection: 'formations',
     icon: 'school',
-    note: 'Miroir Digiforma — les éditeurs affectent la famille.',
+    note: 'Miroir Digiforma — contenu éditable : la sync ne remplit que les champs vides. Seuls sessions/raw/digiforma_id sont réécrits à chaque run.',
     fields: [
       primaryKey(),
       statusField(),
@@ -290,12 +389,16 @@ export const collections = [
       {
         field: 'slug',
         type: 'string',
-        meta: { interface: 'input', width: 'half', readonly: true }
+        meta: {
+          interface: 'input',
+          width: 'half',
+          note: 'Slug URL — rempli par la sync, éditable (jamais écrasé)'
+        }
       },
       {
         field: 'title',
         type: 'string',
-        meta: { interface: 'input', width: 'full', readonly: true }
+        meta: { interface: 'input', width: 'full', note: 'Rempli par la sync, éditable' }
       },
       {
         field: 'description',
@@ -303,44 +406,43 @@ export const collections = [
         meta: {
           interface: 'input-rich-text-html',
           width: 'full',
-          readonly: true,
-          note: 'Description Digiforma'
+          note: 'Description — remplie par la sync, éditable'
         }
       },
       {
         field: 'duration_days',
         type: 'integer',
-        meta: { interface: 'input', width: 'half', readonly: true }
+        meta: { interface: 'input', width: 'half' }
       },
       {
         field: 'duration_hours',
         type: 'integer',
-        meta: { interface: 'input', width: 'half', readonly: true }
+        meta: { interface: 'input', width: 'half' }
       },
       {
         field: 'price',
         type: 'float',
-        meta: { interface: 'input', width: 'half', readonly: true }
+        meta: { interface: 'input', width: 'half' }
       },
       {
         field: 'cpf',
         type: 'boolean',
-        meta: { interface: 'boolean', width: 'half', readonly: true }
+        meta: { interface: 'boolean', width: 'half' }
       },
       {
         field: 'cpf_code',
         type: 'string',
-        meta: { interface: 'input', width: 'half', readonly: true }
+        meta: { interface: 'input', width: 'half' }
       },
       {
         field: 'certification',
         type: 'string',
-        meta: { interface: 'input', width: 'half', readonly: true }
+        meta: { interface: 'input', width: 'half' }
       },
       {
         field: 'certifier_name',
         type: 'string',
-        meta: { interface: 'input', width: 'half', readonly: true }
+        meta: { interface: 'input', width: 'half' }
       },
       {
         field: 'category_name',
@@ -348,24 +450,23 @@ export const collections = [
         meta: {
           interface: 'input',
           width: 'half',
-          readonly: true,
           note: 'Catégorie Digiforma brute'
         }
       },
       {
         field: 'modalities',
         type: 'json',
-        meta: { interface: 'tags', width: 'full', readonly: true }
+        meta: { interface: 'tags', width: 'full' }
       },
       {
         field: 'center_slug',
         type: 'string',
-        meta: { interface: 'input', width: 'half', readonly: true }
+        meta: { interface: 'input', width: 'half' }
       },
       {
         field: 'center_slugs',
         type: 'json',
-        meta: { interface: 'tags', width: 'full', readonly: true }
+        meta: { interface: 'tags', width: 'full' }
       },
       {
         field: 'sessions',
@@ -374,7 +475,7 @@ export const collections = [
           interface: 'input-code',
           width: 'full',
           readonly: true,
-          note: 'Sessions JSON'
+          note: 'Sessions JSON — réécrites par la sync à chaque run'
         }
       },
       {
@@ -383,7 +484,6 @@ export const collections = [
         meta: {
           interface: 'input-multiline',
           width: 'full',
-          readonly: true,
           note: 'Texte localisations pour recherche'
         }
       },
@@ -393,19 +493,56 @@ export const collections = [
         meta: {
           interface: 'input-code',
           width: 'full',
-          readonly: true,
-          note: 'Blocs pédagogiques JSON'
+          note: 'Blocs pédagogiques JSON (programme) — remplis par la sync, éditables'
         }
-      },
-      {
-        field: 'image_url',
-        type: 'string',
-        meta: { interface: 'input', width: 'full', readonly: true }
       },
       {
         field: 'generated_program_url',
         type: 'string',
-        meta: { interface: 'input', width: 'full', readonly: true }
+        meta: { interface: 'input', width: 'full' }
+      },
+      {
+        field: 'pedagogy',
+        type: 'json',
+        meta: {
+          interface: 'list',
+          width: 'full',
+          note: 'Modalités pédagogiques — proposées par la sync depuis Digiforma, éditables',
+          options: {
+            fields: [
+              {
+                field: 'title',
+                type: 'string',
+                meta: { interface: 'input', width: 'full', required: true },
+                schema: {}
+              },
+              {
+                field: 'description',
+                type: 'text',
+                meta: { interface: 'input-multiline', width: 'full' },
+                schema: {}
+              }
+            ]
+          }
+        }
+      },
+      {
+        field: 'evaluation',
+        type: 'json',
+        meta: {
+          interface: 'tags',
+          width: 'full',
+          note: "Modalités d'évaluation — proposées par la sync depuis Digiforma, éditables"
+        }
+      },
+      {
+        field: 'validity',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          note: 'Validité de la certification (ex: « 5 ans · recyclage ») — éditorial'
+        }
       },
       ...seoFields(),
       {
@@ -440,7 +577,10 @@ export const collections = [
           hidden: true
         }
       }
-      // famille = SEUL champ éditable (relation M2O, voir relations)
+      // famille + sous_famille (relations M2O, voir relations).
+      // Tous les champs contenu sont éditables : la sync ne remplit que
+      // les champs vides. Readonly restants : digiforma_id, sessions,
+      // raw, created_at, updated_at.
     ]
   }
 ]
@@ -473,6 +613,12 @@ export const relations = [
     meta: { interface: 'file-image' }
   },
   {
+    collection: 'centres',
+    field: 'qualiopi_certificate',
+    related_collection: 'directus_files',
+    meta: { interface: 'file' }
+  },
+  {
     collection: 'familles_formation',
     field: 'icon',
     related_collection: 'directus_files',
@@ -483,6 +629,15 @@ export const relations = [
     field: 'image',
     related_collection: 'directus_files',
     meta: { interface: 'file-image' }
+  },
+  {
+    collection: 'formations',
+    field: 'image',
+    related_collection: 'directus_files',
+    meta: {
+      interface: 'file-image',
+      note: 'Visuel de la fiche — pré-rempli par la sync (import Digiforma), remplaçable'
+    }
   },
   {
     collection: 'page_blocks',
@@ -509,6 +664,25 @@ export const relations = [
     meta: {
       interface: 'select-dropdown-m2o',
       note: 'Affectation éditoriale — seul champ modifiable'
+    }
+  },
+  {
+    collection: 'formations',
+    field: 'sous_famille',
+    related_collection: 'sous_familles_formation',
+    meta: {
+      interface: 'select-dropdown-m2o',
+      note: 'Affectation éditoriale — proposée par la sync, jamais réécrite'
+    }
+  },
+  {
+    collection: 'sous_familles_formation',
+    field: 'famille',
+    related_collection: 'familles_formation',
+    meta: {
+      interface: 'select-dropdown-m2o',
+      required: true,
+      note: 'Famille parente'
     }
   }
 ]

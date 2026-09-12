@@ -5,6 +5,7 @@ import { SyncService } from './sync.service'
 import { DigiformaClient } from '../digiforma/digiforma.client'
 import { CacheService } from '../common/cache/cache.service'
 import { DirectusCatalogService } from '../directus/directus.catalog.service'
+import { GeocodingService } from '../centres/geocoding.service'
 
 const sampleProgram = {
   id: 'prog-001',
@@ -49,7 +50,11 @@ describe('SyncService', () => {
         { provide: DigiformaClient, useValue: client },
         { provide: CacheService, useValue: cache },
         { provide: DirectusCatalogService, useValue: catalog },
-        { provide: SchedulerRegistry, useValue: scheduler }
+        { provide: SchedulerRegistry, useValue: scheduler },
+        {
+          provide: GeocodingService,
+          useValue: { syncMissing: vi.fn().mockResolvedValue({ geocoded: 0, failed: 0 }) }
+        }
       ]
     }).compile()
 

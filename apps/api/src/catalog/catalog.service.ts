@@ -1,14 +1,19 @@
 import { Injectable, Logger } from '@nestjs/common'
 import type {
+  CatalogFacets,
   Course,
   CourseListItem,
+  CoursePage,
+  CoursePedagogyItem,
   CourseSession,
-  FamilyWithCount,
-  Paginated
+  CourseSessionLocation,
+  FamilyWithCount
 } from '@learnup/types'
 import { CacheService } from '../common/cache/cache.service'
 import {
   DirectusCatalogService,
+  type AssignmentProposal,
+  type DirectusCentre,
   type DirectusFormation,
   type FamilyApplyResult
 } from '../directus/directus.catalog.service'
@@ -101,6 +106,63 @@ function extractTexts(rawPayload: unknown, key: string): string[] | null {
   return texts.length > 0 ? texts : null
 }
 
+function toStringList(value: unknown): string[] | null {
+  if (!Array.isArray(value)) return null
+  const texts = value.filter(
+    (entry): entry is string => typeof entry === 'string' && entry.trim().length > 0
+  )
+  return texts.length > 0 ? texts : null
+}
+
+function toPedagogyItems(value: unknown): CoursePedagogyItem[] | null {
+  if (!Array.isArray(value)) return null
+
+  const items = value
+    .map((entry): CoursePedagogyItem | null => {
+      if (typeof entry === 'string') {
+        return entry.trim() ? { title: entry, description: null } : null
+      }
+      if (!entry || typeof entry !== 'object') return null
+      const rec = entry as Record<string, unknown>
+      if (typeof rec.title !== 'string' || !rec.title.trim()) return null
+      return {
+        title: rec.title,
+        description: typeof rec.description === 'string' ? rec.description : null
+      }
+    })
+    .filter((item): item is CoursePedagogyItem => item !== null)
+
+  return items.length > 0 ? items : null
+}
+
+// Repli quand le champ éditable `pedagogy` est vide : les blocs Digiforma
+// de type « pedagogie » portent la même information.
+function pedagogyFromBlocks(blocks: unknown): CoursePedagogyItem[] | null {
+  if (!Array.isArray(blocks)) return null
+
+  const items = blocks
+    .map((block): CoursePedagogyItem | null => {
+      if (!block || typeof block !== 'object') return null
+      const rec = block as Record<string, unknown>
+      if (typeof rec.type !== 'string' || !rec.type.toLowerCase().includes('pedag')) return null
+      if (typeof rec.name !== 'string' || !rec.name.trim()) return null
+      return {
+        title: rec.name,
+        description: typeof rec.description === 'string' ? rec.description : null
+      }
+    })
+    .filter((item): item is CoursePedagogyItem => item !== null)
+
+  return items.length > 0 ? items : null
+}
+
+// Fallback visuel : l'URL Digiforma d'origine est conservée dans `raw`
+// (payload programme) quand aucun fichier n'a pu être importé.
+function imageUrlFromRaw(raw: unknown): string | null {
+  const image = (raw as { image?: { url?: unknown } } | null)?.image
+  return image && typeof image.url === 'string' ? image.url : null
+}
+
 function toListItem(raw: DirectusFormation): CourseListItem {
   return {
     id: raw.id,
@@ -116,11 +178,14 @@ function toListItem(raw: DirectusFormation): CourseListItem {
     certifierName: raw.certifier_name,
     category: raw.category_name,
     familySlug: raw.famille?.slug ?? null,
+    subFamilySlug: raw.sous_famille?.slug ?? null,
+    subFamilyName: raw.sous_famille?.name ?? null,
     centerSlug: raw.center_slug,
     centerSlugs: (raw.center_slugs as string[]) ?? [],
     modalities: (raw.modalities as string[]) ?? [],
     sessions: mapSessions(raw.sessions),
-    imageUrl: raw.image_url,
+    image: raw.image ?? null,
+    imageUrl: imageUrlFromRaw(raw.raw),
     generatedProgramUrl: raw.generated_program_url,
     status: raw.status,
     seoTitle: raw.seo_title,
@@ -135,7 +200,9 @@ function toCourse(raw: DirectusFormation): Course {
     blocks: Array.isArray(raw.blocks) ? (raw.blocks as unknown[]) : null,
     targets: extractTexts(raw.raw, 'targets'),
     prerequisites: extractTexts(raw.raw, 'prerequisites'),
-    evaluation: extractTexts(raw.raw, 'evaluation'),
+    pedagogy: toPedagogyItems(raw.pedagogy) ?? pedagogyFromBlocks(raw.blocks),
+    evaluation: toStringList(raw.evaluation) ?? extractTexts(raw.raw, 'evaluation'),
+    validity: toNullableString(raw.validity),
     createdAt: toIsoString(raw.created_at),
     updatedAt: toIsoString(raw.updated_at)
   }
@@ -224,20 +291,21 @@ function normalizeSearch(text: string | null | undefined): string {
 }
 
 function buildLocationText(
-  course: CourseListItem,
-  locationsText: string | null | undefined
+  locationsText: string | null | undefined,
+  locations: ResolvedSessionLocation[]
 ): string {
+  const parts = locations.flatMap((loc) => [
+    loc.name,
+    loc.address,
+    loc.city,
+    loc.postalCode,
+    loc.department,
+    loc.region
+  ])
   if (typeof locationsText === 'string' && locationsText.length > 0) {
-    return normalizeSearch(locationsText)
+    parts.push(locationsText)
   }
-
-  if (!course.sessions || course.sessions.length === 0) return ''
-
-  const locations = course.sessions
-    .flatMap((s) => [s.location?.city, s.location?.department, s.location?.region])
-    .filter((v): v is string => typeof v === 'string')
-    .join(' ')
-  return normalizeSearch(locations)
+  return normalizeSearch(parts.filter((v): v is string => typeof v === 'string').join(' '))
 }
 
 function buildSearchText(course: CourseListItem, locationsText: string | null | undefined): string {
@@ -246,20 +314,65 @@ function buildSearchText(course: CourseListItem, locationsText: string | null | 
     .join(' ')
 }
 
+/**
+ * Localisation résolue d'une session : celle du centre quand la session y est
+ * rattachée (`centreSlug`), sinon la localisation Digiforma de la session.
+ * `latitude`/`longitude` viennent du géocodage BAN du centre.
+ */
+interface ResolvedSessionLocation extends CourseSessionLocation {
+  address: string | null
+  latitude: number | null
+  longitude: number | null
+}
+
+function resolveSessionLocation(
+  session: CourseSession,
+  centresBySlug: Map<string, DirectusCentre>
+): ResolvedSessionLocation | null {
+  const centre = session.location?.centreSlug
+    ? centresBySlug.get(session.location.centreSlug)
+    : undefined
+  if (centre) {
+    return {
+      name: centre.name,
+      city: centre.city,
+      postalCode: centre.postal_code,
+      department: centre.department,
+      region: centre.region,
+      centreSlug: centre.slug,
+      address: centre.address,
+      latitude: centre.latitude ?? null,
+      longitude: centre.longitude ?? null
+    }
+  }
+  const loc = session.location
+  if (!loc) return null
+  return { ...loc, address: null, latitude: null, longitude: null }
+}
+
 interface CatalogRow {
   course: CourseListItem
   updatedAt: string
   searchText: string
   locationText: string
+  locations: ResolvedSessionLocation[]
 }
 
-function toCatalogRow(raw: DirectusFormation): CatalogRow {
+function toCatalogRow(
+  raw: DirectusFormation,
+  centresBySlug: Map<string, DirectusCentre>
+): CatalogRow {
   const course = toListItem(raw)
+  const locations = (course.sessions ?? [])
+    .map((s) => resolveSessionLocation(s, centresBySlug))
+    .filter((l): l is ResolvedSessionLocation => l !== null)
+
   return {
     course,
     updatedAt: toIsoString(raw.updated_at),
     searchText: buildSearchText(course, raw.locations_text),
-    locationText: buildLocationText(course, raw.locations_text)
+    locationText: buildLocationText(raw.locations_text, locations),
+    locations
   }
 }
 
@@ -342,9 +455,89 @@ function matchesModalities(course: CourseListItem, modalities: string | undefine
   return wanted.some((m) => course.modalities.includes(m))
 }
 
+/**
+ * Tokens de localisation : pas de stop words (les noms de départements en
+ * contiennent : « Val-de-Marne »), longueur min 2 pour capter les départements
+ * à 1-2 chiffres saisis par l'utilisateur (« 69 », « 75 »).
+ */
+function toLocationTokens(raw: string | undefined): string[] | undefined {
+  if (!raw) return undefined
+  const tokens = normalizeSearch(raw)
+    .match(/[a-z0-9]+/g)
+    ?.filter((token) => token.length >= 2)
+  return tokens && tokens.length > 0 ? tokens : undefined
+}
+
+function wordPrefixMatch(field: string | null | undefined, token: string): boolean {
+  if (!field) return false
+  return normalizeSearch(field)
+    .split(/[^a-z0-9]+/)
+    .some((word) => word.startsWith(token))
+}
+
+type SessionLocation = ResolvedSessionLocation
+
+/**
+ * Numérique : code postal exact (5 chiffres), préfixe CP (3-4) ou code
+ * département via préfixe CP (1-2 : « 69 » matche « 69003 »).
+ * Alpha : préfixe de mot sur ville / département / région / adresse / nom du centre.
+ */
+function locationTokenMatches(token: string, loc: SessionLocation): boolean {
+  if (/^\d+$/.test(token)) {
+    const cp = loc.postalCode ?? ''
+    if (token.length === 5) return cp === token
+    if (token.length <= 4) return cp.startsWith(token)
+    return false
+  }
+  return [loc.name, loc.address, loc.city, loc.department, loc.region].some((field) =>
+    wordPrefixMatch(field, token)
+  )
+}
+
+// Rayon de recherche « autour de » quand la localisation est un point
+// géographique (lat,lng — émis par le geosuggest communes).
+const GEO_SEARCH_RADIUS_KM = 50
+
+function parseGeoLocation(location: string | undefined): { lat: number; lng: number } | null {
+  const match = location?.trim().match(/^(-?\d{1,2}(?:\.\d+)?),\s*(-?\d{1,3}(?:\.\d+)?)$/)
+  if (!match) return null
+  return { lat: Number(match[1]), lng: Number(match[2]) }
+}
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const rad = (deg: number) => (deg * Math.PI) / 180
+  const dLat = rad(lat2 - lat1)
+  const dLng = rad(lng2 - lng1)
+  const a =
+    Math.sin(dLat / 2) ** 2 + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(dLng / 2) ** 2
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+/**
+ * Mode géographique (`lat,lng` issu du geosuggest) : une session matche si
+ * son centre est à moins de GEO_SEARCH_RADIUS_KM du point.
+ * Mode texte : tous les tokens doivent matcher dans la MÊME session —
+ * « lyon 13002 » ne matche pas une formation à Lyon 69003 + Marseille 13002.
+ * Repli sur `locationText` quand aucune session n'est géolocalisée.
+ */
 function matchesLocation(row: CatalogRow, location: string | undefined): boolean {
-  if (!location) return true
-  return row.locationText.includes(normalizeSearch(location))
+  const geo = parseGeoLocation(location)
+  if (geo) {
+    return row.locations.some(
+      (loc) =>
+        loc.latitude != null &&
+        loc.longitude != null &&
+        haversineKm(geo.lat, geo.lng, loc.latitude, loc.longitude) <= GEO_SEARCH_RADIUS_KM
+    )
+  }
+
+  const tokens = toLocationTokens(location)
+  if (!tokens) return true
+
+  if (row.locations.length === 0) {
+    return tokens.every((token) => wordPrefixMatch(row.locationText, token))
+  }
+  return row.locations.some((loc) => tokens.every((token) => locationTokenMatches(token, loc)))
 }
 
 function matchesSearchQuery(row: CatalogRow, search: string | undefined): boolean {
@@ -353,19 +546,68 @@ function matchesSearchQuery(row: CatalogRow, search: string | undefined): boolea
   return tokens.every((token) => row.searchText.includes(token))
 }
 
-function matchesCourse(row: CatalogRow, query: ListCoursesDto): boolean {
-  if (query.family && row.course.familySlug !== query.family) return false
-  if (query.cpf !== undefined && row.course.cpf !== query.cpf) return false
-  if (!matchesCertifying(row.course, query.certifying)) return false
-  if (!matchesDurationRange(row.course, query.durationMin, query.durationMax)) return false
-  if (!matchesDurationBuckets(row.course, query.durations)) return false
-  if (!matchesPriceRange(row.course, query.priceMin, query.priceMax)) return false
-  if (!matchesCenter(row.course, query.center)) return false
-  if (!matchesModalities(row.course, query.modalities)) return false
-  if (!matchesLocation(row, query.location)) return false
-  if (!matchesSearchQuery(row, query.search)) return false
-  return true
+type FacetDimension =
+  'family' | 'subFamily' | 'modalities' | 'durations' | 'location' | 'cpf' | 'certifying'
+
+function matchesCourse(row: CatalogRow, query: ListCoursesDto, except?: FacetDimension): boolean {
+  const checks: { dim: FacetDimension | null; ok: boolean }[] = [
+    { dim: 'family', ok: !query.family || row.course.familySlug === query.family },
+    { dim: 'subFamily', ok: !query.subFamily || row.course.subFamilySlug === query.subFamily },
+    { dim: 'cpf', ok: query.cpf === undefined || row.course.cpf === query.cpf },
+    { dim: 'certifying', ok: matchesCertifying(row.course, query.certifying) },
+    { dim: null, ok: matchesDurationRange(row.course, query.durationMin, query.durationMax) },
+    { dim: 'durations', ok: matchesDurationBuckets(row.course, query.durations) },
+    { dim: null, ok: matchesPriceRange(row.course, query.priceMin, query.priceMax) },
+    { dim: null, ok: matchesCenter(row.course, query.center) },
+    { dim: 'modalities', ok: matchesModalities(row.course, query.modalities) },
+    { dim: 'location', ok: matchesLocation(row, query.location) },
+    { dim: null, ok: matchesSearchQuery(row, query.search) }
+  ]
+  return checks.every((check) => check.dim === except || check.ok)
 }
+
+/**
+ * Compteurs par dimension, chacune calculée en ignorant son propre filtre :
+ * le front n'affiche que les options qui renvoient des résultats.
+ */
+function computeCatalogFacets(rows: CatalogRow[], query: ListCoursesDto): CatalogFacets {
+  const countByKeys = (
+    except: FacetDimension,
+    getKeys: (row: CatalogRow) => (string | null)[]
+  ): Record<string, number> => {
+    const counts: Record<string, number> = {}
+    for (const row of rows) {
+      if (!matchesCourse(row, query, except)) continue
+      for (const key of new Set(getKeys(row))) {
+        if (key) counts[key] = (counts[key] ?? 0) + 1
+      }
+    }
+    return counts
+  }
+
+  const countWhere = (except: FacetDimension, predicate: (row: CatalogRow) => boolean): number =>
+    rows.filter((row) => matchesCourse(row, query, except) && predicate(row)).length
+
+  return {
+    families: countByKeys('family', (row) => [row.course.familySlug]),
+    subFamilies: countByKeys('subFamily', (row) => [row.course.subFamilySlug]),
+    modalities: countByKeys('modalities', (row) => row.course.modalities),
+    durations: countByKeys('durations', (row) =>
+      DURATION_BUCKET_KEYS_LIST.filter((bucket) => matchesDurationBucket(row.course, bucket))
+    ),
+    locations: countByKeys('location', (row) =>
+      row.locations.map((loc) => loc.department ?? loc.region ?? null)
+    ),
+    cpf: countWhere('cpf', (row) => row.course.cpf === true),
+    certifying: countWhere(
+      'certifying',
+      (row) =>
+        typeof row.course.certification === 'string' && row.course.certification.trim() !== ''
+    )
+  }
+}
+
+const DURATION_BUCKET_KEYS_LIST = ['courte', 'moyenne', 'longue']
 
 function sortCatalogRows(
   rows: CatalogRow[],
@@ -406,9 +648,9 @@ export class CatalogService {
     private readonly catalog: DirectusCatalogService
   ) {}
 
-  async list(query: ListCoursesDto): Promise<Paginated<CourseListItem>> {
+  async list(query: ListCoursesDto): Promise<CoursePage> {
     const cacheKey = `courses:list:${JSON.stringify(query)}`
-    const cached = await this.cache.get<Paginated<CourseListItem>>(cacheKey)
+    const cached = await this.cache.get<CoursePage>(cacheKey)
     if (cached) {
       return cached
     }
@@ -421,14 +663,19 @@ export class CatalogService {
     const skip = (query.page - 1) * query.limit
     const items = sorted.slice(skip, skip + query.limit).map((row) => row.course)
 
-    const result: Paginated<CourseListItem> = {
+    const result: CoursePage = {
       items,
       total,
       page: query.page,
-      pageSize: query.limit
+      pageSize: query.limit,
+      facets: computeCatalogFacets(rows, query)
     }
 
-    await this.cache.set(cacheKey, result)
+    // Un dataset vide signifie une source dégradée (Directus indisponible ou
+    // sync incomplète) : ne pas figer « 0 résultat » en cache pendant 1 h.
+    if (rows.length > 0) {
+      await this.cache.set(cacheKey, result)
+    }
     return result
   }
 
@@ -476,28 +723,46 @@ export class CatalogService {
       .map(([slug, count]) => ({ slug, count }))
       .sort((a, b) => a.slug.localeCompare(b.slug))
 
-    await this.cache.set(cacheKey, result)
+    if (rows.length > 0) {
+      await this.cache.set(cacheKey, result)
+    }
     return result
   }
 
   async applyFamilies(): Promise<FamilyApplyResult> {
-    const [formations, familyBySlug] = await Promise.all([
+    const [formations, familyBySlug, subFamilyByFamilySlug] = await Promise.all([
       this.catalog.fetchAllFormations(),
-      this.catalog.getFamilyIdsBySlug()
+      this.catalog.getFamilyIdsBySlug(),
+      this.catalog.getSubFamilyIdsByFamilySlug()
     ])
 
-    const assignments = new Map<string, string>()
+    const assignments = new Map<string, AssignmentProposal>()
     for (const row of formations) {
       const category = row.category_name
       if (!category) continue
 
       const slug = slugifyCategory(category)
-      if (!familyBySlug.has(slug)) continue
+      const proposal: AssignmentProposal = {}
 
       // Une famille éditoriale déjà positionnée n'est jamais écrasée.
-      if (row.famille?.slug && row.famille.slug !== slug) continue
+      if (familyBySlug.has(slug) && !(row.famille?.slug && row.famille.slug !== slug)) {
+        proposal.famille = slug
+      }
 
-      assignments.set(row.digiforma_id, slug)
+      // Même mécanisme une strate plus bas : la catégorie Digiforma propose
+      // une sous-famille de la famille effective — jamais écrasée si posée.
+      const effectiveFamily = proposal.famille ?? row.famille?.slug ?? null
+      if (
+        !row.sous_famille?.slug &&
+        effectiveFamily &&
+        subFamilyByFamilySlug.get(effectiveFamily)?.has(slug)
+      ) {
+        proposal.sousFamille = slug
+      }
+
+      if (proposal.famille || proposal.sousFamille) {
+        assignments.set(row.digiforma_id, proposal)
+      }
     }
 
     const result = await this.catalog.applyFamilyAssignments(assignments)
@@ -511,21 +776,49 @@ export class CatalogService {
       return cached
     }
 
-    const all = await this.getAllFormations()
-    const rows = all.map(toCatalogRow)
-    await this.cache.set(ROWS_CACHE_KEY, rows)
+    const [all, centresBySlug] = await Promise.all([
+      this.getAllFormations(),
+      this.getCentresBySlug()
+    ])
+    const rows = all.map((raw) => toCatalogRow(raw, centresBySlug))
+    if (rows.length > 0) {
+      await this.cache.set(ROWS_CACHE_KEY, rows)
+    }
     return rows
+  }
+
+  /**
+   * Centres indexés par slug : les localisations de session sont résolues
+   * via `centreSlug` — adresse, ville, CP, département et coordonnées BAN
+   * vivent sur le centre, pas sur la session. Centres indisponibles →
+   * repli sur la localisation portée par la session.
+   */
+  private async getCentresBySlug(): Promise<Map<string, DirectusCentre>> {
+    const cached = await this.cache.get<DirectusCentre[]>('centres:all')
+    if (cached) {
+      return new Map(cached.map((c) => [c.slug, c]))
+    }
+    try {
+      const centres = await this.catalog.fetchAllCentres()
+      await this.cache.set('centres:all', centres)
+      return new Map(centres.map((c) => [c.slug, c]))
+    } catch (error) {
+      this.logger.warn({ error }, 'Centres fetch failed — session locations will be used as-is')
+      return new Map()
+    }
   }
 
   private async getAllFormations(): Promise<DirectusFormation[]> {
     const cacheKey = 'formations:all'
     const cached = await this.cache.get<DirectusFormation[]>(cacheKey)
-    if (cached) {
+    if (cached?.length) {
       return cached
     }
 
     const rows = await this.catalog.fetchAllFormations()
-    await this.cache.set(cacheKey, rows)
+    if (rows.length > 0) {
+      await this.cache.set(cacheKey, rows)
+    }
     return rows
   }
 }

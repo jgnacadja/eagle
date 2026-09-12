@@ -13,10 +13,13 @@ Lire d'abord `AGENTS.md` à la racine.
 - DTOs obligatoires pour tous les endpoints, décorateurs `class-validator` (`@IsString`, `@IsOptional`, `@IsInt`, etc.).
 - `ValidationPipe` global : `whitelist: true`, `forbidNonWhitelisted: true`, `transform: true` (déjà dans `main.ts`).
 - `HttpExceptionFilter` global (dans `main.ts`) — conserver la structure `{ statusCode, message, timestamp, path }`.
-- Helmet, `@nestjs/throttler` + stockage Redis (`@nest-lab/throttler-storage-redis`) à mettre en place pour le catalog.
-- Limites cibles :
-  - lecture publique `/courses*` : 100 requêtes/min par IP
-  - admin `/admin/*` : 10 requêtes/min par clé API
+- Helmet, `@nestjs/throttler` + stockage Redis (`@nest-lab/throttler-storage-redis`) en place dans `app.module.ts`.
+- Limites :
+  - lecture publique : 100 requêtes/min par IP (tracker `req.ip` — `trust proxy` est activé dans `configureApp` pour que l'IP cliente traverse le proxy/Vercel)
+  - proxy `/directus/*` : 600 requêtes/min par IP (assets images inclus)
+  - admin `/admin/*` : 10 requêtes/min par clé API — sauf `POST /admin/cache/invalidate` (`@SkipThrottle`) : les écritures Directus en masse déclenchent une rafale d'invalidations qu'aucun 429 ne doit dropper
+  - `/health` et les fetches SSR (`x-internal-ssr` = `INTERNAL_API_TOKEN`) sont exclus du quota public — sans ça l'IP du serveur Nuxt mutualiserait tous les visiteurs dans un seul bucket.
+- Si le stockage Redis tombe, le throttling est désactivé (fail-open, `FailSafeThrottlerStorage`) et les 429 sont loggés par `HttpExceptionFilter`.
 - Routes admin : protégées par `ADMIN_API_KEY` (header `x-api-key`). Guard dédié.
 
 ## Tests
@@ -30,8 +33,11 @@ Lire d'abord `AGENTS.md` à la racine.
 
 - Plus de Prisma / Postgres dédié côté API.
 - La source de vérité des formations est la collection Directus `formations` (`directus/schema/collections.mjs`).
-- Champs attendus pour `formations` : `digiforma_id` unique, `slug`, `title`, `description`, `duration_days`, `duration_hours`, `price`, `cpf`, `cpf_code`, `certification`, `certifier_name`, `category_name`, `modalities`, `center_slug`, `center_slugs`, `sessions`, `locations_text`, `blocks`, `image_url`, `generated_program_url`, `status`, `seo_title`, `seo_description`, `seo_canonical`, `raw`.
-- La relation `famille` (M2O vers `familles_formation`) est le seul champ éditable ; elle n'est jamais écrasée par la sync.
+- Champs attendus pour `formations` : `digiforma_id` unique, `slug`, `title`, `description`, `duration_days`, `duration_hours`, `price`, `cpf`, `cpf_code`, `certification`, `certifier_name`, `category_name`, `modalities`, `center_slug`, `center_slugs`, `sessions`, `locations_text`, `blocks`, `image`, `generated_program_url`, `status`, `seo_title`, `seo_description`, `seo_canonical`, `raw`.
+- `image` (M2O `directus_files`) est l'unique champ visuel : la sync importe l'image Digiforma via `POST /files/import` (marqueur `digiforma-sync:` dans la description du fichier), l'éditeur peut la remplacer — jamais écrasée. L'URL source reste dans `raw` (fallback `Course.imageUrl`).
+- Sync non destructive : à l'update, un champ n'est écrit que s'il est vide côté Directus — le contenu éditorial n'est jamais écrasé. Seuls `digiforma_id`, `sessions`, `raw` sont réécrits à chaque run (et restent readonly dans l'admin). Tous les autres champs sont éditables dans Directus, y compris `famille`/`sous_famille` (M2O — `sous_famille` n'est proposée par la sync que si vide).
+- `sous_familles_formation` (`slug`, `name`, `caption`, M2O `famille`) regroupe les formations au sein d'une famille — la sync propose une affectation depuis `category_name`, uniquement si le champ est vide.
+- Filtre `/courses?subFamily=<slug>` disponible, combiné avec `family`.
 - `SyncRun` est stocké dans Redis (`sync:last_run`) : statut, dates, compteurs, message d'erreur.
 - Clés : `REDIS_URL`, `DIRECTUS_TOKEN`, `DIRECTUS_INTERNAL_URL` dans `.env` (plus de `DATABASE_URL`).
 

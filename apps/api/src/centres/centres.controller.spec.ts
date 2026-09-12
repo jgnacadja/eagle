@@ -4,6 +4,8 @@ import request from 'supertest'
 import type { INestApplication } from '@nestjs/common'
 import { CentresController } from './centres.controller'
 import { CentresService } from './centres.service'
+import { GeocodingService } from './geocoding.service'
+import { AdminApiKeyGuard } from '../common/guards/admin-api-key.guard'
 
 describe('CentresController', () => {
   let app: INestApplication
@@ -20,8 +22,17 @@ describe('CentresController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CentresController],
-      providers: [{ provide: CentresService, useValue: service }]
-    }).compile()
+      providers: [
+        { provide: CentresService, useValue: service },
+        {
+          provide: GeocodingService,
+          useValue: { syncMissing: vi.fn().mockResolvedValue({ geocoded: 0, failed: 0 }) }
+        }
+      ]
+    })
+      .overrideGuard(AdminApiKeyGuard)
+      .useValue({ canActivate: () => true })
+      .compile()
 
     app = module.createNestApplication()
     app.useGlobalPipes(

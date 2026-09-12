@@ -1,5 +1,10 @@
 import type { DigiformaSession, Program } from './digiforma.client'
 
+export interface PedagogyItemPayload {
+  title: string
+  description: string | null
+}
+
 export interface FormationDirectusPayload {
   digiforma_id: string
   slug: string
@@ -19,6 +24,8 @@ export interface FormationDirectusPayload {
   sessions: unknown
   locations_text: string | null
   blocks: unknown
+  pedagogy?: PedagogyItemPayload[] | null
+  evaluation?: string[] | null
   image_url: string | null
   generated_program_url: string | null
   status: 'published' | 'draft' | 'archived'
@@ -95,6 +102,31 @@ function mapCenterSlugs(sessions?: DigiformaSession[] | null): string[] {
   return [...new Set(slugs)]
 }
 
+// Propositions pour les champs éditables : la sync ne les écrit que si le
+// champ est vide côté Directus (voir upsertMany), un contenu éditorial
+// n'est jamais écrasé.
+function mapPedagogy(program: Program): PedagogyItemPayload[] | null {
+  const items = (program.blocks ?? [])
+    .filter(
+      (block) => typeof block?.type === 'string' && block.type.toLowerCase().includes('pedag')
+    )
+    .map((block) => ({
+      title: block.name?.trim() ?? '',
+      description: mapDescription(block.description)
+    }))
+    .filter((item) => item.title.length > 0)
+
+  return items.length > 0 ? items : null
+}
+
+function mapEvaluation(program: Program): string[] | null {
+  const texts = (program.evaluation ?? [])
+    .map((entry) => entry.text?.trim())
+    .filter((text): text is string => typeof text === 'string' && text.length > 0)
+
+  return texts.length > 0 ? texts : null
+}
+
 function mapLocationsText(sessions?: DigiformaSession[] | null): string | null {
   const parts = new Set<string>()
   for (const session of sessions ?? []) {
@@ -131,6 +163,8 @@ export function mapProgramToCourse(program: Program): FormationDirectusPayload {
     sessions: program.sessions ?? null,
     locations_text: mapLocationsText(program.sessions),
     blocks: program.blocks ?? null,
+    pedagogy: mapPedagogy(program),
+    evaluation: mapEvaluation(program),
     image_url: program.image?.url ?? null,
     generated_program_url: program.generatedProgramUrl ?? null,
     status: 'published',

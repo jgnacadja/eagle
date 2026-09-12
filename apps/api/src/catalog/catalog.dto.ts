@@ -66,6 +66,12 @@ export class ListCoursesDto {
   @Transform(({ value }) => toOptionalTrimmed(value))
   family?: string
 
+  @ApiPropertyOptional({ description: 'Filter by sub-family slug' })
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => toOptionalTrimmed(value))
+  subFamily?: string
+
   @ApiPropertyOptional({ description: 'Full-text search on title and description' })
   @IsOptional()
   @IsString()

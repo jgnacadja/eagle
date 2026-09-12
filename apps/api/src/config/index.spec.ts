@@ -4,7 +4,13 @@ import { SwaggerModule } from '@nestjs/swagger'
 import { configureApp } from './index'
 
 function makeApp() {
-  return { enableCors: vi.fn(), use: vi.fn() } as unknown as INestApplication
+  const expressApp = { set: vi.fn() }
+  const app = {
+    enableCors: vi.fn(),
+    use: vi.fn(),
+    getHttpAdapter: () => ({ getInstance: () => expressApp })
+  } as unknown as INestApplication
+  return Object.assign(app, { expressApp })
 }
 
 function getCorsOrigin(app: INestApplication): CustomOrigin {
@@ -86,6 +92,16 @@ describe('configureApp', () => {
     const reject = vi.fn()
     getCorsOrigin(app)('https://evil.vercel.app.other.com', reject)
     expect(reject).toHaveBeenCalledWith(null, false)
+  })
+
+  it('enables trust proxy so req.ip reflects the client IP behind a proxy', () => {
+    const app = makeApp() as INestApplication & {
+      expressApp: { set: ReturnType<typeof vi.fn> }
+    }
+
+    configureApp(app)
+
+    expect(app.expressApp.set).toHaveBeenCalledWith('trust proxy', 1)
   })
 
   it('exposes Swagger docs outside production', () => {

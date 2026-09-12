@@ -8,6 +8,7 @@ import { CacheService, type SyncRun } from '../common/cache/cache.service'
 import { DirectusCatalogService } from '../directus/directus.catalog.service'
 import { DigiformaClient, type Program } from '../digiforma/digiforma.client'
 import { mapProgramToCourse } from '../digiforma/digiforma.mapper'
+import { GeocodingService } from '../centres/geocoding.service'
 
 @Injectable()
 export class SyncService {
@@ -19,7 +20,8 @@ export class SyncService {
     private readonly client: DigiformaClient,
     private readonly cache: CacheService,
     private readonly scheduler: SchedulerRegistry,
-    private readonly catalog: DirectusCatalogService
+    private readonly catalog: DirectusCatalogService,
+    private readonly geocoding: GeocodingService
   ) {}
 
   onModuleInit(): void {
@@ -79,6 +81,9 @@ export class SyncService {
       run.inserted = result.inserted
       run.updated = result.updated
 
+      // Les localisations de session viennent des centres : on (re)géocode
+      // celles dont l'adresse a changé avant d'invalider le cache.
+      await this.geocoding.syncMissing()
       await this.cache.invalidateCatalog()
 
       run.status = 'success'

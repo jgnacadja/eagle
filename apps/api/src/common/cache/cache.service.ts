@@ -2,11 +2,16 @@ import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/commo
 import { ConfigService } from '@nestjs/config'
 import Redis, { RedisOptions } from 'ioredis'
 
+// retryStrategy borné : une coupure Redis transitoire (restart container,
+// réseau) ne doit pas désactiver le cache jusqu'au prochain restart de
+// l'API — sinon les purges webhook (invalidateCatalog) no-op en silence.
+// Les commandes échouent toujours vite (pas d'offline queue, pas de retry
+// par requête) : la dégradation reste fail-open côté lecture.
 const REDIS_OPTIONS: RedisOptions = {
   connectTimeout: 1000,
   enableOfflineQueue: false,
   maxRetriesPerRequest: 0,
-  retryStrategy: () => null
+  retryStrategy: (attempt) => Math.min(attempt * 500, 5000)
 }
 
 export interface SyncRun {
@@ -22,7 +27,7 @@ export interface SyncRun {
 @Injectable()
 export class CacheService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CacheService.name)
-  private client?: Redis
+  private readonly client?: Redis
   private readonly versionKey = 'catalog:version'
   private currentVersion = 0
   private isReady = false
@@ -48,7 +53,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit(): Promise<void> {
-    if (this.client && this.client.status === 'ready') {
+    if (this.client?.status === 'ready') {
       await this.initializeClient()
     } else {
       this.currentVersion = 0
@@ -118,6 +123,14 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       this.logger.log(`Catalog cache invalidated, new version v${this.currentVersion}`)
     } catch (error) {
       this.logger.warn({ error }, 'Failed to invalidate catalog cache')
+    }
+  }
+
+  // Purge ciblée : supprime les clés matchant `patterns` dans la version
+  // courante, sans bump — les clés non concernées restent valides.
+  async invalidatePatterns(patterns: string[]): Promise<void> {
+    for (const pattern of patterns) {
+      await this.del(pattern)
     }
   }
 

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import type { CentreListItem } from '@learnup/types'
 import { CentresService } from './centres.service'
+import { GeocodingService } from './geocoding.service'
 import { CacheService } from '../common/cache/cache.service'
 import { DirectusCatalogService, type DirectusCentre } from '../directus/directus.catalog.service'
 import type { ListCentresDto } from './centres.dto'
@@ -73,7 +74,11 @@ describe('CentresService', () => {
       providers: [
         CentresService,
         { provide: CacheService, useValue: cacheMock },
-        { provide: DirectusCatalogService, useValue: directusMock }
+        { provide: DirectusCatalogService, useValue: directusMock },
+        {
+          provide: GeocodingService,
+          useValue: { syncMissing: vi.fn().mockResolvedValue({ geocoded: 0, failed: 0 }) }
+        }
       ]
     }).compile()
 

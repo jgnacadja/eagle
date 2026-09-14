@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
     // `hasOwn` : sans lui, `__proto__` résoudrait une propriété héritée et
     // `matchers.some` lèverait sur une valeur non-tableau.
     matchers = Object.hasOwn(COLLECTION_ROUTES, body.collection)
-      ? COLLECTION_ROUTES[body.collection]
+      ? (COLLECTION_ROUTES[body.collection] ?? null)
       : null
   }
 

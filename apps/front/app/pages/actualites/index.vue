@@ -15,7 +15,7 @@
             <Select v-model="selectedRegion">
               <SelectTrigger
                 id="region-select"
-                class="h-control w-full rounded-full border border-white/40 bg-transparent px-lg text-small text-paper focus:ring-paper lg:w-56 font-semibold"
+                class="h-control w-full rounded-full border border-outline-inverse bg-transparent px-lg text-small text-paper focus:ring-paper lg:w-56 font-semibold"
               >
                 <span class="flex min-w-0 items-center gap-sm">
                   <IconMapPin :size="20" class="shrink-0" />
@@ -49,7 +49,7 @@
                 :class="
                   category === selectedCategory
                     ? 'border-paper bg-paper font-semibold text-ink'
-                    : 'border-white/35 bg-transparent font-medium text-paper/80 hover:border-paper/40 hover:text-paper'
+                    : 'border-outline-inverse bg-transparent font-medium text-ink-inverse-muted hover:border-outline-inverse hover:text-paper'
                 "
                 :aria-current="category === selectedCategory ? 'true' : undefined"
                 @click="selectedCategory = category"
@@ -111,10 +111,9 @@
               <div class="flex flex-1 flex-col justify-center gap-md bg-paper p-lg lg:p-xl">
                 <p class="text-overline text-accent-text">
                   <span class="font-bold uppercase">{{ featuredArticle.category }}</span>
-                  <span class="font-medium text-ink-subtle leading-4">
-                    <span class="mx-xs leading-2.5">·</span
-                    >{{ formatArticleDate(featuredArticle.publish_at) }}
-                    <span class="mx-xs leading-2.5">·</span> {{ readingTime }} min
+                  <span class="font-medium text-ink-subtle">
+                    <span class="mx-xs">·</span>{{ formatArticleDate(featuredArticle.publish_at) }}
+                    <span class="mx-xs">·</span> {{ readingTime }} min
                   </span>
                 </p>
                 <h3 class="font-display text-h3 font-extrabold leading-snug text-ink lg:text-h2">
@@ -179,7 +178,7 @@
             <!-- Bandeau newsletter -->
             <section
               aria-labelledby="newsletter-heading"
-              class="rounded-md bg-accent/14 p-xl mt-xl lg:mt-3xl lg:flex lg:items-center lg:justify-between lg:p-2xl"
+              class="rounded-md bg-accent-soft p-xl mt-xl lg:mt-3xl lg:flex lg:items-center lg:justify-between lg:p-2xl"
             >
               <div class="max-w-prose">
                 <h2
@@ -235,7 +234,10 @@
                 <PaginationPrevious
                   class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-subtle hover:bg-surface"
                 />
-                <template v-for="item in items" :key="item.type">
+                <template
+                  v-for="(item, index) in items"
+                  :key="item.type === 'page' ? `page-${item.value}` : `ellipsis-${index}`"
+                >
                   <PaginationItem
                     v-if="item.type === 'page'"
                     :value="item.value"
@@ -269,8 +271,8 @@ import { articleAssetUrl, articleReadingTime, formatArticleDate } from '~/utils/
 
 const config = useRuntimeConfig()
 
-function assetUrl(id: string | null): string | null {
-  return articleAssetUrl(id, config.public.apiBase)
+function assetUrl(id: string | null): string | undefined {
+  return articleAssetUrl(id, config.public.apiBase) ?? undefined
 }
 
 useContentSeo(
@@ -318,8 +320,7 @@ const {
             'seo_canonical'
           ],
           filter: { status: { _eq: 'published' } },
-          sort: ['-publish_at'],
-          limit: -1
+          sort: ['-publish_at']
         })
       )
     } catch (error) {

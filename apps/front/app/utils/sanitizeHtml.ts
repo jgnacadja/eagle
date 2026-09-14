@@ -52,7 +52,7 @@ function insertHeadingIds(html: string): string {
       .replace(/&nbsp;/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()
-    const base = slugifyHeading(label || `heading-${level}`)
+    const base = slugifyHeading(label) || `heading-${level}`
 
     let id = base
     let counter = 2

@@ -3,7 +3,8 @@ export function formatArticleDate(value: string | null | undefined): string {
   return new Date(value).toLocaleDateString('fr-FR', {
     day: '2-digit',
     month: 'long',
-    year: 'numeric'
+    year: 'numeric',
+    timeZone: 'Europe/Paris'
   })
 }
 

@@ -16,21 +16,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-withDefaults(
-  defineProps<{
-    color?: string
-  }>(),
-  {
-    color: 'bg-surface'
-  }
-)
-
 export interface BreadcrumbItem {
   label: string
   to?: string
 }
 
 const route = useRoute()
+
+// layoutProps de definePageMeta n'est pas câblé à <NuxtLayout> : on lit la
+// couleur directement dans route.meta pour que la bande suive la page.
+const color = computed(() => {
+  const layoutProps = route.meta.layoutProps as { color?: string } | undefined
+  return layoutProps?.color ?? 'bg-surface'
+})
 
 const items = computed<BreadcrumbItem[] | undefined>(() =>
   Array.isArray(route.meta.breadcrumb) ? (route.meta.breadcrumb as BreadcrumbItem[]) : undefined

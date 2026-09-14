@@ -18,7 +18,7 @@
               >
                 {{ article?.title }}
               </h1>
-              <div class="mt-md h-0.75 flex-1 bg-accent w-16" aria-hidden="true" />
+              <div class="mt-md h-xs flex-1 bg-accent w-4xl" aria-hidden="true" />
               <p class="mt-md text-body text-ink-body">{{ article?.excerpt }}</p>
             </header>
 
@@ -36,9 +36,9 @@
                   aria-hidden="true"
                   >{{ article?.author_name?.slice(0, 2).toUpperCase() || 'LU' }}</span
                 >
-                <div class="text-meta">
-                  <p class="font-semibold text-ink leading-5">{{ article?.author_name }}</p>
-                  <p class="text-ink-muted leading-5">
+                <div class="text-meta leading-relaxed">
+                  <p class="font-semibold text-ink">{{ article?.author_name }}</p>
+                  <p class="text-ink-muted">
                     Publié le {{ formatArticleDate(article?.publish_at) }}
                   </p>
                 </div>
@@ -81,7 +81,7 @@
             </figure>
 
             <div class="mt-2xl max-w-prose space-y-xl text-body text-ink-body">
-              <div class="article-content" v-html="sanitizedArticle.html"></div>
+              <div class="post__content" v-html="sanitizedArticle.html"></div>
 
               <CenterFormationCard
                 v-if="relatedFormationCard"
@@ -142,13 +142,13 @@
 
               <Card class="bg-primary-dark p-lg text-paper">
                 <h3 class="text-small font-bold">Un doute sur vos échéances ?</h3>
-                <p class="mt-sm text-meta leading-5 text-white/72">
+                <p class="mt-sm text-meta leading-relaxed text-ink-inverse-muted">
                   Transmettez vos dates de délivrance : un conseiller planifie les recyclages en
                   série avec vos équipes.
                 </p>
                 <NuxtLink
                   to="/centres/demande-de-formation"
-                  class="mt-lg block h-control rounded-full bg-white px-lg text-center text-small font-semibold leading-11 text-ink hover:bg-paper/90"
+                  class="mt-lg flex h-control items-center justify-center rounded-full bg-paper px-lg text-small font-semibold text-ink hover:bg-paper/90"
                 >
                   Parler à un conseiller
                 </NuxtLink>
@@ -468,8 +468,8 @@ function onErrorSearch(query: string) {
   navigateTo({ path: '/actualites', query: query ? { q: query } : {} })
 }
 
-function assetUrl(id: string | null): string | null {
-  return articleAssetUrl(id, config.public.apiBase)
+function assetUrl(id: string | null): string | undefined {
+  return articleAssetUrl(id, config.public.apiBase) ?? undefined
 }
 
 function onShare() {

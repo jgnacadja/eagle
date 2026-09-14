@@ -616,9 +616,90 @@ export const collections = [
         field: 'blocks',
         type: 'json',
         meta: {
-          interface: 'input-code',
+          interface: 'list',
           width: 'full',
-          note: 'Blocs pédagogiques JSON (programme) — remplis par la sync, éditables'
+          note: 'Blocs pédagogiques (programme) — remplis par la sync, éditables',
+          options: {
+            fields: [
+              {
+                field: 'name',
+                type: 'string',
+                meta: { interface: 'input', width: 'full', required: true },
+                schema: {}
+              },
+              {
+                field: 'subtitle',
+                type: 'string',
+                meta: { interface: 'input', width: 'full', note: 'Ligne résumée sur la fiche' },
+                schema: {}
+              },
+              {
+                field: 'description',
+                type: 'text',
+                meta: { interface: 'input-rich-text-html', width: 'full' },
+                schema: {}
+              },
+              {
+                field: 'goals',
+                type: 'json',
+                meta: {
+                  interface: 'list',
+                  width: 'full',
+                  note: 'Objectifs du bloc',
+                  options: {
+                    fields: [
+                      {
+                        field: 'text',
+                        type: 'string',
+                        meta: { interface: 'input', width: 'full', required: true },
+                        schema: {}
+                      }
+                    ]
+                  }
+                },
+                schema: {}
+              },
+              {
+                field: 'type',
+                type: 'string',
+                meta: {
+                  interface: 'select-dropdown',
+                  width: 'half',
+                  options: {
+                    allowOther: true,
+                    choices: [
+                      { text: 'Théorie', value: 'theorie' },
+                      { text: 'Pratique', value: 'pratique' },
+                      { text: 'Évaluation', value: 'evaluation' }
+                    ]
+                  }
+                },
+                schema: {}
+              },
+              {
+                field: 'position',
+                type: 'integer',
+                meta: { interface: 'input', width: 'half', note: 'Ordre d’affichage' },
+                schema: {}
+              },
+              {
+                field: 'durationInHours',
+                type: 'float',
+                meta: { interface: 'input', width: 'half', note: 'Durée en heures' },
+                schema: {}
+              },
+              {
+                field: 'durationInDays',
+                type: 'float',
+                meta: {
+                  interface: 'input',
+                  width: 'half',
+                  note: 'Durée en jours (si pas d’heures)'
+                },
+                schema: {}
+              }
+            ]
+          }
         }
       },
       {

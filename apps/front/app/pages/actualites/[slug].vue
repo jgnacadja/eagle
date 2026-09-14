@@ -147,7 +147,7 @@
                 </p>
                 <NuxtLink
                   to="/centres/demande-de-formation"
-                  class="mt-lg flex h-control items-center justify-center rounded-full bg-paper px-lg text-small font-semibold text-ink hover:bg-paper/90"
+                  class="mt-lg flex h-control items-center justify-center rounded-full bg-paper px-lg text-small font-semibold text-ink hover:bg-paper/90 hover:text-accent-text"
                 >
                   Parler à un conseiller
                 </NuxtLink>

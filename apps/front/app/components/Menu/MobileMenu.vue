@@ -254,21 +254,21 @@
         >
           <NuxtLink
             to="/etre-guide"
-            class="rounded-full bg-accent px-lg py-md text-center text-small font-semibold text-ink hover:bg-accent-text"
+            class="rounded-full bg-accent px-lg py-md text-center text-small font-semibold text-ink hover:bg-accent-text hover:text-paper"
             @click="closeMenu"
           >
             Être guidé dans mon choix
           </NuxtLink>
           <NuxtLink
             to="/confier-ma-formation"
-            class="rounded-full bg-accent px-lg py-md text-center text-small font-semibold text-ink hover:bg-accent-text"
+            class="rounded-full bg-accent px-lg py-md text-center text-small font-semibold text-ink hover:bg-accent-text hover:text-paper"
             @click="closeMenu"
           >
             Confier ma formation
           </NuxtLink>
           <NuxtLink
             to="/contact"
-            class="rounded-full border border-rule bg-paper px-lg py-md text-center text-small font-semibold text-ink hover:bg-paper"
+            class="rounded-full border border-rule bg-paper px-lg py-md text-center text-small font-semibold text-ink hover:bg-paper hover:text-accent-text"
             @click="closeMenu"
           >
             Parler à un conseiller

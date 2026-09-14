@@ -124,6 +124,36 @@ describe('CentresService', () => {
     expect(result.map((c) => c.slug)).toEqual(['lyon'])
   })
 
+  it('filters by department name matching a covered code', async () => {
+    cache.get.mockResolvedValue(null)
+
+    const result = await service.list({ department: 'Hauts-de-Seine' } as ListCentresDto)
+
+    expect(result.map((c) => c.slug)).toEqual(['paris'])
+  })
+
+  it('filters by code matching the geocoded department name', async () => {
+    cache.get.mockResolvedValue(null)
+    directus.fetchAllCentres.mockResolvedValue([
+      centre({ slug: 'nice', department: 'Alpes-Maritimes', departments_covered: [] })
+    ])
+
+    const result = await service.list({ department: '06' } as ListCentresDto)
+
+    expect(result.map((c) => c.slug)).toEqual(['nice'])
+  })
+
+  it('filters a covered tag despite different separators', async () => {
+    cache.get.mockResolvedValue(null)
+    directus.fetchAllCentres.mockResolvedValue([
+      centre({ slug: 'tag', department: null, departments_covered: ['Val de Marne'] })
+    ])
+
+    const result = await service.list({ department: 'Val-de-Marne' } as ListCentresDto)
+
+    expect(result.map((c) => c.slug)).toEqual(['tag'])
+  })
+
   it('filters search accent- and case-insensitively on name/city/CP/address/specialties', async () => {
     cache.get.mockResolvedValue(null)
 
@@ -170,12 +200,36 @@ describe('CentresService', () => {
     expect(directus.fetchAllCentres).not.toHaveBeenCalled()
   })
 
-  it('dedupes department and departments_covered, sorted fr', async () => {
+  it('dedupes department and covered codes as names, sorted fr', async () => {
     cache.get.mockResolvedValue(null)
 
     const result = await service.departments()
 
-    expect(result).toEqual(['01', '69', '75', '92', '94', 'Paris', 'Rhône', 'Val-de-Marne'])
-    expect(cache.set).toHaveBeenCalledWith('centres:departments', result)
+    expect(result).toEqual(['Ain', 'Hauts-de-Seine', 'Paris', 'Rhône', 'Val-de-Marne'])
+    expect(cache.set).toHaveBeenCalledWith('centres:departments:v2', result)
+  })
+
+  it('dedupes names differing only by separators, geocoded graphie first', async () => {
+    cache.get.mockResolvedValue(null)
+    directus.fetchAllCentres.mockResolvedValue([
+      centre({ slug: 'a', department: 'Val-de-Marne', departments_covered: ['val de marne'] })
+    ])
+
+    const result = await service.departments()
+
+    expect(result).toEqual(['Val-de-Marne'])
+  })
+
+  it('count returns the number of published centres', async () => {
+    cache.get.mockResolvedValue(null)
+
+    expect(await service.count()).toBe(3)
+  })
+
+  it('count degrades to 0 when Directus fails', async () => {
+    cache.get.mockResolvedValue(null)
+    directus.fetchAllCentres.mockRejectedValue(new Error('network'))
+
+    expect(await service.count()).toBe(0)
   })
 })

@@ -78,7 +78,7 @@
         <p class="text-body font-semibold">Vous ne savez pas quelle formation choisir ?</p>
         <NuxtLink
           to="/etre-guide"
-          class="w-full text-center mt-sm inline-block rounded-full bg-paper px-lg py-2 text-small font-semibold text-ink hover:bg-surface"
+          class="w-full text-center mt-sm inline-block rounded-full bg-paper px-lg py-2 text-small font-semibold text-ink hover:bg-surface hover:text-accent-text"
           @click="$emit('close')"
         >
           Être guidé dans mon choix

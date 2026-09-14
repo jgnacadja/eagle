@@ -36,7 +36,7 @@
         <Button
           as-child
           variant="outline"
-          class="h-auto shrink-0 rounded-full border-outline bg-paper px-md py-xs text-small font-bold text-ink transition hover:border-primary hover:bg-paper"
+          class="h-auto shrink-0 rounded-full border-outline bg-paper px-md py-xs text-small font-bold text-ink transition hover:border-primary hover:bg-paper hover:text-accent-text"
         >
           <NuxtLink :to="to">{{ ctaLabel }}</NuxtLink>
         </Button>

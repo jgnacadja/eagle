@@ -34,14 +34,14 @@
               <div class="mt-2xl flex flex-wrap items-center gap-md">
                 <Button
                   as-child
-                  class="h-control w-full rounded-full bg-accent px-md py-sm text-button font-semibold text-ink transition hover:bg-accent-text sm:w-auto"
+                  class="h-control w-full rounded-full bg-accent px-md py-sm text-button font-semibold text-ink transition hover:bg-accent-text hover:text-paper sm:w-auto"
                 >
                   <NuxtLink to="#formations">Trouver une formation dans ce centre</NuxtLink>
                 </Button>
                 <Button
                   as-child
                   variant="outline"
-                  class="h-control w-full rounded-full border-outline bg-paper px-md py-sm text-button font-medium text-ink transition hover:border-primary hover:bg-paper hover:text-ink sm:w-auto"
+                  class="h-control w-full rounded-full border-outline bg-paper px-md py-sm text-button font-medium text-ink transition hover:border-primary hover:bg-paper hover:text-accent-text sm:w-auto"
                 >
                   <NuxtLink to="#">Parler à un conseiller</NuxtLink>
                 </Button>
@@ -162,7 +162,7 @@
                     v-if="centre.qualiopi_certificate"
                     as-child
                     variant="outline"
-                    class="mt-md h-control w-full rounded-full border-outline bg-paper px-md py-sm text-small font-semibold text-ink transition hover:border-primary"
+                    class="mt-md h-control w-full rounded-full border-outline bg-paper px-md py-sm text-small font-semibold text-ink transition hover:border-primary hover:text-accent-text"
                   >
                     <a :href="qualiopiCertificateUrl" target="_blank" rel="noopener">
                       Télécharger le certificat Qualiopi
@@ -258,7 +258,7 @@
         >
           <Button
             as-child
-            class="h-control w-full rounded-full bg-paper px-lg py-sm text-center text-button font-bold text-ink transition hover:bg-surface sm:w-auto"
+            class="h-control w-full rounded-full bg-paper px-lg py-sm text-center text-button font-bold text-ink transition hover:bg-surface hover:text-accent-text sm:w-auto"
           >
             <NuxtLink :to="`/centres/demande-de-formation?centre=${slug}`"
               >Demander une formation</NuxtLink
@@ -301,6 +301,7 @@
                 :distance="nearby.city ?? ''"
                 :formations="nearby.specialties"
                 :tags="[]"
+                :title-to="null"
                 class="h-full transition hover:shadow-md"
               />
             </NuxtLink>
@@ -581,7 +582,7 @@ function toCentreSession(
     meta: sessionMeta(course, session),
     places,
     type: sessionSeatType(places),
-    ctaLabel: places === 0 ? "Être informé d'une place" : 'Voir la session',
+    ctaLabel: places === 0 ? "Être informé d'une place" : "S'inscrire",
     to: course.familySlug ? `/formations/${course.familySlug}/${course.slug}` : '/formations'
   }
 }

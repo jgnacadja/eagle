@@ -30,7 +30,7 @@
       <Button
         as-child
         variant="outline"
-        class="h-control rounded-full border-outline px-lg text-button font-semibold text-ink transition hover:border-primary"
+        class="h-control rounded-full border-outline px-lg text-button font-semibold text-ink transition hover:border-primary hover:text-accent-text"
       >
         <NuxtLink :to="linkTo">{{ linkLabel }}</NuxtLink>
       </Button>

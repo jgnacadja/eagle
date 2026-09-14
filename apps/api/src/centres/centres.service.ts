@@ -3,6 +3,7 @@ import type { CentreListItem } from '@learnup/types'
 import { CacheService } from '../common/cache/cache.service'
 import { DirectusCatalogService, type DirectusCentre } from '../directus/directus.catalog.service'
 import { GeocodingService } from './geocoding.service'
+import { departmentName } from './departments'
 import type { ListCentresDto } from './centres.dto'
 
 function normalizeSearch(text: string | null | undefined): string {
@@ -12,14 +13,40 @@ function normalizeSearch(text: string | null | undefined): string {
     .replace(/[\u0300-\u036f]/g, '')
 }
 
+/**
+ * Forme de comparaison d'une valeur de département : casse et accents via
+ * `normalizeSearch`, plus espaces et tirets ignorés — « Val de Marne »
+ * (tag libre) et « Val-de-Marne » (géocodé BAN) doivent se rejoindre.
+ */
+function normalizeDepartment(text: string | null | undefined): string {
+  return normalizeSearch(text).replace(/[\s-]+/g, '')
+}
+
+/**
+ * Toutes les valeurs de département rattachées à un centre : le nom
+ * géocodé plus `departments_covered` (champ tags libre — codes ou noms),
+ * en brut et traduit en nom. Le filtre matche code et nom indifféremment,
+ * dans les deux sens.
+ */
+function centreDepartmentValues(centre: DirectusCentre): string[] {
+  const values = [centre.department ?? '', departmentName(centre.department)]
+  for (const covered of centre.departments_covered ?? []) {
+    if (!covered) continue
+    values.push(covered, departmentName(covered))
+  }
+  return values
+}
+
 function matchesCentre(centre: DirectusCentre, query: ListCentresDto): boolean {
-  const department = normalizeSearch(query.department)
-  if (
-    department &&
-    normalizeSearch(centre.department) !== department &&
-    !(centre.departments_covered ?? []).some((d) => normalizeSearch(d) === department)
-  ) {
-    return false
+  const department = query.department?.trim()
+  if (department) {
+    // La query peut être un code INSEE (« 94 ») quand le centre ne porte
+    // que le nom géocodé « Val-de-Marne », et inversement : on compare
+    // les deux formes des deux côtés.
+    const wanted = new Set([department, departmentName(department)].map(normalizeDepartment))
+    if (!centreDepartmentValues(centre).some((d) => wanted.has(normalizeDepartment(d)))) {
+      return false
+    }
   }
 
   const search = normalizeSearch(query.search)
@@ -72,7 +99,9 @@ export class CentresService {
   }
 
   async departments(): Promise<string[]> {
-    const cacheKey = 'centres:departments'
+    // v2 : les codes `departments_covered` sont traduits en noms — l'ancienne
+    // clé servirait une liste mélangeant codes et noms jusqu'à expiration.
+    const cacheKey = 'centres:departments:v2'
     const cached = await this.cache.get<string[]>(cacheKey)
     if (cached) {
       return cached
@@ -82,17 +111,27 @@ export class CentresService {
     if (all === null) {
       return []
     }
-    const set = new Set<string>()
+    // Dédup sur la forme normalisée : '94' (couvert), « Val de Marne »
+    // (tag libre) et « Val-de-Marne » (géocodé) donnent une seule entrée.
+    // Premier vu gagne : le département géocodé, itéré avant les tags
+    // couverts, garde sa graphie BAN.
+    const set = new Map<string, string>()
     for (const centre of all) {
-      if (centre.department) set.add(centre.department)
-      for (const dept of centre.departments_covered ?? []) {
-        if (dept) set.add(dept)
+      for (const value of [centre.department, ...(centre.departments_covered ?? [])]) {
+        const name = departmentName(value)
+        const key = normalizeDepartment(name)
+        if (name && !set.has(key)) set.set(key, name)
       }
     }
 
-    const result = [...set].sort((a, b) => a.localeCompare(b, 'fr'))
+    const result = [...set.values()].sort((a, b) => a.localeCompare(b, 'fr'))
     await this.cache.set(cacheKey, result)
     return result
+  }
+
+  async count(): Promise<number> {
+    const all = await this.getAllCentres()
+    return all?.length ?? 0
   }
 
   /**

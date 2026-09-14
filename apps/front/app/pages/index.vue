@@ -49,7 +49,7 @@
 
         <NuxtLink
           to="/centres/demande-de-formation"
-          class="mt-sm inline-block text-small font-bold text-primary transition-colors hover:text-accent-text"
+          class="mt-sm inline-block text-small font-bold text-accent-text underline underline-offset-4 transition-colors hover:text-primary"
         >
           Confier ma formation <span class="link-arrow">→</span>
         </NuxtLink>
@@ -336,7 +336,7 @@
         <div class="mt-lg flex flex-col gap-md md:flex-row md:flex-wrap">
           <NuxtLink
             to="/centres/demande-de-formation"
-            class="w-full text-center rounded-full bg-accent px-lg py-md text-button text-ink hover:bg-accent-text transition md:w-auto"
+            class="w-full text-center rounded-full bg-accent px-lg py-md text-button text-ink hover:bg-accent-text hover:text-paper transition md:w-auto"
           >
             Confier mes formations
           </NuxtLink>

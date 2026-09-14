@@ -231,7 +231,7 @@
           <div class="flex flex-col gap-sm sm:flex-row sm:items-center">
             <Button
               type="submit"
-              class="h-control w-full rounded-full bg-accent px-2xl text-small font-semibold text-ink shadow-sm transition hover:bg-accent-text sm:w-auto"
+              class="h-control w-full rounded-full bg-accent px-2xl text-small font-semibold text-ink shadow-sm transition hover:bg-accent-text hover:text-paper sm:w-auto"
             >
               Envoyer ma demande
             </Button>

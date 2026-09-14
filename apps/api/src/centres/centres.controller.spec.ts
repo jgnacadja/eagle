@@ -12,12 +12,14 @@ describe('CentresController', () => {
   let service: {
     list: ReturnType<typeof vi.fn>
     departments: ReturnType<typeof vi.fn>
+    count: ReturnType<typeof vi.fn>
   }
 
   beforeEach(async () => {
     service = {
       list: vi.fn(),
-      departments: vi.fn()
+      departments: vi.fn(),
+      count: vi.fn()
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -79,6 +81,17 @@ describe('CentresController', () => {
       .expect(200)
       .expect((res) => {
         expect(res.body).toEqual(['Paris', 'Rhône'])
+      })
+  })
+
+  it('GET /centres/count returns the total', async () => {
+    service.count.mockResolvedValue(42)
+
+    await request(app.getHttpServer())
+      .get('/centres/count')
+      .expect(200)
+      .expect((res) => {
+        expect(res.body).toEqual({ count: 42 })
       })
   })
 })

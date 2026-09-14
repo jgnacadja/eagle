@@ -37,7 +37,7 @@
               <div class="mt-2xl hidden flex-wrap items-center gap-md lg:flex">
                 <Button
                   as-child
-                  class="h-control rounded-full bg-accent px-md py-sm text-button font-semibold text-ink transition hover:bg-accent-text"
+                  class="h-control rounded-full bg-accent px-md py-sm text-button font-semibold text-ink transition hover:bg-accent-text hover:text-paper"
                 >
                   <NuxtLink :to="demandeTo">{{
                     hasSessions ? 'Demander cette formation' : 'Demander une session'
@@ -47,7 +47,7 @@
                   v-if="hasSessions"
                   as-child
                   variant="outline"
-                  class="h-control rounded-full border-outline bg-paper px-md py-sm text-button font-semibold text-ink transition hover:border-primary hover:bg-paper"
+                  class="h-control rounded-full border-outline bg-paper px-md py-sm text-button font-semibold text-ink transition hover:border-primary hover:bg-paper hover:text-accent-text"
                 >
                   <NuxtLink href="#sessionsList"> Voir les sessions </NuxtLink>
                 </Button>
@@ -309,7 +309,7 @@
                     <Button
                       as-child
                       variant="outline"
-                      class="h-control rounded-full border-outline bg-paper px-md py-sm text-button font-semibold text-ink transition hover:border-primary hover:bg-paper"
+                      class="h-control rounded-full border-outline bg-paper px-md py-sm text-button font-semibold text-ink transition hover:border-primary hover:bg-paper hover:text-accent-text"
                     >
                       <NuxtLink :to="demandeTo">Être informé des prochaines dates</NuxtLink>
                     </Button>
@@ -384,7 +384,7 @@
                     <Button
                       as-child
                       variant="outline"
-                      class="h-control w-full rounded-full border-outline bg-paper px-md py-sm text-button font-semibold text-ink transition hover:border-primary hover:bg-paper"
+                      class="h-control w-full rounded-full border-outline bg-paper px-md py-sm text-button font-semibold text-ink transition hover:border-primary hover:bg-paper hover:text-accent-text"
                     >
                       <NuxtLink to="#">Parler à un conseiller</NuxtLink>
                     </Button>
@@ -435,7 +435,7 @@
               </p>
               <Button
                 as-child
-                class="mt-md h-control w-full rounded-full bg-paper px-md py-sm text-button font-semibold text-ink transition hover:bg-surface"
+                class="mt-md h-control w-full rounded-full bg-paper px-md py-sm text-button font-semibold text-ink transition hover:bg-surface hover:text-accent-text"
               >
                 <NuxtLink :to="demandeTo">Organiser cette formation dans mon entreprise</NuxtLink>
               </Button>
@@ -446,7 +446,7 @@
               v-if="course.generatedProgramUrl"
               as-child
               variant="outline"
-              class="h-control w-full gap-sm rounded-md border-rule bg-paper px-md py-sm text-small font-medium text-ink transition hover:border-outline hover:bg-paper"
+              class="h-control w-full gap-sm rounded-md border-rule bg-paper px-md py-sm text-small font-medium text-ink transition hover:border-outline hover:bg-paper hover:text-accent-text"
             >
               <NuxtLink :to="course.generatedProgramUrl" target="_blank" rel="noopener noreferrer">
                 <IconDownload :size="16" />
@@ -464,7 +464,7 @@
           >
             <Button
               as-child
-              class="h-control w-full rounded-md bg-paper px-md py-sm text-button font-semibold text-ink transition hover:bg-surface sm:w-auto"
+              class="h-control w-full rounded-md bg-paper px-md py-sm text-button font-semibold text-ink transition hover:bg-surface hover:text-accent-text sm:w-auto"
             >
               <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
             </Button>
@@ -518,7 +518,7 @@
           </div>
           <Button
             as-child
-            class="h-control shrink-0 rounded-full bg-accent px-md py-sm text-button font-semibold text-ink transition hover:bg-accent-text"
+            class="h-control shrink-0 rounded-full bg-accent px-md py-sm text-button font-semibold text-ink transition hover:bg-accent-text hover:text-paper"
           >
             <NuxtLink :to="demandeTo">Demander cette formation</NuxtLink>
           </Button>
@@ -1000,7 +1000,7 @@ const sessionsList = computed(() => {
       price: course.value?.price ? formatPrice(course.value.price) : '',
       places,
       type: sessionSeatType(places),
-      ctaLabel: places === 0 ? "Être informé d'une place" : 'Voir la session',
+      ctaLabel: places === 0 ? "Être informé d'une place" : "S'inscrire",
       to: s.id ? `${demandeTo}&session=${encodeURIComponent(s.id)}` : demandeTo
     }
   })

@@ -22,13 +22,14 @@
     <div class="flex min-w-0 flex-1 flex-col bg-paper md:p-md">
       <div class="flex flex-wrap items-center gap-x-sm gap-y-xs">
         <p class="text-overline text-accent-text uppercase font-bold">{{ category }}</p>
-        <p class="text-meta text-ink-subtle font-medium">{{ date }}</p>
+        <p class="hidden text-meta text-ink-subtle font-medium md:block">{{ date }}</p>
       </div>
 
       <NuxtLink :to="to" class="after:absolute after:inset-0 hover:underline">
         <h3 class="mt-sm font-sans md:text-h4 font-bold text-small text-ink">{{ title }}</h3>
       </NuxtLink>
       <p class="mt-sm hidden text-small text-ink-body md:block">{{ excerpt }}</p>
+      <p class="mt-3 pt-xs text-meta text-ink-subtle font-medium md:hidden">{{ date }}</p>
     </div>
   </article>
 </template>

@@ -81,11 +81,12 @@
               <Button
                 type="button"
                 :variant="isMobileMapOpen ? 'default' : 'outline'"
-                :class="
+                :class="[
+                  'flex items-center gap-sm',
                   isMobileMapOpen
                     ? 'h-control shrink-0 rounded-full bg-primary px-md text-small font-semibold text-paper transition hover:bg-primary-dark lg:hidden'
                     : 'h-control shrink-0 rounded-full border border-outline bg-paper px-md text-small font-semibold text-ink transition hover:bg-surface lg:hidden'
-                "
+                ]"
                 @click="isMobileMapOpen ? closeMobileMap() : openMobileMap()"
               >
                 <IconList v-if="isMobileMapOpen" :size="16" />

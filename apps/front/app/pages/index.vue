@@ -49,7 +49,7 @@
 
         <NuxtLink
           to="/centres/demande-de-formation"
-          class="mt-sm inline-block text-small font-bold text-primary transition-colors hover:text-accent-text"
+          class="mt-sm inline-block text-small font-bold text-accent-text underline underline-offset-4 transition-colors"
         >
           Confier ma formation <span class="link-arrow">→</span>
         </NuxtLink>

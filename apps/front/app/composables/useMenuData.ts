@@ -6,7 +6,11 @@
 
 import { readItems } from '@directus/sdk'
 import { buildMeta } from '~/composables/useCatalog'
+import { formatArticleDate } from '~/utils/article'
+import { formatRegionLabel } from '~/utils/region'
+import { slugify } from '~/utils/slugify'
 import type {
+  Article,
   Centre,
   CourseListItem,
   FamilleFormation,
@@ -41,7 +45,24 @@ export interface MenuRegion {
   count: number
 }
 
-const DIACRITIC_PATTERN = /[̀-ͯ]/g
+export interface MenuRubrique {
+  slug: string
+  label: string
+}
+
+export interface MenuActualite {
+  slug: string
+  categorySlug: string
+  tag: string
+  date: string
+  title: string
+}
+
+export interface MenuActualitesData {
+  rubriques: MenuRubrique[]
+  regions: MenuRegion[]
+  actualitesParRegion: Record<string, MenuActualite[]>
+}
 
 /** Limites d’affichage pour chaque section de mega-menu. */
 const MAX_FAMILLES = 4
@@ -49,15 +70,10 @@ const MAX_REGIONS = 4
 const MAX_CENTRES_PER_REGION = 4
 const MAX_FORMATIONS_A_LA_UNE = 6
 const MAX_FORMATIONS_PAR_FAMILLE = 4
-
-function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(DIACRITIC_PATTERN, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-}
+// Rubriques et régions du méga-menu ne reflètent que les MAX_ACTUALITES
+// articles les plus récents — trade-off assumé pour limiter le payload SSR.
+const MAX_ACTUALITES = 60
+const MAX_REGIONS_ACTUALITES = 6
 
 function humanizeSlug(slug: string): string {
   if (!slug) return ''
@@ -269,4 +285,90 @@ export function useMenuFormationsALaUne() {
   )
 
   return data
+}
+
+/** Actualités publiées regroupées pour le méga-menu et le menu mobile. */
+export function useMenuActualites() {
+  const directus = useDirectusClient()
+
+  const { data } = useAsyncData<MenuActualitesData>(
+    'menu-actualites',
+    async () => {
+      try {
+        const articles = await directus.request<Article[]>(
+          readItems('articles', {
+            fields: ['slug', 'title', 'category', 'region', 'publish_at'],
+            filter: { status: { _eq: 'published' } },
+            sort: ['-publish_at'],
+            limit: MAX_ACTUALITES
+          })
+        )
+
+        const categoryLabels = new Map<string, string>()
+        const regionArticles = new Map<string, { label: string; articles: MenuActualite[] }>()
+
+        for (const article of articles) {
+          if (article.category?.trim()) {
+            const slug = slugify(article.category)
+            categoryLabels.set(slug, article.category.trim())
+          }
+
+          if (!article.region?.trim()) continue
+          const regionLabel = formatRegionLabel(article.region)
+          const regionSlug = slugify(regionLabel)
+          const entry = regionArticles.get(regionSlug) ?? { label: regionLabel, articles: [] }
+
+          entry.articles.push({
+            slug: article.slug,
+            categorySlug: article.category?.trim() ? slugify(article.category) : '',
+            tag: article.category?.trim() || 'Actualité',
+            date: formatArticleDate(article.publish_at),
+            title: article.title
+          })
+          regionArticles.set(regionSlug, entry)
+        }
+
+        const regions = [...regionArticles.entries()]
+          .map(([slug, { label, articles: regionArticlesList }]) => ({
+            slug,
+            label,
+            count: regionArticlesList.length
+          }))
+          .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+          .slice(0, MAX_REGIONS_ACTUALITES)
+
+        const visibleRegionSlugs = new Set(regions.map((region) => region.slug))
+        const actualitesParRegion = Object.fromEntries(
+          [...regionArticles.entries()]
+            .filter(([slug]) => visibleRegionSlugs.has(slug))
+            .map(([slug, entry]) => [slug, entry.articles])
+        )
+
+        return {
+          rubriques: [
+            { slug: 'toute-actualite', label: 'Toute l’actualité du réseau' },
+            ...[...categoryLabels.entries()]
+              .sort(([, first], [, second]) => first.localeCompare(second, 'fr'))
+              .map(([slug, label]) => ({ slug, label }))
+          ],
+          regions,
+          actualitesParRegion
+        }
+      } catch (error) {
+        if (import.meta.server) {
+          logServerError('[useMenuActualites] articles fetch failed:', error)
+        }
+        return { rubriques: [], regions: [], actualitesParRegion: {} }
+      }
+    },
+    {
+      getCachedData: (key, nuxtApp) => getCachedData<MenuActualitesData>(key, nuxtApp)
+    }
+  )
+
+  return {
+    rubriques: computed(() => data.value?.rubriques ?? []),
+    regions: computed(() => data.value?.regions ?? []),
+    actualitesParRegion: computed(() => data.value?.actualitesParRegion ?? {})
+  }
 }

@@ -205,7 +205,7 @@
               >
               <AccordionContent>
                 <ul class="pb-sm pl-2">
-                  <li v-for="rubrique in rubriquesActualites" :key="rubrique.slug">
+                  <li v-for="rubrique in actualitesRubriques" :key="rubrique.slug">
                     <NuxtLink
                       to="/actualites"
                       class="block py-2 text-body text-primary transition-colors hover:text-accent-text"
@@ -217,7 +217,7 @@
                 </ul>
                 <p class="pb-1 pl-2 text-small font-semibold text-ink-muted">Par région</p>
                 <ul class="pb-sm pl-2">
-                  <li v-for="region in (regions ?? []).slice(0, 2)" :key="region.slug">
+                  <li v-for="region in actualitesRegions.slice(0, 2)" :key="region.slug">
                     <NuxtLink
                       to="/actualites"
                       class="block py-2 text-body text-primary transition-colors hover:text-accent-text"
@@ -228,7 +228,7 @@
                   </li>
                   <li>
                     <NuxtLink
-                      to="/centres"
+                      to="/actualites"
                       class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
@@ -290,8 +290,8 @@ import {
   AccordionItem,
   AccordionTrigger
 } from '~/components/ui/accordion'
-import { aproposLiens, legalLiens, rubriquesActualites } from '~/data/navigation'
-import { useMenuCentres, useMenuFamilles } from '~/composables/useMenuData'
+import { aproposLiens, legalLiens } from '~/data/navigation'
+import { useMenuActualites, useMenuCentres, useMenuFamilles } from '~/composables/useMenuData'
 
 const open = defineModel<boolean>('open', { default: false })
 const dialogEl = ref<HTMLDialogElement>()
@@ -300,6 +300,7 @@ let previousFocus: Element | null = null
 
 const familles = useMenuFamilles()
 const { regions, centresParRegion } = useMenuCentres()
+const { rubriques: actualitesRubriques, regions: actualitesRegions } = useMenuActualites()
 
 function centresForRegion(label: string) {
   return centresParRegion.value.get(label) ?? []

@@ -270,8 +270,8 @@
 <script setup lang="ts">
 import { readItems } from '@directus/sdk'
 import type { Article } from '@learnup/types'
-import { regions as knownRegions } from '~/data/navigation'
 import { articleAssetUrl, articleReadingTime, formatArticleDate } from '~/utils/article'
+import { formatRegionLabel } from '~/utils/region'
 import { revealStagger } from '~/utils/reveal'
 
 const config = useRuntimeConfig()
@@ -356,13 +356,6 @@ const regionOptions = computed(() => {
     ...Array.from(regions).map((region) => ({ value: region, label: formatRegionLabel(region) }))
   ]
 })
-
-function formatRegionLabel(value: string): string {
-  return (
-    knownRegions.find((region) => region.slug === value || region.label === value)?.label ??
-    value.replace(/[-_]/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
-  )
-}
 
 const featuredArticle = computed<Article | null>(
   () => (articles.value ?? []).find((a) => a.status === 'published') ?? null

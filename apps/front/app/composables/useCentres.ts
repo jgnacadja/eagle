@@ -1,4 +1,4 @@
-import type { CentreListItem } from '@learnup/types'
+import type { CentreListItem, CourseListItem } from '@learnup/types'
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { upcomingSessions, useCatalog } from '~/composables/useCatalog'
 
@@ -43,10 +43,20 @@ export function availabilityStatus(dates: string[]): AvailabilityStatus {
  * cas d'échec de l'API catalogue (badges « Sur demande » en dégradé).
  */
 export async function useCentreSessionDates() {
-  const catalog = await useCatalog({ limit: 200 }).catch(() => null)
+  // L'API borne `limit` à 100 : on pagine jusqu'à épuisement plutôt que de
+  // demander une page trop grande — rejetée en 400, tous les badges
+  // tomberaient en « Sur demande ».
+  const courses: CourseListItem[] = []
+  for (let page = 1; ; page++) {
+    const catalog = await useCatalog({ limit: 100, page }).catch(() => null)
+    const result = catalog?.data.value
+    if (!result || result.items.length === 0) break
+    courses.push(...result.items)
+    if (courses.length >= result.total) break
+  }
   return computed(() => {
     const grouped = new Map<string, string[]>()
-    for (const course of catalog?.data.value?.items ?? []) {
+    for (const course of courses) {
       for (const session of upcomingSessions(course)) {
         const slug = session.location?.centreSlug
         if (!slug || !session.startDate) continue

@@ -527,6 +527,73 @@ describe('CatalogService', () => {
     })
   })
 
+  describe('facets', () => {
+    it('compte chaque dimension en ignorant son propre filtre', async () => {
+      cache.get.mockResolvedValue(null)
+
+      const result = await service.list({
+        family: 'management',
+        page: 1,
+        limit: 20
+      } as ListCoursesDto)
+
+      // Le filtre family est ignoré pour les compteurs de familles…
+      expect(result.facets.families).toEqual({ management: 1, securite: 1 })
+      // …mais appliqué aux autres dimensions.
+      expect(result.facets.subFamilies).toEqual({ 'pilotage-projet': 1 })
+      expect(result.items).toHaveLength(1)
+    })
+
+    it('compte les buckets de durée multi-valués sans son propre filtre', async () => {
+      cache.get.mockResolvedValue(null)
+
+      const result = await service.list({
+        durations: 'courte',
+        page: 1,
+        limit: 20
+      } as ListCoursesDto)
+
+      expect(result.facets.durations).toEqual({ courte: 1, moyenne: 1 })
+      expect(result.items.map((i) => i.slug)).toEqual(['securite'])
+    })
+
+    it('compte département et région comme localisations', async () => {
+      cache.get.mockResolvedValue(null)
+      catalog.fetchAllFormations.mockResolvedValue([
+        {
+          ...baseFormation,
+          id: 3,
+          digiforma_id: 'prog-003',
+          slug: 'avec-session',
+          sessions: [
+            {
+              id: 's1',
+              startDate: '2026-03-01',
+              endDate: '2026-03-03',
+              modality: 'presentiel',
+              seatsRemaining: 5,
+              location: {
+                name: 'Centre de Lyon',
+                city: 'Lyon',
+                postalCode: '69003',
+                department: 'Rhône',
+                region: 'Auvergne-Rhône-Alpes',
+                centreSlug: null
+              }
+            }
+          ]
+        }
+      ])
+
+      const result = await service.list({ page: 1, limit: 20 } as ListCoursesDto)
+
+      expect(result.facets.locations).toEqual({
+        Rhône: 1,
+        'Auvergne-Rhône-Alpes': 1
+      })
+    })
+  })
+
   it('proposes famille and sous-famille on applyFamilies, without overwriting', async () => {
     const {
       catalog: catalogMock,

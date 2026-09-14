@@ -1,8 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { buildCentresParams, useCentres, useCentreDepartments } from '~/composables/useCentres'
+import type { CourseListItem } from '@learnup/types'
+import {
+  buildCentresParams,
+  useCentres,
+  useCentreDepartments,
+  useCentreSessionDates
+} from '~/composables/useCentres'
 
 const fetchMock = vi.fn()
+
+const { useCatalogMock } = vi.hoisted(() => ({ useCatalogMock: vi.fn() }))
+vi.mock('~/composables/useCatalog', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('~/composables/useCatalog')>()),
+  useCatalog: useCatalogMock
+}))
 
 interface AsyncDataOptions {
   getCachedData?: (key: string, nuxtApp: unknown, ctx: { cause: string }) => unknown
@@ -82,6 +94,53 @@ describe('useCentres', () => {
     ).toBeUndefined()
     expect(getCachedData?.('centres:{}', nuxtApp, { cause: 'watch' })).toBeUndefined()
     expect(getCachedData?.('centres:{}', nuxtApp, { cause: 'refresh:manual' })).toBeUndefined()
+  })
+})
+
+describe('useCentreSessionDates', () => {
+  const makeCourse = (i: number): CourseListItem =>
+    ({
+      sessions: [
+        {
+          id: `s${i}`,
+          startDate: '2999-01-01',
+          endDate: null,
+          modality: 'presentiel',
+          seatsRemaining: 3,
+          location: { centreSlug: `centre-${i % 2}` }
+        }
+      ]
+    }) as unknown as CourseListItem
+
+  it('pagine le catalogue au-delà de la limite API de 100', async () => {
+    useCatalogMock
+      .mockResolvedValueOnce({
+        data: ref({
+          items: Array.from({ length: 100 }, (_, i) => makeCourse(i)),
+          total: 101,
+          page: 1,
+          pageSize: 100
+        })
+      })
+      .mockResolvedValueOnce({
+        data: ref({ items: [makeCourse(100)], total: 101, page: 2, pageSize: 100 })
+      })
+
+    const dates = await useCentreSessionDates()
+
+    expect(useCatalogMock).toHaveBeenCalledTimes(2)
+    expect(useCatalogMock).toHaveBeenNthCalledWith(1, { limit: 100, page: 1 })
+    expect(useCatalogMock).toHaveBeenNthCalledWith(2, { limit: 100, page: 2 })
+    expect(dates.value.get('centre-0')).toHaveLength(51)
+    expect(dates.value.get('centre-1')).toHaveLength(50)
+  })
+
+  it('dégrade à une map vide en cas d’erreur catalogue', async () => {
+    useCatalogMock.mockRejectedValueOnce(new Error('400 limit'))
+
+    const dates = await useCentreSessionDates()
+
+    expect(dates.value.size).toBe(0)
   })
 })
 

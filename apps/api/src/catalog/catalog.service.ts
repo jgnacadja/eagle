@@ -595,8 +595,11 @@ function computeCatalogFacets(rows: CatalogRow[], query: ListCoursesDto): Catalo
     durations: countByKeys('durations', (row) =>
       DURATION_BUCKET_KEYS_LIST.filter((bucket) => matchesDurationBucket(row.course, bucket))
     ),
+    // Département ET région sont comptés : le sélecteur de localisation du
+    // front propose les deux dimensions, la recherche plein-texte couvrant
+    // déjà les villes.
     locations: countByKeys('location', (row) =>
-      row.locations.map((loc) => loc.department ?? loc.region ?? null)
+      row.locations.flatMap((loc) => [loc.department, loc.region])
     ),
     cpf: countWhere('cpf', (row) => row.course.cpf === true),
     certifying: countWhere(

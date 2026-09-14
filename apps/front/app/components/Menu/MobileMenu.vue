@@ -133,7 +133,7 @@
                           </li>
                           <li>
                             <NuxtLink
-                              :to="{ path: '/centres', query: { q: region.label } }"
+                              :to="{ path: '/centres', query: { region: region.label } }"
                               class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                               @click="closeMenu"
                             >
@@ -145,7 +145,7 @@
                     </AccordionItem>
                     <NuxtLink
                       v-else
-                      :to="{ path: '/centres', query: { q: region.label } }"
+                      :to="{ path: '/centres', query: { region: region.label } }"
                       class="flex items-center justify-between py-2 text-body text-primary transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >

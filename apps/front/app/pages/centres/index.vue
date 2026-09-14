@@ -250,7 +250,16 @@ useContentSeo(
 )
 
 const selectedDept = ref('all')
-const appliedSearch = ref(typeof route.query.q === 'string' ? route.query.q : '')
+// `region` (navigation menus) pré-remplit la recherche — le haystack API
+// inclut `centre.region` — tout en restant distinct de `q` (recherche
+// libre) dans le contrat d'URL.
+const appliedSearch = ref(
+  typeof route.query.q === 'string'
+    ? route.query.q
+    : typeof route.query.region === 'string'
+      ? route.query.region
+      : ''
+)
 const searchQuery = ref(appliedSearch.value)
 const activeCenterId = ref<string | null>(null)
 const isMobileMapOpen = ref(false)
@@ -339,9 +348,9 @@ async function loadMoreCenters() {
 }
 
 watch(
-  () => route.query.q,
-  (q) => {
-    const value = typeof q === 'string' ? q : ''
+  () => [route.query.q, route.query.region],
+  ([q, region]) => {
+    const value = typeof q === 'string' && q ? q : typeof region === 'string' ? region : ''
     searchQuery.value = value
     appliedSearch.value = value
   }

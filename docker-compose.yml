@@ -122,6 +122,12 @@ services:
       DIRECTUS_URL: http://directus:8055
       DIRECTUS_ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL}
       DIRECTUS_ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD}
+      # Lus par flows.mjs au build : en full-compose les webhooks de purge
+      # ciblent les services internes, pas host.docker.internal.
+      API_INTERNAL_URL: http://api:3001
+      FRONT_INTERNAL_URL: http://front:3000
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+      NUXT_CACHE_PURGE_SECRET: ${NUXT_CACHE_PURGE_SECRET:-}
     volumes:
       - ./directus:/opt/directus:ro
     entrypoint:

@@ -142,6 +142,15 @@ const catalogMocks = vi.hoisted(() => {
         if (q.family && typeof q.family === 'string') {
           items = items.filter((c) => c.familySlug === q.family)
         }
+        // Facettes calculées avant le filtre subFamily (sémantique de
+        // facettage : une dimension ignore son propre filtre).
+        const subFamilies: Record<string, number> = {}
+        const modalities: Record<string, number> = {}
+        for (const c of items) {
+          if (c.subFamilySlug)
+            subFamilies[c.subFamilySlug] = (subFamilies[c.subFamilySlug] ?? 0) + 1
+          for (const m of c.modalities ?? []) modalities[m] = (modalities[m] ?? 0) + 1
+        }
         if (q.subFamily && typeof q.subFamily === 'string') {
           items = items.filter((c) => c.subFamilySlug === q.subFamily)
         }
@@ -149,7 +158,16 @@ const catalogMocks = vi.hoisted(() => {
           items,
           total: items.length,
           page: q.page ?? 1,
-          pageSize: q.limit ?? 9
+          pageSize: q.limit ?? 9,
+          facets: {
+            families: {},
+            subFamilies,
+            modalities,
+            durations: {},
+            locations: {},
+            cpf: 0,
+            certifying: 0
+          }
         }
       })
       return { data, pending: ref(false), error: ref(null), refresh: vi.fn() }

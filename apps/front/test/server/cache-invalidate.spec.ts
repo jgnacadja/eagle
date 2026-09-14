@@ -74,6 +74,27 @@ describe('server/api/cache/invalidate', () => {
     expect(result).toEqual({ success: true, purged: 4 })
   })
 
+  it('collection héritée (__proto__) → purge complète, sans lever', async () => {
+    const result = await handler(event({ collection: '__proto__' }))
+    expect(result).toEqual({ success: true, purged: 4 })
+  })
+
+  it('articles purge /actualites et la racine, pas les formations', async () => {
+    const result = await handler(event({ collection: 'articles' }))
+    expect(result).toEqual({ success: true, purged: 2 })
+    expect(storage.keys).toEqual([
+      'nitro:isr:formations:sante:sst-sauveteur-secouriste-du-travail',
+      'nitro:isr:formations:caces-conduite-engins:caces-r489'
+    ])
+  })
+
+  it('pages ne purge que la racine', async () => {
+    const result = await handler(event({ collection: 'pages' }))
+    expect(result).toEqual({ success: true, purged: 1 })
+    expect(storage.keys).not.toContain('nitro:isr:')
+    expect(storage.keys).toHaveLength(3)
+  })
+
   it('rejette un secret invalide', async () => {
     await expect(handler(event(null, 'mauvais'))).rejects.toMatchObject({ statusCode: 401 })
     expect(storage.keys).toHaveLength(4)

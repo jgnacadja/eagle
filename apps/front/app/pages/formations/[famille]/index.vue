@@ -524,17 +524,12 @@ const subFamilyFilterLabel = computed(
     subFamilyOptions.value.find((o) => o.value === selectedSubFamily.value)?.label ?? 'Sous-famille'
 )
 
-// Nombre de formations par sous-famille, calculé sur la requête facettes
-// (toute la famille, pas seulement la page courante).
-const subFamilyCounts = computed(() => {
-  const counts = new Map<string, number>()
-  for (const item of facets.data.value?.items ?? []) {
-    const slug = item.subFamilySlug
-    if (!slug) continue
-    counts.set(slug, (counts.get(slug) ?? 0) + 1)
-  }
-  return counts
-})
+// Nombre de formations par sous-famille, lu dans `facets.subFamilies`
+// (calculé par l'API sur toute la famille) — les `items` de la requête
+// sont bornés à `limit` et tronqueraient les compteurs au-delà de 100.
+const subFamilyCounts = computed(
+  () => new Map(Object.entries(facets.data.value?.facets.subFamilies ?? {}))
+)
 
 // Titre éditorial de la section (« Parcourir par type d'engin » pour CACES
 // par ex.) — repli générique si le champ n'est pas renseigné.
@@ -597,16 +592,13 @@ const familyTotal = computed(() => facets.data.value?.total ?? 0)
 // Repli : placeholder avec le nom.
 const heroImage = computed(() => directusAssetUrl(familleData.value?.image))
 
-// Tags du hero : modalités présentes dans la famille + badge sessions
-// (« ce mois-ci » / « programmées ») dérivé des sessions API — calculés
-// sur la requête facettes pour couvrir toute la famille.
-const familyModalities = computed(() => {
-  const set = new Set<string>()
-  for (const item of facets.data.value?.items ?? []) {
-    for (const m of item.modalities ?? []) set.add(m)
-  }
-  return [...set].map((m) => MODALITY_LABELS[m] ?? m)
-})
+// Tags du hero : modalités présentes dans la famille, lues dans
+// `facets.modalities` (toute la famille, pas seulement les `limit` items
+// de la page) + badge sessions (« ce mois-ci » / « programmées ») dérivé
+// des sessions API.
+const familyModalities = computed(() =>
+  Object.keys(facets.data.value?.facets.modalities ?? {}).map((m) => MODALITY_LABELS[m] ?? m)
+)
 
 const familySessionBadge = computed(() => {
   const items = facets.data.value?.items ?? []

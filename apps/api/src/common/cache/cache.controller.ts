@@ -2,6 +2,7 @@ import { Body, Controller, Post, UseGuards } from '@nestjs/common'
 import { ApiSecurity, ApiTags } from '@nestjs/swagger'
 import { SkipThrottle } from '@nestjs/throttler'
 import { AdminApiKeyGuard } from '../guards/admin-api-key.guard'
+import { InvalidateCacheDto } from './cache.dto'
 import { CacheService } from './cache.service'
 
 // Clés catalogue purgées par collection Directus. Une écriture sur une
@@ -31,10 +32,10 @@ export class CacheController {
   @Post('cache/invalidate')
   @SkipThrottle({ admin: true })
   async invalidate(
-    @Body() body?: { collection?: string }
+    @Body() body?: InvalidateCacheDto
   ): Promise<{ success: boolean; purged: boolean }> {
     const collection = body?.collection
-    if (collection && !(collection in COLLECTION_KEYS)) {
+    if (collection && !Object.hasOwn(COLLECTION_KEYS, collection)) {
       return { success: true, purged: false }
     }
     if (collection) {

@@ -49,4 +49,13 @@ describe('CacheController', () => {
     expect(cache.invalidateCatalog).not.toHaveBeenCalled()
     expect(cache.invalidatePatterns).not.toHaveBeenCalled()
   })
+
+  it('ignore les clés héritées du prototype (__proto__)', async () => {
+    await expect(controller.invalidate({ collection: '__proto__' })).resolves.toEqual({
+      success: true,
+      purged: false
+    })
+    expect(cache.invalidateCatalog).not.toHaveBeenCalled()
+    expect(cache.invalidatePatterns).not.toHaveBeenCalled()
+  })
 })

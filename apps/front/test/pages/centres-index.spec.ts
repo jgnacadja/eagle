@@ -64,8 +64,9 @@ function filterFixture(query: CentresQuery) {
   if (search) {
     list = list.filter(
       (c) =>
-        [c.name, c.city, c.postal_code, c.address].some((f) => f?.toLowerCase().includes(search)) ||
-        (c.specialties ?? []).some((s) => s.toLowerCase() === search)
+        [c.name, c.city, c.postal_code, c.address, c.region].some((f) =>
+          f?.toLowerCase().includes(search)
+        ) || (c.specialties ?? []).some((s) => s.toLowerCase() === search)
     )
   }
   return list
@@ -291,6 +292,17 @@ describe('pages/centres/index', () => {
     expect(input.value).toBe('vitry')
     expect(wrapper.findAll('.center-card')).toHaveLength(1)
     expect(wrapper.text()).toContain('Vitry-sur-Seine')
+  })
+
+  it('démarre la recherche depuis ?region= (navigation menus)', async () => {
+    routeStub.query = { region: 'Auvergne-Rhône-Alpes' }
+    const wrapper = await mountPage()
+
+    const input = wrapper.find('.city-search').element as HTMLInputElement
+    expect(input.value).toBe('Auvergne-Rhône-Alpes')
+    const cards = wrapper.findAll('.center-card')
+    expect(cards).toHaveLength(1)
+    expect(cards[0]!.text()).toContain('Lyon')
   })
 
   it('applique une recherche arrivée via ?q= après le montage', async () => {

@@ -47,7 +47,11 @@ export default defineEventHandler(async (event) => {
     matchers = [body.match ?? body.path].filter((v): v is string => Boolean(v))
   } else if (body?.collection) {
     // Collection non mappée : purge complète — la fraîcheur prime.
-    matchers = COLLECTION_ROUTES[body.collection] ?? null
+    // `hasOwn` : sans lui, `__proto__` résoudrait une propriété héritée et
+    // `matchers.some` lèverait sur une valeur non-tableau.
+    matchers = Object.hasOwn(COLLECTION_ROUTES, body.collection)
+      ? COLLECTION_ROUTES[body.collection]
+      : null
   }
 
   const storage = useStorage('cache')
@@ -55,7 +59,14 @@ export default defineEventHandler(async (event) => {
   const targets = keys.filter((key) => {
     if (!matchers) return true
     const normalized = normalize(key)
-    return matchers.some((m) => normalized.includes(normalize(m)))
+    return matchers.some((m) => {
+      const matcher = normalize(m)
+      // « / » se normalise en '' et `includes('')` est toujours vrai : la
+      // racine ne doit cibler que la clé ISR de la page d'accueil (la clé
+      // sans segment de route, ex. `nitro:isr:`).
+      if (!matcher) return normalized === normalize('nitro:isr:')
+      return normalized.includes(matcher)
+    })
   })
 
   await Promise.all(targets.map((key) => storage.removeItem(key)))

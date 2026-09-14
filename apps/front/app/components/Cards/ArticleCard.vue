@@ -1,6 +1,6 @@
 <template>
   <article
-    class="relative flex flex-row gap-3 rounded-md border border-rule bg-paper p-md shadow-sm transition hover:border-primary/40 hover:shadow-md md:flex-col md:gap-0 md:overflow-hidden md:p-0"
+    class="relative flex flex-row gap-md rounded-md border border-rule bg-paper p-md shadow-sm transition hover:border-primary/40 hover:shadow-md md:flex-col md:gap-0 md:overflow-hidden md:p-0"
   >
     <div
       class="flex aspect-3/2 w-2/5 shrink-0 items-center justify-center overflow-hidden rounded-sm text-center md:w-auto md:rounded-none"
@@ -29,7 +29,7 @@
         <h3 class="mt-sm font-sans md:text-h4 font-bold text-small text-ink">{{ title }}</h3>
       </NuxtLink>
       <p class="mt-sm hidden text-small text-ink-body md:block">{{ excerpt }}</p>
-      <p class="mt-3 pt-xs text-meta text-ink-subtle font-medium md:hidden">{{ date }}</p>
+      <p class="mt-auto pt-xs text-meta text-ink-subtle font-medium md:hidden">{{ date }}</p>
     </div>
   </article>
 </template>

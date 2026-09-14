@@ -301,6 +301,7 @@
                 :distance="nearby.city ?? ''"
                 :formations="nearby.specialties"
                 :tags="[]"
+                :title-to="null"
                 class="h-full transition hover:shadow-md"
               />
             </NuxtLink>

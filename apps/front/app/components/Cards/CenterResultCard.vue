@@ -15,7 +15,7 @@
       }}</span>
     </div>
     <p class="mt-xs text-small text-ink-muted">{{ center.address }}</p>
-    <p v-if="center.tags" class="hidden md:block mt-sm text-small font-medium text-ink-body">
+    <p v-if="center.tags" class="mt-sm hidden text-small font-medium text-ink-body md:block">
       {{ center.tags }}
     </p>
     <div class="mt-sm flex items-center justify-between gap-sm">

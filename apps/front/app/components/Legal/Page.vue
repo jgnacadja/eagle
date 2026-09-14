@@ -117,7 +117,7 @@
             <Button
               as-child
               variant="outline"
-              class="h-control w-full rounded-full border-outline px-xl text-small font-semibold sm:w-auto"
+              class="h-control w-full rounded-full border-outline px-xl text-small font-semibold transition hover:text-accent-text sm:w-auto"
             >
               <a :href="page.cta.to">
                 {{ page.cta.label }}

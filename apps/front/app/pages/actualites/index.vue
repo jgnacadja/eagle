@@ -172,7 +172,7 @@
             >
               <Button
                 type="button"
-                class="h-control rounded-full border border-outline bg-transparent px-xl text-small font-semibold text-ink hover:bg-paper"
+                class="h-control rounded-full border border-outline bg-transparent px-xl text-small font-semibold text-ink hover:bg-paper hover:text-accent-text"
                 @click="mobileVisibleCount = filteredArticles.length"
               >
                 Afficher plus d'articles

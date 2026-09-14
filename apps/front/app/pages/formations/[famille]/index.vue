@@ -273,7 +273,7 @@
         >
           <Button
             as-child
-            class="h-control w-full rounded-full bg-accent px-lg text-small font-semibold text-ink transition hover:bg-accent-text sm:w-auto"
+            class="h-control w-full rounded-full bg-accent px-lg text-small font-semibold text-ink transition hover:bg-accent-text hover:text-paper sm:w-auto"
           >
             <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
           </Button>

@@ -77,7 +77,7 @@
         <p class="text-body font-semibold">Besoin d’une formation sur votre site ?</p>
         <NuxtLink
           to="/formation-intra"
-          class="w-full text-center mt-sm inline-block rounded-full bg-paper px-lg py-2 text-small font-semibold text-ink hover:bg-surface"
+          class="w-full text-center mt-sm inline-block rounded-full bg-paper px-lg py-2 text-small font-semibold text-ink hover:bg-surface hover:text-accent-text"
           @click="$emit('close')"
         >
           Organiser une formation intra

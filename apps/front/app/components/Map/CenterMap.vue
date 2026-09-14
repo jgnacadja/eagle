@@ -78,8 +78,9 @@ const props = withDefaults(
     caption: string
     mode?: 'network' | 'single'
     minZoom?: number
+    popup?: boolean
   }>(),
-  { mode: 'network', minZoom: 5 }
+  { mode: 'network', minZoom: 5, popup: true }
 )
 
 const emit = defineEmits<{
@@ -255,7 +256,10 @@ function syncActive(L: typeof import('leaflet'), id: string | null) {
   markers.forEach((m, markerId) => m.setIcon(pinIcon(L, markerId === id)))
   clusterGroup?.refreshClusters()
 
-  if (!id || props.mode === 'single') {
+  // `popup: false` (mobile) : le marqueur actif est seulement surligné —
+  // la fiche s'affiche dans la carte épinglée en bas d'écran, pas dans
+  // une popup Leaflet.
+  if (!id || props.mode === 'single' || !props.popup) {
     closePopup()
     return
   }

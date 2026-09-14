@@ -8,7 +8,8 @@
           Réseau de centres
         </h1>
         <p class="mt-sm max-w-prose text-body text-ink-body">
-          {{ centresCount }} centre{{ centresCount > 1 ? 's' : '' }} couvrent
+          {{ centresCount }} centre{{ centresCount > 1 ? 's' : '' }}
+          {{ centresCount > 1 ? 'couvrent' : 'couvre' }}
           {{ departmentsCount }} département{{ departmentsCount > 1 ? 's' : '' }}. La sélection d'un
           département affiche les centres de ce territoire.
         </p>
@@ -56,27 +57,23 @@
             </div>
 
             <div class="flex items-center justify-between gap-sm">
-              <p class="text-small text-ink">
-                <template v-if="filteredCenters.length === 0">
-                  Aucun centre
-                  <template v-if="selectedDept === 'all'">au total</template>
-                  <template v-else>dans le département</template>
-                  <span v-if="selectedDept !== 'all'" class="font-extrabold">{{
-                    selectedDept
-                  }}</span>
+              <p
+                v-if="filteredCenters.length || selectedDept !== 'all'"
+                class="text-small text-ink"
+              >
+                <span class="font-extrabold">{{ filteredCenters.length }}</span>
+                {{ ' ' }}
+                <span class="font-extrabold">{{
+                  filteredCenters.length > 1 ? 'centres' : 'centre'
+                }}</span>
+                <template v-if="selectedDept !== 'all'">
+                  en
+                  <span class="font-extrabold">{{ selectedDept }}</span>
                 </template>
-                <template v-else>
-                  <span class="font-extrabold">{{ filteredCenters.length }}</span>
-                  {{ ' ' }}
-                  <span class="font-extrabold">{{
-                    filteredCenters.length > 1 ? 'centres' : 'centre'
-                  }}</span>
-                  <template v-if="selectedDept === 'all'"> au total</template>
-                  <template v-else>
-                    dans le département
-                    <span class="font-extrabold">{{ selectedDept }}</span>
-                  </template>
+                <template v-else-if="appliedSearch.trim()">
+                  pour « {{ appliedSearch.trim() }} »
                 </template>
+                <template v-else> au total</template>
               </p>
               <Button
                 type="button"
@@ -85,7 +82,7 @@
                   'flex items-center gap-sm',
                   isMobileMapOpen
                     ? 'h-control shrink-0 rounded-full bg-primary px-md text-small font-semibold text-paper transition hover:bg-primary-dark lg:hidden'
-                    : 'h-control shrink-0 rounded-full border border-outline bg-paper px-md text-small font-semibold text-ink transition hover:bg-surface lg:hidden'
+                    : 'h-control shrink-0 rounded-full border border-outline bg-paper px-md text-small font-semibold text-ink transition hover:bg-surface hover:text-accent-text lg:hidden'
                 ]"
                 @click="isMobileMapOpen ? closeMobileMap() : openMobileMap()"
               >
@@ -102,22 +99,25 @@
     <!-- Bottom paper section: list and map -->
     <section class="bg-paper flex flex-col">
       <!-- Mobile: map replaces list when open -->
-      <div v-if="isMobileMapOpen" class="flex flex-col lg:hidden">
-        <div class="relative h-[60vh] overflow-hidden">
+      <div v-if="isMobileMapOpen" class="relative flex h-[60vh] flex-col justify-end lg:hidden">
+        <div class="absolute inset-0 overflow-hidden">
           <CenterMap
             :centers="filteredCenters"
-            :active-id="activeCenterId"
+            :active-id="hasUserSelection ? activeCenterId : null"
             :caption="selectedDeptLabel"
             :min-zoom="8"
+            :popup="false"
             @select="selectCenter"
           />
         </div>
 
+        <!-- Épinglée en bas du viewport tant que la carte est à l'écran ;
+             sa position naturelle en bas du conteneur l'empêche de dépasser la map. -->
         <CenterResultCard
-          v-if="activeCenter"
+          v-if="activeCenter && hasUserSelection"
           :center="activeCenter"
           :active="true"
-          class="fixed inset-x-sm bottom-sm z-30 shadow-lg lg:hidden"
+          class="sticky bottom-sm z-30 mx-sm mb-sm shadow-lg lg:hidden"
           @select="selectCenter(activeCenter.id)"
         />
       </div>
@@ -187,11 +187,15 @@
         >
           <div class="rounded-md border border-dashed border-rule bg-paper p-xl text-center">
             <h2 class="font-sans text-h4 text-ink">
-              Aucun centre ne correspond à cette sélection pour le moment.
+              {{
+                isDepartmentScope
+                  ? "Aucun centre n'est implanté dans ce département pour le moment."
+                  : 'Aucun centre ne correspond à cette sélection pour le moment.'
+              }}
             </h2>
             <p class="mx-auto mt-sm max-w-prose text-small text-ink-muted">
               Les demandes de formation sur ce territoire sont prises en charge : formations en
-              intra sur site, ou dans un centre voisin selon le besoin.
+              intra sur site, ou dans un centre d'un département voisin selon le besoin.
             </p>
             <div class="mt-xl flex flex-wrap items-center justify-center gap-md">
               <Button
@@ -202,13 +206,19 @@
               </Button>
               <Button
                 variant="outline"
-                class="h-control rounded-full border border-outline bg-paper px-md text-small font-bold text-primary transition hover:bg-surface"
+                class="h-control rounded-full border border-outline bg-paper px-md text-small font-bold text-primary transition hover:bg-surface hover:text-accent-text"
                 @click="resetFilters"
               >
-                Réinitialiser les filtres
+                {{
+                  isDepartmentScope ? 'Choisir un autre département' : 'Réinitialiser les filtres'
+                }}
               </Button>
             </div>
           </div>
+          <p v-if="isDepartmentScope" class="mt-lg text-meta text-ink-muted md:text-small">
+            Aucun centre voisin n'est injecté automatiquement dans les résultats (RG01) —
+            l'élargissement reste un choix de l'utilisateur ou une prise en charge commerciale.
+          </p>
         </div>
 
         <!-- Map -->
@@ -254,15 +264,17 @@ const selectedDept = ref('all')
 // `region` (navigation menus) pré-remplit la recherche — le haystack API
 // inclut `centre.region` — tout en restant distinct de `q` (recherche
 // libre) dans le contrat d'URL.
-const appliedSearch = ref(
-  typeof route.query.q === 'string'
-    ? route.query.q
-    : typeof route.query.region === 'string'
-      ? route.query.region
-      : ''
-)
+function searchFromQuery(q: unknown, region: unknown): string {
+  if (typeof q === 'string' && q) return q
+  return typeof region === 'string' ? region : ''
+}
+const appliedSearch = ref(searchFromQuery(route.query.q, route.query.region))
 const searchQuery = ref(appliedSearch.value)
 const activeCenterId = ref<string | null>(null)
+// Sélection explicite (clic sur une carte ou un marqueur) — distincte de
+// l'auto-sélection du premier centre : sur mobile, la carte n'ouvre la
+// popup d'un centre que si l'utilisateur l'a choisi, jamais d'office.
+const hasUserSelection = ref(false)
 const isMobileMapOpen = ref(false)
 
 const centresFilters = computed<CentresQuery>(() => ({
@@ -271,6 +283,10 @@ const centresFilters = computed<CentresQuery>(() => ({
 }))
 
 const centresResult = useCentres(centresFilters)
+// Total réseau affiché dans le hero : compteur dédié, insensible aux
+// filtres — il ne doit jamais bouger quand recherche/département
+// réduisent `centres` à un sous-ensemble.
+const centresTotalResult = useCentresTotal()
 const departmentsResult = useCentreDepartments()
 // Sessions du catalogue agrégées par centre → badge de disponibilité sur
 // chaque carte (dégradation silencieuse si l'API catalogue échoue).
@@ -280,12 +296,13 @@ const centreSessionDates = await useCentreSessionDates()
 // En navigation client (ex. redirection /centres?q=… depuis l'accueil) la
 // page monte immédiatement et `pending` affiche le chargement dans le champ.
 if (import.meta.server) {
-  await Promise.all([centresResult, departmentsResult])
+  await Promise.all([centresResult, centresTotalResult, departmentsResult])
 }
 
 const { data: centres, pending: centresPending } = centresResult
+const { data: centresTotal } = centresTotalResult
 const { data: departments } = departmentsResult
-const centresCount = computed(() => centres.value?.length ?? 0)
+const centresCount = computed(() => centresTotal.value ?? 0)
 const departmentsCount = computed(() => departments.value?.length ?? 0)
 
 const LIST_CHUNK_SIZE = 12
@@ -320,6 +337,13 @@ const selectedDeptLabel = computed(() =>
   selectedDept.value === 'all' ? 'Tous les départements' : selectedDept.value
 )
 
+// « Département sans centre » (RG01) : le périmètre reste strict — l'état
+// vide territorial ne s'affiche que pour un filtre département seul ; une
+// recherche infructueuse garde le message générique de sélection.
+const isDepartmentScope = computed(
+  () => selectedDept.value !== 'all' && !appliedSearch.value.trim()
+)
+
 const activeCenter = computed(() =>
   filteredCenters.value.find((c) => c.id === activeCenterId.value)
 )
@@ -351,7 +375,7 @@ async function loadMoreCenters() {
 watch(
   () => [route.query.q, route.query.region],
   ([q, region]) => {
-    const value = typeof q === 'string' && q ? q : typeof region === 'string' ? region : ''
+    const value = searchFromQuery(q, region)
     searchQuery.value = value
     appliedSearch.value = value
   }
@@ -359,16 +383,30 @@ watch(
 
 watch(
   filteredCenters,
-  (list) => {
-    visibleCount.value = LIST_CHUNK_SIZE
-    isLoadingMore.value = false
-    if (!activeCenterId.value || !list.some((c) => c.id === activeCenterId.value)) {
-      activeCenterId.value = list[0]?.id ?? null
+  (list, prev) => {
+    // Un refetch renvoyant les mêmes centres (mêmes ids, même ordre) ne
+    // doit rien réinitialiser : ni la sélection explicite de
+    // l'utilisateur, ni la pagination déjà déroulée.
+    const unchanged =
+      prev !== undefined &&
+      list.length === prev.length &&
+      list.every((c, i) => c.id === prev[i]?.id)
+    if (!unchanged) {
+      visibleCount.value = LIST_CHUNK_SIZE
+      isLoadingMore.value = false
+      hasUserSelection.value = false
+      if (!activeCenterId.value || !list.some((c) => c.id === activeCenterId.value)) {
+        activeCenterId.value = list[0]?.id ?? null
+      }
     }
     nextTick(measureListOverflow)
   },
   { immediate: true }
 )
+
+function onResize() {
+  measureListOverflow()
+}
 
 onMounted(() => {
   loadMoreObserver = new IntersectionObserver(
@@ -378,8 +416,8 @@ onMounted(() => {
     { rootMargin: '160px' }
   )
   if (sentinelEl.value) loadMoreObserver.observe(sentinelEl.value)
-  window.addEventListener('resize', measureListOverflow)
-  nextTick(measureListOverflow)
+  window.addEventListener('resize', onResize)
+  nextTick(onResize)
 })
 
 watch(sentinelEl, (el, prev) => {
@@ -391,7 +429,7 @@ watch(sentinelEl, (el, prev) => {
 onBeforeUnmount(() => {
   loadMoreObserver?.disconnect()
   loadMoreObserver = null
-  window.removeEventListener('resize', measureListOverflow)
+  window.removeEventListener('resize', onResize)
 })
 
 function selectCenter(id: string) {
@@ -399,6 +437,7 @@ function selectCenter(id: string) {
     activeCenterId.value = null
     return
   }
+  hasUserSelection.value = true
   activeCenterId.value = id === activeCenterId.value ? null : id
   const index = filteredCenters.value.findIndex((c) => c.id === id)
   if (index >= visibleCount.value) {

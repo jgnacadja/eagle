@@ -5,7 +5,8 @@ import {
   buildCentresParams,
   useCentres,
   useCentreDepartments,
-  useCentreSessionDates
+  useCentreSessionDates,
+  useCentresTotal
 } from '~/composables/useCentres'
 
 const fetchMock = vi.fn()
@@ -97,6 +98,25 @@ describe('useCentres', () => {
   })
 })
 
+describe('useCentresTotal', () => {
+  it('interroge /centres/count et retourne le compteur', async () => {
+    fetchMock.mockResolvedValue({ count: 2 })
+
+    const { data } = await useCentresTotal()
+
+    expect(fetchMock).toHaveBeenCalledWith('http://api.test/centres/count', expect.anything())
+    expect(data.value).toBe(2)
+  })
+
+  it('dégrade à 0 en cas d’erreur API', async () => {
+    fetchMock.mockRejectedValue(new Error('network'))
+
+    const { data } = await useCentresTotal()
+
+    expect(data.value).toBe(0)
+  })
+})
+
 describe('useCentreSessionDates', () => {
   const makeCourse = (i: number): CourseListItem =>
     ({
@@ -145,13 +165,13 @@ describe('useCentreSessionDates', () => {
 })
 
 describe('useCentreDepartments', () => {
-  it('interroge l’API /centres/departments', async () => {
-    fetchMock.mockResolvedValue(['Paris', 'Rhône'])
+  it('interroge l’API /centres/departments et retourne la liste normalisée', async () => {
+    fetchMock.mockResolvedValue(['Hauts-de-Seine', 'Paris', 'Val-de-Marne'])
 
     const { data } = await useCentreDepartments()
 
     expect(fetchMock).toHaveBeenCalledWith('http://api.test/centres/departments')
-    expect(data.value).toEqual(['Paris', 'Rhône'])
+    expect(data.value).toEqual(['Hauts-de-Seine', 'Paris', 'Val-de-Marne'])
   })
 
   it('dégrade à [] en cas d’erreur API', async () => {

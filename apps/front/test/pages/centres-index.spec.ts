@@ -48,7 +48,16 @@ const directusCentres = [
   }
 ]
 
-const centresFixture = { value: directusCentres }
+// Rejoue la traduction code → nom que l'API applique côté serveur
+// (`departments_covered` est un champ tags libre — codes ou noms).
+const COVERED_NAMES: Record<string, string> = {
+  '69': 'Rhône',
+  '92': 'Hauts-de-Seine',
+  '93': 'Seine-Saint-Denis',
+  '94': 'Val-de-Marne'
+}
+
+const centresFixture = ref(directusCentres)
 
 // Rejoue côté mock le filtrage que l'API /centres applique : le composable
 // reçoit la query réactive de la page et dérive la liste.
@@ -56,9 +65,13 @@ function filterFixture(query: CentresQuery) {
   let list = centresFixture.value
   const department = query.department?.trim()
   if (department) {
-    list = list.filter(
-      (c) => c.department === department || (c.departments_covered ?? []).includes(department)
-    )
+    // Code ou nom indifféremment, dans les deux sens — comme l'API.
+    const matches = (value: string | undefined) =>
+      !!value &&
+      (value === department ||
+        COVERED_NAMES[value] === department ||
+        value === COVERED_NAMES[department])
+    list = list.filter((c) => matches(c.department) || (c.departments_covered ?? []).some(matches))
   }
   const search = query.search?.trim().toLowerCase()
   if (search) {
@@ -83,14 +96,26 @@ vi.stubGlobal('useCentres', (query: Parameters<typeof toValue>[0]) => ({
   error: ref(null),
   refresh: vi.fn()
 }))
+vi.stubGlobal('useCentresTotal', () => ({
+  data: computed(() => centresFixture.value.length),
+  pending: ref(false),
+  error: ref(null),
+  refresh: vi.fn()
+}))
 vi.stubGlobal('useCentreDepartments', () => ({
   data: computed(() => {
+    // Rejoue la normalisation de l'API : les codes `departments_covered`
+    // sont traduits en noms et dédupliqués avec le département géocodé.
     const set = new Set<string>()
     for (const c of centresFixture.value) {
-      if (c.department) set.add(c.department)
-      for (const dept of c.departments_covered ?? []) set.add(dept)
+      for (const value of [c.department, ...(c.departments_covered ?? [])]) {
+        const name = value ? (COVERED_NAMES[value] ?? value) : ''
+        if (name) set.add(name)
+      }
     }
-    return [...set].sort((a, b) => a.localeCompare(b, 'fr'))
+    // « Ain » : département listé sans centre implanté — permet de tester
+    // l'état « département sans centre » (RG01).
+    return [...set, 'Ain'].sort((a, b) => a.localeCompare(b, 'fr'))
   }),
   pending: ref(false),
   error: ref(null),
@@ -119,6 +144,11 @@ const stubs = {
       '<input class="city-search" :value="modelValue" @keydown.enter="$emit(\'submit\', $event.target.value)" />'
   },
   Button: { template: '<button><slot /></button>' },
+  CenterMap: {
+    props: ['centers', 'activeId', 'caption', 'minZoom', 'mode', 'popup'],
+    emits: ['select'],
+    template: '<div class="center-map" :data-active-id="activeId" :data-popup="String(popup)" />'
+  },
   CenterResultCard: {
     props: ['center', 'active'],
     emits: ['select'],
@@ -258,7 +288,9 @@ describe('pages/centres/index', () => {
     expect(options).toContain('Tous les départements')
     expect(options).toContain('Val-de-Marne')
     expect(options).toContain('Rhône')
-    expect(options).toContain('94')
+    // Les codes `departments_covered` sont traduits en noms, jamais affichés bruts.
+    expect(options).toContain('Seine-Saint-Denis')
+    expect(options).not.toContain('94')
   })
 
   it('filtre les centres par département', async () => {
@@ -270,6 +302,11 @@ describe('pages/centres/index', () => {
     await wrapper.find('.dept-select').setValue('Rhône')
     expect(wrapper.findAll('.center-card')).toHaveLength(1)
     expect(wrapper.text()).toContain('Centre de Lyon')
+
+    // Un département seulement « couvert » (code 93 → nom) filtre aussi.
+    await wrapper.find('.dept-select').setValue('Seine-Saint-Denis')
+    expect(wrapper.findAll('.center-card')).toHaveLength(1)
+    expect(wrapper.text()).toContain('Centre de Créteil')
   })
 
   it('ne filtre pas pendant la saisie, seulement à la soumission', async () => {
@@ -326,6 +363,62 @@ describe('pages/centres/index', () => {
     expect(cards[0]!.text()).toContain('Vitry-sur-Seine')
   })
 
+  it('garde le total réseau dans le hero pendant une recherche filtrée', async () => {
+    const wrapper = await mountPage()
+    expect(wrapper.text()).toContain('3 centres couvrent')
+    expect(wrapper.text()).toMatch(/3\s+centres\s+au total/)
+
+    await wrapper.find('.city-search').setValue('vitry')
+    await wrapper.find('.city-search').trigger('keydown.enter')
+
+    expect(wrapper.findAll('.center-card')).toHaveLength(1)
+    expect(wrapper.text()).toContain('3 centres couvrent')
+    // « au total » serait trompeur sous une recherche active.
+    expect(wrapper.text()).toMatch(/1\s+centre\s+pour « vitry »/)
+    expect(wrapper.text()).not.toContain('au total')
+  })
+
+  it('conserve la sélection explicite sur un refetch à données identiques', async () => {
+    const wrapper = await mountPage()
+    await wrapper.findAll('.center-card')[1]!.trigger('click')
+    expect(wrapper.findAll('.center-card')[1]!.attributes('data-active')).toBe('true')
+
+    // Même ids, nouvel array : le watch ne doit pas réinitialiser.
+    centresFixture.value = [...directusCentres]
+    await nextTick()
+
+    expect(wrapper.findAll('.center-card')[1]!.attributes('data-active')).toBe('true')
+  })
+
+  it('épingle la carte du centre en bas uniquement après sélection explicite', async () => {
+    const wrapper = await mountPage()
+
+    const mapToggle = wrapper.findAll('button').find((b) => b.text().includes('Voir la carte'))
+    await mapToggle!.trigger('click')
+
+    // Sans sélection explicite : pas de carte épinglée, la carte mobile ne
+    // reçoit pas le centre auto-sélectionné (pas de popup au chargement).
+    expect(wrapper.findAll('.center-card')).toHaveLength(3)
+    let maps = wrapper.findAll('.center-map')
+    expect(maps[0]!.attributes('data-active-id')).toBeUndefined()
+    expect(maps[0]!.attributes('data-popup')).toBe('false')
+    // La carte desktop garde le premier centre actif.
+    expect(maps[1]!.attributes('data-active-id')).toBe('creteil')
+
+    // Après un clic explicite : carte épinglée + centre actif sur la carte.
+    await wrapper.findAll('.center-card')[1]!.trigger('click')
+    expect(wrapper.findAll('.center-card')).toHaveLength(4)
+    maps = wrapper.findAll('.center-map')
+    expect(maps[0]!.attributes('data-active-id')).toBe('vitry')
+
+    const pinnedCard = wrapper.find('.center-card.sticky')
+    expect(pinnedCard.exists()).toBe(true)
+    expect(pinnedCard.classes()).toContain('bottom-sm')
+    expect(pinnedCard.classes()).toContain('mb-sm')
+    expect(pinnedCard.classes()).not.toContain('fixed')
+    expect(pinnedCard.attributes('style')).toBeUndefined()
+  })
+
   it('affiche l’état vide quand aucun centre ne correspond', async () => {
     const wrapper = await mountPage()
 
@@ -334,6 +427,26 @@ describe('pages/centres/index', () => {
 
     expect(wrapper.findAll('.center-card')).toHaveLength(0)
     expect(wrapper.text()).toContain('Aucun centre ne correspond à cette sélection')
+  })
+
+  it('affiche l’état « département sans centre » avec la note RG01', async () => {
+    const wrapper = await mountPage()
+
+    await wrapper.find('.dept-select').setValue('Ain')
+
+    expect(wrapper.findAll('.center-card')).toHaveLength(0)
+    expect(wrapper.text()).toContain("Aucun centre n'est implanté dans ce département")
+    expect(wrapper.text()).toContain("d'un département voisin")
+    expect(wrapper.text()).toContain('Choisir un autre département')
+    expect(wrapper.text()).toContain("Aucun centre voisin n'est injecté automatiquement")
+    expect(wrapper.text()).toMatch(/0\s+centre\s+en\s+Ain/)
+
+    // « Choisir un autre département » ré-élargit le périmètre.
+    const reset = wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Choisir un autre département'))
+    await reset!.trigger('click')
+    expect(wrapper.findAll('.center-card')).toHaveLength(3)
   })
 
   it('un clic sur une carte active/désactive le centre', async () => {

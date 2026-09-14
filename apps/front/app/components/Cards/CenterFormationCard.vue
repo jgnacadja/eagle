@@ -34,7 +34,7 @@
         v-else-if="to"
         as-child
         variant="link"
-        class="mt-md h-auto self-end p-0 text-small font-bold text-primary transition-colors hover:text-accent-text"
+        class="mt-md h-auto gap-xs self-end p-0 text-small font-bold text-primary transition-colors hover:text-accent-text"
       >
         <NuxtLink :to="to" class="after:absolute after:inset-0"
           >Consulter <span class="link-arrow">→</span></NuxtLink

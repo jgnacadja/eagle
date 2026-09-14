@@ -28,6 +28,13 @@ export class CentresController {
     return this.centresService.departments()
   }
 
+  @Get('centres/count')
+  @ApiOperation({ summary: 'Total number of published centres' })
+  @ApiOkResponse({ description: 'Centre count' })
+  async count(): Promise<{ count: number }> {
+    return { count: await this.centresService.count() }
+  }
+
   @Post('admin/centres/geocode')
   @UseGuards(AdminApiKeyGuard)
   @ApiTags('admin')

@@ -67,6 +67,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@etalab/decoupage-administratif':
+        specifier: ^6.0.0
+        version: 6.0.0
       '@learnup/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -1474,6 +1477,13 @@ packages:
         integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==
       }
     engines: { node: ^18.18.0 || ^20.9.0 || >=21.1.0 }
+
+  '@etalab/decoupage-administratif@6.0.0':
+    resolution:
+      {
+        integrity: sha512-XavYsFlbcM/prKr8hNHPKER94IHw/dsxNM4nxjWMYk6PLFACpEedvn/7wK8Baozm0dCYhWWcf+7bcWpA5pmCaQ==
+      }
+    engines: { node: '>= 10' }
 
   '@exodus/bytes@1.15.1':
     resolution:
@@ -11782,6 +11792,8 @@ snapshots:
     dependencies:
       '@eslint/core': 0.17.0
       levn: 0.4.1
+
+  '@etalab/decoupage-administratif@6.0.0': {}
 
   '@exodus/bytes@1.15.1(@noble/hashes@2.4.0)':
     optionalDependencies:

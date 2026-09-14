@@ -233,7 +233,7 @@
               <Button
                 as-child
                 variant="outline"
-                class="h-control rounded-full border-outline px-lg text-small font-semibold text-ink-body hover:bg-surface"
+                class="h-control rounded-full border-outline px-lg text-small font-semibold text-ink-body hover:bg-surface hover:text-accent-text"
               >
                 <NuxtLink to="#">Parler à un conseiller</NuxtLink>
               </Button>
@@ -318,7 +318,7 @@
                 />
               </template>
               <PaginationNext
-                class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-body hover:bg-surface"
+                class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-body hover:bg-surface hover:text-accent-text"
               />
             </PaginationContent>
           </Pagination>
@@ -327,7 +327,7 @@
           <button
             v-if="hasMoreMobile"
             type="button"
-            class="mx-auto mt-lg block rounded-full border border-outline px-lg py-sm text-small font-semibold text-ink-body hover:bg-surface lg:hidden"
+            class="mx-auto mt-lg block rounded-full border border-outline px-lg py-sm text-small font-semibold text-ink-body hover:bg-surface hover:text-accent-text lg:hidden"
             @click="loadMore"
           >
             Afficher plus de résultats
@@ -343,7 +343,7 @@
       >
         <Button
           as-child
-          class="h-control w-full rounded-full bg-accent px-lg text-small font-semibold text-ink transition hover:bg-accent-text sm:w-auto"
+          class="h-control w-full rounded-full bg-accent px-lg text-small font-semibold text-ink transition hover:bg-accent-text hover:text-paper sm:w-auto"
         >
           <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
         </Button>
@@ -407,7 +407,7 @@
         <div class="mx-auto flex w-full max-w-container gap-md">
           <button
             type="button"
-            class="rounded-full border border-outline px-lg py-sm text-small font-semibold text-ink-body hover:bg-surface"
+            class="rounded-full border border-outline px-lg py-sm text-small font-semibold text-ink-body hover:bg-surface hover:text-accent-text"
             @click="resetFilters"
           >
             Tout effacer

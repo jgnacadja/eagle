@@ -336,7 +336,7 @@
         <div class="mt-lg flex flex-col gap-md md:flex-row md:flex-wrap">
           <NuxtLink
             to="/centres/demande-de-formation"
-            class="w-full text-center rounded-full bg-accent px-lg py-md text-button text-ink hover:bg-accent-text transition md:w-auto"
+            class="w-full text-center rounded-full bg-accent px-lg py-md text-button text-ink hover:bg-accent-text hover:text-paper transition md:w-auto"
           >
             Confier mes formations
           </NuxtLink>

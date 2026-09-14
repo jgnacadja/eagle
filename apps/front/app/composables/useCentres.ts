@@ -124,6 +124,40 @@ export function useCentres(query: MaybeRefOrGetter<CentresQuery>) {
 }
 
 /**
+ * Nombre total de centres du réseau, indépendant des filtres de la page.
+ * Clé dédiée `centres-total` : `useCentres` écrit sous `centres:{…}` et y
+ * réécrit le résultat filtré à chaque refetch — partager la clé ferait
+ * bouger le total à chaque filtre. On ne stocke que le compteur.
+ */
+export function useCentresTotal() {
+  const config = useRuntimeConfig()
+  const apiBase = import.meta.server ? config.apiBase : config.public.apiBase
+
+  return useAsyncData<number>(
+    'centres-total',
+    async () => {
+      try {
+        const { count } = await $fetch<{ count: number }>(`${apiBase}/centres/count`, {
+          headers: internalSsrHeaders(config)
+        })
+        return count
+      } catch (err) {
+        if (import.meta.server) {
+          logServerError('[useCentresTotal] centres fetch failed:', err)
+        }
+        return 0
+      }
+    },
+    {
+      getCachedData: (key, nuxtApp, ctx) =>
+        ctx.cause === 'initial' && nuxtApp.isHydrating
+          ? ((nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as number | undefined)
+          : undefined
+    }
+  )
+}
+
+/**
  * Liste des valeurs de département pour le filtre — endpoint dédié de
  * l'API, puisque la liste filtrée ne couvre que le département courant.
  */
@@ -136,6 +170,8 @@ export function useCentreDepartments() {
     async () => {
       try {
         const headers = internalSsrHeaders(config)
+        // L'API est la source unique de normalisation : les codes
+        // `departments_covered` y sont déjà traduits en noms dédupliqués.
         return await (headers
           ? $fetch<string[]>(`${apiBase}/centres/departments`, { headers })
           : $fetch<string[]>(`${apiBase}/centres/departments`))

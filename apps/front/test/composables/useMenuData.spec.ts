@@ -274,7 +274,7 @@ describe('useMenuData', () => {
           slug: 'article-caces',
           title: 'Anticiper les échéances CACES',
           category: 'Réglementation',
-          region: 'Île-de-France',
+          region: 'ile-de-france',
           publish_at: '2026-09-03T08:00:00.000Z'
         },
         {

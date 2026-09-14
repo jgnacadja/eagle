@@ -7,6 +7,7 @@
 import { readItems } from '@directus/sdk'
 import { buildMeta } from '~/composables/useCatalog'
 import { formatArticleDate } from '~/utils/article'
+import { formatRegionLabel } from '~/utils/region'
 import { slugify } from '~/utils/slugify'
 import type {
   Article,
@@ -69,6 +70,8 @@ const MAX_REGIONS = 4
 const MAX_CENTRES_PER_REGION = 4
 const MAX_FORMATIONS_A_LA_UNE = 6
 const MAX_FORMATIONS_PAR_FAMILLE = 4
+// Rubriques et régions du méga-menu ne reflètent que les MAX_ACTUALITES
+// articles les plus récents — trade-off assumé pour limiter le payload SSR.
 const MAX_ACTUALITES = 60
 const MAX_REGIONS_ACTUALITES = 6
 
@@ -311,7 +314,7 @@ export function useMenuActualites() {
           }
 
           if (!article.region?.trim()) continue
-          const regionLabel = article.region.trim()
+          const regionLabel = formatRegionLabel(article.region)
           const regionSlug = slugify(regionLabel)
           const entry = regionArticles.get(regionSlug) ?? { label: regionLabel, articles: [] }
 
@@ -326,13 +329,13 @@ export function useMenuActualites() {
         }
 
         const regions = [...regionArticles.entries()]
-          .sort(([, first], [, second]) => second.articles.length - first.articles.length)
-          .slice(0, MAX_REGIONS_ACTUALITES)
           .map(([slug, { label, articles: regionArticlesList }]) => ({
             slug,
             label,
             count: regionArticlesList.length
           }))
+          .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+          .slice(0, MAX_REGIONS_ACTUALITES)
 
         const visibleRegionSlugs = new Set(regions.map((region) => region.slug))
         const actualitesParRegion = Object.fromEntries(

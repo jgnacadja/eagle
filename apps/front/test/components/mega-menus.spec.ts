@@ -80,6 +80,7 @@ vi.mock('~/composables/useMenuData', async () => {
     useMenuActualites: () => ({
       rubriques: ref([
         { slug: 'toute-actualite', label: 'Toute l’actualité du réseau' },
+        { slug: 'presse', label: 'Presse' },
         { slug: 'reglementation', label: 'Réglementation' },
         { slug: 'vie-du-reseau', label: 'Vie du réseau' }
       ]),
@@ -282,5 +283,17 @@ describe('MegaMenuActualites', () => {
 
     expect(wrapper.text()).toContain('Nouveau centre ouvert à Créteil')
     expect(wrapper.text()).not.toContain('Recyclage CACES : anticiper les échéances 2027')
+  })
+
+  it('affiche un message rubrique quand aucune actu ne matche', async () => {
+    const wrapper = mount(MegaMenuActualites, { global: { stubs } })
+    const rubrique = wrapper.findAll('button').find((button) => button.text() === 'Presse')!
+
+    await rubrique.trigger('click')
+
+    expect(wrapper.text()).toContain(
+      'Aucune publication récente pour cette rubrique dans cette région.'
+    )
+    expect(wrapper.text()).not.toContain('Aucune publication récente pour cette région.')
   })
 })

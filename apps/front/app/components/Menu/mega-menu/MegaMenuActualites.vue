@@ -15,7 +15,7 @@
                 ? 'bg-surface font-semibold text-ink'
                 : 'font-medium'
             "
-            :aria-pressed="rubrique.slug === selectedRubrique"
+            :aria-current="rubrique.slug === selectedRubrique ? 'true' : undefined"
             @click="selectRubrique(rubrique.slug)"
           >
             {{ rubrique.label }}
@@ -37,7 +37,7 @@
                 ? 'bg-surface font-semibold text-ink'
                 : 'font-medium text-primary'
             "
-            :aria-pressed="region.slug === selectedRegion"
+            :aria-current="region.slug === selectedRegion ? 'true' : undefined"
             @mouseenter="selectedRegion = region.slug"
             @focus="selectedRegion = region.slug"
             @click="selectedRegion = region.slug"
@@ -82,7 +82,7 @@
             </NuxtLink>
           </li>
           <li v-if="!actusAffichees.length" class="px-2 py-1.5 text-small text-ink-muted">
-            Aucune publication récente pour cette région.
+            {{ emptyMessage }}
           </li>
           <li>
             <NuxtLink
@@ -108,32 +108,30 @@ defineEmits<{ close: [] }>()
 const { rubriques, regions, actualitesParRegion } = useMenuActualites()
 
 const selectedRubrique = ref(rubriques.value[0]?.slug ?? '')
-watch(
-  rubriques,
-  (list) => {
-    if (!selectedRubrique.value && list.length) selectedRubrique.value = list[0]!.slug
-  },
-  { immediate: true }
-)
+watch(rubriques, (list) => {
+  if (!selectedRubrique.value && list.length) selectedRubrique.value = list[0]!.slug
+})
 
 // Défaut : première région qui a réellement des actus
 const selectedRegion = ref(regions.value[0]?.slug ?? '')
-watch(
-  regions,
-  (list) => {
-    if (!selectedRegion.value && list.length) selectedRegion.value = list[0]!.slug
-  },
-  { immediate: true }
-)
+watch(regions, (list) => {
+  if (!selectedRegion.value && list.length) selectedRegion.value = list[0]!.slug
+})
 const selectedRegionLabel = computed(
   () => regions.value.find((r) => r.slug === selectedRegion.value)?.label ?? ''
 )
+const isTouteActualite = computed(() => selectedRubrique.value === rubriques.value[0]?.slug)
 const actusAffichees = computed(() => {
   const actualites = actualitesParRegion.value[selectedRegion.value] ?? []
-  if (selectedRubrique.value === rubriques.value[0]?.slug) return actualites.slice(0, 3)
+  if (isTouteActualite.value) return actualites.slice(0, 3)
 
   return actualites.filter((actu) => actu.categorySlug === selectedRubrique.value).slice(0, 3)
 })
+const emptyMessage = computed(() =>
+  isTouteActualite.value
+    ? 'Aucune publication récente pour cette région.'
+    : 'Aucune publication récente pour cette rubrique dans cette région.'
+)
 
 function selectRubrique(slug: string) {
   selectedRubrique.value = slug

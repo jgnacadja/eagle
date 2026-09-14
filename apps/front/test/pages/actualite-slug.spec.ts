@@ -20,7 +20,6 @@ interface RouteMock {
 
 let routeMock: RouteMock
 let forceError: Error | null = null
-let directusCallIndex = 0
 
 const articleFixture: Article = {
   id: 1,
@@ -39,8 +38,8 @@ const articleFixture: Article = {
   centre: null,
   cover_image: null,
   seo_title: 'Recyclage CACES | LEARN UP ACADEMY',
-  seo_description: null,
-  seo_canonical: null
+  seo_description: 'Les échéances de recyclage CACES à anticiper.',
+  seo_canonical: 'https://learnup.fr/actualites/recyclage-caces-echeances-2027'
 }
 
 const relatedCourse = {
@@ -77,6 +76,7 @@ const relatedCourse = {
 
 const directusRequestMock = vi.fn()
 const fetchMock = vi.fn()
+type DirectusCommand = () => { path: string }
 
 vi.stubGlobal('computed', computed)
 vi.stubGlobal('ref', ref)
@@ -147,13 +147,15 @@ describe('pages/actualites/[slug]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     forceError = null
-    directusCallIndex = 0
-    directusRequestMock.mockImplementation(async () => {
-      if (routeMock.params.slug === 'inconnu') return []
-      directusCallIndex += 1
-      return directusCallIndex === 1
-        ? [articleFixture]
-        : [{ slug: relatedCourse.slug, famille: { slug: relatedCourse.familySlug } }]
+    directusRequestMock.mockImplementation(async (command: DirectusCommand) => {
+      const { path } = command()
+      if (path === '/items/articles') {
+        return routeMock.params.slug === 'inconnu' ? [] : [articleFixture]
+      }
+      if (path === '/items/formations') {
+        return [{ slug: relatedCourse.slug, famille: { slug: relatedCourse.familySlug } }]
+      }
+      return []
     })
     fetchMock.mockResolvedValue(relatedCourse)
     routeMock = {
@@ -239,7 +241,11 @@ describe('pages/actualites/[slug]', () => {
 
     const [source, fallback] = seoArgs()
     expect(source).toEqual(
-      expect.objectContaining({ seo_title: expect.stringContaining('Recyclage CACES') })
+      expect.objectContaining({
+        seo_title: 'Recyclage CACES | LEARN UP ACADEMY',
+        seo_description: 'Les échéances de recyclage CACES à anticiper.',
+        seo_canonical: 'https://learnup.fr/actualites/recyclage-caces-echeances-2027'
+      })
     )
     expect(fallback).toEqual(expect.stringContaining('Recyclage CACES'))
   })

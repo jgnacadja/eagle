@@ -1,4 +1,5 @@
 import sanitize from 'sanitize-html'
+import { slugifyHeading } from './article'
 
 /**
  * Contenu WYSIWYG Directus — saisi par des éditeurs authentifiés, pas de
@@ -7,18 +8,39 @@ import sanitize from 'sanitize-html'
  * devenir un vecteur XSS. Fonctionne côté SSR et navigateur (pas de DOM requis).
  */
 export function sanitizeHtml(html: string): string {
+  return sanitizeHtmlWithHeadings(html).html
+}
+
+export interface SanitizedHeading {
+  id: string
+  label: string
+  level: number
+}
+
+export function sanitizeHtmlWithHeadings(html: string): {
+  html: string
+  headings: SanitizedHeading[]
+} {
   const clean = sanitize(html, {
     allowedTags: [...sanitize.defaults.allowedTags, 'img', 'h1', 'h2', 'u'],
     allowedAttributes: {
       ...sanitize.defaults.allowedAttributes,
-      '*': ['class', 'id'],
+      '*': ['class'],
+      h1: ['id'],
+      h2: ['id'],
+      h3: ['id'],
       a: ['href', 'name', 'target', 'rel'],
       img: ['src', 'srcset', 'alt', 'title', 'width', 'height', 'loading']
     },
     allowedSchemes: ['https', 'http', 'mailto', 'tel']
   })
 
-  return insertHeadingIds(clean)
+  const sanitizedHtml = insertHeadingIds(clean)
+
+  return {
+    html: sanitizedHtml,
+    headings: extractHeadings(sanitizedHtml)
+  }
 }
 
 function insertHeadingIds(html: string): string {
@@ -46,12 +68,22 @@ function insertHeadingIds(html: string): string {
   })
 }
 
-function slugifyHeading(label: string): string {
-  return label
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
+function extractHeadings(html: string): SanitizedHeading[] {
+  return Array.from(html.matchAll(/<h([1-3])([^>]*)>([\s\S]*?)<\/h\1>/gi)).flatMap((match) => {
+    const level = match[1]
+    const attrs = match[2]
+    const inner = match[3]
+    if (!level || attrs === undefined || inner === undefined) return []
+
+    const id = attrs.match(/\sid="([^"]+)"/i)?.[1]
+    if (!id) return []
+
+    const label = inner
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+
+    return [{ id, label, level: Number(level) }]
+  })
 }

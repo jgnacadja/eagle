@@ -13,7 +13,7 @@ const articles = [
     excerpt: 'Les échéances de recyclage se rapprochent.',
     content: '<h2>Échéances</h2><p>À retenir.</p>',
     category: 'Réglementation & obligations',
-    region: null,
+    region: 'ile-de-france',
     publish_at: '2026-09-02T00:00:00.000Z',
     cover_image: null
   },
@@ -148,6 +148,7 @@ describe('pages/actualites/index', () => {
     expect(wrapper.text()).toContain('ACTUALITÉS DU RÉSEAU')
     expect(wrapper.text()).toContain('Réglementation, formations et vie du réseau')
     expect(wrapper.text()).toContain('Toutes les régions')
+    expect(wrapper.text()).toContain('Île-de-France')
     expect(wrapper.text()).toContain('Réglementation & obligations')
     expect(wrapper.text()).toContain('Nouvelles formations')
     expect(wrapper.text()).toContain('Vie du réseau')
@@ -160,6 +161,11 @@ describe('pages/actualites/index', () => {
     expect(wrapper.text()).toContain('Recyclage CACES')
     const link = wrapper.find('a[href="/actualites/recyclage-caces-echeances-2027"]')
     expect(link.exists()).toBe(true)
+    expect(
+      wrapper
+        .find('section[aria-label="Dernières actualités"]')
+        .findAll('a[href="/actualites/recyclage-caces-echeances-2027"]')
+    ).toHaveLength(0)
   })
 
   it('affiche la grille d’articles', async () => {

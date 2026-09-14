@@ -1,16 +1,22 @@
 <template>
   <article
-    class="flex flex-row gap-lg rounded-md bg-paper p-md shadow-md md:flex-col md:gap-0 md:overflow-hidden md:p-0 duration-500 hover:z-5 hover:scale-[1.03] transition-all object-cover"
+    class="flex flex-row gap-lg rounded-md bg-paper p-md shadow-md md:flex-col md:gap-0 md:overflow-hidden md:p-0 duration-500 hover:z-5 hover:scale-[1.03] transition-all"
   >
     <div
-      class="flex aspect-square w-2/5 shrink-0 items-center justify-center rounded-sm border border-dashed border-outline bg-surface-alt text-center text-small text-ink-muted md:aspect-3/1 md:w-auto md:rounded-none md:border-b md:border-x-0 md:border-t-0"
+      class="flex aspect-square w-2/5 shrink-0 items-center justify-center rounded-sm text-center md:aspect-3/1 md:w-auto md:rounded-none"
+      :class="
+        imageUrl
+          ? 'border-0 bg-paper'
+          : 'border border-dashed border-outline bg-surface-alt text-small text-ink-muted md:border-b md:border-x-0 md:border-t-0'
+      "
     >
       <NuxtImg v-if="imageUrl" :src="imageUrl" :alt="title" class="h-full w-full object-cover" />
+      <span v-else>Visuel article à fournir</span>
     </div>
     <div class="flex min-w-0 flex-1 flex-col bg-paper md:p-md">
       <div class="flex flex-wrap items-center gap-x-sm gap-y-xs">
         <p class="text-overline text-accent-text uppercase font-bold">{{ category }}</p>
-        <p class="text-xs text-ink-subtle font-medium">{{ date }}</p>
+        <p class="text-meta text-ink-subtle font-medium">{{ date }}</p>
       </div>
 
       <NuxtLink :to="to" class="hover:underline">

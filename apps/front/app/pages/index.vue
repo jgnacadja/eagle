@@ -23,7 +23,7 @@
           <span class="text-accent-text">orchestrés</span> de bout en bout.
         </h1>
 
-        <p class="mt-md font-sans text-body md:text-base font-semibold text-ink">
+        <p class="mt-md font-sans text-body md:text-lead font-semibold text-ink">
           La bonne formation. Au bon endroit. Au bon moment.
         </p>
 
@@ -39,7 +39,7 @@
           </SearchInput>
         </form>
 
-        <p class="mx-auto mt-5 max-w-5xl text-small md:text-sm md:whitespace-nowrap">
+        <p class="mx-auto mt-lg max-w-container text-small md:whitespace-nowrap">
           <span class="font-bold text-ink">LEARN UP</span
           ><span class="font-medium text-ink-body"
             >, organisme de formation et de recommandation, vous accompagne pour identifier et
@@ -49,7 +49,7 @@
 
         <NuxtLink
           to="/centres/demande-de-formation"
-          class="mt-2.5 inline-block text-sm font-bold text-primary transition-colors hover:text-accent-text"
+          class="mt-sm inline-block text-small font-bold text-primary transition-colors hover:text-accent-text"
         >
           Confier ma formation →
         </NuxtLink>
@@ -90,7 +90,7 @@
         Construisons ensemble le réseau Learn Up Academy
       </h2>
       <p
-        class="mx-auto mt-sm max-w-prose text-center font-sans text-sm md:text-lead text-ink-muted"
+        class="mx-auto mt-sm max-w-prose text-center font-sans text-small md:text-lead text-ink-muted"
       >
         Rejoignez un réseau national dédié aux formations réglementaires et participez à son
         développement partout en France.
@@ -205,7 +205,7 @@
           <h2 class="font-display text-h3 md:text-h2 font-extrabold text-ink">
             Le réseau Learn Up Academy
           </h2>
-          <p class="mt-sm max-w-prose font-sans text-sm text-ink-muted">
+          <p class="mt-sm max-w-prose font-sans text-small text-ink-muted">
             <span class="font-bold text-primary">+400 centres partenaires</span>
             dans
             <span class="font-bold text-primary">96 départements</span>
@@ -437,21 +437,12 @@ import { computed, ref } from 'vue'
 import type { Article, Centre } from '@learnup/types'
 import { mapCourse, useCatalog } from '~/composables/useCatalog'
 import type { CenterResult } from '~/types/center-result'
+import { articleAssetUrl, formatArticleDate } from '~/utils/article'
 
 const config = useRuntimeConfig()
 
 function assetUrl(id: string | null): string | null {
-  if (!id) return null
-  return `${config.public.apiBase}/directus/assets/${id}`
-}
-
-function formatArticleDate(value: string | null): string {
-  if (!value) return 'Date à préciser'
-  return new Date(value).toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
-  })
+  return articleAssetUrl(id, config.public.apiBase)
 }
 
 useContentSeo(

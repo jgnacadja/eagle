@@ -27,7 +27,7 @@ export default defineNuxtConfig({
       ]
     }
   },
-  modules: ['shadcn-nuxt', '@nuxt/image', '@stefanobartoletti/nuxt-social-share'],
+  modules: ['shadcn-nuxt', '@nuxt/image'],
   css: ['~/assets/css/main.css'],
   vite: {
     plugins: [tailwindcss()]
@@ -65,6 +65,7 @@ export default defineNuxtConfig({
     '/formations/**': { isr: { expiration: 600, passQuery: true } },
     '/centres': { isr: { expiration: 600, passQuery: true } },
     '/centres/**': { isr: { expiration: 600, passQuery: true } },
+    '/actualites': { isr: { expiration: 600, passQuery: true } },
     '/actualites/**': { isr: { expiration: 600, passQuery: true } }
   },
   runtimeConfig: {
@@ -72,10 +73,7 @@ export default defineNuxtConfig({
     public: {
       apiBase: publicApiBase,
       siteUrl,
-      directusUrl: directusUrlPublic,
-      socialShare: {
-        baseUrl: siteUrl
-      }
+      directusUrl: directusUrlPublic
     }
   }
 })

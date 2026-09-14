@@ -9,12 +9,12 @@
                 <span class="font-bold uppercase">{{ article?.category }}</span>
                 <span class="font-medium text-ink-subtle">
                   <span class="mx-xs">·</span>{{ formatArticleDate(article?.publish_at) }}
-                  <span class="mx-xs">· <span class="md:inline hidden">lecture</span></span
+                  <span class="mx-xs">· <span class="md:inline hidden">lecture</span> </span
                   >{{ readingTime }} min
                 </span>
               </p>
               <h1
-                class="mt-sm font-display text-2xl font-extrabold leading-tight text-ink lg:text-4xl"
+                class="mt-sm font-display text-h2 font-extrabold leading-tight text-ink lg:text-h1"
               >
                 {{ article?.title }}
               </h1>
@@ -26,7 +26,7 @@
               <div class="flex items-center gap-md">
                 <NuxtImg
                   v-if="article?.author_image"
-                  class="h-10 w-10 rounded-full border border-outline object-cover"
+                  class="h-control-sm w-control-sm rounded-full border border-outline object-cover"
                   :src="assetUrl(article.author_image)"
                   :alt="article?.author_name ?? 'Auteur'"
                 />
@@ -81,7 +81,7 @@
             </figure>
 
             <div class="mt-2xl max-w-prose space-y-xl text-body text-ink-body">
-              <div class="article-content" v-html="sanitizeHtml(article?.content ?? '')"></div>
+              <div class="article-content" v-html="sanitizedArticle.html"></div>
 
               <CenterFormationCard
                 v-if="relatedFormationCard"
@@ -118,7 +118,7 @@
                       :class="[
                         activeHeading === heading.id
                           ? 'font-extrabold text-ink'
-                          : 'text-ink-body hover:text-ink hover:underline font-semibold text-sm',
+                          : 'text-ink-body hover:text-ink hover:underline font-semibold text-small',
                         'hover:underline'
                       ]"
                       @click="activeHeading = heading.id"
@@ -141,7 +141,7 @@
               />
 
               <Card class="bg-primary-dark p-lg text-paper">
-                <h3 class="text-sm font-bold">Un doute sur vos échéances ?</h3>
+                <h3 class="text-small font-bold">Un doute sur vos échéances ?</h3>
                 <p class="mt-sm text-meta leading-5 text-white/72">
                   Transmettez vos dates de délivrance : un conseiller planifie les recyclages en
                   série avec vos équipes.
@@ -233,7 +233,8 @@
 import { readItems } from '@directus/sdk'
 import type { Article, Course } from '@learnup/types'
 import { mapCourse, type FormationItem } from '~/composables/useCatalog'
-import { sanitizeHtml } from '~/utils/sanitizeHtml'
+import { articleAssetUrl, articleReadingTime, formatArticleDate } from '~/utils/article'
+import { sanitizeHtmlWithHeadings } from '~/utils/sanitizeHtml'
 
 definePageMeta({
   layout: 'with-breadcrumb',
@@ -251,45 +252,52 @@ const {
   data: articleData,
   error: loadError,
   refresh
-} = await useAsyncData<Article | null>(`article-${slug}`, async () => {
-  if (route.query.error === '1') {
-    throw new Error('Article load failed')
-  }
-
-  try {
-    const results = await directus.request<Article[]>(
-      readItems('articles', {
-        fields: [
-          'id',
-          'status',
-          'slug',
-          'title',
-          'excerpt',
-          'content',
-          'category',
-          'author_name',
-          'author_image',
-          'region',
-          'related_formation_slug',
-          'publish_at',
-          'centre',
-          'cover_image',
-          'seo_title',
-          'seo_description',
-          'seo_canonical'
-        ],
-        filter: { slug: { _eq: slug }, status: { _eq: 'published' } },
-        limit: 1
-      })
-    )
-    return results[0] ?? null
-  } catch (error) {
-    if (import.meta.server) {
-      logServerError(`[actualites/slug] ${slug} load failed:`, error)
+} = await useAsyncData<Article | null>(
+  `article-${slug}`,
+  async () => {
+    if (route.query.error === '1') {
+      throw new Error('Article load failed')
     }
-    throw error
+
+    try {
+      const results = await directus.request<Article[]>(
+        readItems('articles', {
+          fields: [
+            'id',
+            'status',
+            'slug',
+            'title',
+            'excerpt',
+            'content',
+            'category',
+            'author_name',
+            'author_image',
+            'region',
+            'related_formation_slug',
+            'publish_at',
+            'centre',
+            'cover_image',
+            'seo_title',
+            'seo_description',
+            'seo_canonical'
+          ],
+          filter: { slug: { _eq: slug }, status: { _eq: 'published' } },
+          limit: 1
+        })
+      )
+      return results[0] ?? null
+    } catch (error) {
+      if (import.meta.server) {
+        logServerError(`[actualites/slug] ${slug} load failed:`, error)
+      }
+      throw error
+    }
+  },
+  {
+    getCachedData: (key, nuxtApp) =>
+      (nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as Article | null | undefined
   }
-})
+)
 
 const article = computed(() => {
   return articleData.value
@@ -327,6 +335,10 @@ const { data: relatedFormation } = await useAsyncData<Course | null>(
       }
       return null
     }
+  },
+  {
+    getCachedData: (key, nuxtApp) =>
+      (nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as Course | null | undefined
   }
 )
 
@@ -338,13 +350,13 @@ const relatedFormationCard = computed<FormationItem | null>(() => {
 })
 
 const readingTime = computed(() => {
-  const content = article.value?.content ?? ''
-  return Math.ceil(content.length / 200)
+  return articleReadingTime(article.value?.content)
 })
 
 const activeHeading = ref<string | null>(null)
 
-const articleHeadings = computed(() => extractArticleHeadings(article.value?.content ?? ''))
+const sanitizedArticle = computed(() => sanitizeHtmlWithHeadings(article.value?.content ?? ''))
+const articleHeadings = computed(() => sanitizedArticle.value.headings)
 
 const relatedArticles = await useDirectusList<Article>('articles', `actualites-related-${slug}`, {
   fields: ['id', 'slug', 'title', 'category', 'publish_at'],
@@ -435,8 +447,12 @@ const seoByState: Record<
 }
 
 useContentSeo(
-  () => seoByState[pageState.value],
-  () => seoByState[pageState.value].seo_title
+  () =>
+    pageState.value === 'found' && article.value ? article.value : seoByState[pageState.value],
+  () =>
+    pageState.value === 'found'
+      ? `${article.value?.title ?? 'Article'} | LEARN UP ACADEMY`
+      : seoByState[pageState.value].seo_title
 )
 
 function retry() {
@@ -452,50 +468,13 @@ function onErrorSearch(query: string) {
   navigateTo({ path: '/actualites', query: query ? { q: query } : {} })
 }
 
-function extractArticleHeadings(
-  content: string
-): Array<{ id: string; label: string; level: number }> {
-  const parser = typeof window !== 'undefined' ? new DOMParser() : null
-  if (!parser) return []
-
-  const doc = parser.parseFromString(content, 'text/html')
-  return Array.from(doc.querySelectorAll('h1,h2,h3')).map((node) => {
-    const label = (node.textContent ?? '').trim()
-    return {
-      id: slugifyHeading(label || node.tagName.toLowerCase()),
-      label,
-      level: Number(node.tagName.replace(/H/i, ''))
-    }
-  })
-}
-
-function slugifyHeading(label: string): string {
-  return label
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-}
-
 function assetUrl(id: string | null): string | null {
-  if (!id) return null
-  return `${config.public.directusUrl}/assets/${id}`
-}
-
-function formatArticleDate(value: string | null): string {
-  if (!value) return 'Date à préciser'
-  return new Date(value).toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
-  })
+  return articleAssetUrl(id, config.public.apiBase)
 }
 
 function onShare() {
   if (typeof window !== 'undefined') {
-    navigator.share?.({ title: article.value?.title, url: window.location.href })
+    navigator.share?.({ title: article.value?.title, url: window.location.href })?.catch(() => {})
   }
 }
 

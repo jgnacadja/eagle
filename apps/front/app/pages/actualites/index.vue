@@ -6,9 +6,7 @@
         <p class="text-overline text-accent font-extrabold">ACTUALITÉS DU RÉSEAU</p>
 
         <div class="mt-md flex flex-col gap-lg lg:flex-row lg:items-end lg:justify-between">
-          <h1
-            class="max-w-prose font-display text-h2 font-extrabold leading-tight text-lg lg:text-h1"
-          >
+          <h1 class="max-w-prose font-display text-h2 font-extrabold leading-tight lg:text-h1">
             Réglementation, formations et vie du réseau
           </h1>
 
@@ -103,10 +101,12 @@
                 class="flex aspect-16/10 items-center justify-center border-b border-dashed border-outline bg-surface-alt text-center text-small text-ink-muted lg:aspect-auto lg:w-2/5 lg:border-b-0 lg:border-r"
               >
                 <NuxtImg
+                  v-if="featuredArticle.cover_image"
                   :src="assetUrl(featuredArticle.cover_image)"
                   :alt="featuredArticle.title"
                   class="h-full w-full object-cover"
                 />
+                <span v-else>Visuel article à fournir</span>
               </div>
               <div class="flex flex-1 flex-col justify-center gap-md bg-paper p-lg lg:p-xl">
                 <p class="text-overline text-accent-text">
@@ -264,12 +264,13 @@
 <script setup lang="ts">
 import { readItems } from '@directus/sdk'
 import type { Article } from '@learnup/types'
+import { regions as knownRegions } from '~/data/navigation'
+import { articleAssetUrl, articleReadingTime, formatArticleDate } from '~/utils/article'
 
 const config = useRuntimeConfig()
 
 function assetUrl(id: string | null): string | null {
-  if (!id) return null
-  return `${config.public.apiBase}/directus/assets/${id}`
+  return articleAssetUrl(id, config.public.apiBase)
 }
 
 useContentSeo(
@@ -285,13 +286,14 @@ const CATEGORY_ALL = 'Tout'
 
 const REGION_ALL = 'all'
 const directus = useDirectusClient()
+type ArticleListItem = Omit<Article, 'content'>
 
 const {
   data: articles,
   pending: articlesPending,
   error: articlesError,
   refresh: refreshArticles
-} = await useAsyncData<Article[]>(
+} = await useAsyncData<ArticleListItem[]>(
   'actualites-list',
   async () => {
     try {
@@ -303,7 +305,6 @@ const {
             'slug',
             'title',
             'excerpt',
-            'content',
             'category',
             'author_name',
             'author_image',
@@ -330,7 +331,7 @@ const {
   },
   {
     getCachedData: (key, nuxtApp) =>
-      (nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as Article[] | undefined
+      (nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as ArticleListItem[] | undefined
   }
 )
 
@@ -353,17 +354,52 @@ const regionOptions = computed(() => {
 
   return [
     { value: REGION_ALL, label: 'Toutes les régions' },
-    ...Array.from(regions).map((region) => ({ value: region, label: region }))
+    ...Array.from(regions).map((region) => ({ value: region, label: formatRegionLabel(region) }))
   ]
 })
 
-const featuredArticle = computed<Article | null>(
+function formatRegionLabel(value: string): string {
+  return (
+    knownRegions.find((region) => region.slug === value || region.label === value)?.label ??
+    value.replace(/[-_]/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
+  )
+}
+
+const featuredArticle = computed<ArticleListItem | null>(
   () => (articles.value ?? []).find((a) => a.status === 'published') ?? null
 )
 
+const { data: featuredArticleContent } = await useAsyncData<Pick<Article, 'content'> | null>(
+  `actualites-featured-content-${featuredArticle.value?.slug ?? 'none'}`,
+  async () => {
+    const slug = featuredArticle.value?.slug
+    if (!slug) return null
+
+    try {
+      const results = await directus.request<Pick<Article, 'content'>[]>(
+        readItems('articles', {
+          fields: ['content'],
+          filter: { slug: { _eq: slug }, status: { _eq: 'published' } },
+          limit: 1
+        })
+      )
+      return results[0] ?? null
+    } catch (error) {
+      if (import.meta.server) {
+        logServerError(`[actualites] featured article ${slug} content load failed:`, error)
+      }
+      return null
+    }
+  },
+  {
+    getCachedData: (key, nuxtApp) =>
+      (nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as
+        Pick<Article, 'content'> | null | undefined
+  }
+)
+
 const readingTime = computed(() => {
-  const content = featuredArticle.value?.content ?? ''
-  return Math.ceil(content.length / 200)
+  return articleReadingTime(featuredArticleContent.value?.content)
 })
 
 const selectedCategory = ref(CATEGORY_ALL)
@@ -382,6 +418,7 @@ const filteredArticles = computed(() =>
   (articles.value ?? []).filter(
     (a) =>
       a.status === 'published' &&
+      a.slug !== featuredArticle.value?.slug &&
       (selectedCategory.value === CATEGORY_ALL || a.category === selectedCategory.value) &&
       (selectedRegion.value === REGION_ALL || a.region === selectedRegion.value)
   )
@@ -397,15 +434,6 @@ function articleClass(index: number): string {
   if (visibleDesktop) return 'hidden lg:block'
   if (visibleMobile) return 'block lg:hidden'
   return 'hidden'
-}
-
-function formatArticleDate(value: string | null): string {
-  if (!value) return 'Date à préciser'
-  return new Date(value).toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
-  })
 }
 
 watch([selectedCategory, selectedRegion], () => {

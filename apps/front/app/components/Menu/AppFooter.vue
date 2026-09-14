@@ -139,11 +139,9 @@
 </template>
 
 <script setup lang="ts">
-import { legalLiens } from '~/data/navigation'
+import { useMenuLegalPages } from '~/composables/useMenuData'
 
 const year = new Date().getFullYear()
 
-const footerLegalLinks = legalLiens.filter((link) =>
-  ['mentions-legales', 'confidentialite', 'accessibilite'].includes(link.slug)
-)
+const footerLegalLinks = useMenuLegalPages()
 </script>

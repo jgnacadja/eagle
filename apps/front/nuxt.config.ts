@@ -80,7 +80,12 @@ export default defineNuxtConfig({
     '/centres/**': { isr: { expiration: 600, passQuery: true } },
     '/actualites': { isr: { expiration: 600, passQuery: true } },
     '/actualites/**': { isr: { expiration: 600, passQuery: true } },
-    '/rejoindre-le-reseau': { prerender: true }
+    '/rejoindre-le-reseau': { prerender: true },
+    // Pages légales et tout slug racine ([slug]) — impossible à cibler par
+    // préfixe. Une page fraîchement publiée apparaît grâce à la purge complète
+    // déclenchée par le flow Directus (pages_legales non mappée côté front).
+    '/**': { isr: { expiration: 600 } },
+    '/api/**': { isr: false }
   },
   runtimeConfig: {
     apiBase,

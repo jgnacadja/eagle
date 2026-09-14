@@ -1,8 +1,8 @@
 // data/navigation.ts
 // Contenu de référence restant pour les menus hors scope dynamique
-// (à-propos, légal) et les libellés des régions connues. Les familles de
-// formation, les centres et les actualités sont chargés dynamiquement via
-// useMenuData() (Directus + API catalogue).
+// (à-propos) et les libellés des régions connues. Les familles de
+// formation, les centres, les actualités et les pages légales sont
+// chargés dynamiquement via useMenuData() (Directus + API catalogue).
 
 export interface Region {
   slug: string
@@ -30,12 +30,4 @@ export const aproposLiens = [
     description: 'Engagements & référentiels de niveau'
   },
   { slug: 'contact', label: 'Contact', description: 'Formulaire et coordonnées' }
-]
-
-export const legalLiens = [
-  { slug: 'mentions-legales', label: 'Mentions légales' },
-  { slug: 'confidentialite', label: 'Politique de confidentialité' },
-  { slug: 'conditions-generales', label: 'Conditions générales' },
-  { slug: 'accessibilite', label: 'Accessibilité — RGAA' },
-  { slug: 'cookies', label: 'Gestion des cookies' }
 ]

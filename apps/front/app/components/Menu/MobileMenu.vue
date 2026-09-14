@@ -291,11 +291,12 @@ import {
   AccordionTrigger
 } from '~/components/ui/accordion'
 import IconLocate from '~/components/icons/IconLocate.vue'
-import { aproposLiens, legalLiens } from '~/data/navigation'
+import { aproposLiens } from '~/data/navigation'
 import {
   useMenuActualites,
   useMenuCentres,
   useMenuFamilles,
+  useMenuLegalPages,
   useMenuSousFamillesParFamille
 } from '~/composables/useMenuData'
 
@@ -308,6 +309,7 @@ const familles = useMenuFamilles()
 const sousFamillesParFamille = useMenuSousFamillesParFamille()
 const { regions, centresParRegion } = useMenuCentres()
 const { rubriques: actualitesRubriques, regions: actualitesRegions } = useMenuActualites()
+const legalLiens = useMenuLegalPages()
 
 function centresForRegion(label: string) {
   return centresParRegion.value.get(label) ?? []

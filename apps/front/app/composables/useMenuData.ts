@@ -16,6 +16,7 @@ import type {
   CoursePage,
   FamilleFormation,
   FamilyWithCount,
+  PageLegale,
   Paginated,
   SousFamilleFormation
 } from '@learnup/types'
@@ -88,7 +89,14 @@ function humanizeSlug(slug: string): string {
   return slug.replaceAll('-', ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-function getCachedData<T>(key: string, nuxtApp: ReturnType<typeof useNuxtApp>): T | undefined {
+// Même règle que useDirectusList : le payload SSR n'est servi que pendant
+// l'hydratation — un mount ultérieur repart sur des données fraîches.
+function getCachedData<T>(
+  key: string,
+  nuxtApp: ReturnType<typeof useNuxtApp>,
+  ctx: { cause?: string }
+): T | undefined {
+  if (ctx.cause !== 'initial' || !nuxtApp.isHydrating) return undefined
   return nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]
 }
 
@@ -180,8 +188,8 @@ function useMenuFamillesData() {
           }),
         (internalSsrHeaders(config)
           ? $fetch<FamilyWithCount[]>(`${apiBase}/families`, {
-              headers: internalSsrHeaders(config)
-            })
+            headers: internalSsrHeaders(config)
+          })
           : $fetch<FamilyWithCount[]>(`${apiBase}/families`)
         ).catch((error: unknown) => {
           if (import.meta.server) {
@@ -200,17 +208,17 @@ function useMenuFamillesData() {
       const familles =
         counts === null && nameBySlug.size > 0
           ? [...nameBySlug.entries()]
-              .map(([slug, label]) => ({ slug, label, count: 0 }))
-              .sort((a, b) => a.label.localeCompare(b.label))
-              .slice(0, MAX_FAMILLES)
+            .map(([slug, label]) => ({ slug, label, count: 0 }))
+            .sort((a, b) => a.label.localeCompare(b.label))
+            .slice(0, MAX_FAMILLES)
           : (counts ?? [])
-              .map((family) => ({
-                slug: family.slug,
-                label: nameBySlug.get(family.slug) ?? humanizeSlug(family.slug),
-                count: family.count
-              }))
-              .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
-              .slice(0, MAX_FAMILLES)
+            .map((family) => ({
+              slug: family.slug,
+              label: nameBySlug.get(family.slug) ?? humanizeSlug(family.slug),
+              count: family.count
+            }))
+            .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+            .slice(0, MAX_FAMILLES)
 
       // Noms des sous-familles groupés par slug de famille (relation M2O
       // résolue via `famille.slug` dans les fields).
@@ -260,7 +268,7 @@ function useMenuFamillesData() {
       return { familles, formationsParFamille, sousFamillesParFamille }
     },
     {
-      getCachedData: (key, nuxtApp) => getCachedData<MenuFamillesData>(key, nuxtApp)
+      getCachedData: (key, nuxtApp, ctx) => getCachedData<MenuFamillesData>(key, nuxtApp, ctx)
     }
   )
 
@@ -358,7 +366,7 @@ export function useMenuFormationsALaUne() {
       }
     },
     {
-      getCachedData: (key, nuxtApp) => getCachedData<MenuFormation[]>(key, nuxtApp)
+      getCachedData: (key, nuxtApp, ctx) => getCachedData<MenuFormation[]>(key, nuxtApp, ctx)
     }
   )
 
@@ -440,7 +448,7 @@ export function useMenuActualites() {
       }
     },
     {
-      getCachedData: (key, nuxtApp) => getCachedData<MenuActualitesData>(key, nuxtApp)
+      getCachedData: (key, nuxtApp, ctx) => getCachedData<MenuActualitesData>(key, nuxtApp, ctx)
     }
   )
 
@@ -449,4 +457,36 @@ export function useMenuActualites() {
     regions: computed(() => data.value?.regions ?? []),
     actualitesParRegion: computed(() => data.value?.actualitesParRegion ?? {})
   }
+}
+
+export interface MenuLegalPage {
+  slug: string
+  label: string
+  /** false = page hors onglets (ex. cookies), mais liée dans les menus/footer. */
+  showInTabs: boolean
+}
+
+/**
+ * Pages légales publiées — source unique pour les méga-menus, le menu mobile,
+ * le footer et les onglets de la page [slug]. Dégradée à [] en cas d'erreur.
+ */
+export function useMenuLegalPages() {
+  const pages = useDirectusList<Pick<PageLegale, 'slug' | 'label' | 'show_in_tabs'>>(
+    'pages_legales',
+    'menu-pages-legales',
+    {
+      fields: ['slug', 'label', 'show_in_tabs'],
+      filter: { status: { _eq: 'published' } },
+      sort: ['sort'],
+      limit: -1
+    }
+  )
+
+  return computed<MenuLegalPage[]>(() =>
+    (pages.value ?? []).map((page) => ({
+      slug: page.slug,
+      label: page.label,
+      showInTabs: page.show_in_tabs !== false
+    }))
+  )
 }

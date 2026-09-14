@@ -1,5 +1,5 @@
 // View models des pages légales — alimentés depuis la collection Directus
-// `pages_legales` (voir PageLegale dans @learnup/types) par la page [legal].
+// `pages_legales` (voir PageLegale dans @learnup/types) par la page [slug].
 
 export interface LegalPageSection {
   id: string
@@ -18,7 +18,6 @@ export interface LegalPage {
   label: string
   title: string
   lastUpdated: string
-  metaDescription: string
   sections: LegalPageSection[]
   cta: { label: string; to: string }
 }

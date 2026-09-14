@@ -34,7 +34,10 @@
 </template>
 
 <script setup lang="ts">
-import { aproposLiens, legalLiens } from '~/data/navigation'
+import { aproposLiens } from '~/data/navigation'
+import { useMenuLegalPages } from '~/composables/useMenuData'
 
 defineEmits<{ close: [] }>()
+
+const legalLiens = useMenuLegalPages()
 </script>

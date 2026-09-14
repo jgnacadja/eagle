@@ -42,7 +42,12 @@ vi.mock('~/composables/useMenuData', async () => {
       regions: ref([{ slug: 'ile-de-france', label: 'Île-de-France', count: 2 }]),
       actualitesParRegion: ref({})
     }),
-    useMenuFormationsALaUne: () => ref([])
+    useMenuFormationsALaUne: () => ref([]),
+    useMenuLegalPages: () =>
+      ref([
+        { slug: 'mentions-legales', label: 'Mentions légales', showInTabs: true },
+        { slug: 'confidentialite', label: 'Politique de confidentialité', showInTabs: true }
+      ])
   }
 })
 

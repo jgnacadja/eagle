@@ -5,6 +5,7 @@
 <script setup lang="ts">
 import { readItems } from '@directus/sdk'
 import type { PageLegale } from '@learnup/types'
+import { useMenuLegalPages } from '~/composables/useMenuData'
 import type { LegalPage, LegalPageTab } from '~/types/legal'
 import { formatDateFr } from '~/utils/date'
 
@@ -13,7 +14,7 @@ definePageMeta({
 })
 
 const route = useRoute()
-const slug = route.params.legal as string
+const slug = route.params.slug as string
 const directus = useDirectusClient()
 
 const { data: pageData, error: loadError } = await useAsyncData<PageLegale | null>(
@@ -35,26 +36,22 @@ const { data: pageData, error: loadError } = await useAsyncData<PageLegale | nul
     }
   },
   {
-    getCachedData: (key, nuxtApp) =>
-      (nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as PageLegale | null | undefined
+    // Même règle que useDirectusList : payload SSR uniquement pendant
+    // l'hydratation, ensuite chaque mount repart sur des données fraîches.
+    getCachedData: (key, nuxtApp, ctx) => {
+      if (ctx.cause !== 'initial' || !nuxtApp.isHydrating) return undefined
+      return (nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as
+        PageLegale | null | undefined
+    }
   }
 )
 
-// Onglets partagés entre les pages légales — `show_in_tabs` exclut les pages
-// hors navigation (ex. cookies), qui restent accessibles par leur slug.
-const tabsData = await useDirectusList<Pick<PageLegale, 'slug' | 'label'>>(
-  'pages_legales',
-  'pages-legales-tabs',
-  {
-    fields: ['slug', 'label'],
-    filter: { status: { _eq: 'published' }, show_in_tabs: { _eq: true } },
-    sort: ['sort']
-  }
-)
-
-const tabs = computed<LegalPageTab[]>(
-  () => tabsData.value?.map((tab) => ({ slug: tab.slug, label: tab.label })) ?? []
-)
+if (loadError.value) {
+  throw createError({
+    statusCode: 500,
+    statusMessage: 'Erreur de chargement de la page'
+  })
+}
 
 const page = computed<LegalPage | null>(() => {
   const raw = pageData.value
@@ -64,7 +61,6 @@ const page = computed<LegalPage | null>(() => {
     label: raw.label,
     title: raw.title,
     lastUpdated: formatDateFr(raw.updated_at ?? raw.created_at),
-    metaDescription: raw.seo_description ?? '',
     sections: (raw.sections ?? []).map((section) => ({
       id: section.id,
       title: section.title,
@@ -73,17 +69,10 @@ const page = computed<LegalPage | null>(() => {
     })),
     cta: {
       label: raw.cta_label ?? 'Nous contacter',
-      to: raw.cta_to ?? '/contact'
+      to: raw.cta_to ?? 'mailto:contact@learnup.fr'
     }
   }
 })
-
-if (loadError.value) {
-  throw createError({
-    statusCode: 500,
-    statusMessage: 'Erreur de chargement de la page'
-  })
-}
 
 if (!page.value) {
   throw createError({
@@ -91,6 +80,13 @@ if (!page.value) {
     statusMessage: 'Page non trouvée'
   })
 }
+
+// Onglets partagés entre les pages légales — `show_in_tabs` exclut les pages
+// hors navigation (ex. cookies), qui restent accessibles par leur slug.
+const legalPages = useMenuLegalPages()
+const tabs = computed<LegalPageTab[]>(() =>
+  legalPages.value.filter((p) => p.showInTabs).map((p) => ({ slug: p.slug, label: p.label }))
+)
 
 useContentSeo(
   () => pageData.value ?? {},

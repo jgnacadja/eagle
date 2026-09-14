@@ -6,7 +6,7 @@ import type { LegalPage as LegalPageModel, LegalPageTab } from '~/types/legal'
 const navigateToMock = vi.fn()
 
 interface RouteMock {
-  params: { legal: string }
+  params: { slug: string }
   hash: string
   meta: Record<string, unknown>
 }
@@ -50,7 +50,6 @@ const page: LegalPageModel = {
   label: 'Mentions légales',
   title: 'Mentions légales',
   lastUpdated: '01 septembre 2026',
-  metaDescription: 'Mentions légales du site.',
   sections: [
     {
       id: 'editeur',
@@ -75,7 +74,7 @@ const tabs: LegalPageTab[] = [
 describe('components/LegalPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    routeMock = { params: { legal: 'mentions-legales' }, hash: '', meta: {} }
+    routeMock = { params: { slug: 'mentions-legales' }, hash: '', meta: {} }
   })
 
   it('affiche le titre, la date de mise à jour et les sections', () => {
@@ -109,7 +108,7 @@ describe('components/LegalPage', () => {
   })
 
   it('navigue vers une autre page légale via le sélecteur mobile', async () => {
-    routeMock = { params: { legal: 'mentions-legales' }, hash: '', meta: {} }
+    routeMock = { params: { slug: 'mentions-legales' }, hash: '', meta: {} }
     const wrapper = mount(LegalPage, { props: { page, tabs }, global: { stubs } })
 
     const select = wrapper.find('select')

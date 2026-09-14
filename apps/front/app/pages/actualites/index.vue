@@ -96,7 +96,10 @@
               <div class="h-px flex-1 bg-accent-text/30" aria-hidden="true" />
             </div>
 
-            <Card v-reveal class="mt-md overflow-hidden shadow-md lg:flex">
+            <Card
+              v-reveal
+              class="mt-md overflow-hidden transition hover:border-primary/40 hover:shadow-md lg:flex"
+            >
               <div
                 class="flex aspect-16/10 items-center justify-center border-b border-dashed border-outline bg-surface-alt text-center text-small text-ink-muted lg:aspect-auto lg:w-2/5 lg:border-b-0 lg:border-r"
               >
@@ -129,9 +132,9 @@
                 </p>
                 <NuxtLink
                   :to="`/actualites/${featuredArticle.slug}`"
-                  class="mt-xs text-small font-semibold text-ink hover:underline hover:text-accent-text transition-all"
+                  class="mt-xs text-small font-semibold text-ink transition-colors hover:text-accent-text"
                 >
-                  Lire l'article →
+                  Lire l'article <span class="link-arrow">→</span>
                 </NuxtLink>
               </div>
             </Card>
@@ -214,7 +217,7 @@
                 />
                 <Button
                   type="submit"
-                  class="h-control shrink-0 rounded-full bg-accent px-xl text-small font-bold text-ink hover:bg-accent-text hover:text-paper transition duration-300 self-start cursor-pointer"
+                  class="h-control shrink-0 self-start rounded-full bg-accent px-xl text-small font-semibold text-ink hover:bg-accent-text hover:text-paper"
                 >
                   S'abonner
                 </Button>

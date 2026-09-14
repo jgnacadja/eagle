@@ -115,12 +115,11 @@
                   <li v-for="heading in articleHeadings" :key="heading.id">
                     <a
                       :href="`#${heading.id}`"
-                      :class="[
+                      :class="
                         activeHeading === heading.id
-                          ? 'font-extrabold text-ink'
-                          : 'text-ink-body hover:text-ink hover:underline font-semibold text-small',
-                        'hover:underline'
-                      ]"
+                          ? 'font-bold text-ink'
+                          : 'text-ink-body transition-colors hover:text-accent-text'
+                      "
                       @click="activeHeading = heading.id"
                     >
                       {{ heading.label }}
@@ -166,7 +165,7 @@
             </h2>
             <NuxtLink
               to="/actualites"
-              class="hidden text-small font-bold text-ink transition-colors hover:text-accent-text hover:underline sm:inline"
+              class="hidden text-small font-semibold text-ink transition-colors hover:text-accent-text sm:inline"
             >
               Toute l'actualité <span class="link-arrow">→</span>
             </NuxtLink>
@@ -175,7 +174,7 @@
             <li
               v-for="related in relatedArticles"
               :key="related.slug"
-              class="border-t border-accent-text/30 pt-md duration-500 hover:scale-[1.03] transition-all"
+              class="border-t border-accent-text/30 pt-md"
             >
               <article>
                 <p class="text-overline text-accent-text">

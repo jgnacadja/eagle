@@ -374,7 +374,14 @@ export const collections = [
     fields: [
       primaryKey(),
       statusField(),
-      sortField(),
+      // special 'sort' : tri manuel par glisser-déposer dans la liste admin
+      // (ordonne les onglets côté front) — sinon le champ caché ne serait
+      // jamais modifiable par un éditeur.
+      {
+        field: 'sort',
+        type: 'integer',
+        meta: { interface: 'input', hidden: true, special: ['sort'] }
+      },
       slugField(),
       {
         field: 'label',

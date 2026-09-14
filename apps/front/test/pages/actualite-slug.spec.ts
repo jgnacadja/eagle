@@ -83,9 +83,16 @@ vi.stubGlobal('ref', ref)
 vi.stubGlobal('watchEffect', watchEffect)
 vi.stubGlobal('definePageMeta', vi.fn())
 vi.stubGlobal('useRoute', () => routeMock)
-vi.stubGlobal('useAsyncData', async (_key: string, handler: () => Promise<unknown>) => {
-  if (forceError) {
-    return { data: ref(null), error: ref(forceError), refresh: refreshMock }
+vi.stubGlobal('useAsyncData', async (key: string, handler: () => Promise<unknown>) => {
+  if (
+    forceError ||
+    (routeMock?.query.error === '1' && key === `article-${routeMock.params.slug}`)
+  ) {
+    return {
+      data: ref(null),
+      error: ref(forceError ?? new Error('down')),
+      refresh: refreshMock
+    }
   }
   try {
     return { data: ref(await handler()), error: ref(null), refresh: refreshMock }

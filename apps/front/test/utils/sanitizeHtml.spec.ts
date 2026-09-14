@@ -22,6 +22,15 @@ describe('sanitizeHtml', () => {
     expect(clean).not.toContain('ancre-piege')
     expect(clean).not.toContain('id="x"')
   })
+
+  it('ajoute rel="noopener noreferrer" aux liens target="_blank"', () => {
+    const clean = sanitizeHtml(
+      '<a href="https://exemple.fr" target="_blank">lien</a><a href="https://exemple.fr">autre</a>'
+    )
+
+    expect(clean).toContain('target="_blank" rel="noopener noreferrer"')
+    expect(clean).toContain('<a href="https://exemple.fr">autre</a>')
+  })
 })
 
 describe('sanitizeHtmlWithHeadings', () => {
@@ -59,5 +68,18 @@ describe('sanitizeHtmlWithHeadings', () => {
     expect(headings.map((h) => h.id)).toEqual(['heading-2', 'heading-2-2'])
     expect(html).toContain('id="heading-2"')
     expect(html).not.toContain('id=""')
+  })
+
+  it('décode les entités HTML dans les libellés du sommaire', () => {
+    const { headings } = sanitizeHtmlWithHeadings('<h2>R&amp;D &#8212; l&apos;essentiel</h2>')
+
+    expect(headings[0]?.label).toBe("R&D — l'essentiel")
+  })
+
+  it('conserve un titre dont un attribut contient un « > »', () => {
+    const { html, headings } = sanitizeHtmlWithHeadings('<h2 class="a&gt;b">Titre piégé</h2>')
+
+    expect(headings).toEqual([{ id: 'titre-piege', label: 'Titre piégé', level: 2 }])
+    expect(html).toContain('id="titre-piege"')
   })
 })

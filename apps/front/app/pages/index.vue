@@ -395,13 +395,13 @@
     </section>
 
     <!-- News -->
-    <section id="actualites" class="bg-surface py-section">
+    <section v-if="articles.length" id="actualites" class="bg-surface py-section">
       <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter">
         <div class="flex items-end justify-between">
           <h2 class="font-display text-h2 font-extrabold text-ink">Actualités</h2>
           <NuxtLink
             to="/actualites"
-            class="hidden md:block whitespace-nowrap text-small font-bold text-primary hover:text-accent-text hover:scale-105 transition-all"
+            class="hidden md:block whitespace-nowrap text-small font-bold text-primary transition-colors hover:text-accent-text"
             >Tout le blog →</NuxtLink
           >
         </div>

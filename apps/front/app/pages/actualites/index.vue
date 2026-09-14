@@ -288,14 +288,13 @@ const CATEGORY_ALL = 'Tout'
 
 const REGION_ALL = 'all'
 const directus = useDirectusClient()
-type ArticleListItem = Omit<Article, 'content'>
 
 const {
   data: articles,
   pending: articlesPending,
   error: articlesError,
   refresh: refreshArticles
-} = await useAsyncData<ArticleListItem[]>(
+} = await useAsyncData<Article[]>(
   'actualites-list',
   async () => {
     try {
@@ -308,16 +307,10 @@ const {
             'title',
             'excerpt',
             'category',
-            'author_name',
-            'author_image',
             'region',
-            'related_formation_slug',
             'publish_at',
-            'centre',
             'cover_image',
-            'seo_title',
-            'seo_description',
-            'seo_canonical'
+            'content'
           ],
           filter: { status: { _eq: 'published' } },
           sort: ['-publish_at']
@@ -332,7 +325,7 @@ const {
   },
   {
     getCachedData: (key, nuxtApp) =>
-      (nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as ArticleListItem[] | undefined
+      (nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as Article[] | undefined
   }
 )
 
@@ -366,41 +359,12 @@ function formatRegionLabel(value: string): string {
   )
 }
 
-const featuredArticle = computed<ArticleListItem | null>(
+const featuredArticle = computed<Article | null>(
   () => (articles.value ?? []).find((a) => a.status === 'published') ?? null
 )
 
-const { data: featuredArticleContent } = await useAsyncData<Pick<Article, 'content'> | null>(
-  `actualites-featured-content-${featuredArticle.value?.slug ?? 'none'}`,
-  async () => {
-    const slug = featuredArticle.value?.slug
-    if (!slug) return null
-
-    try {
-      const results = await directus.request<Pick<Article, 'content'>[]>(
-        readItems('articles', {
-          fields: ['content'],
-          filter: { slug: { _eq: slug }, status: { _eq: 'published' } },
-          limit: 1
-        })
-      )
-      return results[0] ?? null
-    } catch (error) {
-      if (import.meta.server) {
-        logServerError(`[actualites] featured article ${slug} content load failed:`, error)
-      }
-      return null
-    }
-  },
-  {
-    getCachedData: (key, nuxtApp) =>
-      (nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as
-        Pick<Article, 'content'> | null | undefined
-  }
-)
-
 const readingTime = computed(() => {
-  return articleReadingTime(featuredArticleContent.value?.content)
+  return articleReadingTime(featuredArticle.value?.content)
 })
 
 const selectedCategory = ref(CATEGORY_ALL)

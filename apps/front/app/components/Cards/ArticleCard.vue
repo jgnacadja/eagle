@@ -10,7 +10,13 @@
           : 'border border-dashed border-outline bg-surface-alt text-small text-ink-muted md:border-b md:border-x-0 md:border-t-0'
       "
     >
-      <NuxtImg v-if="imageUrl" :src="imageUrl" :alt="title" class="h-full w-full object-cover" />
+      <NuxtImg
+        v-if="imageUrl"
+        :src="imageUrl"
+        :alt="title"
+        loading="lazy"
+        class="h-full w-full object-cover"
+      />
       <span v-else>Visuel article à fournir</span>
     </div>
     <div class="flex min-w-0 flex-1 flex-col bg-paper md:p-md">
@@ -28,8 +34,6 @@
 </template>
 
 <script setup lang="ts">
-import type { RouteLocationRaw } from 'vue-router'
-
 withDefaults(
   defineProps<{
     category: string
@@ -37,7 +41,7 @@ withDefaults(
     date: string
     excerpt: string
     imageUrl?: string
-    to?: RouteLocationRaw
+    to?: string
   }>(),
   { imageUrl: '', to: '#' }
 )

@@ -166,7 +166,7 @@
             </h2>
             <NuxtLink
               to="/actualites"
-              class="hidden text-small font-bold text-ink hover:underline sm:inline hover:text-accent-text hover:scale-105 transition-all"
+              class="hidden text-small font-bold text-ink transition-colors hover:text-accent-text hover:underline sm:inline"
             >
               Toute l'actualité →
             </NuxtLink>
@@ -255,10 +255,6 @@ const {
 } = await useAsyncData<Article | null>(
   `article-${slug}`,
   async () => {
-    if (route.query.error === '1') {
-      throw new Error('Article load failed')
-    }
-
     try {
       const results = await directus.request<Article[]>(
         readItems('articles', {
@@ -305,10 +301,15 @@ const article = computed(() => {
 
 interface RelatedFormationFamily {
   slug: string
-  famille: { slug: string } | null
+  famille: { slug: string; name: string | null } | null
 }
 
-const { data: relatedFormation } = await useAsyncData<Course | null>(
+interface RelatedFormation {
+  course: Course
+  familyName: string | null
+}
+
+const { data: relatedFormation } = await useAsyncData<RelatedFormation | null>(
   `article-related-formation-${slug}`,
   async () => {
     const formationSlug = article.value?.related_formation_slug
@@ -317,7 +318,7 @@ const { data: relatedFormation } = await useAsyncData<Course | null>(
     try {
       const familyResult = await directus.request<RelatedFormationFamily[]>(
         readItems('formations', {
-          fields: ['slug', 'famille.slug'],
+          fields: ['slug', 'famille.slug', 'famille.name'],
           filter: { slug: { _eq: formationSlug }, status: { _eq: 'published' } },
           limit: 1
         })
@@ -326,9 +327,10 @@ const { data: relatedFormation } = await useAsyncData<Course | null>(
       const familySlug = formation?.famille?.slug
       if (!familySlug) return null
 
-      return await $fetch<Course>(
-        `${import.meta.server ? config.apiBase : config.public.apiBase}/courses/${familySlug}/${formation.slug}`
+      const course = await $fetch<Course>(
+        `${import.meta.server ? config.apiBase : config.public.apiBase}/courses/${encodeURIComponent(familySlug)}/${encodeURIComponent(formation.slug)}`
       )
+      return { course, familyName: formation.famille?.name ?? null }
     } catch (error) {
       if (import.meta.server) {
         logServerError(`[actualites/slug] related formation ${formationSlug} load failed:`, error)
@@ -338,15 +340,15 @@ const { data: relatedFormation } = await useAsyncData<Course | null>(
   },
   {
     getCachedData: (key, nuxtApp) =>
-      (nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as Course | null | undefined
+      (nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as RelatedFormation | null | undefined
   }
 )
 
 const relatedFormationCard = computed<FormationItem | null>(() => {
-  const formation = relatedFormation.value
-  if (!formation) return null
+  const related = relatedFormation.value
+  if (!related) return null
 
-  return mapCourse(formation, formation.familySlug ?? undefined)
+  return mapCourse(related.course, related.familyName ?? undefined)
 })
 
 const readingTime = computed(() => {
@@ -456,7 +458,7 @@ useContentSeo(
 )
 
 function retry() {
-  if (route.query.error) {
+  if (route.query.error === '1') {
     const { error: _error, ...query } = route.query
     navigateTo({ path: route.path, query })
   } else {
@@ -473,8 +475,11 @@ function assetUrl(id: string | null): string | undefined {
 }
 
 function onShare() {
-  if (typeof window !== 'undefined') {
-    navigator.share?.({ title: article.value?.title, url: window.location.href })?.catch(() => {})
+  if (typeof window === 'undefined') return
+  if (navigator.share) {
+    navigator.share({ title: article.value?.title, url: window.location.href }).catch(() => {})
+  } else {
+    onCopyLink()
   }
 }
 

@@ -9,7 +9,6 @@ const apiBase = process.env.NUXT_API_BASE ?? 'http://localhost:3001'
 // Directus n'est jamais contacté directement : l'API expose un proxy
 // `/directus` (apps/api/src/directus).
 const publicApiBase = process.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:3001'
-const directusUrlPublic = process.env.NUXT_PUBLIC_DIRECTUS_URL ?? 'http://localhost:8055'
 const siteUrl = process.env.NUXT_PUBLIC_SITE_URL ?? 'https://learnup.fr'
 
 export default defineNuxtConfig({
@@ -72,8 +71,7 @@ export default defineNuxtConfig({
     apiBase,
     public: {
       apiBase: publicApiBase,
-      siteUrl,
-      directusUrl: directusUrlPublic
+      siteUrl
     }
   }
 })

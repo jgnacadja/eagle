@@ -32,7 +32,13 @@ export function sanitizeHtmlWithHeadings(html: string): {
       a: ['href', 'name', 'target', 'rel'],
       img: ['src', 'srcset', 'alt', 'title', 'width', 'height', 'loading']
     },
-    allowedSchemes: ['https', 'http', 'mailto', 'tel']
+    allowedSchemes: ['https', 'http', 'mailto', 'tel'],
+    transformTags: {
+      a: (tagName, attribs) => ({
+        tagName,
+        attribs: attribs.target === '_blank' ? { ...attribs, rel: 'noopener noreferrer' } : attribs
+      })
+    }
   })
 
   const sanitizedHtml = insertHeadingIds(clean)
@@ -43,15 +49,49 @@ export function sanitizeHtmlWithHeadings(html: string): {
   }
 }
 
+// Une valeur d'attribut peut contenir « > » : le motif accepte les chaînes
+// quotées dans les attributs au lieu d'un simple [^>]*.
+const HEADING_PATTERN = /<h([1-3])((?:[^>"']|"[^"]*"|'[^']*')*)>([\s\S]*?)<\/h\1>/gi
+
+const HTML_ENTITIES: Record<string, string> = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+  nbsp: ' ',
+  laquo: '«',
+  raquo: '»',
+  lsquo: '‘',
+  rsquo: '’',
+  ldquo: '“',
+  rdquo: '”',
+  ndash: '–',
+  mdash: '—',
+  hellip: '…'
+}
+
+// Passe unique, de gauche à droite : « &amp;lt; » devient le littéral « &lt; »
+// (le &amp; est décodé sans re-scanner le résultat).
+function decodeEntities(text: string): string {
+  return text.replace(/&#x([0-9a-f]+);|&#(\d+);|&([a-zA-Z]+);/g, (entity, hex, dec, name) => {
+    if (hex !== undefined) return String.fromCodePoint(Number.parseInt(hex, 16))
+    if (dec !== undefined) return String.fromCodePoint(Number.parseInt(dec, 10))
+    return HTML_ENTITIES[name.toLowerCase()] ?? entity
+  })
+}
+
+function headingText(inner: string): string {
+  return decodeEntities(inner.replace(/<[^>]+>/g, ' '))
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 function insertHeadingIds(html: string): string {
   const seen = new Set<string>()
 
-  return html.replace(/<h([1-3])([^>]*)>([\s\S]*?)<\/h\1>/gi, (match, level, attrs, inner) => {
-    const label = inner
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
+  return html.replace(HEADING_PATTERN, (match, level, attrs, inner) => {
+    const label = headingText(inner)
     const base = slugifyHeading(label) || `heading-${level}`
 
     let id = base
@@ -69,7 +109,7 @@ function insertHeadingIds(html: string): string {
 }
 
 function extractHeadings(html: string): SanitizedHeading[] {
-  return Array.from(html.matchAll(/<h([1-3])([^>]*)>([\s\S]*?)<\/h\1>/gi)).flatMap((match) => {
+  return Array.from(html.matchAll(HEADING_PATTERN)).flatMap((match) => {
     const level = match[1]
     const attrs = match[2]
     const inner = match[3]
@@ -78,12 +118,6 @@ function extractHeadings(html: string): SanitizedHeading[] {
     const id = attrs.match(/\sid="([^"]+)"/i)?.[1]
     if (!id) return []
 
-    const label = inner
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-
-    return [{ id, label, level: Number(level) }]
+    return [{ id, label: headingText(inner), level: Number(level) }]
   })
 }

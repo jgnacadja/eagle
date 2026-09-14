@@ -71,7 +71,12 @@ export default defineNuxtConfig({
   },
   components: [
     { path: '~/components/Legal', prefix: 'Legal' },
-    { path: '~/components', pathPrefix: false, pattern: ['**/*.vue', '!Legal/**/*.vue'] }
+    { path: '~/components/Assistant', prefix: 'Assistant' },
+    {
+      path: '~/components',
+      pathPrefix: false,
+      pattern: ['**/*.vue', '!Legal/**/*.vue', '!Assistant/**/*.vue']
+    }
   ],
   nitro: {
     externals: {

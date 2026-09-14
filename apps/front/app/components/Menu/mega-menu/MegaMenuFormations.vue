@@ -80,8 +80,8 @@
 
       <Card variant="dark" class="mt-md px-md py-lg">
         <p class="text-body font-semibold">Vous ne savez pas quelle formation choisir ?</p>
-        <Button as-child variant="paper" size="pill-sm" class="mt-sm w-full">
-          <NuxtLink to="/etre-guide" @click="$emit('close')">Être guidé dans mon choix</NuxtLink>
+        <Button variant="paper" size="pill-sm" class="mt-sm w-full" @click="openAssistant">
+          Être guidé dans mon choix
         </Button>
       </Card>
     </div>
@@ -96,8 +96,17 @@ import {
   useMenuFormationsParFamille
 } from '~/composables/useMenuData'
 import MegaMenuCard from '~/components/Menu/mega-menu/MegaMenuCard.vue'
+import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 
-defineEmits<{ close: [] }>()
+const emit = defineEmits<{ close: [] }>()
+
+const assistant = useAssistantLauncher()
+
+// « Être guidé dans mon choix » ouvre le panneau de recherche assistée.
+function openAssistant() {
+  assistant.open({ context: { source: 'header' } })
+  emit('close')
+}
 
 const familles = useMenuFamilles()
 const formationsParFamille = useMenuFormationsParFamille()

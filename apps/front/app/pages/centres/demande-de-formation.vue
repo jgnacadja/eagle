@@ -451,6 +451,35 @@
             </Badge>
           </Card>
 
+          <!-- D1 — besoin décrit dans la recherche assistée, joint à la demande -->
+          <Card v-if="besoinParam" class="border-accent/40 bg-accent-soft/40 p-lg">
+            <div class="flex items-center justify-between">
+              <h2
+                class="flex items-center gap-xs text-meta font-semibold uppercase tracking-wide text-accent-text"
+              >
+                <IconSparkle :size="14" aria-hidden="true" />
+                Votre besoin, tel que vous l'avez décrit
+              </h2>
+              <Button
+                variant="link"
+                class="h-auto p-0 text-small font-medium text-primary hover:text-accent-text"
+                @click="reopenAssistant"
+              >
+                Modifier
+              </Button>
+            </div>
+            <p class="mt-md text-small italic text-ink">«&nbsp;{{ besoinParam }}&nbsp;»</p>
+            <ul v-if="besoinChips.length" class="mt-sm flex flex-wrap gap-sm">
+              <li v-for="chip in besoinChips" :key="chip">
+                <Badge variant="outline" class="font-medium">{{ chip }}</Badge>
+              </li>
+            </ul>
+            <p class="mt-sm text-meta text-accent-text/80">
+              Ce besoin est joint à la demande pour que le conseiller comprenne ce que vous
+              recherchiez.
+            </p>
+          </Card>
+
           <Card v-reveal class="p-lg">
             <ul class="space-y-sm text-small text-ink-muted">
               <li class="flex items-start gap-sm">
@@ -483,6 +512,7 @@ import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import IconMapPin from '~/components/icons/IconMapPin.vue'
 import IconBook from '~/components/icons/IconBook.vue'
 import IconCalendar from '~/components/icons/IconCalendar.vue'
+import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 
 definePageMeta({
   layout: 'with-breadcrumb'
@@ -511,6 +541,19 @@ const isIntra = computed(() => queryValue(route.query.intra) === '1')
 if (sujetSlug.value === 'conseiller') {
   await navigateTo('/parler-a-votre-conseiller')
 }
+
+// D1 — contexte transmis par le moteur de recherche assistée : besoin brut,
+// effectif et localisation extraits de la conversation (aucune ressaisie).
+const besoinParam = computed(() => queryValue(route.query.besoin))
+const salariesParam = computed(() => queryValue(route.query.salaries))
+const lieuParam = computed(() => queryValue(route.query.lieu))
+
+const besoinChips = computed(() => {
+  const chips: string[] = []
+  if (salariesParam.value) chips.push(`${salariesParam.value} salariés`)
+  if (lieuParam.value) chips.push(lieuParam.value)
+  return chips
+})
 
 // Les CTA « Rejoindre le réseau » et la home arrivent avec ?sujet= : le sujet
 // est affiché dans le bloc contexte — le formulaire reste générique.
@@ -812,8 +855,9 @@ const { handleSubmit, errors, submitCount, defineField, setValues, values } = us
       })
   ),
   initialValues: {
-    salaries: 8,
-    lieu: '',
+    // D1 : effectif et lieu pré-remplis depuis la recherche assistée.
+    salaries: salariesParam.value ?? 8,
+    lieu: lieuParam.value ?? '',
     echeance: 'Septembre 2026',
     precisions: '',
     consentement: false
@@ -870,6 +914,14 @@ const DRAFT_FIELDS = new Set<string>([
 function saveDraft() {
   if (typeof window === 'undefined') return
   window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify(values))
+}
+
+// D1 — « Modifier » rouvre le panneau (la conversation est conservée) et le
+// brouillon du formulaire est sauvegardé pour le retour.
+const assistant = useAssistantLauncher()
+function reopenAssistant() {
+  saveDraft()
+  assistant.open()
 }
 
 onMounted(() => {
@@ -941,7 +993,11 @@ const onSubmit = handleSubmit(async (v) => {
     salaries: v.salaries,
     lieu: v.lieu || undefined,
     echeance: v.echeance,
-    precisions: v.precisions || undefined,
+    // D1 : le besoin décrit dans la recherche assistée est joint à la demande.
+    precisions:
+      [besoinParam.value ? `Besoin exprimé : ${besoinParam.value}` : null, v.precisions]
+        .filter(Boolean)
+        .join('\n\n') || undefined,
     // Libellés résolus — HubSpot reçoit du texte lisible, pas les slugs.
     centre: centreName.value || demandeCentreSlug.value || undefined,
     formation: formationName.value || undefined,

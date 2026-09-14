@@ -282,8 +282,8 @@
           >
             Rejoindre le réseau
           </NuxtLink>
-          <Button as-child variant="accent" size="pill" class="w-full">
-            <NuxtLink to="/etre-guide" @click="closeMenu">Être guidé dans mon choix</NuxtLink>
+          <Button variant="accent" size="pill" class="w-full" @click="openAssistant">
+            Être guidé dans mon choix
           </Button>
         </div>
       </dialog>
@@ -308,6 +308,7 @@ import {
   useMenuLegalPages,
   useMenuSousFamillesParFamille
 } from '~/composables/useMenuData'
+import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 
 const open = defineModel<boolean>('open', { default: false })
 const dialogEl = ref<HTMLDialogElement>()
@@ -330,6 +331,14 @@ function sousFamillesFor(familleSlug: string) {
 
 function closeMenu() {
   open.value = false
+}
+
+const assistant = useAssistantLauncher()
+
+// « Être guidé dans mon choix » ouvre le panneau de recherche assistée.
+function openAssistant() {
+  assistant.open({ context: { source: 'header' } })
+  closeMenu()
 }
 
 function onKeydown(event: KeyboardEvent): void {

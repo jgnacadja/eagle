@@ -379,6 +379,25 @@
               </Card>
             </section>
 
+            <!-- C4 — doute sur la pertinence : porte de sortie vers le moteur -->
+            <Card class="p-lg">
+              <h2 class="font-sans text-h4 font-semibold text-ink">
+                Cette formation ne correspond pas exactement à votre besoin ?
+              </h2>
+              <p class="mt-sm text-small text-ink-muted">
+                Le moteur peut rechercher une alternative dans le catalogue à partir de votre
+                situation.
+              </p>
+              <Button
+                variant="link"
+                class="mt-md inline-flex h-auto items-center gap-sm p-0 text-small font-semibold text-primary underline underline-offset-2 hover:text-accent-text"
+                @click="openAssistant"
+              >
+                <IconSparkle :size="14" class="text-accent" aria-hidden="true" />
+                Décrire mon besoin
+              </Button>
+            </Card>
+
             <!-- Certification -->
             <section v-if="course.certification" aria-labelledby="certification-title">
               <Card v-reveal>
@@ -452,8 +471,8 @@
             title="Vous ne savez pas quelle formation choisir ?"
             text="Décrivez votre besoin : LEARN UP identifie la formation, la catégorie et le format adaptés à votre situation."
           >
-            <Button as-child variant="paper" size="control" class="w-full sm:w-auto">
-              <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
+            <Button variant="paper" size="control" class="w-full sm:w-auto" @click="openAssistant">
+              Être guidé dans mon choix
             </Button>
             <Button as-child variant="outline-inverse" size="control" class="w-full sm:w-auto">
               <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
@@ -525,12 +544,12 @@
       title="Cette formation n'est pas disponible."
       primary-to="/formations"
       primary-label="Voir le catalogue"
-      secondary-to="#"
       secondary-label="Être guidé dans mon choix"
       search-placeholder="Intitulé, compétence ou certification"
       search-label="Rechercher une formation"
       search-input-id="formation-search"
       @search="onErrorSearch"
+      @secondary="openAssistant"
     >
       <template #icon>
         <IconFileOff :size="32" class="text-ink" />
@@ -564,6 +583,7 @@ import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
 import { revealStagger } from '~/utils/reveal'
 import { availabilityStatus } from '~/composables/useCentres'
+import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 
 interface ProgrammeModule {
   title: string
@@ -938,6 +958,12 @@ const demandeIntraTo = computed(() => {
   const params = new URLSearchParams({ famille, formation: slug, intra: '1' })
   return `/centres/demande-de-formation?${params.toString()}`
 })
+
+// C4 — la fiche d'origine est transmise au panneau : il cherche une alternative.
+const assistant = useAssistantLauncher()
+function openAssistant() {
+  assistant.open({ context: { source: 'formation', formationSlug: slug } })
+}
 
 // Titre de session par modalité (label déjà traduit via MODALITY_LABELS).
 const SESSION_TITLES: Record<string, string> = {

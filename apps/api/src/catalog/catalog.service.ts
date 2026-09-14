@@ -1,41 +1,145 @@
-import { Injectable } from '@nestjs/common'
-import type { Course, CourseListItem, FamilyWithCount, Paginated } from '@learnup/types'
-import { Prisma } from '../../prisma/generated/client'
+import { Injectable, Logger } from '@nestjs/common'
+import type {
+  Course,
+  CourseListItem,
+  CourseSession,
+  FamilyWithCount,
+  Paginated
+} from '@learnup/types'
 import { CacheService } from '../common/cache/cache.service'
-import { PrismaService } from '../prisma/prisma.service'
+import {
+  DirectusCatalogService,
+  type DirectusFormation,
+  type FamilyApplyResult
+} from '../directus/directus.catalog.service'
 import { CourseSortField, CourseSortOrder, type ListCoursesDto } from './catalog.dto'
 
-const listSelect = {
-  id: true,
-  slug: true,
-  title: true,
-  description: true,
-  durationDays: true,
-  durationHours: true,
-  price: true,
-  cpf: true,
-  cpfCode: true,
-  certification: true,
-  certifierName: true,
-  category: true,
-  familySlug: true,
-  centerSlug: true,
-  imageUrl: true,
-  status: true,
-  seoTitle: true,
-  seoDescription: true,
-  seoCanonical: true
-} satisfies Prisma.CourseSelect
+function toNumber(value: unknown): number | null {
+  if (value == null) return null
+  const parsed = Number(value)
+  return Number.isNaN(parsed) ? null : parsed
+}
 
-const detailSelect = {
-  ...listSelect,
-  blocks: true,
-  createdAt: true,
-  updatedAt: true
-} satisfies Prisma.CourseSelect
+function toIsoString(value: unknown): string {
+  return value instanceof Date ? value.toISOString() : String(value)
+}
 
-type ListResult = Prisma.CourseGetPayload<{ select: typeof listSelect }>
-type DetailResult = Prisma.CourseGetPayload<{ select: typeof detailSelect }>
+function slugifyCategory(value: string): string {
+  const slug = value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+
+  let start = 0
+  let end = slug.length
+  while (start < end && slug[start] === '-') start++
+  while (end > start && slug[end - 1] === '-') end--
+  return slug.slice(start, end)
+}
+
+type UnknownRecord = Record<string, unknown>
+
+function toNullableString(value: unknown): string | null {
+  return typeof value === 'string' ? value : null
+}
+
+function toNullableNumber(value: unknown): number | null {
+  return typeof value === 'number' ? value : null
+}
+
+function mapSessionLocation(raw: UnknownRecord): CourseSession['location'] {
+  const location = raw['location']
+  if (!location || typeof location !== 'object') return null
+
+  const loc = location as UnknownRecord
+  return {
+    name: toNullableString(loc['name']),
+    city: toNullableString(loc['city']),
+    postalCode: toNullableString(loc['postalCode']),
+    department: toNullableString(loc['department']),
+    region: toNullableString(loc['region']),
+    centreSlug: toNullableString(loc['centreSlug'])
+  }
+}
+
+function mapSessionEntry(entry: unknown): CourseSession | null {
+  if (!entry || typeof entry !== 'object') return null
+
+  const raw = entry as UnknownRecord
+  return {
+    id: toNullableString(raw['id']),
+    startDate: toNullableString(raw['startDate']),
+    endDate: toNullableString(raw['endDate']),
+    modality: toNullableString(raw['modality']),
+    seatsRemaining: toNullableNumber(raw['seatsRemaining']),
+    location: mapSessionLocation(raw)
+  }
+}
+
+function mapSessions(value: unknown): CourseSession[] | null {
+  if (!Array.isArray(value)) return null
+
+  const sessions = value.map(mapSessionEntry).filter((s): s is CourseSession => s !== null)
+
+  return sessions.length > 0 ? sessions : null
+}
+
+function extractTexts(rawPayload: unknown, key: string): string[] | null {
+  if (!rawPayload || typeof rawPayload !== 'object') return null
+  const entries = (rawPayload as Record<string, unknown>)[key]
+  if (!Array.isArray(entries)) return null
+
+  const texts = entries
+    .map((entry) =>
+      entry && typeof entry === 'object' && 'text' in entry
+        ? (entry as { text?: unknown }).text
+        : null
+    )
+    .filter((text): text is string => typeof text === 'string' && text.trim().length > 0)
+
+  return texts.length > 0 ? texts : null
+}
+
+function toListItem(raw: DirectusFormation): CourseListItem {
+  return {
+    id: raw.id,
+    slug: raw.slug,
+    title: raw.title,
+    description: raw.description,
+    durationDays: toNumber(raw.duration_days),
+    durationHours: toNumber(raw.duration_hours),
+    price: toNumber(raw.price),
+    cpf: raw.cpf,
+    cpfCode: raw.cpf_code,
+    certification: raw.certification,
+    certifierName: raw.certifier_name,
+    category: raw.category_name,
+    familySlug: raw.famille?.slug ?? null,
+    centerSlug: raw.center_slug,
+    centerSlugs: (raw.center_slugs as string[]) ?? [],
+    modalities: (raw.modalities as string[]) ?? [],
+    sessions: mapSessions(raw.sessions),
+    imageUrl: raw.image_url,
+    generatedProgramUrl: raw.generated_program_url,
+    status: raw.status,
+    seoTitle: raw.seo_title,
+    seoDescription: raw.seo_description,
+    seoCanonical: raw.seo_canonical
+  }
+}
+
+function toCourse(raw: DirectusFormation): Course {
+  return {
+    ...toListItem(raw),
+    blocks: Array.isArray(raw.blocks) ? (raw.blocks as unknown[]) : null,
+    targets: extractTexts(raw.raw, 'targets'),
+    prerequisites: extractTexts(raw.raw, 'prerequisites'),
+    evaluation: extractTexts(raw.raw, 'evaluation'),
+    createdAt: toIsoString(raw.created_at),
+    updatedAt: toIsoString(raw.updated_at)
+  }
+}
 
 const STOP_WORDS = new Set([
   'a',
@@ -101,260 +205,205 @@ const STOP_WORDS = new Set([
   'y'
 ])
 
-function toNumber(value: unknown): number | null {
-  if (value == null) return null
-  const parsed = Number(value)
-  return Number.isNaN(parsed) ? null : parsed
-}
+function toSearchTokens(raw: string | undefined): string[] | undefined {
+  if (!raw) return undefined
 
-function toIsoString(value: unknown): string {
-  return value instanceof Date ? value.toISOString() : String(value)
-}
-
-function mapListItem(raw: ListResult): CourseListItem {
-  return {
-    id: raw.id,
-    slug: raw.slug,
-    title: raw.title,
-    description: raw.description,
-    durationDays: raw.durationDays,
-    durationHours: raw.durationHours,
-    price: toNumber(raw.price),
-    cpf: raw.cpf,
-    cpfCode: raw.cpfCode,
-    certification: raw.certification,
-    certifierName: raw.certifierName,
-    category: raw.category,
-    familySlug: raw.familySlug,
-    centerSlug: raw.centerSlug,
-    imageUrl: raw.imageUrl,
-    status: raw.status,
-    seoTitle: raw.seoTitle,
-    seoDescription: raw.seoDescription,
-    seoCanonical: raw.seoCanonical
-  }
-}
-
-function mapCourse(raw: DetailResult): Course {
-  return {
-    ...mapListItem(raw),
-    blocks: Array.isArray(raw.blocks) ? (raw.blocks as unknown[]) : null,
-    createdAt: toIsoString(raw.createdAt),
-    updatedAt: toIsoString(raw.updatedAt)
-  }
-}
-
-function toTsQuery(raw: string): string | undefined {
   const tokens = raw
     .toLowerCase()
     .match(/[\p{L}\p{N}]+/gu)
     ?.filter((token) => token.length > 2 && !STOP_WORDS.has(token))
 
-  if (!tokens || tokens.length === 0) {
-    return undefined
-  }
-
-  return tokens.join(' & ')
+  return tokens && tokens.length > 0 ? tokens : undefined
 }
 
-function buildWhere(query: ListCoursesDto): Prisma.CourseWhereInput {
-  const where: Prisma.CourseWhereInput = { status: 'published' }
-
-  if (query.family) {
-    where.familySlug = query.family
-  }
-
-  if (query.cpf !== undefined) {
-    where.cpf = query.cpf
-  }
-
-  if (query.certifying !== undefined) {
-    where.certification = query.certifying ? { not: null } : null
-  }
-
-  if (query.durationMin !== undefined || query.durationMax !== undefined) {
-    where.durationHours = { gte: query.durationMin, lte: query.durationMax }
-  }
-
-  if (query.priceMin !== undefined || query.priceMax !== undefined) {
-    where.price = { gte: query.priceMin, lte: query.priceMax }
-  }
-
-  if (query.center) {
-    where.centerSlug = query.center
-  }
-
-  return where
+function normalizeSearch(text: string | null | undefined): string {
+  return (text ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
 }
 
-function buildOrderBy(
+function buildLocationText(
+  course: CourseListItem,
+  locationsText: string | null | undefined
+): string {
+  if (typeof locationsText === 'string' && locationsText.length > 0) {
+    return normalizeSearch(locationsText)
+  }
+
+  if (!course.sessions || course.sessions.length === 0) return ''
+
+  const locations = course.sessions
+    .flatMap((s) => [s.location?.city, s.location?.department, s.location?.region])
+    .filter((v): v is string => typeof v === 'string')
+    .join(' ')
+  return normalizeSearch(locations)
+}
+
+function buildSearchText(course: CourseListItem, locationsText: string | null | undefined): string {
+  return [course.title, course.description, locationsText, course.certifierName, course.category]
+    .map(normalizeSearch)
+    .join(' ')
+}
+
+interface CatalogRow {
+  course: CourseListItem
+  updatedAt: string
+  searchText: string
+  locationText: string
+}
+
+function toCatalogRow(raw: DirectusFormation): CatalogRow {
+  const course = toListItem(raw)
+  return {
+    course,
+    updatedAt: toIsoString(raw.updated_at),
+    searchText: buildSearchText(course, raw.locations_text),
+    locationText: buildLocationText(course, raw.locations_text)
+  }
+}
+
+function parseModalities(value: string | undefined): string[] {
+  if (!value) return []
+  return value
+    .split(',')
+    .map((m) => m.trim())
+    .filter((m) => m.length > 0)
+}
+
+const DURATION_BUCKET_KEYS = new Set(['courte', 'moyenne', 'longue'])
+
+function parseDurations(value: string | undefined): string[] {
+  if (!value) return []
+  return value
+    .split(',')
+    .map((d) => d.trim())
+    .filter((d) => DURATION_BUCKET_KEYS.has(d))
+}
+
+function matchesDurationBucket(course: CourseListItem, bucket: string): boolean {
+  const hours = course.durationHours ?? 0
+  const days = course.durationDays ?? 1
+
+  if (hours > 0) {
+    if (bucket === 'courte') return hours <= 8
+    if (bucket === 'moyenne') return hours >= 9 && hours <= 40
+    return hours > 40
+  }
+
+  if (bucket === 'courte') return days <= 1
+  if (bucket === 'moyenne') return days >= 2 && days <= 5
+  return days > 5
+}
+
+function matchesCertifying(course: CourseListItem, certifying: boolean | undefined): boolean {
+  if (certifying === undefined) return true
+  const hasCertification =
+    typeof course.certification === 'string' && course.certification.trim().length > 0
+  return certifying === hasCertification
+}
+
+function matchesDurationRange(
+  course: CourseListItem,
+  min: number | undefined,
+  max: number | undefined
+): boolean {
+  const hours = course.durationHours ?? 0
+  if (min !== undefined && hours < min) return false
+  if (max !== undefined && hours > max) return false
+  return true
+}
+
+function matchesDurationBuckets(course: CourseListItem, durations: string | undefined): boolean {
+  const buckets = parseDurations(durations)
+  if (buckets.length === 0) return true
+  return buckets.some((b) => matchesDurationBucket(course, b))
+}
+
+function matchesPriceRange(
+  course: CourseListItem,
+  min: number | undefined,
+  max: number | undefined
+): boolean {
+  const price = course.price ?? 0
+  if (min !== undefined && price < min) return false
+  if (max !== undefined && (course.price ?? Infinity) > max) return false
+  return true
+}
+
+function matchesCenter(course: CourseListItem, center: string | undefined): boolean {
+  if (!center) return true
+  return course.centerSlug === center || course.centerSlugs.includes(center)
+}
+
+function matchesModalities(course: CourseListItem, modalities: string | undefined): boolean {
+  const wanted = parseModalities(modalities)
+  if (wanted.length === 0) return true
+  return wanted.some((m) => course.modalities.includes(m))
+}
+
+function matchesLocation(row: CatalogRow, location: string | undefined): boolean {
+  if (!location) return true
+  return row.locationText.includes(normalizeSearch(location))
+}
+
+function matchesSearchQuery(row: CatalogRow, search: string | undefined): boolean {
+  const tokens = toSearchTokens(search)
+  if (!tokens) return true
+  return tokens.every((token) => row.searchText.includes(token))
+}
+
+function matchesCourse(row: CatalogRow, query: ListCoursesDto): boolean {
+  if (query.family && row.course.familySlug !== query.family) return false
+  if (query.cpf !== undefined && row.course.cpf !== query.cpf) return false
+  if (!matchesCertifying(row.course, query.certifying)) return false
+  if (!matchesDurationRange(row.course, query.durationMin, query.durationMax)) return false
+  if (!matchesDurationBuckets(row.course, query.durations)) return false
+  if (!matchesPriceRange(row.course, query.priceMin, query.priceMax)) return false
+  if (!matchesCenter(row.course, query.center)) return false
+  if (!matchesModalities(row.course, query.modalities)) return false
+  if (!matchesLocation(row, query.location)) return false
+  if (!matchesSearchQuery(row, query.search)) return false
+  return true
+}
+
+function sortCatalogRows(
+  rows: CatalogRow[],
   sort: CourseSortField | undefined,
   order: CourseSortOrder | undefined
-): Prisma.CourseOrderByWithRelationInput {
-  if (sort === CourseSortField.relevance) {
-    return { updatedAt: order ?? CourseSortOrder.desc }
-  }
+): CatalogRow[] {
+  const direction = order === CourseSortOrder.asc ? 1 : -1
 
-  if (sort === CourseSortField.duration) {
-    return { durationHours: order ?? CourseSortOrder.asc }
-  }
+  return [...rows].sort((a, b) => {
+    if (sort === CourseSortField.name) {
+      return direction * a.course.title.localeCompare(b.course.title)
+    }
 
-  if (sort === CourseSortField.price) {
-    return { price: order ?? CourseSortOrder.asc }
-  }
+    if (sort === CourseSortField.duration) {
+      const ah = a.course.durationHours ?? 0
+      const bh = b.course.durationHours ?? 0
+      if (ah !== bh) return direction * (ah - bh)
+    }
 
-  if (sort === CourseSortField.name) {
-    return { title: order ?? CourseSortOrder.asc }
-  }
+    if (sort === CourseSortField.price) {
+      const ap = a.course.price ?? 0
+      const bp = b.course.price ?? 0
+      if (ap !== bp) return direction * (ap - bp)
+    }
 
-  if (sort === CourseSortField.updatedAt) {
-    return { updatedAt: order ?? CourseSortOrder.desc }
-  }
-
-  return { updatedAt: CourseSortOrder.desc }
+    return direction * b.updatedAt.localeCompare(a.updatedAt)
+  })
 }
 
-const listColumnsSql = `id, slug, title, description, duration_days AS "durationDays", duration_hours AS "durationHours", price, cpf, cpf_code AS "cpfCode", certification, certifier_name AS "certifierName", category, family_slug AS "familySlug", center_slug AS "centerSlug", image_url AS "imageUrl", status, seo_title AS "seoTitle", seo_description AS "seoDescription", seo_canonical AS "seoCanonical"`
-
-function escapeLikePattern(raw: string): string {
-  const escaped = raw.replaceAll('!', '!!').replaceAll('%', '!%').replaceAll('_', '!_')
-  return `%${escaped}%`
-}
-
-function buildSearchWhere(
-  query: ListCoursesDto,
-  tsQuery: string | undefined,
-  pattern: string | undefined
-): { sql: string; values: unknown[] } {
-  const conditions: string[] = [`status = 'published'`]
-  const values: unknown[] = []
-
-  if (query.family) {
-    values.push(query.family)
-    conditions.push(`family_slug = $${values.length}`)
-  }
-
-  if (query.cpf !== undefined) {
-    values.push(query.cpf)
-    conditions.push(`cpf = $${values.length}`)
-  }
-
-  if (query.certifying !== undefined) {
-    conditions.push(query.certifying ? 'certification IS NOT NULL' : 'certification IS NULL')
-  }
-
-  if (query.durationMin !== undefined) {
-    values.push(query.durationMin)
-    conditions.push(`duration_hours >= $${values.length}`)
-  }
-
-  if (query.durationMax !== undefined) {
-    values.push(query.durationMax)
-    conditions.push(`duration_hours <= $${values.length}`)
-  }
-
-  if (query.priceMin !== undefined) {
-    values.push(query.priceMin)
-    conditions.push(`price >= $${values.length}`)
-  }
-
-  if (query.priceMax !== undefined) {
-    values.push(query.priceMax)
-    conditions.push(`price <= $${values.length}`)
-  }
-
-  if (query.center) {
-    values.push(query.center)
-    conditions.push(`center_slug = $${values.length}`)
-  }
-
-  if (tsQuery) {
-    values.push(tsQuery)
-    const param = `$${values.length}`
-    conditions.push(
-      `(title_tsv @@ to_tsquery('french', unaccent(${param})) OR description_tsv @@ to_tsquery('french', unaccent(${param})))`
-    )
-  } else if (pattern) {
-    values.push(pattern)
-    const param = `$${values.length}`
-    conditions.push(
-      `(unaccent(title) ILIKE unaccent(${param}) ESCAPE '!' OR unaccent(description) ILIKE unaccent(${param}) ESCAPE '!')`
-    )
-  }
-
-  return { sql: conditions.join(' AND '), values }
-}
-
-function buildSearchOrderBy(
-  query: ListCoursesDto,
-  tsQuery: string | undefined,
-  values: unknown[]
-): string {
-  const direction = query.order ?? CourseSortOrder.desc
-
-  if (query.sort === CourseSortField.relevance && tsQuery) {
-    values.push(tsQuery)
-    const param = `$${values.length}`
-    return `ORDER BY ts_rank_cd(title_tsv, to_tsquery('french', unaccent(${param}))) + ts_rank_cd(description_tsv, to_tsquery('french', unaccent(${param}))) DESC`
-  }
-
-  if (query.sort === CourseSortField.duration) {
-    return `ORDER BY duration_hours ${query.order ?? CourseSortOrder.asc}`
-  }
-
-  if (query.sort === CourseSortField.price) {
-    return `ORDER BY price ${query.order ?? CourseSortOrder.asc}`
-  }
-
-  if (query.sort === CourseSortField.name) {
-    return `ORDER BY unaccent(title) ${query.order ?? CourseSortOrder.asc}`
-  }
-
-  if (query.sort === CourseSortField.updatedAt) {
-    return `ORDER BY updated_at ${direction}`
-  }
-
-  if (tsQuery) {
-    values.push(tsQuery)
-    const param = `$${values.length}`
-    return `ORDER BY ts_rank_cd(title_tsv, to_tsquery('french', unaccent(${param}))) + ts_rank_cd(description_tsv, to_tsquery('french', unaccent(${param}))) DESC`
-  }
-
-  return `ORDER BY updated_at DESC`
-}
-
-function buildSearchListSql(
-  query: ListCoursesDto,
-  tsQuery: string | undefined,
-  pattern: string | undefined,
-  skip: number,
-  take: number
-): { sql: string; values: unknown[] } {
-  const { sql: whereSql, values } = buildSearchWhere(query, tsQuery, pattern)
-  const orderBy = buildSearchOrderBy(query, tsQuery, values)
-  values.push(take, skip)
-  const limitParam = `$${values.length - 1}`
-  const offsetParam = `$${values.length}`
-  return {
-    sql: `SELECT ${listColumnsSql} FROM courses WHERE ${whereSql} ${orderBy} LIMIT ${limitParam} OFFSET ${offsetParam}`,
-    values
-  }
-}
-
-function buildSearchCountSql(
-  query: ListCoursesDto,
-  tsQuery: string | undefined,
-  pattern: string | undefined
-): { sql: string; values: unknown[] } {
-  const { sql: whereSql, values } = buildSearchWhere(query, tsQuery, pattern)
-  return { sql: `SELECT COUNT(*)::int AS count FROM courses WHERE ${whereSql}`, values }
-}
+const ROWS_CACHE_KEY = 'courses:rows'
 
 @Injectable()
 export class CatalogService {
+  private readonly logger = new Logger(CatalogService.name)
+
   constructor(
     private readonly cache: CacheService,
-    private readonly prisma: PrismaService
+    private readonly catalog: DirectusCatalogService
   ) {}
 
   async list(query: ListCoursesDto): Promise<Paginated<CourseListItem>> {
@@ -364,43 +413,16 @@ export class CatalogService {
       return cached
     }
 
+    const rows = await this.getCatalogRows()
+    const filtered = rows.filter((row) => matchesCourse(row, query))
+    const sorted = sortCatalogRows(filtered, query.sort, query.order)
+
+    const total = sorted.length
     const skip = (query.page - 1) * query.limit
-    const take = query.limit
-
-    let rows: ListResult[]
-    let total: number
-
-    if (query.search) {
-      const tsQuery = toTsQuery(query.search)
-      const pattern = tsQuery ? undefined : escapeLikePattern(query.search)
-      const count = buildSearchCountSql(query, tsQuery, pattern)
-      const list = buildSearchListSql(query, tsQuery, pattern, skip, take)
-
-      const [countRows, rawRows] = await Promise.all([
-        this.prisma.$queryRawUnsafe<{ count: number }[]>(count.sql, ...count.values),
-        this.prisma.$queryRawUnsafe<ListResult[]>(list.sql, ...list.values)
-      ])
-
-      total = Number(countRows[0]?.count ?? 0)
-      rows = rawRows
-    } else {
-      const where = buildWhere(query)
-      const orderBy = buildOrderBy(query.sort, query.order)
-
-      ;[rows, total] = await Promise.all([
-        this.prisma.course.findMany({
-          where,
-          select: listSelect,
-          skip,
-          take,
-          orderBy
-        }),
-        this.prisma.course.count({ where })
-      ])
-    }
+    const items = sorted.slice(skip, skip + query.limit).map((row) => row.course)
 
     const result: Paginated<CourseListItem> = {
-      items: rows.map(mapListItem),
+      items,
       total,
       page: query.page,
       pageSize: query.limit
@@ -418,22 +440,18 @@ export class CatalogService {
       return cached
     }
 
-    const where: Prisma.CourseWhereInput = {
-      slug,
-      status: 'published',
-      ...(family ? { familySlug: family } : {})
-    }
-
-    const raw = await this.prisma.course.findFirst({
-      where,
-      select: detailSelect
+    const all = await this.getAllFormations()
+    const raw = all.find((course) => {
+      if (course.slug !== slug) return false
+      if (family && course.famille?.slug !== family) return false
+      return true
     })
 
     if (!raw) {
       return null
     }
 
-    const result = mapCourse(raw)
+    const result = toCourse(raw)
     await this.cache.set(cacheKey, result)
     return result
   }
@@ -445,19 +463,73 @@ export class CatalogService {
       return cached
     }
 
-    const rows = await this.prisma.course.groupBy({
-      by: ['familySlug'],
-      where: { status: 'published', familySlug: { not: null } },
-      _count: { id: true },
-      orderBy: { familySlug: 'asc' }
-    })
+    const rows = await this.getCatalogRows()
+    const counts = new Map<string, number>()
 
-    const result: FamilyWithCount[] = rows.map((row) => ({
-      slug: row.familySlug ?? '',
-      count: row._count.id
-    }))
+    for (const row of rows) {
+      const slug = row.course.familySlug
+      if (!slug) continue
+      counts.set(slug, (counts.get(slug) ?? 0) + 1)
+    }
+
+    const result: FamilyWithCount[] = Array.from(counts.entries())
+      .map(([slug, count]) => ({ slug, count }))
+      .sort((a, b) => a.slug.localeCompare(b.slug))
 
     await this.cache.set(cacheKey, result)
     return result
   }
+
+  async applyFamilies(): Promise<FamilyApplyResult> {
+    const [formations, familyBySlug] = await Promise.all([
+      this.catalog.fetchAllFormations(),
+      this.catalog.getFamilyIdsBySlug()
+    ])
+
+    const assignments = new Map<string, string>()
+    for (const row of formations) {
+      const category = row.category_name
+      if (!category) continue
+
+      const slug = slugifyCategory(category)
+      if (!familyBySlug.has(slug)) continue
+
+      // Une famille éditoriale déjà positionnée n'est jamais écrasée.
+      if (row.famille?.slug && row.famille.slug !== slug) continue
+
+      assignments.set(row.digiforma_id, slug)
+    }
+
+    const result = await this.catalog.applyFamilyAssignments(assignments)
+    await this.cache.invalidateCatalog()
+    return result
+  }
+
+  private async getCatalogRows(): Promise<CatalogRow[]> {
+    const cached = await this.cache.get<CatalogRow[]>(ROWS_CACHE_KEY)
+    if (isCatalogRowsCache(cached)) {
+      return cached
+    }
+
+    const all = await this.getAllFormations()
+    const rows = all.map(toCatalogRow)
+    await this.cache.set(ROWS_CACHE_KEY, rows)
+    return rows
+  }
+
+  private async getAllFormations(): Promise<DirectusFormation[]> {
+    const cacheKey = 'formations:all'
+    const cached = await this.cache.get<DirectusFormation[]>(cacheKey)
+    if (cached) {
+      return cached
+    }
+
+    const rows = await this.catalog.fetchAllFormations()
+    await this.cache.set(cacheKey, rows)
+    return rows
+  }
+}
+
+function isCatalogRowsCache(value: unknown): value is CatalogRow[] {
+  return Array.isArray(value) && (value.length === 0 || 'searchText' in value[0])
 }

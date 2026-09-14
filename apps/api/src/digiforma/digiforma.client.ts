@@ -1,36 +1,87 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 
+export interface DigiformaImage {
+  id?: string | null
+  url?: string | null
+}
+
+export interface DigiformaCost {
+  cost?: number | null
+  vat?: number | null
+  type?: string | null
+}
+
+export interface DigiformaSessionLocation {
+  name?: string | null
+  city?: string | null
+  postalCode?: string | null
+  department?: string | null
+  region?: string | null
+  centreSlug?: string | null
+}
+
+export interface DigiformaSession {
+  id?: string | null
+  startDate?: string | null
+  endDate?: string | null
+  modality?: string | null
+  seatsRemaining?: number | null
+  location?: DigiformaSessionLocation | null
+}
+
 export interface Program {
   id: string
-  slug?: string | null
-  title: string
+  code?: string | null
+  name: string
+  subtitle?: string | null
   description?: string | null
   durationInDays?: number | null
   durationInHours?: number | null
-  price?: number | null
   cpf?: boolean | null
   cpfCode?: string | null
   certificationType?: string | null
   certifierName?: string | null
-  category?: string | null
-  programCategory?: string | null
-  blocks?: unknown[] | null
-  image?: string | null
+  category?: { id?: string; name?: string | null } | null
+  blocks?:
+    | {
+        name?: string | null
+        description?: string | null
+        goals?: { text?: string | null }[] | null
+        position?: number | null
+        type?: string | null
+        durationInDays?: number | null
+        durationInHours?: number | null
+      }[]
+    | null
+  image?: DigiformaImage | null
   generatedProgramUrl?: string | null
+  costsInter?: DigiformaCost[] | null
+  targets?: { text?: string | null }[] | null
+  prerequisites?: { text?: string | null }[] | null
+  evaluation?: { text?: string | null }[] | null
+  modalities?: string[] | null
+  sessions?: DigiformaSession[] | null
+  onSale?: boolean | null
   createdAt?: string | null
   updatedAt?: string | null
-  status?: string | null
 }
 
 export interface DigiformaProgramsResponse {
   data?: {
-    programs?: {
-      nodes: Program[]
-      pageInfo?: { hasNextPage: boolean; endCursor?: string }
-    }
+    programs?: Program[]
   }
   errors?: unknown[]
+}
+
+const PAGE_SIZE = 100
+const MAX_PAGES = 100
+
+interface FetchLikeResponse {
+  ok: boolean
+  status: number
+  json(): Promise<unknown>
+  text(): Promise<string>
 }
 
 @Injectable()
@@ -47,42 +98,49 @@ export class DigiformaClient {
 
   async fetchAllPrograms(): Promise<Program[]> {
     const programs: Program[] = []
-    let cursor: string | undefined
-    let hasNext = true
-    let page = 0
+    let page = 1
+    let previousFirstId: string | undefined
 
-    while (hasNext && page < 100) {
-      const response = await this.queryPrograms(cursor)
-      const nodes = response.data?.programs?.nodes ?? []
+    while (page <= MAX_PAGES) {
+      const nodes = await this.queryPrograms(page)
+
+      // Garde-fou : si l'API boucle (même premier id que la page
+      // précédente), on arrête au lieu de paginer jusqu'à MAX_PAGES.
+      const firstId = nodes[0]?.id
+      if (firstId !== undefined && firstId === previousFirstId) {
+        this.logger.warn(`Digiforma pagination loop detected at page ${page}, stopping`)
+        break
+      }
+      previousFirstId = firstId
+
       programs.push(...nodes)
-      hasNext = response.data?.programs?.pageInfo?.hasNextPage ?? false
-      const nextCursor = response.data?.programs?.pageInfo?.endCursor ?? undefined
 
-      if (hasNext && (nextCursor === undefined || nextCursor === cursor)) {
-        this.logger.warn('Pagination cursor did not advance, stopping')
+      if (nodes.length < PAGE_SIZE) {
         break
       }
 
-      cursor = nextCursor
       page += 1
     }
 
     return programs
   }
 
-  private async queryPrograms(cursor?: string, attempt = 1): Promise<DigiformaProgramsResponse> {
+  private async queryPrograms(page: number, attempt = 1): Promise<Program[]> {
     const query = this.buildProgramsQuery()
 
     try {
-      const response = await fetch(this.url, {
+      const response = (await fetch(this.url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${this.token}`
         },
-        body: JSON.stringify({ query, variables: { after: cursor ?? null } }),
+        body: JSON.stringify({
+          query,
+          variables: { page, size: PAGE_SIZE }
+        }),
         signal: AbortSignal.timeout(30_000)
-      })
+      })) as unknown as FetchLikeResponse
 
       if (!response.ok) {
         throw new Error(`Digiforma HTTP ${response.status}`)
@@ -98,7 +156,7 @@ export class DigiformaClient {
         }
       }
 
-      return body
+      return body.data?.programs ?? []
     } catch (error) {
       if (attempt >= this.maxRetries) {
         this.logger.error(error, 'Digiforma query failed after retries')
@@ -108,39 +166,58 @@ export class DigiformaClient {
       const delay = 2 ** attempt * 100
       this.logger.warn(`Digiforma retry ${attempt} after ${delay}ms`)
       await new Promise((resolve) => setTimeout(resolve, delay))
-      return this.queryPrograms(cursor, attempt + 1)
+      return this.queryPrograms(page, attempt + 1)
     }
   }
 
   private buildProgramsQuery(): string {
     return `
-      query Programs($after: String) {
-        programs(first: 100, after: $after) {
-          nodes {
+      query Programs($page: Int!, $size: Int!) {
+        programs(pagination: { page: $page, size: $size }) {
+          id
+          code
+          name
+          subtitle
+          description
+          durationInDays
+          durationInHours
+          cpf
+          cpfCode
+          certificationType
+          certifierName
+          category {
             id
-            slug
-            title
+            name
+          }
+          blocks {
+            name
             description
+            goals {
+              text
+            }
+            position
+            type
             durationInDays
             durationInHours
-            price
-            cpf
-            cpfCode
-            certificationType
-            certifierName
-            category
-            programCategory
-            blocks
-            image
-            generatedProgramUrl
-            createdAt
-            updatedAt
-            status
           }
-          pageInfo {
-            hasNextPage
-            endCursor
+          image {
+            url
           }
+          generatedProgramUrl
+          costsInter {
+            cost
+            vat
+            type
+          }
+          targets {
+            text
+          }
+          prerequisites {
+            text
+          }
+          onSale
+          createdAt
+          updatedAt
         }
       }
     `

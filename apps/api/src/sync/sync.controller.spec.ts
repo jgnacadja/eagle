@@ -5,9 +5,9 @@ import { SyncModule } from './sync.module'
 import { SyncService } from './sync.service'
 import { AdminApiKeyGuard } from '../common/guards/admin-api-key.guard'
 import { ConfigService } from '@nestjs/config'
-import { PrismaService } from '../prisma/prisma.service'
 import { DigiformaClient } from '../digiforma/digiforma.client'
 import { CacheService } from '../common/cache/cache.service'
+import { DirectusCatalogService } from '../directus/directus.catalog.service'
 
 const mockGuard = { canActivate: () => true }
 
@@ -21,15 +21,15 @@ describe('SyncController', () => {
       .overrideProvider(SyncService)
       .useValue({
         run: vi.fn().mockResolvedValue(undefined),
-        getLatestRun: vi.fn().mockResolvedValue({ id: 1, status: 'success' })
+        getLatestRun: vi.fn().mockResolvedValue({ status: 'success' })
       })
       .overrideProvider(ConfigService)
       .useValue({ get: () => 'test', getOrThrow: () => 'test' })
-      .overrideProvider(PrismaService)
-      .useValue({ $connect: vi.fn() })
       .overrideProvider(DigiformaClient)
       .useValue({})
       .overrideProvider(CacheService)
+      .useValue({})
+      .overrideProvider(DirectusCatalogService)
       .useValue({})
       .overrideGuard(AdminApiKeyGuard)
       .useValue(mockGuard)

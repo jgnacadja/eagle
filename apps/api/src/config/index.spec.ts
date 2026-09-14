@@ -73,6 +73,21 @@ describe('configureApp', () => {
     expect(callback).toHaveBeenCalledWith(null, false)
   })
 
+  it('allows wildcard subdomains in CORS_ORIGIN', () => {
+    process.env.CORS_ORIGIN = 'https://*.vercel.app'
+    const app = makeApp()
+
+    configureApp(app)
+
+    const allow = vi.fn()
+    getCorsOrigin(app)('https://my-project-abc.vercel.app', allow)
+    expect(allow).toHaveBeenCalledWith(null, true)
+
+    const reject = vi.fn()
+    getCorsOrigin(app)('https://evil.vercel.app.other.com', reject)
+    expect(reject).toHaveBeenCalledWith(null, false)
+  })
+
   it('exposes Swagger docs outside production', () => {
     const app = makeApp()
 

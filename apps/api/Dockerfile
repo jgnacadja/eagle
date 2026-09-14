@@ -6,7 +6,6 @@ WORKDIR /app
 FROM base AS build
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY apps/api/package.json apps/api/
-COPY apps/api/prisma apps/api/prisma
 COPY packages/types/package.json packages/types/package.json
 RUN pnpm install --filter @learnup/api... --frozen-lockfile
 COPY packages/types packages/types
@@ -21,6 +20,7 @@ COPY --from=build /app/node_modules /app/node_modules
 COPY --from=build /app/apps/api/node_modules ./node_modules
 COPY --from=build /app/apps/api/dist ./dist
 COPY --from=build /app/apps/api/test/fixtures ./test/fixtures
+COPY --from=build /app/apps/api/test/fixtures ./dist/test/fixtures
 COPY --from=build /app/apps/api/package.json ./package.json
 
 RUN addgroup -S app && adduser -S app -G app && chown -R app:app /app

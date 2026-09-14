@@ -67,23 +67,6 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_BUCKET: ${MINIO_BUCKET}
 
-  postgres-init:
-    image: postgres:16-alpine
-    restart: 'no'
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      PGUSER: ${POSTGRES_USER}
-      PGPASSWORD: ${POSTGRES_PASSWORD}
-      PGHOST: postgres
-    entrypoint:
-      - /bin/sh
-      - -c
-      - |
-        psql -U "$$PGUSER" -d postgres -h "$$PGHOST" -tc "SELECT 1 FROM pg_database WHERE datname='learnup_api'" | grep -q 1 ||
-        psql -U "$$PGUSER" -d postgres -h "$$PGHOST" -c "CREATE DATABASE learnup_api;"
-
   directus:
     image: directus/directus:11
     restart: unless-stopped
@@ -129,25 +112,60 @@ services:
       retries: 10
       start_period: 30s
 
+  directus-init:
+    image: directus/directus:11
+    restart: 'no'
+    depends_on:
+      directus:
+        condition: service_healthy
+    environment:
+      DIRECTUS_URL: http://directus:8055
+      DIRECTUS_ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL}
+      DIRECTUS_ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD}
+    volumes:
+      - ./directus:/opt/directus:ro
+    entrypoint:
+      - node
+      - /opt/directus/schema/build.mjs
+
+  directus-seed:
+    image: directus/directus:11
+    profiles:
+      - seed
+    restart: 'no'
+    depends_on:
+      directus-init:
+        condition: service_completed_successfully
+    environment:
+      DIRECTUS_URL: http://directus:8055
+      DIRECTUS_ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL}
+      DIRECTUS_ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD}
+    volumes:
+      - ./directus:/opt/directus:ro
+    entrypoint:
+      - node
+      - /opt/directus/seed/seed.mjs
+
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
     restart: unless-stopped
     environment:
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV:-development}
       API_PORT: 3001
       CORS_ORIGIN: ${CORS_ORIGIN}
       ADMIN_API_KEY: ${ADMIN_API_KEY}
       DIGIFORMA_API_URL: ${DIGIFORMA_API_URL}
       DIGIFORMA_API_KEY: ${DIGIFORMA_API_KEY}
       SYNC_CRON: ${SYNC_CRON}
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/learnup_api
       REDIS_URL: redis://redis:6379
+      DIRECTUS_INTERNAL_URL: http://directus:8055
+      DIRECTUS_TOKEN: ${DIRECTUS_TOKEN}
     depends_on:
-      postgres:
+      directus:
         condition: service_healthy
-      postgres-init:
+      directus-init:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
@@ -163,8 +181,6 @@ services:
       NODE_ENV: production
       NUXT_API_BASE: http://api:3001
       NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE}
-      NUXT_DIRECTUS_URL: http://directus:8055
-      NUXT_PUBLIC_DIRECTUS_URL: ${NUXT_PUBLIC_DIRECTUS_URL}
     ports:
       - '3000:3000'
     depends_on:

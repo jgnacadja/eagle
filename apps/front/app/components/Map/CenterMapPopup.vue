@@ -1,7 +1,8 @@
 <template>
   <div
-    class="absolute z-30 w-80 -translate-x-1/2 -translate-y-full rounded-md bg-paper p-md shadow-lg"
-    :style="{ top: pos.top, left: pos.left }"
+    class="z-30 w-80 rounded-md bg-paper p-md shadow-lg"
+    :class="popupClasses"
+    :style="popupStyles"
   >
     <Button
       type="button"
@@ -9,7 +10,7 @@
       size="icon"
       aria-label="Fermer"
       class="absolute right-sm top-sm h-control-sm w-control-sm text-ink-subtle transition hover:bg-surface hover:text-ink"
-      @click.stop="$emit('close')"
+      @click.stop="handleClose"
     >
       <IconClose :size="16" />
     </Button>
@@ -20,24 +21,39 @@
       as-child
       class="mt-md h-control rounded-full bg-primary px-md text-small font-bold text-paper hover:bg-primary-dark"
     >
-      <NuxtLink :to="`/centres/${id}`">Voir le centre</NuxtLink>
+      <a :href="`/centres/${id}`">Voir le centre</a>
     </Button>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import IconClose from '@/components/icons/IconClose.vue'
 
-defineProps<{
+const props = defineProps<{
   id: string
   name: string
   locationLabel: string
   tagsShort: string
-  pos: { top: string; left: string }
+  pos?: { top: string; left: string }
+  onClose?: () => void
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   close: []
 }>()
+
+function handleClose() {
+  emit('close')
+  props.onClose?.()
+}
+
+const popupClasses = computed(() =>
+  props.pos ? 'absolute -translate-x-1/2 -translate-y-full' : 'relative'
+)
+
+const popupStyles = computed(() =>
+  props.pos ? { top: props.pos.top, left: props.pos.left } : undefined
+)
 </script>

@@ -63,6 +63,13 @@ async function ensureCollections(token) {
   for (const def of collections) {
     if (await collectionExists(token, def.collection)) {
       log(`↷  collection ${def.collection} déjà présente`)
+      // Collection existante : créer les champs déclarés mais absents —
+      // le fichier collections.mjs reste la source de vérité du schéma.
+      for (const field of def.fields) {
+        if (await fieldExists(token, def.collection, field.field)) continue
+        await api(token, 'POST', `/fields/${def.collection}`, field)
+        log(`✔  champ ${def.collection}.${field.field} créé`)
+      }
       continue
     }
     await api(token, 'POST', '/collections', {
@@ -175,7 +182,7 @@ async function createPermissions(token, policyId, wanted, existing) {
       policy: policyId,
       collection: grant.collection,
       action: grant.action,
-      fields: ['*'],
+      fields: grant.fields ?? ['*'],
       permissions: grant.permissions ?? {},
       validation: {}
     })
@@ -190,7 +197,9 @@ async function ensurePermissions(token, policyIds) {
     const existing = await fetchExistingPermissions(token, policyId)
     const wanted = permissionsFor(role.name)
     const created = await createPermissions(token, policyId, wanted, existing)
-    log(`✔  permissions ${role.name} — ${created} créées, ${wanted.length - created} déjà présentes`)
+    log(
+      `✔  permissions ${role.name} — ${created} créées, ${wanted.length - created} déjà présentes`
+    )
   }
 }
 
@@ -201,7 +210,8 @@ async function ensurePermissions(token, policyIds) {
 async function findPublicPolicyId(token) {
   const { data } = await api(token, 'GET', '/access?limit=-1')
   const publicAccess = data.find((a) => a.role === null && a.user === null)
-  if (!publicAccess) throw new Error('Policy Public introuvable (attendue nativement dans Directus)')
+  if (!publicAccess)
+    throw new Error('Policy Public introuvable (attendue nativement dans Directus)')
   return publicAccess.policy
 }
 
@@ -228,7 +238,9 @@ async function main() {
   log('Schéma v1 prêt.')
 }
 
-main().catch((error) => {
-  logError('Build schema échoué :', error.message)
+try {
+  await main()
+} catch (error) {
+  logError('Build schema échoué :', error instanceof Error ? error.message : error)
   process.exitCode = 1
-})
+}

@@ -4,11 +4,10 @@ import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { CronJob, validateCronExpression } from 'cron'
 import { SchedulerRegistry } from '@nestjs/schedule'
-import { Prisma } from '../../prisma/generated/client'
-import { CacheService } from '../common/cache/cache.service'
+import { CacheService, type SyncRun } from '../common/cache/cache.service'
+import { DirectusCatalogService } from '../directus/directus.catalog.service'
 import { DigiformaClient, type Program } from '../digiforma/digiforma.client'
 import { mapProgramToCourse } from '../digiforma/digiforma.mapper'
-import { PrismaService } from '../prisma/prisma.service'
 
 @Injectable()
 export class SyncService {
@@ -18,9 +17,9 @@ export class SyncService {
   constructor(
     private readonly config: ConfigService,
     private readonly client: DigiformaClient,
-    private readonly prisma: PrismaService,
     private readonly cache: CacheService,
-    private readonly scheduler: SchedulerRegistry
+    private readonly scheduler: SchedulerRegistry,
+    private readonly catalog: DirectusCatalogService
   ) {}
 
   onModuleInit(): void {
@@ -50,69 +49,54 @@ export class SyncService {
     }
     this.running = true
 
-    const run = await this.prisma.syncRun.create({
-      data: { status: 'running' }
-    })
-
-    const counts = {
+    const startedAt = new Date().toISOString()
+    const run: SyncRun = {
+      status: 'running',
+      startedAt,
+      finishedAt: null,
       inserted: 0,
       updated: 0,
-      failed: 0
+      failed: 0,
+      error: null
     }
+
+    await this.cache.setSyncRun(run)
 
     try {
       const programs = await this.loadPrograms()
+      const payloads = [] as ReturnType<typeof mapProgramToCourse>[]
 
       for (const program of programs) {
         try {
-          const input = mapProgramToCourse(program)
-          const result = await this.upsertCourse(input)
-
-          if (result === 'inserted') counts.inserted += 1
-          else if (result === 'updated') counts.updated += 1
+          payloads.push(mapProgramToCourse(program))
         } catch (error) {
-          counts.failed += 1
-          this.logger.warn({ error, programId: program.id }, 'Failed to sync program')
+          run.failed += 1
+          this.logger.warn({ error, programId: program.id }, 'Failed to map program')
         }
       }
+
+      const result = await this.catalog.upsertMany(payloads)
+      run.inserted = result.inserted
+      run.updated = result.updated
 
       await this.cache.invalidateCatalog()
 
-      await this.prisma.syncRun.update({
-        where: { id: run.id },
-        data: {
-          status: 'success',
-          finishedAt: new Date(),
-          ...counts
-        }
-      })
-
-      this.logger.log(`Sync finished: ${JSON.stringify(counts)}`)
+      run.status = 'success'
+      run.finishedAt = new Date().toISOString()
+      this.logger.log(`Sync finished: ${JSON.stringify(result)}`)
     } catch (error) {
-      try {
-        await this.prisma.syncRun.update({
-          where: { id: run.id },
-          data: {
-            status: 'failed',
-            finishedAt: new Date(),
-            error: error instanceof Error ? error.message : 'Unknown error'
-          }
-        })
-      } catch (updateError) {
-        this.logger.error(updateError, 'Failed to record sync failure')
-      }
-
+      run.status = 'failed'
+      run.finishedAt = new Date().toISOString()
+      run.error = error instanceof Error ? error.message : 'Unknown error'
       throw error
     } finally {
       this.running = false
+      await this.cache.setSyncRun(run)
     }
   }
 
-  async getLatestRun(): Promise<Prisma.SyncRunGetPayload<null> | null> {
-    const run = await this.prisma.syncRun.findFirst({
-      orderBy: { startedAt: 'desc' }
-    })
-    return run
+  async getLatestRun(): Promise<SyncRun | null> {
+    return this.cache.getSyncRun()
   }
 
   private async loadPrograms(): Promise<Program[]> {
@@ -123,26 +107,12 @@ export class SyncService {
         throw error
       }
       this.logger.warn(error, 'Digiforma call failed, falling back to fixture')
+      // Relatif au fichier (src/sync ou dist/sync → apps/api/test/fixtures) :
+      // process.cwd() dépend du répertoire de lancement (racine du monorepo
+      // vs apps/api) et casserait le repli fixture.
       const fixturePath = resolve(__dirname, '..', '..', 'test', 'fixtures', 'programs.json')
       const raw = await fs.readFile(fixturePath, 'utf-8')
       return JSON.parse(raw) as Program[]
     }
-  }
-
-  private async upsertCourse(input: Prisma.CourseCreateInput): Promise<'inserted' | 'updated'> {
-    const existing = await this.prisma.course.findUnique({
-      where: { digiformaId: input.digiformaId }
-    })
-
-    if (!existing) {
-      await this.prisma.course.create({ data: input })
-      return 'inserted'
-    }
-
-    await this.prisma.course.update({
-      where: { digiformaId: input.digiformaId },
-      data: input
-    })
-    return 'updated'
   }
 }

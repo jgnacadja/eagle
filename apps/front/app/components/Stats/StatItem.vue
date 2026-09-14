@@ -1,9 +1,11 @@
 <template>
   <div>
-    <p class="font-display text-h1 font-extrabold text-ink">
+    <p class="font-display text-h2 md:text-h1 font-extrabold text-ink">
       {{ value }}<span v-if="unit" class="text-h4 align-baseline text-ink-muted">{{ unit }}</span>
     </p>
-    <p class="mt-xs text-body font-medium text-ink-muted">{{ label }}</p>
+    <p class="mt-xs text-small md:text-body font-medium text-ink-muted">
+      {{ label }}
+    </p>
   </div>
 </template>
 

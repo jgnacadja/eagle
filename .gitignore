@@ -45,3 +45,6 @@ docker-compose.override.yml
 # OS / editor
 .DS_Store
 .scannerwork
+
+# Vercel project link (CLI)
+.vercel

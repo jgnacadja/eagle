@@ -83,7 +83,10 @@
                 </span>
               </p>
               <h3 class="font-display text-h3 font-extrabold leading-snug text-ink lg:text-h2">
-                <NuxtLink :to="`/actualites/${featuredArticle.slug}`" class="hover:underline">
+                <NuxtLink
+                  :to="`/actualites/${featuredArticle.slug}`"
+                  class="transition-colors hover:text-accent-text"
+                >
                   {{ featuredArticle.title }}
                 </NuxtLink>
               </h3>
@@ -92,7 +95,7 @@
               </p>
               <NuxtLink
                 :to="`/actualites/${featuredArticle.slug}`"
-                class="mt-xs text-small font-semibold text-ink hover:underline"
+                class="mt-xs text-small font-semibold text-ink transition-colors hover:text-accent-text"
               >
                 Lire l'article →
               </NuxtLink>

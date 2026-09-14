@@ -41,18 +41,16 @@
         <Accordion type="multiple" class="divide-y divide-rule">
           <!-- FORMATIONS -->
           <AccordionItem value="formations" class="border-b-0">
-            <AccordionTrigger class="py-md text-h3 text-ink hover:no-underline"
+            <AccordionTrigger
+              class="py-md text-h3 text-ink transition-colors hover:text-accent-text hover:no-underline"
               >Formations</AccordionTrigger
             >
             <AccordionContent>
               <Accordion type="multiple" class="pb-sm pl-2">
-                <div
-                  v-for="famille in familles.filter((f) => f.slug !== 'caces-conduite-engins')"
-                  :key="famille.slug"
-                >
+                <div v-for="famille in familles ?? []" :key="famille.slug">
                   <NuxtLink
                     :to="`/formations/${famille.slug}`"
-                    class="flex items-center justify-between py-2 text-body text-primary"
+                    class="flex items-center justify-between py-2 text-body text-primary transition-colors hover:text-accent-text"
                     @click="closeMenu"
                   >
                     <span>{{ famille.label }}</span>
@@ -60,41 +58,10 @@
                   </NuxtLink>
                 </div>
 
-                <AccordionItem value="caces" class="border-b-0">
-                  <AccordionTrigger class="py-2 text-body text-primary hover:no-underline">
-                    <span class="flex w-full items-center justify-between pr-2">
-                      <span>CACES & conduite d’engins</span>
-                      <span class="text-small text-ink-muted">{{ cacesCount }}</span>
-                    </span>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <ul class="pl-2">
-                      <li v-for="engin in enginsCaces" :key="engin.slug">
-                        <NuxtLink
-                          :to="`/formations/caces-conduite-engins/${engin.slug}`"
-                          class="block py-2 text-body text-primary"
-                          @click="closeMenu"
-                        >
-                          {{ engin.label }}
-                        </NuxtLink>
-                      </li>
-                      <li>
-                        <NuxtLink
-                          to="/formations/caces-conduite-engins"
-                          class="block py-2 text-small font-semibold text-ink underline underline-offset-4"
-                          @click="closeMenu"
-                        >
-                          Voir la famille +
-                        </NuxtLink>
-                      </li>
-                    </ul>
-                  </AccordionContent>
-                </AccordionItem>
-
                 <div>
                   <NuxtLink
                     to="/formations"
-                    class="block py-2 text-small font-semibold text-ink underline underline-offset-4"
+                    class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                     @click="closeMenu"
                   >
                     Tout le catalogue +
@@ -106,7 +73,8 @@
 
           <!-- CENTRES -->
           <AccordionItem value="centres" class="border-b-0">
-            <AccordionTrigger class="py-md text-h3 text-ink hover:no-underline"
+            <AccordionTrigger
+              class="py-md text-h3 text-ink transition-colors hover:text-accent-text hover:no-underline"
               >Centres</AccordionTrigger
             >
             <AccordionContent>
@@ -114,7 +82,7 @@
                 <div>
                   <NuxtLink
                     to="/centres"
-                    class="flex items-center gap-2 py-2 text-body text-primary"
+                    class="flex items-center gap-2 py-2 text-body text-primary transition-colors hover:text-accent-text"
                     @click="closeMenu"
                   >
                     <svg
@@ -132,12 +100,14 @@
                 </div>
 
                 <AccordionItem
-                  v-for="region in regions.slice(0, 3)"
+                  v-for="region in (regions ?? []).slice(0, 3)"
                   :key="region.slug"
                   :value="region.slug"
                   class="border-b-0"
                 >
-                  <AccordionTrigger class="py-2 text-body text-primary hover:no-underline">
+                  <AccordionTrigger
+                    class="py-2 text-body text-primary transition-colors hover:text-accent-text hover:no-underline"
+                  >
                     <span class="flex w-full items-center justify-between pr-2">
                       <span>{{ region.label }}</span>
                       <span class="text-small text-ink-muted">{{ region.count }}</span>
@@ -146,22 +116,24 @@
                   <AccordionContent>
                     <ul class="pl-2">
                       <li
-                        v-for="centre in (centresParRegion[region.slug] ?? []).slice(0, 3)"
+                        v-for="centre in centresForRegion(region.label).slice(0, 3)"
                         :key="centre.slug"
                       >
                         <NuxtLink
                           :to="`/centres/${centre.slug}`"
-                          class="flex items-center justify-between py-2 text-body text-primary"
+                          class="flex items-center justify-between py-2 text-body text-primary transition-colors hover:text-accent-text"
                           @click="closeMenu"
                         >
                           <span>{{ centre.name }}</span>
-                          <span class="text-small text-ink-muted">{{ centre.departement }}</span>
+                          <span class="text-small text-ink-muted">
+                            {{ centre.department ?? centre.city }}
+                          </span>
                         </NuxtLink>
                       </li>
                       <li>
                         <NuxtLink
                           to="/centres"
-                          class="block py-2 text-small font-semibold text-ink underline underline-offset-4"
+                          class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                           @click="closeMenu"
                         >
                           Tous les centres {{ region.label }} +
@@ -174,7 +146,7 @@
                 <div>
                   <NuxtLink
                     to="/centres"
-                    class="block py-2 text-small font-semibold text-ink underline underline-offset-4"
+                    class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                     @click="closeMenu"
                   >
                     Voir la carte de région +
@@ -186,7 +158,8 @@
 
           <!-- À PROPOS -->
           <AccordionItem value="apropos" class="border-b-0">
-            <AccordionTrigger class="py-md text-h3 text-ink hover:no-underline"
+            <AccordionTrigger
+              class="py-md text-h3 text-ink transition-colors hover:text-accent-text hover:no-underline"
               >À propos</AccordionTrigger
             >
             <AccordionContent>
@@ -194,7 +167,7 @@
                 <li v-for="lien in aproposLiens" :key="lien.slug">
                   <NuxtLink
                     :to="`/a-propos/${lien.slug}`"
-                    class="block py-2 text-body text-primary"
+                    class="block py-2 text-body text-primary transition-colors hover:text-accent-text"
                     @click="closeMenu"
                   >
                     {{ lien.label }}
@@ -203,7 +176,7 @@
                 <li v-for="lien in legalLiens" :key="lien.slug">
                   <NuxtLink
                     :to="`/legal/${lien.slug}`"
-                    class="block py-2 text-body text-primary"
+                    class="block py-2 text-body text-primary transition-colors hover:text-accent-text"
                     @click="closeMenu"
                   >
                     {{ lien.label }}
@@ -215,7 +188,8 @@
 
           <!-- ACTUALITÉS -->
           <AccordionItem value="actualites" class="border-b-0">
-            <AccordionTrigger class="py-md text-h3 text-ink hover:no-underline"
+            <AccordionTrigger
+              class="py-md text-h3 text-ink transition-colors hover:text-accent-text hover:no-underline"
               >Actualités</AccordionTrigger
             >
             <AccordionContent>
@@ -223,7 +197,7 @@
                 <li v-for="rubrique in rubriquesActualites" :key="rubrique.slug">
                   <NuxtLink
                     to="/actualites"
-                    class="block py-2 text-body text-primary"
+                    class="block py-2 text-body text-primary transition-colors hover:text-accent-text"
                     @click="closeMenu"
                   >
                     {{ rubrique.label }}
@@ -232,10 +206,10 @@
               </ul>
               <p class="pb-1 pl-2 text-small font-semibold text-ink-muted">Par région</p>
               <ul class="pb-sm pl-2">
-                <li v-for="region in regions.slice(0, 2)" :key="region.slug">
+                <li v-for="region in (regions ?? []).slice(0, 2)" :key="region.slug">
                   <NuxtLink
                     to="/actualites"
-                    class="block py-2 text-body text-primary"
+                    class="block py-2 text-body text-primary transition-colors hover:text-accent-text"
                     @click="closeMenu"
                   >
                     {{ region.label }}
@@ -244,7 +218,7 @@
                 <li>
                   <NuxtLink
                     to="/centres"
-                    class="block py-2 text-small font-semibold text-ink underline underline-offset-4"
+                    class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                     @click="closeMenu"
                   >
                     Toutes les régions +
@@ -257,7 +231,7 @@
 
         <NuxtLink
           to="/rejoindre-le-reseau"
-          class="mt-lg inline-block text-body font-semibold text-ink underline underline-offset-4"
+          class="mt-lg inline-block text-body font-semibold text-ink transition-colors hover:text-accent-text"
           @click="closeMenu"
         >
           Rejoindre le réseau
@@ -297,31 +271,27 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger
 } from '~/components/ui/accordion'
-import {
-  familles,
-  enginsCaces,
-  regions,
-  centresParRegion,
-  aproposLiens,
-  legalLiens,
-  rubriquesActualites
-} from '~/data/navigation'
+import { aproposLiens, legalLiens, rubriquesActualites } from '~/data/navigation'
+import { useMenuCentres, useMenuFamilles } from '~/composables/useMenuData'
 
 const open = defineModel<boolean>('open', { default: false })
 const dialogEl = ref<HTMLDialogElement>()
 const closeBtn = ref<HTMLButtonElement>()
 let previousFocus: Element | null = null
 
-const cacesCount = computed(
-  () => familles.find((f) => f.slug === 'caces-conduite-engins')?.count ?? 0
-)
+const familles = useMenuFamilles()
+const { regions, centresParRegion } = useMenuCentres()
+
+function centresForRegion(label: string) {
+  return centresParRegion.value.get(label) ?? []
+}
 
 function closeMenu() {
   open.value = false

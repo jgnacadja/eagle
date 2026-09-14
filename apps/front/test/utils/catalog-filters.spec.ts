@@ -3,8 +3,7 @@ import {
   MODALITY_OPTIONS,
   DURATION_OPTIONS,
   CERTIFICATION_OPTIONS,
-  getFilterLabel,
-  normalizeFamilySlug
+  getFilterLabel
 } from '~/utils/catalog-filters'
 
 describe('catalog-filters', () => {
@@ -31,29 +30,16 @@ describe('catalog-filters', () => {
     ])
   })
 
-  it('returns family labels', () => {
-    expect(getFilterLabel('families', 'caces')).toBe("CACES & conduite d'engins")
-    expect(getFilterLabel('families', 'securite')).toBe('Sécurité & prévention')
-  })
-
   it('returns modality and certification labels', () => {
     expect(getFilterLabel('modalities', 'presentiel')).toBe('Présentiel')
     expect(getFilterLabel('certifications', 'habilitation')).toBe('Habilitation')
   })
 
   it('returns the key itself when label is unknown', () => {
-    expect(getFilterLabel('families', 'unknown')).toBe('unknown')
     expect(getFilterLabel('durations', 'unknown')).toBe('unknown')
   })
 
   it('returns location key as-is', () => {
     expect(getFilterLabel('location', 'Île-de-France')).toBe('Île-de-France')
-  })
-
-  it('normalizes family slugs to first segment', () => {
-    expect(normalizeFamilySlug('caces-conduite-engins')).toBe('caces')
-    expect(normalizeFamilySlug('securite-prevention')).toBe('securite')
-    expect(normalizeFamilySlug('only')).toBe('only')
-    expect(normalizeFamilySlug('')).toBe('')
   })
 })

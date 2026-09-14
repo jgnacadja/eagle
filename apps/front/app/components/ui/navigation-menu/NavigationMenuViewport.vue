@@ -1,5 +1,5 @@
 <template>
-  <div class="absolute left-0 top-full flex w-full justify-center">
+  <div class="absolute left-1/2 top-full flex w-screen -translate-x-1/2 justify-center">
     <NavigationMenuViewport
       v-bind="forwardedProps"
       :class="

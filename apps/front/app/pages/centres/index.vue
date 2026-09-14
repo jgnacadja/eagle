@@ -1,18 +1,24 @@
 <template>
   <div class="flex flex-1 flex-col">
-    <!-- Top surface section: heading, description and filters -->
-    <section class="bg-surface-soft">
-      <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter py-section">
+    <!-- Top surface section: heading and description -->
+    <section class="shrink-0 bg-surface-soft">
+      <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter pb-lg pt-section">
         <p class="text-overline text-accent-text">LE RÉSEAU LEARN UP</p>
         <h1 class="mt-sm font-display text-h2 font-extrabold text-ink lg:text-h1">
           Réseau de centres
         </h1>
         <p class="mt-sm max-w-prose text-body text-ink-body">
-          Plus de 400 centres couvrent 96 départements. La sélection d'un département affiche les
-          centres de ce territoire.
+          {{ centresCount }} centre{{ centresCount > 1 ? 's' : '' }} couvrent
+          {{ departmentsCount }} département{{ departmentsCount > 1 ? 's' : '' }}. La sélection d'un
+          département affiche les centres de ce territoire.
         </p>
+      </div>
+    </section>
 
-        <div class="mt-2xl flex flex-col gap-md">
+    <!-- Barre de recherche/filtres : épinglée en haut sur desktop -->
+    <section class="shrink-0 bg-surface-soft lg:sticky lg:top-0 lg:z-30">
+      <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter pb-lg">
+        <div class="flex flex-col gap-md">
           <div class="flex flex-col gap-md sm:flex-row sm:items-center sm:justify-between">
             <div class="flex flex-col gap-md sm:flex-row sm:items-center">
               <Label for="dept-select" class="relative block">
@@ -25,8 +31,15 @@
                     <span class="truncate">{{ selectedDeptLabel }}</span>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="94" class="text-small">94 — Val-de-Marne</SelectItem>
-                    <SelectItem value="48" class="text-small">48 — Lozère</SelectItem>
+                    <SelectItem value="all" class="text-small">Tous les départements</SelectItem>
+                    <SelectItem
+                      v-for="dept in departments"
+                      :key="dept"
+                      :value="dept"
+                      class="text-small"
+                    >
+                      {{ dept }}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </Label>
@@ -36,6 +49,7 @@
                 input-id="city-search"
                 sr-label="Rechercher par ville ou code postal"
                 placeholder="Ville ou code postal"
+                :loading="centresPending"
                 class="w-full sm:w-72"
                 @submit="onSearch"
               />
@@ -43,13 +57,13 @@
 
             <div class="flex items-center justify-between gap-sm">
               <p class="text-small text-ink">
-                <template v-if="department.centers.length === 0">
-                  Aucun centre en
-                  <span class="font-extrabold">{{ department.label }}</span>
-                </template>
-                <template v-else-if="filteredCenters.length === 0">
-                  Aucun centre dans le
-                  <span class="font-extrabold">{{ department.label }}</span>
+                <template v-if="filteredCenters.length === 0">
+                  Aucun centre
+                  <template v-if="selectedDept === 'all'">au total</template>
+                  <template v-else>dans le département</template>
+                  <span v-if="selectedDept !== 'all'" class="font-extrabold">{{
+                    selectedDept
+                  }}</span>
                 </template>
                 <template v-else>
                   <span class="font-extrabold">{{ filteredCenters.length }}</span>
@@ -57,8 +71,11 @@
                   <span class="font-extrabold">{{
                     filteredCenters.length > 1 ? 'centres' : 'centre'
                   }}</span>
-                  dans le
-                  <span class="font-extrabold">{{ department.label }}</span>
+                  <template v-if="selectedDept === 'all'"> au total</template>
+                  <template v-else>
+                    dans le département
+                    <span class="font-extrabold">{{ selectedDept }}</span>
+                  </template>
                 </template>
               </p>
               <Button
@@ -82,19 +99,18 @@
     </section>
 
     <!-- Bottom paper section: list and map -->
-    <section class="bg-paper flex flex-1 flex-col">
+    <section class="bg-paper flex flex-col">
       <!-- Mobile: map replaces list when open -->
       <div v-if="isMobileMapOpen" class="flex flex-col lg:hidden">
         <div class="relative h-[60vh] overflow-hidden">
           <CenterMap
             :centers="filteredCenters"
             :active-id="activeCenterId"
-            :caption="department.caption"
+            :caption="selectedDeptLabel"
             @select="selectCenter"
           />
         </div>
 
-        <!-- Mobile bottom sheet -->
         <CenterResultCard
           v-if="activeCenter"
           :center="activeCenter"
@@ -106,22 +122,59 @@
 
       <!-- Desktop grid + mobile list -->
       <div
-        class="grid h-full min-h-0 flex-1 lg:grid-cols-[2fr_3fr] lg:grid-rows-1"
+        class="grid lg:h-[calc(80vh-5rem)] lg:grid-cols-[2fr_3fr] lg:grid-rows-1 lg:overflow-hidden"
         :class="{ 'hidden lg:grid': isMobileMapOpen }"
       >
         <!-- List -->
         <div
           v-if="filteredCenters.length"
-          class="flex h-full min-h-0 flex-col gap-md px-gutter-mobile py-lg md:pl-gutter lg:pl-[max(48px,calc((100vw-var(--layout-container-max))/2+48px))]"
+          ref="listEl"
+          data-testid="centres-scroll-list"
+          class="flex flex-col gap-md px-gutter-mobile py-lg md:pl-gutter lg:h-full lg:min-h-0 lg:overflow-y-auto lg:pl-[max(48px,calc((100vw-var(--layout-container-max))/2+48px))] lg:pr-md"
         >
           <CenterResultCard
-            v-for="center in filteredCenters"
+            v-for="center in visibleCenters"
             :id="`center-${center.id}`"
             :key="center.id"
             :center="center"
             :active="activeCenterId === center.id"
             @select="selectCenter(center.id)"
           />
+          <div
+            v-if="isLoadingMore"
+            aria-label="Chargement de centres supplémentaires"
+            class="flex flex-col gap-md"
+          >
+            <output class="sr-only">Chargement de centres supplémentaires</output>
+            <div
+              v-for="i in 3"
+              :key="i"
+              class="flex animate-pulse flex-col gap-sm rounded-md border border-rule p-md"
+              aria-hidden="true"
+            >
+              <div class="flex justify-between gap-sm">
+                <div class="h-xs w-2xl rounded-full bg-surface" />
+                <div class="h-xs w-lg rounded-full bg-surface" />
+              </div>
+              <div class="h-xs w-3/4 rounded-full bg-surface" />
+              <div class="h-xs w-1/2 rounded-full bg-surface" />
+              <div class="ml-auto h-control w-2xl rounded-full bg-surface" />
+            </div>
+          </div>
+          <div
+            v-if="visibleCenters.length < filteredCenters.length && !isLoadingMore"
+            ref="sentinelEl"
+            aria-hidden="true"
+            class="h-1"
+          />
+          <p
+            v-if="
+              visibleCenters.length >= filteredCenters.length && hasListOverflowed && !isLoadingMore
+            "
+            class="py-sm text-center text-small text-ink-muted"
+          >
+            Vous avez atteint la fin de la liste
+          </p>
         </div>
 
         <!-- Empty state -->
@@ -131,51 +184,51 @@
         >
           <div class="rounded-md border border-dashed border-rule bg-paper p-xl text-center">
             <h2 class="font-sans text-h4 text-ink">
-              Aucun centre n'est implanté dans ce département pour le moment.
+              Aucun centre ne correspond à cette sélection pour le moment.
             </h2>
             <p class="mx-auto mt-sm max-w-prose text-small text-ink-muted">
               Les demandes de formation sur ce territoire sont prises en charge : formations en
-              intra sur site, ou dans un centre d'un département voisin selon le besoin.
+              intra sur site, ou dans un centre voisin selon le besoin.
             </p>
             <div class="mt-xl flex flex-wrap items-center justify-center gap-md">
               <Button
                 as-child
                 class="h-control rounded-full bg-primary px-md text-small font-bold text-paper hover:bg-primary-dark"
               >
-                <NuxtLink to="/">Demander une formation</NuxtLink>
+                <NuxtLink to="/centres/demande-de-formation">Demander une formation</NuxtLink>
               </Button>
               <Button
-                as-child
                 variant="outline"
                 class="h-control rounded-full border border-outline bg-paper px-md text-small font-bold text-primary transition hover:bg-surface"
+                @click="resetFilters"
               >
-                <NuxtLink to="/">Choisir un autre département</NuxtLink>
+                Réinitialiser les filtres
               </Button>
             </div>
           </div>
-          <p class="mt-md text-meta text-ink-subtle">
-            Aucun centre voisin n'est injecté automatiquement dans les résultats (RG01) —
-            l'élargissement reste un choix de l'utilisateur ou une prise en charge commerciale.
-          </p>
         </div>
 
         <!-- Map -->
-        <CenterMap
-          v-if="filteredCenters.length"
-          class="hidden h-full min-h-0 lg:block"
-          :centers="filteredCenters"
-          :active-id="activeCenterId"
-          :caption="department.caption"
-          @select="selectCenter"
-        />
+        <div v-if="filteredCenters.length" class="hidden lg:block lg:h-full lg:min-h-0">
+          <CenterMap
+            class="h-full"
+            :centers="filteredCenters"
+            :active-id="activeCenterId"
+            :caption="selectedDeptLabel"
+            @select="selectCenter"
+          />
+        </div>
       </div>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import type { CentresQuery } from '~/composables/useCentres'
 import type { CenterResult } from '~/types/center-result'
+
+const route = useRoute()
 
 definePageMeta({
   layout: 'with-breadcrumb',
@@ -186,123 +239,140 @@ useContentSeo(
   {
     seo_title: 'Réseau de centres — LEARN UP ACADEMY',
     seo_description:
-      'Plus de 400 centres couvrent 96 départements. Trouvez un centre Learn Up Academy près de vos équipes.'
+      'Trouvez un centre Learn Up Academy près de vos équipes : formations réglementaires et professionnelles partout en France.'
   },
   'Réseau de centres — LEARN UP ACADEMY'
 )
 
-interface Department {
-  label: string
-  caption: string
-  centers: CenterResult[]
-}
-
-const CENTERS: Record<string, Department> = {
-  '94': {
-    label: 'Val-de-Marne',
-    caption: 'département 94 cadré',
-    centers: [
-      {
-        id: 'creteil',
-        name: 'Centre de Créteil',
-        cp: '94000',
-        address: '14 rue des Refuzniks, Créteil · Val-de-Marne',
-        tags: 'CACES · Habilitations électriques · SST · Hauteur',
-        tagsShort: 'CACES · Habilitations · SST',
-        status: { type: 'success', label: 'Sessions cette semaine' },
-        pos: { top: '30%', left: '73%' }
-      },
-      {
-        id: 'vitry',
-        name: 'Centre de Vitry-sur-Seine',
-        cp: '94400',
-        address: '22 quai Jules Guesde, Vitry-sur-Seine · Val-de-Marne',
-        tags: 'CACES · AIPR · SST',
-        tagsShort: 'CACES · AIPR · SST',
-        status: { type: 'warning', label: 'Prochaine session le 14/09' },
-        pos: { top: '52%', left: '55%' }
-      },
-      {
-        id: 'champigny',
-        name: 'Centre de Champigny-sur-Marne',
-        cp: '94500',
-        address: '5 rue Benoît Frachon, Champigny · Val-de-Marne',
-        tags: 'Habilitations électriques · Incendie',
-        tagsShort: 'Habilitations · Incendie',
-        status: { type: 'success', label: 'Sessions ce mois-ci' },
-        pos: { top: '58%', left: '35%' }
-      },
-      {
-        id: 'rungis',
-        name: 'Centre de Rungis',
-        cp: '94150',
-        address: '1 rue de la Tour, Rungis · Val-de-Marne',
-        tags: 'CACES · Logistique · Hauteur',
-        tagsShort: 'CACES · Logistique',
-        status: { type: 'neutral', label: 'Sessions sur demande' },
-        pos: { top: '69%', left: '68%' }
-      },
-      {
-        id: 'nogent',
-        name: 'Centre de Nogent-sur-Marne',
-        cp: '94130',
-        address: '3 boulevard de Strasbourg, Nogent · Val-de-Marne',
-        tags: 'SST · Gestes & postures',
-        tagsShort: 'SST · Gestes & postures',
-        status: { type: 'success', label: 'Sessions ce mois-ci' },
-        pos: { top: '43%', left: '20%' }
-      }
-    ]
-  },
-  '48': {
-    label: 'Lozère',
-    caption: 'département 48 cadré',
-    centers: []
-  }
-}
-
-const DEFAULT_DEPARTMENT: Department = { label: '', caption: '', centers: [] }
-
-const selectedDept = ref('94')
-const searchQuery = ref('')
+const selectedDept = ref('all')
+const appliedSearch = ref(typeof route.query.q === 'string' ? route.query.q : '')
+const searchQuery = ref(appliedSearch.value)
 const activeCenterId = ref<string | null>(null)
 const isMobileMapOpen = ref(false)
 
-const department = computed(() => CENTERS[selectedDept.value] ?? DEFAULT_DEPARTMENT)
+const centresFilters = computed<CentresQuery>(() => ({
+  department: selectedDept.value === 'all' ? undefined : selectedDept.value,
+  search: appliedSearch.value.trim() || undefined
+}))
 
-const filteredCenters = computed(() => {
-  const query = searchQuery.value.toLowerCase()
-  if (!query) return department.value.centers
-  return department.value.centers.filter(
-    (c) =>
-      c.name.toLowerCase().includes(query) ||
-      c.cp.toLowerCase().includes(query) ||
-      c.address.toLowerCase().includes(query) ||
-      c.tags.toLowerCase().includes(query)
-  )
-})
+const centresResult = useCentres(centresFilters)
+const departmentsResult = useCentreDepartments()
+
+// SSR : on attend le fetch pour embarquer les données dans le payload.
+// En navigation client (ex. redirection /centres?q=… depuis l'accueil) la
+// page monte immédiatement et `pending` affiche le chargement dans le champ.
+if (import.meta.server) {
+  await Promise.all([centresResult, departmentsResult])
+}
+
+const { data: centres, pending: centresPending } = centresResult
+const { data: departments } = departmentsResult
+const centresCount = computed(() => centres.value?.length ?? 0)
+const departmentsCount = computed(() => departments.value?.length ?? 0)
+
+const LIST_CHUNK_SIZE = 12
+const visibleCount = ref(LIST_CHUNK_SIZE)
+const listEl = ref<HTMLElement | null>(null)
+const sentinelEl = ref<HTMLElement | null>(null)
+const isLoadingMore = ref(false)
+const hasListOverflowed = ref(false)
+let loadMoreObserver: IntersectionObserver | null = null
+
+const filteredCenters = computed<CenterResult[]>(() =>
+  (centres.value ?? []).map((centre) => {
+    const location = [centre.address, centre.postal_code, centre.city, centre.department]
+      .filter(Boolean)
+      .join(', ')
+    const tags = (centre.specialties ?? []).join(' · ')
+    return {
+      id: centre.slug,
+      name: centre.name,
+      cp: centre.postal_code ?? '',
+      address: location,
+      tags,
+      tagsShort: tags,
+      lat: centre.latitude ?? undefined,
+      lng: centre.longitude ?? undefined
+    }
+  })
+)
+
+const selectedDeptLabel = computed(() =>
+  selectedDept.value === 'all' ? 'Tous les départements' : selectedDept.value
+)
 
 const activeCenter = computed(() =>
   filteredCenters.value.find((c) => c.id === activeCenterId.value)
 )
 
-const selectedDeptLabel = computed(() => {
-  return `${selectedDept.value} — ${department.value.label}`
-})
+const visibleCenters = computed(() => filteredCenters.value.slice(0, visibleCount.value))
+
+function measureListOverflow() {
+  const el = listEl.value
+  if (!el) {
+    hasListOverflowed.value = false
+    return
+  }
+  const heightLimit =
+    getComputedStyle(el).overflowY === 'auto' ? el.clientHeight : window.innerHeight
+  hasListOverflowed.value = el.scrollHeight > heightLimit + 1
+}
+
+async function loadMoreCenters() {
+  if (isLoadingMore.value || visibleCount.value >= filteredCenters.value.length) return
+  isLoadingMore.value = true
+  await nextTick()
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+  visibleCount.value = Math.min(visibleCount.value + LIST_CHUNK_SIZE, filteredCenters.value.length)
+  isLoadingMore.value = false
+  await nextTick()
+  measureListOverflow()
+}
 
 watch(
-  department,
-  (dept) => {
-    activeCenterId.value = dept.centers[0]?.id ?? null
-    searchQuery.value = ''
+  () => route.query.q,
+  (q) => {
+    const value = typeof q === 'string' ? q : ''
+    searchQuery.value = value
+    appliedSearch.value = value
+  }
+)
+
+watch(
+  filteredCenters,
+  (list) => {
+    visibleCount.value = LIST_CHUNK_SIZE
+    isLoadingMore.value = false
+    if (!activeCenterId.value || !list.some((c) => c.id === activeCenterId.value)) {
+      activeCenterId.value = list[0]?.id ?? null
+    }
+    nextTick(measureListOverflow)
   },
   { immediate: true }
 )
 
-watch(filteredCenters, (list) => {
-  if (activeCenterId.value && !list.some((c) => c.id === activeCenterId.value)) {
-    activeCenterId.value = list[0]?.id ?? null
-  }
+onMounted(() => {
+  loadMoreObserver = new IntersectionObserver(
+    (entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) loadMoreCenters()
+    },
+    { rootMargin: '160px' }
+  )
+  if (sentinelEl.value) loadMoreObserver.observe(sentinelEl.value)
+  window.addEventListener('resize', measureListOverflow)
+  nextTick(measureListOverflow)
+})
+
+watch(sentinelEl, (el, prev) => {
+  if (!loadMoreObserver) return
+  if (prev) loadMoreObserver.unobserve(prev)
+  if (el) loadMoreObserver.observe(el)
+})
+
+onBeforeUnmount(() => {
+  loadMoreObserver?.disconnect()
+  loadMoreObserver = null
+  window.removeEventListener('resize', measureListOverflow)
 })
 
 function selectCenter(id: string) {
@@ -311,15 +381,25 @@ function selectCenter(id: string) {
     return
   }
   activeCenterId.value = id === activeCenterId.value ? null : id
+  const index = filteredCenters.value.findIndex((c) => c.id === id)
+  if (index >= visibleCount.value) {
+    visibleCount.value = Math.min(index + LIST_CHUNK_SIZE, filteredCenters.value.length)
+  }
   nextTick(() => {
     const el = document.getElementById(`center-${id}`)
     el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   })
 }
 
-function onSearch() {
-  // The search is already reactive through v-model.
-  // This handler keeps the submit button accessible.
+function onSearch(value: string) {
+  // La recherche n'est appliquée qu'à la soumission (bouton ou touche Entrée).
+  appliedSearch.value = value
+}
+
+function resetFilters() {
+  selectedDept.value = 'all'
+  searchQuery.value = ''
+  appliedSearch.value = ''
 }
 
 function openMobileMap() {

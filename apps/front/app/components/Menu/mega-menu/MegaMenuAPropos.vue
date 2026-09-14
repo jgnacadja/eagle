@@ -1,12 +1,14 @@
 <template>
-  <div class="grid w-full grid-cols-2 gap-lg p-lg">
+  <div
+    class="mx-auto grid w-full max-w-container grid-cols-2 gap-lg px-gutter-mobile py-lg md:px-gutter"
+  >
     <div>
       <h3 class="text-small font-semibold text-ink-muted">Learn Up Academy</h3>
       <ul class="mt-sm space-y-2">
         <li v-for="lien in aproposLiens" :key="lien.slug">
           <NuxtLink
             :to="`/a-propos/${lien.slug}`"
-            class="block rounded-md px-2 py-1.5 text-primary transition-colors hover:bg-surface hover:text-ink"
+            class="block rounded-md px-2 py-1.5 text-primary transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
             <span class="block text-body font-medium">{{ lien.label }}</span>
@@ -22,7 +24,7 @@
         <li v-for="lien in legalLiens" :key="lien.slug">
           <NuxtLink
             :to="`/legal/${lien.slug}`"
-            class="block rounded-md px-2 py-1.5 text-body text-primary transition-colors hover:bg-surface hover:text-ink"
+            class="block rounded-md px-2 py-1.5 text-body text-primary transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
             {{ lien.label }}

@@ -4,7 +4,7 @@ Lire d'abord `AGENTS.md` à la racine.
 
 ## Architecture
 
-- `app/app.vue` avec `<NuxtPage :page-key="(route) => route.path + route.search" />` — obligatoire pour que les routes dynamiques se rechargent. Le hash est exclu : un clic dans un sommaire (`#section`) ne doit pas remonter la page.
+- `app/app.vue` avec `<NuxtPage :page-key="(route) => route.path" />` — obligatoire pour que les routes dynamiques se rechargent. Query et hash exclus : ni une recherche (`?q=`) ni un clic dans un sommaire (`#section`) ne doivent remonter la page.
 - `app/pages/` : routing Nuxt 4 (`index.vue`, `[famille].vue`, `[famille]/[slug].vue`).
 - `app/components/` : composants Vue, nommés PascalCase.
 - `app/layouts/default.vue` : layout racine.
@@ -13,11 +13,11 @@ Lire d'abord `AGENTS.md` à la racine.
 
 ## Composables existants
 
-- `useDirectusClient()` : client Directus (URL distincte selon SSR/navigateur).
+- `useDirectusClient()` : client Directus pointant sur le proxy `/directus` de l'API NestJS (le front ne contacte jamais Directus directement).
 - `useDirectusList<T>(collection, cacheKey, query?)` : liste Directus avec dégradation gracieuse (`[]` en cas d'erreur, log serveur).
 - `useDirectusItemBySlug<T>(collection, slug, cacheKey)` : fiche par slug.
 - `useContentSeo(source, fallbackTitle)` : met à jour `useHead` depuis les champs SEO Directus.
-- `useCatalog()` à créer : appel API NestJS via `useAsyncData`, dégradation gracieuse similaire.
+- `useCatalog()` : appel API NestJS `/courses` via `useAsyncData`, clés de cache dérivées du JSON de la requête, dégradation gracieuse.
 
 ## Conventions UI
 
@@ -34,7 +34,9 @@ Lire d'abord `AGENTS.md` à la racine.
 
 ## Données
 
-- SSR : `useAsyncData` avec `cacheKey` stable. Gestion d'erreur : log côté serveur, retour vide/dégradé, jamais de crash silencieux.
+- SSR : `useAsyncData` avec `cacheKey` stable. Réutiliser le cache Nuxt côté client via `getCachedData: (key, nuxtApp) => nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]` pour éviter les refetchs inutiles lors de la navigation.
+- Cache SWR au niveau des routes : `nuxt.config.ts` configure `routeRules: { '/': { swr: 600 }, '/formations/**': { swr: 600 }, '/centres/**': { swr: 600 } }`.
+- Gestion d'erreur : log côté serveur, retour vide/dégradé, jamais de crash silencieux.
 - Appels API : `useRuntimeConfig().public.apiBase` (`http://localhost:3001`).
 - Sanitization : `sanitizeHtml()` de `app/utils/sanitizeHtml.ts` avant tout `v-html`.
 

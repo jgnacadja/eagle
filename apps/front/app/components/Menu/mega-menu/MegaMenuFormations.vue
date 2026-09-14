@@ -1,5 +1,7 @@
 <template>
-  <div class="grid w-full grid-cols-3 gap-lg p-lg">
+  <div
+    class="mx-auto grid w-full max-w-container grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter"
+  >
     <!-- FAMILLES -->
     <div>
       <h3 class="text-small font-semibold text-ink-muted">Familles</h3>
@@ -7,13 +9,12 @@
         <li v-for="famille in familles" :key="famille.slug">
           <button
             type="button"
-            class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-body transition-colors hover:bg-surface"
+            class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-body transition-colors hover:text-accent-text"
             :class="
               famille.slug === selectedFamille
                 ? 'bg-surface font-semibold text-ink'
                 : 'text-primary'
             "
-            @mouseenter="selectedFamille = famille.slug"
             @focus="selectedFamille = famille.slug"
             @click="goToFamille(famille.slug)"
           >
@@ -21,56 +22,50 @@
             <span class="text-small text-ink-muted">{{ famille.count }}</span>
           </button>
         </li>
-      </ul>
-      <NuxtLink
-        to="/formations"
-        class="mt-sm inline-block text-small font-semibold text-ink underline underline-offset-4"
-        @click="$emit('close')"
-      >
-        Tout le catalogue →
-      </NuxtLink>
-    </div>
-
-    <!-- DÉTAIL FAMILLE SÉLECTIONNÉE -->
-    <div class="border-l border-rule pl-lg">
-      <h3 class="text-small font-semibold text-ink-muted">
-        {{ selectedFamilleLabel }}<template v-if="isCaces"> — par type d’engin</template>
-      </h3>
-      <ul v-if="isCaces" class="mt-sm space-y-1">
-        <li v-for="engin in enginsCaces" :key="engin.slug">
+        <li>
           <NuxtLink
-            :to="`/formations/caces-conduite-engins/${engin.slug}`"
-            class="block rounded-md px-2 py-1.5 text-body text-primary transition-colors hover:bg-surface hover:text-ink"
+            to="/formations"
+            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
-            <span class="font-medium">{{ engin.label }}</span>
-            <span class="ml-1 text-small text-ink-muted"
-              >{{ engin.refs }} → {{ engin.count }} formations</span
-            >
+            Tout le catalogue →
           </NuxtLink>
         </li>
       </ul>
-      <p v-else class="mt-sm px-2 text-body text-ink-muted">
-        {{ selectedFamilleCount }} formations dans cette famille.
-      </p>
-      <NuxtLink
-        :to="`/formations/${selectedFamille}`"
-        class="mt-sm inline-block text-small font-semibold text-ink underline underline-offset-4"
-        @click="$emit('close')"
-      >
-        Voir la famille →
-      </NuxtLink>
-      <p class="mt-1 text-small text-ink-muted">Informations pratiques exigées</p>
     </div>
 
-    <!-- PLUS CONSULTÉS + CTA -->
-    <div>
-      <h3 class="text-small font-semibold text-ink-muted">Les plus consultés</h3>
-      <ul class="mt-sm space-y-1">
-        <li v-for="formation in formationsPlusConsultees" :key="formation.slug">
+    <!-- FORMATIONS DE LA FAMILLE SÉLECTIONNÉE -->
+    <div class="col-span-2 border-l border-rule pl-lg">
+      <h3 class="text-overline uppercase text-ink-muted">{{ selectedFamilleLabel }}</h3>
+      <ul class="mt-sm grid grid-cols-2 gap-sm">
+        <li v-for="formation in formationsFamille" :key="formation.slug">
+          <MegaMenuCard
+            :to="formation.to"
+            :title="formation.label"
+            :meta="formation.meta"
+            @select="$emit('close')"
+          />
+        </li>
+        <li v-if="selectedFamille" class="col-span-2">
           <NuxtLink
-            :to="`/formations/caces-conduite-engins/${formation.slug}`"
-            class="flex items-center justify-between rounded-md px-2 py-1.5 text-body text-primary transition-colors hover:bg-surface hover:text-ink"
+            :to="`/formations/${selectedFamille}`"
+            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
+            @click="$emit('close')"
+          >
+            Voir la famille →
+          </NuxtLink>
+        </li>
+      </ul>
+    </div>
+
+    <!-- À LA UNE + CTA -->
+    <div>
+      <h3 class="text-small font-semibold text-ink-muted">À la une</h3>
+      <ul class="mt-sm space-y-1">
+        <li v-for="formation in formationsALaUne" :key="formation.slug">
+          <NuxtLink
+            :to="formation.to"
+            class="flex items-center justify-between rounded-md px-2 py-1.5 text-body text-primary transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
             <span>{{ formation.label }}</span>
@@ -83,7 +78,7 @@
         <p class="text-body font-semibold">Vous ne savez pas quelle formation choisir ?</p>
         <NuxtLink
           to="/etre-guide"
-          class="mt-sm inline-block rounded-full bg-accent px-lg py-2 text-small font-semibold text-ink hover:bg-accent-text"
+          class="w-full text-center mt-sm inline-block rounded-full bg-paper px-lg py-2 text-small font-semibold text-ink hover:bg-surface"
           @click="$emit('close')"
         >
           Être guidé dans mon choix
@@ -94,22 +89,39 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { familles, enginsCaces, formationsPlusConsultees } from '~/data/navigation'
+import { computed, ref, watch } from 'vue'
+import {
+  useMenuFamilles,
+  useMenuFormationsALaUne,
+  useMenuFormationsParFamille
+} from '~/composables/useMenuData'
+import MegaMenuCard from '~/components/Menu/mega-menu/MegaMenuCard.vue'
 
 defineEmits<{ close: [] }>()
 
-// CACES & conduite d'engins mis en avant par défaut, comme sur la maquette
-const selectedFamille = ref('caces-conduite-engins')
+const familles = useMenuFamilles()
+const formationsParFamille = useMenuFormationsParFamille()
+const formationsALaUne = useMenuFormationsALaUne()
+
+const selectedFamille = ref(familles.value?.[0]?.slug ?? '')
+
+// Si les familles arrivent après le premier rendu (dégradation), pré-sélectionner la première.
+watch(
+  familles,
+  (list) => {
+    if (!selectedFamille.value && list?.length) {
+      selectedFamille.value = list[0]!.slug
+    }
+  },
+  { immediate: true }
+)
 
 const selectedFamilleLabel = computed(() => {
-  return familles.find((f) => f.slug === selectedFamille.value)?.label ?? ''
+  return familles.value?.find((f) => f.slug === selectedFamille.value)?.label ?? ''
 })
-const selectedFamilleCount = computed(() => {
-  return familles.find((f) => f.slug === selectedFamille.value)?.count ?? 0
+const formationsFamille = computed(() => {
+  return formationsParFamille.value[selectedFamille.value] ?? []
 })
-// Seule la famille CACES a un découpage par type d'engin
-const isCaces = computed(() => selectedFamille.value === 'caces-conduite-engins')
 
 function goToFamille(slug: string) {
   selectedFamille.value = slug

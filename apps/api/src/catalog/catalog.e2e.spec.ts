@@ -5,7 +5,10 @@ import request from 'supertest'
 import type { INestApplication } from '@nestjs/common'
 import { CatalogController } from './catalog.controller'
 import { CatalogService } from './catalog.service'
+import { AdminApiKeyGuard } from '../common/guards/admin-api-key.guard'
 import { HttpExceptionFilter } from '../common/filters/http-exception.filter'
+
+const mockGuard = { canActivate: () => true }
 
 class InMemoryThrottlerStorage implements ThrottlerStorage {
   private readonly hits = new Map<string, number>()
@@ -55,7 +58,10 @@ describe('Catalog rate limiting (e2e)', () => {
           }
         }
       ]
-    }).compile()
+    })
+      .overrideGuard(AdminApiKeyGuard)
+      .useValue(mockGuard)
+      .compile()
 
     app = module.createNestApplication()
     app.useGlobalFilters(new HttpExceptionFilter())

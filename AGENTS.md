@@ -63,7 +63,7 @@ directus/
 - **Valeurs de style** : jamais en dur. Importer `@learnup/ui` et utiliser les tokens CSS (`--color-*`, etc.) ou les classes Tailwind (`text-ink`, `bg-paper`, etc.).
 - **Secrets** : **jamais** dans le repo. Uniquement dans `.env` (non versionné) et `.env.example` (valeurs de dev). Variables sensibles dans `docker-compose.yml` : utiliser `${VAR:-default}`.
 - **Logging** : pas de `console.*` dans le code, sauf dans `apps/front/app/utils/logger.ts` et `directus/logger.mjs` (explicitement exemptés par ESLint).
-- **Tests systématiques** : chaque module a sa couverture. Vitest + Supertest (API), Vitest + `@vue/test-utils` (front). Mocks Prisma/Redis/Digiforma en dev si pas de clé.
+- **Tests systématiques** : chaque module a sa couverture. Vitest + Supertest (API), Vitest + `@vue/test-utils` (front). Mocks Redis/Directus/Digiforma en dev si pas de clé.
 
 ## Règles de revue bloquantes
 
@@ -124,5 +124,5 @@ Les tickets du sprint 2 sont dans ClickUp (liste `901220536096`). Lier chaque PR
 ## Points de vigilance
 
 - **Digiforma** : API GraphQL sur `https://app.digiforma.com/api/v1/graphql`, auth Bearer. Aucun webhook natif connu : on poll toutes les 1 h.
-- **Bases de données** : Postgres partagé avec Directus via la DB `learnup` (même instance, schémas/logique applicative distincts).
+- **Bases de données** : Postgres utilisé par Directus uniquement. L'API n'a plus de base de données propre (Prisma retiré) : les formations sont écrites et lues dans Directus.
 - **Cache** : Redis utilisé par Directus et par l'API (clés versionnées `catalog:v{n}:…`).

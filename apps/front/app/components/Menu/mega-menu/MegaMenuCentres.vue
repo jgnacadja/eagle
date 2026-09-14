@@ -1,5 +1,7 @@
 <template>
-  <div class="grid w-full grid-cols-3 gap-lg p-lg">
+  <div
+    class="mx-auto grid w-full max-w-container grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter"
+  >
     <!-- RÉGIONS -->
     <div>
       <h3 class="text-small font-semibold text-ink-muted">Régions</h3>
@@ -7,11 +9,10 @@
         <li v-for="region in regions" :key="region.slug">
           <button
             type="button"
-            class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-body transition-colors hover:bg-surface"
+            class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-body transition-colors hover:text-accent-text"
             :class="
               region.slug === selectedRegion ? 'bg-surface font-semibold text-ink' : 'text-primary'
             "
-            @mouseenter="selectedRegion = region.slug"
             @focus="selectedRegion = region.slug"
             @click="goToRegion(region.slug)"
           >
@@ -19,43 +20,44 @@
             <span class="text-small text-ink-muted">{{ region.count }}</span>
           </button>
         </li>
-      </ul>
-      <NuxtLink
-        to="/centres"
-        class="mt-sm inline-block text-small font-semibold text-ink underline underline-offset-4"
-        @click="$emit('close')"
-      >
-        Toutes les régions →
-      </NuxtLink>
-    </div>
-
-    <!-- CENTRES DE LA RÉGION SÉLECTIONNÉE -->
-    <div class="border-l border-rule pl-lg">
-      <h3 class="text-small font-semibold text-ink-muted">
-        {{ selectedRegionLabel }} — {{ selectedRegionCount }} centres
-      </h3>
-      <ul class="mt-sm space-y-2">
-        <li v-for="centre in centresAffiches" :key="centre.slug">
+        <li>
           <NuxtLink
-            :to="`/centres/${centre.slug}`"
-            class="block rounded-md px-2 py-1.5 text-body text-primary transition-colors hover:bg-surface hover:text-ink"
+            to="/centres"
+            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
-            <span class="font-medium">{{ centre.name }}</span>
-            <span class="block text-small text-ink-muted"
-              >{{ centre.departement }} · {{ centre.specialites }}</span
-            >
+            Toutes les régions →
           </NuxtLink>
         </li>
       </ul>
-      <NuxtLink
-        to="/centres"
-        class="mt-sm inline-block text-small font-semibold text-ink underline underline-offset-4"
-        @click="$emit('close')"
-      >
-        Tous les centres {{ selectedRegionLabel }} →
-      </NuxtLink>
-      <p class="mt-1 text-small text-ink-muted">Ouverture(s) prévue(s) 2026</p>
+    </div>
+
+    <!-- CENTRES DE LA RÉGION SÉLECTIONNÉE -->
+    <div class="col-span-2 border-l border-rule pl-lg">
+      <h3 class="text-overline uppercase text-ink-muted">
+        {{ selectedRegionLabel }} — {{ selectedRegionCount }} centre{{
+          selectedRegionCount > 1 ? 's' : ''
+        }}
+      </h3>
+      <ul class="mt-sm grid grid-cols-2 gap-sm">
+        <li v-for="centre in centresAffiches" :key="centre.slug">
+          <MegaMenuCard
+            :to="`/centres/${centre.slug}`"
+            :title="centre.name"
+            :meta="centre.department ?? centre.city"
+            @select="$emit('close')"
+          />
+        </li>
+        <li class="col-span-2">
+          <NuxtLink
+            to="/centres"
+            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
+            @click="$emit('close')"
+          >
+            Tous les centres {{ selectedRegionLabel }} →
+          </NuxtLink>
+        </li>
+      </ul>
     </div>
 
     <!-- TROUVER UN CENTRE + CTA -->
@@ -69,16 +71,13 @@
           type="text"
           placeholder="Ville ou code postal"
         />
-        <Button type="button" variant="outline" class="rounded-full" @click="useGeolocation">
-          Autour de moi
-        </Button>
       </form>
 
       <div class="mt-md rounded-lg bg-ink px-md py-md text-paper">
         <p class="text-body font-semibold">Besoin d’une formation sur votre site ?</p>
         <NuxtLink
           to="/formation-intra"
-          class="mt-sm inline-block rounded-full bg-paper px-lg py-2 text-small font-semibold text-ink hover:bg-surface"
+          class="w-full text-center mt-sm inline-block rounded-full bg-paper px-lg py-2 text-small font-semibold text-ink hover:bg-surface"
           @click="$emit('close')"
         >
           Organiser une formation intra
@@ -89,24 +88,39 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { Button } from '~/components/ui/button'
+import { computed, ref, watch } from 'vue'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
-import { regions, centresParRegion } from '~/data/navigation'
+import { useMenuCentres } from '~/composables/useMenuData'
+import MegaMenuCard from '~/components/Menu/mega-menu/MegaMenuCard.vue'
 
 const emit = defineEmits<{ close: [] }>()
 
-const selectedRegion = ref('ile-de-france')
+const { regions, centresParRegion } = useMenuCentres()
+
+const selectedRegion = ref(regions.value?.[0]?.slug ?? '')
 const searchQuery = ref('')
 
+watch(
+  regions,
+  (list) => {
+    if (!selectedRegion.value && list?.length) {
+      selectedRegion.value = list[0]!.slug
+    }
+  },
+  { immediate: true }
+)
+
 const selectedRegionLabel = computed(
-  () => regions.find((r) => r.slug === selectedRegion.value)?.label ?? ''
+  () => regions.value?.find((r) => r.slug === selectedRegion.value)?.label ?? ''
 )
 const selectedRegionCount = computed(
-  () => regions.find((r) => r.slug === selectedRegion.value)?.count ?? 0
+  () => regions.value?.find((r) => r.slug === selectedRegion.value)?.count ?? 0
 )
-const centresAffiches = computed(() => (centresParRegion[selectedRegion.value] ?? []).slice(0, 4))
+const centresAffiches = computed(() => {
+  const region = regions.value?.find((r) => r.slug === selectedRegion.value)
+  return (region ? (centresParRegion.value.get(region.label) ?? []) : []).slice(0, 4)
+})
 
 function goToRegion(slug: string) {
   selectedRegion.value = slug
@@ -118,27 +132,5 @@ function onSearchSubmit() {
   // Pas de page recherche dédiée : on renvoie vers l'annuaire avec la query.
   navigateTo({ path: '/centres', query: { q } })
   emit('close')
-}
-
-function useGeolocation() {
-  if (!navigator.geolocation) {
-    navigateTo('/centres')
-    emit('close')
-    return
-  }
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      navigateTo({
-        path: '/centres',
-        query: { lat: pos.coords.latitude, lng: pos.coords.longitude }
-      })
-      emit('close')
-    },
-    // Refus ou erreur : annuaire simple
-    () => {
-      navigateTo('/centres')
-      emit('close')
-    }
-  )
 }
 </script>

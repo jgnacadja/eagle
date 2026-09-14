@@ -13,17 +13,17 @@
         class="relative mx-auto max-w-container px-gutter-mobile md:px-gutter pb-section pt-4xl text-center"
       >
         <span
-          class="inline-block rounded-full border border-primary bg-paper px-4 py-2 text-h4 font-bold uppercase leading-3 tracking-widest text-primary"
+          class="inline-block rounded-full border border-primary bg-paper px-4 py-2 text-h4 font-bold uppercase tracking-widest text-primary"
         >
           Plateforme de conseil en formation professionnelle
         </span>
 
-        <h1 class="mt-5 font-display text-h2 font-extrabold text-ink md:text-hero">
+        <h1 class="mt-5 font-display text-h2 md:text-hero font-extrabold text-ink">
           Vos besoins de formation,<br />
           <span class="text-accent-text">orchestrés</span> de bout en bout.
         </h1>
 
-        <p class="mt-md font-sans text-lead font-semibold text-ink">
+        <p class="mt-md font-sans text-body md:text-base font-semibold text-ink">
           La bonne formation. Au bon endroit. Au bon moment.
         </p>
 
@@ -39,7 +39,7 @@
           </SearchInput>
         </form>
 
-        <p class="mx-auto mt-5 max-w-5xl text-body md:whitespace-nowrap">
+        <p class="mx-auto mt-5 max-w-5xl text-small md:text-sm md:whitespace-nowrap">
           <span class="font-bold text-ink">LEARN UP</span
           ><span class="font-medium text-ink-body"
             >, organisme de formation et de recommandation, vous accompagne pour identifier et
@@ -48,8 +48,8 @@
         </p>
 
         <NuxtLink
-          to="/"
-          class="mt-2.5 inline-block text-body font-bold text-accent-text underline underline-offset-4 decoration-accent-text/40 hover:opacity-80"
+          to="/centres/demande-de-formation"
+          class="mt-2.5 inline-block text-sm font-bold text-primary transition-colors hover:text-accent-text"
         >
           Confier ma formation →
         </NuxtLink>
@@ -86,10 +86,12 @@
 
     <!-- Network -->
     <section class="mx-auto max-w-container px-gutter-mobile md:px-gutter py-section">
-      <h2 class="text-center font-display text-h2 font-extrabold text-ink">
+      <h2 class="text-center font-display text-h3 md:text-h2 font-extrabold text-ink">
         Construisons ensemble le réseau Learn Up Academy
       </h2>
-      <p class="mx-auto mt-sm max-w-prose text-center font-sans text-body text-ink-muted">
+      <p
+        class="mx-auto mt-sm max-w-prose text-center font-sans text-sm md:text-lead text-ink-muted"
+      >
         Rejoignez un réseau national dédié aux formations réglementaires et participez à son
         développement partout en France.
       </p>
@@ -102,12 +104,15 @@
           :subtitle="card.subtitle"
           :body="card.body"
           :cta="card.cta"
+          :to="card.to"
         />
       </div>
 
-      <p class="mt-xl text-center text-small text-ink-muted">
+      <p class="mt-xl text-center text-meta md:text-small text-ink-muted">
         Vous êtes un particulier ? Certaines sessions sont ouvertes aux inscriptions individuelles —
-        <NuxtLink to="/" class="font-bold text-primary hover:text-primary-muted"
+        <NuxtLink
+          to="/centres"
+          class="font-bold text-primary transition-colors hover:text-accent-text"
           >contactez le centre le plus proche →</NuxtLink
         >
       </p>
@@ -115,11 +120,17 @@
 
     <!-- How it works -->
     <section class="mx-auto max-w-container px-gutter-mobile md:px-gutter pb-section">
-      <p class="text-center text-h4 font-bold uppercase leading-3 tracking-widest text-accent-text">
+      <p
+        class="text-center text-h4 font-bold uppercase leading-3 tracking-widest text-accent-text my-4"
+      >
         Comment ça marche
       </p>
 
-      <ol class="relative mt-2.5 grid gap-2xl md:grid-cols-4">
+      <ol class="relative mt-2.5 flex flex-col gap-xl md:grid md:grid-cols-4 md:gap-2xl">
+        <div
+          class="absolute left-[calc(var(--spacing-control-sm)/2-0.5px)] top-[calc(var(--spacing-control-sm)/2)] bottom-[calc(var(--spacing-control-sm)/2)] z-0 w-px bg-rule-strong md:hidden"
+          aria-hidden="true"
+        />
         <div
           class="absolute top-[calc(var(--spacing-control-sm)/2-0.5px)] left-0 right-0 z-0 mx-auto hidden h-px w-4/5 bg-rule-strong md:block"
           aria-hidden="true"
@@ -128,18 +139,20 @@
         <li
           v-for="step in steps"
           :key="step.number"
-          class="relative flex flex-col items-center text-center"
+          class="relative flex flex-row items-start gap-md text-left md:flex-col md:items-center md:text-center md:gap-0"
         >
           <span
-            class="z-10 flex h-control-sm w-control-sm items-center justify-center rounded-full text-small font-bold text-paper"
+            class="z-10 flex h-control-sm w-control-sm shrink-0 items-center justify-center rounded-full text-small font-bold text-paper"
             :class="step.number === 4 ? 'bg-success' : 'bg-primary'"
           >
             {{ step.number }}
           </span>
-          <h3 class="mt-2.5 font-sans text-body font-bold text-ink">{{ step.title }}</h3>
-          <p class="mx-auto mt-1 text-small text-ink-muted" :class="step.maxWidth">
-            {{ step.body }}
-          </p>
+          <div class="flex-1 pt-1 md:pt-0">
+            <h3 class="font-sans text-body font-bold text-ink md:mt-2.5">{{ step.title }}</h3>
+            <p class="mt-0.5 text-small text-ink-muted md:mx-auto md:mt-1" :class="step.maxWidth">
+              {{ step.body }}
+            </p>
+          </div>
         </li>
       </ol>
     </section>
@@ -155,8 +168,8 @@
             </p>
           </div>
           <NuxtLink
-            to="/"
-            class="hidden whitespace-nowrap text-body font-bold text-primary hover:text-ink md:block"
+            to="/formations"
+            class="hidden whitespace-nowrap text-body font-bold text-primary transition-colors hover:text-accent-text md:block"
           >
             Voir tout le catalogue →
           </NuxtLink>
@@ -164,20 +177,24 @@
 
         <div class="mt-2xl grid gap-grid sm:grid-cols-2 lg:grid-cols-4">
           <FormationCard
-            v-for="item in formations"
-            :key="item.title"
+            v-for="item in dernieresFormations"
+            :key="item.slug"
             :title="item.title"
-            :image-top="item.imageTop"
-            :image-bottom="item.imageBottom"
+            :image-top="item.family"
+            :image-bottom="item.meta"
+            :image="item.image"
+            :to="item.to"
           />
         </div>
 
-        <NuxtLink
-          to="/"
-          class="mt-xl inline-block text-body font-bold text-primary hover:text-ink md:hidden"
-        >
-          Voir tout le catalogue →
-        </NuxtLink>
+        <div class="flex justify-center mt-lg">
+          <NuxtLink
+            to="/formations"
+            class="inline-block text-body font-bold text-primary transition-colors hover:text-accent-text md:hidden"
+          >
+            Voir tout le catalogue →
+          </NuxtLink>
+        </div>
       </div>
     </section>
 
@@ -185,8 +202,10 @@
     <section id="centres" class="mx-auto max-w-container px-gutter-mobile md:px-gutter py-section">
       <div class="flex flex-col gap-md sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 class="font-display text-h2 font-extrabold text-ink">Le réseau Learn Up Academy</h2>
-          <p class="mt-sm font-sans text-body text-ink-muted">
+          <h2 class="font-display text-h3 md:text-h2 font-extrabold text-ink">
+            Le réseau Learn Up Academy
+          </h2>
+          <p class="mt-sm max-w-prose font-sans text-sm text-ink-muted">
             <span class="font-bold text-primary">+400 centres partenaires</span>
             dans
             <span class="font-bold text-primary">96 départements</span>
@@ -195,7 +214,7 @@
         </div>
         <NuxtLink
           to="/centres"
-          class="whitespace-nowrap text-body font-bold text-primary hover:text-ink"
+          class="hidden whitespace-nowrap text-body font-bold text-primary transition-colors hover:text-accent-text md:block"
         >
           Explorer la carte des centres →
         </NuxtLink>
@@ -203,9 +222,20 @@
 
       <div class="mt-xl grid gap-grid lg:grid-cols-3">
         <div
-          class="lg:col-span-2 flex aspect-2/1 items-center justify-center rounded-md border border-dashed border-outline bg-surface text-center text-meta text-ink-muted px-md"
+          class="h-80 overflow-hidden rounded-md border border-rule bg-surface md:h-96 lg:col-span-2"
         >
-          Carte de France interactive<br />départements + pins centres — lisible, pas un outil SIG
+          <CenterMap
+            v-if="homeMapCenters.length"
+            :centers="homeMapCenters"
+            :active-id="null"
+            :caption="''"
+          />
+          <div
+            v-else
+            class="flex h-full items-center justify-center px-md text-center text-meta text-ink-muted"
+          >
+            Carte de France interactive<br />départements + pins centres — lisible, pas un outil SIG
+          </div>
         </div>
 
         <div class="flex flex-col gap-md lg:col-span-1">
@@ -214,6 +244,7 @@
             input-id="map-search"
             sr-label="Rechercher une ville, code postal ou département"
             placeholder="Ville, code postal ou département"
+            @submit="onMapSearch"
           >
             <template #icon>
               <IconSearch :size="20" class="shrink-0 text-primary" />
@@ -221,13 +252,23 @@
           </SearchInput>
 
           <CenterCard
-            v-for="centre in centres"
-            :key="centre.name"
+            v-for="centre in derniersCentres"
+            :key="centre.slug"
             :name="centre.name"
-            :distance="centre.distance"
-            :formations="centre.formations"
-            :tags="centre.tags"
+            :distance="centreDistance(centre)"
+            :formations="centreFormations(centre)"
+            :tags="centreTags(centre)"
+            :to="`/centres/${centre.slug}`"
           />
+
+          <div class="flex justify-center mt-lg">
+            <NuxtLink
+              to="/centres"
+              class="whitespace-nowrap text-body font-bold text-primary transition-colors hover:text-accent-text md:hidden"
+            >
+              Explorer la carte des centres →
+            </NuxtLink>
+          </div>
         </div>
       </div>
     </section>
@@ -238,16 +279,16 @@
         <p class="text-h4 font-bold uppercase text-accent">Confier mes formations</p>
 
         <div class="mt-sm flex flex-col gap-md lg:flex-row lg:items-baseline lg:justify-between">
-          <h2 class="max-w-prose font-display text-h2 font-extrabold">
+          <h2 class="max-w-prose font-display text-h3 md:text-h2 font-extrabold">
             Un interlocuteur unique orchestre votre plan de formation
           </h2>
-          <p class="max-w-(--layout-callout-max) text-body text-ink-inverse/65">
+          <p class="max-w-callout text-small md:text-body text-ink-inverse/65">
             Pensé pour les RH, responsables formation, QHSE et directions d'exploitation : vous
             gardez la maîtrise, nous portons l'exécution.
           </p>
         </div>
 
-        <div class="mt-2xl grid gap-grid md:grid-cols-3">
+        <div class="mt-2xl hidden gap-grid md:grid md:grid-cols-3">
           <ConfierCard
             v-for="card in confierCards"
             :key="card.title"
@@ -259,16 +300,42 @@
           />
         </div>
 
-        <div class="mt-2xl flex flex-wrap gap-md">
+        <div class="mt-2xl flex snap-x snap-mandatory gap-grid overflow-x-auto pb-sm md:hidden">
+          <ConfierCard
+            v-for="card in confierCards"
+            :key="`${card.title}-image`"
+            variant="image"
+            :tag="card.tag"
+            :title="card.title"
+            :body="card.body"
+            :image-label="card.imageLabel"
+            :image-sub="card.imageSub"
+          />
+        </div>
+
+        <div class="mt-md flex flex-col gap-md md:hidden">
+          <ConfierCard
+            v-for="card in confierCards"
+            :key="`${card.title}-detail`"
+            variant="detail"
+            :tag="card.tag"
+            :title="card.title"
+            :body="card.body"
+            :image-label="card.imageLabel"
+            :image-sub="card.imageSub"
+          />
+        </div>
+
+        <div class="mt-lg flex flex-col gap-md md:flex-row md:flex-wrap">
           <NuxtLink
-            to="/"
-            class="rounded-full bg-accent px-lg py-md text-button text-ink hover:bg-accent-text transition"
+            to="/centres/demande-de-formation"
+            class="w-full text-center rounded-full bg-accent px-lg py-md text-button text-ink hover:bg-accent-text transition md:w-auto"
           >
             Confier mes formations
           </NuxtLink>
           <NuxtLink
-            to="/"
-            class="rounded-full border border-outline-inverse px-lg py-md text-button text-ink-inverse hover:bg-ink-inverse/10 transition"
+            to="/centres/demande-de-formation?sujet=conseiller"
+            class="w-full text-center rounded-full border border-outline-inverse px-lg py-md text-button text-ink-inverse hover:bg-ink-inverse/10 transition md:w-auto"
           >
             Parler à un conseiller
           </NuxtLink>
@@ -279,7 +346,7 @@
     <!-- Stats -->
     <section class="border-b border-rule bg-surface">
       <div
-        class="mx-auto grid max-w-container grid-cols-2 gap-xl px-gutter-mobile md:px-gutter py-section md:grid-cols-4"
+        class="mx-auto grid max-w-container grid-cols-2 gap-y-xl gap-x-0 px-gutter-mobile md:px-gutter py-section md:grid-cols-4 md:gap-xl"
       >
         <StatItem
           v-for="stat in stats"
@@ -287,7 +354,7 @@
           :value="stat.value"
           :unit="stat.unit"
           :label="stat.label"
-          class="border-b border-rule md:border-b-0 md:border-r last:border-r-0 md:last:border-r-0"
+          class="border-r border-rule even:border-r-0 md:even:border-r last:border-r-0! odd:pr-md even:pl-md md:px-0"
         />
       </div>
     </section>
@@ -295,16 +362,20 @@
     <!-- Testimonials -->
     <section class="mx-auto max-w-container px-gutter-mobile md:px-gutter py-section">
       <div class="flex flex-wrap items-end justify-between gap-sm">
-        <h2 class="font-display text-h2 font-extrabold text-ink">
+        <h2 class="font-display text-h3 md:text-h2 font-extrabold text-ink">
           Ce qu'en disent les entreprises
-          <span class="ml-sm text-small font-medium text-ink-muted">4,7/5 · 312 avis Google</span>
+          <span class="md:ml-sm text-small font-medium text-ink-muted"
+            >4,7/5 · 312 avis Google</span
+          >
         </h2>
-        <NuxtLink to="/" class="text-small font-bold text-primary hover:text-ink"
+        <NuxtLink
+          to="/"
+          class="hidden md:block text-small font-bold text-primary transition-colors hover:text-accent-text"
           >Voir tous les avis →</NuxtLink
         >
       </div>
 
-      <div class="mt-2xl grid gap-grid md:grid-cols-3">
+      <div class="mt-lg grid gap-grid md:grid-cols-3">
         <TestimonialCard
           v-for="t in testimonials"
           :key="t.author"
@@ -312,6 +383,14 @@
           :quote="t.quote"
           :author="t.author"
         />
+      </div>
+
+      <div class="flex justify-center mt-lg">
+        <NuxtLink
+          to="/"
+          class="md:hidden text-small font-bold text-primary transition-colors hover:text-accent-text"
+          >Voir tous les avis →</NuxtLink
+        >
       </div>
     </section>
 
@@ -321,13 +400,13 @@
         <div class="flex items-end justify-between">
           <h2 class="font-display text-h2 font-extrabold text-ink">Actualités</h2>
           <NuxtLink
-            to="/"
-            class="whitespace-nowrap text-small font-bold text-primary hover:text-ink"
+            to="/actualites"
+            class="hidden md:block whitespace-nowrap text-small font-bold text-primary transition-colors hover:text-accent-text"
             >Tout le blog →</NuxtLink
           >
         </div>
 
-        <div class="mt-2xl grid gap-grid md:grid-cols-3">
+        <div class="mt-lg grid gap-grid md:grid-cols-3">
           <ArticleCard
             v-for="article in articles"
             :key="article.title"
@@ -338,13 +417,25 @@
             :image-label="article.imageLabel"
           />
         </div>
+
+        <div class="flex justify-center">
+          <NuxtLink
+            to="/actualites"
+            class="mt-lg inline-block text-small font-bold text-primary transition-colors hover:text-accent-text md:hidden"
+          >
+            Tout le blog →
+          </NuxtLink>
+        </div>
       </div>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import type { Centre } from '@learnup/types'
+import { mapCourse, useCatalog } from '~/composables/useCatalog'
+import type { CenterResult } from '~/types/center-result'
 
 useContentSeo(
   {
@@ -398,19 +489,22 @@ const networkCards = [
     title: 'Devenir franchisé',
     subtitle: 'Rejoignez un réseau en pleine croissance',
     body: "Ouvrez votre centre Learn Up Academy avec l'appui de la marque, des outils et du réseau national.",
-    cta: 'Découvrir la franchise →'
+    cta: 'Découvrir la franchise →',
+    to: '/centres/demande-de-formation?sujet=franchise'
   },
   {
     title: 'Organisme partenaire',
     subtitle: 'Référencez vos centres, développez votre activité',
     body: 'Rendez vos sessions visibles et recevez des demandes qualifiées de tout le territoire.',
-    cta: 'Référencer mon organisme →'
+    cta: 'Référencer mon organisme →',
+    to: '/centres/demande-de-formation?sujet=organisme'
   },
   {
     title: 'Formateur indépendant',
     subtitle: 'Intervenez sur les sessions du réseau',
     body: 'Missions en centre, sur site ou en intra, au plus près de chez vous.',
-    cta: 'Devenir formateur partenaire →'
+    cta: 'Devenir formateur partenaire →',
+    to: '/centres/demande-de-formation?sujet=formateur'
   }
 ]
 
@@ -441,43 +535,70 @@ const steps = [
   }
 ]
 
-const formations = [
-  {
-    title: "CACES & conduite d'engins",
-    imageTop: 'Photo à fournir',
-    imageBottom: 'cariste en manœuvre'
-  },
-  {
-    title: 'Habilitations électriques',
-    imageTop: 'Photo à fournir',
-    imageBottom: 'intervention armoire électrique'
-  },
-  {
-    title: 'Santé, secours & incendie',
-    imageTop: 'Photo à fournir',
-    imageBottom: 'exercice SST / incendie'
-  },
-  {
-    title: 'Travaux en hauteur',
-    imageTop: 'Photo à fournir',
-    imageBottom: 'harnais & travaux en hauteur'
-  }
-]
+// 4 dernières formations du catalogue (API) — la fiche n'est cliquable
+// que si la formation a une famille (slug d'URL complet requis).
+const { data: catalogue } = await useCatalog({ limit: 4, sort: 'updatedAt', order: 'desc' })
+const dernieresFormations = computed(() =>
+  (catalogue.value?.items ?? []).slice(0, 4).map((c) => mapCourse(c))
+)
 
-const centres = [
-  {
-    name: 'Centre de Créteil',
-    distance: 'à 6 km',
-    formations: 'CACES · Habilitations électriques · SST',
-    tags: ['Sessions cette semaine', 'Intra sur site']
-  },
-  {
-    name: 'Centre de Villeneuve-le-Roi',
-    distance: 'à 14 km',
-    formations: 'Travaux en hauteur · Échafaudages · PEMP',
-    tags: ['▲ Prochaine session le 14/09']
-  }
-]
+// 2 derniers centres publiés (Directus) — colonne droite de la section réseau.
+const derniersCentresData = await useDirectusList<Centre>('centres', 'home-centres', {
+  fields: [
+    'slug',
+    'name',
+    'address',
+    'postal_code',
+    'city',
+    'department',
+    'region',
+    'specialties',
+    'latitude',
+    'longitude'
+  ],
+  filter: { status: { _eq: 'published' } },
+  sort: ['-id'],
+  limit: -1
+})
+const derniersCentres = computed(() => (derniersCentresData.value ?? []).slice(0, 2))
+
+const homeMapCenters = computed<CenterResult[]>(() =>
+  (derniersCentresData.value ?? []).map((centre) => {
+    const location = [centre.address, centre.postal_code, centre.city, centre.department]
+      .filter(Boolean)
+      .join(', ')
+    const tags = (centre.specialties ?? []).join(' · ')
+    return {
+      id: centre.slug,
+      name: centre.name,
+      cp: centre.postal_code ?? '',
+      address: location,
+      tags,
+      tagsShort: tags,
+      lat: centre.latitude ?? undefined,
+      lng: centre.longitude ?? undefined
+    }
+  })
+)
+
+function centreDistance(centre: Centre): string {
+  return [centre.city, centre.department].filter(Boolean).join(' · ')
+}
+
+function centreFormations(centre: Centre): string {
+  return centre.specialties?.length ? centre.specialties.join(' · ') : 'Catalogue complet'
+}
+
+function centreTags(centre: Centre): string[] {
+  return centre.region ? [centre.region] : []
+}
+
+// Soumission de la recherche réseau : la requête part en query `q` et la
+// page /centres l'applique automatiquement via route.query.q.
+function onMapSearch(value: string) {
+  const q = value.trim()
+  navigateTo({ path: '/centres', query: q ? { q } : {} })
+}
 
 const confierCards = [
   {

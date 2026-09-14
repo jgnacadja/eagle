@@ -5,7 +5,9 @@
     :class="
       cn(
         'flex h-control-sm w-control-sm cursor-pointer items-center justify-center rounded-full text-small font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50',
-        isActive ? 'bg-primary text-paper' : 'text-ink-body hover:bg-surface',
+        isActive
+          ? 'bg-primary text-paper'
+          : 'text-ink-body transition-colors hover:text-accent-text',
         props.class
       )
     "

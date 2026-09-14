@@ -23,7 +23,7 @@
           <span class="text-accent-text">orchestrés</span> de bout en bout.
         </h1>
 
-        <p class="mt-md font-sans text-body md:text-base font-semibold text-ink">
+        <p class="mt-md font-sans text-body md:text-lead font-semibold text-ink">
           La bonne formation. Au bon endroit. Au bon moment.
         </p>
 
@@ -39,7 +39,7 @@
           </SearchInput>
         </form>
 
-        <p class="mx-auto mt-5 max-w-5xl text-small md:text-sm md:whitespace-nowrap">
+        <p class="mx-auto mt-lg max-w-container text-small md:whitespace-nowrap">
           <span class="font-bold text-ink">LEARN UP</span
           ><span class="font-medium text-ink-body"
             >, organisme de formation et de recommandation, vous accompagne pour identifier et
@@ -49,7 +49,7 @@
 
         <NuxtLink
           to="/centres/demande-de-formation"
-          class="mt-2.5 inline-block text-sm font-bold text-primary transition-colors hover:text-accent-text"
+          class="mt-sm inline-block text-small font-bold text-primary transition-colors hover:text-accent-text"
         >
           Confier ma formation →
         </NuxtLink>
@@ -90,7 +90,7 @@
         Construisons ensemble le réseau Learn Up Academy
       </h2>
       <p
-        class="mx-auto mt-sm max-w-prose text-center font-sans text-sm md:text-lead text-ink-muted"
+        class="mx-auto mt-sm max-w-prose text-center font-sans text-small md:text-lead text-ink-muted"
       >
         Rejoignez un réseau national dédié aux formations réglementaires et participez à son
         développement partout en France.
@@ -205,7 +205,7 @@
           <h2 class="font-display text-h3 md:text-h2 font-extrabold text-ink">
             Le réseau Learn Up Academy
           </h2>
-          <p class="mt-sm max-w-prose font-sans text-sm text-ink-muted">
+          <p class="mt-sm max-w-prose font-sans text-small text-ink-muted">
             <span class="font-bold text-primary">+400 centres partenaires</span>
             dans
             <span class="font-bold text-primary">96 départements</span>
@@ -395,7 +395,7 @@
     </section>
 
     <!-- News -->
-    <section id="actualites" class="bg-surface py-section">
+    <section v-if="articles.length" id="actualites" class="bg-surface py-section">
       <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter">
         <div class="flex items-end justify-between">
           <h2 class="font-display text-h2 font-extrabold text-ink">Actualités</h2>
@@ -409,12 +409,13 @@
         <div class="mt-lg grid gap-grid md:grid-cols-3">
           <ArticleCard
             v-for="article in articles"
-            :key="article.title"
-            :category="article.category"
+            :key="article.slug"
+            :category="article.category ?? 'Actualité'"
             :title="article.title"
-            :date="article.date"
-            :excerpt="article.excerpt"
-            :image-label="article.imageLabel"
+            :date="formatArticleDate(article.publish_at)"
+            :excerpt="article.excerpt ?? ''"
+            :image-url="assetUrl(article.cover_image) ?? undefined"
+            :to="`/actualites/${article.slug}`"
           />
         </div>
 
@@ -433,9 +434,16 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { Centre } from '@learnup/types'
+import type { Article, Centre } from '@learnup/types'
 import { mapCourse, useCatalog } from '~/composables/useCatalog'
 import type { CenterResult } from '~/types/center-result'
+import { articleAssetUrl, formatArticleDate } from '~/utils/article'
+
+const config = useRuntimeConfig()
+
+function assetUrl(id: string | null): string | null {
+  return articleAssetUrl(id, config.public.apiBase)
+}
 
 useContentSeo(
   {
@@ -650,28 +658,12 @@ const testimonials = [
   }
 ]
 
-const articles = [
-  {
-    category: 'Réglementation',
-    title: 'Recyclage CACES : les échéances 2026 à anticiper',
-    date: '28 août 2026 · 4 min',
-    excerpt:
-      'Calendrier de recyclage et points de vigilance pour garder vos équipes en conformité.',
-    imageLabel: 'Visuel article à fournir'
-  },
-  {
-    category: 'Conformité',
-    title: 'Habilitations électriques : quelles obligations pour vos sous-traitants ?',
-    date: '21 août 2026 · 6 min',
-    excerpt: 'Ce que dit la norme NF C18-510 et comment organiser le suivi des habilitations.',
-    imageLabel: 'Visuel article à fournir'
-  },
-  {
-    category: 'Financement',
-    title: 'OPCO : optimiser la prise en charge de votre plan de formation',
-    date: '12 août 2026 · 5 min',
-    excerpt: 'Les leviers de financement mobilisables et les délais à respecter.',
-    imageLabel: 'Visuel article à fournir'
-  }
-]
+const homeArticlesData = await useDirectusList<Article>('articles', 'home-actualites-list', {
+  fields: ['id', 'status', 'slug', 'title', 'excerpt', 'category', 'publish_at', 'cover_image'],
+  filter: { status: { _eq: 'published' } },
+  sort: ['-publish_at'],
+  limit: 3
+})
+
+const articles = computed(() => (homeArticlesData.value ?? []).slice(0, 3))
 </script>

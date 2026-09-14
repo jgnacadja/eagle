@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '@learnup/ui/tokens.css';
+@import './post.css';
 
 @theme inline {
   /* Points de rupture */
@@ -228,4 +229,13 @@
   100% {
     transform: translateX(-50%);
   }
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }

@@ -63,7 +63,9 @@ export default defineNuxtConfig({
     '/formations': { isr: { expiration: 600, passQuery: true } },
     '/formations/**': { isr: { expiration: 600, passQuery: true } },
     '/centres': { isr: { expiration: 600, passQuery: true } },
-    '/centres/**': { isr: { expiration: 600, passQuery: true } }
+    '/centres/**': { isr: { expiration: 600, passQuery: true } },
+    '/actualites': { isr: { expiration: 600, passQuery: true } },
+    '/actualites/**': { isr: { expiration: 600, passQuery: true } }
   },
   runtimeConfig: {
     apiBase,

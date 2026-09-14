@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, ref, Suspense, watchEffect } from 'vue'
+import type { Article, Course } from '@learnup/types'
 import LoadError from '~/components/ErrorState/LoadError.vue'
 import NotFound from '~/components/ErrorState/NotFound.vue'
 import ArticlePage from '~/pages/actualites/[slug].vue'
@@ -20,14 +21,78 @@ interface RouteMock {
 let routeMock: RouteMock
 let forceError: Error | null = null
 
+const articleFixture: Article = {
+  id: 1,
+  status: 'published',
+  slug: 'recyclage-caces-echeances-2027',
+  title: 'Recyclage CACES : échéance en 2027',
+  excerpt: 'Les échéances de recyclage se rapprochent.',
+  content:
+    '<h2>Pourquoi 2027 concentre les échéances</h2><p>À retenir : 3 à 6 mois avant l’échéance.</p><h2>Comment étaler les recyclages</h2><p>CACES R489 — Autorisation de conduite</p>',
+  category: 'Réglementation & obligations',
+  author_name: 'Équipe réglementation LEARN UP ACADEMY',
+  author_image: null,
+  region: null,
+  related_formation_slug: 'caces-r489-chariots-elevateurs',
+  publish_at: '2026-09-02T00:00:00.000Z',
+  centre: null,
+  cover_image: null,
+  seo_title: 'Recyclage CACES | LEARN UP ACADEMY',
+  seo_description: 'Les échéances de recyclage CACES à anticiper.',
+  seo_canonical: 'https://learnup.fr/actualites/recyclage-caces-echeances-2027'
+}
+
+const relatedCourse = {
+  id: 2,
+  slug: 'caces-r489-chariots-elevateurs',
+  title: 'Recyclage CACES R489 — toutes catégories',
+  description: null,
+  durationDays: 3,
+  durationHours: 21,
+  price: null,
+  cpf: false,
+  cpfCode: null,
+  certification: 'Certification CACES',
+  certifierName: null,
+  category: null,
+  familySlug: 'caces-conduite-engins',
+  centerSlug: null,
+  centerSlugs: [],
+  modalities: [],
+  sessions: null,
+  imageUrl: null,
+  generatedProgramUrl: null,
+  status: 'published',
+  seoTitle: null,
+  seoDescription: null,
+  seoCanonical: null,
+  blocks: null,
+  targets: null,
+  prerequisites: null,
+  evaluation: null,
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z'
+} satisfies Course
+
+const directusRequestMock = vi.fn()
+const fetchMock = vi.fn()
+type DirectusCommand = () => { path: string }
+
 vi.stubGlobal('computed', computed)
 vi.stubGlobal('ref', ref)
 vi.stubGlobal('watchEffect', watchEffect)
 vi.stubGlobal('definePageMeta', vi.fn())
 vi.stubGlobal('useRoute', () => routeMock)
-vi.stubGlobal('useAsyncData', async (_key: string, handler: () => Promise<unknown>) => {
-  if (forceError) {
-    return { data: ref(null), error: ref(forceError), refresh: refreshMock }
+vi.stubGlobal('useAsyncData', async (key: string, handler: () => Promise<unknown>) => {
+  if (
+    forceError ||
+    (routeMock?.query.error === '1' && key === `article-${routeMock.params.slug}`)
+  ) {
+    return {
+      data: ref(null),
+      error: ref(forceError ?? new Error('down')),
+      refresh: refreshMock
+    }
   }
   try {
     return { data: ref(await handler()), error: ref(null), refresh: refreshMock }
@@ -39,11 +104,22 @@ vi.stubGlobal('useRequestEvent', () => undefined)
 vi.stubGlobal('setResponseStatus', setResponseStatusMock)
 vi.stubGlobal('useContentSeo', seoMock)
 vi.stubGlobal('navigateTo', navigateToMock)
+vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
+vi.stubGlobal('useDirectusClient', () => ({ request: directusRequestMock }))
+vi.stubGlobal('useDirectusList', () =>
+  ref([{ slug: 'aipr-qui-former', title: 'AIPR : qui former ?' }])
+)
+vi.stubGlobal('$fetch', fetchMock)
 
 const stubs = {
   NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
+  NuxtImg: { props: ['src', 'alt'], template: '<img :src="src" :alt="alt" />' },
   Button: { template: '<button><slot /></button>' },
   Card: { template: '<div><slot /></div>' },
+  CenterFormationCard: {
+    props: ['title', 'to'],
+    template: '<div><a v-if="to" :href="to">{{ title }}</a></div>'
+  },
   SearchInput: {
     props: ['modelValue'],
     emits: ['update:modelValue', 'submit'],
@@ -78,6 +154,17 @@ describe('pages/actualites/[slug]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     forceError = null
+    directusRequestMock.mockImplementation(async (command: DirectusCommand) => {
+      const { path } = command()
+      if (path === '/items/articles') {
+        return routeMock.params.slug === 'inconnu' ? [] : [articleFixture]
+      }
+      if (path === '/items/formations') {
+        return [{ slug: relatedCourse.slug, famille: { slug: relatedCourse.familySlug } }]
+      }
+      return []
+    })
+    fetchMock.mockResolvedValue(relatedCourse)
     routeMock = {
       params: { slug: 'recyclage-caces-echeances-2027' },
       query: {},
@@ -90,8 +177,8 @@ describe('pages/actualites/[slug]', () => {
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain('Réglementation & obligations')
-    expect(wrapper.text()).toContain('2 sept. 2026')
-    expect(wrapper.text()).toContain('4 min')
+    expect(wrapper.text()).toContain('02 septembre 2026')
+    expect(wrapper.text()).toContain('1 min')
     expect(wrapper.text()).toContain('Recyclage CACES')
     expect(wrapper.text()).toContain('échéance en 2027')
   })
@@ -100,7 +187,7 @@ describe('pages/actualites/[slug]', () => {
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain('Équipe réglementation LEARN UP ACADEMY')
-    expect(wrapper.text()).toContain('Publié le 2 sept. 2026')
+    expect(wrapper.text()).toContain('Publié le 02 septembre 2026')
     const labels = wrapper.findAll('button').map((b) => b.attributes('aria-label'))
     expect(labels).toContain("Partager l'article")
     expect(labels).toContain("Copier le lien de l'article")
@@ -139,8 +226,8 @@ describe('pages/actualites/[slug]', () => {
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain('Dans cet article')
-    expect(wrapper.find('a[href="#pourquoi"]').exists()).toBe(true)
-    expect(wrapper.find('a[href="#etaler"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="#pourquoi-2027-concentre-les-echeances"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="#comment-etaler-les-recyclages"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('À lire ensuite')
     expect(wrapper.find('a[href="/actualites/aipr-qui-former"]').exists()).toBe(true)
   })
@@ -161,7 +248,11 @@ describe('pages/actualites/[slug]', () => {
 
     const [source, fallback] = seoArgs()
     expect(source).toEqual(
-      expect.objectContaining({ seo_title: expect.stringContaining('Recyclage CACES') })
+      expect.objectContaining({
+        seo_title: 'Recyclage CACES | LEARN UP ACADEMY',
+        seo_description: 'Les échéances de recyclage CACES à anticiper.',
+        seo_canonical: 'https://learnup.fr/actualites/recyclage-caces-echeances-2027'
+      })
     )
     expect(fallback).toEqual(expect.stringContaining('Recyclage CACES'))
   })

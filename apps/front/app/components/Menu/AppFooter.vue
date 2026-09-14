@@ -124,27 +124,26 @@
       <div
         class="mt-2xl flex flex-wrap items-center gap-x-lg gap-y-sm border-t border-outline-inverse pt-lg text-small text-ink-inverse-muted"
       >
-        <p class="text-small">© {{ year }} LEARN UP ACADEMY</p>
+        <p class="text-ink-inverse-muted">© {{ year }} LEARN UP ACADEMY</p>
         <NuxtLink
-          to="/"
-          class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
-          >Mentions légales</NuxtLink
+          v-for="link in footerLegalLinks"
+          :key="link.slug"
+          :to="`/${link.slug}`"
+          class="text-ink-inverse-muted hover:text-ink-inverse"
         >
-        <NuxtLink
-          to="/"
-          class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
-          >Confidentialité</NuxtLink
-        >
-        <NuxtLink
-          to="/"
-          class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
-          >Accessibilité — RGAA AA</NuxtLink
-        >
+          {{ link.label }}
+        </NuxtLink>
       </div>
     </div>
   </footer>
 </template>
 
 <script setup lang="ts">
+import { legalLiens } from '~/data/navigation'
+
 const year = new Date().getFullYear()
+
+const footerLegalLinks = legalLiens.filter((link) =>
+  ['mentions-legales', 'confidentialite', 'accessibilite'].includes(link.slug)
+)
 </script>

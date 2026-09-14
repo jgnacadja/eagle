@@ -35,7 +35,10 @@ export default defineNuxtConfig({
     prefix: '',
     componentDir: '@/components/ui'
   },
-  components: [{ path: '~/components', pathPrefix: false }],
+  components: [
+    { path: '~/components/Legal', prefix: 'Legal' },
+    { path: '~/components', pathPrefix: false, pattern: ['**/*.vue', '!Legal/**/*.vue'] }
+  ],
   nitro: {
     externals: {
       // Bundler plutôt que tracer dans node_modules : le runtime Vercel

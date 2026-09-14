@@ -9,5 +9,6 @@
          réinitialisé). -->
       <NuxtPage :page-key="(route) => route.path" />
     </NuxtLayout>
+    <AssistantChat />
   </MotionConfig>
 </template>

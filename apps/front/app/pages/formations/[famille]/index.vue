@@ -161,6 +161,9 @@
           </div>
         </div>
 
+        <!-- C3 — porte de sortie « Être guidé » sous les filtres -->
+        <AssistantGuidedCard class="mt-lg" @open="openAssistant" />
+
         <!-- État vide -->
         <div
           v-if="!catalog.pending.value && !catalog.error.value && formations.length === 0"
@@ -272,10 +275,10 @@
           text="Décrivez vos engins et votre site : LEARN UP identifie les recommandations et catégories applicables."
         >
           <Button
-            as-child
             class="h-control w-full rounded-full bg-accent px-lg text-small font-semibold text-ink transition hover:bg-accent-text hover:text-paper sm:w-auto"
+            @click="openAssistant"
           >
-            <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
+            Être guidé dans mon choix
           </Button>
           <Button
             as-child
@@ -308,12 +311,12 @@
       title="Cette famille de formations n'est pas disponible."
       primary-to="/formations"
       primary-label="Voir le catalogue"
-      secondary-to="#"
       secondary-label="Être guidé dans mon choix"
       search-placeholder="Intitulé, compétence ou certification"
       search-label="Rechercher une formation"
       search-input-id="famille-search"
       @search="onErrorSearch"
+      @secondary="openAssistant"
     >
       <template #icon>
         <IconFileOff :size="32" class="text-ink" />
@@ -335,6 +338,7 @@ import {
   type FormationItem
 } from '~/composables/useCatalog'
 import { useDirectusClient } from '~/composables/useDirectus'
+import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { MODALITY_LABELS, MODALITY_OPTIONS } from '~/utils/catalog-filters'
 import { directusAssetUrl } from '~/utils/directusAsset'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
@@ -612,6 +616,23 @@ const familySessionBadge = computed(() => {
   }
   return null
 })
+
+// C3 — porte de sortie « Être guidé » : famille consultée + filtres actifs
+// transmis au panneau de recherche assistée.
+const assistant = useAssistantLauncher()
+function openAssistant() {
+  const filters: string[] = []
+  if (selectedSubFamily.value !== 'all') filters.push(subFamilyFilterLabel.value)
+  if (selectedModality.value !== 'all') filters.push(modalityFilterLabel.value)
+  if (selectedLocation.value !== 'all') filters.push(locationFilterLabel.value)
+  assistant.open({
+    context: {
+      source: 'catalogue',
+      familleSlug: famille,
+      filters: filters.length ? filters : undefined
+    }
+  })
+}
 
 function resetPage() {
   // Le watch de catalogQuery relance déjà la requête quand la page ou les

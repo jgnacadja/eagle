@@ -319,7 +319,7 @@ function buildSearchText(course: CourseListItem, locationsText: string | null | 
  * rattachée (`centreSlug`), sinon la localisation Digiforma de la session.
  * `latitude`/`longitude` viennent du géocodage BAN du centre.
  */
-interface ResolvedSessionLocation extends CourseSessionLocation {
+export interface ResolvedSessionLocation extends CourseSessionLocation {
   address: string | null
   latitude: number | null
   longitude: number | null
@@ -350,7 +350,7 @@ function resolveSessionLocation(
   return { ...loc, address: null, latitude: null, longitude: null }
 }
 
-interface CatalogRow {
+export interface CatalogRow {
   course: CourseListItem
   updatedAt: string
   searchText: string
@@ -730,6 +730,16 @@ export class CatalogService {
       await this.cache.set(cacheKey, result)
     }
     return result
+  }
+
+  /**
+   * Toutes les formations publiées avec leurs localisations résolues —
+   * utilisé par la recherche assistée pour construire le digest catalogue
+   * envoyé au modèle (les recommandations sont ensuite re-résolues ici,
+   * jamais reprises telles quelles de la sortie LLM).
+   */
+  async allCourses(): Promise<CatalogRow[]> {
+    return this.getCatalogRows()
   }
 
   async applyFamilies(): Promise<FamilyApplyResult> {

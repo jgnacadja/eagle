@@ -386,7 +386,7 @@
                       variant="outline"
                       class="h-control w-full rounded-full border-outline bg-paper px-md py-sm text-button font-semibold text-ink transition hover:border-primary hover:bg-paper hover:text-accent-text"
                     >
-                      <NuxtLink to="#">Parler à un conseiller</NuxtLink>
+                      <NuxtLink :to="advisorTo">Parler à un conseiller</NuxtLink>
                     </Button>
                   </div>
                   <p class="mt-sm text-meta leading-relaxed text-ink-subtle">
@@ -396,6 +396,25 @@
                 </CardContent>
               </Card>
             </section>
+
+            <!-- C4 — doute sur la pertinence : porte de sortie vers le moteur -->
+            <Card class="p-lg">
+              <h2 class="font-sans text-h4 font-semibold text-ink">
+                Cette formation ne correspond pas exactement à votre besoin ?
+              </h2>
+              <p class="mt-sm text-small text-ink-muted">
+                Le moteur peut rechercher une alternative dans le catalogue à partir de votre
+                situation.
+              </p>
+              <Button
+                variant="link"
+                class="mt-md inline-flex h-auto items-center gap-sm p-0 text-small font-semibold text-primary underline underline-offset-2 hover:text-accent-text"
+                @click="openAssistant"
+              >
+                <IconSparkle :size="14" class="text-accent" aria-hidden="true" />
+                Décrire mon besoin
+              </Button>
+            </Card>
 
             <!-- Certification -->
             <section v-if="course.certification" aria-labelledby="certification-title">
@@ -463,17 +482,17 @@
             text="Décrivez votre besoin : LEARN UP identifie la formation, la catégorie et le format adaptés à votre situation."
           >
             <Button
-              as-child
               class="h-control w-full rounded-md bg-paper px-md py-sm text-button font-semibold text-ink transition hover:bg-surface hover:text-accent-text sm:w-auto"
+              @click="openAssistant"
             >
-              <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
+              Être guidé dans mon choix
             </Button>
             <Button
               as-child
               variant="outline"
               class="h-control w-full rounded-md border-outline-inverse bg-transparent px-md py-sm text-button font-semibold text-ink-inverse transition hover:bg-transparent hover:text-ink-inverse sm:w-auto"
             >
-              <NuxtLink to="#">Parler à un conseiller</NuxtLink>
+              <NuxtLink :to="advisorTo">Parler à un conseiller</NuxtLink>
             </Button>
           </CtaBanner>
 
@@ -545,12 +564,12 @@
       title="Cette formation n'est pas disponible."
       primary-to="/formations"
       primary-label="Voir le catalogue"
-      secondary-to="#"
       secondary-label="Être guidé dans mon choix"
       search-placeholder="Intitulé, compétence ou certification"
       search-label="Rechercher une formation"
       search-input-id="formation-search"
       @search="onErrorSearch"
+      @secondary="openAssistant"
     >
       <template #icon>
         <IconFileOff :size="32" class="text-ink" />
@@ -581,6 +600,7 @@ import { sanitizeHtml } from '~/utils/sanitizeHtml'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
 import { availabilityStatus } from '~/composables/useCentres'
+import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 
 interface ProgrammeModule {
   title: string
@@ -944,6 +964,13 @@ function pedagogyIcon(title: string) {
 // Params encodés : famille/slug/id de session peuvent contenir des
 // caractères spéciaux — ne jamais les interpoler bruts dans la query.
 const demandeTo = `/centres/demande-de-formation?famille=${encodeURIComponent(famille)}&formation=${encodeURIComponent(slug)}`
+
+// C4 — la fiche d'origine est transmise au panneau : il cherche une alternative.
+const assistant = useAssistantLauncher()
+function openAssistant() {
+  assistant.open({ context: { source: 'formation', formationSlug: slug } })
+}
+const advisorTo = '/centres/demande-de-formation?sujet=conseiller'
 
 // Titre de session par modalité (label déjà traduit via MODALITY_LABELS).
 const SESSION_TITLES: Record<string, string> = {

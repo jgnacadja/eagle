@@ -1,5 +1,5 @@
 import { config } from '@vue/test-utils'
-import { type Component } from 'vue'
+import { ref, type Component } from 'vue'
 
 function registerByName(modules: Record<string, unknown>) {
   for (const [path, component] of Object.entries(modules)) {
@@ -37,6 +37,14 @@ config.global.stubs = {
 // exister en environnement de test.
 vi.stubGlobal('internalSsrHeaders', () => undefined)
 
+// useState (auto-import Nuxt) : store ref partagé par clé, nécessaire aux
+// composables d'état global (ex : useAssistantLauncher).
+const nuxtState = new Map<string, unknown>()
+vi.stubGlobal('useState', (key: string, init: () => unknown) => {
+  if (!nuxtState.has(key)) nuxtState.set(key, ref(init()))
+  return nuxtState.get(key)
+})
+
 // Directives motion-v (enregistrées par le module Nuxt, absentes ici) et
 // utilitaires de reveal utilisés dans les templates.
 config.global.directives = {
@@ -47,8 +55,14 @@ config.global.directives = {
 
 // happy-dom n'expose pas IntersectionObserver (requis par motion-v/inView).
 class IntersectionObserverStub {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe() {
+    // no-op : stub de test
+  }
+  unobserve() {
+    // no-op : stub de test
+  }
+  disconnect() {
+    // no-op : stub de test
+  }
 }
 vi.stubGlobal('IntersectionObserver', IntersectionObserverStub)

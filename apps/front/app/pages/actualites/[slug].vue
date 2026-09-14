@@ -94,6 +94,23 @@
                 :status="relatedFormationCard.status"
                 :to="relatedFormationCard.to ?? undefined"
               />
+
+              <!-- C6 — fin d'article : le thème éditorial est transmis au moteur -->
+              <div class="rounded-md border-t-4 border-accent bg-paper p-lg shadow-sm">
+                <h2 class="font-sans text-h4 font-bold text-ink">
+                  Un besoin de formation sur ce sujet ?
+                </h2>
+                <p class="mt-sm text-small text-ink-muted">
+                  Décrivez votre situation&nbsp;: le moteur recherche les formations correspondantes
+                  du catalogue.
+                </p>
+                <Button
+                  class="mt-md h-control rounded-full bg-accent px-lg text-small font-semibold text-ink hover:bg-accent-text hover:text-paper"
+                  @click="openAssistant"
+                >
+                  Décrire mon besoin
+                </Button>
+              </div>
             </div>
           </article>
 
@@ -232,6 +249,7 @@
 import { readItems } from '@directus/sdk'
 import type { Article, Course } from '@learnup/types'
 import { mapCourse, type FormationItem } from '~/composables/useCatalog'
+import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { articleAssetUrl, articleReadingTime, formatArticleDate } from '~/utils/article'
 import { sanitizeHtmlWithHeadings } from '~/utils/sanitizeHtml'
 
@@ -297,6 +315,18 @@ const {
 const article = computed(() => {
   return articleData.value
 })
+
+// C6 — le thème de l'article est transmis au panneau comme contexte éditorial.
+const assistant = useAssistantLauncher()
+function openAssistant() {
+  assistant.open({
+    context: {
+      source: 'editorial',
+      theme: article.value?.category ?? article.value?.title ?? undefined,
+      formationSlug: article.value?.related_formation_slug ?? undefined
+    }
+  })
+}
 
 interface RelatedFormationFamily {
   slug: string

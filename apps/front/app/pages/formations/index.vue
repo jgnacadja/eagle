@@ -31,11 +31,7 @@
             :loading="catalog.pending.value"
             class="w-full"
             @submit="triggerSearch"
-          >
-            <template #icon>
-              <IconSparkle :size="18" class="shrink-0 text-accent" />
-            </template>
-          </SearchInput>
+          />
         </form>
 
         <!-- Barre mobile : filtrer + tri -->
@@ -124,6 +120,8 @@
             location-input-id="loc-desktop"
             @update:location="location = $event ?? ''"
           />
+          <!-- C3 — porte de sortie « Être guidé » visible pendant le filtrage -->
+          <AssistantGuidedCard class="mt-xl" @open="openAssistant" />
         </aside>
 
         <!-- Résultats -->
@@ -225,17 +223,19 @@
             </p>
             <div class="mt-lg flex flex-wrap justify-center gap-md">
               <Button
-                as-child
                 class="h-control rounded-full bg-primary px-lg text-small font-semibold text-paper hover:bg-primary-dark"
+                @click="openAssistant"
               >
-                <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
+                Être guidé dans mon choix
               </Button>
               <Button
                 as-child
                 variant="outline"
                 class="h-control rounded-full border-outline px-lg text-small font-semibold text-ink-body hover:bg-surface hover:text-accent-text"
               >
-                <NuxtLink to="#">Parler à un conseiller</NuxtLink>
+                <NuxtLink to="/centres/demande-de-formation?sujet=conseiller"
+                  >Parler à un conseiller</NuxtLink
+                >
               </Button>
             </div>
             <div class="mt-lg flex gap-lg text-small font-semibold">
@@ -332,6 +332,9 @@
           >
             Afficher plus de résultats
           </button>
+
+          <!-- Porte de sortie « Être guidé » — mobile (la sidebar est masquée) -->
+          <AssistantGuidedCard class="mt-2xl lg:hidden" @open="openAssistant" />
         </div>
       </div>
 
@@ -342,17 +345,19 @@
         text="Décrivez votre besoin : LEARN UP identifie la formation, le format et le lieu adaptés à votre situation."
       >
         <Button
-          as-child
           class="h-control w-full rounded-full bg-accent px-lg text-small font-semibold text-ink transition hover:bg-accent-text hover:text-paper sm:w-auto"
+          @click="openAssistant"
         >
-          <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
+          Être guidé dans mon choix
         </Button>
         <Button
           as-child
           variant="outline"
           class="h-control w-full rounded-full border-outline-inverse bg-transparent px-lg text-small font-semibold text-ink-inverse transition hover:bg-transparent hover:text-ink-inverse sm:w-auto"
         >
-          <NuxtLink to="#">Parler à un conseiller</NuxtLink>
+          <NuxtLink to="/centres/demande-de-formation?sujet=conseiller"
+            >Parler à un conseiller</NuxtLink
+          >
         </Button>
       </CtaBanner>
     </section>
@@ -443,6 +448,7 @@ import {
   MODALITY_OPTIONS
 } from '~/utils/catalog-filters'
 import { useDirectusClient } from '~/composables/useDirectus'
+import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { revealStagger } from '~/utils/reveal'
 import { readItems } from '@directus/sdk'
 
@@ -503,6 +509,23 @@ const sortOptions: SortOption[] = [
   { value: 'duree', label: 'Durée' }
 ]
 const sortLabel = computed(() => sortOptions.find((o) => o.value === sortBy.value)?.label ?? '')
+
+// C3 — porte de sortie vers le moteur : la recherche en cours est envoyée
+// comme premier message du panneau, la famille et les filtres actifs en
+// contexte (pas de ressaisie).
+const assistant = useAssistantLauncher()
+function openAssistant() {
+  const q = searchQuery.value.trim()
+  const filters = activeFilters.value.map((f) => f.label)
+  assistant.open({
+    context: {
+      source: 'catalogue',
+      familleSlug: selectedFamilies.value.length === 1 ? selectedFamilies.value[0] : undefined,
+      filters: filters.length ? filters : undefined
+    },
+    message: q || undefined
+  })
+}
 
 // Sync from URL
 function parseListParam(value: unknown): string[] {

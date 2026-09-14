@@ -97,6 +97,9 @@ importers:
       '@nestjs/throttler':
         specifier: ^6.5.0
         version: 6.5.0(@nestjs/common@11.1.27(class-transformer@0.5.1)(class-validator@0.15.1)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.27)(reflect-metadata@0.2.2)
+      ai:
+        specifier: ^7.0.100
+        version: 7.0.100(zod@4.6.5)
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -118,6 +121,9 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
+      zod:
+        specifier: ^4.6.5
+        version: 4.6.5
     devDependencies:
       '@nestjs/cli':
         specifier: ^11.0.0
@@ -167,6 +173,9 @@ importers:
 
   apps/front:
     dependencies:
+      '@ai-sdk/vue':
+        specifier: 4.0.100
+        version: 4.0.100(vue@3.5.41(typescript@5.9.3))(zod@4.6.5)
       '@directus/sdk':
         specifier: ^25.0.0
         version: 25.0.0
@@ -188,6 +197,9 @@ importers:
       '@vueuse/core':
         specifier: ^14.4.0
         version: 14.4.0(vue@3.5.41(typescript@5.9.3))
+      ai:
+        specifier: 7.0.100
+        version: 7.0.100(zod@4.6.5)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -299,6 +311,40 @@ importers:
         version: 3.2.6(@types/node@22.20.0)(happy-dom@20.11.10)(jiti@2.7.0)(jsdom@30.0.1(@noble/hashes@2.4.0))(lightningcss@1.33.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0)
 
 packages:
+  '@ai-sdk/gateway@4.0.81':
+    resolution:
+      {
+        integrity: sha512-9TdKEg2l/qfaK7L4gC1FkrHNBrEXQjZSV3DvkRLCXkOSJTzojmarCn19ROWBbrlHqFVbW7OSOwQqz1n7ku9HQA==
+      }
+    engines: { node: '>=22' }
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/provider-utils@5.0.40':
+    resolution:
+      {
+        integrity: sha512-zsXPwSAQ9mRJ2hvyITaLOYUyuGrBmzFhJXOg4mllGmla1PfNxZcm4GwqMiV2xQaDgcgBMdUGxXkp9xekZZNIkg==
+      }
+    engines: { node: '>=22' }
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/provider@4.0.14':
+    resolution:
+      {
+        integrity: sha512-yukP2tbcQQErG5gLCMBGvpvb/rM3D3KlTKG6eKKOdNHLHqtNNDEeBxdYrY/JL+O76B2ig5dXY19H/f1HFSvRiQ==
+      }
+    engines: { node: '>=22' }
+
+  '@ai-sdk/vue@4.0.100':
+    resolution:
+      {
+        integrity: sha512-Zd1u84Y2ocnJuz6DiHgPvRswoQRlboRuiG5Nd8xJ1r8dXl/2AIbwAvLviEDoxb1XGEDtDWXMaMsn85M13DLBSA==
+      }
+    engines: { node: '>=22' }
+    peerDependencies:
+      vue: ^3.3.4
+
   '@ampproject/remapping@2.3.0':
     resolution:
       {
@@ -3476,6 +3522,12 @@ packages:
         integrity: sha512-Z92FwKpCtfaW1V0jTU/fh3QzYEZN8wDwrzRIBoADCJfn4mJCNcJN/XegifX7BDrQ8/h9Xh/JnbyMchL0FqXrkg==
       }
 
+  '@standard-schema/spec@1.1.0':
+    resolution:
+      {
+        integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==
+      }
+
   '@swc/core-darwin-arm64@1.15.43':
     resolution:
       {
@@ -4177,6 +4229,13 @@ packages:
     engines: { node: '>=20' }
     hasBin: true
 
+  '@vercel/oidc@3.2.0':
+    resolution:
+      {
+        integrity: sha512-UycprH3T6n3jH0k44NHMa7pnFHGu/N05MjojYr+Mc6I7obkoLIJujSWwin1pCvdy/eOxrI/l3uDLQsmcrOb4ug==
+      }
+    engines: { node: '>= 20' }
+
   '@vitejs/plugin-vue-jsx@5.1.6':
     resolution:
       {
@@ -4525,6 +4584,12 @@ packages:
         integrity: sha512-kPSSXE6De1XOR820C90RIo2ogvZG+c3KiHzqUoO/F34Y2shGzesfqv7o57xrxovZJH/MetF5UjroJ/R/3isoiw==
       }
 
+  '@workflow/serde@4.1.0':
+    resolution:
+      {
+        integrity: sha512-pav4F2BoirECWR7Nf1TKt+2eETcBj7jj4cBefQ8VXQCA6NPkaKeLfj/zMgi+3zYV5ZIBT4GuUiphsj0/b9hPQQ==
+      }
+
   '@xtuc/ieee754@1.2.0':
     resolution:
       {
@@ -4611,6 +4676,15 @@ packages:
         integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==
       }
     engines: { node: '>= 14' }
+
+  ai@7.0.100:
+    resolution:
+      {
+        integrity: sha512-BfIPruxell8aPPW7zL0B2Vs0Pnah3icMQ7zxc/NZHJH7CXSKpeCgUHMwqYmdTdbMhgesxJIdwEgiL97cmoljPQ==
+      }
+    engines: { node: '>=22' }
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
 
   ajv-formats@2.1.1:
     resolution:
@@ -6318,6 +6392,13 @@ packages:
       }
     engines: { node: '>=0.8.x' }
 
+  eventsource-parser@3.1.1:
+    resolution:
+      {
+        integrity: sha512-EKN1vKAMcZ8MlYMpaNuxN6R9yakzH6uajHcHVTqWJzvu5pWw9DyhbP35HH8MVBQ+dZjAfDxk+A8NiR9KWaXiyQ==
+      }
+    engines: { node: '>=18.0.0' }
+
   execa@8.0.1:
     resolution:
       {
@@ -7373,6 +7454,12 @@ packages:
     resolution:
       {
         integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==
+      }
+
+  json-schema@0.4.0:
+    resolution:
+      {
+        integrity: sha512-es94M3nTIfsEPisRafak+HDLfHXnKBhV3vU5eqPcS3flIWqcxJWgXHXiey3YrpaNsanY5ei1VoYEbOzijuq9BA==
       }
 
   json-stable-stringify-without-jsonify@1.0.1:
@@ -9817,6 +9904,14 @@ packages:
         integrity: sha512-75ttZNaYCLoFPnozPZcTUU6mS3wKT8l7WLjU5zJSHFeJa23i5vtnze6IiCl4jDMPeQTXVXIgovq4M11NNfQvSA==
       }
 
+  swrv@1.2.0:
+    resolution:
+      {
+        integrity: sha512-lH/g4UcNyj+7lzK4eRGT4C68Q4EhQ6JtM9otPRIASfhhzfLWtbZPHcMuhuba7S9YVYuxkMUGImwMyGpfbkH07A==
+      }
+    peerDependencies:
+      vue: '>=3.2.26 < 4'
+
   symbol-observable@4.0.0:
     resolution:
       {
@@ -10229,6 +10324,13 @@ packages:
       {
         integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==
       }
+
+  undici@7.29.1:
+    resolution:
+      {
+        integrity: sha512-RYONW2MeafgYlkVOKYKkA/Ag7BmXqgIWCa8t1m0JcxrQg9pI9lEqRhAOruOBCbAohOa/gkCF+iPi9hrgvTzu6Q==
+      }
+    engines: { node: '>=20.18.1' }
 
   undici@8.10.0:
     resolution:
@@ -11085,7 +11187,42 @@ packages:
       }
     engines: { node: '>= 14' }
 
+  zod@4.6.5:
+    resolution:
+      {
+        integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==
+      }
+
 snapshots:
+  '@ai-sdk/gateway@4.0.81(zod@4.6.5)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.14
+      '@ai-sdk/provider-utils': 5.0.40(zod@4.6.5)
+      '@vercel/oidc': 3.2.0
+      zod: 4.6.5
+
+  '@ai-sdk/provider-utils@5.0.40(zod@4.6.5)':
+    dependencies:
+      '@ai-sdk/provider': 4.0.14
+      '@standard-schema/spec': 1.1.0
+      '@workflow/serde': 4.1.0
+      eventsource-parser: 3.1.1
+      undici: 7.29.1
+      zod: 4.6.5
+
+  '@ai-sdk/provider@4.0.14':
+    dependencies:
+      json-schema: 0.4.0
+
+  '@ai-sdk/vue@4.0.100(vue@3.5.41(typescript@5.9.3))(zod@4.6.5)':
+    dependencies:
+      '@ai-sdk/provider-utils': 5.0.40(zod@4.6.5)
+      ai: 7.0.100(zod@4.6.5)
+      swrv: 1.2.0(vue@3.5.41(typescript@5.9.3))
+      vue: 3.5.41(typescript@5.9.3)
+    transitivePeerDependencies:
+      - zod
+
   '@ampproject/remapping@2.3.0':
     dependencies:
       '@jridgewell/gen-mapping': 0.3.13
@@ -13198,6 +13335,8 @@ snapshots:
 
   '@speed-highlight/core@1.2.17': {}
 
+  '@standard-schema/spec@1.1.0': {}
+
   '@swc/core-darwin-arm64@1.15.43':
     optional: true
 
@@ -13639,6 +13778,8 @@ snapshots:
       - rollup
       - supports-color
 
+  '@vercel/oidc@3.2.0': {}
+
   '@vitejs/plugin-vue-jsx@5.1.6(vite@8.2.2(@types/node@22.20.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0))(vue@3.5.41(typescript@5.9.3))':
     dependencies:
       '@babel/core': 7.29.7
@@ -13970,6 +14111,8 @@ snapshots:
       '@webassemblyjs/ast': 1.14.1
       '@xtuc/long': 4.2.2
 
+  '@workflow/serde@4.1.0': {}
+
   '@xtuc/ieee754@1.2.0': {}
 
   '@xtuc/long@4.2.2': {}
@@ -14008,6 +14151,13 @@ snapshots:
   acorn@8.18.0: {}
 
   agent-base@7.1.4: {}
+
+  ai@7.0.100(zod@4.6.5):
+    dependencies:
+      '@ai-sdk/gateway': 4.0.81(zod@4.6.5)
+      '@ai-sdk/provider': 4.0.14
+      '@ai-sdk/provider-utils': 5.0.40(zod@4.6.5)
+      zod: 4.6.5
 
   ajv-formats@2.1.1(ajv@8.20.0):
     optionalDependencies:
@@ -15022,6 +15172,8 @@ snapshots:
 
   events@3.3.0: {}
 
+  eventsource-parser@3.1.1: {}
+
   execa@8.0.1:
     dependencies:
       cross-spawn: 7.0.6
@@ -15676,6 +15828,8 @@ snapshots:
   json-schema-traverse@0.4.1: {}
 
   json-schema-traverse@1.0.0: {}
+
+  json-schema@0.4.0: {}
 
   json-stable-stringify-without-jsonify@1.0.1: {}
 
@@ -17382,6 +17536,10 @@ snapshots:
     dependencies:
       '@scarf/scarf': 1.4.0
 
+  swrv@1.2.0(vue@3.5.41(typescript@5.9.3)):
+    dependencies:
+      vue: 3.5.41(typescript@5.9.3)
+
   symbol-observable@4.0.0: {}
 
   symbol-tree@3.2.4:
@@ -17615,6 +17773,8 @@ snapshots:
       unplugin: 3.3.0(esbuild@0.28.2)(rolldown@1.2.5)(rollup@4.62.2)(vite@8.2.2(@types/node@22.20.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0))(webpack@5.106.2(esbuild@0.28.2)(lightningcss@1.33.0)(postcss@8.5.26))
 
   undici-types@6.21.0: {}
+
+  undici@7.29.1: {}
 
   undici@8.10.0: {}
 
@@ -18308,3 +18468,5 @@ snapshots:
       archiver-utils: 5.0.2
       compress-commons: 6.0.2
       readable-stream: 4.7.0
+
+  zod@4.6.5: {}

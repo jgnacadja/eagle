@@ -5,7 +5,7 @@
         'flex h-control items-center gap-sm rounded-full border bg-paper pl-md pr-sm shadow-sm transition-colors',
         isLoading ? 'border-outline-soft bg-surface-soft' : '',
         hasError ? 'border-danger' : 'border-outline',
-        !isLoading && !hasError ? 'focus-within:ring-2 focus-within:ring-outline' : '',
+        !isLoading && !hasError ? 'focus-within:ring-2 focus-within:ring-accent' : '',
         $attrs.class as string
       ]"
     >
@@ -21,7 +21,7 @@
         :aria-describedby="hasError ? errorId : undefined"
         class="h-auto flex-1 border-0 bg-transparent px-0 text-small text-ink shadow-none placeholder:text-ink-placeholder focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-70"
         @update:model-value="onInput"
-        @keydown.enter="submit"
+        @keydown.enter.prevent="submit"
       />
       <button
         v-if="draft && !isLoading"
@@ -51,7 +51,7 @@
 
     <!-- Erreur de saisie (§40, moteur É9) -->
     <p v-if="hasError" :id="errorId" class="mt-xs text-small font-semibold text-danger">
-      {{ errorMessage }}
+      {{ visibleError }}
     </p>
 
     <!-- Annonce accessible de l'état de chargement (aria-live) -->
@@ -76,6 +76,8 @@ const props = withDefaults(
     type?: string
     loading?: boolean
     errorMessage?: string
+    /** Message affiché (et soumission bloquée) quand le champ est vide. */
+    emptyErrorMessage?: string
   }>(),
   {
     modelValue: '',
@@ -85,7 +87,8 @@ const props = withDefaults(
     loadingLabel: 'Analyse de votre besoin en cours',
     type: 'text',
     loading: false,
-    errorMessage: ''
+    errorMessage: '',
+    emptyErrorMessage: ''
   }
 )
 
@@ -97,10 +100,12 @@ const emit = defineEmits<{
 }>()
 
 const draft = ref(props.modelValue ?? '')
+const localError = ref('')
 const errorId = `${props.inputId}-error`
 
 const isLoading = computed(() => props.loading)
-const hasError = computed(() => !!props.errorMessage)
+const visibleError = computed(() => props.errorMessage || localError.value)
+const hasError = computed(() => !!visibleError.value)
 
 watch(
   () => props.modelValue,
@@ -110,11 +115,16 @@ watch(
 )
 
 function onInput(value: string | number) {
+  localError.value = ''
   draft.value = String(value)
 }
 
 function submit() {
   if (isLoading.value) return
+  if (!draft.value.trim() && props.emptyErrorMessage) {
+    localError.value = props.emptyErrorMessage
+    return
+  }
   emit('update:modelValue', draft.value)
   emit('submit', draft.value)
 }

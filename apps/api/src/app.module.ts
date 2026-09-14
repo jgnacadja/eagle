@@ -12,6 +12,7 @@ import { CatalogModule } from './catalog/catalog.module'
 import { CentresModule } from './centres/centres.module'
 import { CacheModule } from './common/cache/cache.module'
 import { DirectusModule } from './directus/directus.module'
+import { AssistantModule } from './assistant/assistant.module'
 
 function isAdminRoute(context: ExecutionContext): boolean {
   const request = context.switchToHttp().getRequest<{ originalUrl?: string }>()
@@ -33,6 +34,14 @@ function isHealthRoute(context: ExecutionContext): boolean {
   const request = context.switchToHttp().getRequest<{ originalUrl?: string }>()
   const url = request.originalUrl ?? ''
   return url === '/health' || url.startsWith('/health/')
+}
+
+// La recherche assistée déclenche un appel LLM par message : quota dédié,
+// plus resserré que le catalogue, et sorti du bucket public de 100 req/min.
+function isAssistantRoute(context: ExecutionContext): boolean {
+  const request = context.switchToHttp().getRequest<{ originalUrl?: string }>()
+  const url = request.originalUrl ?? ''
+  return url === '/assistant' || url.startsWith('/assistant/')
 }
 
 // Le SSR du front appelle l'API depuis l'IP du serveur Nuxt : sans bypass,
@@ -108,7 +117,15 @@ function createRedisThrottlerStorage(url: string): ThrottlerStorage {
                 isAdminRoute(context) ||
                 isDirectusRoute(context) ||
                 isHealthRoute(context) ||
+                isAssistantRoute(context) ||
                 isInternalSsr(context, internalSsrToken),
+              getTracker: (req) => req.ip ?? req.socket?.remoteAddress ?? 'anonymous'
+            },
+            {
+              name: 'assistant',
+              ttl: 60_000,
+              limit: 20,
+              skipIf: (context) => !isAssistantRoute(context),
               getTracker: (req) => req.ip ?? req.socket?.remoteAddress ?? 'anonymous'
             },
             {
@@ -142,7 +159,8 @@ function createRedisThrottlerStorage(url: string): ThrottlerStorage {
     SyncModule,
     CatalogModule,
     CentresModule,
-    DirectusModule
+    DirectusModule,
+    AssistantModule
   ],
   controllers: [HealthController],
   providers: [

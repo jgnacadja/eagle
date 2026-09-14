@@ -252,13 +252,12 @@
         <div
           class="sticky bottom-0 flex flex-col gap-sm border-t border-rule bg-surface px-gutter-mobile py-lg"
         >
-          <NuxtLink
-            to="/etre-guide"
-            class="rounded-full bg-accent px-lg py-md text-center text-small font-semibold text-ink hover:bg-accent-text hover:text-paper"
-            @click="closeMenu"
+          <Button
+            class="rounded-full bg-accent px-lg py-md text-small font-semibold text-ink hover:bg-accent-text hover:text-paper"
+            @click="openAssistant"
           >
             Être guidé dans mon choix
-          </NuxtLink>
+          </Button>
           <NuxtLink
             to="/confier-ma-formation"
             class="rounded-full bg-accent px-lg py-md text-center text-small font-semibold text-ink hover:bg-accent-text hover:text-paper"
@@ -292,6 +291,7 @@ import {
 } from '~/components/ui/accordion'
 import { aproposLiens, legalLiens } from '~/data/navigation'
 import { useMenuActualites, useMenuCentres, useMenuFamilles } from '~/composables/useMenuData'
+import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 
 const open = defineModel<boolean>('open', { default: false })
 const dialogEl = ref<HTMLDialogElement>()
@@ -308,6 +308,14 @@ function centresForRegion(label: string) {
 
 function closeMenu() {
   open.value = false
+}
+
+const assistant = useAssistantLauncher()
+
+// « Être guidé dans mon choix » ouvre le panneau de recherche assistée.
+function openAssistant() {
+  assistant.open({ context: { source: 'header' } })
+  closeMenu()
 }
 
 function onKeydown(event: KeyboardEvent): void {

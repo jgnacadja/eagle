@@ -27,11 +27,14 @@
           La bonne formation. Au bon endroit. Au bon moment.
         </p>
 
-        <form class="mx-auto mt-xl w-full max-w-prose" @submit.prevent>
+        <form class="mx-auto mt-xl w-full max-w-prose" @submit.prevent="onHeroSearch">
           <SearchInput
+            v-model="heroSearch"
             input-id="hero-search"
-            sr-label="Rechercher une formation"
+            sr-label="Décrire votre besoin de formation"
             placeholder="« Je dois former 8 salariés au CACES près de Lyon avant septembre »"
+            empty-error-message="Décrivez votre besoin pour lancer la recherche."
+            @submit="onHeroSearch"
           >
             <template #icon>
               <IconSparkle :size="20" class="shrink-0 text-accent" />
@@ -445,6 +448,7 @@
 import { computed, ref } from 'vue'
 import type { Article, Centre } from '@learnup/types'
 import { mapCourse, useCatalog } from '~/composables/useCatalog'
+import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
 import { articleAssetUrl, formatArticleDate } from '~/utils/article'
@@ -494,6 +498,16 @@ useHead({
 })
 
 const mapSearch = ref('')
+const heroSearch = ref('')
+const assistant = useAssistantLauncher()
+
+// C1 — point d'entrée principal : le besoin saisi ouvre le panneau de
+// recherche assistée et est envoyé comme premier message.
+function onHeroSearch() {
+  const q = heroSearch.value.trim()
+  assistant.open({ context: { source: 'home' }, message: q || undefined })
+  heroSearch.value = ''
+}
 
 const tickerItems = [
   { key: 'sessions', value: '312', label: 'sessions ouvertes' },

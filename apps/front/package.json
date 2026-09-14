@@ -14,6 +14,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@ai-sdk/vue": "4.0.100",
     "@directus/sdk": "^25.0.0",
     "@learnup/types": "workspace:*",
     "@learnup/ui": "workspace:*",
@@ -21,6 +22,7 @@
     "@nuxt/image": "^2.1.0",
     "@types/leaflet": "^1.9.22",
     "@vueuse/core": "^14.4.0",
+    "ai": "7.0.100",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "leaflet": "^1.9.4",

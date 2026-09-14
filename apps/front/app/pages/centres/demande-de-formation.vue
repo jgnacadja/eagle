@@ -66,6 +66,18 @@
                   />
                 </div>
                 <div>
+                  <Label for="localisation" class="mb-xs block text-small font-medium text-ink">
+                    Localisation
+                  </Label>
+                  <Input
+                    id="localisation"
+                    v-model="form.localisation"
+                    type="text"
+                    placeholder="Ville, département ou site"
+                    class="h-control rounded-full border-outline bg-paper px-md text-small text-ink-body shadow-none placeholder:text-ink-placeholder focus-visible:ring-primary"
+                  />
+                </div>
+                <div>
                   <Label for="echeance" class="block text-small font-medium text-ink">
                     <span class="mb-xs block">Échéance souhaitée</span>
                     <Select v-model="form.echeance">
@@ -291,6 +303,35 @@
             </ul>
           </Card>
 
+          <!-- D1 — besoin décrit dans la recherche assistée, joint à la demande -->
+          <Card v-if="besoinParam" class="border-accent/40 bg-accent-soft/40 p-lg">
+            <div class="flex items-center justify-between">
+              <h2
+                class="flex items-center gap-xs text-meta font-semibold uppercase tracking-wide text-accent-text"
+              >
+                <IconSparkle :size="14" aria-hidden="true" />
+                Votre besoin, tel que vous l'avez décrit
+              </h2>
+              <Button
+                variant="link"
+                class="h-auto p-0 text-small font-medium text-primary hover:text-accent-text"
+                @click="reopenAssistant"
+              >
+                Modifier
+              </Button>
+            </div>
+            <p class="mt-md text-small italic text-ink">«&nbsp;{{ besoinParam }}&nbsp;»</p>
+            <ul v-if="besoinChips.length" class="mt-sm flex flex-wrap gap-sm">
+              <li v-for="chip in besoinChips" :key="chip">
+                <Badge variant="outline" class="font-medium">{{ chip }}</Badge>
+              </li>
+            </ul>
+            <p class="mt-sm text-meta text-accent-text/80">
+              Ce besoin est joint à la demande pour que le conseiller comprenne ce que vous
+              recherchiez.
+            </p>
+          </Card>
+
           <Card class="p-lg">
             <ul class="space-y-sm text-small text-ink-muted">
               <li class="flex items-start gap-sm">
@@ -317,6 +358,7 @@
 <script setup lang="ts">
 import type { Centre, Course } from '@learnup/types'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
+import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 
 definePageMeta({
   layout: 'with-breadcrumb'
@@ -336,6 +378,19 @@ const centreSlug = computed(() => queryValue(route.query.centre))
 const formationSlug = computed(() => queryValue(route.query.formation))
 const sessionSlug = computed(() => queryValue(route.query.session))
 const familleSlug = computed(() => queryValue(route.query.famille))
+
+// D1 — contexte transmis par le moteur de recherche assistée : besoin brut,
+// effectif et localisation extraits de la conversation (aucune ressaisie).
+const besoinParam = computed(() => queryValue(route.query.besoin))
+const salariesParam = computed(() => queryValue(route.query.salaries))
+const lieuParam = computed(() => queryValue(route.query.lieu))
+
+const besoinChips = computed(() => {
+  const chips: string[] = []
+  if (salariesParam.value) chips.push(`${salariesParam.value} salariés`)
+  if (lieuParam.value) chips.push(lieuParam.value)
+  return chips
+})
 
 // Libellés résolus dynamiquement : le centre vient de Directus,
 // la formation et la session de l'API catalogue.
@@ -472,8 +527,11 @@ useContentSeo(
 const echeanceOptions = ['Septembre 2026', 'Octobre 2026', 'Novembre 2026']
 
 const form = reactive({
+  // Besoin décrit dans la recherche assistée : joint à la demande (D1).
+  besoin: besoinParam.value ?? '',
   // Input émet string | number : la saisie reste une chaîne tant qu'on ne convertit pas.
-  salaries: 8 as string | number,
+  salaries: (salariesParam.value ?? 8) as string | number,
+  localisation: lieuParam.value ?? '',
   echeance: 'Septembre 2026',
   precisions: '',
   raisonSociale: '',
@@ -492,6 +550,14 @@ const DRAFT_KEY = 'demande-formation-draft'
 function saveDraft() {
   if (typeof window === 'undefined') return
   window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify(form))
+}
+
+// D1 — « Modifier » rouvre le panneau (la conversation est conservée) et le
+// brouillon du formulaire est sauvegardé pour le retour.
+const assistant = useAssistantLauncher()
+function reopenAssistant() {
+  saveDraft()
+  assistant.open()
 }
 
 onMounted(() => {

@@ -87,6 +87,31 @@ export interface SousFamilleFormation {
   famille: number | { slug: string } | null
 }
 
+/** Section de page légale — l'`id` sert d'ancre pour le sommaire. */
+export interface LegalSection {
+  id: string
+  title: string
+  paragraphs?: string[] | null
+  bullets?: string[] | null
+}
+
+export interface PageLegale extends SeoFields {
+  id: number
+  status: ContentStatus
+  sort: number | null
+  slug: string
+  /** Libellé court utilisé par les onglets et les menus. */
+  label: string
+  title: string
+  /** false = page hors onglets (ex. cookies), toujours accessible par son slug. */
+  show_in_tabs: boolean | null
+  sections: LegalSection[] | null
+  cta_label: string | null
+  cta_to: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
 export interface Article extends SeoFields {
   id: number
   status: ContentStatus

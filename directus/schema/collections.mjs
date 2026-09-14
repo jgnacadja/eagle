@@ -368,6 +368,117 @@ export const collections = [
     ]
   },
   {
+    collection: 'pages_legales',
+    icon: 'gavel',
+    note: 'Pages légales (mentions légales, confidentialité, CGU, accessibilité, cookies).',
+    fields: [
+      primaryKey(),
+      statusField(),
+      sortField(),
+      slugField(),
+      {
+        field: 'label',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          required: true,
+          note: 'Libellé court (onglets, menus)'
+        }
+      },
+      {
+        field: 'title',
+        type: 'string',
+        meta: { interface: 'input', width: 'full', required: true }
+      },
+      {
+        field: 'show_in_tabs',
+        type: 'boolean',
+        meta: {
+          interface: 'boolean',
+          width: 'half',
+          note: 'Afficher dans la navigation par onglets des pages légales'
+        },
+        schema: { default_value: true }
+      },
+      {
+        field: 'sections',
+        type: 'json',
+        meta: {
+          interface: 'list',
+          width: 'full',
+          note: 'Sections de la page — ancre, titre, paragraphes, puces',
+          options: {
+            fields: [
+              {
+                field: 'id',
+                type: 'string',
+                meta: {
+                  interface: 'input',
+                  width: 'half',
+                  required: true,
+                  note: 'Ancre HTML (ex: editeur)'
+                },
+                schema: {}
+              },
+              {
+                field: 'title',
+                type: 'string',
+                meta: { interface: 'input', width: 'half', required: true },
+                schema: {}
+              },
+              {
+                field: 'paragraphs',
+                type: 'json',
+                meta: { interface: 'tags', width: 'full' },
+                schema: {}
+              },
+              {
+                field: 'bullets',
+                type: 'json',
+                meta: { interface: 'tags', width: 'full' },
+                schema: {}
+              }
+            ]
+          }
+        }
+      },
+      {
+        field: 'cta_label',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', note: 'Libellé du bouton en bas de page' }
+      },
+      {
+        field: 'cta_to',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', note: 'Lien du bouton (mailto:… ou route)' }
+      },
+      ...seoFields(),
+      {
+        field: 'created_at',
+        type: 'timestamp',
+        meta: {
+          special: ['date-created'],
+          interface: 'datetime',
+          width: 'half',
+          readonly: true,
+          hidden: true
+        }
+      },
+      {
+        field: 'updated_at',
+        type: 'timestamp',
+        meta: {
+          special: ['date-updated'],
+          interface: 'datetime',
+          width: 'half',
+          readonly: true,
+          hidden: true
+        }
+      }
+    ]
+  },
+  {
     collection: 'stats',
     icon: 'bar_chart',
     note: 'Entrées de la bannière statistiques (accueil).',

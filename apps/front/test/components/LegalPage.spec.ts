@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import LegalPage from '~/components/Legal/Page.vue'
-import { legalPages } from '~/data/legal'
+import type { LegalPage as LegalPageModel, LegalPageTab } from '~/types/legal'
 
 const navigateToMock = vi.fn()
 
@@ -45,7 +45,32 @@ const stubs = {
   }
 }
 
-const page = legalPages.find((p) => p.slug === 'mentions-legales')!
+const page: LegalPageModel = {
+  slug: 'mentions-legales',
+  label: 'Mentions légales',
+  title: 'Mentions légales',
+  lastUpdated: '01 septembre 2026',
+  metaDescription: 'Mentions légales du site.',
+  sections: [
+    {
+      id: 'editeur',
+      title: '1. Éditeur du site',
+      paragraphs: ['Premier paragraphe.', 'Second paragraphe.']
+    },
+    {
+      id: 'hebergement',
+      title: '2. Hébergement',
+      paragraphs: ['Paragraphe hébergement.'],
+      bullets: ['Puce un', 'Puce deux']
+    }
+  ],
+  cta: { label: 'Contacter LEARN UP ACADEMY', to: 'mailto:contact@learnup.fr' }
+}
+
+const tabs: LegalPageTab[] = [
+  { slug: 'mentions-legales', label: 'Mentions légales' },
+  { slug: 'confidentialite', label: 'Confidentialité' }
+]
 
 describe('components/LegalPage', () => {
   beforeEach(() => {
@@ -54,7 +79,7 @@ describe('components/LegalPage', () => {
   })
 
   it('affiche le titre, la date de mise à jour et les sections', () => {
-    const wrapper = mount(LegalPage, { props: { page }, global: { stubs } })
+    const wrapper = mount(LegalPage, { props: { page, tabs }, global: { stubs } })
 
     expect(wrapper.text()).toContain(page.title)
     expect(wrapper.text()).toContain(`Dernière mise à jour : ${page.lastUpdated}`)
@@ -70,11 +95,13 @@ describe('components/LegalPage', () => {
   })
 
   it('affiche les liens de navigation vers les autres pages légales', () => {
-    const wrapper = mount(LegalPage, { props: { page }, global: { stubs } })
+    const wrapper = mount(LegalPage, { props: { page, tabs }, global: { stubs } })
     const links = wrapper.findAll('a')
 
     // Au moins un lien vers le sommaire et un lien par section.
     expect(links.length).toBeGreaterThan(page.sections.length)
+
+    expect(links.some((a) => a.attributes('href') === '/confidentialite')).toBe(true)
 
     const firstSectionHref = `#${page.sections[0]?.id ?? ''}`
     const firstSummaryLink = links.find((a) => a.attributes('href') === firstSectionHref)
@@ -83,7 +110,7 @@ describe('components/LegalPage', () => {
 
   it('navigue vers une autre page légale via le sélecteur mobile', async () => {
     routeMock = { params: { legal: 'mentions-legales' }, hash: '', meta: {} }
-    const wrapper = mount(LegalPage, { props: { page }, global: { stubs } })
+    const wrapper = mount(LegalPage, { props: { page, tabs }, global: { stubs } })
 
     const select = wrapper.find('select')
     await select.setValue('confidentialite')
@@ -92,7 +119,7 @@ describe('components/LegalPage', () => {
   })
 
   it('affiche le sommaire avec la première section active par défaut', () => {
-    const wrapper = mount(LegalPage, { props: { page }, global: { stubs } })
+    const wrapper = mount(LegalPage, { props: { page, tabs }, global: { stubs } })
 
     const firstLink = wrapper.find(`a[href="#${page.sections[0]?.id ?? ''}"]`)
     expect(firstLink.exists()).toBe(true)

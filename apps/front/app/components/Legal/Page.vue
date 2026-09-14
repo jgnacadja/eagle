@@ -132,20 +132,21 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { cn } from '@/lib/utils'
-import { tabbedLegalPages, type LegalPage } from '~/data/legal'
+import type { LegalPage, LegalPageTab } from '~/types/legal'
 
 const props = defineProps<{
   page: LegalPage
+  tabs: LegalPageTab[]
 }>()
 
 const route = useRoute()
 const currentSlug = computed(() => (route.params.legal as string) || props.page.slug)
 
-const tabbedPages = tabbedLegalPages
+const tabbedPages = computed(() => props.tabs)
 
 const selectedPage = ref(currentSlug.value)
 const currentLabel = computed(
-  () => tabbedPages.find((p) => p.slug === currentSlug.value)?.label ?? props.page.label
+  () => tabbedPages.value.find((p) => p.slug === currentSlug.value)?.label ?? props.page.label
 )
 
 watch(selectedPage, (newSlug) => {

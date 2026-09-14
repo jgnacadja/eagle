@@ -11,6 +11,7 @@ const family: FamilleFormation = {
   slug: 'caces-conduite-engins',
   name: "CACES & conduite d'engins",
   status: 'published',
+  subnav_title: "Parcourir par type d'engin",
   intro: null,
   icon: null,
   image: null,
@@ -33,6 +34,8 @@ const course: Course = {
   certifierName: 'Opérateur réglementaire',
   category: null,
   familySlug: 'caces-conduite-engins',
+  subFamilySlug: null,
+  subFamilyName: null,
   centerSlug: 'creteil',
   centerSlugs: ['creteil'],
   modalities: ['inter', 'presentiel'],
@@ -53,12 +56,18 @@ const course: Course = {
       }
     }
   ],
+  image: null,
   imageUrl: null,
   generatedProgramUrl: 'https://digiforma.example/program/caces-r489',
   status: 'published',
   targets: ['Caristes, conducteurs d engins'],
   prerequisites: ['Aucun prérequis particulier'],
+  pedagogy: [
+    { title: 'Inter, en centre.', description: 'Sessions sur plateau technique.' },
+    { title: 'Intra, sur site.', description: 'Dans votre entreprise.' }
+  ],
   evaluation: ['Épreuve pratique de conduite'],
+  validity: '5 ans · recyclage',
   blocks: [
     {
       name: 'Conduite sécurisée',
@@ -99,10 +108,13 @@ const similar: CourseListItem[] = [
     certifierName: null,
     category: null,
     familySlug: 'caces-conduite-engins',
+    subFamilySlug: null,
+    subFamilyName: null,
     centerSlug: null,
     centerSlugs: [],
     modalities: [],
     sessions: null,
+    image: null,
     imageUrl: null,
     generatedProgramUrl: null,
     status: 'published',
@@ -124,10 +136,13 @@ const similar: CourseListItem[] = [
     certifierName: null,
     category: null,
     familySlug: 'caces-conduite-engins',
+    subFamilySlug: null,
+    subFamilyName: null,
     centerSlug: null,
     centerSlugs: [],
     modalities: [],
     sessions: null,
+    image: null,
     imageUrl: null,
     generatedProgramUrl: null,
     status: 'published',
@@ -149,10 +164,13 @@ const similar: CourseListItem[] = [
     certifierName: null,
     category: null,
     familySlug: 'caces-conduite-engins',
+    subFamilySlug: null,
+    subFamilyName: null,
     centerSlug: null,
     centerSlugs: [],
     modalities: [],
     sessions: null,
+    image: null,
     imageUrl: null,
     generatedProgramUrl: null,
     status: 'published',
@@ -252,7 +270,7 @@ vi.mock('~/composables/useDirectus', () => ({
   useDirectusClient: () => ({ request: vi.fn() })
 }))
 
-vi.stubGlobal('useAsyncData', async (key: string) => {
+const defaultUseAsyncData = async (key: string) => {
   if (
     routeMock?.query.error === '1' &&
     key === `course-${routeMock.params.famille}-${routeMock.params.slug}`
@@ -272,7 +290,9 @@ vi.stubGlobal('useAsyncData', async (key: string) => {
     return { data: ref(null), pending: ref(false), error: ref(null), refresh: vi.fn() }
   }
   return { data: ref(null), pending: ref(false), error: ref(null), refresh: vi.fn() }
-})
+}
+
+vi.stubGlobal('useAsyncData', defaultUseAsyncData)
 
 const stubs = {
   NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
@@ -285,8 +305,8 @@ const stubs = {
   CardDescription: { template: '<p><slot /></p>' },
   CardFooter: { template: '<div><slot /></div>' },
   CenterFormationCard: {
-    props: ['title', 'family'],
-    template: '<div class="similaire-card">{{ family }} — {{ title }}</div>'
+    props: ['title', 'subFamily'],
+    template: '<div class="similaire-card">{{ subFamily }} — {{ title }}</div>'
   },
   CtaBanner: { template: '<div><slot /></div>' },
   SearchInput: {
@@ -335,6 +355,7 @@ async function mountPage() {
 describe('pages/formations/[famille]/[slug]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.stubGlobal('useAsyncData', defaultUseAsyncData)
     routeMock = {
       params: { famille: 'caces-conduite-engins', slug: 'caces-r489-chariots-elevateurs' },
       query: {},
@@ -363,13 +384,70 @@ describe('pages/formations/[famille]/[slug]', () => {
     expect(wrapper.text()).toContain('Prochaines sessions')
     expect(wrapper.findAll('.session-card')).toHaveLength(1)
     expect(wrapper.text()).toContain('Session en présentiel')
-    expect(wrapper.text()).toContain('Où suivre cette formation')
+    expect(wrapper.text()).toContain('Où suivre cette formation ?')
     expect(wrapper.find('a[href="/centres/creteil"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Centre de Créteil')
     expect(wrapper.text()).toContain('Val-de-Marne')
     expect(wrapper.text()).toContain('Prochaine session le 12/10')
-    expect(wrapper.text()).toContain('Modalités & évaluation')
+    expect(wrapper.text()).toContain('Modalités pédagogiques')
+    expect(wrapper.text()).toContain('Inter, en centre.')
+    expect(wrapper.text()).toContain('Évaluation')
     expect(wrapper.text()).toContain('Épreuve pratique de conduite')
+  })
+
+  it('sert le visuel Directus via le proxy avant imageUrl', async () => {
+    const withImage: Course = {
+      ...course,
+      image: 'file-abc-123',
+      imageUrl: 'https://digiforma.example/visuel.jpg'
+    }
+    vi.stubGlobal('useAsyncData', async (key: string) => {
+      if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+        return { data: ref(withImage), pending: ref(false), error: ref(null), refresh: vi.fn() }
+      }
+      return defaultUseAsyncData(key)
+    })
+
+    const wrapper = await mountPage()
+
+    expect(wrapper.find('img').attributes('src')).toBe(
+      'http://api.test/directus/assets/file-abc-123'
+    )
+  })
+
+  it('retombe sur imageUrl quand aucun fichier Directus n’est lié', async () => {
+    const withoutFile: Course = { ...course, image: null, imageUrl: 'https://cdn.example/v.jpg' }
+    vi.stubGlobal('useAsyncData', async (key: string) => {
+      if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+        return { data: ref(withoutFile), pending: ref(false), error: ref(null), refresh: vi.fn() }
+      }
+      return defaultUseAsyncData(key)
+    })
+
+    const wrapper = await mountPage()
+
+    expect(wrapper.find('img').attributes('src')).toBe('https://cdn.example/v.jpg')
+  })
+
+  it('affiche l’état vide des sessions quand aucune session n’est publiée', async () => {
+    const emptyCourse: Course = { ...course, sessions: null }
+    vi.stubGlobal('useAsyncData', async (key: string) => {
+      if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+        return { data: ref(emptyCourse), pending: ref(false), error: ref(null), refresh: vi.fn() }
+      }
+      if (key === 'famille-name-caces-conduite-engins') {
+        return { data: ref(family), pending: ref(false), error: ref(null), refresh: vi.fn() }
+      }
+      return { data: ref(null), pending: ref(false), error: ref(null), refresh: vi.fn() }
+    })
+
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Prochaines sessions')
+    expect(wrapper.text()).toContain('Aucune session programmée pour le moment.')
+    expect(wrapper.findAll('.session-card')).toHaveLength(0)
+    expect(wrapper.text()).toContain('Demander une session')
+    expect(wrapper.text()).not.toContain('Voir les sessions')
   })
 
   it('définit le SEO et le JSON-LD Course', async () => {

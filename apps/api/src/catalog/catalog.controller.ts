@@ -7,10 +7,11 @@ import {
   ApiSecurity,
   ApiTags
 } from '@nestjs/swagger'
-import type { Course, CourseListItem, FamilyWithCount, Paginated } from '@learnup/types'
+import type { Course, CoursePage, FamilyWithCount } from '@learnup/types'
 import { AdminApiKeyGuard } from '../common/guards/admin-api-key.guard'
 import { CatalogService } from './catalog.service'
 import { FamilyCourseParams, ListCoursesDto } from './catalog.dto'
+import type { FamilyApplyResult } from '../directus/directus.catalog.service'
 
 @ApiTags('Catalog')
 @Controller()
@@ -20,7 +21,7 @@ export class CatalogController {
   @Get('courses')
   @ApiOperation({ summary: 'Paginated list of courses' })
   @ApiOkResponse({ description: 'Paginated list of courses' })
-  async list(@Query() query: ListCoursesDto): Promise<Paginated<CourseListItem>> {
+  async list(@Query() query: ListCoursesDto): Promise<CoursePage> {
     return this.catalogService.list(query)
   }
 
@@ -50,7 +51,7 @@ export class CatalogController {
   @ApiSecurity('x-api-key')
   @ApiOperation({ summary: 'Apply family assignments from Directus mirror' })
   @ApiOkResponse({ description: 'Assignments applied' })
-  async applyFamilies(): Promise<{ assigned: number; cleared: number }> {
+  async applyFamilies(): Promise<FamilyApplyResult> {
     return this.catalogService.applyFamilies()
   }
 }

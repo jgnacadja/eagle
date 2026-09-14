@@ -19,6 +19,32 @@ function isAdminRoute(context: ExecutionContext): boolean {
   return url === '/admin' || url.startsWith('/admin/')
 }
 
+// Le proxy /directus sert aussi les assets (une image par carte) : le quota
+// public de 100 req/min se viderait en quelques navigations. Il garde sa
+// propre limite, plus large, et ne consomme pas le quota catalogue.
+function isDirectusRoute(context: ExecutionContext): boolean {
+  const request = context.switchToHttp().getRequest<{ originalUrl?: string }>()
+  const url = request.originalUrl ?? ''
+  return url === '/directus' || url.startsWith('/directus/')
+}
+
+// Les checks de santé (uptime, LB) ne consomment pas le quota public.
+function isHealthRoute(context: ExecutionContext): boolean {
+  const request = context.switchToHttp().getRequest<{ originalUrl?: string }>()
+  const url = request.originalUrl ?? ''
+  return url === '/health' || url.startsWith('/health/')
+}
+
+// Le SSR du front appelle l'API depuis l'IP du serveur Nuxt : sans bypass,
+// tous les visiteurs partageraient le même bucket de 100 req/min. Le front
+// envoie un secret partagé (x-internal-ssr) uniquement côté serveur — jamais
+// exposé au navigateur. Le quota /admin reste appliqué même avec le header.
+function isInternalSsr(context: ExecutionContext, token: string | undefined): boolean {
+  if (!token) return false
+  const request = context.switchToHttp().getRequest<{ headers?: Record<string, unknown> }>()
+  return request.headers?.['x-internal-ssr'] === token
+}
+
 const THROTTLER_REDIS_OPTIONS: RedisOptions = {
   connectTimeout: 1_000,
   enableOfflineQueue: false,
@@ -72,12 +98,25 @@ function createRedisThrottlerStorage(url: string): ThrottlerStorage {
       useFactory: (config: ConfigService) => {
         const adminApiKey = config.getOrThrow<string>('ADMIN_API_KEY')
         const redisUrl = config.get<string>('REDIS_URL')
+        const internalSsrToken = config.get<string>('INTERNAL_API_TOKEN')
         return {
           throttlers: [
             {
               ttl: 60_000,
               limit: 100,
-              skipIf: (context) => isAdminRoute(context),
+              skipIf: (context) =>
+                isAdminRoute(context) ||
+                isDirectusRoute(context) ||
+                isHealthRoute(context) ||
+                isInternalSsr(context, internalSsrToken),
+              getTracker: (req) => req.ip ?? req.socket?.remoteAddress ?? 'anonymous'
+            },
+            {
+              name: 'directus',
+              ttl: 60_000,
+              limit: 600,
+              skipIf: (context) =>
+                !isDirectusRoute(context) || isInternalSsr(context, internalSsrToken),
               getTracker: (req) => req.ip ?? req.socket?.remoteAddress ?? 'anonymous'
             },
             {

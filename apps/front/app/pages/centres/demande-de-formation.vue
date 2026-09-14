@@ -354,9 +354,10 @@ const formationData =
         `demande-formation-${familleSlug.value}-${formationSlug.value}`,
         async () => {
           try {
-            return await $fetch<Course>(
-              `${import.meta.server ? config.apiBase : config.public.apiBase}/courses/${familleSlug.value}/${formationSlug.value}`
-            )
+            const apiBase = import.meta.server ? config.apiBase : config.public.apiBase
+            const headers = internalSsrHeaders(config)
+            const url = `${apiBase}/courses/${familleSlug.value}/${formationSlug.value}`
+            return headers ? await $fetch<Course>(url, { headers }) : await $fetch<Course>(url)
           } catch (err) {
             if (import.meta.server) {
               logServerError('[demande] formation fetch failed:', err)

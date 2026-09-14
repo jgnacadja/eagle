@@ -75,6 +75,8 @@ const catalogueCourses = {
       certifierName: 'INRS',
       category: 'Santé',
       familySlug: 'sante',
+      subFamilySlug: null,
+      subFamilyName: null,
       centerSlug: 'creteil',
       centerSlugs: ['creteil'],
       modalities: ['inter', 'presentiel'],

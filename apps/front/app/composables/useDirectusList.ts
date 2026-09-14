@@ -1,6 +1,14 @@
 import { readItems } from '@directus/sdk'
 
-function getCachedData<T>(key: string, nuxtApp: ReturnType<typeof useNuxtApp>): T | undefined {
+// Le payload SSR n'est servi que pendant l'hydratation : un mount ultérieur
+// (navigation client) repart sur des données fraîches plutôt que de servir
+// une liste figée — potentiellement vide — pour toute la session.
+function getCachedData<T>(
+  key: string,
+  nuxtApp: ReturnType<typeof useNuxtApp>,
+  ctx: { cause?: string }
+): T | undefined {
+  if (ctx.cause !== 'initial' || !nuxtApp.isHydrating) return undefined
   return nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]
 }
 
@@ -30,7 +38,7 @@ export function useDirectusList<T>(
       }
     },
     {
-      getCachedData: (key, nuxtApp) => getCachedData<T[]>(key, nuxtApp)
+      getCachedData: (key, nuxtApp, ctx) => getCachedData<T[]>(key, nuxtApp, ctx)
     }
   )
 

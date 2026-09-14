@@ -20,6 +20,7 @@ export const roles = [
 const CONTENT_COLLECTIONS = [
   'centres',
   'familles_formation',
+  'sous_familles_formation',
   'articles',
   'pages',
   'page_blocks',
@@ -41,19 +42,64 @@ export function permissionsFor(roleName) {
 
     case 'editeur':
       return [
-        ...['articles', 'page_blocks'].flatMap((c) => grants(c, ['create', 'read', 'update'])),
+        ...['articles', 'page_blocks', 'sous_familles_formation'].flatMap((c) =>
+          grants(c, ['create', 'read', 'update'])
+        ),
         ...['centres', 'familles_formation', 'pages', 'stats'].flatMap((c) => grants(c, ['read'])),
         ...grants('directus_files', ['create', 'read']),
         { collection: 'formations', action: 'read' },
-        { collection: 'formations', action: 'update', fields: ['famille'] }
+        {
+          collection: 'formations',
+          action: 'update',
+          // Tous les champs contenu + éditoriaux ; hors techniques
+          // (digiforma_id, sessions, raw, timestamps) et status
+          // (publication réservée au modérateur).
+          fields: [
+            'sort',
+            'slug',
+            'title',
+            'description',
+            'duration_days',
+            'duration_hours',
+            'price',
+            'cpf',
+            'cpf_code',
+            'certification',
+            'certifier_name',
+            'category_name',
+            'modalities',
+            'center_slug',
+            'center_slugs',
+            'locations_text',
+            'blocks',
+            'generated_program_url',
+            'famille',
+            'sous_famille',
+            'pedagogy',
+            'evaluation',
+            'validity',
+            'image',
+            'seo_title',
+            'seo_description',
+            'seo_canonical'
+          ]
+        }
       ]
 
     case 'moderateur':
       return [
         ...['articles', 'page_blocks'].flatMap((c) => grants(c, ['read', 'update'])),
-        ...['centres', 'familles_formation', 'pages', 'stats', 'directus_files'].flatMap((c) =>
-          grants(c, ['read'])
-        )
+        ...[
+          'centres',
+          'familles_formation',
+          'sous_familles_formation',
+          'pages',
+          'stats',
+          'directus_files'
+        ].flatMap((c) => grants(c, ['read'])),
+        { collection: 'formations', action: 'read' },
+        // Publier / dépublier une formation = mettre à jour son status.
+        { collection: 'formations', action: 'update', fields: ['status'] }
       ]
 
     case 'lecteur':
@@ -69,7 +115,14 @@ export function permissionsFor(roleName) {
 // tout GET est 403 (deny-by-default). Statut "published" uniquement sur les
 // collections qui ont un champ status ; le reste (page_blocks, stats,
 // directus_files) n'en a pas, lecture non filtrée.
-const PUBLIC_STATUS_FILTERED = ['centres', 'familles_formation', 'articles', 'pages', 'formations']
+const PUBLIC_STATUS_FILTERED = [
+  'centres',
+  'familles_formation',
+  'sous_familles_formation',
+  'articles',
+  'pages',
+  'formations'
+]
 const PUBLIC_UNRESTRICTED = ['page_blocks', 'stats', 'directus_files']
 
 /** @returns {Array<{collection: string, action: string, permissions?: object}>} */

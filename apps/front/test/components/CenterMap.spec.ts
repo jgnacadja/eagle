@@ -1,9 +1,10 @@
 import { mount, flushPromises } from '@vue/test-utils'
 import { describe, it, expect, vi } from 'vitest'
 import CenterMap from '~/components/Map/CenterMap.vue'
+import type { CenterResult } from '~/types/center-result'
 import * as Leaflet from 'leaflet'
 
-const centers = [
+const centers: CenterResult[] = [
   {
     id: 'creteil',
     name: 'Centre de Créteil',
@@ -66,6 +67,8 @@ vi.mock('leaflet', () => {
       closePopup: vi.fn()
     })),
     marker,
+    polygon: vi.fn(() => ({ addTo: vi.fn().mockReturnThis() })),
+    svg: vi.fn(() => ({})),
     divIcon: vi.fn((options) => options),
     tileLayer: vi.fn(() => ({ addTo: vi.fn().mockReturnThis() })),
     latLngBounds: vi.fn(() => ({ getCenter: vi.fn(() => [0, 0]) })),
@@ -88,7 +91,15 @@ vi.mock('leaflet.markercluster', () => ({
 vi.mock('leaflet.markercluster/dist/MarkerCluster.css', () => ({}))
 vi.mock('leaflet.markercluster/dist/MarkerCluster.Default.css', () => ({}))
 
-function mountWithStubs(props: Record<string, unknown>) {
+interface CenterMapProps {
+  centers: CenterResult[]
+  activeId: string | null
+  caption: string
+  mode?: 'network' | 'single'
+  minZoom?: number
+}
+
+function mountWithStubs(props: CenterMapProps) {
   vi.mocked(Leaflet.markerClusterGroup).mockClear()
 
   return mount(CenterMap, {
@@ -116,6 +127,31 @@ describe('CenterMap', () => {
     expect(wrapper.find('.w-full.flex-1').exists()).toBe(true)
   })
 
+  it('constrains the map view to France bounds', async () => {
+    mountWithStubs({
+      centers,
+      activeId: null,
+      caption: 'Tous les départements'
+    })
+    await flushPromises()
+
+    const options = vi.mocked(Leaflet.map).mock.calls[0]?.[1] as Record<string, unknown>
+    expect(options.minZoom).toBe(5)
+    expect(options.maxBoundsViscosity).toBe(1)
+    expect(Leaflet.latLngBounds).toHaveBeenCalledWith([
+      [41.3, -5.2],
+      [51.2, 9.7]
+    ])
+    expect(Leaflet.svg).toHaveBeenCalledWith({ padding: 1 })
+    expect(options.renderer).toBeDefined()
+    const tileOptions = vi.mocked(Leaflet.tileLayer).mock.calls[0]?.[1] as Record<string, unknown>
+    expect(tileOptions.bounds).toBeDefined()
+
+    const maskOptions = vi.mocked(Leaflet.polygon).mock.calls[0]?.[1] as Record<string, unknown>
+    expect(maskOptions.fillOpacity).toBe(1)
+    expect(maskOptions.interactive).toBe(false)
+  })
+
   it('shows the empty message when no centers', () => {
     const wrapper = mountWithStubs({
       centers: [],
@@ -128,7 +164,7 @@ describe('CenterMap', () => {
 
   it('skips centers without coordinates and shows empty state', () => {
     const wrapper = mountWithStubs({
-      centers: [{ ...centers[0], lat: undefined, lng: undefined }],
+      centers: [{ ...centers[0]!, lat: undefined, lng: undefined }],
       activeId: null,
       caption: 'département 94'
     })
@@ -138,7 +174,7 @@ describe('CenterMap', () => {
 
   it('renders single mode with the map container and directions link', () => {
     const wrapper = mountWithStubs({
-      centers: [centers[0]],
+      centers: [centers[0]!],
       activeId: null,
       caption: '',
       mode: 'single'

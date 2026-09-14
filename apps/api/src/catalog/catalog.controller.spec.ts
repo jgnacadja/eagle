@@ -155,7 +155,7 @@ describe('CatalogController', () => {
   })
 
   it('POST /admin/families/apply returns assignment counts', async () => {
-    service.applyFamilies.mockResolvedValue({ assigned: 3, cleared: 1 })
+    service.applyFamilies.mockResolvedValue({ assigned: 3, cleared: 1, subAssigned: 2 })
 
     await request(app.getHttpServer())
       .post('/admin/families/apply')
@@ -163,6 +163,7 @@ describe('CatalogController', () => {
       .expect((res) => {
         expect(res.body.assigned).toBe(3)
         expect(res.body.cleared).toBe(1)
+        expect(res.body.subAssigned).toBe(2)
       })
   })
 })

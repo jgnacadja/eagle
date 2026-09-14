@@ -25,10 +25,13 @@ const course: CourseListItem = {
   certifierName: 'Opérateur réglementaire',
   category: null,
   familySlug: 'caces-conduite-engins',
+  subFamilySlug: null,
+  subFamilyName: null,
   centerSlug: null,
   centerSlugs: [],
   modalities: [],
   sessions: null,
+  image: null,
   imageUrl: null,
   generatedProgramUrl: null,
   status: 'published',
@@ -123,10 +126,10 @@ describe('useCatalog helpers', () => {
       location: null
     })
 
-    // Seule une session passée : pas de statut.
+    // Seule une session passée : « Sur demande » neutre (formation organisable).
     expect(
       buildStatus({ ...course, sessions: [session(past.toISOString().slice(0, 10))] })
-    ).toBeUndefined()
+    ).toEqual({ type: 'neutral', label: 'Sur demande' })
 
     // Session passée + session du jour : la session du jour est retenue.
     const status = buildStatus({
@@ -250,10 +253,18 @@ describe('useCatalog composable', () => {
 
     const key = `catalog:${JSON.stringify({ limit: 9, page: 1 })}`
     const cached = { items: [{ slug: 'cached' }], total: 1, page: 1, pageSize: 9 }
-    const nuxtApp = { payload: { data: { [key]: cached } }, static: { data: {} } }
+    const nuxtApp = {
+      isHydrating: true,
+      payload: { data: { [key]: cached } },
+      static: { data: {} }
+    }
     const getCachedData = options?.getCachedData
 
     expect(getCachedData?.(key, nuxtApp, { cause: 'initial' })).toEqual(cached)
+    // Passé l'hydratation (navigation client), on refetch toujours.
+    expect(
+      getCachedData?.(key, { ...nuxtApp, isHydrating: false }, { cause: 'initial' })
+    ).toBeUndefined()
     expect(getCachedData?.(key, nuxtApp, { cause: 'watch' })).toBeUndefined()
     expect(getCachedData?.(key, nuxtApp, { cause: 'refresh:manual' })).toBeUndefined()
   })

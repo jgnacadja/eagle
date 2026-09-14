@@ -2,6 +2,8 @@ export interface FilterOption {
   key: string
   label: string
   count?: number
+  /** 0 résultat dans le contexte courant — affichée grisée (RG-CAT-07). */
+  disabled?: boolean
 }
 
 export const MODALITY_OPTIONS: FilterOption[] = [

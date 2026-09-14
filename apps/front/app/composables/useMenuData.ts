@@ -76,13 +76,15 @@ interface MenuFamillesData {
 /** Formations d'une famille pour la colonne centrale du méga-menu. */
 async function fetchFormationsParFamille(
   apiBase: string,
-  familles: MenuFamille[]
+  familles: MenuFamille[],
+  headers: Record<string, string> | undefined
 ): Promise<Record<string, MenuFormation[]>> {
   const entries = await Promise.all(
     familles.map(async (famille) => {
       try {
         const result = await $fetch<Paginated<CourseListItem>>(`${apiBase}/courses`, {
-          query: { family: famille.slug, limit: MAX_FORMATIONS_PAR_FAMILLE, page: 1 }
+          query: { family: famille.slug, limit: MAX_FORMATIONS_PAR_FAMILLE, page: 1 },
+          headers
         })
         return [
           famille.slug,
@@ -128,7 +130,12 @@ function useMenuFamillesData() {
             }
             return [] as FamilleFormation[]
           }),
-        $fetch<FamilyWithCount[]>(`${apiBase}/families`).catch((error: unknown) => {
+        (internalSsrHeaders(config)
+          ? $fetch<FamilyWithCount[]>(`${apiBase}/families`, {
+              headers: internalSsrHeaders(config)
+            })
+          : $fetch<FamilyWithCount[]>(`${apiBase}/families`)
+        ).catch((error: unknown) => {
           if (import.meta.server) {
             logServerError('[useMenuFamilles] /families fetch failed:', error)
           }
@@ -157,7 +164,11 @@ function useMenuFamillesData() {
               .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
               .slice(0, MAX_FAMILLES)
 
-      const formationsParFamille = await fetchFormationsParFamille(apiBase, familles)
+      const formationsParFamille = await fetchFormationsParFamille(
+        apiBase,
+        familles,
+        internalSsrHeaders(config)
+      )
       return { familles, formationsParFamille }
     },
     {
@@ -237,7 +248,8 @@ export function useMenuFormationsALaUne() {
     async () => {
       try {
         const result = await $fetch<Paginated<CourseListItem>>(`${apiBase}/courses`, {
-          query: { limit: MAX_FORMATIONS_A_LA_UNE, page: 1, sort: 'updatedAt', order: 'desc' }
+          query: { limit: MAX_FORMATIONS_A_LA_UNE, page: 1, sort: 'updatedAt', order: 'desc' },
+          headers: internalSsrHeaders(config)
         })
         return result.items.map((course) => ({
           slug: course.slug,

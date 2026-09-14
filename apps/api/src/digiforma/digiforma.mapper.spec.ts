@@ -121,6 +121,31 @@ describe('mapProgramToCourse', () => {
     expect(course.locations_text).toContain('Paris')
   })
 
+  it('maps pedagogy blocks and evaluation texts as proposals', () => {
+    const course = mapProgramToCourse({
+      ...program,
+      blocks: [
+        { name: 'Objectifs', type: 'objectif', goals: [{ text: 'Objectif 1' }] },
+        { name: 'Inter, en centre.', type: 'pedagogie', description: 'Sur plateau technique.' },
+        { name: 'Intra, sur site.', type: 'Pedagogie', description: null }
+      ],
+      evaluation: [{ text: 'Épreuve pratique.' }, { text: ' ' }, {}]
+    })
+
+    expect(course.pedagogy).toEqual([
+      { title: 'Inter, en centre.', description: 'Sur plateau technique.' },
+      { title: 'Intra, sur site.', description: null }
+    ])
+    expect(course.evaluation).toEqual(['Épreuve pratique.'])
+  })
+
+  it('returns null pedagogy/evaluation when the source has none', () => {
+    const course = mapProgramToCourse({ ...program, evaluation: null })
+
+    expect(course.pedagogy).toBeNull()
+    expect(course.evaluation).toBeNull()
+  })
+
   it('returns null centre/location data when sessions are absent', () => {
     const course = mapProgramToCourse({ ...program, sessions: null })
 

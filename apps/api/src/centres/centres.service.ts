@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import type { CentreListItem } from '@learnup/types'
 import { CacheService } from '../common/cache/cache.service'
 import { DirectusCatalogService, type DirectusCentre } from '../directus/directus.catalog.service'
+import { GeocodingService } from './geocoding.service'
 import type { ListCentresDto } from './centres.dto'
 
 function normalizeSearch(text: string | null | undefined): string {
@@ -47,7 +48,8 @@ export class CentresService {
 
   constructor(
     private readonly cache: CacheService,
-    private readonly directus: DirectusCatalogService
+    private readonly directus: DirectusCatalogService,
+    private readonly geocoding: GeocodingService
   ) {}
 
   async list(query: ListCentresDto): Promise<CentreListItem[]> {
@@ -107,6 +109,10 @@ export class CentresService {
     try {
       const rows = await this.directus.fetchAllCentres()
       await this.cache.set(ALL_CENTRES_CACHE_KEY, rows)
+      // Fire-and-forget : géocode en arrière-plan les centres dont l'adresse
+      // a changé — la lecture courante garde les données actuelles, la
+      // prochaine (cache invalidé par syncMissing) est à jour.
+      void this.geocoding.syncMissing()
       return rows
     } catch (error) {
       this.logger.warn({ error }, 'Directus centres fetch failed — returning empty list')

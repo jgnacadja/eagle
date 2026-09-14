@@ -34,10 +34,11 @@ Lire d'abord `AGENTS.md` à la racine.
 
 ## Données
 
-- SSR : `useAsyncData` avec `cacheKey` stable. Réutiliser le cache Nuxt côté client via `getCachedData: (key, nuxtApp) => nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]` pour éviter les refetchs inutiles lors de la navigation.
-- Cache SWR au niveau des routes : `nuxt.config.ts` configure `routeRules: { '/': { swr: 600 }, '/formations/**': { swr: 600 }, '/centres/**': { swr: 600 } }`.
+- SSR : `useAsyncData` avec `cacheKey` stable. Le payload SSR n'est resservi que pendant l'hydratation (`ctx.cause === 'initial' && nuxtApp.isHydrating` dans `getCachedData`) — ensuite chaque mount/refetch repart sur des données fraîches pour ne pas figer un résultat vide ou transitoire.
+- Cache ISR au niveau des routes : `nuxt.config.ts` configure `routeRules` en `isr` + `passQuery` (la query fait partie de la clé de cache — sinon les filtres serviraient du HTML non filtré).
 - Gestion d'erreur : log côté serveur, retour vide/dégradé, jamais de crash silencieux.
 - Appels API : `useRuntimeConfig().public.apiBase` (`http://localhost:3001`).
+- Les fetches SSR passent `x-internal-ssr` via `internalSsrHeaders(config)` (`app/utils/ssrHeaders.ts`) : bypass du rate-limit public pour ne pas mutualiser tous les visiteurs sur l'IP du serveur Nuxt. Token : `NUXT_INTERNAL_API_TOKEN`.
 - Sanitization : `sanitizeHtml()` de `app/utils/sanitizeHtml.ts` avant tout `v-html`.
 
 ## Tests

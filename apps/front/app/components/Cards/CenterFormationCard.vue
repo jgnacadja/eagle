@@ -1,16 +1,14 @@
 <template>
-  <Card
-    class="flex flex-col hover:shadow-md duration-500 hover:z-5 hover:scale-[1.03] transition-all"
-  >
+  <Card class="relative flex flex-col transition hover:border-primary/40 hover:shadow-md">
     <CardHeader class="space-y-sm p-md pb-0">
       <p v-if="eyebrow" class="mb-md text-overline text-ink-subtle font-bold">{{ eyebrow }}</p>
-      <p class="text-overline text-accent-text uppercase">{{ family }}</p>
+      <p class="text-overline text-accent-text uppercase">{{ subFamily }}</p>
       <CardTitle class="font-sans text-h4 font-extrabold leading-tight tracking-normal text-ink">
         {{ title }}
       </CardTitle>
     </CardHeader>
     <CardContent class="flex-1 px-md py-sm">
-      <p v-if="description" class="hidden flex-1 text-small text-ink-body lg:block font-bold">
+      <p v-if="description" class="flex-1 text-small text-ink-body font-bold">
         {{ description }}
       </p>
       <CardDescription class="font-bold">{{ meta }}</CardDescription>
@@ -30,7 +28,7 @@
         as-child
         class="mt-md h-control w-full rounded-full px-lg text-small font-bold hover:bg-primary-dark"
       >
-        <NuxtLink :to="to">Voir la formation</NuxtLink>
+        <NuxtLink :to="to" class="after:absolute after:inset-0">Voir la formation</NuxtLink>
       </Button>
       <Button
         v-else-if="to"
@@ -38,7 +36,9 @@
         variant="link"
         class="mt-md h-auto self-end p-0 text-small font-bold text-primary transition-colors hover:text-accent-text"
       >
-        <NuxtLink :to="to">Voir la formation →</NuxtLink>
+        <NuxtLink :to="to" class="after:absolute after:inset-0"
+          >Consulter <span class="link-arrow">→</span></NuxtLink
+        >
       </Button>
     </CardFooter>
   </Card>
@@ -47,7 +47,8 @@
 <script setup lang="ts">
 withDefaults(
   defineProps<{
-    family: string
+    /** Sous-famille affichée en surtitre — jamais la famille. */
+    subFamily: string | null
     title: string
     description?: string
     meta: string
@@ -56,6 +57,12 @@ withDefaults(
     eyebrow?: string
     variant?: 'default' | 'button'
   }>(),
-  { to: undefined, description: '', status: undefined, eyebrow: '', variant: 'default' }
+  {
+    to: undefined,
+    description: '',
+    status: undefined,
+    eyebrow: '',
+    variant: 'default'
+  }
 )
 </script>

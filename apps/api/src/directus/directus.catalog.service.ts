@@ -6,16 +6,46 @@ import type { FormationDirectusPayload } from '../digiforma/digiforma.mapper'
 export interface FamilyApplyResult {
   assigned: number
   cleared: number
+  subAssigned: number
 }
 
-export interface DirectusFormation extends FormationDirectusPayload {
+export interface AssignmentProposal {
+  famille?: string
+  sousFamille?: string
+}
+
+// `image_url` est exclu : ce n'est plus une colonne — l'URL source vit dans
+// `raw` et la sync importe le fichier dans `directus_files` (champ `image`).
+export type DirectusFormation = Omit<FormationDirectusPayload, 'image_url'> & {
   id: number
   famille: { id: number; slug: string } | null
+  sous_famille: { id: number; slug: string; name: string } | null
+  validity: string | null
+  image: string | null
   created_at: string | null
   updated_at: string | null
 }
 
 export type DirectusCentre = CentreListItem
+
+export interface GeocodableCentre {
+  id: number
+  slug: string
+  name: string
+  status: string
+  address: string | null
+  geocoded_address: string | null
+}
+
+export interface CentreGeodata {
+  city: string | null
+  postal_code: string | null
+  department: string | null
+  region: string | null
+  latitude: number
+  longitude: number
+  geocoded_address: string | null
+}
 
 interface FetchLikeResponse {
   ok: boolean
@@ -27,6 +57,31 @@ interface FetchLikeResponse {
 interface UpsertBatch {
   create: FormationDirectusPayload[]
   update: (FormationDirectusPayload & { id: number })[]
+}
+
+interface ExistingFormation {
+  id: number
+  digiforma_id: string
+  image?: { id: string; description: string | null } | null
+  [key: string]: unknown
+}
+
+// Marqueur posé dans la description du fichier importé : permet de
+// distinguer un visuel importé par la sync d'un fichier posé par un
+// éditeur (jamais écrasé) et de détecter un changement d'URL source.
+const IMAGE_IMPORT_MARKER = 'digiforma-sync:'
+
+// Réécrits à chaque sync : données volatiles/techniques. Tous les autres
+// champs ne sont proposés que quand le champ Directus est vide — une
+// valeur éditoriale n'est jamais écrasée.
+const ALWAYS_SYNCED_FIELDS = new Set(['digiforma_id', 'sessions', 'raw'])
+
+function isEmptyValue(value: unknown): boolean {
+  if (value === null || value === undefined) return true
+  if (typeof value === 'string') return value.trim() === ''
+  if (Array.isArray(value)) return value.length === 0
+  if (typeof value === 'object') return Object.keys(value).length === 0
+  return false
 }
 
 const ALL_CENTRE_FIELDS = [
@@ -65,7 +120,10 @@ const ALL_FORMATION_FIELDS = [
   'sessions',
   'locations_text',
   'blocks',
-  'image_url',
+  'pedagogy',
+  'evaluation',
+  'validity',
+  'image',
   'generated_program_url',
   'status',
   'seo_title',
@@ -73,6 +131,8 @@ const ALL_FORMATION_FIELDS = [
   'seo_canonical',
   'raw',
   'famille.slug',
+  'sous_famille.slug',
+  'sous_famille.name',
   'created_at',
   'updated_at'
 ]
@@ -115,11 +175,72 @@ export class DirectusCatalogService {
     const existing = await this.fetchExisting(courses.map((c) => c.digiforma_id))
     const batch = this.buildBatch(courses, existing)
 
-    await Promise.all([this.createMany(batch.create), this.updateMany(batch.update)])
+    const [created] = await Promise.all([
+      this.createMany(batch.create),
+      this.updateMany(batch.update)
+    ])
+    await this.syncFormationImages(courses, existing, created)
 
     return {
       inserted: batch.create.length,
       updated: batch.update.length
+    }
+  }
+
+  /**
+   * Importe le visuel Digiforma dans la librairie de fichiers et le lie au
+   * champ `image` — un seul champ image, avec preview/remplacement dans
+   * Directus. Règles :
+   * - `image` vide → import + liaison ;
+   * - `image` liée à un fichier marqué `digiforma-sync:` avec une autre URL →
+   *   réimport (le visuel source a changé) ;
+   * - fichier posé par un éditeur → jamais touché.
+   */
+  private async syncFormationImages(
+    courses: FormationDirectusPayload[],
+    existing: Map<string, ExistingFormation>,
+    created: Array<{ id: number; digiforma_id: string }>
+  ): Promise<void> {
+    const createdIdByDigiformaId = new Map(created.map((r) => [r.digiforma_id, r.id]))
+
+    for (const course of courses) {
+      if (!course.image_url) continue
+
+      const found = existing.get(course.digiforma_id)
+      const formationId = found?.id ?? createdIdByDigiformaId.get(course.digiforma_id)
+      if (!formationId) continue
+
+      const marker = `${IMAGE_IMPORT_MARKER}${course.image_url}`
+      const current = found?.image
+      if (current) {
+        if (current.description === marker) continue
+        if (!current.description?.startsWith(IMAGE_IMPORT_MARKER)) continue
+      }
+
+      const fileId = await this.importFormationImage(course.image_url, course.title, marker)
+      if (!fileId) continue
+
+      await this.request(`${this.baseUrl}/items/formations/${formationId}`, 'PATCH', {
+        image: fileId
+      })
+    }
+  }
+
+  private async importFormationImage(
+    url: string,
+    title: string,
+    marker: string
+  ): Promise<string | null> {
+    try {
+      const response = await this.request<{ data: { id: string } }>(
+        `${this.baseUrl}/files/import`,
+        'POST',
+        { url, data: { title, description: marker } }
+      )
+      return response.data?.id ?? null
+    } catch (error) {
+      this.logger.warn({ error, url }, 'Formation image import failed — image left empty')
+      return null
     }
   }
 
@@ -164,38 +285,76 @@ export class DirectusCatalogService {
   }
 
   /**
-   * Applique les affectations famille (faites dans Directus) aux formations.
+   * Centres à géocoder : tous statuts confondus (un brouillon doit être
+   * géolocalisé avant sa publication), champs minimaux. Le filtre « adresse
+   * changée » se fait côté appelant via `geocoded_address`.
+   */
+  async fetchCentresForGeocoding(): Promise<GeocodableCentre[]> {
+    if (!this.enabled) {
+      return []
+    }
+
+    const url = new URL(`${this.baseUrl}/items/centres`)
+    url.searchParams.set('limit', '-1')
+    for (const field of ['id', 'slug', 'name', 'status', 'address', 'geocoded_address']) {
+      url.searchParams.append('fields[]', field)
+    }
+
+    const response = await this.request<{ data: GeocodableCentre[] }>(url.toString())
+    return response.data ?? []
+  }
+
+  /** Écrit les champs géo dérivés de l'adresse sur un centre. */
+  async updateCentre(id: number, patch: Partial<CentreGeodata>): Promise<void> {
+    if (!this.enabled) {
+      throw new Error('Directus catalog disabled: missing DIRECTUS_TOKEN or DIRECTUS_INTERNAL_URL')
+    }
+    await this.request(`${this.baseUrl}/items/centres/${id}`, 'PATCH', patch)
+  }
+
+  /**
+   * Applique les affectations famille / sous-famille proposées (par la sync ou
+   * par catégorie Digiforma) aux formations.
+   * - `famille` est écrite si différente de l'actuelle ;
+   * - `sous_famille` n'est écrite que si le champ est vide — une affectation
+   *   éditoriale n'est jamais écrasée.
    * Retourne le nombre de formations affectées / désaffectées.
    */
-  async applyFamilyAssignments(assignments: Map<string, string>): Promise<FamilyApplyResult> {
+  async applyFamilyAssignments(
+    assignments: Map<string, AssignmentProposal>
+  ): Promise<FamilyApplyResult> {
     if (!this.enabled) {
       throw new Error('Directus catalog disabled: missing DIRECTUS_TOKEN or DIRECTUS_INTERNAL_URL')
     }
 
-    const [formations, familyBySlug] = await Promise.all([
+    const [formations, familyBySlug, subFamilyByFamilySlug] = await Promise.all([
       this.fetchFormationsForAssignments(),
-      this.getFamilyIdsBySlug()
+      this.getFamilyIdsBySlug(),
+      this.getSubFamilyIdsByFamilySlug()
     ])
 
-    const result: FamilyApplyResult = { assigned: 0, cleared: 0 }
+    const result: FamilyApplyResult = { assigned: 0, cleared: 0, subAssigned: 0 }
     const patches: Promise<unknown>[] = []
 
     for (const formation of formations) {
-      const desiredSlug = assignments.get(formation.digiforma_id)
-      if (!desiredSlug) continue
+      const proposal = assignments.get(formation.digiforma_id)
+      if (!proposal) continue
 
-      const currentSlug = formation.famille?.slug ?? null
-      if (desiredSlug === currentSlug) continue
-
-      const familyId = familyBySlug.get(desiredSlug)
-      if (familyId === undefined) continue
+      const patch = this.buildAssignmentPatch(
+        formation,
+        proposal,
+        familyBySlug,
+        subFamilyByFamilySlug
+      )
+      if (Object.keys(patch).length === 0) continue
 
       patches.push(
-        this.request(`${this.baseUrl}/items/formations/${formation.id}`, 'PATCH', {
-          famille: familyId
-        }).then(() => {
-          result.assigned += 1
-        })
+        this.request(`${this.baseUrl}/items/formations/${formation.id}`, 'PATCH', patch).then(
+          () => {
+            if (patch.famille !== undefined) result.assigned += 1
+            if (patch.sous_famille !== undefined) result.subAssigned += 1
+          }
+        )
       )
     }
 
@@ -207,12 +366,36 @@ export class DirectusCatalogService {
     return result
   }
 
+  private buildAssignmentPatch(
+    formation: DirectusFormation,
+    proposal: AssignmentProposal,
+    familyBySlug: Map<string, number>,
+    subFamilyByFamilySlug: Map<string, Map<string, number>>
+  ): Record<string, number> {
+    const patch: Record<string, number> = {}
+    const currentFamilleSlug = formation.famille?.slug ?? null
+
+    if (proposal.famille && proposal.famille !== currentFamilleSlug) {
+      const familyId = familyBySlug.get(proposal.famille)
+      if (familyId !== undefined) patch.famille = familyId
+    }
+
+    const effectiveFamilleSlug = proposal.famille ?? currentFamilleSlug
+    if (proposal.sousFamille && !formation.sous_famille && effectiveFamilleSlug) {
+      const subFamilyId = subFamilyByFamilySlug.get(effectiveFamilleSlug)?.get(proposal.sousFamille)
+      if (subFamilyId !== undefined) patch.sous_famille = subFamilyId
+    }
+
+    return patch
+  }
+
   private async fetchFormationsForAssignments(): Promise<DirectusFormation[]> {
     const url = new URL(`${this.baseUrl}/items/formations`)
     url.searchParams.set('limit', '-1')
     url.searchParams.append('fields[]', 'id')
     url.searchParams.append('fields[]', 'digiforma_id')
     url.searchParams.append('fields[]', 'famille.slug')
+    url.searchParams.append('fields[]', 'sous_famille.slug')
 
     const response = await this.request<{ data: DirectusFormation[] }>(url.toString())
     return response.data ?? []
@@ -235,22 +418,48 @@ export class DirectusCatalogService {
     return map
   }
 
-  private async fetchExisting(digiformaIds: string[]): Promise<Map<string, number>> {
-    const map = new Map<string, number>()
+  /** Slugs de sous-familles publiées → id, regroupés par slug de famille. */
+  async getSubFamilyIdsByFamilySlug(): Promise<Map<string, Map<string, number>>> {
+    const url = new URL(`${this.baseUrl}/items/sous_familles_formation`)
+    url.searchParams.set('filter[status][_eq]', 'published')
+    url.searchParams.set('limit', '-1')
+    url.searchParams.append('fields[]', 'id')
+    url.searchParams.append('fields[]', 'slug')
+    url.searchParams.append('fields[]', 'famille.slug')
+
+    const response = await this.request<{
+      data: Array<{ id: number; slug: string; famille: { slug: string } | null }>
+    }>(url.toString())
+
+    const map = new Map<string, Map<string, number>>()
+    for (const row of response.data ?? []) {
+      const familleSlug = row.famille?.slug
+      if (!familleSlug) continue
+      if (!map.has(familleSlug)) map.set(familleSlug, new Map())
+      map.get(familleSlug)?.set(row.slug, row.id)
+    }
+    return map
+  }
+
+  private async fetchExisting(digiformaIds: string[]): Promise<Map<string, ExistingFormation>> {
+    const map = new Map<string, ExistingFormation>()
 
     for (let i = 0; i < digiformaIds.length; i += 100) {
       const slice = digiformaIds.slice(i, i + 100)
       const url = new URL(`${this.baseUrl}/items/formations`)
-      url.searchParams.append('fields[]', 'id')
-      url.searchParams.append('fields[]', 'digiforma_id')
+      for (const field of ALL_FORMATION_FIELDS.filter(
+        (f) => !f.includes('.') && f !== 'created_at' && f !== 'updated_at'
+      )) {
+        url.searchParams.append('fields[]', field)
+      }
+      url.searchParams.append('fields[]', 'image.id')
+      url.searchParams.append('fields[]', 'image.description')
       url.searchParams.set('filter[digiforma_id][_in]', slice.join(','))
       url.searchParams.set('limit', '-1')
 
-      const response = await this.request<{ data: Array<{ id: number; digiforma_id: string }> }>(
-        url.toString()
-      )
+      const response = await this.request<{ data: ExistingFormation[] }>(url.toString())
       for (const row of response.data ?? []) {
-        map.set(row.digiforma_id, row.id)
+        map.set(row.digiforma_id, row)
       }
     }
 
@@ -259,25 +468,51 @@ export class DirectusCatalogService {
 
   private buildBatch(
     courses: FormationDirectusPayload[],
-    existing: Map<string, number>
+    existing: Map<string, ExistingFormation>
   ): UpsertBatch {
     const batch: UpsertBatch = { create: [], update: [] }
 
     for (const course of courses) {
-      const id = existing.get(course.digiforma_id)
-      if (id === undefined) {
+      const found = existing.get(course.digiforma_id)
+      if (!found) {
         batch.create.push(course)
       } else {
-        batch.update.push({ id, ...course })
+        // Sync non destructive : un champ n'est écrit que s'il est vide
+        // côté Directus — le contenu éditorial n'est jamais écrasé. Seuls
+        // sessions/raw/digiforma_id restent réécrits à chaque run.
+        const patch = {} as FormationDirectusPayload
+        for (const [key, value] of Object.entries(course)) {
+          const field = key as keyof FormationDirectusPayload
+          if (ALWAYS_SYNCED_FIELDS.has(key) || isEmptyValue(found[key])) {
+            patch[field] = value as never
+          }
+        }
+        batch.update.push({ id: found.id, ...patch })
       }
     }
 
     return batch
   }
 
-  private async createMany(rows: FormationDirectusPayload[]): Promise<void> {
-    if (rows.length === 0) return
-    await this.request(`${this.baseUrl}/items/formations`, 'POST', rows)
+  // `image_url` n'est pas une colonne : on la retire du corps d'écriture.
+  private toColumnPayload(row: FormationDirectusPayload): Record<string, unknown> {
+    const data: Record<string, unknown> = { ...row }
+    delete data.image_url
+    return data
+  }
+
+  private async createMany(
+    rows: FormationDirectusPayload[]
+  ): Promise<Array<{ id: number; digiforma_id: string }>> {
+    if (rows.length === 0) return []
+    const response = await this.request<{
+      data: Array<{ id: number; digiforma_id: string }>
+    }>(
+      `${this.baseUrl}/items/formations`,
+      'POST',
+      rows.map((r) => this.toColumnPayload(r))
+    )
+    return response?.data ?? []
   }
 
   private async updateMany(rows: UpsertBatch['update']): Promise<void> {
@@ -285,8 +520,12 @@ export class DirectusCatalogService {
       const slice = rows.slice(i, i + this.updateConcurrency)
       await Promise.all(
         slice.map((row) => {
-          const { id, ...data } = row
-          return this.request(`${this.baseUrl}/items/formations/${id}`, 'PATCH', data)
+          const { id, ...rest } = row
+          return this.request(
+            `${this.baseUrl}/items/formations/${id}`,
+            'PATCH',
+            this.toColumnPayload(rest)
+          )
         })
       )
     }

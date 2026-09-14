@@ -1,6 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import tailwindcss from '@tailwindcss/vite'
 import { typography } from '@learnup/ui'
+import { REVEAL_TRANSITION } from './app/utils/reveal'
 
 const apiBase = process.env.NUXT_API_BASE ?? 'http://localhost:3001'
 // Deux valeurs distinctes : le rendu SSR tourne dans le conteneur front et
@@ -16,6 +17,8 @@ export default defineNuxtConfig({
   future: { compatibilityVersion: 4 },
   devtools: { enabled: true },
   app: {
+    pageTransition: { name: 'page', mode: 'out-in' },
+    layoutTransition: { name: 'layout', mode: 'out-in' },
     head: {
       htmlAttrs: { lang: 'fr' },
       link: [
@@ -26,7 +29,18 @@ export default defineNuxtConfig({
       ]
     }
   },
-  modules: ['shadcn-nuxt', '@nuxt/image'],
+  modules: ['shadcn-nuxt', '@nuxt/image', 'motion-v/nuxt'],
+  motionV: {
+    directives: true,
+    presets: {
+      reveal: {
+        initial: { opacity: 0, y: 28 },
+        whileInView: { opacity: 1, y: 0 },
+        inViewOptions: { once: true, margin: '0px 0px -6% 0px' },
+        transition: REVEAL_TRANSITION
+      }
+    }
+  },
   css: ['~/assets/css/main.css'],
   vite: {
     plugins: [tailwindcss()]
@@ -69,6 +83,11 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     apiBase,
+    // Secret serveur → API : bypass du rate-limit public pour les fetches SSR
+    // (sans ça, tous les visiteurs partagent le bucket de l'IP du front).
+    internalApiToken: process.env.NUXT_INTERNAL_API_TOKEN ?? '',
+    // Secret Directus → front : purge du cache ISR (x-cache-secret).
+    cachePurgeSecret: process.env.NUXT_CACHE_PURGE_SECRET ?? '',
     public: {
       apiBase: publicApiBase,
       siteUrl

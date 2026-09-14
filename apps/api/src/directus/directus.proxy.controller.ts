@@ -21,6 +21,7 @@ const ALLOWED_ITEM_COLLECTIONS = new Set([
   'articles',
   'centres',
   'familles_formation',
+  'sous_familles_formation',
   'formations'
 ])
 const UPSTREAM_TIMEOUT_MS = 10_000

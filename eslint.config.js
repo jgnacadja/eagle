@@ -64,7 +64,17 @@ const nuxtGlobals = {
   useCentres: 'readonly',
   useCentreDepartments: 'readonly',
   sanitizeHtml: 'readonly',
-  logServerError: 'readonly'
+  logServerError: 'readonly',
+  internalSsrHeaders: 'readonly'
+}
+
+// Auto-imports Nitro (apps/front/server/) — injectés par unimport au build,
+// pas d'import explicite dans les handlers.
+const nitroGlobals = {
+  defineEventHandler: 'readonly',
+  getHeader: 'readonly',
+  readBody: 'readonly',
+  useStorage: 'readonly'
 }
 
 const browserGlobals = {
@@ -149,6 +159,12 @@ export default defineConfig(
         ...nuxtGlobals,
         ...vueGlobals
       }
+    }
+  },
+  {
+    files: ['apps/front/server/**/*.ts'],
+    languageOptions: {
+      globals: nitroGlobals
     }
   },
   {

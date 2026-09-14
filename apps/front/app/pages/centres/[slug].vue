@@ -158,6 +158,16 @@
                       </p>
                     </div>
                   </div>
+                  <Button
+                    v-if="centre.qualiopi_certificate"
+                    as-child
+                    variant="outline"
+                    class="mt-md h-control w-full rounded-full border-outline bg-paper px-md py-sm text-small font-semibold text-ink transition hover:border-primary"
+                  >
+                    <a :href="qualiopiCertificateUrl" target="_blank" rel="noopener">
+                      Télécharger le certificat Qualiopi
+                    </a>
+                  </Button>
                 </CardContent>
               </Card>
             </section>
@@ -192,10 +202,11 @@
                 <CenterFormationCard
                   v-for="formation in formations"
                   :key="formation.slug"
-                  :family="formation.family"
+                  :sub-family="formation.subFamily"
                   :title="formation.title"
                   :description="formation.description"
                   :meta="formation.meta"
+                  :status="formation.status"
                   :to="formation.to ?? undefined"
                 />
               </div>
@@ -210,7 +221,7 @@
                 class="mt-md h-auto p-0 text-small font-bold text-primary transition-colors hover:text-accent-text"
               >
                 <NuxtLink :to="`/formations?lieu=${centre.city ?? ''}`"
-                  >Voir toutes les formations du centre →</NuxtLink
+                  >Voir toutes les formations du centre <span class="link-arrow">→</span></NuxtLink
                 >
               </Button>
             </section>
@@ -231,6 +242,7 @@
                     :places="session.places"
                     :type="session.type"
                     :to="session.to"
+                    :cta-label="session.ctaLabel"
                   />
                 </li>
               </ul>
@@ -272,7 +284,9 @@
               variant="link"
               class="hidden h-auto p-0 text-small font-bold text-primary transition-colors hover:text-accent-text sm:inline"
             >
-              <NuxtLink to="/centres">Voir le réseau de centres →</NuxtLink>
+              <NuxtLink to="/centres"
+                >Voir le réseau de centres <span class="link-arrow">→</span></NuxtLink
+              >
             </Button>
           </div>
           <div class="mt-md grid gap-grid sm:grid-cols-3">
@@ -296,7 +310,9 @@
             variant="link"
             class="mt-md h-auto p-0 text-small font-bold text-primary transition-colors hover:text-accent-text sm:hidden"
           >
-            <NuxtLink to="/centres">Voir le réseau de centres →</NuxtLink>
+            <NuxtLink to="/centres"
+              >Voir le réseau de centres <span class="link-arrow">→</span></NuxtLink
+            >
           </Button>
         </section>
       </div>
@@ -343,7 +359,9 @@ import {
   useCatalog,
   type FormationItem
 } from '~/composables/useCatalog'
+import { availabilityStatus } from '~/composables/useCentres'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
+import { directusAssetUrl } from '~/utils/directusAsset'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
 import type { CenterResult } from '~/types/center-result'
@@ -418,6 +436,10 @@ const singleCenter = computed<CenterResult[]>(() => {
 
 const specialties = computed(() => centre.value?.specialties ?? [])
 
+const qualiopiCertificateUrl = computed(
+  () => directusAssetUrl(centre.value?.qualiopi_certificate) ?? ''
+)
+
 // Breadcrumb adapté à l'état affiché. route.meta est partagé entre toutes
 // les routes /centres/:slug : on réassigne la valeur à chaque changement
 // d'état pour ne pas conserver le breadcrumb d'un slug précédent.
@@ -481,13 +503,37 @@ const familyNames = await useDirectusList<FamilleFormation>(
 // figé garderait des libellés de famille manquants.
 const familyLabel = computed(() => new Map((familyNames.value ?? []).map((f) => [f.slug, f.name])))
 
+// Statut de disponibilité d'une formation dans CE centre (sémantique
+// partagée `availabilityStatus` — voir useCentres).
+function centreFormationStatus(course: CourseListItem): FormationItem['status'] {
+  const dates = upcomingSessions(course)
+    .filter((s) => s.location?.centreSlug === slug)
+    .map((s) => s.startDate)
+    .filter((d): d is string => Boolean(d))
+  return availabilityStatus(dates)
+}
+
+// Méta « durée · modalités · ville » conforme à la maquette de la carte
+// formation en fiche centre.
+function centreFormationMeta(course: CourseListItem): string {
+  const parts: string[] = []
+  if (course.durationDays) parts.push(`${course.durationDays} jours`)
+  const modalities = (course.modalities ?? []).map((m) => MODALITY_LABELS[m] ?? m).join(' / ')
+  if (modalities) parts.push(modalities)
+  if (centre.value?.city) parts.push(centre.value.city)
+  return parts.join(' · ')
+}
+
 const formations = computed<FormationItem[]>(
   () =>
-    centreCatalog.data.value?.items
-      .slice(0, 4)
-      .map((course) =>
-        mapCourse(course, course.familySlug ? familyLabel.value.get(course.familySlug) : undefined)
-      ) ?? []
+    centreCatalog.data.value?.items.slice(0, 4).map((course) => ({
+      ...mapCourse(
+        course,
+        course.familySlug ? familyLabel.value.get(course.familySlug) : undefined
+      ),
+      meta: centreFormationMeta(course),
+      status: centreFormationStatus(course)
+    })) ?? []
 )
 
 interface CentreSession {
@@ -497,7 +543,8 @@ interface CentreSession {
   title: string
   meta: string
   places?: number
-  type?: 'success' | 'warning'
+  type?: 'success' | 'warning' | 'neutral'
+  ctaLabel: string
   to: string
 }
 
@@ -534,6 +581,7 @@ function toCentreSession(
     meta: sessionMeta(course, session),
     places,
     type: sessionSeatType(places),
+    ctaLabel: places === 0 ? "Être informé d'une place" : 'Voir la session',
     to: course.familySlug ? `/formations/${course.familySlug}/${course.slug}` : '/formations'
   }
 }

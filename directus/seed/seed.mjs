@@ -7,7 +7,7 @@
 // la saute proprement (log + skip) plutôt que d'échouer — il devient
 // pleinement actif une fois ST-11 livré, sans changement requis.
 
-import { articles, centres, famillesFormation } from './data.mjs'
+import { articles, centres, famillesFormation, formations, sousFamillesFormation } from './data.mjs'
 import { log, logError } from '../logger.mjs'
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL ?? 'http://localhost:8055'
@@ -17,7 +17,22 @@ const ADMIN_PASSWORD = process.env.DIRECTUS_ADMIN_PASSWORD
 const DATASETS = [
   { collection: 'centres', items: centres },
   { collection: 'familles_formation', items: famillesFormation },
-  { collection: 'articles', items: articles }
+  {
+    collection: 'sous_familles_formation',
+    items: sousFamillesFormation,
+    // Chaque item porte `familleSlug` : résolu en id de familles_formation
+    // (collection seedée juste avant) avant l'upsert.
+    refs: [{ key: 'familleSlug', collection: 'familles_formation', field: 'famille' }]
+  },
+  { collection: 'articles', items: articles },
+  {
+    collection: 'formations',
+    items: formations,
+    refs: [
+      { key: 'familleSlug', collection: 'familles_formation', field: 'famille' },
+      { key: 'sousFamilleSlug', collection: 'sous_familles_formation', field: 'sous_famille' }
+    ]
+  }
 ]
 
 async function waitForDirectus(timeoutMs = 30_000, intervalMs = 2_000) {
@@ -121,36 +136,60 @@ async function upsertItem(token, collection, item, existingId) {
   return existingId ? 'updated' : 'created'
 }
 
-async function seedDataset(token, { collection, items }) {
+// Résout les clés `*Slug` en ids de leurs collections cibles. Retourne
+// `null` si une ref est manquante — l'item doit être ignoré.
+function resolveRefs(item, refs, refsBySlug, collection) {
+  for (const ref of refs ?? []) {
+    if (item[ref.key] === undefined) continue
+    const refId = refsBySlug.get(ref.collection).get(item[ref.key])
+    if (refId === undefined) {
+      log(`⏭  ${collection}/${item.slug} — ${ref.collection}/${item[ref.key]} absent, ignoré`)
+      return null
+    }
+    item[ref.field] = refId
+    delete item[ref.key]
+  }
+  return item
+}
+
+const FILE_FIELDS = [
+  { key: 'imageUrl', field: 'image', suffix: '' },
+  { key: 'author_imageUrl', field: 'author_image', suffix: '-author' },
+  { key: 'cover_imageUrl', field: 'cover_image', suffix: '-cover' }
+]
+
+async function prepareItem(token, rawItem, refs, refsBySlug, collection) {
+  const fileKeys = new Set(FILE_FIELDS.map(({ key }) => key))
+  const item = Object.fromEntries(Object.entries(rawItem).filter(([key]) => !fileKeys.has(key)))
+
+  if (!resolveRefs(item, refs, refsBySlug, collection)) return null
+
+  for (const { key, field, suffix } of FILE_FIELDS) {
+    const url = rawItem[key]
+    if (url) {
+      item[field] = await ensureFile(token, url, `seed-${collection}-${item.slug}${suffix}.jpg`)
+    }
+  }
+  return item
+}
+
+async function seedDataset(token, { collection, items, refs }) {
   if (!(await collectionExists(token, collection))) {
     log(`⏭  ${collection} — collection absente (ST-11 non livré), ignoré`)
     return
   }
 
   const existingBySlug = await fetchExistingBySlug(token, collection)
+  const refsBySlug = new Map()
+  for (const ref of refs ?? []) {
+    if (!refsBySlug.has(ref.collection)) {
+      refsBySlug.set(ref.collection, await fetchExistingBySlug(token, ref.collection))
+    }
+  }
   const results = { created: 0, updated: 0 }
   for (const rawItem of items) {
-    const { imageUrl, author_imageUrl, cover_imageUrl, ...item } = rawItem
-
-    if (imageUrl) {
-      item.image = await ensureFile(token, imageUrl, `seed-${collection}-${item.slug}.jpg`)
-    }
-
-    if (author_imageUrl) {
-      item.author_image = await ensureFile(
-        token,
-        author_imageUrl,
-        `seed-${collection}-${item.slug}-author.jpg`
-      )
-    }
-
-    if (cover_imageUrl) {
-      item.cover_image = await ensureFile(
-        token,
-        cover_imageUrl,
-        `seed-${collection}-${item.slug}-cover.jpg`
-      )
-    }
+    const item = await prepareItem(token, rawItem, refs, refsBySlug, collection)
+    if (!item) continue
 
     const outcome = await upsertItem(token, collection, item, existingBySlug.get(item.slug))
     results[outcome] += 1

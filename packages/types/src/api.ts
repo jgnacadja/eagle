@@ -12,6 +12,25 @@ export interface Paginated<T> {
   pageSize: number
 }
 
+/**
+ * Compteurs de facettes du catalogue : chaque dimension est calculée sur le
+ * résultat filtré en ignorant son propre filtre (facettage standard), pour
+ * que le front n'affiche que les options qui renvoient des résultats.
+ */
+export interface CatalogFacets {
+  families: Record<string, number>
+  subFamilies: Record<string, number>
+  modalities: Record<string, number>
+  durations: Record<string, number>
+  locations: Record<string, number>
+  cpf: number
+  certifying: number
+}
+
+export interface CoursePage extends Paginated<CourseListItem> {
+  facets: CatalogFacets
+}
+
 export interface CourseSessionLocation {
   name: string | null
   city: string | null
@@ -44,10 +63,14 @@ export interface CourseBase {
   certifierName: string | null
   category: string | null
   familySlug: string | null
+  subFamilySlug: string | null
+  subFamilyName: string | null
   centerSlug: string | null
   centerSlugs: string[]
   modalities: string[]
   sessions: CourseSession[] | null
+  /** Id du fichier Directus (champ éditorial `image`) — sert via `/directus/assets/{id}`. */
+  image: string | null
   imageUrl: string | null
   generatedProgramUrl: string | null
   status: string
@@ -58,11 +81,18 @@ export interface CourseBase {
 
 export type CourseListItem = CourseBase
 
+export interface CoursePedagogyItem {
+  title: string
+  description: string | null
+}
+
 export interface Course extends CourseBase {
   blocks: unknown[] | null
   targets: string[] | null
   prerequisites: string[] | null
+  pedagogy: CoursePedagogyItem[] | null
   evaluation: string[] | null
+  validity: string | null
   createdAt: string
   updatedAt: string
 }

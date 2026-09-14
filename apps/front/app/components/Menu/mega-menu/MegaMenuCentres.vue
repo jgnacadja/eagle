@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="mx-auto grid w-full max-w-container grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter"
-  >
+  <div class="grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter">
     <!-- RÉGIONS -->
     <div>
       <h3 class="text-small font-semibold text-ink-muted">Régions</h3>
@@ -26,7 +24,7 @@
             class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
-            Toutes les régions →
+            Toutes les régions <span class="link-arrow">→</span>
           </NuxtLink>
         </li>
       </ul>
@@ -39,25 +37,27 @@
           selectedRegionCount > 1 ? 's' : ''
         }}
       </h3>
-      <ul class="mt-sm grid grid-cols-2 gap-sm">
-        <li v-for="centre in centresAffiches" :key="centre.slug">
-          <MegaMenuCard
-            :to="`/centres/${centre.slug}`"
-            :title="centre.name"
-            :meta="centre.department ?? centre.city"
-            @select="$emit('close')"
-          />
-        </li>
-        <li class="col-span-2">
-          <NuxtLink
-            to="/centres"
-            class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
-            @click="$emit('close')"
-          >
-            Tous les centres {{ selectedRegionLabel }} →
-          </NuxtLink>
-        </li>
-      </ul>
+      <Transition name="menu-panel" mode="out-in">
+        <ul :key="selectedRegion" class="mt-sm grid grid-cols-2 gap-sm">
+          <li v-for="centre in centresAffiches" :key="centre.slug">
+            <MegaMenuCard
+              :to="`/centres/${centre.slug}`"
+              :title="centre.name"
+              :meta="centre.department ?? centre.city"
+              @select="$emit('close')"
+            />
+          </li>
+          <li class="col-span-2">
+            <NuxtLink
+              :to="{ path: '/centres', query: { region: selectedRegionLabel } }"
+              class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
+              @click="$emit('close')"
+            >
+              Tous les centres {{ selectedRegionLabel }} <span class="link-arrow">→</span>
+            </NuxtLink>
+          </li>
+        </ul>
+      </Transition>
     </div>
 
     <!-- TROUVER UN CENTRE + CTA -->

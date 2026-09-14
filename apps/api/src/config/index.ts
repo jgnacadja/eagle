@@ -5,6 +5,15 @@ import { makeCorsOrigin, toOriginMatcher } from '../common/utils/cors.util'
 
 export function configureApp(app: INestApplication): void {
   app.use(helmet())
+
+  // Derrière un proxy (Vercel, LB, Docker) : sans `trust proxy`, req.ip vaut
+  // l'IP du frontal et tout le trafic partage le même bucket du throttler
+  // (100 req/min au total). On fait confiance au premier hop uniquement.
+  const httpApp = app.getHttpAdapter().getInstance() as
+    { set?: (key: string, value: unknown) => void } | undefined
+
+  httpApp?.set?.('trust proxy', 1)
+
   const allowedOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:3000')
     .split(',')
     .map((o) => o.trim())

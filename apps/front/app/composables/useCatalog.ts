@@ -1,9 +1,13 @@
-import type { CourseListItem, CourseSession, Paginated } from '@learnup/types'
+import type { CourseListItem, CoursePage, CourseSession } from '@learnup/types'
 import { toValue, type MaybeRefOrGetter } from 'vue'
+import { directusAssetUrl } from '~/utils/directusAsset'
+import { placesLabel } from '~/utils/placesLabel'
+import { MODALITY_LABELS } from '~/utils/catalog-filters'
 
 export interface CatalogQuery {
   search?: string
   family?: string
+  subFamily?: string
   page?: number
   limit?: number
   sort?: 'updatedAt' | 'duration' | 'price' | 'name' | 'relevance'
@@ -20,6 +24,7 @@ export interface FormationItem {
   slug: string
   family: string
   familyKey: string
+  subFamily: string | null
   title: string
   description: string
   meta: string
@@ -48,6 +53,8 @@ export function buildDuration(course: CourseListItem): 'courte' | 'moyenne' | 'l
 export function buildMeta(course: CourseListItem): string {
   const parts: string[] = []
   if (course.durationDays) parts.push(`${course.durationDays} jours`)
+  const modalities = (course.modalities ?? []).map((m) => MODALITY_LABELS[m] ?? m).join(' / ')
+  if (modalities) parts.push(modalities)
   if (course.certification) parts.push(course.certification)
   if (course.certifierName && course.certifierName !== course.certification) {
     parts.push(course.certifierName)
@@ -104,32 +111,35 @@ export function buildSessionBadge(course: CourseListItem): string | null {
   return thisMonth ? 'Sessions ce mois-ci' : 'Sessions programmées'
 }
 
+// Badge de disponibilité d'une carte formation : « N places disponibles »
+// en warning quand la prochaine session est tendue, « Sessions ce mois-ci »
+// quand une session démarre bientôt, date sinon ; « Sur demande » neutre
+// quand aucune session n'est publiée (formation organisable).
 export function buildStatus(
   course: CourseListItem
 ): { type: 'success' | 'warning' | 'neutral'; label: string } | undefined {
   const upcoming = upcomingSessions(course).sort((a, b) =>
     (a.startDate ?? '').localeCompare(b.startDate ?? '')
   )[0]
-  if (!upcoming?.startDate) return undefined
+  if (!upcoming?.startDate) return { type: 'neutral', label: 'Sur demande' }
+
+  const seats = upcoming.seatsRemaining
+  if (seats != null && seats <= 3) {
+    return { type: 'warning', label: placesLabel(seats) }
+  }
 
   const date = new Date(`${upcoming.startDate}T00:00:00Z`)
+  const now = new Date()
+  const thisMonth =
+    date.getUTCFullYear() === now.getUTCFullYear() && date.getUTCMonth() === now.getUTCMonth()
+  if (thisMonth) return { type: 'success', label: 'Sessions ce mois-ci' }
+
   const short = new Intl.DateTimeFormat('fr-FR', {
     day: '2-digit',
     month: '2-digit',
     timeZone: 'UTC'
   }).format(date)
-
-  const seats = upcoming.seatsRemaining
-  if (seats != null && seats <= 3) {
-    return { type: 'warning', label: `${seats} place${seats > 1 ? 's' : ''} le ${short}` }
-  }
-
-  const now = new Date()
-  const thisMonth =
-    date.getUTCFullYear() === now.getUTCFullYear() && date.getUTCMonth() === now.getUTCMonth()
-  return thisMonth
-    ? { type: 'success', label: 'Sessions ce mois-ci' }
-    : { type: 'success', label: `Prochaine session le ${short}` }
+  return { type: 'success', label: `Prochaine session le ${short}` }
 }
 
 export function mapCourse(course: CourseListItem, familyName?: string): FormationItem {
@@ -140,19 +150,20 @@ export function mapCourse(course: CourseListItem, familyName?: string): Formatio
     slug: course.slug,
     family: familyName ?? familySlug ?? 'Autre',
     familyKey,
+    subFamily: course.subFamilyName ?? null,
     title: course.title,
     description: course.description ?? '',
     meta: buildMeta(course),
     days: course.durationDays ?? 0,
     duration: buildDuration(course),
     certifications: buildCertifications(course),
-    image: course.imageUrl ?? null,
+    image: directusAssetUrl(course.image) ?? course.imageUrl ?? null,
     status: buildStatus(course),
     to: familySlug ? `/formations/${familySlug}/${course.slug}` : null
   }
 }
 
-export type CatalogApiResult = Paginated<CourseListItem>
+export type CatalogApiResult = CoursePage
 
 export async function useCatalog(query: MaybeRefOrGetter<CatalogQuery>) {
   const config = useRuntimeConfig()
@@ -165,8 +176,10 @@ export async function useCatalog(query: MaybeRefOrGetter<CatalogQuery>) {
     `catalog:${JSON.stringify(buildApiQuery(toValue(query)))}`,
     async () => {
       try {
+        const headers = internalSsrHeaders(config)
         return await $fetch<CatalogApiResult>(`${apiBase}/courses`, {
-          query: buildApiQuery(toValue(query))
+          query: buildApiQuery(toValue(query)),
+          headers
         })
       } catch (err) {
         if (import.meta.server) {
@@ -177,12 +190,12 @@ export async function useCatalog(query: MaybeRefOrGetter<CatalogQuery>) {
     },
     {
       watch: [() => toValue(query)],
-      // Nuxt consulte getCachedData à CHAQUE execute() — y compris les
-      // refetches déclenchés par le watch ci-dessus. Ne servir le payload
-      // qu'à l'initialisation : sinon une query qui change (recherche,
-      // filtres, pagination) retourne les données périmées sans refetch.
+      // Le payload SSR n'est servi que pendant l'hydratation. Ensuite tout
+      // mount/refetch va chercher des données fraîches : sinon un résultat
+      // vide ou transitoire (filtre, 429, sync incomplète) restait servi
+      // toute la session — « aucun résultat » figé au retour sur la page.
       getCachedData: (key, nuxtApp, ctx) =>
-        ctx.cause === 'initial'
+        ctx.cause === 'initial' && nuxtApp.isHydrating
           ? ((nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as
               CatalogApiResult | undefined)
           : undefined
@@ -200,6 +213,7 @@ function buildApiQuery(query: CatalogQuery): Record<string, unknown> {
 
   if (query.search?.trim()) params.search = query.search.trim()
   if (query.family) params.family = query.family
+  if (query.subFamily) params.subFamily = query.subFamily
   if (query.cpf === true) params.cpf = true
   if (query.certifying === true) params.certifying = true
   if (query.durations?.length) params.durations = query.durations.join(',')

@@ -76,6 +76,51 @@ vi.mock('~/composables/useMenuData', async () => {
           ]
         ])
       )
+    }),
+    useMenuActualites: () => ({
+      rubriques: ref([
+        { slug: 'toute-actualite', label: 'Toute l’actualité du réseau' },
+        { slug: 'reglementation', label: 'Réglementation' },
+        { slug: 'vie-du-reseau', label: 'Vie du réseau' }
+      ]),
+      regions: ref([
+        { slug: 'ile-de-france', label: 'Île-de-France', count: 3 },
+        { slug: 'occitanie', label: 'Occitanie', count: 1 }
+      ]),
+      actualitesParRegion: ref({
+        'ile-de-france': [
+          {
+            slug: 'recyclage-caces-echeances-2027-idf',
+            categorySlug: 'reglementation',
+            tag: 'Réglementation',
+            date: '3 septembre 2026',
+            title: 'Recyclage CACES : anticiper les échéances 2027 en Île-de-France'
+          },
+          {
+            slug: 'nouveau-centre-creteil',
+            categorySlug: 'vie-du-reseau',
+            tag: 'Vie du réseau',
+            date: '28 août 2026',
+            title: 'Nouveau centre ouvert à Créteil'
+          }
+        ],
+        occitanie: [
+          {
+            slug: 'ouverture-toulouse-management',
+            categorySlug: 'vie-du-reseau',
+            tag: 'Vie du réseau',
+            date: '19 août 2026',
+            title: 'Le centre de Toulouse ouvre une offre management'
+          },
+          {
+            slug: 'session-occitanie',
+            categorySlug: 'reglementation',
+            tag: 'Réglementation',
+            date: '18 août 2026',
+            title: 'Les obligations évoluent en Occitanie'
+          }
+        ]
+      })
     })
   }
 })
@@ -227,5 +272,15 @@ describe('MegaMenuActualites', () => {
     expect(wrapper.find('a[href="/actualites/recyclage-caces-echeances-2027-idf"]').exists()).toBe(
       true
     )
+  })
+
+  it('filtre les publications quand une rubrique est sélectionnée', async () => {
+    const wrapper = mount(MegaMenuActualites, { global: { stubs } })
+    const rubrique = wrapper.findAll('button').find((button) => button.text() === 'Vie du réseau')!
+
+    await rubrique.trigger('click')
+
+    expect(wrapper.text()).toContain('Nouveau centre ouvert à Créteil')
+    expect(wrapper.text()).not.toContain('Recyclage CACES : anticiper les échéances 2027')
   })
 })

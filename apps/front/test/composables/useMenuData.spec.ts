@@ -5,7 +5,8 @@ import {
   useMenuCentres,
   useMenuFamilles,
   useMenuFormationsALaUne,
-  useMenuFormationsParFamille
+  useMenuFormationsParFamille,
+  useMenuActualites
 } from '~/composables/useMenuData'
 
 const fetchMock = vi.fn()
@@ -263,6 +264,46 @@ describe('useMenuData', () => {
       await flushPromises()
 
       expect(formations.value).toEqual([])
+    })
+  })
+
+  describe('useMenuActualites', () => {
+    it('mappe les articles publiés par rubrique et par région', async () => {
+      directusRequestMock.mockResolvedValue([
+        {
+          slug: 'article-caces',
+          title: 'Anticiper les échéances CACES',
+          category: 'Réglementation',
+          region: 'Île-de-France',
+          publish_at: '2026-09-03T08:00:00.000Z'
+        },
+        {
+          slug: 'article-reseau',
+          title: 'Un nouveau centre ouvre',
+          category: 'Vie du réseau',
+          region: 'Occitanie',
+          publish_at: '2026-08-19T08:00:00.000Z'
+        }
+      ])
+
+      const menu = useMenuActualites()
+      await flushPromises()
+
+      expect(menu.rubriques.value).toEqual([
+        { slug: 'toute-actualite', label: 'Toute l’actualité du réseau' },
+        { slug: 'reglementation', label: 'Réglementation' },
+        { slug: 'vie-du-reseau', label: 'Vie du réseau' }
+      ])
+      expect(menu.regions.value).toEqual([
+        { slug: 'ile-de-france', label: 'Île-de-France', count: 1 },
+        { slug: 'occitanie', label: 'Occitanie', count: 1 }
+      ])
+      expect(menu.actualitesParRegion.value['ile-de-france']?.[0]).toMatchObject({
+        slug: 'article-caces',
+        tag: 'Réglementation',
+        title: 'Anticiper les échéances CACES'
+      })
+      expect(directusRequestMock).toHaveBeenCalled()
     })
   })
 })

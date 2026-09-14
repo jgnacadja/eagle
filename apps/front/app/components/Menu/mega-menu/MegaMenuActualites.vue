@@ -1,42 +1,54 @@
 <template>
-  <div class="grid w-full grid-cols-3 gap-lg px-gutter-mobile py-lg md:px-gutter">
+  <div
+    class="mx-auto grid w-full max-w-container grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter"
+  >
     <!-- RUBRIQUES -->
-    <div>
-      <h3 class="text-small font-semibold text-ink-muted">Rubriques</h3>
+    <div class="border-r border-rule pr-lg">
+      <h3 class="text-small font-semibold text-ink-muted uppercase">Rubriques</h3>
       <ul class="mt-sm space-y-1">
-        <li v-for="rubrique in rubriquesActualites" :key="rubrique.slug">
-          <NuxtLink
-            to="/actualites"
-            class="block rounded-md px-2 py-1.5 text-body text-primary transition-colors hover:text-accent-text"
-            @click="$emit('close')"
+        <li v-for="rubrique in rubriques" :key="rubrique.slug">
+          <button
+            type="button"
+            class="block w-full rounded-md px-2 py-1.5 text-left text-body text-primary transition-colors hover:text-accent-text"
+            :class="
+              rubrique.slug === selectedRubrique
+                ? 'bg-surface font-semibold text-ink'
+                : 'font-medium'
+            "
+            :aria-pressed="rubrique.slug === selectedRubrique"
+            @click="selectRubrique(rubrique.slug)"
           >
             {{ rubrique.label }}
-          </NuxtLink>
+          </button>
         </li>
       </ul>
     </div>
 
     <!-- PAR RÉGION -->
-    <div class="border-l border-rule pl-lg">
-      <h3 class="text-small font-semibold text-ink-muted">Par région</h3>
+    <div class="border-r border-rule pr-lg">
+      <h3 class="text-small font-semibold text-ink-muted uppercase">Par région</h3>
       <ul class="mt-sm space-y-1">
-        <li v-for="region in regionsAvecActus" :key="region.slug">
+        <li v-for="region in regions" :key="region.slug">
           <button
             type="button"
             class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-body transition-colors hover:text-accent-text"
             :class="
-              region.slug === selectedRegion ? 'bg-surface font-semibold text-ink' : 'text-primary'
+              region.slug === selectedRegion
+                ? 'bg-surface font-semibold text-ink'
+                : 'font-medium text-primary'
             "
+            :aria-pressed="region.slug === selectedRegion"
             @mouseenter="selectedRegion = region.slug"
             @focus="selectedRegion = region.slug"
             @click="selectedRegion = region.slug"
           >
             <span>{{ region.label }}</span>
+            <span v-if="region.slug === selectedRegion" class="text-accent">›</span>
           </button>
         </li>
         <li>
           <NuxtLink
-            to="/centres"
+            to="/actualites"
             class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
@@ -47,24 +59,26 @@
     </div>
 
     <!-- DERNIÈRES PUBLICATIONS DE LA RÉGION -->
-    <div>
-      <h3 class="text-small font-semibold text-ink-muted">
+    <div class="col-span-2">
+      <h3 class="text-small font-semibold text-ink-muted uppercase">
         {{ selectedRegionLabel }} — dernières publications
       </h3>
       <Transition name="menu-panel" mode="out-in">
-        <ul :key="selectedRegion" class="mt-sm space-y-sm">
+        <ul :key="selectedRegion" class="mt-sm space-y-xs">
           <li v-for="actu in actusAffichees" :key="actu.slug">
             <NuxtLink
               :to="`/actualites/${actu.slug}`"
-              class="group block rounded-md px-2 py-1.5 transition-colors"
+              class="group block rounded-md bg-surface px-md py-sm transition-colors hover:bg-surface-alt"
               @click="$emit('close')"
             >
-              <span class="block text-small font-semibold text-ink-muted"
-                >{{ actu.tag }} · {{ actu.date }}</span
+              <p class="flex items-center gap-sm text-overline">
+                <span class="font-bold uppercase text-accent-text">{{ actu.tag }}</span>
+                <span class="font-medium text-ink-subtle">{{ actu.date }}</span>
+              </p>
+              <span
+                class="text-small font-semibold text-ink transition-colors group-hover:text-accent-text"
+                >{{ actu.title }}</span
               >
-              <span class="text-body text-ink transition-colors group-hover:text-accent-text">{{
-                actu.title
-              }}</span>
             </NuxtLink>
           </li>
           <li v-if="!actusAffichees.length" class="px-2 py-1.5 text-small text-ink-muted">
@@ -86,18 +100,42 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { regions, rubriquesActualites, actualitesParRegion } from '~/data/navigation'
+import { computed, ref, watch } from 'vue'
+import { useMenuActualites } from '~/composables/useMenuData'
 
 defineEmits<{ close: [] }>()
 
-// Seules les régions avec de l'actualité publiée apparaissent ici
-const regionsAvecActus = computed(() => regions.filter((r) => actualitesParRegion[r.slug]?.length))
+const { rubriques, regions, actualitesParRegion } = useMenuActualites()
+
+const selectedRubrique = ref(rubriques.value[0]?.slug ?? '')
+watch(
+  rubriques,
+  (list) => {
+    if (!selectedRubrique.value && list.length) selectedRubrique.value = list[0]!.slug
+  },
+  { immediate: true }
+)
 
 // Défaut : première région qui a réellement des actus
-const selectedRegion = ref(regionsAvecActus.value[0]?.slug ?? '')
-const selectedRegionLabel = computed(
-  () => regions.find((r) => r.slug === selectedRegion.value)?.label ?? ''
+const selectedRegion = ref(regions.value[0]?.slug ?? '')
+watch(
+  regions,
+  (list) => {
+    if (!selectedRegion.value && list.length) selectedRegion.value = list[0]!.slug
+  },
+  { immediate: true }
 )
-const actusAffichees = computed(() => actualitesParRegion[selectedRegion.value] ?? [])
+const selectedRegionLabel = computed(
+  () => regions.value.find((r) => r.slug === selectedRegion.value)?.label ?? ''
+)
+const actusAffichees = computed(() => {
+  const actualites = actualitesParRegion.value[selectedRegion.value] ?? []
+  if (selectedRubrique.value === rubriques.value[0]?.slug) return actualites.slice(0, 3)
+
+  return actualites.filter((actu) => actu.categorySlug === selectedRubrique.value).slice(0, 3)
+})
+
+function selectRubrique(slug: string) {
+  selectedRubrique.value = slug
+}
 </script>

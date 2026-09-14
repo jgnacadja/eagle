@@ -30,6 +30,11 @@ vi.mock('~/composables/useMenuData', async () => {
         ])
       )
     }),
+    useMenuActualites: () => ({
+      rubriques: ref([{ slug: 'reglementation', label: 'Réglementation' }]),
+      regions: ref([{ slug: 'ile-de-france', label: 'Île-de-France', count: 2 }]),
+      actualitesParRegion: ref({})
+    }),
     useMenuFormationsALaUne: () => ref([])
   }
 })

@@ -429,3 +429,21 @@
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-rule-strong) transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar {
+  width: 1px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--color-rule-strong);
+  border-radius: var(--radius-full);
+}

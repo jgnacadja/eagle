@@ -132,7 +132,7 @@
           v-if="filteredCenters.length"
           ref="listEl"
           data-testid="centres-scroll-list"
-          class="flex flex-col gap-md px-gutter-mobile py-lg md:pl-gutter lg:h-full lg:min-h-0 lg:overflow-y-auto lg:pl-[max(48px,calc((100vw-var(--layout-container-max))/2+48px))] lg:pr-md"
+          class="thin-scrollbar flex flex-col gap-md px-gutter-mobile py-lg md:pl-gutter lg:h-full lg:min-h-0 lg:overflow-y-auto lg:pl-[max(48px,calc((100vw-var(--layout-container-max))/2+48px))] lg:pr-md"
         >
           <CenterResultCard
             v-for="(center, i) in visibleCenters"

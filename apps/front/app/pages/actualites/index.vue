@@ -2,7 +2,7 @@
   <div class="flex flex-1 flex-col">
     <!-- Bandeau d'intro : titre, filtre région, catégories -->
     <section class="bg-primary-dark text-paper">
-      <div class="mx-auto max-w-container px-gutter-mobile py-lg md:py-2xl md:px-gutter">
+      <div class="mx-auto px-gutter-mobile py-lg md:py-2xl md:px-gutter">
         <p class="text-overline text-accent font-extrabold">ACTUALITÉS DU RÉSEAU</p>
 
         <div class="mt-md flex flex-col gap-lg lg:flex-row lg:items-end lg:justify-between">
@@ -63,7 +63,7 @@
     </section>
 
     <div class="bg-paper-warm">
-      <div class="mx-auto w-full max-w-container px-gutter-mobile py-2xl md:px-gutter">
+      <div class="mx-auto w-full px-gutter-mobile py-2xl md:px-gutter">
         <div v-if="articlesPending" aria-label="Chargement des actualités">
           <output class="sr-only">Chargement des actualités</output>
           <div class="grid grid-cols-1 gap-lg lg:grid-cols-3" aria-hidden="true">

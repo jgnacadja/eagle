@@ -124,7 +124,7 @@
 
       <!-- Desktop grid + mobile list -->
       <div
-        class="grid lg:h-[calc(80vh-5rem)] lg:grid-cols-[2fr_3fr] lg:grid-rows-1 lg:overflow-hidden"
+        class="grid lg:mx-auto lg:h-[calc(80vh-5rem)] lg:w-full lg:grid-cols-[2fr_3fr] lg:grid-rows-1 lg:overflow-hidden lg:px-gutter"
         :class="{ 'hidden lg:grid': isMobileMapOpen }"
       >
         <!-- List -->
@@ -132,7 +132,7 @@
           v-if="filteredCenters.length"
           ref="listEl"
           data-testid="centres-scroll-list"
-          class="thin-scrollbar flex flex-col gap-md px-gutter-mobile py-lg md:pl-gutter lg:h-full lg:min-h-0 lg:overflow-y-auto lg:pl-[max(48px,calc((100vw-var(--layout-container-max))/2+48px))] lg:pr-md"
+          class="thin-scrollbar flex flex-col gap-md px-gutter-mobile py-lg md:pl-gutter lg:h-full lg:min-h-0 lg:overflow-y-auto lg:pl-0 lg:pr-lg"
         >
           <CenterResultCard
             v-for="(center, i) in visibleCenters"
@@ -183,7 +183,7 @@
         <!-- Empty state -->
         <div
           v-else
-          class="flex h-full min-h-0 flex-col justify-center px-gutter-mobile py-lg md:pl-gutter lg:col-span-2 lg:pl-[max(48px,calc((100vw-var(--layout-container-max))/2+48px))] lg:pr-[max(48px,calc((100vw-var(--layout-container-max))/2+48px))]"
+          class="flex h-full min-h-0 flex-col justify-center px-gutter-mobile py-lg md:pl-gutter lg:col-span-2 lg:px-0"
         >
           <div class="rounded-md border border-dashed border-rule bg-paper p-xl text-center">
             <h2 class="font-sans text-h4 text-ink">

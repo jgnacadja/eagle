@@ -432,11 +432,12 @@
 
 .thin-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-rule-strong) transparent;
+  scrollbar-color: var(--color-primary) transparent;
 }
 
 .thin-scrollbar::-webkit-scrollbar {
-  width: 1px;
+  width: calc(var(--spacing-sm) / 1.5);
+  height: calc(var(--spacing-sm) / 1.5);
 }
 
 .thin-scrollbar::-webkit-scrollbar-track {
@@ -444,6 +445,17 @@
 }
 
 .thin-scrollbar::-webkit-scrollbar-thumb {
-  background-color: var(--color-rule-strong);
+  background-color: var(--color-primary);
   border-radius: var(--radius-full);
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-rule-strong);
+}
+
+@supports selector(::-webkit-scrollbar) {
+  .thin-scrollbar {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
 }

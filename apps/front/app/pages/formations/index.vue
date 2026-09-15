@@ -304,7 +304,10 @@
               <PaginationPrevious
                 class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-subtle hover:bg-surface"
               />
-              <template v-for="item in items" :key="item.value">
+              <template
+                v-for="(item, i) in items"
+                :key="item.type === 'page' ? item.value : `ellipsis-${i}`"
+              >
                 <PaginationItem
                   v-if="item.type === 'page'"
                   :value="item.value"
@@ -548,7 +551,7 @@ function parseUrl() {
   assignList(selectedDurations, parseListParam(route.query.duree))
   cpf.value = route.query.cpf === 'true'
   certifying.value = route.query.certifiant === 'true'
-  sortBy.value = parseSortParam(route.query.tri, searchQuery.value)
+  sortBy.value = parseSortParam(route.query.tri, !!searchQuery.value)
   currentPage.value = parsePageParam(route.query.page)
 }
 
@@ -641,7 +644,7 @@ const { data: directusFamilies } = await useAsyncData<FamilleFormation[]>(
   'catalog-families',
   async () => {
     try {
-      return await directus.request(
+      return await directus.request<FamilleFormation[]>(
         readItems('familles_formation', {
           fields: ['slug', 'name'],
           filter: { status: { _eq: 'published' } },
@@ -755,13 +758,16 @@ const certifyingFilterVisible = computed(
 )
 
 const familyShortcuts = computed(() => {
-  const top = familyOptions.value.slice(0, 3).map((family) => ({
-    slug: family.key,
-    label: family.label,
-    caption: `${family.count} formation${family.count > 1 ? 's' : ''}`,
-    linkLabel: 'Voir la famille',
-    to: `/formations/${family.key}`
-  }))
+  const top = familyOptions.value.slice(0, 3).map((family) => {
+    const count = family.count ?? 0
+    return {
+      slug: family.key,
+      label: family.label,
+      caption: `${count} formation${count > 1 ? 's' : ''}`,
+      linkLabel: 'Voir la famille',
+      to: `/formations/${family.key}`
+    }
+  })
 
   return [
     ...top,
@@ -886,7 +892,9 @@ watch(
     // c'est la page elle-même qui vient de changer (pagination, « Afficher
     // plus ») ou si la mise à jour vient de l'URL (parseUrl restaure page
     // et filtres ensemble).
-    const filtersChanged = newValues.slice(0, 8).some((value, i) => value !== oldValues[i])
+    const filtersChanged = newValues
+      .slice(0, 8)
+      .some((value: unknown, i: number) => value !== oldValues[i])
     const pageChanged = newValues[8] !== oldValues[8]
     if (filtersChanged && !pageChanged && currentPage.value !== 1) {
       currentPage.value = 1

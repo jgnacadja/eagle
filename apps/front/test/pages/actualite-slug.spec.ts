@@ -56,6 +56,8 @@ const relatedCourse = {
   certifierName: null,
   category: null,
   familySlug: 'caces-conduite-engins',
+  subFamilySlug: 'chariots-elevateurs',
+  subFamilyName: 'Chariots élévateurs',
   centerSlug: null,
   centerSlugs: [],
   modalities: [],
@@ -117,8 +119,8 @@ const stubs = {
   Button: { template: '<button><slot /></button>' },
   Card: { template: '<div><slot /></div>' },
   CenterFormationCard: {
-    props: ['title', 'to'],
-    template: '<div><a v-if="to" :href="to">{{ title }}</a></div>'
+    props: ['title', 'to', 'subFamily'],
+    template: '<div>{{ subFamily }}<a v-if="to" :href="to">{{ title }}</a></div>'
   },
   SearchInput: {
     props: ['modelValue'],
@@ -160,7 +162,12 @@ describe('pages/actualites/[slug]', () => {
         return routeMock.params.slug === 'inconnu' ? [] : [articleFixture]
       }
       if (path === '/items/formations') {
-        return [{ slug: relatedCourse.slug, famille: { slug: relatedCourse.familySlug } }]
+        return [
+          {
+            slug: relatedCourse.slug,
+            famille: { slug: relatedCourse.familySlug, name: 'Informatique & Digital' }
+          }
+        ]
       }
       return []
     })
@@ -207,6 +214,7 @@ describe('pages/actualites/[slug]', () => {
 
     expect(wrapper.text()).toContain('CACES R489')
     expect(wrapper.text()).toContain('Autorisation de conduite')
+    expect(wrapper.text()).toContain('Informatique & Digital')
     expect(wrapper.text()).toContain('Recyclage CACES R489 — toutes catégories')
     const link = wrapper.find(
       'a[href="/formations/caces-conduite-engins/caces-r489-chariots-elevateurs"]'

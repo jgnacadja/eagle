@@ -42,7 +42,7 @@
       </div>
     </section>
 
-    <main class="mx-auto max-w-container px-gutter-mobile py-section md:px-gutter md:py-4xl">
+    <div class="mx-auto max-w-container px-gutter-mobile py-section md:px-gutter md:py-4xl">
       <section aria-labelledby="options-title">
         <h2 id="options-title" class="font-display text-h2 font-extrabold text-ink">
           Trois façons de rejoindre le réseau
@@ -93,7 +93,7 @@
         </h2>
         <div class="relative mt-2xl grid gap-xl md:grid-cols-4 md:gap-grid">
           <div
-            class="pointer-events-none absolute left-[12%] right-[12%] top-[calc(var(--spacing-control-sm)/2-0.5px)] hidden border-t border-rule md:block"
+            class="pointer-events-none absolute left-[12.5%] right-[12.5%] top-[calc(var(--spacing-xl)/2-0.5px)] hidden border-t border-rule md:block"
           />
           <article v-for="(step, index) in steps" :key="step.title" class="relative text-center">
             <div
@@ -117,14 +117,14 @@
             d'établissement · démarche qualité · ancrage local.
           </p>
           <NuxtLink
-            to="/centres/demande-de-formation"
+            to="/centres/demande-de-formation?sujet=franchise"
             class="inline-flex h-control shrink-0 items-center justify-center rounded-full bg-accent px-xl text-button font-bold text-ink transition-colors hover:bg-accent-text hover:text-ink-inverse"
           >
             Candidater
           </NuxtLink>
         </div>
       </section>
-    </main>
+    </div>
   </div>
 </template>
 
@@ -133,16 +133,14 @@ import IconAward from '~/components/icons/IconAward.vue'
 import IconBook from '~/components/icons/IconBook.vue'
 import IconBuilding from '~/components/icons/IconBuilding.vue'
 
-useHead({
-  title: 'Rejoindre le réseau | LEARN UP ACADEMY',
-  meta: [
-    {
-      name: 'description',
-      content:
-        'Découvrez les différentes façons de rejoindre le réseau national de centres de formation LEARN UP ACADEMY.'
-    }
-  ]
-})
+useContentSeo(
+  {
+    seo_title: 'Rejoindre le réseau — LEARN UP ACADEMY',
+    seo_description:
+      'Découvrez les différentes façons de rejoindre le réseau national de centres de formation LEARN UP ACADEMY.'
+  },
+  'Rejoindre le réseau — LEARN UP ACADEMY'
+)
 
 const joinOptions = [
   {
@@ -150,21 +148,21 @@ const joinOptions = [
     title: 'Ouvrir un centre LEARN UP ACADEMY',
     body: "Je suis un candidat à la franchise dynamique et rigoureux, fort d'une expérience confirmée en gestion de centre de profit et en management d'équipe.",
     cta: 'Candidater pour un centre',
-    to: '/centres/demande-de-formation'
+    to: '/centres/demande-de-formation?sujet=franchise'
   },
   {
     icon: IconBook,
     title: 'Référencer mon organisme',
     body: 'Votre organisme de formation conserve son identité juridique et reçoit des demandes du réseau sur son territoire et ses domaines.',
     cta: 'Référencer mon organisme',
-    to: '#contact'
+    to: '/centres/demande-de-formation?sujet=organisme'
   },
   {
     icon: IconAward,
     title: 'Intervenir comme formateur',
     body: 'Formateurs indépendants certifiés : intervenez pour les centres du réseau, sur vos domaines et votre zone géographique.',
     cta: 'Proposer mes interventions',
-    to: '#contact'
+    to: '/centres/demande-de-formation?sujet=formateur'
   }
 ]
 

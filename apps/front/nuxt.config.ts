@@ -79,7 +79,8 @@ export default defineNuxtConfig({
     '/centres': { isr: { expiration: 600, passQuery: true } },
     '/centres/**': { isr: { expiration: 600, passQuery: true } },
     '/actualites': { isr: { expiration: 600, passQuery: true } },
-    '/actualites/**': { isr: { expiration: 600, passQuery: true } }
+    '/actualites/**': { isr: { expiration: 600, passQuery: true } },
+    '/rejoindre-le-reseau': { prerender: true }
   },
   runtimeConfig: {
     apiBase,

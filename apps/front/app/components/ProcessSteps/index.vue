@@ -1,11 +1,5 @@
 <template>
-  <ol
-    class="relative flex flex-col gap-xl md:grid md:gap-2xl"
-    :class="
-      { 3: 'md:grid-cols-3', 4: 'md:grid-cols-4', 5: 'md:grid-cols-5' }[steps.length] ??
-      'md:grid-cols-4'
-    "
-  >
+  <ol class="relative flex flex-col gap-xl md:grid md:gap-2xl" :class="gridClass">
     <!-- Ligne verticale mobile -->
     <div
       class="absolute left-[calc(var(--spacing-control-sm)/2-0.5px)] top-[calc(var(--spacing-control-sm)/2)] bottom-[calc(var(--spacing-control-sm)/2)] z-0 w-px bg-rule-strong md:hidden"
@@ -19,42 +13,21 @@
       aria-hidden="true"
     />
 
-    <li
+    <ProcessStepsStep
       v-for="(step, index) in steps"
       :key="step.title"
-      v-reveal="revealStagger(index)"
-      class="relative flex flex-row items-start gap-md text-left md:flex-col md:items-center md:gap-0 md:text-center"
-    >
-      <span
-        class="z-10 flex h-control-sm w-control-sm shrink-0 items-center justify-center rounded-full text-small font-bold"
-        :class="badgeClass(index)"
-      >
-        {{ step.number ?? index + 1 }}
-      </span>
-
-      <div class="flex-1 pt-1 md:pt-0">
-        <h3
-          class="text-ink md:mt-2.5"
-          :class="
-            titleSize === 'h4'
-              ? 'font-display text-h4 font-extrabold'
-              : 'font-sans text-body font-bold'
-          "
-        >
-          {{ step.title }}
-        </h3>
-
-        <p class="mt-0.5 text-small text-ink-muted md:mx-auto md:mt-1">
-          {{ step.body }}
-        </p>
-      </div>
-    </li>
+      :step="step"
+      :index="index"
+      :is-last="index === steps.length - 1"
+      :last-step-variant="lastStepVariant"
+      :title-size="titleSize"
+    />
   </ol>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { revealStagger } from '~/utils/reveal'
+import ProcessStepsStep from './Step.vue'
 
 export interface StepItem {
   title: string
@@ -74,19 +47,17 @@ const props = withDefaults(
   }
 )
 
+const GRID_COLS: Record<number, string> = {
+  3: 'md:grid-cols-3',
+  4: 'md:grid-cols-4',
+  5: 'md:grid-cols-5'
+}
+
+const gridClass = computed(() => GRID_COLS[props.steps.length] ?? 'md:grid-cols-4')
+
 const horizontalLineStyle = computed(() => {
   const n = props.steps.length
 
   return n > 1 ? { left: `${50 / n}%`, right: `${50 / n}%` } : { display: 'none' }
 })
-
-const badgeClass = (index: number) => {
-  if (index < props.steps.length - 1) return 'bg-primary text-paper'
-
-  return {
-    success: 'bg-success text-paper',
-    accent: 'bg-accent text-ink',
-    primary: 'bg-primary text-paper'
-  }[props.lastStepVariant]
-}
 </script>

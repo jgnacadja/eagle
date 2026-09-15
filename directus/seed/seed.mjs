@@ -7,7 +7,7 @@
 // la saute proprement (log + skip) plutôt que d'échouer — il devient
 // pleinement actif une fois ST-11 livré, sans changement requis.
 
-import { articles, centres, famillesFormation } from './data.mjs'
+import { articles, centres, famillesFormation, formations, sousFamillesFormation } from './data.mjs'
 import { log, logError } from '../logger.mjs'
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL ?? 'http://localhost:8055'
@@ -17,7 +17,22 @@ const ADMIN_PASSWORD = process.env.DIRECTUS_ADMIN_PASSWORD
 const DATASETS = [
   { collection: 'centres', items: centres },
   { collection: 'familles_formation', items: famillesFormation },
-  { collection: 'articles', items: articles }
+  {
+    collection: 'sous_familles_formation',
+    items: sousFamillesFormation,
+    // Chaque item porte `familleSlug` : résolu en id de familles_formation
+    // (collection seedée juste avant) avant l'upsert.
+    refs: [{ key: 'familleSlug', collection: 'familles_formation', field: 'famille' }]
+  },
+  { collection: 'articles', items: articles },
+  {
+    collection: 'formations',
+    items: formations,
+    refs: [
+      { key: 'familleSlug', collection: 'familles_formation', field: 'famille' },
+      { key: 'sousFamilleSlug', collection: 'sous_familles_formation', field: 'sous_famille' }
+    ]
+  }
 ]
 
 async function waitForDirectus(timeoutMs = 30_000, intervalMs = 2_000) {
@@ -76,6 +91,32 @@ async function fetchExistingBySlug(token, collection) {
   return new Map(data.map((row) => [row.slug, row.id]))
 }
 
+// Les champs `imageUrl` de data.mjs ne sont pas des champs de collection :
+// le seed importe le fichier dans directus_files (endpoint /files/import)
+// et renseigne le champ `image` avec l'id retourné. Idempotent : le fichier
+// est retrouvé par `filename_download` avant réimport.
+async function ensureFile(token, url, filename) {
+  const lookup = await fetch(
+    `${DIRECTUS_URL}/files?filter[filename_download][_eq]=${encodeURIComponent(filename)}&limit=1`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  )
+  if (lookup.ok) {
+    const { data } = await lookup.json()
+    if (data[0]?.id) return data[0].id
+  }
+  const res = await fetch(`${DIRECTUS_URL}/files/import`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ url, data: { title: filename, filename_download: filename } })
+  })
+  if (!res.ok) throw new Error(`Import du fichier ${filename} échoué (${res.status})`)
+  const { data } = await res.json()
+  return data.id
+}
+
 async function upsertItem(token, collection, item, existingId) {
   const url = existingId
     ? `${DIRECTUS_URL}/items/${collection}/${existingId}`
@@ -95,15 +136,61 @@ async function upsertItem(token, collection, item, existingId) {
   return existingId ? 'updated' : 'created'
 }
 
-async function seedDataset(token, { collection, items }) {
+// Résout les clés `*Slug` en ids de leurs collections cibles. Retourne
+// `null` si une ref est manquante — l'item doit être ignoré.
+function resolveRefs(item, refs, refsBySlug, collection) {
+  for (const ref of refs ?? []) {
+    if (item[ref.key] === undefined) continue
+    const refId = refsBySlug.get(ref.collection).get(item[ref.key])
+    if (refId === undefined) {
+      log(`⏭  ${collection}/${item.slug} — ${ref.collection}/${item[ref.key]} absent, ignoré`)
+      return null
+    }
+    item[ref.field] = refId
+    delete item[ref.key]
+  }
+  return item
+}
+
+const FILE_FIELDS = [
+  { key: 'imageUrl', field: 'image', suffix: '' },
+  { key: 'author_imageUrl', field: 'author_image', suffix: '-author' },
+  { key: 'cover_imageUrl', field: 'cover_image', suffix: '-cover' }
+]
+
+async function prepareItem(token, rawItem, refs, refsBySlug, collection) {
+  const fileKeys = new Set(FILE_FIELDS.map(({ key }) => key))
+  const item = Object.fromEntries(Object.entries(rawItem).filter(([key]) => !fileKeys.has(key)))
+
+  if (!resolveRefs(item, refs, refsBySlug, collection)) return null
+
+  for (const { key, field, suffix } of FILE_FIELDS) {
+    const url = rawItem[key]
+    if (url) {
+      item[field] = await ensureFile(token, url, `seed-${collection}-${item.slug}${suffix}.jpg`)
+    }
+  }
+  return item
+}
+
+async function seedDataset(token, { collection, items, refs }) {
   if (!(await collectionExists(token, collection))) {
     log(`⏭  ${collection} — collection absente (ST-11 non livré), ignoré`)
     return
   }
 
   const existingBySlug = await fetchExistingBySlug(token, collection)
+  const refsBySlug = new Map()
+  for (const ref of refs ?? []) {
+    if (!refsBySlug.has(ref.collection)) {
+      refsBySlug.set(ref.collection, await fetchExistingBySlug(token, ref.collection))
+    }
+  }
   const results = { created: 0, updated: 0 }
-  for (const item of items) {
+  for (const rawItem of items) {
+    const item = await prepareItem(token, rawItem, refs, refsBySlug, collection)
+    if (!item) continue
+
     const outcome = await upsertItem(token, collection, item, existingBySlug.get(item.slug))
     results[outcome] += 1
   }
@@ -122,7 +209,9 @@ async function main() {
   log('Seed terminé.')
 }
 
-main().catch((error) => {
+try {
+  await main()
+} catch (error) {
   logError('Seed échoué :', error.message)
   process.exitCode = 1
-})
+}

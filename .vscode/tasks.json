@@ -1,0 +1,95 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "pnpm dev",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["dev"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "pnpm dev:api",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["dev:api"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "pnpm dev:api:debug",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["dev:api:debug"],
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "."
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Debugger listening on",
+          "endsPattern": "."
+        }
+      }
+    },
+    {
+      "label": "pnpm dev:front",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["dev:front"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "pnpm lint",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["lint"],
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "pnpm test",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["test"],
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "pnpm test:e2e",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["test:e2e"],
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "docker compose up",
+      "type": "shell",
+      "command": "docker",
+      "args": ["compose", "up", "--build"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "pnpm seed",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["seed"],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "pnpm directus:build",
+      "type": "shell",
+      "command": "pnpm",
+      "args": ["directus:build"],
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}

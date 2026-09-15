@@ -41,12 +41,12 @@ export const typography = {
     /** Corps · 400 · 14.5/1.55 · ink.muted */
     body: { fontSize: '14.5px', lineHeight: '1.55', letterSpacing: '0', fontWeight: '400' },
     /** Corps réduit · 400 · 13/1.5 */
-    small: { fontSize: '13px', lineHeight: '1.5', letterSpacing: '0', fontWeight: '400' },
+    small: { fontSize: '13.5px', lineHeight: '1.5', letterSpacing: '0', fontWeight: '400' },
     /** Méta · 500 · 12.5/1 · ink.subtle */
     meta: { fontSize: '12.5px', lineHeight: '1', letterSpacing: '0', fontWeight: '500' },
     /** Libellé de bouton · 700 · 15/1 */
     button: { fontSize: '15px', lineHeight: '1', letterSpacing: '0', fontWeight: '700' },
     /** Badge d'état · 700 · 11.5/1 */
-    badge: { fontSize: '11.5px', lineHeight: '1', letterSpacing: '0', fontWeight: '700' }
+    badge: { fontSize: '12px', lineHeight: '1', letterSpacing: '0', fontWeight: '700' }
   }
 } as const

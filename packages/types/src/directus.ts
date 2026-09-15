@@ -17,6 +17,14 @@ export interface Centre extends SeoFields {
   address: string | null
   city: string | null
   postal_code: string | null
+  department: string | null
+  region: string | null
+  description: string | null
+  specialties: string[] | null
+  opening_hours: string | null
+  transport: string | null
+  parking: string | null
+  pmr_accessible: boolean | null
   phone: string | null
   email: string | null
   contact_name: string | null
@@ -25,8 +33,32 @@ export interface Centre extends SeoFields {
   digiforma_url: string | null
   qualiopi_certified: boolean | null
   qualiopi_certificate_number: string | null
+  qualiopi_certificate: string | null
   image: string | null
+  latitude: number | null
+  longitude: number | null
 }
+
+/**
+ * Sous-ensemble de `Centre` exposé par `GET /centres` (apps/api) — les
+ * champs de contact, SEO et horaires ne sont renvoyés que par la fiche.
+ */
+export type CentreListItem = Pick<
+  Centre,
+  | 'id'
+  | 'status'
+  | 'slug'
+  | 'name'
+  | 'address'
+  | 'city'
+  | 'postal_code'
+  | 'department'
+  | 'departments_covered'
+  | 'region'
+  | 'specialties'
+  | 'latitude'
+  | 'longitude'
+>
 
 export interface FamilleFormation extends SeoFields {
   id: number
@@ -35,6 +67,20 @@ export interface FamilleFormation extends SeoFields {
   name: string
   intro: string | null
   icon: string | null
+  /** UUID du fichier Directus — rendre via `${directusUrl}/assets/{id}`. */
+  image: string | null
+  /** Titre éditorial de la section sous-familles (repli : « Parcourir par sous-famille »). */
+  subnav_title: string | null
+}
+
+export interface SousFamilleFormation {
+  id: number
+  status: ContentStatus
+  slug: string
+  name: string
+  caption: string | null
+  /** Relation M2O — id brut ou objet { slug } selon les fields demandés. */
+  famille: number | { slug: string } | null
 }
 
 export interface Article extends SeoFields {
@@ -45,6 +91,10 @@ export interface Article extends SeoFields {
   excerpt: string | null
   content: string | null
   category: string | null
+  author_name: string | null
+  author_image: string | null
+  region: string | null
+  related_formation_slug: string | null
   publish_at: string | null
   centre: number | null
   cover_image: string | null

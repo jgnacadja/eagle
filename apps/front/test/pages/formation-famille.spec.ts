@@ -1,0 +1,374 @@
+import type { CourseListItem, FamilleFormation, SousFamilleFormation } from '@learnup/types'
+import { flushPromises, mount } from '@vue/test-utils'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { computed, defineComponent, h, ref, Suspense, watch, watchEffect } from 'vue'
+import LoadError from '~/components/ErrorState/LoadError.vue'
+import NotFound from '~/components/ErrorState/NotFound.vue'
+import FamillePage from '~/pages/formations/[famille]/index.vue'
+
+const family: FamilleFormation = {
+  id: 1,
+  slug: 'caces-conduite-engins',
+  name: "CACES & conduite d'engins",
+  status: 'published',
+  intro: '<p>Conduite d’engins de manutention.</p>',
+  icon: null,
+  image: null,
+  seo_title: 'CACES & conduite d’engins — LEARN UP ACADEMY',
+  seo_description: 'Formations CACES.',
+  seo_canonical: null,
+  subnav_title: "Parcourir par type d'engin"
+}
+
+const sousFamilles: SousFamilleFormation[] = [
+  {
+    id: 1,
+    status: 'published',
+    slug: 'chariots',
+    name: 'Chariots & gerbeurs',
+    caption: 'R489 · R485',
+    famille: 1
+  },
+  { id: 2, status: 'published', slug: 'grues', name: 'Grues & levage', caption: null, famille: 1 }
+]
+
+const courses: CourseListItem[] = [
+  {
+    id: 1,
+    slug: 'caces-r489-chariots-elevateurs',
+    title: 'CACES R489 — chariots élévateurs',
+    description: 'Conduite de chariots élévateurs.',
+    durationDays: 3,
+    durationHours: null,
+    price: null,
+    cpf: null,
+    cpfCode: null,
+    certification: 'Certification CACES',
+    certifierName: 'Opérateur réglementaire',
+    category: null,
+    familySlug: 'caces-conduite-engins',
+    subFamilySlug: 'chariots',
+    subFamilyName: 'Chariots & gerbeurs',
+    centerSlug: null,
+    centerSlugs: [],
+    modalities: [],
+    sessions: null,
+    image: null,
+    imageUrl: null,
+    generatedProgramUrl: null,
+    status: 'published',
+    seoTitle: null,
+    seoDescription: null,
+    seoCanonical: null
+  },
+  {
+    id: 2,
+    slug: 'caces-r490-grues-chargement',
+    title: 'CACES R490 — grues de chargement',
+    description: 'Conduite de grues de chargement.',
+    durationDays: 5,
+    durationHours: null,
+    price: null,
+    cpf: null,
+    cpfCode: null,
+    certification: 'Certification CACES',
+    certifierName: null,
+    category: null,
+    familySlug: 'caces-conduite-engins',
+    subFamilySlug: 'grues',
+    subFamilyName: 'Grues & levage',
+    centerSlug: null,
+    centerSlugs: [],
+    modalities: [],
+    sessions: null,
+    image: null,
+    imageUrl: null,
+    generatedProgramUrl: null,
+    status: 'published',
+    seoTitle: null,
+    seoDescription: null,
+    seoCanonical: null
+  }
+]
+
+interface RouteMock {
+  params: { famille: string }
+  query: Record<string, string>
+  path: string
+  meta: Record<string, unknown>
+}
+
+let routeMock: RouteMock
+const navigateToMock = vi.fn()
+const setResponseStatusMock = vi.fn()
+const useContentSeoMock = vi.fn()
+
+vi.stubGlobal('ref', ref)
+vi.stubGlobal('computed', computed)
+vi.stubGlobal('watch', watch)
+vi.stubGlobal('watchEffect', watchEffect)
+vi.stubGlobal('definePageMeta', vi.fn())
+vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
+vi.stubGlobal('useRoute', () => routeMock)
+vi.stubGlobal('useRouter', () => ({ replace: vi.fn() }))
+vi.stubGlobal('useContentSeo', useContentSeoMock)
+vi.stubGlobal('useRequestEvent', () => undefined)
+vi.stubGlobal('setResponseStatus', setResponseStatusMock)
+vi.stubGlobal('navigateTo', navigateToMock)
+vi.stubGlobal('logServerError', vi.fn())
+
+const catalogMocks = vi.hoisted(() => {
+  function mapCourse(course: CourseListItem, familyName?: string) {
+    return {
+      slug: course.slug,
+      title: course.title,
+      family: familyName ?? course.familySlug ?? 'Autre',
+      familyKey: course.familySlug ?? 'autre',
+      subFamily: course.subFamilyName ?? null,
+      description: course.description ?? '',
+      meta: `${course.durationDays} jours`,
+      days: course.durationDays ?? 0,
+      duration: 'moyenne',
+      certifications: [],
+      to: course.familySlug ? `/formations/${course.familySlug}/${course.slug}` : null
+    }
+  }
+
+  return {
+    useCatalog: vi.fn((query) => {
+      const data = computed(() => {
+        const q = 'value' in query ? query.value : query
+        let items = [...courses]
+        if (q.family && typeof q.family === 'string') {
+          items = items.filter((c) => c.familySlug === q.family)
+        }
+        // Facettes calculées avant le filtre subFamily (sémantique de
+        // facettage : une dimension ignore son propre filtre).
+        const subFamilies: Record<string, number> = {}
+        const modalities: Record<string, number> = {}
+        for (const c of items) {
+          if (c.subFamilySlug)
+            subFamilies[c.subFamilySlug] = (subFamilies[c.subFamilySlug] ?? 0) + 1
+          for (const m of c.modalities ?? []) modalities[m] = (modalities[m] ?? 0) + 1
+        }
+        if (q.subFamily && typeof q.subFamily === 'string') {
+          items = items.filter((c) => c.subFamilySlug === q.subFamily)
+        }
+        return {
+          items,
+          total: items.length,
+          page: q.page ?? 1,
+          pageSize: q.limit ?? 9,
+          facets: {
+            families: {},
+            subFamilies,
+            modalities,
+            durations: {},
+            locations: {},
+            cpf: 0,
+            certifying: 0
+          }
+        }
+      })
+      return { data, pending: ref(false), error: ref(null), refresh: vi.fn() }
+    }),
+    mapCourse
+  }
+})
+
+vi.mock('~/composables/useCatalog', () => ({
+  useCatalog: catalogMocks.useCatalog,
+  mapCourse: catalogMocks.mapCourse,
+  buildDuration: vi.fn(),
+  buildMeta: vi.fn(),
+  buildCertifications: vi.fn(),
+  buildSessionBadge: vi.fn(() => null)
+}))
+
+vi.mock('~/composables/useDirectus', () => ({
+  useDirectusClient: () => ({ request: vi.fn() })
+}))
+
+vi.stubGlobal('useDirectusList', async (_collection: string, key: string) =>
+  ref(key.startsWith('sous-familles-') ? sousFamilles : [])
+)
+
+vi.stubGlobal('useAsyncData', async (key: string) => {
+  if (key === `famille-caces-conduite-engins`) {
+    return { data: ref(family), pending: ref(false), error: ref(null), refresh: vi.fn() }
+  }
+  return { data: ref(null), pending: ref(false), error: ref(null), refresh: vi.fn() }
+})
+
+const stubs = {
+  NuxtLink: { template: '<a><slot /></a>' },
+  Button: { template: '<button><slot /></button>' },
+  SubFamilyCard: {
+    props: ['name', 'caption'],
+    emits: ['select'],
+    template:
+      '<div class="subfamily-card"><h3>{{ name }}</h3><p>{{ caption }}</p>' +
+      '<button @click="$emit(\'select\')">Voir la sous-famille →</button></div>'
+  },
+  Badge: { template: '<span><slot /></span>' },
+  CenterFormationCard: {
+    props: ['title', 'subFamily'],
+    template: '<div class="formation-card">{{ subFamily }} — {{ title }}</div>'
+  },
+  CtaBanner: { template: '<div><slot /></div>' },
+  SearchInput: {
+    props: ['modelValue'],
+    emits: ['update:modelValue', 'submit'],
+    template: '<button class="search-stub" @click="$emit(\'submit\', \'caces\')" />'
+  },
+  LoadError,
+  NotFound,
+  IconSearchMinus: true,
+  IconFileOff: true,
+  IconRefresh: true,
+  IconSparkle: true
+}
+
+function seoArgs() {
+  const [source, fallback] = useContentSeoMock.mock.calls[0]!
+  const resolve = (v: unknown) => (typeof v === 'function' ? (v as () => unknown)() : v)
+  return [resolve(source), resolve(fallback)] as const
+}
+
+async function mountPage() {
+  const Host = defineComponent({
+    render() {
+      return h(Suspense, () => h(FamillePage))
+    }
+  })
+  const wrapper = mount(Host, { global: { stubs } })
+  await flushPromises()
+  return wrapper
+}
+
+describe('pages/formations/[famille]', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    routeMock = {
+      params: { famille: 'caces-conduite-engins' },
+      query: {},
+      path: '/formations/caces-conduite-engins',
+      meta: {}
+    }
+  })
+
+  it('affiche la famille et la liste de formations', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain("CACES & conduite d'engins")
+    expect(wrapper.text()).toContain('Conduite d’engins de manutention.')
+    expect(wrapper.findAll('.formation-card')).toHaveLength(courses.length)
+    expect(wrapper.text()).toContain('CACES R489 — chariots élévateurs')
+    expect(wrapper.text()).toContain('CACES R490 — grues de chargement')
+  })
+
+  it('affiche la section sous-familles et filtre la liste via les cartes', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain("Parcourir par type d'engin")
+    expect(wrapper.text()).toContain('Chariots & gerbeurs')
+    expect(wrapper.text()).toContain('R489 · R485')
+    expect(wrapper.text()).toContain('Grues & levage')
+    expect(wrapper.findAll('.formation-card')).toHaveLength(2)
+
+    const buttons = wrapper
+      .findAll('button')
+      .filter((b) => b.text().includes('Voir la sous-famille'))
+    await buttons[0]!.trigger('click')
+    await flushPromises()
+
+    const cards = wrapper.findAll('.formation-card')
+    expect(cards).toHaveLength(1)
+    expect(cards[0]!.text()).toContain('Chariots & gerbeurs')
+  })
+
+  it('définit le breadcrumb et le SEO', async () => {
+    await mountPage()
+
+    expect(routeMock.meta.breadcrumb).toEqual([
+      { label: 'Accueil', to: '/' },
+      { label: 'Formations', to: '/formations' },
+      { label: "CACES & conduite d'engins" }
+    ])
+
+    const [source, fallback] = seoArgs()
+    expect(source).toEqual(
+      expect.objectContaining({
+        seo_title: 'CACES & conduite d’engins — LEARN UP ACADEMY'
+      })
+    )
+    expect(fallback).toBe("CACES & conduite d'engins — Formations | LEARN UP ACADEMY")
+  })
+
+  it('affiche l’état introuvable et adapte breadcrumb/SEO pour un slug inconnu', async () => {
+    vi.stubGlobal('useAsyncData', async (key: string) => {
+      if (key === 'famille-famille-inconnue') {
+        return { data: ref(null), pending: ref(false), error: ref(null), refresh: vi.fn() }
+      }
+      return { data: ref(null), pending: ref(false), error: ref(null), refresh: vi.fn() }
+    })
+
+    routeMock.params.famille = 'famille-inconnue'
+    routeMock.path = '/formations/famille-inconnue'
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain("Cette famille de formations n'est pas disponible.")
+    expect(routeMock.meta.breadcrumb).toEqual([
+      { label: 'Accueil', to: '/' },
+      { label: 'Formations', to: '/formations' },
+      { label: 'Famille introuvable' }
+    ])
+
+    const [source, fallback] = seoArgs()
+    expect(source).toEqual(
+      expect.objectContaining({
+        seo_title: 'Famille introuvable',
+        seo_noindex: true
+      })
+    )
+    expect(fallback).toBe('Famille introuvable')
+  })
+
+  it('affiche l’état erreur quand le chargement échoue', async () => {
+    vi.stubGlobal('useAsyncData', async (key: string) => {
+      if (key === 'famille-caces-conduite-engins') {
+        return {
+          data: ref(null),
+          pending: ref(false),
+          error: ref(new Error('down')),
+          refresh: vi.fn()
+        }
+      }
+      return { data: ref(null), pending: ref(false), error: ref(null), refresh: vi.fn() }
+    })
+
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain("Le contenu n'a pas pu être chargé.")
+  })
+
+  it('la recherche de l’état introuvable redirige vers /formations avec la requête', async () => {
+    vi.stubGlobal('useAsyncData', async (key: string) => {
+      if (key === 'famille-famille-inconnue') {
+        return { data: ref(null), pending: ref(false), error: ref(null), refresh: vi.fn() }
+      }
+      return { data: ref(null), pending: ref(false), error: ref(null), refresh: vi.fn() }
+    })
+
+    routeMock.params.famille = 'famille-inconnue'
+    routeMock.path = '/formations/famille-inconnue'
+    const wrapper = await mountPage()
+
+    await wrapper.find('.search-stub').trigger('click')
+
+    expect(navigateToMock).toHaveBeenCalledWith({
+      path: '/formations',
+      query: { q: 'caces' }
+    })
+  })
+})

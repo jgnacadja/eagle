@@ -95,7 +95,7 @@ services:
       STORAGE_S3_FORCE_PATH_STYLE: 'true'
       CORS_ENABLED: 'true'
       CORS_ORIGIN: ${CORS_ORIGIN}
-      PUBLIC_URL: http://localhost:8055
+      PUBLIC_URL: ${DIRECTUS_PUBLIC_URL:-http://localhost:8055}
     ports:
       - '8055:8055'
     depends_on:
@@ -112,15 +112,70 @@ services:
       retries: 10
       start_period: 30s
 
+  directus-init:
+    image: directus/directus:11
+    restart: 'no'
+    depends_on:
+      directus:
+        condition: service_healthy
+    environment:
+      DIRECTUS_URL: http://directus:8055
+      DIRECTUS_ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL}
+      DIRECTUS_ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD}
+      # Lus par flows.mjs au build : en full-compose les webhooks de purge
+      # ciblent les services internes, pas host.docker.internal.
+      API_INTERNAL_URL: http://api:3001
+      FRONT_INTERNAL_URL: http://front:3000
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+      NUXT_CACHE_PURGE_SECRET: ${NUXT_CACHE_PURGE_SECRET:-}
+    volumes:
+      - ./directus:/opt/directus:ro
+    entrypoint:
+      - node
+      - /opt/directus/schema/build.mjs
+
+  directus-seed:
+    image: directus/directus:11
+    profiles:
+      - seed
+    restart: 'no'
+    depends_on:
+      directus-init:
+        condition: service_completed_successfully
+    environment:
+      DIRECTUS_URL: http://directus:8055
+      DIRECTUS_ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL}
+      DIRECTUS_ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD}
+    volumes:
+      - ./directus:/opt/directus:ro
+    entrypoint:
+      - node
+      - /opt/directus/seed/seed.mjs
+
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
     restart: unless-stopped
     environment:
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV:-development}
       API_PORT: 3001
       CORS_ORIGIN: ${CORS_ORIGIN}
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+      DIGIFORMA_API_URL: ${DIGIFORMA_API_URL}
+      DIGIFORMA_API_KEY: ${DIGIFORMA_API_KEY}
+      SYNC_CRON: ${SYNC_CRON}
+      REDIS_URL: redis://redis:6379
+      DIRECTUS_INTERNAL_URL: http://directus:8055
+      DIRECTUS_TOKEN: ${DIRECTUS_TOKEN}
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
+    depends_on:
+      directus:
+        condition: service_healthy
+      directus-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     ports:
       - '3001:3001'
 
@@ -133,8 +188,8 @@ services:
       NODE_ENV: production
       NUXT_API_BASE: http://api:3001
       NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE}
-      NUXT_DIRECTUS_URL: http://directus:8055
-      NUXT_PUBLIC_DIRECTUS_URL: ${NUXT_PUBLIC_DIRECTUS_URL}
+      NUXT_INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
+      NUXT_CACHE_PURGE_SECRET: ${NUXT_CACHE_PURGE_SECRET:-}
     ports:
       - '3000:3000'
     depends_on:

@@ -191,12 +191,24 @@ describe('AssistantConversation', () => {
     expect(wrapper.emitted('reset')).toHaveLength(1)
   })
 
-  it('emits send with the input value and clears the field', async () => {
+  it('emits send with the composer value and clears the field', async () => {
     const wrapper = mountConversation()
-    const input = wrapper.find('input')
+    const input = wrapper.find('textarea')
     await input.setValue('former 8 salariés au SST')
     await wrapper.find('form').trigger('submit.prevent')
     expect(wrapper.emitted('send')?.[0]).toEqual(['former 8 salariés au SST'])
-    expect((input.element as HTMLInputElement).value).toBe('')
+    expect((input.element as HTMLTextAreaElement).value).toBe('')
+  })
+
+  it('uses a single scroller viewport for the transcript', () => {
+    const wrapper = mountConversation({
+      entries: [{ role: 'user', content: 'former mes équipes' }]
+    })
+
+    expect(wrapper.findAll('[data-slot="message-scroller-viewport"]')).toHaveLength(1)
+    expect(wrapper.find('[data-slot="message-scroller-content"]').attributes('role')).toBe('log')
+    expect(
+      wrapper.find('[data-slot="message-scroller-item"]').attributes('data-scroll-anchor')
+    ).toBe('true')
   })
 })

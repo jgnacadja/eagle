@@ -153,6 +153,21 @@ describe('pages/centres/demande-de-formation', () => {
     expect(wrapper.text()).toContain('Politique de confidentialité')
   })
 
+  it('affiche le sujet transmis par les CTA réseau', async () => {
+    routeStub.query = { sujet: 'franchise' }
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Ouvrir un centre LEARN UP ACADEMY')
+    expect(wrapper.text()).not.toContain('Votre projet de formation')
+  })
+
+  it('retombe sur le contexte générique pour un sujet inconnu', async () => {
+    routeStub.query = { sujet: 'autre-chose' }
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Votre projet de formation')
+  })
+
   it('affiche le contexte générique sans paramètres (RG04)', async () => {
     const wrapper = await mountPage()
 

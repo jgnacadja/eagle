@@ -127,7 +127,7 @@
                     {{ featuredArticle.title }}
                   </NuxtLink>
                 </h3>
-                <p class="text-small text-ink-body lg:text-body">
+                <p class="hidden md:block text-small text-ink-body lg:text-body">
                   {{ featuredArticle.excerpt }}
                 </p>
                 <NuxtLink
@@ -217,7 +217,7 @@
                 />
                 <Button
                   type="submit"
-                  class="h-control shrink-0 self-start rounded-full bg-accent px-xl text-small font-semibold text-ink hover:bg-accent-text hover:text-paper"
+                  class="h-control w-full shrink-0 rounded-full bg-accent px-xl text-small font-semibold text-ink hover:bg-accent-text hover:text-paper sm:w-auto"
                 >
                   S'abonner
                 </Button>

@@ -133,7 +133,8 @@ const stubs = {
   TestimonialCard: { props: ['author'], template: '<div class="testimonial">{{ author }}</div>' },
   ArticleCard: { props: ['title'], template: '<div class="article">{{ title }}</div>' },
   IconSparkle: true,
-  IconSearch: true
+  IconSearch: true,
+  ProcessSteps: true
 }
 
 const Host = defineComponent({

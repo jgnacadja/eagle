@@ -41,7 +41,7 @@
             @click="selectedRegion = region.slug"
           >
             <span>{{ region.label }}</span>
-            <span v-if="region.slug === selectedRegion" class="text-accent"> › </span>
+            <span v-if="region.slug === selectedRegion" class="text-accent">›</span>
           </button>
         </li>
 
@@ -64,7 +64,11 @@
     <!-- DERNIÈRES PUBLICATIONS DE LA RÉGION -->
     <div class="col-span-2">
       <h3 class="text-small font-semibold text-ink-muted uppercase">
-        {{ selectedRegionLabel }} — dernières publications
+        {{
+          selectedRegionLabel
+            ? `${selectedRegionLabel} — dernières publications`
+            : 'Dernières publications'
+        }}
       </h3>
 
       <Transition name="menu-panel" mode="out-in">
@@ -125,7 +129,7 @@ watch(rubriques, (list) => {
     selectedRubrique.value = list[0]!.slug
   }
 })
-const allNews = computed(() => selectedRubrique.value === rubriques.value[0]?.slug)
+const allNews = computed(() => selectedRubrique.value === 'toute-actualite')
 const displayedRegions = computed(() => {
   if (allNews.value) {
     return regions.value
@@ -169,11 +173,13 @@ const featuredNews = computed(() => {
 
   return actualites.filter((actu) => actu.categorySlug === selectedRubrique.value).slice(0, 3)
 })
-const emptyMessage = computed(() =>
-  allNews.value
-    ? 'Aucune publication récente pour cette région.'
-    : 'Aucune publication récente pour cette rubrique dans cette région.'
-)
+const emptyMessage = computed(() => {
+  if (allNews.value) return 'Aucune publication récente pour cette région.'
+
+  return selectedRegion.value
+    ? 'Aucune publication récente pour cette rubrique dans cette région.'
+    : 'Aucune publication récente pour cette rubrique.'
+})
 
 function selectRubrique(slug: string) {
   selectedRubrique.value = slug

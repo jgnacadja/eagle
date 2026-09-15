@@ -48,6 +48,8 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+
 export interface StepItem {
   title: string
   body: string

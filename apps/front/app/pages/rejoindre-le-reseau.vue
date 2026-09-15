@@ -27,7 +27,7 @@
           <div class="mt-xl flex flex-wrap gap-md">
             <Button
               as-child
-              class="h-control w-full rounded-full bg-accent px-xl text-button font-bold text-ink transition-colors hover:bg-paper sm:w-auto"
+              class="h-control w-full rounded-full bg-accent px-xl text-button font-bold text-ink transition-colors hover:bg-accent-text hover:text-ink-inverse sm:w-auto"
             >
               <NuxtLink to="#candidater">Candidater</NuxtLink>
             </Button>
@@ -90,7 +90,7 @@
       </section>
 
       <section id="candidater" class="mt-4xl" aria-labelledby="process-title">
-        <h2 id="process-title" class="text-center font-display text-h2 font-extrabold text-ink">
+        <h2 id="process-title" class="md:text-center font-display text-h2 font-extrabold text-ink">
           De la candidature à l'ouverture
         </h2>
 
@@ -105,7 +105,7 @@
           </p>
           <NuxtLink
             to="/centres/demande-de-formation?sujet=franchise"
-            class="inline-flex h-control shrink-0 items-center justify-center rounded-full bg-accent px-xl text-button font-bold text-ink transition-colors hover:bg-accent-text hover:text-ink-inverse"
+            class="inline-flex w-full md:w-auto h-control shrink-0 items-center justify-center rounded-full bg-accent px-xl text-button font-bold text-ink transition-colors hover:bg-accent-text hover:text-ink-inverse"
           >
             Candidater
           </NuxtLink>

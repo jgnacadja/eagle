@@ -268,9 +268,11 @@
               <li v-else class="flex items-start gap-sm">
                 <IconMapPin :size="20" class="mt-xs shrink-0 text-primary" />
                 <div>
-                  <p class="font-medium text-ink">Votre projet de formation</p>
+                  <p class="font-medium text-ink">
+                    {{ sujet?.title ?? 'Votre projet de formation' }}
+                  </p>
                   <p class="text-ink-muted">
-                    Un conseiller identifie le centre et la session adaptés.
+                    {{ sujet?.body ?? 'Un conseiller identifie le centre et la session adaptés.' }}
                   </p>
                 </div>
               </li>
@@ -325,7 +327,7 @@ definePageMeta({
 const route = useRoute()
 const config = useRuntimeConfig()
 
-// Contexte transmis en query params par les CTA (?centre=, ?formation=, ?session=).
+// Contexte transmis en query params par les CTA (?centre=, ?formation=, ?session=, ?sujet=).
 // Maquette : libellés résolus depuis les slugs tant que le catalogue n'est pas branché.
 // Un param répété (?centre=a&centre=b) produit un tableau — on prend la 1re valeur.
 const queryValue = (value: unknown): string | null => {
@@ -336,6 +338,29 @@ const centreSlug = computed(() => queryValue(route.query.centre))
 const formationSlug = computed(() => queryValue(route.query.formation))
 const sessionSlug = computed(() => queryValue(route.query.session))
 const familleSlug = computed(() => queryValue(route.query.famille))
+const sujetSlug = computed(() => queryValue(route.query.sujet))
+
+// Les CTA « Rejoindre le réseau » et la home arrivent avec ?sujet= : le sujet
+// est affiché dans le bloc contexte — le formulaire reste générique.
+const SUJETS: Record<string, { title: string; body: string }> = {
+  franchise: {
+    title: 'Ouvrir un centre LEARN UP ACADEMY',
+    body: 'Candidature à la franchise — étude du projet et du territoire.'
+  },
+  organisme: {
+    title: 'Référencer votre organisme',
+    body: 'Votre organisme reçoit les demandes du réseau sur son territoire.'
+  },
+  formateur: {
+    title: 'Intervenir comme formateur',
+    body: 'Vos interventions sont proposées aux centres du réseau.'
+  },
+  conseiller: {
+    title: 'Échanger avec un conseiller',
+    body: 'Un conseiller LEARN UP ACADEMY vous recontacte.'
+  }
+}
+const sujet = computed(() => (sujetSlug.value ? (SUJETS[sujetSlug.value] ?? null) : null))
 
 // Libellés résolus dynamiquement : le centre vient de Directus,
 // la formation et la session de l'API catalogue.

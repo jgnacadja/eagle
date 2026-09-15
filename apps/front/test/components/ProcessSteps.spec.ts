@@ -119,24 +119,6 @@ describe('ProcessSteps', () => {
     })
   })
 
-  it('applique la classe maxWidth à la description', () => {
-    const wrapper = mount(ProcessSteps, {
-      props: {
-        steps: [
-          {
-            title: 'Candidature',
-            body: 'Description',
-            maxWidth: 'max-w-prose'
-          }
-        ]
-      }
-    })
-
-    const paragraph = wrapper.find('p')
-
-    expect(paragraph.classes()).toContain('max-w-prose')
-  })
-
   it('rend les lignes décoratives avec aria-hidden', () => {
     const wrapper = mount(ProcessSteps, {
       props: {

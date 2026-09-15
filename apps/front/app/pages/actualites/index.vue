@@ -217,7 +217,7 @@
                 />
                 <Button
                   type="submit"
-                  class="h-control w-full rounded-full bg-accent px-xl text-small font-semibold text-ink hover:bg-accent-text hover:text-paper"
+                  class="h-control w-full shrink-0 rounded-full bg-accent px-xl text-small font-semibold text-ink hover:bg-accent-text hover:text-paper sm:w-auto"
                 >
                   S'abonner
                 </Button>

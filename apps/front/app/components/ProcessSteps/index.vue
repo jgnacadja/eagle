@@ -22,6 +22,7 @@
     <li
       v-for="(step, index) in steps"
       :key="step.title"
+      v-reveal="revealStagger(index)"
       class="relative flex flex-row items-start gap-md text-left md:flex-col md:items-center md:gap-0 md:text-center"
     >
       <span
@@ -33,15 +34,17 @@
 
       <div class="flex-1 pt-1 md:pt-0">
         <h3
-          class="font-bold text-ink md:mt-2.5"
+          class="text-ink md:mt-2.5"
           :class="
-            titleSize === 'h4' ? 'font-display text-h4 font-extrabold' : 'font-sans text-body'
+            titleSize === 'h4'
+              ? 'font-display text-h4 font-extrabold'
+              : 'font-sans text-body font-bold'
           "
         >
           {{ step.title }}
         </h3>
 
-        <p class="mt-0.5 text-small text-ink-muted md:mx-auto md:mt-1" :class="step.maxWidth">
+        <p class="mt-0.5 text-small text-ink-muted md:mx-auto md:mt-1">
           {{ step.body }}
         </p>
       </div>
@@ -51,12 +54,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { revealStagger } from '~/utils/reveal'
 
 export interface StepItem {
   title: string
   body: string
   number?: number
-  maxWidth?: string
 }
 
 const props = withDefaults(

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import type { CourseListItem } from '@learnup/types'
 import {
+  availabilityStatus,
   buildCentresParams,
   useCentres,
   useCentreDepartments,
@@ -54,6 +55,49 @@ describe('buildCentresParams', () => {
       department: 'Rhône',
       search: 'lyon'
     })
+  })
+})
+
+describe('availabilityStatus', () => {
+  const iso = (d: Date) => d.toISOString().slice(0, 10)
+  const addDays = (days: number) => {
+    const d = new Date()
+    d.setUTCDate(d.getUTCDate() + days)
+    return iso(d)
+  }
+
+  it('retourne « Sur demande » neutre sans session', () => {
+    expect(availabilityStatus([])).toEqual({ type: 'neutral', label: 'Sur demande' })
+  })
+
+  it('retourne « Sessions cette semaine » quand une session tombe dans la semaine', () => {
+    expect(availabilityStatus([addDays(0)])).toEqual({
+      type: 'success',
+      label: 'Sessions cette semaine'
+    })
+  })
+
+  it('retourne « Sessions ce mois-ci » ou la date selon la position dans le mois', () => {
+    // Lundi de la semaine prochaine : même mois → « Sessions ce mois-ci »,
+    // mois suivant → « Prochaine session le … » en warning.
+    const nextMonday = new Date()
+    nextMonday.setUTCHours(0, 0, 0, 0)
+    nextMonday.setUTCDate(nextMonday.getUTCDate() + ((8 - nextMonday.getUTCDay()) % 7 || 7))
+
+    const status = availabilityStatus([iso(nextMonday)])
+    const today = new Date()
+    if (nextMonday.getUTCMonth() === today.getUTCMonth()) {
+      expect(status).toEqual({ type: 'success', label: 'Sessions ce mois-ci' })
+    } else {
+      expect(status.type).toBe('warning')
+      expect(status.label).toContain('Prochaine session le')
+    }
+  })
+
+  it('retourne la prochaine session en warning quand elle est au-delà du mois', () => {
+    const status = availabilityStatus([addDays(45)])
+    expect(status.type).toBe('warning')
+    expect(status.label).toMatch(/^Prochaine session le \d{2}\/\d{2}$/)
   })
 })
 

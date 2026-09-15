@@ -261,7 +261,7 @@
             :name="centre.name"
             :distance="centreDistance(centre)"
             :formations="centreFormations(centre)"
-            :tags="centreTags(centre)"
+            :status="centreStatus(centre)"
             :to="`/centres/${centre.slug}`"
           />
 
@@ -445,6 +445,7 @@
 import { computed, ref } from 'vue'
 import type { Article, Centre } from '@learnup/types'
 import { mapCourse, useCatalog } from '~/composables/useCatalog'
+import { availabilityStatus, useCentreSessionDates } from '~/composables/useCentres'
 import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
 import { articleAssetUrl, formatArticleDate } from '~/utils/article'
@@ -607,8 +608,12 @@ function centreFormations(centre: Centre): string {
   return centre.specialties?.length ? centre.specialties.join(' · ') : 'Catalogue complet'
 }
 
-function centreTags(centre: Centre): string[] {
-  return centre.region ? [centre.region] : []
+// Sessions à venir du catalogue agrégées par centre → badge de
+// disponibilité (même sémantique `availabilityStatus` que la page /centres).
+const centreSessionDates = await useCentreSessionDates()
+
+function centreStatus(centre: Centre) {
+  return availabilityStatus(centreSessionDates.value.get(centre.slug) ?? [])
 }
 
 // Soumission de la recherche réseau : la requête part en query `q` et la

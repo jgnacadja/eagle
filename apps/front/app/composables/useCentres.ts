@@ -19,23 +19,40 @@ const availabilityDateFmt = new Intl.DateTimeFormat('fr-FR', {
 })
 
 /**
- * Sémantique unique des badges de disponibilité : ≥2 sessions à venir →
- * compteur vert, 1 → date en warning, 0 → « Sur demande » neutre.
+ * Sémantique unique des badges de disponibilité : session dans la semaine
+ * courante → « Sessions cette semaine », sinon dans le mois courant →
+ * « Sessions ce mois-ci », sinon la date de la prochaine en warning, et
+ * « Sur demande » neutre quand aucune session n'est à venir.
  * `dates` = startDate ISO des sessions à venir concernées.
  */
 export function availabilityStatus(dates: string[]): AvailabilityStatus {
   const sorted = [...dates].sort((a, b) => a.localeCompare(b))
-  if (sorted.length >= 2) {
-    return { type: 'success', label: `${sorted.length} sessions à venir` }
+  if (!sorted.length) {
+    return { type: 'neutral', label: 'Sur demande' }
   }
-  if (sorted.length === 1) {
-    const date = new Date(`${sorted[0]}T00:00:00Z`)
-    return {
-      type: 'warning',
-      label: `Prochaine session le ${availabilityDateFmt.format(date)}`
-    }
+
+  const today = new Date()
+  today.setUTCHours(0, 0, 0, 0)
+  // Fin de la semaine courante (dimanche) en UTC — getUTCDay() : 0 = dimanche.
+  const endOfWeek = new Date(today)
+  endOfWeek.setUTCDate(today.getUTCDate() + ((7 - today.getUTCDay()) % 7))
+
+  const upcoming = sorted.map((d) => new Date(`${d}T00:00:00Z`))
+  if (upcoming.some((d) => d <= endOfWeek)) {
+    return { type: 'success', label: 'Sessions cette semaine' }
   }
-  return { type: 'neutral', label: 'Sur demande' }
+  if (
+    upcoming.some(
+      (d) =>
+        d.getUTCFullYear() === today.getUTCFullYear() && d.getUTCMonth() === today.getUTCMonth()
+    )
+  ) {
+    return { type: 'success', label: 'Sessions ce mois-ci' }
+  }
+  return {
+    type: 'warning',
+    label: `Prochaine session le ${availabilityDateFmt.format(upcoming[0]!)}`
+  }
 }
 
 /**

@@ -13,6 +13,7 @@ vi.stubGlobal('navigateTo', navigateMock)
 vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
 
 vi.mock('~/composables/useCatalog', () => ({
+  upcomingSessions: (c: { sessions?: unknown[] }) => c.sessions ?? [],
   mapCourse: (c: { slug: string; title: string; familySlug?: string | null }) => ({
     slug: c.slug,
     title: c.title,

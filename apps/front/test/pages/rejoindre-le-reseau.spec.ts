@@ -14,7 +14,8 @@ describe('Rejoindre le réseau page', () => {
           NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
           IconAward: true,
           IconBook: true,
-          IconBuilding: true
+          IconBuilding: true,
+          ProcessSteps: true
         }
       }
     })

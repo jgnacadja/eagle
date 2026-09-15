@@ -103,12 +103,12 @@
             Prérequis : expérience de la formation professionnelle ou de la direction
             d'établissement · démarche qualité · ancrage local.
           </p>
-          <NuxtLink
-            to="/centres/demande-de-formation?sujet=franchise"
-            class="inline-flex w-full md:w-auto h-control shrink-0 items-center justify-center rounded-full bg-accent px-xl text-button font-bold text-ink transition-colors hover:bg-accent-text hover:text-ink-inverse"
+          <Button
+            as-child
+            class="h-control w-full shrink-0 rounded-full bg-accent px-xl text-button font-bold text-ink transition-colors hover:bg-accent-text hover:text-ink-inverse md:w-auto"
           >
-            Candidater
-          </NuxtLink>
+            <NuxtLink to="/centres/demande-de-formation?sujet=franchise">Candidater</NuxtLink>
+          </Button>
         </div>
       </section>
     </div>
@@ -116,10 +116,6 @@
 </template>
 
 <script setup lang="ts">
-import IconAward from '~/components/icons/IconAward.vue'
-import IconBook from '~/components/icons/IconBook.vue'
-import IconBuilding from '~/components/icons/IconBuilding.vue'
-
 useContentSeo(
   {
     seo_title: 'Rejoindre le réseau — LEARN UP ACADEMY',
@@ -131,21 +127,21 @@ useContentSeo(
 
 const joinOptions = [
   {
-    icon: IconBuilding,
+    icon: 'IconBuilding',
     title: 'Ouvrir un centre LEARN UP ACADEMY',
     body: "Je suis un candidat à la franchise dynamique et rigoureux, fort d'une expérience confirmée en gestion de centre de profit et en management d'équipe.",
     cta: 'Candidater pour un centre',
     to: '/centres/demande-de-formation?sujet=franchise'
   },
   {
-    icon: IconBook,
+    icon: 'IconBook',
     title: 'Référencer mon organisme',
     body: 'Votre organisme de formation conserve son identité juridique et reçoit des demandes du réseau sur son territoire et ses domaines.',
     cta: 'Référencer mon organisme',
     to: '/centres/demande-de-formation?sujet=organisme'
   },
   {
-    icon: IconAward,
+    icon: 'IconAward',
     title: 'Intervenir comme formateur',
     body: 'Formateurs indépendants certifiés : intervenez pour les centres du réseau, sur vos domaines et votre zone géographique.',
     cta: 'Proposer mes interventions',

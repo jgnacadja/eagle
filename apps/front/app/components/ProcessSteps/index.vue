@@ -1,8 +1,10 @@
-```vue
 <template>
   <ol
     class="relative flex flex-col gap-xl md:grid md:gap-2xl"
-    :class="`md:grid-cols-${steps.length === 3 ? 3 : steps.length === 5 ? 5 : 4}`"
+    :class="
+      { 3: 'md:grid-cols-3', 4: 'md:grid-cols-4', 5: 'md:grid-cols-5' }[steps.length] ??
+      'md:grid-cols-4'
+    "
   >
     <!-- Ligne verticale mobile -->
     <div

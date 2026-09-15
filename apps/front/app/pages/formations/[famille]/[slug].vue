@@ -70,20 +70,10 @@
             </div>
 
             <figure
+              v-if="imageSrc"
               class="relative aspect-video overflow-hidden rounded-md bg-surface-alt shadow-lg lg:col-span-2 lg:aspect-4/3"
             >
-              <img
-                v-if="imageSrc"
-                :src="imageSrc"
-                :alt="course.title"
-                class="h-full w-full object-cover"
-              />
-              <figcaption
-                v-else
-                class="flex h-full items-center justify-center text-center text-small text-ink-muted"
-              >
-                {{ course.title }}
-              </figcaption>
+              <img :src="imageSrc" :alt="course.title" class="h-full w-full object-cover" />
             </figure>
           </div>
         </div>
@@ -591,6 +581,10 @@ interface ProgrammeModule {
   evaluation?: boolean
   goals: string[]
 }
+
+definePageMeta({
+  layout: 'with-breadcrumb'
+})
 
 const route = useRoute()
 const famille = route.params.famille as string

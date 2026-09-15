@@ -55,6 +55,13 @@
                 </NuxtLink>
               </div>
             </div>
+
+            <figure
+              v-if="imageSrc"
+              class="relative aspect-video overflow-hidden rounded-md bg-surface-alt shadow-lg lg:col-span-2 lg:aspect-4/3"
+            >
+              <img :src="imageSrc" :alt="centre.name" class="h-full w-full object-cover" />
+            </figure>
           </div>
         </div>
       </section>
@@ -367,6 +374,10 @@ import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
 import type { CenterResult } from '~/types/center-result'
 
+definePageMeta({
+  layout: 'with-breadcrumb'
+})
+
 const route = useRoute()
 const slug = route.params.slug as string
 
@@ -440,6 +451,8 @@ const specialties = computed(() => centre.value?.specialties ?? [])
 const qualiopiCertificateUrl = computed(
   () => directusAssetUrl(centre.value?.qualiopi_certificate) ?? ''
 )
+
+const imageSrc = computed(() => directusAssetUrl(centre.value?.image))
 
 // Breadcrumb adapté à l'état affiché. route.meta est partagé entre toutes
 // les routes /centres/:slug : on réassigne la valeur à chaque changement

@@ -177,7 +177,7 @@
                 <ul class="pb-sm pl-2">
                   <li v-for="lien in aproposLiens" :key="lien.slug">
                     <NuxtLink
-                      :to="`/a-propos/${lien.slug}`"
+                      :to="`/${lien.slug}`"
                       class="block py-2 text-body text-primary transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
@@ -186,7 +186,7 @@
                   </li>
                   <li v-for="lien in legalLiens" :key="lien.slug">
                     <NuxtLink
-                      :to="`/legal/${lien.slug}`"
+                      :to="`/${lien.slug}`"
                       class="block py-2 text-body text-primary transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >

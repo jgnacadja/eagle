@@ -241,8 +241,8 @@ describe('MegaMenuAPropos', () => {
 
     expect(wrapper.text()).toContain('Qui sommes-nous')
     expect(wrapper.text()).toContain('Mentions légales')
-    expect(wrapper.find('a[href="/a-propos/contact"]').exists()).toBe(true)
-    expect(wrapper.find('a[href="/legal/confidentialite"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/contact"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/confidentialite"]').exists()).toBe(true)
   })
 })
 

@@ -5,7 +5,7 @@
       <ul class="mt-sm space-y-2">
         <li v-for="lien in aproposLiens" :key="lien.slug">
           <NuxtLink
-            :to="`/a-propos/${lien.slug}`"
+            :to="`/${lien.slug}`"
             class="block rounded-md px-2 py-1.5 text-primary transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
@@ -21,7 +21,7 @@
       <ul class="mt-sm space-y-1">
         <li v-for="lien in legalLiens" :key="lien.slug">
           <NuxtLink
-            :to="`/legal/${lien.slug}`"
+            :to="`/${lien.slug}`"
             class="block rounded-md px-2 py-1.5 text-body text-primary transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >

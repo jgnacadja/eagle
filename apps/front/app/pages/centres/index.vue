@@ -2,7 +2,7 @@
   <div class="flex flex-1 flex-col">
     <!-- Top surface section: heading and description -->
     <section class="shrink-0 bg-surface-soft">
-      <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter pb-lg pt-section">
+      <div class="mx-auto px-gutter-mobile md:px-gutter pb-lg pt-section">
         <p class="text-overline text-accent-text">LE RÉSEAU LEARN UP</p>
         <h1 class="mt-sm font-display text-h2 font-extrabold text-ink lg:text-h1">
           Réseau de centres
@@ -18,7 +18,7 @@
 
     <!-- Barre de recherche/filtres : épinglée en haut sur desktop -->
     <section class="shrink-0 bg-surface-soft lg:sticky lg:top-0 lg:z-30">
-      <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter pb-lg">
+      <div class="mx-auto px-gutter-mobile md:px-gutter pb-lg">
         <div class="flex flex-col gap-md">
           <div class="flex flex-col gap-md sm:flex-row sm:items-center sm:justify-between">
             <div class="flex flex-col gap-md sm:flex-row sm:items-center">

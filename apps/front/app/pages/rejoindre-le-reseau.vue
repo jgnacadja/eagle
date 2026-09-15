@@ -8,7 +8,7 @@
         class="pointer-events-none absolute -bottom-48 -left-24 h-96 w-96 rounded-full bg-primary-muted/40"
       />
 
-      <div class="relative mx-auto max-w-container px-gutter-mobile py-4xl md:px-gutter md:py-4xl">
+      <div class="relative mx-auto px-gutter-mobile py-4xl md:px-gutter md:py-4xl">
         <div class="max-w-prose">
           <span
             class="inline-block rounded-full border border-outline-inverse px-lg py-sm text-overline font-bold uppercase text-ink-inverse-muted"
@@ -44,7 +44,7 @@
       </div>
     </section>
 
-    <div class="mx-auto max-w-container px-gutter-mobile py-section md:px-gutter md:py-4xl">
+    <div class="mx-auto px-gutter-mobile py-section md:px-gutter md:py-4xl">
       <section aria-labelledby="options-title">
         <h2 id="options-title" class="font-display text-h2 font-extrabold text-ink">
           Trois façons de rejoindre le réseau

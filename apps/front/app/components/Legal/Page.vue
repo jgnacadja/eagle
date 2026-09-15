@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-1 flex-col bg-paper">
     <header class="border-b border-rule bg-linear-to-b from-paper to-surface">
-      <div class="mx-auto w-full max-w-container px-gutter-mobile pt-2xl md:px-gutter">
+      <div class="mx-auto w-full px-gutter-mobile pt-2xl md:px-gutter">
         <h1 class="font-display text-h1 font-extrabold text-ink">
           {{ page.title }}
         </h1>
@@ -30,7 +30,7 @@
       </div>
     </header>
 
-    <div class="mx-auto w-full max-w-container px-gutter-mobile pb-xl md:px-gutter">
+    <div class="mx-auto w-full px-gutter-mobile pb-xl md:px-gutter">
       <!-- Mobile page selector -->
       <div class="mt-2xl md:hidden">
         <Label id="legal-page-select-label" for="legal-page-select" class="sr-only"

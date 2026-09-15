@@ -291,9 +291,9 @@ describe('MegaMenuActualites', () => {
 
     await rubrique.trigger('click')
 
-    expect(wrapper.text()).toContain(
-      'Aucune publication récente pour cette rubrique dans cette région.'
-    )
-    expect(wrapper.text()).not.toContain('Aucune publication récente pour cette région.')
+    // 'Presse' n'a d'actus dans aucune région → pas de région sélectionnée
+    expect(wrapper.text()).toContain('Aucune publication récente pour cette rubrique.')
+    expect(wrapper.text()).not.toContain('dans cette région')
+    expect(wrapper.text()).toContain('Aucune région disponible.')
   })
 })

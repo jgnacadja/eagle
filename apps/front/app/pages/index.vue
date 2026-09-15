@@ -109,7 +109,7 @@
         />
       </div>
 
-      <p class="mt-xl text-center text-meta md:text-small text-ink-muted">
+      <p class="mt-xl text-center text-meta md:text-small text-ink-muted leading-5">
         Vous êtes un particulier ? Certaines sessions sont ouvertes aux inscriptions individuelles —
         <NuxtLink
           to="/centres"
@@ -127,36 +127,7 @@
         Comment ça marche
       </p>
 
-      <ol class="relative mt-2.5 flex flex-col gap-xl md:grid md:grid-cols-4 md:gap-2xl">
-        <div
-          class="absolute left-[calc(var(--spacing-control-sm)/2-0.5px)] top-[calc(var(--spacing-control-sm)/2)] bottom-[calc(var(--spacing-control-sm)/2)] z-0 w-px bg-rule-strong md:hidden"
-          aria-hidden="true"
-        />
-        <div
-          class="absolute top-[calc(var(--spacing-control-sm)/2-0.5px)] left-0 right-0 z-0 mx-auto hidden h-px w-4/5 bg-rule-strong md:block"
-          aria-hidden="true"
-        />
-
-        <li
-          v-for="(step, i) in steps"
-          :key="step.number"
-          v-reveal="revealStagger(i)"
-          class="relative flex flex-row items-start gap-md text-left md:flex-col md:items-center md:text-center md:gap-0"
-        >
-          <span
-            class="z-10 flex h-control-sm w-control-sm shrink-0 items-center justify-center rounded-full text-small font-bold text-paper"
-            :class="step.number === 4 ? 'bg-success' : 'bg-primary'"
-          >
-            {{ step.number }}
-          </span>
-          <div class="flex-1 pt-1 md:pt-0">
-            <h3 class="font-sans text-body font-bold text-ink md:mt-2.5">{{ step.title }}</h3>
-            <p class="mt-0.5 text-small text-ink-muted md:mx-auto md:mt-1" :class="step.maxWidth">
-              {{ step.body }}
-            </p>
-          </div>
-        </li>
-      </ol>
+      <ProcessSteps :steps="steps" last-step-variant="success" title-size="body" class="mt-2xl" />
     </section>
 
     <!-- Formations -->
@@ -531,26 +502,22 @@ const steps = [
   {
     number: 1,
     title: 'Décrivez votre besoin',
-    body: 'en une phrase, avec vos mots',
-    maxWidth: 'max-w-44'
+    body: 'en une phrase, avec vos mots'
   },
   {
     number: 2,
     title: 'Recevez la solution',
-    body: 'formation, centre et dates identifiés près de vos équipes',
-    maxWidth: 'max-w-56'
+    body: 'formation, centre et dates identifiés près de vos équipes'
   },
   {
     number: 3,
     title: 'Validez la session',
-    body: 'demande envoyée, prise en charge sécurisée',
-    maxWidth: 'max-w-48'
+    body: 'demande envoyée, prise en charge sécurisée'
   },
   {
     number: 4,
     title: 'Formez vos équipes',
-    body: "accompagnement jusqu'aux attestations",
-    maxWidth: 'max-w-48'
+    body: "accompagnement jusqu'aux attestations"
   }
 ]
 

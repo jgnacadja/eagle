@@ -25,18 +25,20 @@
             demandes transmises aux centres du réseau.
           </p>
           <div class="mt-xl flex flex-wrap gap-md">
-            <NuxtLink
-              to="#candidater"
-              class="inline-flex h-control items-center justify-center rounded-full bg-accent px-xl text-button font-bold text-ink transition-colors hover:bg-paper"
+            <Button
+              as-child
+              class="h-control w-full rounded-full bg-accent px-xl text-button font-bold text-ink transition-colors hover:bg-paper sm:w-auto"
             >
-              Candidater
-            </NuxtLink>
-            <NuxtLink
-              to="#modele"
-              class="inline-flex h-control items-center justify-center rounded-full border border-outline-inverse px-xl text-button font-bold text-ink-inverse transition-colors hover:bg-ink-inverse/10"
+              <NuxtLink to="#candidater">Candidater</NuxtLink>
+            </Button>
+
+            <Button
+              as-child
+              variant="outline"
+              class="h-control w-full rounded-full border-outline-inverse bg-transparent px-xl text-button font-bold text-ink-inverse transition-colors hover:bg-ink-inverse/10 hover:text-ink-inverse sm:w-auto"
             >
-              Découvrir le modèle
-            </NuxtLink>
+              <NuxtLink to="#modele">Découvrir le modèle</NuxtLink>
+            </Button>
           </div>
         </div>
       </div>
@@ -91,26 +93,11 @@
         <h2 id="process-title" class="text-center font-display text-h2 font-extrabold text-ink">
           De la candidature à l'ouverture
         </h2>
-        <div class="relative mt-2xl grid gap-xl md:grid-cols-4 md:gap-grid">
-          <div
-            class="pointer-events-none absolute left-[12.5%] right-[12.5%] top-[calc(var(--spacing-xl)/2-0.5px)] hidden border-t border-rule md:block"
-          />
-          <article v-for="(step, index) in steps" :key="step.title" class="relative text-center">
-            <div
-              class="mx-auto flex h-xl w-xl items-center justify-center rounded-full text-button font-bold"
-              :class="
-                index === steps.length - 1 ? 'bg-accent text-ink' : 'bg-primary text-ink-inverse'
-              "
-            >
-              {{ index + 1 }}
-            </div>
-            <h3 class="mt-md font-display text-h4 font-extrabold text-ink">{{ step.title }}</h3>
-            <p class="mt-sm text-small text-ink-muted">{{ step.body }}</p>
-          </article>
-        </div>
+
+        <ProcessSteps :steps="steps" last-step-variant="accent" title-size="h4" class="mt-2xl" />
 
         <div
-          class="mt-2xl flex flex-col items-center justify-between gap-lg border-t border-rule pt-xl text-center md:flex-row md:text-left"
+          class="mt-2xl flex flex-col items-center justify-between gap-lg border-t border-rule pt-xl text-center md:flex-row md:text-left md:px-20"
         >
           <p class="text-small text-ink-muted">
             Prérequis : expérience de la formation professionnelle ou de la direction

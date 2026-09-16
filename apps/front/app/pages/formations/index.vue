@@ -42,7 +42,8 @@
         <div class="mt-lg flex items-center gap-md lg:hidden">
           <Button
             type="button"
-            class="h-control gap-sm rounded-full bg-primary px-md text-small font-semibold text-paper hover:bg-primary-dark"
+            size="pill-sm"
+            class="gap-sm"
             aria-haspopup="dialog"
             aria-controls="mobile-filter-panel"
             :aria-expanded="isFilterPanelOpen"
@@ -58,10 +59,7 @@
             </span>
           </Button>
           <Select v-model="sortBy" aria-label="Trier par">
-            <SelectTrigger
-              aria-label="Trier par"
-              class="h-control w-auto gap-sm rounded-full border-outline bg-paper px-md text-small font-semibold text-ink-body shadow-none"
-            >
+            <SelectTrigger aria-label="Trier par" variant="pill">
               <span class="truncate">{{ sortLabel }}</span>
             </SelectTrigger>
             <SelectContent>
@@ -150,13 +148,15 @@
                 </button>
               </span>
             </div>
-            <button
+            <Button
               type="button"
-              class="mt-sm text-small font-semibold text-primary transition-colors hover:text-accent-text underline"
+              variant="link"
+              size="inline"
+              class="mt-sm underline"
               @click="resetFilters"
             >
               Réinitialiser
-            </button>
+            </Button>
           </div>
 
           <div
@@ -169,13 +169,9 @@
               <template v-if="hasActiveCriteria">correspondent</template>
             </h2>
             <div class="ml-auto hidden items-center gap-sm lg:flex">
-              <Label for="sort-desktop" class="text-small font-normal text-ink-body">
-                Trier par
-              </Label>
+              <Label for="sort-desktop" variant="body"> Trier par </Label>
               <Select id="sort-desktop" v-model="sortBy">
-                <SelectTrigger
-                  class="h-auto w-auto gap-sm rounded-full border-outline bg-paper px-md py-sm text-small text-ink-body shadow-none"
-                >
+                <SelectTrigger variant="pill-auto">
                   <span class="truncate">{{ sortLabel }}</span>
                 </SelectTrigger>
                 <SelectContent>
@@ -227,28 +223,17 @@
               réponse adaptée vous sera proposée.
             </p>
             <div class="mt-lg flex flex-wrap justify-center gap-md">
-              <Button
-                as-child
-                class="h-control rounded-full bg-primary px-lg text-small font-semibold text-paper hover:bg-primary-dark"
-              >
+              <Button as-child size="pill-sm">
                 <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
               </Button>
-              <Button
-                as-child
-                variant="outline"
-                class="h-control rounded-full border-outline px-lg text-small font-semibold text-ink-body hover:bg-surface hover:text-accent-text"
-              >
+              <Button as-child variant="outline" size="pill-sm">
                 <NuxtLink to="#">Parler à un conseiller</NuxtLink>
               </Button>
             </div>
             <div class="mt-lg flex gap-lg text-small font-semibold">
-              <button
-                type="button"
-                class="text-primary transition-colors hover:text-accent-text"
-                @click="resetFilters"
-              >
+              <Button type="button" variant="link" size="inline" @click="resetFilters">
                 Réinitialiser les filtres
-              </button>
+              </Button>
               <NuxtLink
                 to="/formations"
                 class="text-primary transition-colors hover:text-accent-text"
@@ -304,9 +289,7 @@
             aria-label="Pagination du catalogue"
           >
             <PaginationContent v-slot="{ items }" class="gap-sm">
-              <PaginationPrevious
-                class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-subtle hover:bg-surface"
-              />
+              <PaginationPrevious variant="icon-outline" size="icon-sm" />
               <template
                 v-for="(item, i) in items"
                 :key="item.type === 'page' ? item.value : `ellipsis-${i}`"
@@ -323,21 +306,21 @@
                   class="h-control-sm w-control-sm text-ink-subtle"
                 />
               </template>
-              <PaginationNext
-                class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-body hover:bg-surface hover:text-accent-text"
-              />
+              <PaginationNext variant="icon-outline" size="icon-sm" />
             </PaginationContent>
           </Pagination>
 
           <!-- Pagination mobile -->
-          <button
+          <Button
             v-if="hasMoreMobile"
             type="button"
-            class="mx-auto mt-lg block rounded-full border border-outline px-lg py-sm text-small font-semibold text-ink-body hover:bg-surface hover:text-accent-text lg:hidden"
+            variant="outline"
+            size="pill-sm"
+            class="mx-auto mt-lg block lg:hidden"
             @click="loadMore"
           >
             Afficher plus de résultats
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -347,17 +330,10 @@
         title="Vous ne savez pas quelle formation choisir ?"
         text="Décrivez votre besoin : LEARN UP identifie la formation, le format et le lieu adaptés à votre situation."
       >
-        <Button
-          as-child
-          class="h-control w-full rounded-full bg-accent px-lg text-small font-semibold text-ink transition hover:bg-accent-text hover:text-paper sm:w-auto"
-        >
+        <Button as-child variant="accent" size="pill-sm" class="w-full sm:w-auto">
           <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
         </Button>
-        <Button
-          as-child
-          variant="outline"
-          class="h-control w-full rounded-full border-outline-inverse bg-transparent px-lg text-small font-semibold text-ink-inverse transition hover:bg-transparent hover:text-ink-inverse sm:w-auto"
-        >
+        <Button as-child variant="outline-inverse" size="pill-sm" class="w-full sm:w-auto">
           <NuxtLink to="#">Parler à un conseiller</NuxtLink>
         </Button>
       </CtaBanner>
@@ -413,22 +389,14 @@
       <!-- Barre d'action fixe -->
       <div class="shrink-0 border-t border-rule bg-paper p-md">
         <div class="mx-auto flex w-full gap-md">
-          <button
-            type="button"
-            class="rounded-full border border-outline px-lg py-sm text-small font-semibold text-ink-body hover:bg-surface hover:text-accent-text"
-            @click="resetFilters"
-          >
+          <Button type="button" variant="outline" size="pill-sm" @click="resetFilters">
             Tout effacer
-          </button>
-          <button
-            type="button"
-            class="h-control flex-1 rounded-full bg-primary px-lg text-small font-semibold text-paper hover:bg-primary-dark"
-            @click="closeFilterPanel"
-          >
+          </Button>
+          <Button type="button" size="pill-sm" class="flex-1" @click="closeFilterPanel">
             {{
               resultCount > 0 ? `Afficher ${resultCount} formation(s)` : 'Afficher les résultats'
             }}
-          </button>
+          </Button>
         </div>
       </div>
     </dialog>

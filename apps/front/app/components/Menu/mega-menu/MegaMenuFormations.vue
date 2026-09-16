@@ -76,13 +76,9 @@
 
       <div class="mt-md rounded-lg bg-ink px-md py-md text-paper">
         <p class="text-body font-semibold">Vous ne savez pas quelle formation choisir ?</p>
-        <NuxtLink
-          to="/etre-guide"
-          class="w-full text-center mt-sm inline-block rounded-full bg-paper px-lg py-2 text-small font-semibold text-ink hover:bg-surface hover:text-accent-text"
-          @click="$emit('close')"
-        >
-          Être guidé dans mon choix
-        </NuxtLink>
+        <Button as-child variant="paper" size="pill-sm" class="mt-sm w-full">
+          <NuxtLink to="/etre-guide" @click="$emit('close')">Être guidé dans mon choix</NuxtLink>
+        </Button>
       </div>
     </div>
   </div>

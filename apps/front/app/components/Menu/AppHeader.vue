@@ -18,44 +18,28 @@
       >
         <NavigationMenuList class="gap-1">
           <NavigationMenuItem value="formations">
-            <NavigationMenuTrigger
-              class="border-b-2 border-transparent text-body rounded-none px-0 mx-sm font-semibold text-primary transition-colors hover:text-accent-text data-[state=open]:border-accent"
-            >
-              Formations
-            </NavigationMenuTrigger>
+            <NavigationMenuTrigger variant="header"> Formations </NavigationMenuTrigger>
             <NavigationMenuContent>
               <MegaMenuFormations @close="close" />
             </NavigationMenuContent>
           </NavigationMenuItem>
 
           <NavigationMenuItem value="centres">
-            <NavigationMenuTrigger
-              class="border-b-2 border-transparent text-body rounded-none px-0 mx-sm font-semibold text-primary transition-colors hover:text-accent-text data-[state=open]:border-accent"
-            >
-              Centres
-            </NavigationMenuTrigger>
+            <NavigationMenuTrigger variant="header"> Centres </NavigationMenuTrigger>
             <NavigationMenuContent>
               <MegaMenuCentres @close="close" />
             </NavigationMenuContent>
           </NavigationMenuItem>
 
           <NavigationMenuItem value="apropos">
-            <NavigationMenuTrigger
-              class="border-b-2 border-transparent text-body rounded-none px-0 mx-sm font-semibold text-primary transition-colors hover:text-accent-text data-[state=open]:border-accent"
-            >
-              À propos
-            </NavigationMenuTrigger>
+            <NavigationMenuTrigger variant="header"> À propos </NavigationMenuTrigger>
             <NavigationMenuContent>
               <MegaMenuAPropos @close="close" />
             </NavigationMenuContent>
           </NavigationMenuItem>
 
           <NavigationMenuItem value="actualites">
-            <NavigationMenuTrigger
-              class="border-b-2 border-transparent text-body rounded-none px-0 mx-sm font-semibold text-primary transition-colors hover:text-accent-text data-[state=open]:border-accent"
-            >
-              Actualités
-            </NavigationMenuTrigger>
+            <NavigationMenuTrigger variant="header"> Actualités </NavigationMenuTrigger>
             <NavigationMenuContent>
               <MegaMenuActualites @close="close" />
             </NavigationMenuContent>

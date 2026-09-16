@@ -15,17 +15,10 @@
     <div
       class="mt-2xl flex flex-col items-stretch justify-center gap-md sm:flex-row sm:items-center"
     >
-      <Button
-        as-child
-        class="h-control rounded-full bg-accent px-lg text-button font-semibold text-ink transition hover:bg-accent-text hover:text-paper"
-      >
+      <Button as-child variant="accent" size="pill" class="px-lg">
         <NuxtLink :to="primaryTo">{{ primaryLabel }}</NuxtLink>
       </Button>
-      <Button
-        as-child
-        variant="outline"
-        class="h-control rounded-full border-outline px-lg text-button font-semibold text-ink transition hover:border-primary hover:text-accent-text"
-      >
+      <Button as-child variant="outline" size="pill" class="px-lg">
         <NuxtLink :to="secondaryTo">{{ secondaryLabel }}</NuxtLink>
       </Button>
     </div>

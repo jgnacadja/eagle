@@ -6,12 +6,7 @@
     <p class="font-sans text-ink-muted">
       {{ error?.statusMessage || 'Page introuvable.' }}
     </p>
-    <button
-      class="rounded-full bg-primary px-5 py-2 font-sans text-sm font-semibold text-paper hover:bg-primary-dark"
-      @click="handleClear"
-    >
-      Retour à l'accueil
-    </button>
+    <Button size="pill-sm" @click="handleClear">Retour à l'accueil</Button>
   </div>
 </template>
 

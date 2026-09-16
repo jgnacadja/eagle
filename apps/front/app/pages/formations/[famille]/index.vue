@@ -91,10 +91,7 @@
 
           <div class="flex flex-wrap gap-sm md:ml-auto">
             <Select v-model="selectedSubFamily" aria-label="Filtrer par sous-famille">
-              <SelectTrigger
-                aria-label="Sous-famille"
-                class="h-control w-auto gap-sm rounded-full border-outline bg-paper px-md text-small font-semibold text-ink-body shadow-none"
-              >
+              <SelectTrigger variant="pill" aria-label="Sous-famille">
                 <span class="truncate">{{ subFamilyFilterLabel }}</span>
               </SelectTrigger>
               <SelectContent>
@@ -114,10 +111,7 @@
               v-model="selectedModality"
               aria-label="Filtrer par modalité"
             >
-              <SelectTrigger
-                aria-label="Modalité"
-                class="h-control w-auto gap-sm rounded-full border-outline bg-paper px-md text-small font-semibold text-ink-body shadow-none"
-              >
+              <SelectTrigger variant="pill" aria-label="Modalité">
                 <span class="truncate">{{ modalityFilterLabel }}</span>
               </SelectTrigger>
               <SelectContent>
@@ -137,10 +131,7 @@
               v-model="selectedLocation"
               aria-label="Filtrer par localisation"
             >
-              <SelectTrigger
-                aria-label="Localisation"
-                class="h-control w-auto gap-sm rounded-full border-outline bg-paper px-md text-small font-semibold text-ink-body shadow-none"
-              >
+              <SelectTrigger variant="pill" aria-label="Localisation">
                 <span class="truncate">{{ locationFilterLabel }}</span>
               </SelectTrigger>
               <SelectContent>
@@ -156,10 +147,7 @@
             </Select>
 
             <Select v-model="selectedAvailability" aria-label="Filtrer par disponibilité">
-              <SelectTrigger
-                aria-label="Disponibilité"
-                class="h-control w-auto gap-sm rounded-full border-outline bg-paper px-md text-small font-semibold text-ink-body shadow-none"
-              >
+              <SelectTrigger variant="pill" aria-label="Disponibilité">
                 <span class="truncate">{{ availabilityFilterLabel }}</span>
               </SelectTrigger>
               <SelectContent>
@@ -189,11 +177,7 @@
             Élargissez vos critères ou transmettez votre besoin : une réponse adaptée vous sera
             proposée.
           </p>
-          <Button
-            variant="link"
-            class="mt-lg h-auto p-0 text-small font-semibold"
-            @click="resetPage"
-          >
+          <Button variant="link" size="inline" class="mt-lg text-small" @click="resetPage">
             Réinitialiser
           </Button>
         </div>
@@ -254,9 +238,7 @@
           aria-label="Pagination du catalogue"
         >
           <PaginationContent v-slot="{ items }" class="gap-sm">
-            <PaginationPrevious
-              class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-subtle hover:bg-surface"
-            />
+            <PaginationPrevious variant="icon-outline" size="icon-sm" />
             <template
               v-for="(item, index) in items"
               :key="item.type === 'page' ? item.value : `ellipsis-${index}`"
@@ -273,9 +255,7 @@
                 class="h-control-sm w-control-sm text-ink-subtle"
               />
             </template>
-            <PaginationNext
-              class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-body hover:bg-surface"
-            />
+            <PaginationNext variant="icon-outline" size="icon-sm" />
           </PaginationContent>
         </Pagination>
       </section>
@@ -287,7 +267,7 @@
       >
         <ul class="grid grid-cols-1 gap-md md:grid-cols-2">
           <li v-if="familleData?.audience_text">
-            <Card class="h-full border-rule bg-surface p-lg shadow-none">
+            <Card variant="panel" class="h-full p-lg">
               <h3 class="font-sans text-h5 font-bold text-ink">Qui est concerné ?</h3>
               <p class="mt-sm whitespace-pre-line text-body text-ink-body">
                 {{ familleData.audience_text }}
@@ -295,7 +275,7 @@
             </Card>
           </li>
           <li v-if="familleData?.validity_text">
-            <Card class="h-full border-rule bg-surface p-lg shadow-none">
+            <Card variant="panel" class="h-full p-lg">
               <h3 class="font-sans text-h5 font-bold text-ink">Validité et renouvellement</h3>
               <p class="mt-sm whitespace-pre-line text-body text-ink-body">
                 {{ familleData.validity_text }}
@@ -311,17 +291,10 @@
           title="Quelle catégorie pour vos équipes ?"
           text="Décrivez vos engins et votre site : LEARN UP identifie les recommandations et catégories applicables."
         >
-          <Button
-            as-child
-            class="h-control w-full rounded-full bg-accent px-lg text-small font-semibold text-ink transition hover:bg-accent-text hover:text-paper sm:w-auto"
-          >
+          <Button as-child variant="accent" size="pill-sm" class="w-full sm:w-auto">
             <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
           </Button>
-          <Button
-            as-child
-            variant="outline"
-            class="h-control w-full rounded-full border-outline-inverse bg-transparent px-lg text-small font-semibold text-ink-inverse transition hover:bg-transparent hover:text-ink-inverse sm:w-auto"
-          >
+          <Button as-child variant="outline-inverse" size="pill-sm" class="w-full sm:w-auto">
             <NuxtLink :to="`/centres/demande-de-formation?famille=${famille}`"
               >Faire une demande</NuxtLink
             >

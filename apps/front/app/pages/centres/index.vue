@@ -25,10 +25,7 @@
               <Label for="dept-select" class="relative block">
                 <span class="sr-only">Sélectionner un département</span>
                 <Select v-model="selectedDept">
-                  <SelectTrigger
-                    id="dept-select"
-                    class="h-control w-full rounded-full border border-outline bg-paper px-lg text-small font-medium text-ink focus:ring-outline sm:w-64"
-                  >
+                  <SelectTrigger id="dept-select" variant="field-lg" class="sm:w-64">
                     <span class="truncate">{{ selectedDeptLabel }}</span>
                   </SelectTrigger>
                   <SelectContent>
@@ -78,12 +75,8 @@
               <Button
                 type="button"
                 :variant="isMobileMapOpen ? 'default' : 'outline'"
-                :class="[
-                  'flex items-center gap-sm',
-                  isMobileMapOpen
-                    ? 'h-control shrink-0 rounded-full bg-primary px-md text-small font-semibold text-paper transition hover:bg-primary-dark lg:hidden'
-                    : 'h-control shrink-0 rounded-full border border-outline bg-paper px-md text-small font-semibold text-ink transition hover:bg-surface hover:text-accent-text lg:hidden'
-                ]"
+                size="pill-sm"
+                class="shrink-0 gap-sm lg:hidden"
                 @click="isMobileMapOpen ? closeMobileMap() : openMobileMap()"
               >
                 <IconList v-if="isMobileMapOpen" :size="16" />
@@ -198,17 +191,10 @@
               intra sur site, ou dans un centre d'un département voisin selon le besoin.
             </p>
             <div class="mt-xl flex flex-wrap items-center justify-center gap-md">
-              <Button
-                as-child
-                class="h-control rounded-full bg-primary px-md text-small font-bold text-paper hover:bg-primary-dark"
-              >
+              <Button as-child size="pill-sm" class="font-bold">
                 <NuxtLink to="/centres/demande-de-formation">Demander une formation</NuxtLink>
               </Button>
-              <Button
-                variant="outline"
-                class="h-control rounded-full border border-outline bg-paper px-md text-small font-bold text-primary transition hover:bg-surface hover:text-accent-text"
-                @click="resetFilters"
-              >
+              <Button variant="outline" size="pill-sm" class="font-bold" @click="resetFilters">
                 {{
                   isDepartmentScope ? 'Choisir un autre département' : 'Réinitialiser les filtres'
                 }}

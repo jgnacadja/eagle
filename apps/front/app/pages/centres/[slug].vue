@@ -32,17 +32,10 @@
               </ul>
 
               <div class="mt-control-sm flex flex-wrap items-center gap-md">
-                <Button
-                  as-child
-                  class="h-control w-full rounded-full bg-accent px-md py-sm text-button font-semibold text-ink transition hover:bg-accent-text hover:text-paper sm:w-auto"
-                >
+                <Button as-child variant="accent" size="pill" class="w-full sm:w-auto">
                   <NuxtLink to="#formations">Trouver une formation dans ce centre</NuxtLink>
                 </Button>
-                <Button
-                  as-child
-                  variant="outline"
-                  class="h-control w-full rounded-full border-outline bg-paper px-md py-sm text-button font-medium text-ink transition hover:border-primary hover:bg-paper hover:text-accent-text sm:w-auto"
-                >
+                <Button as-child variant="outline" size="pill" class="w-full sm:w-auto">
                   <NuxtLink to="#">Parler à un conseiller</NuxtLink>
                 </Button>
                 <NuxtLink
@@ -76,7 +69,7 @@
           >
             <!-- Informations pratiques -->
             <section aria-labelledby="infos-title">
-              <Card class="h-fit bg-surface">
+              <Card variant="surface" class="h-fit">
                 <CardHeader class="p-lg pb-0">
                   <h2 id="infos-title" class="font-sans text-h4 font-semibold text-ink">
                     Informations pratiques
@@ -142,7 +135,7 @@
 
             <!-- Qualité -->
             <section v-if="centre.qualiopi_certified" aria-labelledby="qualite-title">
-              <Card class="h-fit bg-paper">
+              <Card variant="paper" class="h-fit">
                 <CardHeader class="p-lg pb-0">
                   <h2 id="qualite-title" class="font-sans text-h4 font-semibold text-ink">
                     Qualité et certifications
@@ -169,7 +162,8 @@
                     v-if="centre.qualiopi_certificate"
                     as-child
                     variant="outline"
-                    class="mt-md h-control w-full rounded-full border-outline bg-paper px-md py-sm text-small font-semibold text-ink transition hover:border-primary hover:text-accent-text"
+                    size="pill-sm"
+                    class="mt-md w-full"
                   >
                     <a :href="qualiopiCertificateUrl" target="_blank" rel="noopener">
                       Télécharger le certificat Qualiopi
@@ -225,7 +219,8 @@
                 v-if="(centreCatalog.data.value?.total ?? 0) > formations.length"
                 as-child
                 variant="link"
-                class="mt-md h-auto p-0 text-small font-bold text-primary transition-colors hover:text-accent-text"
+                size="inline"
+                class="mt-md font-bold"
               >
                 <NuxtLink :to="`/formations?lieu=${centre.city ?? ''}`"
                   >Voir toutes les formations du centre <span class="link-arrow">→</span></NuxtLink
@@ -263,19 +258,12 @@
           title="Un besoin de formation sur ce territoire ?"
           text="La demande transmet automatiquement le centre, la ville et la formation concernée — sans ressaisie."
         >
-          <Button
-            as-child
-            class="h-control w-full rounded-full bg-paper px-lg py-sm text-center text-button font-bold text-ink transition hover:bg-surface hover:text-accent-text sm:w-auto"
-          >
+          <Button as-child variant="paper" size="pill-lg" class="w-full sm:w-auto">
             <NuxtLink :to="`/centres/demande-de-formation?centre=${slug}`"
               >Demander une formation</NuxtLink
             >
           </Button>
-          <Button
-            as-child
-            variant="outline"
-            class="h-control w-full rounded-full border-outline-inverse bg-transparent px-lg py-sm text-center text-button font-medium text-ink-inverse transition hover:border-ink-inverse hover:bg-ink-inverse/10 sm:w-auto"
-          >
+          <Button as-child variant="outline-inverse" size="pill-lg" class="w-full sm:w-auto">
             <NuxtLink to="#">Parler à un conseiller</NuxtLink>
           </Button>
         </CtaBanner>
@@ -286,11 +274,7 @@
             <h2 id="autres-title" class="font-display text-h2 font-extrabold text-ink">
               Autres centres<template v-if="centre.region"> en {{ centre.region }}</template>
             </h2>
-            <Button
-              as-child
-              variant="link"
-              class="hidden h-auto p-0 text-small font-bold text-primary transition-colors hover:text-accent-text sm:inline"
-            >
+            <Button as-child variant="link" size="inline" class="hidden font-bold sm:inline">
               <NuxtLink to="/centres"
                 >Voir le réseau de centres <span class="link-arrow">→</span></NuxtLink
               >
@@ -313,11 +297,7 @@
               />
             </NuxtLink>
           </div>
-          <Button
-            as-child
-            variant="link"
-            class="mt-md h-auto p-0 text-small font-bold text-primary transition-colors hover:text-accent-text sm:hidden"
-          >
+          <Button as-child variant="link" size="inline" class="mt-md font-bold sm:hidden">
             <NuxtLink to="/centres"
               >Voir le réseau de centres <span class="link-arrow">→</span></NuxtLink
             >

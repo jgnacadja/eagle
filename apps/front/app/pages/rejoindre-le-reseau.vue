@@ -25,18 +25,11 @@
             demandes transmises aux centres du réseau.
           </p>
           <div class="mt-xl flex flex-wrap gap-md">
-            <Button
-              as-child
-              class="h-control w-full rounded-full bg-accent px-xl text-button font-bold text-ink transition-colors hover:bg-accent-text hover:text-ink-inverse sm:w-auto"
-            >
+            <Button as-child variant="accent" size="pill-lg" class="w-full sm:w-auto">
               <NuxtLink to="#candidater">Candidater</NuxtLink>
             </Button>
 
-            <Button
-              as-child
-              variant="outline"
-              class="h-control w-full rounded-full border-outline-inverse bg-transparent px-xl text-button font-bold text-ink-inverse transition-colors hover:bg-ink-inverse/10 hover:text-ink-inverse sm:w-auto"
-            >
+            <Button as-child variant="outline-inverse" size="pill-lg" class="w-full sm:w-auto">
               <NuxtLink to="#modele">Découvrir le modèle</NuxtLink>
             </Button>
           </div>
@@ -103,10 +96,7 @@
             Prérequis : expérience de la formation professionnelle ou de la direction
             d'établissement · démarche qualité · ancrage local.
           </p>
-          <Button
-            as-child
-            class="h-control w-full shrink-0 rounded-full bg-accent px-xl text-button font-bold text-ink transition-colors hover:bg-accent-text hover:text-ink-inverse md:w-auto"
-          >
+          <Button as-child variant="accent" size="pill-lg" class="w-full shrink-0 md:w-auto">
             <NuxtLink to="/centres/demande-de-formation?sujet=franchise">Candidater</NuxtLink>
           </Button>
         </div>

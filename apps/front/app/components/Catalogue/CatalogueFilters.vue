@@ -12,10 +12,9 @@
             <Checkbox
               :id="`family-${family.key}`"
               :model-value="families.includes(family.key)"
-              class="h-md w-md rounded border-outline data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-paper"
               @update:model-value="toggleFamily(family.key)"
             />
-            <Label :for="`family-${family.key}`" class="text-small font-normal text-ink-body">
+            <Label :for="`family-${family.key}`" variant="body">
               {{ family.label }}
             </Label>
           </div>
@@ -40,17 +39,11 @@
           v-for="modality in modalityOptions"
           :key="modality.key"
           type="button"
-          variant="outline"
+          :variant="modalities.includes(modality.key) ? 'dark' : 'outline'"
+          size="chip"
           :aria-pressed="modalities.includes(modality.key)"
           :disabled="modality.disabled"
-          class="h-auto rounded-full px-md py-xs text-small font-normal transition"
-          :class="
-            modalities.includes(modality.key)
-              ? 'border-primary-dark bg-primary-dark font-semibold text-paper hover:bg-primary-dark hover:text-paper'
-              : modality.disabled
-                ? 'cursor-not-allowed border-rule bg-paper text-ink-subtle opacity-60 hover:border-rule hover:bg-paper hover:text-ink-subtle'
-                : 'border-outline bg-paper text-ink-body hover:border-primary hover:bg-paper hover:text-ink-body'
-          "
+          :class="{ 'font-semibold': modalities.includes(modality.key) }"
           @click="toggle(modalities, modality.key, (v) => (modalities = v))"
         >
           {{ modality.label }}
@@ -73,10 +66,9 @@
             <Checkbox
               :id="`duration-${duration.key}`"
               :model-value="durations.includes(duration.key)"
-              class="h-md w-md rounded border-outline data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-paper"
               @update:model-value="toggle(durations, duration.key, (v) => (durations = v))"
             />
-            <Label :for="`duration-${duration.key}`" class="text-small font-normal text-ink-body">
+            <Label :for="`duration-${duration.key}`" variant="body">
               {{ duration.label }}
             </Label>
           </div>
@@ -95,15 +87,11 @@
             <Checkbox
               :id="`certification-${certification.key}`"
               :model-value="certifications.includes(certification.key)"
-              class="h-md w-md rounded border-outline data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-paper"
               @update:model-value="
                 toggle(certifications, certification.key, (v) => (certifications = v))
               "
             />
-            <Label
-              :for="`certification-${certification.key}`"
-              class="text-small font-normal text-ink-body"
-            >
+            <Label :for="`certification-${certification.key}`" variant="body">
               {{ certification.label }}
             </Label>
           </div>
@@ -116,10 +104,9 @@
         <Checkbox
           id="filter-cpf"
           :model-value="cpf"
-          class="h-md w-md rounded border-outline data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-paper"
           @update:model-value="(v) => (cpf = v as boolean)"
         />
-        <Label for="filter-cpf" class="text-small font-normal text-ink-body"> Éligible CPF </Label>
+        <Label for="filter-cpf" variant="body"> Éligible CPF </Label>
       </div>
     </div>
 
@@ -128,12 +115,9 @@
         <Checkbox
           id="filter-certifying"
           :model-value="certifying"
-          class="h-md w-md rounded border-outline data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-paper"
           @update:model-value="(v) => (certifying = v as boolean)"
         />
-        <Label for="filter-certifying" class="text-small font-normal text-ink-body">
-          Formation certifiante
-        </Label>
+        <Label for="filter-certifying" variant="body"> Formation certifiante </Label>
       </div>
     </div>
   </div>

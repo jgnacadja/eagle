@@ -34,10 +34,10 @@
       </button>
       <Button
         type="button"
-        size="icon"
+        size="icon-sm"
         :aria-label="isLoading ? loadingLabel : buttonLabel"
         :disabled="isLoading"
-        class="h-8 w-8 shrink-0 rounded-full bg-primary text-paper hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-70"
+        class="shrink-0 disabled:cursor-not-allowed"
         @click="submit"
       >
         <span

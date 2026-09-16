@@ -13,10 +13,7 @@
           <Label for="region-select" class="relative block">
             <span class="sr-only">Filtrer par région</span>
             <Select v-model="regionModel">
-              <SelectTrigger
-                id="region-select"
-                class="h-control w-full rounded-full border border-outline-inverse bg-transparent px-lg text-small text-paper focus:ring-paper lg:w-56 font-semibold"
-              >
+              <SelectTrigger id="region-select" variant="inverse" class="lg:w-56">
                 <span class="flex min-w-0 items-center gap-sm">
                   <IconMapPin :size="20" class="shrink-0" />
                   <span class="truncate">{{ selectedRegionLabel }}</span>
@@ -43,19 +40,16 @@
         >
           <ul class="flex gap-sm whitespace-nowrap">
             <li v-for="category in categoryOptions" :key="category">
-              <button
+              <Button
                 type="button"
-                class="rounded-full border px-lg py-3 text-meta font-semibold capitalize"
-                :class="
-                  category === selectedCategory
-                    ? 'border-paper bg-paper font-semibold text-ink'
-                    : 'border-outline-inverse bg-transparent font-medium text-ink-inverse-muted hover:border-outline-inverse hover:text-paper'
-                "
+                :variant="category === selectedCategory ? 'paper' : 'outline-inverse'"
+                size="chip"
+                class="px-lg py-3 text-meta capitalize"
                 :aria-current="category === selectedCategory ? 'true' : undefined"
                 @click="setCategory(category)"
               >
                 {{ category }}
-              </button>
+              </Button>
             </li>
           </ul>
         </nav>
@@ -198,11 +192,14 @@
                   type="email"
                   required
                   placeholder="votre@email-professionnel.fr"
-                  class="h-control w-full rounded-full border-outline bg-paper px-lg text-small placeholder:text-ink-placeholder sm:w-72"
+                  variant="field-lg"
+                  class="sm:w-72"
                 />
                 <Button
                   type="submit"
-                  class="h-control w-full shrink-0 rounded-full bg-accent px-xl text-small font-semibold text-ink hover:bg-accent-text hover:text-paper sm:w-auto"
+                  variant="accent"
+                  size="pill-sm"
+                  class="w-full shrink-0 px-xl sm:w-auto"
                 >
                   S'abonner
                 </Button>
@@ -220,9 +217,7 @@
               aria-label="Pagination des actualités"
             >
               <PaginationContent v-slot="{ items }" class="gap-sm">
-                <PaginationPrevious
-                  class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-subtle hover:bg-surface"
-                />
+                <PaginationPrevious variant="icon-outline" size="icon-sm" />
                 <template
                   v-for="(item, index) in items"
                   :key="item.type === 'page' ? `page-${item.value}` : `ellipsis-${index}`"
@@ -231,7 +226,7 @@
                     v-if="item.type === 'page'"
                     :value="item.value"
                     :is-active="item.value === currentPage"
-                    class="rounded-full border border-primary/25 p-0 hover:bg-surface"
+                    variant="icon-outline"
                   >
                     {{ item.value }}
                   </PaginationItem>
@@ -240,9 +235,7 @@
                     class="h-control-sm w-control-sm text-ink-subtle"
                   />
                 </template>
-                <PaginationNext
-                  class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-body hover:bg-surface"
-                />
+                <PaginationNext variant="icon-outline" size="icon-sm" />
               </PaginationContent>
             </Pagination>
           </section>

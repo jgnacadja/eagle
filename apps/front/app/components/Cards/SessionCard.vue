@@ -1,7 +1,7 @@
 <template>
   <Card
+    :variant="type === 'neutral' ? 'surface' : 'default'"
     class="transition hover:border-primary/40 hover:shadow-md"
-    :class="{ 'bg-surface': type === 'neutral' }"
   >
     <CardContent class="flex flex-col gap-md p-md sm:flex-row sm:items-center">
       <div class="flex min-w-0 flex-1 items-center gap-md">
@@ -33,11 +33,7 @@
             <span class="sm:hidden">{{ placesLabel(places, false) }}</span>
           </Badge>
         </div>
-        <Button
-          as-child
-          variant="outline"
-          class="h-auto shrink-0 rounded-full border-outline bg-paper px-md py-xs text-small font-bold text-ink transition hover:border-primary hover:bg-paper hover:text-accent-text"
-        >
+        <Button as-child variant="outline" size="chip" class="shrink-0 font-bold">
           <NuxtLink :to="to">{{ ctaLabel }}</NuxtLink>
         </Button>
       </div>

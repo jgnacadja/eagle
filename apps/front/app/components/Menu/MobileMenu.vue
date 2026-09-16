@@ -41,22 +41,17 @@
         <nav class="flex-1 overflow-y-auto px-gutter-mobile" aria-label="Menu de navigation">
           <Accordion type="multiple" class="divide-y divide-rule">
             <!-- FORMATIONS -->
-            <AccordionItem value="formations" class="border-b-0">
-              <AccordionTrigger
-                class="py-md text-h3 text-ink transition-colors hover:text-accent-text hover:no-underline"
-                >Formations</AccordionTrigger
-              >
+            <AccordionItem value="formations" variant="menu">
+              <AccordionTrigger variant="menu">Formations</AccordionTrigger>
               <AccordionContent>
                 <Accordion type="multiple" class="pb-sm">
                   <template v-for="famille in familles ?? []" :key="famille.slug">
                     <AccordionItem
                       v-if="sousFamillesFor(famille.slug).length"
                       :value="famille.slug"
-                      class="border-b-0 rounded-md transition-colors data-[state=open]:bg-surface my-2"
+                      variant="submenu"
                     >
-                      <AccordionTrigger
-                        class="px-3 py-2 text-body text-primary transition-colors hover:text-accent-text hover:no-underline data-[state=open]:font-bold data-[state=open]:text-ink"
-                      >
+                      <AccordionTrigger variant="submenu">
                         <span class="flex w-full items-center justify-between pr-2">
                           <span>{{ famille.label }}</span>
                           <span class="text-small text-ink-muted">{{ famille.count }}</span>
@@ -117,11 +112,8 @@
             </AccordionItem>
 
             <!-- CENTRES -->
-            <AccordionItem value="centres" class="border-b-0">
-              <AccordionTrigger
-                class="py-md text-h3 text-ink transition-colors hover:text-accent-text hover:no-underline"
-                >Centres</AccordionTrigger
-              >
+            <AccordionItem value="centres" variant="menu">
+              <AccordionTrigger variant="menu">Centres</AccordionTrigger>
               <AccordionContent>
                 <Accordion type="multiple" class="pb-sm">
                   <div>
@@ -139,11 +131,9 @@
                     <AccordionItem
                       v-if="centresForRegion(region.label).length"
                       :value="region.slug"
-                      class="border-b-0 rounded-md transition-colors data-[state=open]:bg-surface my-2"
+                      variant="submenu"
                     >
-                      <AccordionTrigger
-                        class="px-3 py-2 text-body text-primary transition-colors hover:text-accent-text hover:no-underline data-[state=open]:font-bold data-[state=open]:text-ink"
-                      >
+                      <AccordionTrigger variant="submenu">
                         <span class="flex w-full items-center justify-between pr-2">
                           <span>{{ region.label }}</span>
                           <span class="text-small text-ink-muted">{{ region.count }}</span>
@@ -204,11 +194,8 @@
             </AccordionItem>
 
             <!-- À PROPOS -->
-            <AccordionItem value="apropos" class="border-b-0">
-              <AccordionTrigger
-                class="py-md text-h3 text-ink transition-colors hover:text-accent-text hover:no-underline"
-                >À propos</AccordionTrigger
-              >
+            <AccordionItem value="apropos" variant="menu">
+              <AccordionTrigger variant="menu">À propos</AccordionTrigger>
               <AccordionContent>
                 <ul class="pb-sm px-3">
                   <li v-for="lien in aproposLiens" :key="lien.slug">
@@ -236,11 +223,8 @@
             </AccordionItem>
 
             <!-- ACTUALITÉS -->
-            <AccordionItem value="actualites" class="border-b-0">
-              <AccordionTrigger
-                class="py-md text-h3 text-ink transition-colors hover:text-accent-text hover:no-underline"
-                >Actualités</AccordionTrigger
-              >
+            <AccordionItem value="actualites" variant="menu">
+              <AccordionTrigger variant="menu">Actualités</AccordionTrigger>
               <AccordionContent>
                 <ul class="pb-sm px-3">
                   <li v-for="rubrique in actualitesRubriques" :key="rubrique.slug">
@@ -289,13 +273,9 @@
           >
             Rejoindre le réseau
           </NuxtLink>
-          <NuxtLink
-            to="/etre-guide"
-            class="rounded-full bg-accent px-lg py-md text-center text-small font-semibold text-ink hover:bg-accent-text hover:text-paper"
-            @click="closeMenu"
-          >
-            Être guidé dans mon choix
-          </NuxtLink>
+          <Button as-child variant="accent" size="pill" class="w-full">
+            <NuxtLink to="/etre-guide" @click="closeMenu">Être guidé dans mon choix</NuxtLink>
+          </Button>
         </div>
       </dialog>
     </Transition>

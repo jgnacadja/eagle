@@ -1,7 +1,7 @@
 <template>
   <NavigationMenuTrigger
     v-bind="forwardedProps"
-    :class="cn(navigationMenuTriggerStyle(), 'group', props.class)"
+    :class="cn(navigationMenuTriggerStyle({ variant }), 'group', props.class)"
   >
     <slot />
     <IconChevronDown
@@ -17,11 +17,19 @@ import type { HTMLAttributes } from 'vue'
 import { reactiveOmit } from '@vueuse/core'
 import { NavigationMenuTrigger, useForwardProps } from 'reka-ui'
 import { cn } from '@/lib/utils'
-import { navigationMenuTriggerStyle } from '.'
+import { navigationMenuTriggerStyle, type NavigationMenuTriggerVariants } from '.'
 
-const props = defineProps<NavigationMenuTriggerProps & { class?: HTMLAttributes['class'] }>()
+const props = withDefaults(
+  defineProps<
+    NavigationMenuTriggerProps & {
+      variant?: NavigationMenuTriggerVariants['variant']
+      class?: HTMLAttributes['class']
+    }
+  >(),
+  { variant: 'default', class: undefined }
+)
 
-const delegatedProps = reactiveOmit(props, 'class')
+const delegatedProps = reactiveOmit(props, 'class', 'variant')
 
 const forwardedProps = useForwardProps(delegatedProps)
 </script>

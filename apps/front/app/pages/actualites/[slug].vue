@@ -46,18 +46,18 @@
               <div class="flex items-center gap-md text-ink-subtle">
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="icon-outline"
+                  size="icon-sm"
                   aria-label="Partager l'article"
-                  class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 hover:bg-surface hover:text-ink"
                   @click="onShare"
                 >
                   <IconShare :size="18" />
                 </Button>
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="icon-outline"
+                  size="icon-sm"
                   aria-label="Copier le lien de l'article"
-                  class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 hover:bg-surface hover:text-ink"
                   @click="onCopyLink"
                 >
                   <IconLink :size="18" />
@@ -141,18 +141,15 @@
                 :to="relatedFormationCard.to ?? undefined"
               />
 
-              <Card class="bg-primary-dark p-lg text-paper">
+              <Card variant="dark" class="p-lg">
                 <h3 class="text-small font-bold">Un doute sur vos échéances ?</h3>
                 <p class="mt-sm text-meta leading-relaxed text-ink-inverse-muted">
                   Transmettez vos dates de délivrance : un conseiller planifie les recyclages en
                   série avec vos équipes.
                 </p>
-                <NuxtLink
-                  to="/centres/demande-de-formation"
-                  class="mt-lg flex h-control items-center justify-center rounded-full bg-paper px-lg text-small font-semibold text-ink hover:bg-paper/90 hover:text-accent-text"
-                >
-                  Parler à un conseiller
-                </NuxtLink>
+                <Button as-child variant="paper" size="pill" class="mt-lg w-full">
+                  <NuxtLink to="/centres/demande-de-formation">Parler à un conseiller</NuxtLink>
+                </Button>
               </Card>
             </div>
           </aside>

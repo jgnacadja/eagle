@@ -305,18 +305,14 @@
         </div>
 
         <div class="mt-lg flex flex-col gap-md md:flex-row md:flex-wrap">
-          <NuxtLink
-            to="/centres/demande-de-formation"
-            class="w-full text-center rounded-full bg-accent px-lg py-md text-button text-ink hover:bg-accent-text hover:text-paper transition md:w-auto"
-          >
-            Confier mes formations
-          </NuxtLink>
-          <NuxtLink
-            to="/centres/demande-de-formation?sujet=conseiller"
-            class="w-full text-center rounded-full border border-outline-inverse px-lg py-md text-button text-ink-inverse hover:bg-ink-inverse/10 transition md:w-auto"
-          >
-            Parler à un conseiller
-          </NuxtLink>
+          <Button as-child variant="accent" size="pill-lg" class="w-full md:w-auto">
+            <NuxtLink to="/centres/demande-de-formation">Confier mes formations</NuxtLink>
+          </Button>
+          <Button as-child variant="outline-inverse" size="pill-lg" class="w-full md:w-auto">
+            <NuxtLink to="/centres/demande-de-formation?sujet=conseiller"
+              >Parler à un conseiller</NuxtLink
+            >
+          </Button>
         </div>
       </div>
     </section>

@@ -54,25 +54,20 @@
 
               <div class="grid grid-cols-1 gap-md sm:grid-cols-2">
                 <div>
-                  <Label for="salaries" class="mb-xs block text-small font-medium text-ink">
-                    Salariés à former
-                  </Label>
+                  <Label for="salaries" class="mb-xs block"> Salariés à former </Label>
                   <Input
                     id="salaries"
                     v-model="form.salaries"
                     type="number"
                     min="1"
-                    class="h-control rounded-full border-outline bg-paper px-md text-small text-ink-body shadow-none focus-visible:ring-primary"
+                    variant="field"
                   />
                 </div>
                 <div>
-                  <Label for="echeance" class="block text-small font-medium text-ink">
+                  <Label for="echeance" class="block">
                     <span class="mb-xs block">Échéance souhaitée</span>
                     <Select v-model="form.echeance">
-                      <SelectTrigger
-                        id="echeance"
-                        class="h-control w-full rounded-full border-outline bg-paper px-md text-small text-ink-body shadow-none"
-                      >
+                      <SelectTrigger id="echeance" variant="field">
                         <SelectValue placeholder="Choisir une échéance" />
                       </SelectTrigger>
                       <SelectContent>
@@ -91,7 +86,7 @@
               </div>
 
               <div>
-                <Label for="precisions" class="mb-xs block text-small font-medium text-ink">
+                <Label for="precisions" class="mb-xs block">
                   Précisions <span class="font-normal text-ink-subtle">(facultatif)</span>
                 </Label>
                 <Textarea
@@ -116,28 +111,24 @@
 
               <div class="grid grid-cols-1 gap-md sm:grid-cols-2">
                 <div>
-                  <Label for="raison-sociale" class="mb-xs block text-small font-medium text-ink">
-                    Raison sociale
-                  </Label>
+                  <Label for="raison-sociale" class="mb-xs block"> Raison sociale </Label>
                   <Input
                     id="raison-sociale"
                     v-model="form.raisonSociale"
                     type="text"
                     placeholder="Nom de l'entreprise"
-                    class="h-control rounded-full border-outline bg-paper px-md text-small text-ink-body shadow-none placeholder:text-ink-placeholder focus-visible:ring-primary"
+                    variant="field"
                   />
                 </div>
                 <div>
-                  <Label for="siret" class="mb-xs block text-small font-medium text-ink"
-                    >SIRET</Label
-                  >
+                  <Label for="siret" class="mb-xs block">SIRET</Label>
                   <Input
                     id="siret"
                     v-model="form.siret"
                     type="text"
                     inputmode="numeric"
                     placeholder="14 chiffres"
-                    class="h-control rounded-full border-outline bg-paper px-md text-small text-ink-body shadow-none placeholder:text-ink-placeholder focus-visible:ring-primary"
+                    variant="field"
                   />
                 </div>
               </div>
@@ -155,65 +146,52 @@
 
               <div class="grid grid-cols-1 gap-md sm:grid-cols-2">
                 <div>
-                  <Label for="nom" class="mb-xs block text-small font-medium text-ink">
-                    Nom et prénom
-                  </Label>
+                  <Label for="nom" class="mb-xs block"> Nom et prénom </Label>
                   <Input
                     id="nom"
                     v-model="form.nom"
                     type="text"
                     autocomplete="name"
-                    class="h-control rounded-full border-outline bg-paper px-md text-small text-ink-body shadow-none focus-visible:ring-primary"
+                    variant="field"
                   />
                 </div>
                 <div>
-                  <Label for="fonction" class="mb-xs block text-small font-medium text-ink">
-                    Fonction
-                  </Label>
+                  <Label for="fonction" class="mb-xs block"> Fonction </Label>
                   <Input
                     id="fonction"
                     v-model="form.fonction"
                     type="text"
                     placeholder="RH, QHSE, direction…"
-                    class="h-control rounded-full border-outline bg-paper px-md text-small text-ink-body shadow-none placeholder:text-ink-placeholder focus-visible:ring-primary"
+                    variant="field"
                   />
                 </div>
                 <div>
-                  <Label for="email" class="mb-xs block text-small font-medium text-ink">
-                    E-mail professionnel
-                  </Label>
+                  <Label for="email" class="mb-xs block"> E-mail professionnel </Label>
                   <Input
                     id="email"
                     v-model="form.email"
                     type="email"
                     autocomplete="email"
                     placeholder="nom@entreprise.fr"
-                    class="h-control rounded-full border-outline bg-paper px-md text-small text-ink-body shadow-none placeholder:text-ink-placeholder focus-visible:ring-primary"
+                    variant="field"
                   />
                 </div>
                 <div>
-                  <Label for="telephone" class="mb-xs block text-small font-medium text-ink">
-                    Téléphone
-                  </Label>
+                  <Label for="telephone" class="mb-xs block"> Téléphone </Label>
                   <Input
                     id="telephone"
                     v-model="form.telephone"
                     type="tel"
                     autocomplete="tel"
                     placeholder="06 -- -- -- --"
-                    class="h-control rounded-full border-outline bg-paper px-md text-small text-ink-body shadow-none placeholder:text-ink-placeholder focus-visible:ring-primary"
+                    variant="field"
                   />
                 </div>
               </div>
 
               <div class="flex items-start gap-sm pt-xs">
-                <Checkbox
-                  id="consentement"
-                  v-model="form.consentement"
-                  required
-                  class="mt-xs h-md w-md rounded border-outline data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-paper"
-                />
-                <Label for="consentement" class="text-small font-normal text-ink-muted">
+                <Checkbox id="consentement" v-model="form.consentement" required class="mt-xs" />
+                <Label for="consentement" variant="muted">
                   J'accepte que ces informations soient utilisées pour le traitement de ma demande
                   de formation.
                   <NuxtLink
@@ -231,7 +209,9 @@
           <div class="flex flex-col gap-sm sm:flex-row sm:items-center">
             <Button
               type="submit"
-              class="h-control w-full rounded-full bg-accent px-2xl text-small font-semibold text-ink shadow-sm transition hover:bg-accent-text hover:text-paper sm:w-auto"
+              variant="accent"
+              size="pill-sm"
+              class="w-full px-2xl shadow-sm sm:w-auto"
             >
               Envoyer ma demande
             </Button>
@@ -243,7 +223,7 @@
 
         <!-- Sidebar : contexte de la demande -->
         <aside class="space-y-lg sm:sticky sm:top-lg">
-          <Card class="bg-surface p-lg">
+          <Card variant="surface" class="p-lg">
             <div class="mb-lg flex items-center justify-between">
               <h2 class="text-meta font-semibold uppercase tracking-wide text-ink-subtle">
                 Votre demande concerne

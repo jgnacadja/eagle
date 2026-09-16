@@ -43,14 +43,8 @@
       <Button
         as-child
         :variant="active ? 'default' : 'outline'"
-        :class="
-          cn(
-            'shrink-0 rounded-full px-md py-sm text-small font-bold transition',
-            active
-              ? 'bg-primary text-paper hover:bg-primary-dark'
-              : 'border border-outline bg-paper text-primary transition-colors hover:text-accent-text'
-          )
-        "
+        size="pill-sm"
+        class="shrink-0 font-bold"
       >
         <NuxtLink :to="`/centres/${center.id}`" @click.stop>Voir le centre</NuxtLink>
       </Button>
@@ -60,7 +54,6 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import type { CenterResult } from '~/types/center-result'
 

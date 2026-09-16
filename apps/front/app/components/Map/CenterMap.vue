@@ -17,9 +17,9 @@
       <Button
         type="button"
         variant="outline"
-        size="icon"
+        size="icon-box"
         aria-label="Zoomer"
-        class="h-control-sm w-control-sm rounded-sm bg-paper text-ink shadow-sm hover:bg-surface"
+        class="shadow-sm"
         @click="mapInstance?.zoomIn()"
       >
         <IconPlus :size="16" />
@@ -27,9 +27,9 @@
       <Button
         type="button"
         variant="outline"
-        size="icon"
+        size="icon-box"
         aria-label="Dézoomer"
-        class="h-control-sm w-control-sm rounded-sm bg-paper text-ink shadow-sm hover:bg-surface"
+        class="shadow-sm"
         @click="mapInstance?.zoomOut()"
       >
         <IconMinus :size="16" />

@@ -37,27 +37,20 @@
 
               <!-- CTA desktop -->
               <div class="mt-control-sm hidden flex-wrap items-center gap-md lg:flex">
-                <Button
-                  as-child
-                  class="h-control rounded-full bg-accent px-md py-sm text-button font-semibold text-ink transition hover:bg-accent-text hover:text-paper"
-                >
+                <Button as-child variant="accent" size="pill">
                   <NuxtLink :to="demandeTo">{{
                     hasSessions ? 'Demander cette formation' : 'Demander une session'
                   }}</NuxtLink>
                 </Button>
-                <Button
-                  v-if="hasSessions"
-                  as-child
-                  variant="outline"
-                  class="h-control rounded-full border-outline bg-paper px-md py-sm text-button font-semibold text-ink transition hover:border-primary hover:bg-paper hover:text-accent-text"
-                >
+                <Button v-if="hasSessions" as-child variant="outline" size="pill">
                   <NuxtLink href="#sessionsList"> Voir les sessions </NuxtLink>
                 </Button>
                 <Button
                   v-if="course.generatedProgramUrl"
                   as-child
                   variant="link"
-                  class="h-auto gap-sm p-0 text-small font-medium text-ink-muted transition-colors hover:text-accent-text"
+                  size="inline"
+                  class="gap-sm text-ink-muted"
                 >
                   <NuxtLink
                     :to="course.generatedProgramUrl"
@@ -117,7 +110,7 @@
             <!-- Public & prérequis -->
             <section v-if="course.targets || course.prerequisites" aria-label="Public et prérequis">
               <div class="grid gap-md sm:grid-cols-2">
-                <Card v-if="course.targets?.length" class="bg-surface">
+                <Card v-if="course.targets?.length" variant="surface">
                   <CardHeader class="p-lg pb-0">
                     <h3 class="font-sans text-h4 font-semibold text-ink">Public concerné</h3>
                   </CardHeader>
@@ -127,7 +120,7 @@
                     </ul>
                   </CardContent>
                 </Card>
-                <Card class="bg-surface">
+                <Card variant="surface">
                   <CardHeader class="p-lg pb-0">
                     <h3 class="font-sans text-h4 font-semibold text-ink">Prérequis</h3>
                   </CardHeader>
@@ -296,17 +289,10 @@
                     </p>
                   </div>
                   <div class="flex flex-wrap items-center justify-center gap-md">
-                    <Button
-                      as-child
-                      class="h-control rounded-full bg-primary-dark px-md py-sm text-button font-semibold text-ink-inverse transition hover:bg-primary"
-                    >
+                    <Button as-child variant="dark" size="pill">
                       <NuxtLink :to="demandeTo">Demander une session</NuxtLink>
                     </Button>
-                    <Button
-                      as-child
-                      variant="outline"
-                      class="h-control rounded-full border-outline bg-paper px-md py-sm text-button font-semibold text-ink transition hover:border-primary hover:bg-paper hover:text-accent-text"
-                    >
+                    <Button as-child variant="outline" size="pill">
                       <NuxtLink :to="demandeTo">Être informé des prochaines dates</NuxtLink>
                     </Button>
                   </div>
@@ -353,7 +339,7 @@
           >
             <!-- L'essentiel -->
             <section id="demande" aria-labelledby="essentiel-title">
-              <Card class="bg-surface">
+              <Card variant="surface">
                 <CardHeader class="p-lg pb-0">
                   <h2 id="essentiel-title" class="font-sans text-h4 font-semibold text-ink">
                     L'essentiel
@@ -371,17 +357,10 @@
                     </div>
                   </dl>
                   <div class="mt-lg space-y-sm">
-                    <Button
-                      as-child
-                      class="h-control w-full rounded-full bg-primary-dark px-md py-sm text-button font-semibold text-ink-inverse transition hover:bg-primary"
-                    >
+                    <Button as-child variant="dark" size="pill" class="w-full">
                       <NuxtLink :to="demandeTo">Demander cette formation</NuxtLink>
                     </Button>
-                    <Button
-                      as-child
-                      variant="outline"
-                      class="h-control w-full rounded-full border-outline bg-paper px-md py-sm text-button font-semibold text-ink transition hover:border-primary hover:bg-paper hover:text-accent-text"
-                    >
+                    <Button as-child variant="outline" size="pill" class="w-full">
                       <NuxtLink to="#">Parler à un conseiller</NuxtLink>
                     </Button>
                   </div>
@@ -421,7 +400,7 @@
             </section>
 
             <!-- Formation en intra -->
-            <Card class="bg-primary-dark p-lg" aria-labelledby="intra-title">
+            <Card variant="dark" class="p-lg" aria-labelledby="intra-title">
               <h2 id="intra-title" class="font-sans text-h4 font-semibold text-ink-inverse">
                 Formation en intra
               </h2>
@@ -429,10 +408,7 @@
                 Cette formation peut être organisée dans votre entreprise, sur vos équipements. Le
                 formulaire conserve la formation et le besoin — le centre n'est pas imposé.
               </p>
-              <Button
-                as-child
-                class="mt-md h-control w-full rounded-full bg-paper px-md py-sm text-button font-semibold text-ink transition hover:bg-surface hover:text-accent-text"
-              >
+              <Button as-child variant="paper" size="pill" class="mt-md w-full">
                 <NuxtLink :to="demandeTo">Organiser cette formation dans mon entreprise</NuxtLink>
               </Button>
             </Card>
@@ -442,7 +418,8 @@
               v-if="course.generatedProgramUrl"
               as-child
               variant="outline"
-              class="h-control w-full gap-sm rounded-md border-rule bg-paper px-md py-sm text-small font-medium text-ink transition hover:border-outline hover:bg-paper hover:text-accent-text"
+              size="control"
+              class="w-full gap-sm"
             >
               <NuxtLink :to="course.generatedProgramUrl" target="_blank" rel="noopener noreferrer">
                 <IconDownload :size="16" />
@@ -458,17 +435,10 @@
             title="Vous ne savez pas quelle formation choisir ?"
             text="Décrivez votre besoin : LEARN UP identifie la formation, la catégorie et le format adaptés à votre situation."
           >
-            <Button
-              as-child
-              class="h-control w-full rounded-md bg-paper px-md py-sm text-button font-semibold text-ink transition hover:bg-surface hover:text-accent-text sm:w-auto"
-            >
+            <Button as-child variant="paper" size="control" class="w-full sm:w-auto">
               <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
             </Button>
-            <Button
-              as-child
-              variant="outline"
-              class="h-control w-full rounded-md border-outline-inverse bg-transparent px-md py-sm text-button font-semibold text-ink-inverse transition hover:bg-transparent hover:text-ink-inverse sm:w-auto"
-            >
+            <Button as-child variant="outline-inverse" size="control" class="w-full sm:w-auto">
               <NuxtLink to="#">Parler à un conseiller</NuxtLink>
             </Button>
           </CtaBanner>
@@ -478,11 +448,7 @@
               <h2 id="similaires-title" class="font-display text-h2 font-extrabold text-ink">
                 Formations similaires
               </h2>
-              <Button
-                as-child
-                variant="link"
-                class="h-auto p-0 text-small font-bold text-primary transition-colors hover:text-accent-text"
-              >
+              <Button as-child variant="link" size="inline" class="font-bold">
                 <NuxtLink :to="`/formations/${famille}`"
                   >Voir la famille {{ familyName }} <span class="link-arrow">→</span></NuxtLink
                 >
@@ -515,10 +481,7 @@
             <p v-if="priceLabel" class="font-semibold text-ink">{{ priceLabel }}</p>
             <p class="text-small text-ink-muted">Demander un devis ou une session</p>
           </div>
-          <Button
-            as-child
-            class="h-control shrink-0 rounded-full bg-accent px-md py-sm text-button font-semibold text-ink transition hover:bg-accent-text hover:text-paper"
-          >
+          <Button as-child variant="accent" size="pill" class="shrink-0">
             <NuxtLink :to="demandeTo">Demander cette formation</NuxtLink>
           </Button>
         </div>

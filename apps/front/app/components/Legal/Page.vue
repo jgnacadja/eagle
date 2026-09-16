@@ -37,10 +37,7 @@
           >Sélecteur de page légale</Label
         >
         <Select id="legal-page-select" v-model="selectedPage">
-          <SelectTrigger
-            aria-labelledby="legal-page-select-label"
-            class="h-control w-full rounded-lg border border-rule bg-surface px-lg text-small font-medium text-ink shadow-sm focus:ring-2 focus:ring-accent"
-          >
+          <SelectTrigger aria-labelledby="legal-page-select-label" variant="surface">
             <span class="truncate">{{ currentLabel }}</span>
           </SelectTrigger>
           <SelectContent>
@@ -61,11 +58,7 @@
         <aside class="mb-2xl md:mb-0" @click.capture="onSummaryClick">
           <Accordion type="single" collapsible class="md:hidden">
             <AccordionItem value="summary" class="border-0">
-              <AccordionTrigger
-                class="w-full rounded-lg border border-rule bg-surface px-lg py-md text-xs font-semibold uppercase tracking-wide text-ink"
-              >
-                Sommaire
-              </AccordionTrigger>
+              <AccordionTrigger variant="panel"> Sommaire </AccordionTrigger>
               <AccordionContent class="p-0">
                 <LegalSummary
                   :sections="page.sections"
@@ -114,11 +107,7 @@
             class="flex flex-col gap-lg border-t border-rule pt-2xl sm:flex-row sm:items-center sm:justify-between"
           >
             <p class="text-small text-ink-muted">Une question sur ces informations ?</p>
-            <Button
-              as-child
-              variant="outline"
-              class="h-control w-full rounded-full border-outline px-xl text-small font-semibold transition hover:text-accent-text sm:w-auto"
-            >
+            <Button as-child variant="outline" size="pill-sm" class="w-full px-xl sm:w-auto">
               <a :href="page.cta.to">
                 {{ page.cta.label }}
               </a>

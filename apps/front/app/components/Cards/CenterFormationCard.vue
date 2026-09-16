@@ -26,7 +26,8 @@
       <Button
         v-if="to && variant === 'button'"
         as-child
-        class="mt-md h-control w-full rounded-full px-lg text-small font-bold hover:bg-primary-dark"
+        size="pill-sm"
+        class="mt-md w-full px-lg font-bold"
       >
         <NuxtLink :to="to" class="after:absolute after:inset-0">Voir la formation</NuxtLink>
       </Button>
@@ -34,7 +35,8 @@
         v-else-if="to"
         as-child
         variant="link"
-        class="h-auto gap-xs p-0 text-small font-bold text-primary transition-colors hover:text-accent-text"
+        size="inline"
+        class="gap-xs font-bold"
         :class="variant === 'similar' ? 'mt-0 self-start' : 'mt-md self-end'"
       >
         <NuxtLink :to="to" class="after:absolute after:inset-0"

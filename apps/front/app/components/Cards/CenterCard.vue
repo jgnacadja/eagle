@@ -11,7 +11,7 @@
         </h3>
       </NuxtLink>
       <h3 v-else class="font-sans text-h4 font-semibold text-ink">{{ name }}</h3>
-      <span class="shrink-0 text-meta text-ink-subtle">{{ distance }}</span>
+      <span class="hidden md:block shrink-0 text-meta text-ink-subtle">{{ distance }}</span>
     </div>
     <p class="mt-xs text-small text-ink-muted">{{ formations }}</p>
     <div v-if="status || tags.length" class="mt-md flex flex-wrap gap-sm">

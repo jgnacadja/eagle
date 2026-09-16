@@ -517,7 +517,11 @@ const currentPage = ref(1)
 // Filtres inline au-dessus de la liste — sous-famille, modalité et
 // localisation sont appliqués côté API (params `subFamily`, `modalities`
 // et `location`).
-const selectedSubFamily = ref('all')
+// Le filtre peut être pré-sélectionné via l'URL (`?subFamily=`) — utilisé
+// par les liens sous-familles du menu mobile.
+const selectedSubFamily = ref(
+  typeof route.query.subFamily === 'string' ? route.query.subFamily : 'all'
+)
 const selectedModality = ref('all')
 const selectedLocation = ref('all')
 const selectedAvailability = ref<CatalogQuery['availability'] | 'all'>('all')

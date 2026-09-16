@@ -13,6 +13,7 @@ import IconFactory from '~/components/icons/IconFactory.vue'
 import IconFileOff from '~/components/icons/IconFileOff.vue'
 import IconFilter from '~/components/icons/IconFilter.vue'
 import IconLink from '~/components/icons/IconLink.vue'
+import IconLocate from '~/components/icons/IconLocate.vue'
 import IconMail from '~/components/icons/IconMail.vue'
 import IconMapPin from '~/components/icons/IconMapPin.vue'
 import IconMapPinOff from '~/components/icons/IconMapPinOff.vue'
@@ -39,6 +40,7 @@ const icons = {
   IconFileOff,
   IconFilter,
   IconLink,
+  IconLocate,
   IconMail,
   IconMapPin,
   IconMapPinOff,

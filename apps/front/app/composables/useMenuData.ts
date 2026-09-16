@@ -13,9 +13,11 @@ import type {
   Article,
   Centre,
   CourseListItem,
+  CoursePage,
   FamilleFormation,
   FamilyWithCount,
-  Paginated
+  Paginated,
+  SousFamilleFormation
 } from '@learnup/types'
 
 export interface MenuFamille {
@@ -29,6 +31,12 @@ export interface MenuFormation {
   label: string
   to: string
   meta?: string
+}
+
+export interface MenuSousFamille {
+  slug: string
+  label: string
+  count: number
 }
 
 export interface MenuCentre {
@@ -87,35 +95,44 @@ function getCachedData<T>(key: string, nuxtApp: ReturnType<typeof useNuxtApp>): 
 interface MenuFamillesData {
   familles: MenuFamille[]
   formationsParFamille: Record<string, MenuFormation[]>
+  sousFamillesParFamille: Record<string, MenuSousFamille[]>
 }
 
-/** Formations d'une famille pour la colonne centrale du méga-menu. */
-async function fetchFormationsParFamille(
+interface FamilleMenuContent {
+  formations: MenuFormation[]
+  subFamilyCounts: Record<string, number>
+}
+
+/** Formations d'une famille (méga-menu) + compteurs par sous-famille (menu mobile). */
+async function fetchFamilleMenuContent(
   apiBase: string,
   familles: MenuFamille[],
   headers: Record<string, string> | undefined
-): Promise<Record<string, MenuFormation[]>> {
+): Promise<Record<string, FamilleMenuContent>> {
   const entries = await Promise.all(
     familles.map(async (famille) => {
       try {
-        const result = await $fetch<Paginated<CourseListItem>>(`${apiBase}/courses`, {
+        const result = await $fetch<CoursePage>(`${apiBase}/courses`, {
           query: { family: famille.slug, limit: MAX_FORMATIONS_PAR_FAMILLE, page: 1 },
           headers
         })
         return [
           famille.slug,
-          result.items.map((course) => ({
-            slug: course.slug,
-            label: course.title,
-            to: `/formations/${famille.slug}/${course.slug}`,
-            meta: buildMeta(course)
-          }))
+          {
+            formations: result.items.map((course) => ({
+              slug: course.slug,
+              label: course.title,
+              to: `/formations/${famille.slug}/${course.slug}`,
+              meta: buildMeta(course)
+            })),
+            subFamilyCounts: result.facets?.subFamilies ?? {}
+          }
         ] as const
       } catch (error) {
         if (import.meta.server) {
           logServerError('[useMenuFamilles] /courses fetch failed:', error)
         }
-        return [famille.slug, []] as const
+        return [famille.slug, { formations: [], subFamilyCounts: {} }] as const
       }
     })
   )
@@ -131,7 +148,7 @@ function useMenuFamillesData() {
   const { data } = useAsyncData<MenuFamillesData>(
     'menu-familles',
     async () => {
-      const [names, counts] = await Promise.all([
+      const [names, sousFamillesList, counts] = await Promise.all([
         directus
           .request<FamilleFormation[]>(
             readItems('familles_formation', {
@@ -145,6 +162,21 @@ function useMenuFamillesData() {
               logServerError('[useMenuFamilles] familles_formation fetch failed:', error)
             }
             return [] as FamilleFormation[]
+          }),
+        directus
+          .request<SousFamilleFormation[]>(
+            readItems('sous_familles_formation', {
+              fields: ['slug', 'name', 'famille.slug'],
+              filter: { status: { _eq: 'published' } },
+              sort: ['sort', 'name'],
+              limit: -1
+            })
+          )
+          .catch((error: unknown) => {
+            if (import.meta.server) {
+              logServerError('[useMenuFamilles] sous_familles_formation fetch failed:', error)
+            }
+            return [] as SousFamilleFormation[]
           }),
         (internalSsrHeaders(config)
           ? $fetch<FamilyWithCount[]>(`${apiBase}/families`, {
@@ -180,12 +212,52 @@ function useMenuFamillesData() {
               .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
               .slice(0, MAX_FAMILLES)
 
-      const formationsParFamille = await fetchFormationsParFamille(
+      // Noms des sous-familles groupés par slug de famille (relation M2O
+      // résolue via `famille.slug` dans les fields).
+      const sousFamilleNamesByFamille = new Map<string, Map<string, string>>()
+      for (const sousFamille of sousFamillesList) {
+        const familleSlug =
+          typeof sousFamille.famille === 'object' && sousFamille.famille
+            ? sousFamille.famille.slug
+            : null
+        if (!familleSlug || !sousFamille.slug || !sousFamille.name) continue
+        const bySlug = sousFamilleNamesByFamille.get(familleSlug) ?? new Map<string, string>()
+        bySlug.set(sousFamille.slug, sousFamille.name)
+        sousFamilleNamesByFamille.set(familleSlug, bySlug)
+      }
+
+      const contenuParFamille = await fetchFamilleMenuContent(
         apiBase,
         familles,
         internalSsrHeaders(config)
       )
-      return { familles, formationsParFamille }
+
+      const formationsParFamille = Object.fromEntries(
+        Object.entries(contenuParFamille).map(([slug, content]) => [slug, content.formations])
+      )
+
+      // Sous-familles peuplées (facettes /courses par famille) : les slugs
+      // sans nom Directus sont humanisés en repli, les « 0 formation » masqués.
+      const sousFamillesParFamille = Object.fromEntries(
+        familles.map((famille) => {
+          const subFamilyCounts = contenuParFamille[famille.slug]?.subFamilyCounts ?? {}
+          const names = sousFamilleNamesByFamille.get(famille.slug)
+          const items: MenuSousFamille[] = []
+          for (const [slug, name] of names ?? []) {
+            const count = subFamilyCounts[slug] ?? 0
+            if (count > 0) items.push({ slug, label: name, count })
+          }
+          for (const [slug, count] of Object.entries(subFamilyCounts)) {
+            if (count > 0 && !names?.has(slug)) {
+              items.push({ slug, label: humanizeSlug(slug), count })
+            }
+          }
+          items.sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+          return [famille.slug, items]
+        })
+      )
+
+      return { familles, formationsParFamille, sousFamillesParFamille }
     },
     {
       getCachedData: (key, nuxtApp) => getCachedData<MenuFamillesData>(key, nuxtApp)
@@ -205,6 +277,12 @@ export function useMenuFamilles() {
 export function useMenuFormationsParFamille() {
   const data = useMenuFamillesData()
   return computed(() => data.value?.formationsParFamille ?? {})
+}
+
+/** Sous-familles peuplées de chaque famille — accordéons du menu mobile. */
+export function useMenuSousFamillesParFamille() {
+  const data = useMenuFamillesData()
+  return computed(() => data.value?.sousFamillesParFamille ?? {})
 }
 
 /** Centres publiés, groupés par région pour les menus. */

@@ -11,6 +11,13 @@ vi.mock('~/composables/useMenuData', async () => {
         { slug: 'management', label: 'Management', count: 12 },
         { slug: 'securite-prevention', label: 'Sécurité & prévention', count: 32 }
       ]),
+    useMenuSousFamillesParFamille: () =>
+      ref({
+        'securite-prevention': [
+          { slug: 'secourisme', label: 'Secourisme', count: 5 },
+          { slug: 'incendie', label: 'Incendie', count: 3 }
+        ]
+      }),
     useMenuCentres: () => ({
       regions: ref([{ slug: 'ile-de-france', label: 'Île-de-France', count: 2 }]),
       centresParRegion: ref(
@@ -120,6 +127,17 @@ describe('MobileMenu', () => {
     await nextTick()
 
     expect(wrapper.emitted('update:open')).toEqual([[false]])
+    wrapper.unmount()
+  })
+
+  it('affiche les sous-familles dépliables et le lien Voir la famille', async () => {
+    const wrapper = await mountMenu(true)
+
+    // Famille avec sous-familles : accordéon + encart ; sans : lien direct.
+    expect(wrapper.text()).toContain('Secourisme')
+    expect(wrapper.text()).toContain('Incendie')
+    expect(wrapper.text()).toContain('Voir la famille')
+    expect(wrapper.find('a[href="/formations/management"]').exists()).toBe(true)
     wrapper.unmount()
   })
 

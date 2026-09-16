@@ -5,7 +5,7 @@
     :in-view-options="{ once: true, margin: '0px 0px -10% 0px' }"
     :transition="{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }"
   >
-    <p ref="numberEl" class="font-display text-h2 md:text-h1 font-extrabold text-ink">
+    <p ref="numberEl" class="font-display text-3xl md:text-h1 font-extrabold text-ink">
       {{ displayed
       }}<span v-if="unit" class="text-h4 align-baseline text-ink-muted">{{ unit }}</span>
     </p>

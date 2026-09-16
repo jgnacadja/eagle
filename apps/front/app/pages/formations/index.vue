@@ -159,7 +159,10 @@
             </button>
           </div>
 
-          <div class="mt-lg flex flex-wrap items-center justify-between gap-md">
+          <div
+            class="flex flex-wrap items-center justify-between gap-md"
+            :class="{ 'mt-lg': activeFilters.length }"
+          >
             <h2 v-if="resultCount > 0" class="font-sans text-h4 font-bold text-ink">
               {{ resultCount }}
               {{ resultCount > 1 ? 'formations' : 'formation' }}

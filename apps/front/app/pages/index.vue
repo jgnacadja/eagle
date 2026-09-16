@@ -88,7 +88,7 @@
         Construisons ensemble le réseau Learn Up Academy
       </h2>
       <p
-        class="mx-auto mt-sm max-w-prose text-center font-sans text-small md:text-lead text-ink-muted"
+        class="mx-auto mt-sm max-w-prose text-center font-sans text-sm md:text-lead text-ink-muted"
       >
         Rejoignez un réseau national dédié aux formations réglementaires et participez à son
         développement partout en France.
@@ -120,7 +120,7 @@
     <!-- How it works -->
     <section class="mx-auto px-gutter-mobile md:px-gutter pb-section">
       <p
-        class="text-center text-h4 font-bold uppercase leading-3 tracking-widest text-accent-text my-4"
+        class="text-center text-badge font-bold uppercase leading-3 tracking-widest text-accent-text my-4"
       >
         Comment ça marche
       </p>
@@ -174,10 +174,10 @@
     <section id="centres" class="mx-auto px-gutter-mobile md:px-gutter py-section">
       <div class="flex flex-col gap-md sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 class="font-display text-h3 md:text-h2 font-extrabold text-ink">
+          <h2 class="font-display text-xl md:text-h2 font-extrabold text-ink">
             Le réseau Learn Up Academy
           </h2>
-          <p class="mt-sm max-w-prose font-sans text-small text-ink-muted">
+          <p class="mt-sm max-w-prose font-sans text-sm text-ink-muted">
             <span class="font-bold text-primary">+400 centres partenaires</span>
             dans
             <span class="font-bold text-primary">96 départements</span>
@@ -249,10 +249,10 @@
     <!-- Confier -->
     <section id="confier" class="bg-primary-muted py-section text-ink-inverse">
       <div class="mx-auto px-gutter-mobile md:px-gutter">
-        <p class="text-h4 font-bold uppercase text-accent">Confier mes formations</p>
+        <p class="text-overline font-bold uppercase text-accent">Confier mes formations</p>
 
         <div class="mt-sm flex flex-col gap-md lg:flex-row lg:items-baseline lg:justify-between">
-          <h2 class="max-w-prose font-display text-h3 md:text-h2 font-extrabold">
+          <h2 class="max-w-prose font-display text-xl md:text-h2 font-extrabold">
             Un interlocuteur unique orchestre votre plan de formation
           </h2>
           <p class="max-w-callout text-small md:text-body text-ink-inverse/65">
@@ -274,7 +274,9 @@
           />
         </div>
 
-        <div class="mt-2xl flex snap-x snap-mandatory gap-grid overflow-x-auto pb-sm md:hidden">
+        <div
+          class="mt-2xl flex snap-x snap-mandatory gap-grid overflow-x-auto overflow-y-hidden pb-sm md:hidden"
+        >
           <ConfierCard
             v-for="(card, i) in confierCards"
             :key="`${card.title}-image`"
@@ -338,12 +340,12 @@
     <!-- Testimonials -->
     <section class="mx-auto px-gutter-mobile md:px-gutter py-section">
       <div class="flex flex-wrap items-end justify-between gap-sm">
-        <h2 class="font-display text-h3 md:text-h2 font-extrabold text-ink">
-          Ce qu'en disent les entreprises
-          <span class="md:ml-sm text-small font-medium text-ink-muted"
-            >4,7/5 · 312 avis Google</span
-          >
-        </h2>
+        <div class="flex flex-wrap items-baseline gap-x-sm">
+          <h2 class="font-display text-xl md:text-h2 font-extrabold text-ink">
+            Ce qu'en disent les entreprises
+          </h2>
+          <span class="text-small font-medium text-ink-muted">4,7/5 · 312 avis Google</span>
+        </div>
         <NuxtLink
           to="/"
           class="hidden md:block text-small font-bold text-primary transition-colors hover:text-accent-text"
@@ -375,7 +377,7 @@
     <section v-if="articles.length" id="actualites" class="bg-surface py-section">
       <div class="mx-auto px-gutter-mobile md:px-gutter">
         <div class="flex items-end justify-between">
-          <h2 class="font-display text-h2 font-extrabold text-ink">Actualités</h2>
+          <h2 class="font-display text-xl font-extrabold text-ink">Actualités</h2>
           <NuxtLink
             to="/actualites"
             class="hidden md:block whitespace-nowrap text-small font-bold text-primary transition-colors hover:text-accent-text"

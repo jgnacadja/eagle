@@ -215,9 +215,13 @@
                     </NuxtLink>
                   </li>
                 </ul>
-                <p class="pb-1 pl-2 text-small font-semibold text-ink-muted">Par région</p>
-                <ul class="pb-sm pl-2">
-                  <li v-for="region in actualitesRegions.slice(0, 2)" :key="region.slug">
+                <ul class="py-md rounded-md pl-2 bg-surface">
+                  <p class="pb-1 text-small font-bold text-ink-muted">PAR RÉGION</p>
+                  <li
+                    v-for="region in actualitesRegions.slice(0, 2)"
+                    :key="region.slug"
+                    class="pl-2"
+                  >
                     <NuxtLink
                       to="/actualites"
                       class="block py-2 text-body text-primary transition-colors hover:text-accent-text"
@@ -229,7 +233,7 @@
                   <li>
                     <NuxtLink
                       to="/actualites"
-                      class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
+                      class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text pl-2"
                       @click="closeMenu"
                     >
                       Toutes les régions +
@@ -239,39 +243,24 @@
               </AccordionContent>
             </AccordionItem>
           </Accordion>
+        </nav>
 
+        <div
+          class="sticky bottom-0 flex flex-col gap-sm border-t border-rule px-gutter-mobile py-md"
+        >
           <NuxtLink
             to="/rejoindre-le-reseau"
-            class="mt-lg inline-block text-body font-semibold text-ink transition-colors hover:text-accent-text"
+            class="inline-block text-body font-semibold text-ink transition-colors hover:text-accent-text underline"
             @click="closeMenu"
           >
             Rejoindre le réseau
           </NuxtLink>
-        </nav>
-
-        <div
-          class="sticky bottom-0 flex flex-col gap-sm border-t border-rule bg-surface px-gutter-mobile py-lg"
-        >
           <NuxtLink
             to="/etre-guide"
             class="rounded-full bg-accent px-lg py-md text-center text-small font-semibold text-ink hover:bg-accent-text hover:text-paper"
             @click="closeMenu"
           >
             Être guidé dans mon choix
-          </NuxtLink>
-          <NuxtLink
-            to="/confier-ma-formation"
-            class="rounded-full bg-accent px-lg py-md text-center text-small font-semibold text-ink hover:bg-accent-text hover:text-paper"
-            @click="closeMenu"
-          >
-            Confier ma formation
-          </NuxtLink>
-          <NuxtLink
-            to="/contact"
-            class="rounded-full border border-rule bg-paper px-lg py-md text-center text-small font-semibold text-ink hover:bg-paper hover:text-accent-text"
-            @click="closeMenu"
-          >
-            Parler à un conseiller
           </NuxtLink>
           <p class="mt-xs text-center text-small text-ink-muted">
             01 84 60 00 00 <span class="mx-1">·</span> contact@learnup.fr

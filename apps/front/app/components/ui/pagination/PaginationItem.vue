@@ -6,6 +6,8 @@
       cn(
         buttonVariants({ variant: isActive ? 'default' : variant, size: 'icon-sm' }),
         'cursor-pointer text-small font-semibold',
+        !isActive && 'text-ink-body hover:text-accent-text',
+        !isActive && variant === 'ghost' && 'hover:bg-transparent',
         props.class
       )
     "

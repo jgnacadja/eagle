@@ -152,7 +152,7 @@
               type="button"
               variant="link"
               size="inline"
-              class="mt-sm underline"
+              class="mt-sm font-semibold underline"
               @click="resetFilters"
             >
               Réinitialiser

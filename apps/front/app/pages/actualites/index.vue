@@ -44,7 +44,10 @@
                 type="button"
                 :variant="category === selectedCategory ? 'paper' : 'outline-inverse'"
                 size="chip"
-                class="px-lg py-3 text-meta capitalize"
+                :class="[
+                  'px-lg py-3 text-meta capitalize',
+                  category === selectedCategory ? 'font-semibold' : 'font-medium'
+                ]"
                 :aria-current="category === selectedCategory ? 'true' : undefined"
                 @click="setCategory(category)"
               >

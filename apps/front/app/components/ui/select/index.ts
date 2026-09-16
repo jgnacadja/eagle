@@ -20,9 +20,9 @@ export const selectTriggerVariants = cva(
       variant: {
         default:
           'h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:ring-1 focus:ring-ring',
-        pill: 'h-control w-auto gap-sm rounded-full border border-outline bg-paper px-md text-small font-semibold text-ink-body shadow-none',
+        pill: 'h-control w-auto gap-sm rounded-full border border-outline bg-paper px-md text-small font-semibold text-ink-body shadow-none focus:ring-1 focus:ring-ring',
         'pill-auto':
-          'h-auto w-auto gap-sm rounded-full border border-outline bg-paper px-md py-sm text-small text-ink-body shadow-none',
+          'h-auto w-auto gap-sm rounded-full border border-outline bg-paper px-md py-sm text-small text-ink-body shadow-none focus:ring-1 focus:ring-ring',
         field:
           'h-control w-full rounded-full border border-outline bg-paper px-md text-small text-ink-body shadow-none focus:ring-1 focus:ring-ring',
         'field-lg':

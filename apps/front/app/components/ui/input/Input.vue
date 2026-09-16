@@ -10,14 +10,13 @@ import { inputVariants, type InputVariants } from '.'
 
 const props = withDefaults(
   defineProps<{
-    id?: string
+    id: string
     defaultValue?: string | number
     modelValue?: string | number
     variant?: InputVariants['variant']
     class?: HTMLAttributes['class']
   }>(),
   {
-    id: undefined,
     defaultValue: undefined,
     modelValue: undefined,
     variant: 'default',

@@ -16,7 +16,7 @@ export const navigationMenuTriggerStyle = cva(
       variant: {
         default: 'h-9 rounded-md px-4 py-2 text-sm font-medium',
         header:
-          'mx-sm rounded-none border-b-2 border-transparent px-0 text-body font-semibold text-primary hover:text-accent-text data-[state=open]:border-accent'
+          'mx-sm h-9 rounded-none border-b-2 border-transparent px-0 py-2 text-body font-semibold text-primary hover:text-accent-text data-[state=open]:border-accent'
       }
     },
     defaultVariants: {

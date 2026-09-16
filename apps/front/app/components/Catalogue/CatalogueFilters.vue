@@ -43,7 +43,10 @@
           size="chip"
           :aria-pressed="modalities.includes(modality.key)"
           :disabled="modality.disabled"
-          :class="{ 'font-semibold': modalities.includes(modality.key) }"
+          :class="[
+            modalities.includes(modality.key) && 'font-semibold',
+            modality.disabled && 'border-rule bg-paper text-ink-subtle disabled:opacity-60'
+          ]"
           @click="toggle(modalities, modality.key, (v) => (modalities = v))"
         >
           {{ modality.label }}

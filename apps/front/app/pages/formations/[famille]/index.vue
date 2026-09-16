@@ -177,7 +177,12 @@
             Élargissez vos critères ou transmettez votre besoin : une réponse adaptée vous sera
             proposée.
           </p>
-          <Button variant="link" size="inline" class="mt-lg text-small" @click="resetPage">
+          <Button
+            variant="link"
+            size="inline"
+            class="mt-lg text-small font-semibold"
+            @click="resetPage"
+          >
             Réinitialiser
           </Button>
         </div>

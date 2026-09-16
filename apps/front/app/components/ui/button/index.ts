@@ -11,7 +11,7 @@ export const buttonVariants = cva(
         default: 'bg-primary text-primary-foreground hover:bg-primary-dark',
         accent: 'bg-accent text-ink hover:bg-accent-text hover:text-paper',
         dark: 'bg-primary-dark text-ink-inverse hover:bg-primary',
-        paper: 'bg-paper text-ink hover:bg-surface hover:text-accent-text',
+        paper: 'border border-paper bg-paper text-ink hover:bg-surface hover:text-accent-text',
         destructive: 'bg-destructive text-destructive-foreground hover:bg-ink',
         outline:
           'border border-outline bg-paper text-ink hover:border-primary hover:text-accent-text',
@@ -29,7 +29,6 @@ export const buttonVariants = cva(
         icon: 'h-10 w-10',
         'icon-sm': 'h-control-sm w-control-sm rounded-full p-0',
         'icon-box': 'h-control-sm w-control-sm rounded-sm p-0',
-        'icon-lg': 'h-touch w-touch p-0',
         inline: 'h-auto p-0',
         control: 'h-control rounded-md px-md py-sm text-button font-semibold',
         pill: 'h-control rounded-full px-md py-sm text-button font-semibold',

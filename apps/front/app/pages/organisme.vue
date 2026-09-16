@@ -94,7 +94,7 @@
 
           <!-- Carte placeholder -->
           <div
-            class="flex-1 w-full h-87.5 rounded-2xl bg-linkwater border border-dashed border-biscay/30 flex items-center justify-center text-center text-bayoux text-sm font-medium leading-relaxed px-6 bg-surface"
+            class="flex-1 w-full h-113 rounded-2xl bg-linkwater border border-dashed border-biscay/30 flex items-center justify-center text-center text-bayoux text-sm font-medium leading-relaxed px-6 bg-surface"
           >
             Carte de France interactive<br />départements couverts + centres du réseau
           </div>

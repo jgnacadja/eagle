@@ -1,6 +1,6 @@
 <template>
   <article
-    class="rounded-md border border-rule bg-paper p-md shadow-sm transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-md"
+    class="flex h-full flex-col rounded-md border border-rule bg-paper p-md shadow-sm transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-md"
   >
     <div class="flex items-start justify-between gap-sm">
       <NuxtLink v-if="titleTo" :to="titleTo" class="group">
@@ -36,7 +36,7 @@
     <NuxtLink
       v-if="to"
       :to="to"
-      class="mt-md block text-small font-bold text-primary transition-colors hover:text-accent-text"
+      class="mt-auto pt-md block text-small font-bold text-primary transition-colors hover:text-accent-text"
     >
       Voir le centre <span class="link-arrow">→</span>
     </NuxtLink>

@@ -80,7 +80,7 @@
       <!-- Liste des formations -->
       <section
         id="liste-formations"
-        class="mx-auto w-full scroll-mt-lg px-gutter-mobile py-section md:px-gutter"
+        class="mx-auto w-full scroll-mt-lg px-gutter-mobile pb-section md:px-gutter"
         aria-labelledby="liste-title"
       >
         <div class="flex flex-col gap-md md:flex-row md:items-center md:justify-between">
@@ -590,17 +590,7 @@ const subnavTitle = computed(() => familleData.value?.subnav_title ?? 'Parcourir
 // Une sous-famille sans formation publiée n'affiche pas de carte
 // (« 0 formation ») — la section se masque si aucune n'est peuplée.
 const subFamilyCards = computed(() =>
-  (sousFamilles.value ?? [])
-    .filter((s) => (subFamilyCounts.value.get(s.slug) ?? 0) > 0)
-    .map((s) => {
-      const count = subFamilyCounts.value.get(s.slug) ?? 0
-      const countLabel = `${count} formation${count > 1 ? 's' : ''}`
-      return {
-        slug: s.slug,
-        name: s.name,
-        caption: s.caption ? `${s.caption} — ${countLabel}` : countLabel
-      }
-    })
+  (sousFamilles.value ?? []).filter((s) => (subFamilyCounts.value.get(s.slug) ?? 0) > 0)
 )
 
 function selectSubFamily(slug: string) {

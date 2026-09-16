@@ -262,9 +262,6 @@
           >
             Être guidé dans mon choix
           </NuxtLink>
-          <p class="mt-xs text-center text-small text-ink-muted">
-            01 84 60 00 00 <span class="mx-1">·</span> contact@learnup.fr
-          </p>
         </div>
       </dialog>
     </Transition>

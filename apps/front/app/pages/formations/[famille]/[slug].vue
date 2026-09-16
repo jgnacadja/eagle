@@ -19,9 +19,11 @@
               >
                 {{ course.title }}
               </h1>
-              <p v-if="course.description" class="mt-md max-w-prose text-body text-ink-body">
-                {{ course.description }}
-              </p>
+              <div
+                v-if="course.description"
+                class="mt-md max-w-prose text-body text-ink-body"
+                v-html="sanitizeHtml(course.description)"
+              />
 
               <ul class="mt-md flex flex-wrap gap-sm">
                 <Badge v-if="durationTag" as="li" variant="chip">{{ durationTag }}</Badge>
@@ -89,9 +91,10 @@
               <h2 id="apropos-title" class="font-display text-h2 font-extrabold text-ink">
                 À propos de cette formation
               </h2>
-              <div class="mt-md space-y-md text-body text-ink-body">
-                <p>{{ course.description }}</p>
-              </div>
+              <div
+                class="mt-md space-y-md text-body text-ink-body"
+                v-html="sanitizeHtml(course.description)"
+              />
             </section>
 
             <!-- Objectifs -->
@@ -489,10 +492,13 @@
               <CenterFormationCard
                 v-for="similaire in similaires"
                 :key="similaire.slug"
+                variant="similar"
+                :family="similaire.family"
                 :sub-family="similaire.subFamily"
                 :title="similaire.title"
                 :meta="similaire.meta"
                 :to="similaire.to ?? undefined"
+                class="h-full"
               />
             </div>
           </section>
@@ -563,6 +569,7 @@ import IconBook from '~/components/icons/IconBook.vue'
 import IconBuilding from '~/components/icons/IconBuilding.vue'
 import IconFactory from '~/components/icons/IconFactory.vue'
 import {
+  buildMeta,
   buildSessionBadge,
   mapCourse,
   upcomingSessions,
@@ -570,7 +577,7 @@ import {
   type FormationItem
 } from '~/composables/useCatalog'
 import { directusAssetUrl } from '~/utils/directusAsset'
-import { sanitizeHtml } from '~/utils/sanitizeHtml'
+import { htmlToText, sanitizeHtml } from '~/utils/sanitizeHtml'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
 import { availabilityStatus } from '~/composables/useCentres'
@@ -696,7 +703,7 @@ useContentSeo(
         ? (course.value?.seoTitle ?? course.value?.title ?? 'Formation — LEARN UP ACADEMY')
         : title,
       seo_description: isFound
-        ? (course.value?.seoDescription ?? course.value?.description)
+        ? (course.value?.seoDescription ?? htmlToText(course.value?.description))
         : undefined,
       seo_canonical: isFound ? course.value?.seoCanonical : undefined,
       seo_noindex: !isFound
@@ -719,7 +726,7 @@ useHead({
           '@context': 'https://schema.org',
           '@type': 'Course',
           name: course.value.title,
-          description: course.value.description ?? '',
+          description: htmlToText(course.value.description),
           provider: {
             '@type': 'Organization',
             name: 'LEARN UP ACADEMY',
@@ -868,12 +875,6 @@ interface ProgrammeBlock {
 
 // La ligne sous le titre est un sous-titre (texte court) ; la description
 // peut être du HTML riche (Directus) affiché dans le contenu déplié.
-function stripHtml(html?: string): string {
-  return (html ?? '')
-    .replace(/<[^<>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
 
 function toProgrammeModule(block: ProgrammeBlock): ProgrammeModule | null {
   if (typeof block.name !== 'string' || !block.name) return null
@@ -885,8 +886,8 @@ function toProgrammeModule(block: ProgrammeBlock): ProgrammeModule | null {
   const typeKey = typeof block.type === 'string' ? block.type.toLowerCase() : ''
   const hasRichDescription =
     typeof block.description === 'string' && /<[a-z][^>]*>/i.test(block.description)
-  const subtitle = block.subtitle?.trim() || stripHtml(block.description)
-  const descriptionText = stripHtml(block.description)
+  const subtitle = block.subtitle?.trim() || htmlToText(block.description)
+  const descriptionText = htmlToText(block.description)
   // Digiforma duplique parfois la description dans les goals — on ne
   // répète ni le sous-titre ni la description dans le contenu déplié.
   const goals = (block.goals ?? [])
@@ -1085,10 +1086,15 @@ const similarQuery = computed(() => ({
 
 const similarCatalog = await useCatalog(similarQuery)
 
+// Cartes similaires : méta courte (durée + modalités), sans certification
+// ni certificateur — la maquette n'affiche que l'essentiel.
 const similaires = computed<FormationItem[]>(
   () =>
     similarCatalog.data.value?.items
-      .map((course) => mapCourse(course, familyName.value))
+      .map((course) => ({
+        ...mapCourse(course, familyName.value),
+        meta: buildMeta(course, false)
+      }))
       .filter((f) => f.slug !== slug) ?? []
 )
 

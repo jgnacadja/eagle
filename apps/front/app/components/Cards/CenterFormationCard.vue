@@ -2,16 +2,16 @@
   <Card class="relative flex flex-col transition hover:border-primary/40 hover:shadow-md">
     <CardHeader class="space-y-sm p-md pb-0">
       <p v-if="eyebrow" class="mb-md text-overline text-ink-subtle font-bold">{{ eyebrow }}</p>
-      <p class="text-overline text-accent-text uppercase">{{ subFamily }}</p>
+      <p class="text-overline text-accent-text uppercase">{{ overline }}</p>
       <CardTitle class="font-sans text-h4 font-extrabold leading-tight tracking-normal text-ink">
         {{ title }}
       </CardTitle>
     </CardHeader>
     <CardContent class="flex-1 px-md py-sm">
-      <p v-if="description" class="flex-1 text-small text-ink-body font-bold">
+      <p v-if="description" class="flex-1 text-small text-ink-body">
         {{ description }}
       </p>
-      <CardDescription class="font-bold">{{ meta }}</CardDescription>
+      <CardDescription>{{ meta }}</CardDescription>
     </CardContent>
     <CardFooter class="flex flex-col items-start px-md pb-md pt-sm">
       <Badge v-if="status" :variant="status.type" class="w-fit flex justify-center items-center">
@@ -34,7 +34,8 @@
         v-else-if="to"
         as-child
         variant="link"
-        class="mt-md h-auto gap-xs self-end p-0 text-small font-bold text-primary transition-colors hover:text-accent-text"
+        class="h-auto gap-xs p-0 text-small font-bold text-primary transition-colors hover:text-accent-text"
+        :class="variant === 'similar' ? 'mt-0 self-start' : 'mt-md self-end'"
       >
         <NuxtLink :to="to" class="after:absolute after:inset-0"
           >Consulter <span class="link-arrow">→</span></NuxtLink
@@ -45,9 +46,11 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(
+import { computed } from 'vue'
+
+const props = withDefaults(
   defineProps<{
-    /** Sous-famille affichée en surtitre — jamais la famille. */
+    /** Sous-famille affichée en surtitre — sauf variante `similar` (famille). */
     subFamily: string | null
     title: string
     description?: string
@@ -55,14 +58,20 @@ withDefaults(
     status?: { type: 'success' | 'warning' | 'neutral'; label: string }
     to?: string
     eyebrow?: string
-    variant?: 'default' | 'button'
+    /** `similar` : carte « formations similaires » — surtitre = famille. */
+    variant?: 'default' | 'button' | 'similar'
+    /** Famille affichée en surtitre pour la variante `similar`. */
+    family?: string
   }>(),
   {
     to: undefined,
     description: '',
     status: undefined,
     eyebrow: '',
-    variant: 'default'
+    variant: 'default',
+    family: ''
   }
 )
+
+const overline = computed(() => (props.variant === 'similar' ? props.family : props.subFamily))
 </script>

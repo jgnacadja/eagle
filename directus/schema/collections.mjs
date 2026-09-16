@@ -227,6 +227,16 @@ export const collections = [
           note: "Titre de la section sous-familles (ex: « Parcourir par type d'engin »)"
         }
       },
+      {
+        field: 'audience_text',
+        type: 'text',
+        meta: { interface: 'input-multiline', width: 'half', note: 'Contenu de la carte « Qui est concerné ? »' }
+      },
+      {
+        field: 'validity_text',
+        type: 'text',
+        meta: { interface: 'input-multiline', width: 'half', note: 'Contenu de la carte « Validité et renouvellement »' }
+      },
       ...seoFields()
     ]
   },

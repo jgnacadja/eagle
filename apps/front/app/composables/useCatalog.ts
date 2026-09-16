@@ -1,6 +1,7 @@
 import type { CourseListItem, CoursePage, CourseSession } from '@learnup/types'
 import { toValue, type MaybeRefOrGetter } from 'vue'
 import { directusAssetUrl } from '~/utils/directusAsset'
+import { htmlToText } from '~/utils/sanitizeHtml'
 import { placesLabel } from '~/utils/placesLabel'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 
@@ -51,13 +52,13 @@ export function buildDuration(course: CourseListItem): 'courte' | 'moyenne' | 'l
   return 'longue'
 }
 
-export function buildMeta(course: CourseListItem): string {
+export function buildMeta(course: CourseListItem, withCertification = true): string {
   const parts: string[] = []
   if (course.durationDays) parts.push(`${course.durationDays} jours`)
   const modalities = (course.modalities ?? []).map((m) => MODALITY_LABELS[m] ?? m).join(' / ')
   if (modalities) parts.push(modalities)
-  if (course.certification) parts.push(course.certification)
-  if (course.certifierName && course.certifierName !== course.certification) {
+  if (withCertification && course.certification) parts.push(course.certification)
+  if (withCertification && course.certifierName && course.certifierName !== course.certification) {
     parts.push(course.certifierName)
   }
   return parts.join(' · ')
@@ -153,7 +154,8 @@ export function mapCourse(course: CourseListItem, familyName?: string): Formatio
     familyKey,
     subFamily: course.subFamilyName ?? null,
     title: course.title,
-    description: course.description ?? '',
+    // Champ WYSIWYG Directus : les cartes affichent un extrait en texte brut.
+    description: htmlToText(course.description),
     meta: buildMeta(course),
     days: course.durationDays ?? 0,
     duration: buildDuration(course),

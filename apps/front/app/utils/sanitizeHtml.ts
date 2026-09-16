@@ -1,3 +1,4 @@
+import { decodeHTML } from 'entities'
 import sanitize from 'sanitize-html'
 import { slugifyHeading } from './article'
 
@@ -53,38 +54,17 @@ export function sanitizeHtmlWithHeadings(html: string): {
 // quotées dans les attributs au lieu d'un simple [^>]*.
 const HEADING_PATTERN = /<h([1-3])((?:[^>"']|"[^"]*"|'[^']*')*)>([\s\S]*?)<\/h\1>/gi
 
-const HTML_ENTITIES: Record<string, string> = {
-  amp: '&',
-  lt: '<',
-  gt: '>',
-  quot: '"',
-  apos: "'",
-  nbsp: ' ',
-  laquo: '«',
-  raquo: '»',
-  lsquo: '‘',
-  rsquo: '’',
-  ldquo: '“',
-  rdquo: '”',
-  ndash: '–',
-  mdash: '—',
-  hellip: '…'
-}
-
-// Passe unique, de gauche à droite : « &amp;lt; » devient le littéral « &lt; »
-// (le &amp; est décodé sans re-scanner le résultat).
-function decodeEntities(text: string): string {
-  return text.replace(/&#x([0-9a-f]+);|&#(\d+);|&([a-zA-Z]+);/g, (entity, hex, dec, name) => {
-    if (hex !== undefined) return String.fromCodePoint(Number.parseInt(hex, 16))
-    if (dec !== undefined) return String.fromCodePoint(Number.parseInt(dec, 10))
-    return HTML_ENTITIES[name.toLowerCase()] ?? entity
-  })
+// Extrait le texte brut d'un champ riche Directus (WYSIWYG) : balises
+// retirées puis entités décodées — « &amp;lt; » devient le littéral
+// « &lt; » (le &amp; est décodé sans re-scanner le résultat).
+export function htmlToText(html?: string | null): string {
+  return decodeHTML((html ?? '').replace(/<[^<>]+>/g, ' '))
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 function headingText(inner: string): string {
-  return decodeEntities(inner.replace(/<[^>]+>/g, ' '))
-    .replace(/\s+/g, ' ')
-    .trim()
+  return htmlToText(inner)
 }
 
 function insertHeadingIds(html: string): string {

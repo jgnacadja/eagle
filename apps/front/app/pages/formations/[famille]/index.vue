@@ -280,6 +280,31 @@
         </Pagination>
       </section>
 
+      <!-- Informations famille -->
+      <section
+        v-if="familleData?.audience_text || familleData?.validity_text"
+        class="mx-auto w-full px-gutter-mobile pb-section md:px-gutter"
+      >
+        <ul class="grid grid-cols-1 gap-md md:grid-cols-2">
+          <li v-if="familleData?.audience_text">
+            <Card class="h-full border-rule bg-surface p-lg shadow-none">
+              <h3 class="font-sans text-h5 font-bold text-ink">Qui est concerné ?</h3>
+              <p class="mt-sm whitespace-pre-line text-body text-ink-body">
+                {{ familleData.audience_text }}
+              </p>
+            </Card>
+          </li>
+          <li v-if="familleData?.validity_text">
+            <Card class="h-full border-rule bg-surface p-lg shadow-none">
+              <h3 class="font-sans text-h5 font-bold text-ink">Validité et renouvellement</h3>
+              <p class="mt-sm whitespace-pre-line text-body text-ink-body">
+                {{ familleData.validity_text }}
+              </p>
+            </Card>
+          </li>
+        </ul>
+      </section>
+
       <!-- Bandeau CTA -->
       <section class="mx-auto w-full px-gutter-mobile pb-section md:px-gutter">
         <CtaBanner
@@ -533,9 +558,15 @@ const locationOptions = computed(() => {
   ]
 })
 
+// Une sous-famille sans formation n'est pas proposée — sauf si déjà
+// sélectionnée, pour ne pas faire disparaître le filtre actif.
 const subFamilyOptions = computed(() => [
   { value: 'all', label: 'Sous-famille' },
-  ...(sousFamilles.value ?? []).map((s) => ({ value: s.slug, label: s.name }))
+  ...(sousFamilles.value ?? [])
+    .filter(
+      (s) => (subFamilyCounts.value.get(s.slug) ?? 0) > 0 || s.slug === selectedSubFamily.value
+    )
+    .map((s) => ({ value: s.slug, label: s.name }))
 ])
 
 const subFamilyFilterLabel = computed(
@@ -554,16 +585,20 @@ const subFamilyCounts = computed(
 // par ex.) — repli générique si le champ n'est pas renseigné.
 const subnavTitle = computed(() => familleData.value?.subnav_title ?? 'Parcourir par sous-famille')
 
+// Une sous-famille sans formation publiée n'affiche pas de carte
+// (« 0 formation ») — la section se masque si aucune n'est peuplée.
 const subFamilyCards = computed(() =>
-  (sousFamilles.value ?? []).map((s) => {
-    const count = subFamilyCounts.value.get(s.slug) ?? 0
-    const countLabel = `${count} formation${count > 1 ? 's' : ''}`
-    return {
-      slug: s.slug,
-      name: s.name,
-      caption: s.caption ? `${s.caption} — ${countLabel}` : countLabel
-    }
-  })
+  (sousFamilles.value ?? [])
+    .filter((s) => (subFamilyCounts.value.get(s.slug) ?? 0) > 0)
+    .map((s) => {
+      const count = subFamilyCounts.value.get(s.slug) ?? 0
+      const countLabel = `${count} formation${count > 1 ? 's' : ''}`
+      return {
+        slug: s.slug,
+        name: s.name,
+        caption: s.caption ? `${s.caption} — ${countLabel}` : countLabel
+      }
+    })
 )
 
 function selectSubFamily(slug: string) {

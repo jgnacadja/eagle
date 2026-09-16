@@ -71,6 +71,10 @@ export interface FamilleFormation extends SeoFields {
   image: string | null
   /** Titre éditorial de la section sous-familles (repli : « Parcourir par sous-famille »). */
   subnav_title: string | null
+  /** Contenu de la carte « Qui est concerné ? ». */
+  audience_text: string | null
+  /** Contenu de la carte « Validité et renouvellement ». */
+  validity_text: string | null
 }
 
 export interface SousFamilleFormation {

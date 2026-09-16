@@ -8,7 +8,7 @@
     </div>
     <Button
       variant="link"
-      class="mt-auto h-auto self-start p-0 text-small font-bold"
+      class="mt-auto gap-xs h-auto self-start p-0 text-small font-bold"
       @click="$emit('select')"
     >
       {{ actionLabel }} <span class="link-arrow">→</span>

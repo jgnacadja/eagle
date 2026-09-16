@@ -194,6 +194,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      entities:
+        specifier: 8.1.0
+        version: 8.1.0
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
@@ -6025,6 +6028,13 @@ packages:
     resolution:
       {
         integrity: sha512-zwfzJecQ/Uej6tusMqwAqU/6KL2XaB2VZ2Jg54Je6ahNBGNH6Ek6g3jjNCF0fG9EWQKGZNddNjU5F1ZQn/sBnA==
+      }
+    engines: { node: '>=20.19.0' }
+
+  entities@8.1.0:
+    resolution:
+      {
+        integrity: sha512-kxL7msIffSuh9aaFAMD7rxAIuTRMAHMeBtgHW2yUdWw732ZNh4MehkF2gdjvtdmikkaIP9bFDDJOPlsvm7avrA==
       }
     engines: { node: '>=20.19.0' }
 
@@ -14696,7 +14706,7 @@ snapshots:
     dependencies:
       domelementtype: 3.0.0
       domhandler: 6.0.1
-      entities: 8.0.0
+      entities: 8.1.0
 
   domelementtype@2.3.0: {}
 
@@ -14795,7 +14805,10 @@ snapshots:
 
   entities@7.0.1: {}
 
-  entities@8.0.0: {}
+  entities@8.0.0:
+    optional: true
+
+  entities@8.1.0: {}
 
   env-paths@2.2.1: {}
 
@@ -15401,7 +15414,7 @@ snapshots:
       domelementtype: 3.0.0
       domhandler: 6.0.1
       domutils: 4.0.2
-      entities: 8.0.0
+      entities: 8.1.0
 
   http-errors@2.0.1:
     dependencies:

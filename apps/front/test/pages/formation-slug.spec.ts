@@ -378,6 +378,26 @@ describe('pages/formations/[famille]/[slug]', () => {
     expect(wrapper.text()).toContain('Télécharger le programme détaillé')
   })
 
+  it('rend la description WYSIWYG en HTML sans balises littérales', async () => {
+    const richCourse: Course = {
+      ...course,
+      description: '<p>Initiez-vous au march&eacute; du <strong>cloud</strong>.</p>'
+    }
+    vi.stubGlobal('useAsyncData', async (key: string) => {
+      if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+        return { data: ref(richCourse), pending: ref(false), error: ref(null), refresh: vi.fn() }
+      }
+      return defaultUseAsyncData(key)
+    })
+
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('marché du cloud.')
+    expect(wrapper.text()).not.toContain('&eacute;')
+    expect(wrapper.html()).not.toContain('&lt;p&gt;')
+    expect(wrapper.html()).toContain('<strong>cloud</strong>')
+  })
+
   it('restaure les sections sessions, lieux et modalités/évaluation', async () => {
     const wrapper = await mountPage()
 

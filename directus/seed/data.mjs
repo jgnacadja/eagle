@@ -255,6 +255,10 @@ export const famillesFormation = [
     name: "CACES & conduite d'engins",
     intro:
       '<p>Conduite d’engins de chantier et de manutention : CACES R482, R483, R484, R485, R486, R489.</p>',
+    audience_text:
+      "Tout salarié amené à conduire un engin de la famille concernée : caristes, conducteurs d'engins de chantier, opérateurs nacelle, grutiers. L'employeur délivre une autorisation de conduite sur la base du CACES®, de l'aptitude médicale et de la connaissance des lieux.",
+    validity_text:
+      'Les CACES® de cette famille sont valables 5 ans (10 ans pour le R482). Le renouvellement passe par une formation de recyclage et de nouveaux tests. Les sessions de recyclage sont identifiées comme telles dans la liste ci-dessus.',
     imageUrl:
       'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=800&h=600&fit=crop&q=80',
     status: 'published'

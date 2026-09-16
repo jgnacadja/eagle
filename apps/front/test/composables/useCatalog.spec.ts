@@ -59,6 +59,12 @@ describe('useCatalog helpers', () => {
     expect(buildMeta(course)).toBe('3 jours · Certification CACES · Opérateur réglementaire')
   })
 
+  it('builds meta without certification when disabled', () => {
+    expect(buildMeta({ ...course, modalities: ['inter', 'intra'] }, false)).toBe(
+      '3 jours · Inter / Intra'
+    )
+  })
+
   it('builds certifications from course data', () => {
     expect(buildCertifications(course)).toEqual(['certification', 'reglementaire'])
   })
@@ -99,6 +105,15 @@ describe('useCatalog helpers', () => {
 
     expect(mapped.family).toBe(course.familySlug)
     expect(mapped.familyKey).toBe(course.familySlug)
+  })
+
+  it('strips WYSIWYG HTML from the card description', () => {
+    const mapped = mapCourse({
+      ...course,
+      description: '<p>Initiez-vous au march&eacute; du cloud.</p>'
+    })
+
+    expect(mapped.description).toBe('Initiez-vous au marché du cloud.')
   })
 
   it('renders family-less courses without a link', () => {

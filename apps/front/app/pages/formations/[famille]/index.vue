@@ -558,16 +558,18 @@ const locationOptions = computed(() => {
   ]
 })
 
-// Une sous-famille sans formation n'est pas proposée — sauf si déjà
-// sélectionnée, pour ne pas faire disparaître le filtre actif.
-const subFamilyOptions = computed(() => [
-  { value: 'all', label: 'Sous-famille' },
-  ...(sousFamilles.value ?? [])
-    .filter(
-      (s) => (subFamilyCounts.value.get(s.slug) ?? 0) > 0 || s.slug === selectedSubFamily.value
-    )
-    .map((s) => ({ value: s.slug, label: s.name }))
-])
+// Une sous-famille sans formation dans le résultat courant n'est pas
+// proposée — sauf si déjà sélectionnée, pour ne pas faire disparaître
+// le filtre actif (même facettage que modalité/localisation).
+const subFamilyOptions = computed(() => {
+  const counts = catalogFacets.value?.subFamilies
+  return [
+    { value: 'all', label: 'Sous-famille' },
+    ...(sousFamilles.value ?? [])
+      .filter((s) => !counts || (counts[s.slug] ?? 0) > 0 || s.slug === selectedSubFamily.value)
+      .map((s) => ({ value: s.slug, label: s.name }))
+  ]
+})
 
 const subFamilyFilterLabel = computed(
   () =>

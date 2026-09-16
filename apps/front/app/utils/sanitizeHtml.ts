@@ -56,9 +56,10 @@ const HEADING_PATTERN = /<h([1-3])((?:[^>"']|"[^"]*"|'[^']*')*)>([\s\S]*?)<\/h\1
 
 // Extrait le texte brut d'un champ riche Directus (WYSIWYG) : balises
 // retirées puis entités décodées — « &amp;lt; » devient le littéral
-// « &lt; » (le &amp; est décodé sans re-scanner le résultat).
+// « &lt; » (le &amp; est décodé sans re-scanner le résultat). Le motif
+// accepte les « > » dans les valeurs d'attribut quotées.
 export function htmlToText(html?: string | null): string {
-  return decodeHTML((html ?? '').replace(/<[^<>]+>/g, ' '))
+  return decodeHTML((html ?? '').replace(/<(?:[^>"']|"[^"]*"|'[^']*')*>/g, ' '))
     .replace(/\s+/g, ' ')
     .trim()
 }

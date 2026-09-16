@@ -35,7 +35,7 @@
     </div>
     <NuxtLink
       v-if="to"
-      :to="to"
+      to="/centres"
       class="mt-md block text-small font-bold text-primary transition-colors hover:text-accent-text"
     >
       Voir le centre <span class="link-arrow">→</span>

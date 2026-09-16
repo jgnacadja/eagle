@@ -340,8 +340,9 @@ export const collections = [
         type: 'text',
         meta: {
           interface: 'input-multiline',
-          width: 'half',
-          note: 'Contenu de la carte « Qui est concerné ? »'
+          width: 'full',
+          note: 'Contenu de la carte « Qui est concerné ? »',
+          ...fr('Qui est concerné ?')
         }
       },
       {
@@ -349,8 +350,9 @@ export const collections = [
         type: 'text',
         meta: {
           interface: 'input-multiline',
-          width: 'half',
-          note: 'Contenu de la carte « Validité et renouvellement »'
+          width: 'full',
+          note: 'Contenu de la carte « Validité et renouvellement »',
+          ...fr('Validité et renouvellement')
         }
       },
       ...seoFields()

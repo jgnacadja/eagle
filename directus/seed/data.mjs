@@ -711,7 +711,7 @@ export const articles = [
     author_imageUrl:
       'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=600&q=80',
     region: 'Île-de-France',
-    related_formation_slug: 'sst-securite-travail',
+    relatedFormationSlug: 'sst-sauveteur-secouriste-du-travail',
     publish_at: '2026-09-01T09:00:00+00:00',
     centre: 1,
     cover_imageUrl:
@@ -734,7 +734,7 @@ export const articles = [
     author_imageUrl:
       'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=600&q=80',
     region: 'Paris',
-    related_formation_slug: 'management',
+    relatedFormationSlug: 'gestion-du-stress-et-prevention-rps',
     publish_at: '2026-09-05T09:00:00+00:00',
     centre: 2,
     cover_imageUrl:
@@ -757,7 +757,7 @@ export const articles = [
     author_imageUrl:
       'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80',
     region: 'Lyon',
-    related_formation_slug: 'informatique-digital',
+    relatedFormationSlug: 'caces-r489-conduite-de-chariots-elevateurs',
     publish_at: '2026-09-10T09:00:00+00:00',
     centre: 3,
     cover_imageUrl:

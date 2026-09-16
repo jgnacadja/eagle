@@ -230,12 +230,20 @@ export const collections = [
       {
         field: 'audience_text',
         type: 'text',
-        meta: { interface: 'input-multiline', width: 'half', note: 'Contenu de la carte « Qui est concerné ? »' }
+        meta: {
+          interface: 'input-multiline',
+          width: 'half',
+          note: 'Contenu de la carte « Qui est concerné ? »'
+        }
       },
       {
         field: 'validity_text',
         type: 'text',
-        meta: { interface: 'input-multiline', width: 'half', note: 'Contenu de la carte « Validité et renouvellement »' }
+        meta: {
+          interface: 'input-multiline',
+          width: 'half',
+          note: 'Contenu de la carte « Validité et renouvellement »'
+        }
       },
       ...seoFields()
     ]
@@ -306,11 +314,7 @@ export const collections = [
         type: 'string',
         meta: { interface: 'input', width: 'half', note: 'Région concernée' }
       },
-      {
-        field: 'related_formation_slug',
-        type: 'string',
-        meta: { interface: 'input', width: 'half', note: 'Slug de la formation liée' }
-      },
+      // related_formation = relation M2O vers formations (voir relations)
       {
         field: 'publish_at',
         type: 'timestamp',
@@ -603,6 +607,16 @@ export const relations = [
     field: 'centre',
     related_collection: 'centres',
     meta: { interface: 'select-dropdown-m2o' }
+  },
+  {
+    collection: 'articles',
+    field: 'related_formation',
+    related_collection: 'formations',
+    meta: {
+      interface: 'select-dropdown-m2o',
+      width: 'half',
+      note: 'Formation mise en avant dans l’article (carte « Formation liée »)'
+    }
   },
   {
     collection: 'articles',

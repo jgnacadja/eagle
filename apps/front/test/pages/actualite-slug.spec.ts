@@ -33,7 +33,11 @@ const articleFixture: Article = {
   author_name: 'Équipe réglementation LEARN UP ACADEMY',
   author_image: null,
   region: null,
-  related_formation_slug: 'caces-r489-chariots-elevateurs',
+  related_formation: {
+    slug: 'caces-r489-chariots-elevateurs',
+    status: 'published',
+    famille: { slug: 'caces-conduite-engins', name: "CACES & conduite d'engins" }
+  },
   publish_at: '2026-09-02T00:00:00.000Z',
   centre: null,
   cover_image: null,
@@ -62,6 +66,7 @@ const relatedCourse = {
   centerSlugs: [],
   modalities: [],
   sessions: null,
+  image: null,
   imageUrl: null,
   generatedProgramUrl: null,
   status: 'published',
@@ -71,7 +76,9 @@ const relatedCourse = {
   blocks: null,
   targets: null,
   prerequisites: null,
+  pedagogy: null,
   evaluation: null,
+  validity: null,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z'
 } satisfies Course
@@ -161,14 +168,6 @@ describe('pages/actualites/[slug]', () => {
       if (path === '/items/articles') {
         return routeMock.params.slug === 'inconnu' ? [] : [articleFixture]
       }
-      if (path === '/items/formations') {
-        return [
-          {
-            slug: relatedCourse.slug,
-            famille: { slug: relatedCourse.familySlug, name: 'Informatique & Digital' }
-          }
-        ]
-      }
       return []
     })
     fetchMock.mockResolvedValue(relatedCourse)
@@ -214,7 +213,7 @@ describe('pages/actualites/[slug]', () => {
 
     expect(wrapper.text()).toContain('CACES R489')
     expect(wrapper.text()).toContain('Autorisation de conduite')
-    expect(wrapper.text()).toContain('Informatique & Digital')
+    expect(wrapper.text()).toContain("CACES & conduite d'engins")
     expect(wrapper.text()).toContain('Recyclage CACES R489 — toutes catégories')
     const link = wrapper.find(
       'a[href="/formations/caces-conduite-engins/caces-r489-chariots-elevateurs"]'

@@ -85,6 +85,7 @@
 
               <CenterFormationCard
                 v-if="relatedFormationCard"
+                v-reveal
                 class="lg:hidden"
                 eyebrow="Formation liée"
                 variant="button"
@@ -130,6 +131,7 @@
 
               <CenterFormationCard
                 v-if="relatedFormationCard"
+                v-reveal
                 eyebrow="Formation liée"
                 variant="button"
                 :sub-family="relatedFormationCard.family"
@@ -231,7 +233,7 @@
 <script setup lang="ts">
 import { readItems } from '@directus/sdk'
 import type { Article, Course } from '@learnup/types'
-import { mapCourse, type FormationItem } from '~/composables/useCatalog'
+import { buildMeta, mapCourse, type FormationItem } from '~/composables/useCatalog'
 import { articleAssetUrl, articleReadingTime, formatArticleDate } from '~/utils/article'
 import { sanitizeHtmlWithHeadings } from '~/utils/sanitizeHtml'
 
@@ -268,7 +270,10 @@ const {
             'author_name',
             'author_image',
             'region',
-            'related_formation_slug',
+            'related_formation.slug',
+            'related_formation.status',
+            'related_formation.famille.slug',
+            'related_formation.famille.name',
             'publish_at',
             'centre',
             'cover_image',
@@ -298,41 +303,32 @@ const article = computed(() => {
   return articleData.value
 })
 
-interface RelatedFormationFamily {
-  slug: string
-  famille: { slug: string; name: string | null } | null
-}
-
 interface RelatedFormation {
   course: Course
   familyName: string | null
 }
 
+// La relation M2O `related_formation` est résolue directement dans la
+// requête article (slug + famille) — reste l'appel API pour la carte.
 const { data: relatedFormation } = await useAsyncData<RelatedFormation | null>(
   `article-related-formation-${slug}`,
   async () => {
-    const formationSlug = article.value?.related_formation_slug
-    if (!formationSlug) return null
+    const formation = article.value?.related_formation
+    if (!formation || typeof formation !== 'object' || formation.status !== 'published') {
+      return null
+    }
+    const famille =
+      formation.famille && typeof formation.famille === 'object' ? formation.famille : null
+    if (!famille?.slug) return null
 
     try {
-      const familyResult = await directus.request<RelatedFormationFamily[]>(
-        readItems('formations', {
-          fields: ['slug', 'famille.slug', 'famille.name'],
-          filter: { slug: { _eq: formationSlug }, status: { _eq: 'published' } },
-          limit: 1
-        })
-      )
-      const formation = familyResult[0]
-      const familySlug = formation?.famille?.slug
-      if (!familySlug) return null
-
       const course = await $fetch<Course>(
-        `${import.meta.server ? config.apiBase : config.public.apiBase}/courses/${encodeURIComponent(familySlug)}/${encodeURIComponent(formation.slug)}`
+        `${import.meta.server ? config.apiBase : config.public.apiBase}/courses/${encodeURIComponent(famille.slug)}/${encodeURIComponent(formation.slug)}`
       )
-      return { course, familyName: formation.famille?.name ?? null }
+      return { course, familyName: famille.name ?? null }
     } catch (error) {
       if (import.meta.server) {
-        logServerError(`[actualites/slug] related formation ${formationSlug} load failed:`, error)
+        logServerError(`[actualites/slug] related formation ${formation.slug} load failed:`, error)
       }
       return null
     }
@@ -347,7 +343,12 @@ const relatedFormationCard = computed<FormationItem | null>(() => {
   const related = relatedFormation.value
   if (!related) return null
 
-  return mapCourse(related.course, related.familyName ?? undefined)
+  // Méta courte (durée + modalités), sans certification — comme les
+  // cartes « formations similaires » de la fiche formation.
+  return {
+    ...mapCourse(related.course, related.familyName ?? undefined),
+    meta: buildMeta(related.course, false)
+  }
 })
 
 const readingTime = computed(() => {

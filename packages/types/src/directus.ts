@@ -98,7 +98,15 @@ export interface Article extends SeoFields {
   author_name: string | null
   author_image: string | null
   region: string | null
-  related_formation_slug: string | null
+  /** Relation M2O vers `formations` — id brut ou objet partiel selon les fields demandés. */
+  related_formation:
+    | number
+    | {
+        slug: string
+        status: ContentStatus
+        famille: number | { slug: string; name: string | null } | null
+      }
+    | null
   publish_at: string | null
   centre: number | null
   cover_image: string | null

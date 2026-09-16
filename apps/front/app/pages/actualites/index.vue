@@ -12,7 +12,7 @@
 
           <Label for="region-select" class="relative block">
             <span class="sr-only">Filtrer par région</span>
-            <Select v-model="selectedRegion">
+            <Select v-model="regionModel">
               <SelectTrigger
                 id="region-select"
                 class="h-control w-full rounded-full border border-outline-inverse bg-transparent px-lg text-small text-paper focus:ring-paper lg:w-56 font-semibold"
@@ -52,7 +52,7 @@
                     : 'border-outline-inverse bg-transparent font-medium text-ink-inverse-muted hover:border-outline-inverse hover:text-paper'
                 "
                 :aria-current="category === selectedCategory ? 'true' : undefined"
-                @click="selectedCategory = category"
+                @click="setCategory(category)"
               >
                 {{ category }}
               </button>
@@ -142,16 +142,15 @@
 
           <!-- Grille d'articles -->
           <section aria-label="Dernières actualités" class="mt-4 md:mt-2xl">
-            <p v-if="filteredArticles.length === 0" class="text-body text-ink-muted">
-              Aucun article dans cette catégorie pour le moment.
+            <p v-if="articles.length === 0" class="text-body text-ink-muted">
+              Aucun article ne correspond à ces filtres pour le moment.
             </p>
 
             <ul v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <li
-                v-for="(article, index) in filteredArticles"
+                v-for="(article, index) in articles"
                 :key="article.slug"
                 v-reveal="revealStagger(index % 3)"
-                :class="articleClass(index)"
               >
                 <ArticleCard
                   :category="article.category ?? 'Actualité'"
@@ -164,20 +163,6 @@
                 />
               </li>
             </ul>
-
-            <!-- Afficher plus — mobile -->
-            <div
-              v-if="mobileVisibleCount < filteredArticles.length"
-              class="flex justify-center lg:hidden my-3.5"
-            >
-              <Button
-                type="button"
-                class="h-control rounded-full border border-outline bg-transparent px-xl text-small font-semibold text-ink hover:bg-paper hover:text-accent-text"
-                @click="mobileVisibleCount = filteredArticles.length"
-              >
-                Afficher plus d'articles
-              </Button>
-            </div>
 
             <!-- Bandeau newsletter -->
             <section
@@ -224,14 +209,14 @@
               </form>
             </section>
 
-            <!-- Pagination desktop -->
+            <!-- Pagination -->
             <Pagination
-              v-if="filteredArticles.length > perPage"
-              v-model:page="currentPage"
-              :total="filteredArticles.length"
+              v-if="totalItems > perPage"
+              v-model:page="pageModel"
+              :total="totalItems"
               :items-per-page="perPage"
               :sibling-count="1"
-              class="mt-2xl hidden items-center justify-center lg:flex"
+              class="mt-2xl flex items-center justify-center"
               aria-label="Pagination des actualités"
             >
               <PaginationContent v-slot="{ items }" class="gap-sm">
@@ -268,13 +253,14 @@
 </template>
 
 <script setup lang="ts">
-import { readItems } from '@directus/sdk'
+import { aggregate, readItems } from '@directus/sdk'
 import type { Article } from '@learnup/types'
 import { articleAssetUrl, articleReadingTime, formatArticleDate } from '~/utils/article'
 import { formatRegionLabel } from '~/utils/region'
 import { revealStagger } from '~/utils/reveal'
 
 const config = useRuntimeConfig()
+const route = useRoute()
 
 function assetUrl(id: string | null): string | undefined {
   return articleAssetUrl(id, config.public.apiBase) ?? undefined
@@ -290,20 +276,79 @@ useContentSeo(
 )
 
 const CATEGORY_ALL = 'Tout'
-
 const REGION_ALL = 'all'
+const perPage = 6
 const directus = useDirectusClient()
 
-const {
-  data: articles,
-  pending: articlesPending,
-  error: articlesError,
-  refresh: refreshArticles
-} = await useAsyncData<Article[]>(
-  'actualites-list',
+// Filtres portés par l'URL : partageables, rendus côté serveur et cachés
+// par variante grâce à l'ISR `passQuery`.
+const selectedCategory = computed(() =>
+  typeof route.query.category === 'string' && route.query.category
+    ? route.query.category
+    : CATEGORY_ALL
+)
+const selectedRegion = computed(() =>
+  typeof route.query.region === 'string' && route.query.region ? route.query.region : REGION_ALL
+)
+const currentPage = computed(() => {
+  const page = Number(route.query.page)
+  return Number.isInteger(page) && page > 0 ? page : 1
+})
+
+function filtersQuery(patch: { category?: string; region?: string; page?: number }) {
+  const category = patch.category ?? selectedCategory.value
+  const region = patch.region ?? selectedRegion.value
+  const page = patch.page ?? 1
+  const query: Record<string, string> = {}
+  if (category !== CATEGORY_ALL) query.category = category
+  if (region !== REGION_ALL) query.region = region
+  if (page > 1) query.page = String(page)
+  return query
+}
+
+function setCategory(category: string) {
+  if (category !== selectedCategory.value) {
+    navigateTo({ path: '/actualites', query: filtersQuery({ category }) })
+  }
+}
+
+const regionModel = computed<string>({
+  get: () => selectedRegion.value,
+  set: (region) => {
+    if (region !== selectedRegion.value) {
+      navigateTo({ path: '/actualites', query: filtersQuery({ region }) })
+    }
+  }
+})
+
+const pageModel = computed<number>({
+  get: () => currentPage.value,
+  set: (page) => {
+    if (page !== currentPage.value) {
+      navigateTo({ path: '/actualites', query: filtersQuery({ page }) })
+    }
+  }
+})
+
+// Le payload SSR n'est resservi que pendant l'hydratation — ensuite tout
+// remount repart sur des données fraîches.
+function hydrationCache<T>(
+  key: string,
+  nuxtApp: ReturnType<typeof useNuxtApp>,
+  ctx: { cause: string }
+): T | undefined {
+  return ctx.cause === 'initial' && nuxtApp.isHydrating
+    ? ((nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as T | undefined)
+    : undefined
+}
+
+// À la une : dernier article publié, indépendant des filtres. Seul fetch
+// qui charge `content` — il ne sert qu'au temps de lecture de la carte.
+const { data: featuredArticle } = await useAsyncData<Article | null>(
+  'actualites-featured',
   async () => {
     try {
-      return await directus.request<Article[]>(
+      const items = await directus.request<Article[]>(
         readItems('articles', {
           fields: [
             'id',
@@ -312,32 +357,59 @@ const {
             'title',
             'excerpt',
             'category',
-            'region',
             'publish_at',
             'cover_image',
             'content'
           ],
           filter: { status: { _eq: 'published' } },
-          sort: ['-publish_at']
+          sort: ['-publish_at'],
+          limit: 1
+        })
+      )
+      return items[0] ?? null
+    } catch (error) {
+      if (import.meta.server) {
+        logServerError('[actualites] featured fetch failed:', error)
+      }
+      return null
+    }
+  },
+  { getCachedData: hydrationCache<Article | null> }
+)
+
+interface ArticleFacet {
+  category: string | null
+  region: string | null
+  count: string | null
+}
+
+// Options de filtres : une seule agrégation donne les catégories et les
+// régions réellement utilisées, sans charger tous les articles.
+const { data: facets } = await useAsyncData<ArticleFacet[]>(
+  'actualites-facets',
+  async () => {
+    try {
+      return await directus.request<ArticleFacet[]>(
+        aggregate('articles', {
+          aggregate: { count: '*' },
+          groupBy: ['category', 'region'],
+          query: { filter: { status: { _eq: 'published' } } }
         })
       )
     } catch (error) {
       if (import.meta.server) {
-        logServerError('[actualites] articles fetch failed:', error)
+        logServerError('[actualites] facets fetch failed:', error)
       }
-      throw error
+      return []
     }
   },
-  {
-    getCachedData: (key, nuxtApp) =>
-      (nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as Article[] | undefined
-  }
+  { getCachedData: hydrationCache<ArticleFacet[]> }
 )
 
 const categoryOptions = computed(() => {
   const categories = new Set(
-    (articles.value ?? [])
-      .map((article) => article.category)
+    (facets.value ?? [])
+      .map((facet) => facet.category)
       .filter((category): category is string => Boolean(category?.trim()))
   )
 
@@ -346,8 +418,8 @@ const categoryOptions = computed(() => {
 
 const regionOptions = computed(() => {
   const regions = new Set(
-    (articles.value ?? [])
-      .map((article) => article.region)
+    (facets.value ?? [])
+      .map((facet) => facet.region)
       .filter((region): region is string => Boolean(region?.trim()))
   )
 
@@ -357,51 +429,86 @@ const regionOptions = computed(() => {
   ]
 })
 
-const featuredArticle = computed<Article | null>(
-  () => (articles.value ?? []).find((a) => a.status === 'published') ?? null
-)
-
-const readingTime = computed(() => {
-  return articleReadingTime(featuredArticle.value?.content)
-})
-
-const selectedCategory = ref(CATEGORY_ALL)
-const selectedRegion = ref(REGION_ALL)
-const currentPage = ref(1)
-const perPage = 6
-const mobileVisibleCount = ref(3)
-
 const selectedRegionLabel = computed(() => {
   return (
     regionOptions.value.find((r) => r.value === selectedRegion.value)?.label ?? 'Toutes les régions'
   )
 })
 
-const filteredArticles = computed(() =>
-  (articles.value ?? []).filter(
-    (a) =>
-      a.status === 'published' &&
-      a.slug !== featuredArticle.value?.slug &&
-      (selectedCategory.value === CATEGORY_ALL || a.category === selectedCategory.value) &&
-      (selectedRegion.value === REGION_ALL || a.region === selectedRegion.value)
-  )
-)
+const articlesFilter = computed(() => ({
+  _and: [
+    { status: { _eq: 'published' } },
+    ...(featuredArticle.value ? [{ slug: { _neq: featuredArticle.value.slug } }] : []),
+    ...(selectedCategory.value === CATEGORY_ALL
+      ? []
+      : [{ category: { _eq: selectedCategory.value } }]),
+    ...(selectedRegion.value === REGION_ALL ? [] : [{ region: { _eq: selectedRegion.value } }])
+  ]
+}))
 
-const pageStart = computed(() => (currentPage.value - 1) * perPage)
-const pageEnd = computed(() => pageStart.value + perPage)
-
-function articleClass(index: number): string {
-  const visibleMobile = index < mobileVisibleCount.value
-  const visibleDesktop = index >= pageStart.value && index < pageEnd.value
-  if (visibleMobile && visibleDesktop) return ''
-  if (visibleDesktop) return 'hidden lg:block'
-  if (visibleMobile) return 'block lg:hidden'
-  return 'hidden'
+interface ArticleList {
+  items: Article[]
+  total: number
 }
 
-watch([selectedCategory, selectedRegion], () => {
-  currentPage.value = 1
-  mobileVisibleCount.value = 3
+// Liste paginée côté serveur : la clé dépend des filtres et de la page,
+// chaque variante est requêtée (et cachée) séparément.
+const {
+  data: listData,
+  pending: articlesPending,
+  error: articlesError,
+  refresh: refreshArticles
+} = await useAsyncData<ArticleList>(
+  () =>
+    `actualites-list:${JSON.stringify({
+      category: selectedCategory.value,
+      region: selectedRegion.value,
+      page: currentPage.value,
+      featured: featuredArticle.value?.slug ?? ''
+    })}`,
+  async () => {
+    const filter = articlesFilter.value
+    try {
+      const [items, countRows] = await Promise.all([
+        directus.request<Article[]>(
+          readItems('articles', {
+            fields: [
+              'id',
+              'status',
+              'slug',
+              'title',
+              'excerpt',
+              'category',
+              'region',
+              'publish_at',
+              'cover_image'
+            ],
+            filter,
+            sort: ['-publish_at'],
+            limit: perPage,
+            page: currentPage.value
+          })
+        ),
+        directus.request<{ count: string | null }[]>(
+          aggregate('articles', { aggregate: { count: '*' }, query: { filter } })
+        )
+      ])
+      return { items, total: Number(countRows[0]?.count ?? 0) }
+    } catch (error) {
+      if (import.meta.server) {
+        logServerError('[actualites] articles fetch failed:', error)
+      }
+      throw error
+    }
+  },
+  { getCachedData: hydrationCache<ArticleList> }
+)
+
+const articles = computed(() => listData.value?.items ?? [])
+const totalItems = computed(() => listData.value?.total ?? 0)
+
+const readingTime = computed(() => {
+  return articleReadingTime(featuredArticle.value?.content)
 })
 
 const newsletterEmail = ref('')

@@ -216,7 +216,7 @@
                   </li>
                 </ul>
                 <ul class="py-md rounded-md pl-2 bg-surface">
-                  <p class="pb-1 text-small font-bold text-ink-muted">PAR RÉGION</p>
+                  <p class="pb-1 text-small font-bold text-ink-muted uppercase">Par région</p>
                   <li
                     v-for="region in actualitesRegions.slice(0, 2)"
                     :key="region.slug"

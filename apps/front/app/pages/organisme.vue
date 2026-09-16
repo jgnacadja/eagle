@@ -40,6 +40,9 @@
               <NuxtLink to="#modele">Comment fonctionne le réseau</NuxtLink>
             </Button>
           </div>
+          <p class="mt-xl text-sm text-ink-inverse-muted">
+            La candidature se dépose sur la page Rejoindre le réseau — réponse sous 5 jours ouvrés.
+          </p>
         </div>
       </div>
     </section>
@@ -49,16 +52,22 @@
         <h2 id="options-title" class="font-display text-h2 font-extrabold text-ink">
           Comment fonctionne le partenariat
         </h2>
-        <ProcessSteps :steps="steps" last-step-variant="accent" title-size="h4" class="mt-2xl" />
+        <ProcessSteps
+          :steps="steps"
+          last-step-variant="accent"
+          title-size="h4"
+          class="mt-2xl"
+          max-width-class="md:max-w-[15rem]"
+        />
       </section>
 
       <!-- Benefits -->
       <Benefits id="modele" title="Ce que le partenariat apporte" :benefits="benefits" />
 
       <section id="maillage" class="mt-4xl" aria-labelledby="maillage">
-        <div class="flex flex-col md:flex-row gap-14 items-start">
+        <div class="flex flex-col md:flex-row gap-14 items-center">
           <!-- Colonne gauche -->
-          <div class="w-full md:w-81.75 shrink-0 pt-2">
+          <div class="w-full md:w-85.75 shrink-0 pt-2">
             <h2 class="text-h2 font-extrabold leading-snug tracking-tight">
               Un maillage qui s'étend avec ses partenaires
             </h2>
@@ -70,24 +79,22 @@
             <div class="flex mt-6">
               <div class="pr-5">
                 <div class="text-2xl font-extrabold tracking-tight">+400</div>
-                <div class="text-xs text-bayoux mt-1 leading-tight">centres partenaires</div>
+                <div class="text-xs mt-1 leading-tight whitespace-nowrap">centres partenaires</div>
               </div>
               <div class="border-l border-bunting/15 pl-5 pr-5">
                 <div class="text-2xl font-extrabold tracking-tight">96</div>
-                <div class="text-xs text-bayoux mt-1 leading-tight">départements<br />couverts</div>
+                <div class="text-xs mt-1 leading-tight">départements couverts</div>
               </div>
               <div class="border-l border-bunting/15 pl-5">
                 <div class="text-2xl font-extrabold tracking-tight">+250</div>
-                <div class="text-xs text-bayoux mt-1 leading-tight">
-                  formations au<br />catalogue
-                </div>
+                <div class="text-xs mt-1 leading-tight">formations au catalogue</div>
               </div>
             </div>
           </div>
 
           <!-- Carte placeholder -->
           <div
-            class="flex-1 w-full h-87.5 rounded-2xl bg-linkwater border border-dashed border-biscay/30 flex items-center justify-center text-center text-bayoux text-[12.5px] font-medium leading-relaxed px-6 bg-surface"
+            class="flex-1 w-full h-87.5 rounded-2xl bg-linkwater border border-dashed border-biscay/30 flex items-center justify-center text-center text-bayoux text-sm font-medium leading-relaxed px-6 bg-surface"
           >
             Carte de France interactive<br />départements couverts + centres du réseau
           </div>
@@ -95,7 +102,7 @@
       </section>
     </div>
 
-    <div class="bg-navy-primary text-white px-12 py-9">
+    <div class="bg-navy-primary text-white p-12">
       <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div>
           <h3 class="text-h2 font-extrabold tracking-tight">Référencer votre organisme</h3>

@@ -15,7 +15,7 @@
         {{ step.title }}
       </h3>
 
-      <p class="mt-0.5 text-small text-ink-muted md:mx-auto md:mt-1">
+      <p class="mt-0.5 text-small text-ink-muted md:mx-auto md:mt-1" :class="maxWidthClass">
         {{ step.body }}
       </p>
     </div>
@@ -33,6 +33,7 @@ const props = defineProps<{
   isLast: boolean
   lastStepVariant: 'success' | 'accent' | 'primary'
   titleSize: 'body' | 'h4'
+  maxWidthClass?: string
 }>()
 
 const badgeClass = computed(() => {

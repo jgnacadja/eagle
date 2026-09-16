@@ -188,8 +188,8 @@ function useMenuFamillesData() {
           }),
         (internalSsrHeaders(config)
           ? $fetch<FamilyWithCount[]>(`${apiBase}/families`, {
-            headers: internalSsrHeaders(config)
-          })
+              headers: internalSsrHeaders(config)
+            })
           : $fetch<FamilyWithCount[]>(`${apiBase}/families`)
         ).catch((error: unknown) => {
           if (import.meta.server) {
@@ -208,17 +208,17 @@ function useMenuFamillesData() {
       const familles =
         counts === null && nameBySlug.size > 0
           ? [...nameBySlug.entries()]
-            .map(([slug, label]) => ({ slug, label, count: 0 }))
-            .sort((a, b) => a.label.localeCompare(b.label))
-            .slice(0, MAX_FAMILLES)
+              .map(([slug, label]) => ({ slug, label, count: 0 }))
+              .sort((a, b) => a.label.localeCompare(b.label))
+              .slice(0, MAX_FAMILLES)
           : (counts ?? [])
-            .map((family) => ({
-              slug: family.slug,
-              label: nameBySlug.get(family.slug) ?? humanizeSlug(family.slug),
-              count: family.count
-            }))
-            .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
-            .slice(0, MAX_FAMILLES)
+              .map((family) => ({
+                slug: family.slug,
+                label: nameBySlug.get(family.slug) ?? humanizeSlug(family.slug),
+                count: family.count
+              }))
+              .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+              .slice(0, MAX_FAMILLES)
 
       // Noms des sous-familles groupés par slug de famille (relation M2O
       // résolue via `famille.slug` dans les fields).

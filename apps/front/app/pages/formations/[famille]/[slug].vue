@@ -6,7 +6,7 @@
         class="border-b border-rule bg-linear-to-b from-paper to-surface"
         aria-labelledby="formation-title"
       >
-        <div class="mx-auto px-gutter-mobile py-2xl md:px-gutter">
+        <div class="mx-auto px-gutter-mobile md:px-gutter py-control-sm">
           <div class="grid items-start gap-2xl lg:grid-cols-5">
             <div class="lg:col-span-3">
               <p class="text-overline text-accent-text">
@@ -34,7 +34,7 @@
               </ul>
 
               <!-- CTA desktop -->
-              <div class="mt-2xl hidden flex-wrap items-center gap-md lg:flex">
+              <div class="mt-control-sm hidden flex-wrap items-center gap-md lg:flex">
                 <Button
                   as-child
                   class="h-control rounded-full bg-accent px-md py-sm text-button font-semibold text-ink transition hover:bg-accent-text hover:text-paper"
@@ -100,7 +100,11 @@
                 Objectifs pédagogiques
               </h2>
               <ul class="mt-md space-y-sm">
-                <li v-for="(objectif, idx) in objectives" :key="idx" class="flex gap-sm">
+                <li
+                  v-for="(objectif, idx) in objectives"
+                  :key="idx"
+                  class="flex gap-sm items-center"
+                >
                   <IconCheck :size="20" class="mt-xs shrink-0 text-success" />
                   <span class="text-body text-ink-body" v-html="sanitizeHtml(objectif)" />
                 </li>
@@ -154,7 +158,7 @@
                   :disabled="!module.content && !module.goals.length"
                   class="rounded-md border bg-paper px-lg"
                 >
-                  <AccordionTrigger class="gap-md py-lg text-left">
+                  <AccordionTrigger class="gap-md py-lg text-left [&[data-disabled]>svg]:hidden">
                     <span
                       class="flex h-xl w-xl shrink-0 items-center justify-center rounded-full text-small font-semibold text-ink-inverse"
                       :class="module.evaluation ? 'bg-success' : 'bg-primary-dark'"
@@ -175,7 +179,6 @@
                     </span>
                     <template #icon>
                       <IconChevronDown
-                        v-if="module.content || module.goals.length"
                         :size="16"
                         class="shrink-0 text-ink-muted transition-transform duration-200"
                       />
@@ -880,6 +883,8 @@ function toProgrammeModule(block: ProgrammeBlock): ProgrammeModule | null {
   else if (block.durationInDays) durationParts.push(`${block.durationInDays} jours`)
 
   const typeKey = typeof block.type === 'string' ? block.type.toLowerCase() : ''
+  const hasRichDescription =
+    typeof block.description === 'string' && /<[a-z][^>]*>/i.test(block.description)
   const subtitle = block.subtitle?.trim() || stripHtml(block.description)
   const descriptionText = stripHtml(block.description)
   // Digiforma duplique parfois la description dans les goals — on ne
@@ -891,9 +896,9 @@ function toProgrammeModule(block: ProgrammeBlock): ProgrammeModule | null {
         typeof text === 'string' && text.length > 0 && text !== subtitle && text !== descriptionText
     )
 
-  // Sans sous-titre explicite, la description sert déjà de ligne résumée —
-  // on ne la répète pas dans le contenu déplié.
-  const content = block.subtitle ? block.description : undefined
+  // Sans sous-titre explicite ni HTML riche, la description sert déjà de
+  // ligne résumée — on ne la répète pas dans le contenu déplié.
+  const content = block.subtitle || hasRichDescription ? block.description : undefined
 
   return {
     title: block.name,

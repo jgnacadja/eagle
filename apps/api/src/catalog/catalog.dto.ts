@@ -15,6 +15,12 @@ export enum CourseSortOrder {
   desc = 'desc'
 }
 
+export enum CourseAvailability {
+  thisMonth = 'success',
+  scheduled = 'warning',
+  onDemand = 'neutral'
+}
+
 function toOptionalTrimmed(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined
   const trimmed = value.trim()
@@ -143,6 +149,16 @@ export class ListCoursesDto {
   @IsString()
   @Transform(({ value }) => toOptionalTrimmed(value))
   location?: string
+
+  @ApiPropertyOptional({
+    enum: CourseAvailability,
+    description:
+      'Availability filter: success = session this month, warning = upcoming session, neutral = on demand'
+  })
+  @IsOptional()
+  @IsEnum(CourseAvailability)
+  @Transform(({ value }) => toOptionalTrimmed(value) as CourseAvailability | undefined)
+  availability?: CourseAvailability
 
   @ApiPropertyOptional({ enum: CourseSortField, description: 'Sort field' })
   @IsOptional()

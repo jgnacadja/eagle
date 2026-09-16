@@ -3,7 +3,7 @@
     <template v-if="pageState === 'found'">
       <!-- Hero / intro famille -->
       <section class="border-b border-rule bg-linear-to-b from-paper to-surface">
-        <div class="mx-auto px-gutter-mobile py-section md:px-gutter">
+        <div class="mx-auto px-gutter-mobile md:px-gutter py-control-sm">
           <div class="grid grid-cols-1 items-start gap-2xl lg:grid-cols-5">
             <div class="lg:col-span-3">
               <p class="text-overline text-accent-text">Famille de formations</p>
@@ -90,11 +90,7 @@
           </h2>
 
           <div class="flex flex-wrap gap-sm md:ml-auto">
-            <Select
-              v-if="subFamilyOptions.length > 1"
-              v-model="selectedSubFamily"
-              aria-label="Filtrer par sous-famille"
-            >
+            <Select v-model="selectedSubFamily" aria-label="Filtrer par sous-famille">
               <SelectTrigger
                 aria-label="Sous-famille"
                 class="h-control w-auto gap-sm rounded-full border-outline bg-paper px-md text-small font-semibold text-ink-body shadow-none"
@@ -150,6 +146,25 @@
               <SelectContent>
                 <SelectItem
                   v-for="option in locationOptions"
+                  :key="option.value"
+                  :value="option.value"
+                  class="text-small"
+                >
+                  {{ option.label }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select v-model="selectedAvailability" aria-label="Filtrer par disponibilité">
+              <SelectTrigger
+                aria-label="Disponibilité"
+                class="h-control w-auto gap-sm rounded-full border-outline bg-paper px-md text-small font-semibold text-ink-body shadow-none"
+              >
+                <span class="truncate">{{ availabilityFilterLabel }}</span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem
+                  v-for="option in availabilityOptions"
                   :key="option.value"
                   :value="option.value"
                   class="text-small"
@@ -480,6 +495,16 @@ const currentPage = ref(1)
 const selectedSubFamily = ref('all')
 const selectedModality = ref('all')
 const selectedLocation = ref('all')
+const selectedAvailability = ref<CatalogQuery['availability'] | 'all'>('all')
+
+// La disponibilité est appliquée côté API (param `availability`) sur les
+// sessions : session ce mois-ci, session à venir, ou sur demande.
+const availabilityOptions = [
+  { value: 'all', label: 'Disponibilité' },
+  { value: 'success', label: 'Sessions ce mois-ci' },
+  { value: 'warning', label: 'Prochaine session' },
+  { value: 'neutral', label: 'Sur demande' }
+]
 
 // Options dérivées des facettes de la réponse /courses : chaque dimension
 // est comptée sur le résultat courant en ignorant son propre filtre — une
@@ -508,16 +533,10 @@ const locationOptions = computed(() => {
   ]
 })
 
-const subFamilyOptions = computed(() => {
-  const counts = catalogFacets.value?.subFamilies
-  const visible = (sousFamilles.value ?? []).filter(
-    (s) => !counts || (counts[s.slug] ?? 0) > 0 || s.slug === selectedSubFamily.value
-  )
-  return [
-    { value: 'all', label: 'Sous-famille' },
-    ...visible.map((s) => ({ value: s.slug, label: s.name }))
-  ]
-})
+const subFamilyOptions = computed(() => [
+  { value: 'all', label: 'Sous-famille' },
+  ...(sousFamilles.value ?? []).map((s) => ({ value: s.slug, label: s.name }))
+])
 
 const subFamilyFilterLabel = computed(
   () =>
@@ -562,6 +581,11 @@ const locationFilterLabel = computed(
   () =>
     locationOptions.value.find((o) => o.value === selectedLocation.value)?.label ?? 'Localisation'
 )
+const availabilityFilterLabel = computed(
+  () =>
+    availabilityOptions.find((o) => o.value === selectedAvailability.value)?.label ??
+    'Disponibilité'
+)
 
 const catalogQuery = computed<CatalogQuery>(() => ({
   family: famille,
@@ -571,7 +595,8 @@ const catalogQuery = computed<CatalogQuery>(() => ({
   sort: 'updatedAt',
   order: 'desc',
   modalities: selectedModality.value !== 'all' ? [selectedModality.value] : undefined,
-  location: selectedLocation.value !== 'all' ? selectedLocation.value : undefined
+  location: selectedLocation.value !== 'all' ? selectedLocation.value : undefined,
+  availability: selectedAvailability.value !== 'all' ? selectedAvailability.value : undefined
 }))
 
 // Requête « facettes » : badges du hero et options de localisation doivent
@@ -620,10 +645,12 @@ function resetPage() {
     currentPage.value !== 1 ||
     selectedSubFamily.value !== 'all' ||
     selectedModality.value !== 'all' ||
-    selectedLocation.value !== 'all'
+    selectedLocation.value !== 'all' ||
+    selectedAvailability.value !== 'all'
   selectedSubFamily.value = 'all'
   selectedModality.value = 'all'
   selectedLocation.value = 'all'
+  selectedAvailability.value = 'all'
   currentPage.value = 1
   if (!queryWillChange) catalog.refresh()
 }

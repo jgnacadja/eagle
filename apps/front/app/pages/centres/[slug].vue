@@ -6,7 +6,7 @@
         class="border-b border-rule bg-linear-to-b from-paper to-surface"
         aria-labelledby="hero-title"
       >
-        <div class="mx-auto px-gutter-mobile md:px-gutter py-2xl">
+        <div class="mx-auto px-gutter-mobile md:px-gutter py-control-sm">
           <div class="grid items-start gap-2xl lg:grid-cols-5">
             <div class="lg:col-span-3">
               <p class="text-overline text-accent-text uppercase">
@@ -31,7 +31,7 @@
                 </Badge>
               </ul>
 
-              <div class="mt-2xl flex flex-wrap items-center gap-md">
+              <div class="mt-control-sm flex flex-wrap items-center gap-md">
                 <Button
                   as-child
                   class="h-control w-full rounded-full bg-accent px-md py-sm text-button font-semibold text-ink transition hover:bg-accent-text hover:text-paper sm:w-auto"

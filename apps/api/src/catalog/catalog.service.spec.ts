@@ -6,7 +6,12 @@ import {
   DirectusCatalogService,
   type DirectusFormation
 } from '../directus/directus.catalog.service'
-import { CourseSortField, CourseSortOrder, type ListCoursesDto } from './catalog.dto'
+import {
+  CourseAvailability,
+  CourseSortField,
+  CourseSortOrder,
+  type ListCoursesDto
+} from './catalog.dto'
 
 const baseFormation: DirectusFormation = {
   id: 1,
@@ -591,6 +596,57 @@ describe('CatalogService', () => {
         Rhône: 1,
         'Auvergne-Rhône-Alpes': 1
       })
+    })
+  })
+
+  describe('availability filter', () => {
+    // Dates relatives : dernier jour du mois courant (toujours « ce mois-ci »,
+    // y compris quand le test tourne ce jour-là) et un mois plus tard.
+    const now = new Date()
+    const endOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0))
+      .toISOString()
+      .slice(0, 10)
+    const later = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 2, 15))
+      .toISOString()
+      .slice(0, 10)
+
+    const withSession = (id: number, slug: string, startDate: string | null) =>
+      ({
+        ...baseFormation,
+        id,
+        digiforma_id: `prog-${id}`,
+        slug,
+        sessions: startDate
+          ? [
+              {
+                id: `s-${id}`,
+                startDate,
+                endDate: null,
+                modality: 'presentiel',
+                seatsRemaining: null,
+                location: null
+              }
+            ]
+          : null
+      }) as unknown as DirectusFormation
+
+    beforeEach(() => {
+      cache.get.mockResolvedValue(null)
+      catalog.fetchAllFormations.mockResolvedValue([
+        withSession(3, 'ce-mois', endOfMonth),
+        withSession(4, 'plus-tard', later),
+        withSession(5, 'sur-demande', null)
+      ])
+    })
+
+    it.each([
+      { availability: CourseAvailability.thisMonth, expected: ['ce-mois'] },
+      { availability: CourseAvailability.scheduled, expected: ['plus-tard'] },
+      { availability: CourseAvailability.onDemand, expected: ['sur-demande'] }
+    ])('filtre $availability → $expected', async ({ availability, expected }) => {
+      const result = await service.list({ availability, page: 1, limit: 20 } as ListCoursesDto)
+
+      expect(result.items.map((i) => i.slug)).toEqual(expected)
     })
   })
 

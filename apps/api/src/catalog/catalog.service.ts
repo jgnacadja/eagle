@@ -17,7 +17,12 @@ import {
   type DirectusFormation,
   type FamilyApplyResult
 } from '../directus/directus.catalog.service'
-import { CourseSortField, CourseSortOrder, type ListCoursesDto } from './catalog.dto'
+import {
+  CourseAvailability,
+  CourseSortField,
+  CourseSortOrder,
+  type ListCoursesDto
+} from './catalog.dto'
 
 function toNumber(value: unknown): number | null {
   if (value == null) return null
@@ -547,7 +552,33 @@ function matchesSearchQuery(row: CatalogRow, search: string | undefined): boolea
 }
 
 type FacetDimension =
-  'family' | 'subFamily' | 'modalities' | 'durations' | 'location' | 'cpf' | 'certifying'
+  | 'family'
+  | 'subFamily'
+  | 'modalities'
+  | 'durations'
+  | 'location'
+  | 'cpf'
+  | 'certifying'
+  | 'availability'
+
+// Disponibilité dérivée des sessions — mêmes bornes que `buildSessionBadge`
+// côté front : session qui démarre dans le mois courant (UTC), session à
+// venir plus tard, ou aucune session à venir (« sur demande »).
+function courseAvailability(course: CourseListItem): CourseAvailability {
+  const today = new Date()
+  today.setUTCHours(0, 0, 0, 0)
+  const upcoming = (course.sessions ?? []).filter(
+    (s) => s.startDate && new Date(`${s.startDate}T00:00:00Z`) >= today
+  )
+  if (!upcoming.length) return CourseAvailability.onDemand
+
+  const now = new Date()
+  const thisMonth = upcoming.some((s) => {
+    const d = new Date(`${s.startDate}T00:00:00Z`)
+    return d.getUTCFullYear() === now.getUTCFullYear() && d.getUTCMonth() === now.getUTCMonth()
+  })
+  return thisMonth ? CourseAvailability.thisMonth : CourseAvailability.scheduled
+}
 
 function matchesCourse(row: CatalogRow, query: ListCoursesDto, except?: FacetDimension): boolean {
   const checks: { dim: FacetDimension | null; ok: boolean }[] = [
@@ -561,6 +592,10 @@ function matchesCourse(row: CatalogRow, query: ListCoursesDto, except?: FacetDim
     { dim: null, ok: matchesCenter(row.course, query.center) },
     { dim: 'modalities', ok: matchesModalities(row.course, query.modalities) },
     { dim: 'location', ok: matchesLocation(row, query.location) },
+    {
+      dim: 'availability',
+      ok: !query.availability || courseAvailability(row.course) === query.availability
+    },
     { dim: null, ok: matchesSearchQuery(row, query.search) }
   ]
   return checks.every((check) => check.dim === except || check.ok)

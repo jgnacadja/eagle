@@ -18,6 +18,7 @@ export interface CatalogQuery {
   modalities?: string[]
   location?: string
   center?: string
+  availability?: 'success' | 'warning' | 'neutral'
 }
 
 export interface FormationItem {
@@ -220,6 +221,7 @@ function buildApiQuery(query: CatalogQuery): Record<string, unknown> {
   if (query.modalities?.length) params.modalities = query.modalities.join(',')
   if (query.location?.trim()) params.location = query.location.trim()
   if (query.center) params.center = query.center
+  if (query.availability) params.availability = query.availability
   if (query.sort) params.sort = query.sort
   if (query.order) params.order = query.order
 

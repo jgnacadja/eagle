@@ -121,6 +121,8 @@
             :duration-options="durationOptions"
             location-input-id="loc-desktop"
             @update:location="location = $event ?? ''"
+            @update:cpf="cpf = $event ?? false"
+            @update:certifying="certifying = $event ?? false"
           />
         </aside>
 
@@ -150,7 +152,7 @@
             </div>
             <button
               type="button"
-              class="mt-sm text-small font-semibold text-primary transition-colors hover:text-accent-text"
+              class="mt-sm text-small font-semibold text-primary transition-colors hover:text-accent-text underline"
               @click="resetFilters"
             >
               Réinitialiser
@@ -400,6 +402,8 @@
           :duration-options="durationOptions"
           location-input-id="loc-mobile"
           @update:location="location = $event ?? ''"
+          @update:cpf="cpf = $event ?? false"
+          @update:certifying="certifying = $event ?? false"
         />
       </div>
 

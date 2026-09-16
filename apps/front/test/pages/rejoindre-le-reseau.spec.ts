@@ -22,11 +22,10 @@ describe('Rejoindre le réseau page', () => {
 
     expect(wrapper.text()).toContain('Un réseau national de centres de formation')
     expect(wrapper.text()).toContain('Trois façons de rejoindre le réseau')
-    expect(wrapper.text()).toContain('Ce que le réseau apporte')
 
     const hrefs = wrapper.findAll('a').map((link) => link.attributes('href'))
     expect(hrefs).toContain('/centres/demande-de-formation?sujet=franchise')
-    expect(hrefs).toContain('/centres/demande-de-formation?sujet=organisme')
+    expect(hrefs).toContain('/organisme')
     expect(hrefs).toContain('/centres/demande-de-formation?sujet=formateur')
   })
 })

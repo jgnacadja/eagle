@@ -5,7 +5,7 @@
         v-if="open"
         id="mobile-menu"
         ref="dialogEl"
-        class="fixed inset-0 z-50 m-0 flex h-dvh w-screen max-w-none flex-col border-0 bg-paper p-0 md:hidden"
+        class="fixed inset-0 z-50 m-0 flex h-dvh w-screen max-w-none max-h-none flex-col border-0 bg-paper p-0 md:hidden"
         aria-label="Menu principal"
         aria-modal="true"
         @cancel.prevent="closeMenu"
@@ -104,10 +104,10 @@
                     <AccordionItem
                       v-if="centresForRegion(region.label).length"
                       :value="region.slug"
-                      class="border-b-0"
+                      class="border-b-0 rounded-md transition-colors data-[state=open]:bg-surface my-2"
                     >
                       <AccordionTrigger
-                        class="py-2 text-body text-primary transition-colors hover:text-accent-text hover:no-underline"
+                        class="px-3 py-2 text-body text-primary transition-colors hover:text-accent-text hover:no-underline data-[state=open]:font-bold data-[state=open]:text-ink"
                       >
                         <span class="flex w-full items-center justify-between pr-2">
                           <span>{{ region.label }}</span>
@@ -115,7 +115,7 @@
                         </span>
                       </AccordionTrigger>
                       <AccordionContent>
-                        <ul class="pl-2">
+                        <ul class="px-3">
                           <li
                             v-for="centre in centresForRegion(region.label).slice(0, 3)"
                             :key="centre.slug"
@@ -184,6 +184,8 @@
                       {{ lien.label }}
                     </NuxtLink>
                   </li>
+                </ul>
+                <ul class="rounded-md bg-surface p-3">
                   <li v-for="lien in legalLiens" :key="lien.slug">
                     <NuxtLink
                       :to="`/${lien.slug}`"

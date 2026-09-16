@@ -274,10 +274,13 @@
           />
         </div>
 
-        <div class="mt-2xl flex snap-x snap-mandatory gap-grid overflow-x-auto pb-sm md:hidden">
+        <div
+          class="mt-2xl flex snap-x snap-mandatory gap-grid overflow-x-auto overflow-y-hidden pb-sm md:hidden"
+        >
           <ConfierCard
-            v-for="card in confierCards"
+            v-for="(card, i) in confierCards"
             :key="`${card.title}-image`"
+            v-reveal="revealStagger(i)"
             variant="image"
             :tag="card.tag"
             :title="card.title"

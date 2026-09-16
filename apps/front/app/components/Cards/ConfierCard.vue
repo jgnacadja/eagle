@@ -14,7 +14,7 @@
 
   <div
     v-else-if="variant === 'image'"
-    class="flex aspect-[2/1] basis-3/4 shrink-0 snap-start items-center justify-center rounded-md border border-dashed border-outline-inverse bg-primary-card px-md text-center text-small font-medium text-ink-inverse/60 md:min-w-0"
+    class="flex aspect-2/1 basis-3/4 shrink-0 snap-start items-center justify-center rounded-md border border-dashed border-outline-inverse bg-primary-card px-md text-center text-small font-medium text-ink-inverse/60 md:min-w-0"
   >
     <span>{{ imageLabel }}<br v-if="imageSub" />{{ imageSub }}</span>
   </div>

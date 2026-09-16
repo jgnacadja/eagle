@@ -1,4 +1,4 @@
-Autour <template>
+<template>
   <ClientOnly>
     <Transition name="mobile-menu">
       <dialog
@@ -52,10 +52,10 @@ Autour <template>
                     <AccordionItem
                       v-if="sousFamillesFor(famille.slug).length"
                       :value="famille.slug"
-                      class="border-b-0 rounded-md transition-all data-[state=open]:-mx-3 data-[state=open]:bg-surface data-[state=open]:px-3 my-2"
+                      class="border-b-0 rounded-md transition-colors data-[state=open]:bg-surface my-2"
                     >
                       <AccordionTrigger
-                        class="py-2 text-body text-primary transition-colors hover:text-accent-text hover:no-underline data-[state=open]:font-bold data-[state=open]:text-ink"
+                        class="px-3 py-2 text-body text-primary transition-colors hover:text-accent-text hover:no-underline data-[state=open]:font-bold data-[state=open]:text-ink"
                       >
                         <span class="flex w-full items-center justify-between pr-2">
                           <span>{{ famille.label }}</span>
@@ -63,7 +63,7 @@ Autour <template>
                         </span>
                       </AccordionTrigger>
                       <AccordionContent>
-                        <ul>
+                        <ul class="px-3">
                           <li
                             v-for="sousFamille in sousFamillesFor(famille.slug)"
                             :key="sousFamille.slug"
@@ -95,7 +95,7 @@ Autour <template>
                     <NuxtLink
                       v-else
                       :to="`/formations/${famille.slug}`"
-                      class="flex items-center justify-between py-2 text-body text-primary transition-colors hover:text-accent-text"
+                      class="flex items-center justify-between px-3 py-2 text-body text-primary transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
                       <span>{{ famille.label }}</span>
@@ -106,7 +106,7 @@ Autour <template>
                   <div>
                     <NuxtLink
                       to="/formations"
-                      class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
+                      class="block px-3 py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
                       Tout le catalogue <span class="link-arrow">→</span>
@@ -127,19 +127,10 @@ Autour <template>
                   <div>
                     <NuxtLink
                       to="/centres"
-                      class="flex items-center gap-2 py-2 text-body text-primary transition-colors hover:text-accent-text"
+                      class="flex items-center gap-2 px-3 py-2 text-body text-primary transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
-                      <svg
-                        class="h-4 w-4 text-accent"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M12 21s7-6.5 7-11a7 7 0 1 0-14 0c0 4.5 7 11 7 11z" />
-                        <circle cx="12" cy="10" r="2.5" />
-                      </svg>
+                      <IconLocate :size="16" class="text-accent" />
                       Autour de moi
                     </NuxtLink>
                   </div>
@@ -148,10 +139,10 @@ Autour <template>
                     <AccordionItem
                       v-if="centresForRegion(region.label).length"
                       :value="region.slug"
-                      class="border-b-0 rounded-md transition-all data-[state=open]:-mx-3 data-[state=open]:bg-surface data-[state=open]:px-3 my-2"
+                      class="border-b-0 rounded-md transition-colors data-[state=open]:bg-surface my-2"
                     >
                       <AccordionTrigger
-                        class="py-2 text-body text-primary transition-colors hover:text-accent-text hover:no-underline data-[state=open]:font-bold data-[state=open]:text-ink"
+                        class="px-3 py-2 text-body text-primary transition-colors hover:text-accent-text hover:no-underline data-[state=open]:font-bold data-[state=open]:text-ink"
                       >
                         <span class="flex w-full items-center justify-between pr-2">
                           <span>{{ region.label }}</span>
@@ -159,7 +150,7 @@ Autour <template>
                         </span>
                       </AccordionTrigger>
                       <AccordionContent>
-                        <ul>
+                        <ul class="px-3">
                           <li
                             v-for="centre in centresForRegion(region.label).slice(0, 3)"
                             :key="centre.slug"
@@ -202,7 +193,7 @@ Autour <template>
                   <div>
                     <NuxtLink
                       to="/centres"
-                      class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
+                      class="block px-3 py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
                       Voir la carte de région <span class="link-arrow">→</span>
@@ -219,7 +210,7 @@ Autour <template>
                 >À propos</AccordionTrigger
               >
               <AccordionContent>
-                <ul class="pb-sm">
+                <ul class="pb-sm px-3">
                   <li v-for="lien in aproposLiens" :key="lien.slug">
                     <NuxtLink
                       :to="`/${lien.slug}`"
@@ -230,7 +221,7 @@ Autour <template>
                     </NuxtLink>
                   </li>
                 </ul>
-                <ul class="-mx-3 rounded-md bg-surface p-3">
+                <ul class="rounded-md bg-surface p-3">
                   <li v-for="lien in legalLiens" :key="lien.slug">
                     <NuxtLink
                       :to="`/${lien.slug}`"
@@ -251,7 +242,7 @@ Autour <template>
                 >Actualités</AccordionTrigger
               >
               <AccordionContent>
-                <ul class="pb-sm">
+                <ul class="pb-sm px-3">
                   <li v-for="rubrique in actualitesRubriques" :key="rubrique.slug">
                     <NuxtLink
                       to="/actualites"
@@ -262,7 +253,7 @@ Autour <template>
                     </NuxtLink>
                   </li>
                 </ul>
-                <ul class="-mx-3 rounded-md bg-surface px-3 py-md">
+                <ul class="rounded-md bg-surface p-3">
                   <p class="pb-1 text-small font-bold text-ink-muted uppercase">Par région</p>
                   <li v-for="region in actualitesRegions.slice(0, 2)" :key="region.slug">
                     <NuxtLink
@@ -319,6 +310,7 @@ import {
   AccordionItem,
   AccordionTrigger
 } from '~/components/ui/accordion'
+import IconLocate from '~/components/icons/IconLocate.vue'
 import { aproposLiens, legalLiens } from '~/data/navigation'
 import {
   useMenuActualites,

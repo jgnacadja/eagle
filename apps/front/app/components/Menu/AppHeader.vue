@@ -93,6 +93,15 @@
     </div>
   </header>
 
+  <Transition name="menu-overlay">
+    <div
+      v-if="openMenu"
+      class="fixed inset-0 z-40 hidden bg-ink/40 md:block"
+      aria-hidden="true"
+      @click="close"
+    />
+  </Transition>
+
   <MobileMenu v-model:open="isMobileOpen" />
 </template>
 

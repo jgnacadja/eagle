@@ -206,6 +206,7 @@
 
   html {
     scroll-behavior: smooth;
+    overflow-x: clip;
   }
 
   html,
@@ -359,6 +360,16 @@
   opacity: 0;
 }
 
+.menu-overlay-enter-active,
+.menu-overlay-leave-active {
+  transition: opacity 200ms ease-out;
+}
+
+.menu-overlay-enter-from,
+.menu-overlay-leave-to {
+  opacity: 0;
+}
+
 .mobile-menu-enter-active,
 .mobile-menu-leave-active {
   transition:
@@ -397,6 +408,8 @@
   [data-motion],
   .menu-panel-enter-active,
   .menu-panel-leave-active,
+  .menu-overlay-enter-active,
+  .menu-overlay-leave-active,
   .mobile-menu-enter-active,
   .mobile-menu-leave-active,
   .page-enter-active,

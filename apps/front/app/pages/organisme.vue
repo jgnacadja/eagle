@@ -67,7 +67,7 @@
       <section id="maillage" class="mt-4xl" aria-labelledby="maillage">
         <div class="flex flex-col md:flex-row gap-14 items-center">
           <!-- Colonne gauche -->
-          <div class="w-full md:w-85.75 shrink-0 pt-2">
+          <div class="w-81 md:w-98 shrink-0 pt-2">
             <h2 class="text-h2 font-extrabold leading-snug tracking-tight">
               Un maillage qui s'étend avec ses partenaires
             </h2>
@@ -102,7 +102,7 @@
       </section>
     </div>
 
-    <div class="bg-navy-primary text-white p-12">
+    <div id="candidater" class="bg-navy-primary text-white p-12">
       <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div>
           <h3 class="text-h2 font-extrabold tracking-tight">Référencer votre organisme</h3>

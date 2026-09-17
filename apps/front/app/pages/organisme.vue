@@ -87,11 +87,20 @@
             </div>
           </div>
 
-          <!-- Carte placeholder -->
-          <div
-            class="flex-1 w-full h-96 rounded-2xl border border-dashed flex items-center justify-center text-center text-small font-medium px-lg bg-surface"
-          >
-            Carte de France interactive<br />départements couverts + centres du réseau
+          <!-- Carte -->
+          <div class="flex-1 w-full h-96 rounded-2xl border border-rule overflow-hidden bg-surface">
+            <CenterMap
+              v-if="mapCenters.length"
+              :centers="mapCenters"
+              :active-id="null"
+              :caption="''"
+            />
+            <div
+              v-else
+              class="flex h-full items-center justify-center px-lg text-center text-small text-ink-muted"
+            >
+              Carte de France interactive<br />départements couverts + centres du réseau
+            </div>
           </div>
         </div>
       </section>
@@ -117,6 +126,10 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import type { Centre } from '@learnup/types'
+import type { CenterResult } from '~/types/center-result'
+
 useContentSeo(
   {
     seo_title: 'Référencer votre centre — LEARN UP ACADEMY',
@@ -163,4 +176,41 @@ const steps = [
     body: 'Les besoins qualifiés (formation, effectif, lieu, échéance) vous sont transmis.'
   }
 ]
+
+const centresData = await useDirectusList<Centre>('centres', 'organisme-map-centres', {
+  fields: [
+    'slug',
+    'name',
+    'address',
+    'postal_code',
+    'city',
+    'department',
+    'region',
+    'specialties',
+    'latitude',
+    'longitude'
+  ],
+  filter: { status: { _eq: 'published' } },
+  sort: ['-id'],
+  limit: -1
+})
+
+const mapCenters = computed<CenterResult[]>(() =>
+  (centresData.value ?? []).map((centre) => {
+    const location = [centre.address, centre.postal_code, centre.city, centre.department]
+      .filter(Boolean)
+      .join(', ')
+    const tags = (centre.specialties ?? []).join(' · ')
+    return {
+      id: centre.slug,
+      name: centre.name,
+      cp: centre.postal_code ?? '',
+      address: location,
+      tags,
+      tagsShort: tags,
+      lat: centre.latitude ?? undefined,
+      lng: centre.longitude ?? undefined
+    }
+  })
+)
 </script>

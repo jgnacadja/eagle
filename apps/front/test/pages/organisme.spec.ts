@@ -22,6 +22,10 @@ const stubs = {
       },
       ProcessSteps: true,
       CenterMap: true,
+      StatItem: {
+        props: ['value', 'label'],
+        template: '<div class="stat">{{ value }} {{ label }}</div>'
+      },
       Benefits: { props: ['title'], template: '<section><h2>{{ title }}</h2></section>' }
     }
   }
@@ -67,6 +71,15 @@ describe('pages/organisme.vue', () => {
     expect(section.exists()).toBe(true)
     expect(title.exists()).toBe(true)
     expect(section.attributes('aria-labelledby')).toBe('maillage-title')
+  })
+
+  it('affiche les trois chiffres clés du maillage', async () => {
+    const wrapper = await mountOrganisme()
+
+    expect(wrapper.findAll('.stat')).toHaveLength(3)
+    expect(wrapper.text()).toContain('centres partenaires')
+    expect(wrapper.text()).toContain('départements couverts')
+    expect(wrapper.text()).toContain('formations au catalogue')
   })
 
   it("affiche le placeholder carte quand aucun centre n'est retourné", async () => {

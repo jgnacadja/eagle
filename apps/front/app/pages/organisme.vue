@@ -72,18 +72,19 @@
             </p>
 
             <div class="flex mt-lg">
-              <div class="pr-lg">
-                <div class="text-h2 font-extrabold">+400</div>
-                <div class="text-meta mt-xs whitespace-nowrap">centres partenaires</div>
-              </div>
-              <div class="border-l px-md">
-                <div class="text-h2 font-extrabold">96</div>
-                <div class="text-meta mt-xs">départements couverts</div>
-              </div>
-              <div class="border-l pl-md">
-                <div class="text-h2 font-extrabold">+250</div>
-                <div class="text-meta mt-xs">formations au catalogue</div>
-              </div>
+              <StatItem
+                value="+400"
+                label="centres partenaires"
+                size="sm"
+                class="pr-lg whitespace-nowrap"
+              />
+              <StatItem value="96" label="départements couverts" size="sm" class="border-l px-md" />
+              <StatItem
+                value="+250"
+                label="formations au catalogue"
+                size="sm"
+                class="border-l pl-md"
+              />
             </div>
           </div>
 

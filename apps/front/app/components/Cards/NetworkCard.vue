@@ -1,6 +1,6 @@
 <template>
   <article
-    class="rounded-md border border-transparent bg-surface p-lg transition hover:border-primary/40 hover:shadow-md"
+    class="rounded-md border border-transparent bg-surface p-lg transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-md"
   >
     <h3 class="font-display text-h3 font-extrabold uppercase text-ink">{{ title }}</h3>
     <p class="mt-xs text-xs font-bold text-accent-text">{{ subtitle }}</p>

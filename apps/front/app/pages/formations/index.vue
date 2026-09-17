@@ -81,7 +81,7 @@
             v-for="(shortcut, i) in familyShortcuts"
             :key="shortcut.slug"
             v-reveal="revealStagger(i)"
-            class="rounded-md border border-rule bg-paper p-lg transition hover:border-primary/40 hover:shadow-md"
+            class="rounded-md border border-rule bg-paper p-lg transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-md"
           >
             <p class="font-semibold text-ink">{{ shortcut.label }}</p>
             <p class="mt-xs text-small text-ink-muted">{{ shortcut.caption }}</p>

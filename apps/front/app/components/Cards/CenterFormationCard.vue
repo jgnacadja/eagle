@@ -1,5 +1,7 @@
 <template>
-  <Card class="relative flex flex-col transition hover:border-primary/40 hover:shadow-md">
+  <Card
+    class="relative flex flex-col transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-md"
+  >
     <CardHeader class="space-y-sm p-md pb-0">
       <p v-if="eyebrow" class="mb-md text-overline text-ink-subtle font-bold">{{ eyebrow }}</p>
       <p v-if="overline" class="text-overline text-accent-text uppercase">{{ overline }}</p>

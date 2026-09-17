@@ -37,6 +37,9 @@ describe('FormationCard', () => {
       global: { stubs }
     })
 
+    expect(wrapper.classes()).toContain('transition-[border-color,box-shadow]')
+    expect(wrapper.classes()).not.toContain('transition')
+
     const img = wrapper.find('img')
     expect(img.exists()).toBe(true)
     expect(img.attributes('src')).toBe('https://example.test/sst.jpg')

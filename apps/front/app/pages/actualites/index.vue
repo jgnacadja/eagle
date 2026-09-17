@@ -95,7 +95,7 @@
 
             <Card
               v-reveal
-              class="mt-md overflow-hidden transition hover:border-primary/40 hover:shadow-md lg:flex"
+              class="mt-md overflow-hidden transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-md lg:flex"
             >
               <div
                 class="flex aspect-16/10 items-center justify-center border-b border-dashed border-outline bg-surface-alt text-center text-small text-ink-muted lg:aspect-auto lg:w-2/5 lg:border-b-0 lg:border-r"

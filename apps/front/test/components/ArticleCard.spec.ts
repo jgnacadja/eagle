@@ -19,6 +19,9 @@ describe('ArticleCard', () => {
       }
     })
 
+    expect(wrapper.classes()).toContain('transition-[border-color,box-shadow]')
+    expect(wrapper.classes()).not.toContain('transition')
+
     expect(wrapper.text()).toContain('Réglementation')
     expect(wrapper.text()).toContain('Recyclage CACES : les échéances 2026')
     expect(wrapper.text()).toContain('28 août 2026 · 4 min')

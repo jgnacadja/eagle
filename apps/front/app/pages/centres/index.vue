@@ -100,6 +100,7 @@
             :caption="selectedDeptLabel"
             :min-zoom="8"
             :popup="false"
+            :user-position="userPosition"
             @select="selectCenter"
           />
         </div>
@@ -215,6 +216,7 @@
             :active-id="activeCenterId"
             :caption="selectedDeptLabel"
             :min-zoom="8"
+            :user-position="userPosition"
             @select="selectCenter"
           />
         </div>
@@ -225,6 +227,8 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useGeolocation } from '~/composables/useGeolocation'
+import { distanceKm } from '~/utils/geo'
 import type { CentresQuery } from '~/composables/useCentres'
 import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
@@ -263,6 +267,11 @@ const activeCenterId = ref<string | null>(null)
 const hasUserSelection = ref(false)
 const isMobileMapOpen = ref(false)
 
+// Destructuration : `position` devient un binding top-level, donc auto-déplié
+// dans le template (un Ref imbriqué dans un objet ne l'est pas — CenterMap
+// recevrait le Ref lui-même et non { lat, lng }).
+const { position: userPosition, request: requestGeolocation } = useGeolocation()
+
 const centresFilters = computed<CentresQuery>(() => ({
   department: selectedDept.value === 'all' ? undefined : selectedDept.value,
   search: appliedSearch.value.trim() || undefined
@@ -291,6 +300,10 @@ const { data: departments } = departmentsResult
 const centresCount = computed(() => centresTotal.value ?? 0)
 const departmentsCount = computed(() => departments.value?.length ?? 0)
 
+onMounted(() => {
+  requestGeolocation()
+})
+
 const LIST_CHUNK_SIZE = 12
 const visibleCount = ref(LIST_CHUNK_SIZE)
 const listEl = ref<HTMLElement | null>(null)
@@ -299,12 +312,19 @@ const isLoadingMore = ref(false)
 const hasListOverflowed = ref(false)
 let loadMoreObserver: IntersectionObserver | null = null
 
-const filteredCenters = computed<CenterResult[]>(() =>
-  (centres.value ?? []).map((centre) => {
+const filteredCenters = computed<CenterResult[]>(() => {
+  const userPos = userPosition.value
+  const mapped = (centres.value ?? []).map((centre) => {
     const location = [centre.address, centre.postal_code, centre.city, centre.department]
       .filter(Boolean)
       .join(', ')
     const tags = (centre.specialties ?? []).join(' · ')
+
+    const distance =
+      userPos && centre.latitude != null && centre.longitude != null
+        ? distanceKm(userPos, { lat: centre.latitude, lng: centre.longitude })
+        : undefined
+
     return {
       id: centre.slug,
       name: centre.name,
@@ -314,10 +334,22 @@ const filteredCenters = computed<CenterResult[]>(() =>
       tagsShort: tags,
       status: availabilityStatus(centreSessionDates.value.get(centre.slug) ?? []),
       lat: centre.latitude ?? undefined,
-      lng: centre.longitude ?? undefined
+      lng: centre.longitude ?? undefined,
+      distanceKm: distance
     }
   })
-)
+
+  if (userPos) {
+    mapped.sort((a, b) => {
+      if (a.distanceKm == null && b.distanceKm == null) return 0
+      if (a.distanceKm == null) return 1
+      if (b.distanceKm == null) return -1
+      return a.distanceKm - b.distanceKm
+    })
+  }
+
+  return mapped
+})
 
 const selectedDeptLabel = computed(() =>
   selectedDept.value === 'all' ? 'Tous les départements' : selectedDept.value

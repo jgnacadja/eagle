@@ -102,6 +102,8 @@ function createRedisThrottlerStorage(url: string): ThrottlerStorage {
         return {
           throttlers: [
             {
+              // Lecture publique : les fetches SSR (x-internal-ssr) sont exclus
+              // pour ne pas mutualiser tous les visiteurs sur l'IP du serveur Nuxt.
               ttl: 60_000,
               limit: 100,
               skipIf: (context) =>

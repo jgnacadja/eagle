@@ -88,7 +88,7 @@
           </div>
 
           <!-- Carte -->
-          <div class="flex-1 w-full h-96 rounded-2xl border border-rule overflow-hidden bg-surface">
+          <div class="flex-1 w-full h-96 rounded-md border border-rule overflow-hidden bg-surface">
             <CenterMap
               v-if="mapCenters.length"
               :centers="mapCenters"

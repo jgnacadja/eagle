@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue'
+import { getCurrentScope, onMounted, onScopeDispose, ref, type Ref } from 'vue'
 import type { GeoPoint } from '~/utils/geo'
 
 export type GeolocationStatus = 'idle' | 'locating' | 'granted' | 'denied' | 'unavailable' | 'error'
@@ -16,7 +16,10 @@ interface GeolocationErrorLike {
 
 const DEFAULT_OPTIONS: GeolocationOptions = {
   enableHighAccuracy: false,
-  timeout: 8_000,
+  // Le timeout inclut le temps de décision de l'utilisateur sur la popup —
+  // 8 s était trop court : un accord « lent » tombait en erreur TIMEOUT et
+  // n'était appliqué qu'au prochain chargement.
+  timeout: 30_000,
   maximumAge: 60_000
 }
 
@@ -66,5 +69,52 @@ export function useGeolocation(): UseGeolocationReturn {
     )
   }
 
+  // Si la demande échoue (timeout le temps que l'utilisateur lise la popup),
+  // un accord tardif ne s'appliquait qu'au refresh : on relance la demande
+  // dès que la permission passe à granted.
+  if (typeof navigator !== 'undefined' && typeof navigator.permissions?.query === 'function') {
+    navigator.permissions
+      .query({ name: 'geolocation' })
+      .then((perm) => {
+        const onChange = () => {
+          if (perm.state === 'granted' && !position.value) request()
+        }
+        perm.addEventListener('change', onChange)
+        if (getCurrentScope()) {
+          onScopeDispose(() => perm.removeEventListener('change', onChange))
+        }
+      })
+      .catch(() => {
+        // Permissions API indisponible (ou nom non supporté) : la demande
+        // simple suffit, pas de relance possible.
+      })
+  }
+
   return { status, position, error, request }
+}
+
+// Viewport « desktop » : même seuil que le breakpoint Tailwind `lg`.
+export const DESKTOP_QUERY = '(min-width: 1024px)'
+
+/**
+ * Variante qui déclenche `request()` au montage du composant :
+ * - desktop (viewport ≥ `lg`) : demande automatique ;
+ * - mobile : uniquement via un geste explicite — `force()` (bouton
+ *   « Autour de moi » → `/centres?geo=1`) ou un appel direct à `request()`.
+ *
+ * `force` n'est évalué qu'une fois, au montage. Pour un re-déclenchement
+ * (navigation interne changeant la query), la page appelle `request()`.
+ */
+export function useAutoGeolocation(force?: () => boolean): UseGeolocationReturn {
+  const geo = useGeolocation()
+
+  onMounted(() => {
+    // matchMedia absent (vieux navigateur) → on demande quand même : mieux
+    // vaut une popup en trop qu'une géolocalisation silencieusement inactive.
+    const isDesktop =
+      typeof window.matchMedia !== 'function' || window.matchMedia(DESKTOP_QUERY).matches
+    if (isDesktop || force?.()) geo.request()
+  })
+
+  return geo
 }

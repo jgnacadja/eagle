@@ -31,6 +31,27 @@ export function distanceKm(from: GeoPoint, to: GeoPoint): number {
 }
 
 /**
+ * Centroïde du groupe de points le plus concentré : chaque point compte
+ * ses voisins dans `radiusKm`, on retourne le barycentre du plus grand
+ * voisinage. Sert à cadrer la carte sur la zone la plus dense d'un
+ * département — les centres « couvrant » un département peuvent être
+ * implantés dans les départements voisins, un fit global cadrerait trop
+ * large.
+ */
+export function densestClusterCenter(points: GeoPoint[], radiusKm = 15): GeoPoint | null {
+  let best: GeoPoint[] = []
+  for (const p of points) {
+    const group = points.filter((o) => distanceKm(p, o) <= radiusKm)
+    if (group.length > best.length) best = group
+  }
+  if (!best.length) return null
+  return {
+    lat: best.reduce((s, p) => s + p.lat, 0) / best.length,
+    lng: best.reduce((s, p) => s + p.lng, 0) / best.length
+  }
+}
+
+/**
  * Formate une distance en kilomètres pour l'affichage :
  * - moins de 1 km : « 800 m »
  * - 1 km ou plus : « 12,4 km »

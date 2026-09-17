@@ -46,9 +46,9 @@
       v-if="mode === 'single' && hasVisibleCenters"
       class="flex items-center justify-between gap-md border-t border-rule bg-paper px-md py-sm text-small"
     >
-      <span class="text-ink-body">{{ centers[0].address }}</span>
+      <span class="text-ink-body">{{ centers[0]?.address }}</span>
       <a
-        v-if="centers[0].lat != null && centers[0].lng != null"
+        v-if="centers[0]?.lat != null && centers[0]?.lng != null"
         :href="directionsUrl"
         target="_blank"
         rel="noopener"
@@ -80,8 +80,10 @@ const props = withDefaults(
     minZoom?: number
     popup?: boolean
     userPosition?: { lat: number; lng: number } | null
+    /** Vue forcée (ville/zoom) — prioritaire sur le fit des marqueurs. */
+    focusCenter?: { lat: number; lng: number } | null
   }>(),
-  { mode: 'network', minZoom: 5, popup: true, userPosition: null }
+  { mode: 'network', minZoom: 5, popup: true, userPosition: null, focusCenter: null }
 )
 
 const emit = defineEmits<{
@@ -197,7 +199,10 @@ async function ensureLeaflet(): Promise<typeof import('leaflet')> {
 
 function locationLabel(center: CenterResult): string {
   const parts = center.address.split('·')
-  return parts.length > 1 ? parts[1].trim() : (center.address.split(',').pop()?.trim() ?? '')
+  const second = parts[1]
+  return parts.length > 1 && second
+    ? second.trim()
+    : (center.address.split(',').pop()?.trim() ?? '')
 }
 
 function closePopup() {
@@ -275,6 +280,11 @@ function buildMarkers(L: typeof import('leaflet')) {
 }
 
 function fitToMarkers(L: typeof import('leaflet')) {
+  if (props.focusCenter) {
+    // Zoom communal-départemental : la ville et sa proche couronne.
+    mapInstance.value?.setView([props.focusCenter.lat, props.focusCenter.lng], 10)
+    return
+  }
   const coords = props.centers
     .filter((c) => c.lat != null && c.lng != null)
     .map((c) => [c.lat, c.lng] as [number, number])
@@ -287,9 +297,10 @@ function fitToMarkers(L: typeof import('leaflet')) {
     coords.push([props.userPosition.lat, props.userPosition.lng])
   }
 
-  if (!coords.length || !mapInstance.value) return
+  const first = coords[0]
+  if (!first || !mapInstance.value) return
   if (coords.length === 1) {
-    mapInstance.value.setView(coords[0], props.mode === 'single' ? 15 : 13)
+    mapInstance.value.setView(first, props.mode === 'single' ? 15 : 13)
   } else {
     mapInstance.value.fitBounds(L.latLngBounds(coords), { padding: [40, 40] })
   }
@@ -423,6 +434,15 @@ watch(
   }
 )
 
+watch(
+  () => props.focusCenter,
+  async () => {
+    if (!mapInstance.value) return
+    const L = await ensureLeaflet()
+    fitToMarkers(L)
+  }
+)
+
 onBeforeUnmount(() => {
   closePopup()
   mapInstance.value?.remove()
@@ -454,11 +474,12 @@ onBeforeUnmount(() => {
   margin: 0;
 }
 /* Leaflet force `color` sur les liens (.leaflet-container a) et sur le
-   contenu de popup (#333) : on restaure la couleur du bouton (text-paper). */
+   contenu de popup (#333) : on restaure la couleur du bouton
+   (text-primary-foreground). */
 .leaflet-container .center-map-popup a {
   color: inherit;
 }
-.leaflet-container .center-map-popup a.text-paper {
-  color: var(--color-paper);
+.leaflet-container .center-map-popup a.text-primary-foreground {
+  color: var(--color-primary-foreground);
 }
 </style>

@@ -118,7 +118,7 @@
                 <Accordion type="multiple" class="pb-sm">
                   <div>
                     <NuxtLink
-                      to="/centres"
+                      :to="{ path: '/centres', query: { geo: '1' } }"
                       class="flex items-center gap-2 px-3 py-2 text-body text-primary transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >

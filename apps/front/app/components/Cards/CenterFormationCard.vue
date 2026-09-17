@@ -23,7 +23,8 @@
           aria-hidden="true"
         />
         <span v-else aria-hidden="true">▲</span>
-        {{ status.label }}
+        <span class="hidden md:inline">{{ status.label }}</span>
+        <span class="md:hidden">{{ status.labelShort ?? status.label }}</span>
       </Badge>
       <Button
         v-if="to && variant === 'button'"
@@ -59,7 +60,7 @@ const props = withDefaults(
     title: string
     description?: string
     meta: string
-    status?: { type: 'success' | 'warning' | 'neutral'; label: string }
+    status?: { type: 'success' | 'warning' | 'neutral'; label: string; labelShort?: string }
     to?: string
     eyebrow?: string
     /** `similar` : carte « formations similaires » — surtitre = famille. */

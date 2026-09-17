@@ -46,7 +46,9 @@ const directusCentres = ref([
     city: 'Créteil',
     department: '94',
     region: 'Île-de-France',
-    specialties: ['CACES', 'SST']
+    specialties: ['CACES', 'SST'],
+    latitude: 48.7909,
+    longitude: 2.4534
   },
   {
     slug: 'lyon',
@@ -54,7 +56,9 @@ const directusCentres = ref([
     city: 'Lyon',
     department: '69',
     region: 'Auvergne-Rhône-Alpes',
-    specialties: ['Hauteur']
+    specialties: ['Hauteur'],
+    latitude: 45.764,
+    longitude: 4.8357
   },
   {
     slug: 'lille',
@@ -62,7 +66,9 @@ const directusCentres = ref([
     city: 'Lille',
     department: '59',
     region: 'Hauts-de-France',
-    specialties: ['Incendie']
+    specialties: ['Incendie'],
+    latitude: 50.6292,
+    longitude: 3.0573
   }
 ])
 
@@ -122,8 +128,9 @@ const stubs = {
     template: '<div class="formation-card">{{ title }}<a class="formation-cta" :href="to" /></div>'
   },
   CenterCard: {
-    props: ['name', 'to'],
-    template: '<div class="center-card">{{ name }}<a class="centre-cta" :href="to" /></div>'
+    props: ['name', 'to', 'distance'],
+    template:
+      '<div class="center-card">{{ name }} <span class="centre-distance">{{ distance }}</span><a class="centre-cta" :href="to" /></div>'
   },
   ConfierCard: { props: ['title'], template: '<div class="confier-card">{{ title }}</div>' },
   StatItem: {
@@ -185,6 +192,26 @@ describe('pages/index', () => {
     expect(hrefs).toContain('/centres/demande-de-formation?sujet=formateur')
     expect(hrefs).toContain('/formations')
     expect(hrefs).toContain('/centres')
+  })
+
+  it('demande la géolocalisation au montage et affiche les distances réelles', async () => {
+    const getCurrentPosition = vi.fn(
+      (success: (pos: { coords: { latitude: number; longitude: number } }) => void) => {
+        success({ coords: { latitude: 48.7909, longitude: 2.4534 } })
+      }
+    )
+    const originalNavigator = globalThis.navigator
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
+
+    try {
+      const wrapper = await mountPage()
+
+      expect(getCurrentPosition).toHaveBeenCalled()
+      // Position = Créteil : la carte affiche la distance réelle, pas ville·dept.
+      expect(wrapper.findAll('.centre-distance')[0]!.text()).toMatch(/à .*(km|m)/)
+    } finally {
+      vi.stubGlobal('navigator', originalNavigator)
+    }
   })
 
   it('envoie la recherche carte en query q vers /centres', async () => {

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent, h, Suspense, ref } from 'vue'
-import OrganismePage from '~/pages/organisme.vue'
+import OrganismePage from '~/pages/referencer-mon-organisme.vue'
 
 beforeEach(() => {
   vi.stubGlobal('useContentSeo', vi.fn())
@@ -47,7 +47,7 @@ async function mountOrganisme() {
   return wrapper
 }
 
-describe('pages/organisme.vue', () => {
+describe('pages/referencer-mon-organisme.vue', () => {
   it('affiche le titre h1 attendu', async () => {
     const wrapper = await mountOrganisme()
     const h1 = wrapper.find('h1')

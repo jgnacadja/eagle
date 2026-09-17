@@ -1,10 +1,11 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, nextTick, reactive, ref, Suspense, toValue } from 'vue'
 import type { CentresQuery } from '~/composables/useCentres'
 import CentresPage from '~/pages/centres/index.vue'
 
 const seoMock = vi.fn()
+const navigateToMock = vi.fn()
 
 const directusCentres = [
   {
@@ -96,6 +97,7 @@ const routeStub = reactive({ query: {} as Record<string, string> })
 vi.stubGlobal('definePageMeta', vi.fn())
 vi.stubGlobal('useContentSeo', seoMock)
 vi.stubGlobal('useRoute', () => routeStub)
+vi.stubGlobal('navigateTo', navigateToMock)
 vi.stubGlobal('useCentres', (query: Parameters<typeof toValue>[0]) => ({
   data: computed(() => filterFixture(toValue(query) as CentresQuery)),
   pending: ref(false),
@@ -151,9 +153,10 @@ const stubs = {
   },
   Button: { template: '<button><slot /></button>' },
   CenterMap: {
-    props: ['centers', 'activeId', 'caption', 'minZoom', 'mode', 'popup'],
+    props: ['centers', 'activeId', 'caption', 'minZoom', 'mode', 'popup', 'focusCenter'],
     emits: ['select'],
-    template: '<div class="center-map" :data-active-id="activeId" :data-popup="String(popup)" />'
+    template:
+      '<div class="center-map" :data-active-id="activeId" :data-popup="String(popup)" :data-focus="focusCenter ? `${focusCenter.lat},${focusCenter.lng}` : \'\'" />'
   },
   CenterResultCard: {
     props: ['center', 'active'],
@@ -163,6 +166,8 @@ const stubs = {
   }
 }
 
+const mountedWrappers: ReturnType<typeof mount>[] = []
+
 async function mountPage() {
   const Host = defineComponent({
     render() {
@@ -170,6 +175,7 @@ async function mountPage() {
     }
   })
   const wrapper = mount(Host, { global: { stubs } })
+  mountedWrappers.push(wrapper)
   await flushPromises()
   return wrapper
 }
@@ -179,6 +185,12 @@ describe('pages/centres/index', () => {
     vi.clearAllMocks()
     centresFixture.value = directusCentres
     routeStub.query = {}
+  })
+
+  // Les pages des tests précédents resteraient montées : leurs watchers sur
+  // la route partagée (routeStub) redéclencheraient la géolocalisation.
+  afterEach(() => {
+    while (mountedWrappers.length) mountedWrappers.pop()!.unmount()
   })
 
   it('affiche les centres issus de Directus', async () => {
@@ -425,6 +437,20 @@ describe('pages/centres/index', () => {
     expect(pinnedCard.attributes('style')).toBeUndefined()
   })
 
+  it('centre la carte sur Paris par défaut et sur le groupe dense d’un département', async () => {
+    const wrapper = await mountPage()
+
+    let maps = wrapper.findAll('.center-map')
+    // Sans filtre : focus Paris (48.8566, 2.3522).
+    expect(maps[0]!.attributes('data-focus')).toBe('48.8566,2.3522')
+
+    await wrapper.find('.dept-select').setValue('Val-de-Marne')
+    // Département choisi : centroïde du groupe Créteil+Vitry ≈ 48.79, 2.42.
+    maps = wrapper.findAll('.center-map')
+    const expected = `${(48.7909 + 48.7938) / 2},${(2.4534 + 2.3899) / 2}`
+    expect(maps[0]!.attributes('data-focus')).toBe(expected)
+  })
+
   it('affiche l’état vide quand aucun centre ne correspond', async () => {
     const wrapper = await mountPage()
 
@@ -453,6 +479,22 @@ describe('pages/centres/index', () => {
       .find((b) => b.text().includes('Choisir un autre département'))
     await reset!.trigger('click')
     expect(wrapper.findAll('.center-card')).toHaveLength(3)
+  })
+
+  it('navigue vers la fiche au clic sur une carte en mode liste mobile', async () => {
+    const originalMatchMedia = window.matchMedia
+    window.matchMedia = (() => ({ matches: false }) as MediaQueryList) as typeof window.matchMedia
+
+    try {
+      const wrapper = await mountPage()
+      await wrapper.findAll('.center-card')[1]!.trigger('click')
+
+      expect(navigateToMock).toHaveBeenCalledWith('/centres/vitry')
+      // Pas de sélection : la popup sticky est réservée au mode carte.
+      expect(wrapper.find('.center-card.sticky').exists()).toBe(false)
+    } finally {
+      window.matchMedia = originalMatchMedia
+    }
   })
 
   it('un clic sur une carte active/désactive le centre', async () => {
@@ -556,6 +598,45 @@ describe('pages/centres/index', () => {
       expect(cards[2]).toContain('Gamma')
     } finally {
       vi.stubGlobal('navigator', originalNavigator)
+    }
+  })
+
+  it('ne demande pas la géolocalisation sur mobile sauf via ?geo=1', async () => {
+    const getCurrentPosition = vi.fn()
+    const originalNavigator = globalThis.navigator
+    const originalMatchMedia = window.matchMedia
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
+    window.matchMedia = (() => ({ matches: false }) as MediaQueryList) as typeof window.matchMedia
+
+    try {
+      await mountPage()
+      expect(getCurrentPosition).not.toHaveBeenCalled()
+
+      // « Autour de moi » (menu mobile) navigue vers /centres?geo=1 — le
+      // changement de query déclenche la demande sans remonter la page.
+      routeStub.query = { geo: '1' }
+      await nextTick()
+      expect(getCurrentPosition).toHaveBeenCalledOnce()
+    } finally {
+      vi.stubGlobal('navigator', originalNavigator)
+      window.matchMedia = originalMatchMedia
+    }
+  })
+
+  it('demande la géolocalisation au montage sur mobile via ?geo=1', async () => {
+    const getCurrentPosition = vi.fn()
+    const originalNavigator = globalThis.navigator
+    const originalMatchMedia = window.matchMedia
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
+    window.matchMedia = (() => ({ matches: false }) as MediaQueryList) as typeof window.matchMedia
+    routeStub.query = { geo: '1' }
+
+    try {
+      await mountPage()
+      expect(getCurrentPosition).toHaveBeenCalledOnce()
+    } finally {
+      vi.stubGlobal('navigator', originalNavigator)
+      window.matchMedia = originalMatchMedia
     }
   })
 })

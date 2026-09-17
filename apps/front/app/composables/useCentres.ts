@@ -10,6 +10,8 @@ export interface CentresQuery {
 export interface AvailabilityStatus {
   type: 'success' | 'warning' | 'neutral'
   label: string
+  /** Version courte affichée sur mobile — `label` sert de repli. */
+  labelShort?: string
 }
 
 const availabilityDateFmt = new Intl.DateTimeFormat('fr-FR', {
@@ -51,7 +53,8 @@ export function availabilityStatus(dates: string[]): AvailabilityStatus {
   }
   return {
     type: 'warning',
-    label: `Prochaine session le ${availabilityDateFmt.format(upcoming[0]!)}`
+    label: `Prochaine session le ${availabilityDateFmt.format(upcoming[0]!)}`,
+    labelShort: `Session le ${availabilityDateFmt.format(upcoming[0]!)}`
   }
 }
 

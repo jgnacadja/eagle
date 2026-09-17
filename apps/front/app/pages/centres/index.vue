@@ -101,6 +101,7 @@
             :min-zoom="8"
             :popup="false"
             :user-position="userPosition"
+            :focus-center="mapFocus"
             @select="selectCenter"
           />
         </div>
@@ -135,7 +136,7 @@
             v-reveal="revealStagger(i % 3)"
             :center="center"
             :active="activeCenterId === center.id"
-            @select="selectCenter(center.id)"
+            @select="onListCardSelect(center.id)"
           />
           <div
             v-if="isLoadingMore"
@@ -217,6 +218,7 @@
             :caption="selectedDeptLabel"
             :min-zoom="8"
             :user-position="userPosition"
+            :focus-center="mapFocus"
             @select="selectCenter"
           />
         </div>
@@ -227,8 +229,8 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useGeolocation } from '~/composables/useGeolocation'
-import { distanceKm } from '~/utils/geo'
+import { DESKTOP_QUERY, useAutoGeolocation } from '~/composables/useGeolocation'
+import { densestClusterCenter, distanceKm } from '~/utils/geo'
 import type { CentresQuery } from '~/composables/useCentres'
 import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
@@ -270,7 +272,11 @@ const isMobileMapOpen = ref(false)
 // Destructuration : `position` devient un binding top-level, donc auto-déplié
 // dans le template (un Ref imbriqué dans un objet ne l'est pas — CenterMap
 // recevrait le Ref lui-même et non { lat, lng }).
-const { position: userPosition, request: requestGeolocation } = useGeolocation()
+// « Autour de moi » (menu mobile) pointe vers /centres?geo=1 : la demande
+// part du geste utilisateur. Sur desktop elle est automatique au montage.
+const { position: userPosition, request: requestGeolocation } = useAutoGeolocation(
+  () => route.query.geo === '1'
+)
 
 const centresFilters = computed<CentresQuery>(() => ({
   department: selectedDept.value === 'all' ? undefined : selectedDept.value,
@@ -300,9 +306,14 @@ const { data: departments } = departmentsResult
 const centresCount = computed(() => centresTotal.value ?? 0)
 const departmentsCount = computed(() => departments.value?.length ?? 0)
 
-onMounted(() => {
-  requestGeolocation()
-})
+// La page déjà affichée ne remonte pas : seul le changement de query
+// redéclenche la demande (mobile : « Autour de moi » depuis le menu).
+watch(
+  () => route.query.geo,
+  (value) => {
+    if (value === '1') requestGeolocation()
+  }
+)
 
 const LIST_CHUNK_SIZE = 12
 const visibleCount = ref(LIST_CHUNK_SIZE)
@@ -354,6 +365,24 @@ const filteredCenters = computed<CenterResult[]>(() => {
 const selectedDeptLabel = computed(() =>
   selectedDept.value === 'all' ? 'Tous les départements' : selectedDept.value
 )
+
+// Vue de la carte : sans département ni recherche → Paris (cœur du réseau),
+// ou la position de l'utilisateur s'il est géolocalisé ; département choisi
+// → centroïde du groupe le plus dense de ses centres (les centres
+// « couvrant » un département peuvent être implantés chez les voisins, un
+// fit global cadrerait trop large) ; recherche seule → `fitBounds` cadre
+// les résultats.
+const PARIS_CENTER = { lat: 48.8566, lng: 2.3522 }
+const mapFocus = computed(() => {
+  if (selectedDept.value !== 'all') {
+    const points = filteredCenters.value.flatMap((c) =>
+      c.lat != null && c.lng != null ? [{ lat: c.lat, lng: c.lng }] : []
+    )
+    return densestClusterCenter(points)
+  }
+  if (!appliedSearch.value.trim()) return userPosition.value ?? PARIS_CENTER
+  return null
+})
 
 // « Département sans centre » (RG01) : le périmètre reste strict — l'état
 // vide territorial ne s'affiche que pour un filtre département seul ; une
@@ -449,6 +478,20 @@ onBeforeUnmount(() => {
   loadMoreObserver = null
   window.removeEventListener('resize', onResize)
 })
+
+// Mobile (liste plein écran) : le clic sur une carte ouvre la fiche,
+// comme « Voir le centre » — la sélection/popup sticky n'existe qu'en
+// mode carte (mobile) et sur desktop où liste et carte sont visibles.
+function onListCardSelect(id: string) {
+  // Même garde que useAutoGeolocation : matchMedia absent → desktop.
+  const isDesktop =
+    typeof window.matchMedia !== 'function' || window.matchMedia(DESKTOP_QUERY).matches
+  if (!isDesktop) {
+    void navigateTo(`/centres/${id}`)
+    return
+  }
+  selectCenter(id)
+}
 
 function selectCenter(id: string) {
   if (!id) {

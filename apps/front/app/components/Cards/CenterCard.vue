@@ -22,7 +22,8 @@
           aria-hidden="true"
         />
         <span v-else-if="status.type === 'warning'" aria-hidden="true">▲</span>
-        {{ status.label }}
+        <span class="hidden md:inline">{{ status.label }}</span>
+        <span class="md:hidden">{{ status.labelShort ?? status.label }}</span>
       </Badge>
       <Badge v-for="tag in tags" :key="tag" :variant="tagVariant(tag)">
         <span
@@ -50,7 +51,7 @@ withDefaults(
     distance: string
     formations: string
     tags?: string[]
-    status?: { type: 'success' | 'warning' | 'neutral'; label: string }
+    status?: { type: 'success' | 'warning' | 'neutral'; label: string; labelShort?: string }
     to?: string | null
     titleTo?: string | null
   }>(),

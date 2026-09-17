@@ -33,7 +33,7 @@ export interface FormationItem {
   days: number
   duration: 'courte' | 'moyenne' | 'longue'
   certifications: string[]
-  status?: { type: 'success' | 'warning' | 'neutral'; label: string }
+  status?: { type: 'success' | 'warning' | 'neutral'; label: string; labelShort?: string }
   image: string | null
   to: string | null
 }
@@ -119,7 +119,7 @@ export function buildSessionBadge(course: CourseListItem): string | null {
 // quand aucune session n'est publiée (formation organisable).
 export function buildStatus(
   course: CourseListItem
-): { type: 'success' | 'warning' | 'neutral'; label: string } | undefined {
+): { type: 'success' | 'warning' | 'neutral'; label: string; labelShort?: string } | undefined {
   const upcoming = upcomingSessions(course).sort((a, b) =>
     (a.startDate ?? '').localeCompare(b.startDate ?? '')
   )[0]
@@ -127,7 +127,7 @@ export function buildStatus(
 
   const seats = upcoming.seatsRemaining
   if (seats != null && seats <= 3) {
-    return { type: 'warning', label: placesLabel(seats) }
+    return { type: 'warning', label: placesLabel(seats), labelShort: placesLabel(seats, false) }
   }
 
   const date = new Date(`${upcoming.startDate}T00:00:00Z`)
@@ -141,7 +141,11 @@ export function buildStatus(
     month: '2-digit',
     timeZone: 'UTC'
   }).format(date)
-  return { type: 'success', label: `Prochaine session le ${short}` }
+  return {
+    type: 'success',
+    label: `Prochaine session le ${short}`,
+    labelShort: `Session le ${short}`
+  }
 }
 
 export function mapCourse(course: CourseListItem, familyName?: string): FormationItem {

@@ -23,18 +23,21 @@ export const buttonVariants = cva(
         link: 'text-primary transition-colors hover:text-accent-text'
       },
       size: {
-        default: 'h-10 px-4 py-2',
-        sm: 'h-9 rounded-md px-3',
-        lg: 'h-11 rounded-md px-8',
+        default: 'h-10 px-4 py-2 max-md:h-control-sm',
+        sm: 'h-9 rounded-md px-3 max-md:h-control-sm max-md:px-4',
+        lg: 'h-11 rounded-md px-8 max-md:h-control-sm max-md:px-4',
         icon: 'h-10 w-10',
         'icon-sm': 'h-control-sm w-control-sm rounded-full p-0',
         'icon-box': 'h-control-sm w-control-sm rounded-sm p-0',
         inline: 'h-auto p-0',
-        control: 'h-control rounded-md px-md py-sm text-button font-semibold',
-        pill: 'h-control rounded-full px-md py-sm text-button font-semibold',
-        'pill-sm': 'h-control rounded-full px-md text-small font-semibold',
-        'pill-lg': 'h-control rounded-full px-xl text-button font-bold',
-        chip: 'h-auto rounded-full px-md py-xs text-small font-normal'
+        control:
+          'h-control rounded-md px-md py-sm text-button font-semibold max-md:h-control-sm max-md:px-4',
+        pill: 'h-control rounded-full px-md py-sm text-button font-semibold max-md:h-control-sm max-md:px-4',
+        'pill-sm':
+          'h-control rounded-full px-md text-small font-semibold max-md:h-control-sm max-md:px-4',
+        'pill-lg':
+          'h-control rounded-full px-xl text-button font-bold max-md:h-control-sm max-md:px-4',
+        chip: 'h-auto rounded-full px-md py-xs text-small font-normal max-md:h-control-sm max-md:px-4'
       }
     },
     defaultVariants: {

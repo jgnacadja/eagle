@@ -163,6 +163,30 @@ describe('useCatalog helpers', () => {
       ]
     })
     expect(futureStatus?.label).toContain('Prochaine session le')
+    expect(futureStatus?.labelShort).toContain('Session le')
+  })
+
+  it('buildStatus expose un label court « N places » pour mobile', () => {
+    const future = new Date()
+    future.setUTCDate(future.getUTCDate() + 30)
+    const status = buildStatus({
+      ...course,
+      sessions: [
+        {
+          id: 's1',
+          startDate: future.toISOString().slice(0, 10),
+          endDate: null,
+          modality: null,
+          seatsRemaining: 2,
+          location: null
+        }
+      ]
+    })
+    expect(status).toEqual({
+      type: 'warning',
+      label: '2 places disponibles',
+      labelShort: '2 places'
+    })
   })
 
   it('buildSessionBadge returns null when all sessions are past', () => {

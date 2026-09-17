@@ -118,7 +118,7 @@ const joinOptions = [
     title: 'Référencer mon organisme',
     body: 'Votre organisme de formation conserve son identité juridique et reçoit des demandes du réseau sur son territoire et ses domaines.',
     cta: 'Référencer mon organisme',
-    to: '/organisme'
+    to: '/referencer-mon-organisme'
   },
   {
     icon: IconAward,

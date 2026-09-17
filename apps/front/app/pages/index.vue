@@ -201,6 +201,7 @@
             :centers="homeMapCenters"
             :active-id="null"
             :caption="''"
+            :user-position="userPosition"
           />
           <div
             v-else
@@ -413,6 +414,8 @@ import { computed, ref } from 'vue'
 import type { Article, Centre } from '@learnup/types'
 import { mapCourse, useCatalog } from '~/composables/useCatalog'
 import { availabilityStatus, useCentreSessionDates } from '~/composables/useCentres'
+import { useAutoGeolocation } from '~/composables/useGeolocation'
+import { distanceKm, formatDistance } from '~/utils/geo'
 import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
 import { articleAssetUrl, formatArticleDate } from '~/utils/article'
@@ -542,7 +545,21 @@ const derniersCentresData = await useDirectusList<Centre>('centres', 'home-centr
   sort: ['-id'],
   limit: -1
 })
-const derniersCentres = computed(() => (derniersCentresData.value ?? []).slice(0, 2))
+const { position: userPosition } = useAutoGeolocation()
+
+// Centres « à proximité » : triés par distance quand la position est connue,
+// sinon les deux plus récents (ordre Directus).
+const derniersCentres = computed(() => {
+  const list = [...(derniersCentresData.value ?? [])]
+  const pos = userPosition.value
+  if (!pos) return list.slice(0, 2)
+  return list.sort((a, b) => distanceToUser(a, pos) - distanceToUser(b, pos)).slice(0, 2)
+})
+
+function distanceToUser(centre: Centre, pos: { lat: number; lng: number }): number {
+  if (centre.latitude == null || centre.longitude == null) return Infinity
+  return distanceKm(pos, { lat: centre.latitude, lng: centre.longitude })
+}
 
 const homeMapCenters = computed<CenterResult[]>(() =>
   (derniersCentresData.value ?? []).map((centre) => {
@@ -564,6 +581,10 @@ const homeMapCenters = computed<CenterResult[]>(() =>
 )
 
 function centreDistance(centre: Centre): string {
+  const pos = userPosition.value
+  if (pos && centre.latitude != null && centre.longitude != null) {
+    return `à ${formatDistance(distanceKm(pos, { lat: centre.latitude, lng: centre.longitude }))}`
+  }
   return [centre.city, centre.department].filter(Boolean).join(' · ')
 }
 

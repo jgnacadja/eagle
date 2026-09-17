@@ -98,6 +98,7 @@ interface CenterMapProps {
   mode?: 'network' | 'single'
   minZoom?: number
   userPosition?: { lat: number; lng: number } | null
+  focusCenter?: { lat: number; lng: number } | null
 }
 
 function mountWithStubs(props: CenterMapProps) {
@@ -241,12 +242,31 @@ describe('CenterMap', () => {
     })
     await flushPromises()
 
-    const map = vi.mocked(Leaflet.map).mock.results[0]?.value as ReturnType<typeof vi.fn>
+    const map = vi.mocked(Leaflet.map).mock.results[0]?.value as unknown as {
+      fitBounds: ReturnType<typeof vi.fn>
+    }
     expect(Leaflet.marker).toHaveBeenCalledWith(
       [48.8566, 2.3522],
       expect.objectContaining({ zIndexOffset: 1000 })
     )
     expect(map?.fitBounds).toHaveBeenCalled()
+  })
+
+  it('centers on focusCenter instead of fitting markers', async () => {
+    mountWithStubs({
+      centers,
+      activeId: null,
+      caption: 'Tous les départements',
+      focusCenter: { lat: 48.8566, lng: 2.3522 }
+    })
+    await flushPromises()
+
+    const map = vi.mocked(Leaflet.map).mock.results[0]?.value as unknown as {
+      setView: ReturnType<typeof vi.fn>
+      fitBounds: ReturnType<typeof vi.fn>
+    }
+    expect(map.setView).toHaveBeenCalledWith([48.8566, 2.3522], 10)
+    expect(map.fitBounds).not.toHaveBeenCalled()
   })
 
   it('skips the user marker when userPosition is null', async () => {

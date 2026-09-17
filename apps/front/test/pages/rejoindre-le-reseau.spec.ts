@@ -28,7 +28,7 @@ describe('Rejoindre le réseau page', () => {
 
     const hrefs = wrapper.findAll('a').map((link) => link.attributes('href'))
     expect(hrefs).toContain('/centres/demande-de-formation?sujet=franchise')
-    expect(hrefs).toContain('/organisme')
+    expect(hrefs).toContain('/referencer-mon-organisme')
     expect(hrefs).toContain('/centres/demande-de-formation?sujet=formateur')
   })
 })

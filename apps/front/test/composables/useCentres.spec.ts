@@ -98,6 +98,7 @@ describe('availabilityStatus', () => {
     const status = availabilityStatus([addDays(45)])
     expect(status.type).toBe('warning')
     expect(status.label).toMatch(/^Prochaine session le \d{2}\/\d{2}$/)
+    expect(status.labelShort).toMatch(/^Session le \d{2}\/\d{2}$/)
   })
 })
 

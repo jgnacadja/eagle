@@ -1,7 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
-import { nextTick } from 'vue'
-import { useGeolocation } from '~/composables/useGeolocation'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { defineComponent, h, nextTick } from 'vue'
+import {
+  useAutoGeolocation,
+  useGeolocation,
+  type UseGeolocationReturn
+} from '~/composables/useGeolocation'
 
 interface MockPosition {
   coords: {
@@ -111,5 +115,95 @@ describe('useGeolocation', () => {
     await nextTick()
 
     expect(status.value).toBe('error')
+  })
+
+  it('relance la demande quand la permission passe à granted après un échec', async () => {
+    let calls = 0
+    const getCurrentPosition = vi.fn(
+      (success: (position: MockPosition) => void, onError?: (error: MockPositionError) => void) => {
+        calls += 1
+        if (calls === 1)
+          onError?.(makeError(3)) // TIMEOUT pendant la popup
+        else success(makePosition(48.8566, 2.3522))
+      }
+    )
+    const changeHandlers: (() => void)[] = []
+    const perm = {
+      state: 'prompt',
+      addEventListener: (_: string, fn: () => void) => changeHandlers.push(fn),
+      removeEventListener: vi.fn()
+    }
+    vi.stubGlobal('navigator', {
+      geolocation: { getCurrentPosition },
+      permissions: { query: vi.fn(async () => perm) }
+    })
+
+    const { status, position, request } = useGeolocation()
+    await flushPromises() // laisse permissions.query se résoudre
+    request()
+    expect(status.value).toBe('error')
+
+    // L'utilisateur finit par accepter la popup : la demande repart sans refresh.
+    perm.state = 'granted'
+    for (const fn of changeHandlers) fn()
+
+    expect(getCurrentPosition).toHaveBeenCalledTimes(2)
+    expect(position.value).toEqual({ lat: 48.8566, lng: 2.3522 })
+    expect(status.value).toBe('granted')
+  })
+})
+
+describe('useAutoGeolocation', () => {
+  const originalMatchMedia = window.matchMedia
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia
+    vi.unstubAllGlobals()
+  })
+
+  function stubMobileViewport() {
+    window.matchMedia = (() => ({ matches: false }) as MediaQueryList) as typeof window.matchMedia
+  }
+
+  function mountAutoGeolocation(force?: () => boolean) {
+    const holder: { api?: UseGeolocationReturn } = {}
+    mount(
+      defineComponent({
+        setup() {
+          holder.api = useAutoGeolocation(force)
+          return () => h('div')
+        }
+      })
+    )
+    return holder.api!
+  }
+
+  it('demande la position au montage sur desktop', () => {
+    const getCurrentPosition = vi.fn()
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
+
+    mountAutoGeolocation()
+
+    expect(getCurrentPosition).toHaveBeenCalledOnce()
+  })
+
+  it('ne demande pas la position sur mobile sans geste explicite', () => {
+    const getCurrentPosition = vi.fn()
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
+    stubMobileViewport()
+
+    mountAutoGeolocation()
+
+    expect(getCurrentPosition).not.toHaveBeenCalled()
+  })
+
+  it('demande la position sur mobile quand force() est vrai', () => {
+    const getCurrentPosition = vi.fn()
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
+    stubMobileViewport()
+
+    mountAutoGeolocation(() => true)
+
+    expect(getCurrentPosition).toHaveBeenCalledOnce()
   })
 })

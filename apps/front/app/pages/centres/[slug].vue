@@ -130,7 +130,13 @@
               aria-labelledby="carte-title"
             >
               <h2 id="carte-title" class="sr-only">Carte d'accès</h2>
-              <CenterMap mode="single" :centers="singleCenter" :active-id="null" caption="" />
+              <CenterMap
+                mode="single"
+                :centers="singleCenter"
+                :active-id="null"
+                caption=""
+                :user-position="userPosition"
+              />
             </section>
 
             <!-- Qualité -->
@@ -348,6 +354,7 @@ import {
   type FormationItem
 } from '~/composables/useCatalog'
 import { availabilityStatus } from '~/composables/useCentres'
+import { useAutoGeolocation } from '~/composables/useGeolocation'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
 import { directusAssetUrl } from '~/utils/directusAsset'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
@@ -409,6 +416,8 @@ const heroAddress = computed(() =>
     .filter(Boolean)
     .join(', ')
 )
+
+const { position: userPosition } = useAutoGeolocation()
 
 const singleCenter = computed<CenterResult[]>(() => {
   if (!centre.value || centre.value.latitude == null || centre.value.longitude == null) return []

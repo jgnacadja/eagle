@@ -95,6 +95,7 @@
               :centers="mapCenters"
               :active-id="null"
               :caption="''"
+              :user-position="userPosition"
             />
             <div
               v-else
@@ -129,6 +130,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Centre } from '@learnup/types'
+import { useAutoGeolocation } from '~/composables/useGeolocation'
 import type { CenterResult } from '~/types/center-result'
 
 useContentSeo(
@@ -195,6 +197,8 @@ const centresData = await useDirectusList<Centre>('centres', 'organisme-map-cent
   sort: ['-id'],
   limit: -1
 })
+
+const { position: userPosition } = useAutoGeolocation()
 
 const mapCenters = computed<CenterResult[]>(() =>
   (centresData.value ?? []).map((centre) => {

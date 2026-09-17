@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { distanceKm, formatDistance } from '~/utils/geo'
+import { densestClusterCenter, distanceKm, formatDistance } from '~/utils/geo'
 
 describe('geo', () => {
   describe('distanceKm', () => {
@@ -51,6 +51,41 @@ describe('geo', () => {
       expect(formatDistance(1)).toBe('1,0 km')
       expect(formatDistance(12.35)).toBe('12,4 km')
       expect(formatDistance(392)).toBe('392,0 km')
+    })
+  })
+
+  describe('densestClusterCenter', () => {
+    it('retourne null sans point', () => {
+      expect(densestClusterCenter([])).toBeNull()
+    })
+
+    it('retourne le point lui-même quand il est seul', () => {
+      const paris = { lat: 48.8566, lng: 2.3522 }
+      expect(densestClusterCenter([paris])).toEqual(paris)
+    })
+
+    it('retourne le centroïde du groupe le plus dense', () => {
+      // 3 centres en petite couronne + un isolé à Lyon : le centroïde doit
+      // rester dans le groupe parisien.
+      const points = [
+        { lat: 48.7909, lng: 2.4534 }, // Créteil
+        { lat: 48.7938, lng: 2.3899 }, // Vitry
+        { lat: 48.8566, lng: 2.3522 }, // Paris
+        { lat: 45.764, lng: 4.8357 } // Lyon
+      ]
+      const center = densestClusterCenter(points)!
+      expect(center.lat).toBeCloseTo(48.8138, 3)
+      expect(center.lng).toBeCloseTo(2.3985, 3)
+    })
+
+    it('isole le groupe majoritaire quand les points sont éclatés', () => {
+      const points = [
+        { lat: 45.764, lng: 4.8357 }, // Lyon
+        { lat: 43.2965, lng: 5.3698 } // Marseille
+      ]
+      // Groupes ex æquo : le premier gagne — centroïde du point seul.
+      const center = densestClusterCenter(points)!
+      expect(center).toEqual(points[0])
     })
   })
 })

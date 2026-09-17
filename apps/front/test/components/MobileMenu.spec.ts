@@ -99,7 +99,7 @@ describe('MobileMenu', () => {
 
     expect(wrapper.find('#mobile-menu').exists()).toBe(true)
     expect(wrapper.text()).toContain('Formations')
-    expect(wrapper.text()).toContain('Centres')
+    expect(wrapper.text()).toContain('Trouver un Centre')
     expect(wrapper.text()).toContain('À propos')
     expect(wrapper.text()).toContain('Actualités')
     expect(wrapper.text()).toContain('Rejoindre le réseau')

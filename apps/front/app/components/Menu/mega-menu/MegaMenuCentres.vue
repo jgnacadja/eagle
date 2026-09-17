@@ -2,7 +2,7 @@
   <div class="grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter">
     <!-- RÉGIONS -->
     <div>
-      <h3 class="text-small font-semibold text-ink-muted">Régions</h3>
+      <h3 class="text-small font-semibold text-ink-muted uppercase">Régions</h3>
       <ul class="mt-sm space-y-1">
         <li v-for="region in regions" :key="region.slug">
           <button
@@ -62,7 +62,7 @@
 
     <!-- TROUVER UN CENTRE + CTA -->
     <div>
-      <h3 class="text-small font-semibold text-ink-muted">Trouver un centre</h3>
+      <h3 class="text-small font-semibold text-ink-muted uppercase">Trouver un centre</h3>
       <form class="mt-sm flex flex-col gap-sm" @submit.prevent="onSearchSubmit">
         <Label for="mega-menu-centre-search" class="sr-only">Ville ou code postal</Label>
         <Input
@@ -74,7 +74,9 @@
       </form>
 
       <div class="mt-md rounded-lg bg-ink px-md py-md text-paper">
-        <p class="text-body font-semibold">Besoin d’une formation sur votre site ?</p>
+        <p class="whitespace-nowrap text-small font-semibold">
+          Besoin d’une formation sur votre site ?
+        </p>
         <Button as-child variant="paper" size="pill-sm" class="mt-sm w-full">
           <NuxtLink to="/formation-intra" @click="$emit('close')">
             Organiser une formation intra

@@ -113,7 +113,7 @@
 
             <!-- CENTRES -->
             <AccordionItem value="centres" variant="menu">
-              <AccordionTrigger variant="menu">Centres</AccordionTrigger>
+              <AccordionTrigger variant="menu">Trouver un Centre</AccordionTrigger>
               <AccordionContent>
                 <Accordion type="multiple" class="pb-sm">
                   <div>
@@ -151,7 +151,7 @@
                               @click="closeMenu"
                             >
                               <span>{{ centre.name }}</span>
-                              <span class="text-small text-ink-muted">
+                              <span class="hidden md:block text-small text-ink-muted">
                                 {{ centre.department ?? centre.city }}
                               </span>
                             </NuxtLink>
@@ -197,7 +197,7 @@
             <AccordionItem value="apropos" variant="menu">
               <AccordionTrigger variant="menu">À propos</AccordionTrigger>
               <AccordionContent>
-                <ul class="pb-sm px-6">
+                <ul class="pb-sm px-3">
                   <li v-for="lien in aproposLiens" :key="lien.slug">
                     <NuxtLink
                       :to="`/${lien.slug}`"

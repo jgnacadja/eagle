@@ -73,8 +73,10 @@
         />
       </form>
 
-      <div class="mt-md rounded-lg bg-ink px-2 py-md text-paper">
-        <p class="text-sm font-semibold">Besoin d’une formation sur votre site ?</p>
+      <div class="mt-md rounded-lg bg-ink px-md py-md text-paper">
+        <p class="whitespace-nowrap text-small font-semibold">
+          Besoin d’une formation sur votre site ?
+        </p>
         <Button as-child variant="paper" size="pill-sm" class="mt-sm w-full">
           <NuxtLink to="/formation-intra" @click="$emit('close')">
             Organiser une formation intra

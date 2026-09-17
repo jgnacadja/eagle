@@ -58,7 +58,7 @@
                         </span>
                       </AccordionTrigger>
                       <AccordionContent>
-                        <ul class="px-3">
+                        <ul class="px-6">
                           <li
                             v-for="sousFamille in sousFamillesFor(famille.slug)"
                             :key="sousFamille.slug"
@@ -140,7 +140,7 @@
                         </span>
                       </AccordionTrigger>
                       <AccordionContent>
-                        <ul class="px-3">
+                        <ul class="px-6">
                           <li
                             v-for="centre in centresForRegion(region.label).slice(0, 3)"
                             :key="centre.slug"
@@ -197,7 +197,7 @@
             <AccordionItem value="apropos" variant="menu">
               <AccordionTrigger variant="menu">À propos</AccordionTrigger>
               <AccordionContent>
-                <ul class="pb-sm px-3">
+                <ul class="pb-sm px-6">
                   <li v-for="lien in aproposLiens" :key="lien.slug">
                     <NuxtLink
                       :to="`/${lien.slug}`"
@@ -226,7 +226,7 @@
             <AccordionItem value="actualites" variant="menu">
               <AccordionTrigger variant="menu">Actualités</AccordionTrigger>
               <AccordionContent>
-                <ul class="pb-sm px-3">
+                <ul class="pb-sm px-6">
                   <li v-for="rubrique in actualitesRubriques" :key="rubrique.slug">
                     <NuxtLink
                       to="/actualites"

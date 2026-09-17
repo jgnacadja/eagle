@@ -46,6 +46,7 @@ Lire d'abord `AGENTS.md` à la racine.
 - ioredis, service générique `get`/`set`/`del`.
 - Clés versionnées : `catalog:v{n}:...`. Incrémenter `n` en fin de sync réussie.
 - TTL 1 h par défaut, configurable.
+- **Jamais cacher un résultat vide** (catalogue sans formations) : si Directus est vide ou indisponible au démarrage, un catalogue vide ne doit pas être gelé pendant le TTL.
 
 ## Sync Digiforma
 

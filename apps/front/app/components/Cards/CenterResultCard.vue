@@ -15,6 +15,14 @@
       }}</span>
     </div>
     <p class="mt-xs text-small text-ink-muted">{{ center.address }}</p>
+    <p
+      v-if="center.distanceKm != null"
+      data-testid="center-distance"
+      class="mt-xs flex items-center gap-xs text-small text-ink-subtle"
+    >
+      <IconMapPin :size="14" />
+      {{ formatDistance(center.distanceKm) }}
+    </p>
     <p v-if="center.tags" class="mt-sm hidden text-small font-medium text-ink-body md:block">
       {{ center.tags }}
     </p>
@@ -55,6 +63,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Button } from '@/components/ui/button'
+import IconMapPin from '@/components/icons/IconMapPin.vue'
+import { formatDistance } from '~/utils/geo'
 import type { CenterResult } from '~/types/center-result'
 
 const props = defineProps<{

@@ -353,6 +353,109 @@ describe('CatalogService', () => {
     expect(result).toEqual([])
   })
 
+  it('does not cache an empty catalog', async () => {
+    cache.get.mockResolvedValue(null)
+    catalog.fetchAllFormations.mockResolvedValue([])
+
+    const families = await service.families()
+    const list = await service.list({ page: 1, limit: 20 } as ListCoursesDto)
+
+    expect(families).toEqual([])
+    expect(list.items).toEqual([])
+    // Jamais de résultat vide en cache — ni catalogue ni référentiel centres.
+    const cachedKeys = cache.set.mock.calls.map((call) => call[0])
+    expect(cachedKeys).not.toContain('courses:families')
+    expect(cachedKeys).not.toContain('courses:rows')
+    expect(cachedKeys).not.toContain('formations:all')
+    expect(cachedKeys).not.toContain('centres:all')
+    expect(cachedKeys.some((key) => String(key).startsWith('courses:list:'))).toBe(false)
+  })
+
+  // Entrées vides écrites par une version antérieure sans garde anti-vide :
+  // elles ne doivent jamais être resservies — on retombe sur la source.
+  describe('stale empty cache entries', () => {
+    it('refetches formations when formations:all is an empty array', async () => {
+      cache.get.mockImplementation((key: string) =>
+        Promise.resolve(key === 'formations:all' ? [] : null)
+      )
+
+      const result = await service.findBySlug('pilotage-de-projet')
+
+      expect(catalog.fetchAllFormations).toHaveBeenCalled()
+      expect(result?.slug).toBe('pilotage-de-projet')
+    })
+
+    it('refetches rows when courses:rows is an empty array', async () => {
+      cache.get.mockImplementation((key: string) =>
+        Promise.resolve(key === 'courses:rows' ? [] : null)
+      )
+
+      const result = await service.list({ page: 1, limit: 20 } as ListCoursesDto)
+
+      expect(catalog.fetchAllFormations).toHaveBeenCalled()
+      expect(result.items).toHaveLength(2)
+    })
+
+    it('refetches centres when centres:all is an empty array', async () => {
+      cache.get.mockImplementation((key: string) =>
+        Promise.resolve(key === 'centres:all' ? [] : null)
+      )
+
+      await service.list({ page: 1, limit: 20 } as ListCoursesDto)
+
+      expect(catalog.fetchAllCentres).toHaveBeenCalled()
+    })
+
+    it('recomputes when a cached list page is empty', async () => {
+      cache.get.mockImplementation((key: string) =>
+        Promise.resolve(
+          String(key).startsWith('courses:list:')
+            ? { items: [], total: 0, page: 1, pageSize: 20 }
+            : null
+        )
+      )
+
+      const result = await service.list({ page: 1, limit: 20 } as ListCoursesDto)
+
+      expect(result.items).toHaveLength(2)
+    })
+
+    it('recomputes families when the cached list is empty', async () => {
+      cache.get.mockImplementation((key: string) =>
+        Promise.resolve(key === 'courses:families' ? [] : null)
+      )
+
+      const result = await service.families()
+
+      expect(result).toHaveLength(2)
+      expect(catalog.fetchAllFormations).toHaveBeenCalled()
+    })
+
+    it('does not cache an empty centres list', async () => {
+      cache.get.mockResolvedValue(null)
+      catalog.fetchAllCentres.mockResolvedValue([])
+
+      await service.list({ page: 1, limit: 20 } as ListCoursesDto)
+
+      const cachedKeys = cache.set.mock.calls.map((call) => call[0])
+      expect(cachedKeys).not.toContain('centres:all')
+    })
+
+    it('does not cache an empty result page on a healthy dataset', async () => {
+      cache.get.mockResolvedValue(null)
+
+      const result = await service.list({
+        search: 'zzzz-introuvable',
+        page: 1,
+        limit: 20
+      } as ListCoursesDto)
+
+      expect(result.items).toHaveLength(0)
+      const cachedKeys = cache.set.mock.calls.map((call) => call[0])
+      expect(cachedKeys.some((key) => String(key).startsWith('courses:list:'))).toBe(false)
+    })
+  })
+
   describe('location filter', () => {
     const geoFormation = {
       ...baseFormation,

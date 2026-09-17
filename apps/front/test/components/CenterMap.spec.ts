@@ -97,9 +97,12 @@ interface CenterMapProps {
   caption: string
   mode?: 'network' | 'single'
   minZoom?: number
+  userPosition?: { lat: number; lng: number } | null
 }
 
 function mountWithStubs(props: CenterMapProps) {
+  vi.mocked(Leaflet.marker).mockClear()
+  vi.mocked(Leaflet.map).mockClear()
   vi.mocked(Leaflet.markerClusterGroup).mockClear()
 
   return mount(CenterMap, {
@@ -227,5 +230,34 @@ describe('CenterMap', () => {
       unbindPopup: ReturnType<typeof vi.fn>
     }[]
     expect(markerInstances.some((m) => m.unbindPopup.mock.calls.length > 0)).toBe(true)
+  })
+
+  it('renders a user position marker and includes it in bounds', async () => {
+    mountWithStubs({
+      centers,
+      activeId: null,
+      caption: 'Tous les départements',
+      userPosition: { lat: 48.8566, lng: 2.3522 }
+    })
+    await flushPromises()
+
+    const map = vi.mocked(Leaflet.map).mock.results[0]?.value as ReturnType<typeof vi.fn>
+    expect(Leaflet.marker).toHaveBeenCalledWith(
+      [48.8566, 2.3522],
+      expect.objectContaining({ zIndexOffset: 1000 })
+    )
+    expect(map?.fitBounds).toHaveBeenCalled()
+  })
+
+  it('skips the user marker when userPosition is null', async () => {
+    mountWithStubs({
+      centers,
+      activeId: null,
+      caption: 'Tous les départements',
+      userPosition: null
+    })
+    await flushPromises()
+
+    expect(Leaflet.marker).toHaveBeenCalledTimes(centers.length)
   })
 })

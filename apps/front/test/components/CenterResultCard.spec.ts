@@ -10,7 +10,8 @@ const center = {
   tags: 'CACES · Habilitations électriques · SST · Hauteur',
   tagsShort: 'CACES · Habilitations · SST',
   status: { type: 'success' as const, label: 'Sessions cette semaine' },
-  pos: { top: '30%', left: '73%' }
+  pos: { top: '30%', left: '73%' },
+  distanceKm: 12.4
 }
 
 describe('CenterResultCard', () => {
@@ -60,5 +61,32 @@ describe('CenterResultCard', () => {
     expect(wrapper.find('article').classes()).toContain('border-primary')
     expect(wrapper.find('article').classes()).toContain('bg-surface')
     expect(wrapper.find('article').classes()).toContain('shadow-md')
+  })
+
+  it('displays the distance when distanceKm is provided', () => {
+    const wrapper = mount(CenterResultCard, {
+      props: { center },
+      global: {
+        stubs: {
+          NuxtLink: { template: '<a><slot /></a>' }
+        }
+      }
+    })
+
+    expect(wrapper.text()).toContain('12,4 km')
+  })
+
+  it('hides the distance line when distanceKm is absent', () => {
+    const noDistance = { ...center, distanceKm: undefined }
+    const wrapper = mount(CenterResultCard, {
+      props: { center: noDistance },
+      global: {
+        stubs: {
+          NuxtLink: { template: '<a><slot /></a>' }
+        }
+      }
+    })
+
+    expect(wrapper.find('[data-testid="center-distance"]').exists()).toBe(false)
   })
 })

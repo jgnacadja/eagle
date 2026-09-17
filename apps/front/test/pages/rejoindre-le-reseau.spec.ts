@@ -15,13 +15,16 @@ describe('Rejoindre le réseau page', () => {
           IconAward: true,
           IconBook: true,
           IconBuilding: true,
-          ProcessSteps: true
+          ProcessSteps: true,
+          Benefits: { props: ['title'], template: '<section><h2>{{ title }}</h2></section>' }
         }
       }
     })
 
     expect(wrapper.text()).toContain('Un réseau national de centres de formation')
     expect(wrapper.text()).toContain('Trois façons de rejoindre le réseau')
+    expect(wrapper.text()).toContain('Ce que le réseau apporte')
+    expect(wrapper.text()).toContain("De la candidature à l'ouverture")
 
     const hrefs = wrapper.findAll('a').map((link) => link.attributes('href'))
     expect(hrefs).toContain('/centres/demande-de-formation?sujet=franchise')

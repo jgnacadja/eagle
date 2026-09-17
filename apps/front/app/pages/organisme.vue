@@ -2,20 +2,22 @@
   <div class="bg-paper">
     <section class="relative isolate overflow-hidden bg-primary-dark text-ink-inverse">
       <div
+        aria-hidden="true"
         class="pointer-events-none absolute -right-24 -top-32 h-96 w-96 rounded-full bg-primary-muted/60"
       />
       <div
+        aria-hidden="true"
         class="pointer-events-none absolute -bottom-48 -left-24 h-96 w-96 rounded-full bg-primary-muted/40"
       />
 
-      <div class="relative mx-auto px-gutter-mobile py-4xl md:px-gutter md:py-4xl">
+      <div class="relative mx-auto px-gutter-mobile py-4xl md:px-gutter">
         <div class="max-w-prose">
           <span
             class="inline-block rounded-full border border-outline-inverse px-lg py-sm text-overline font-bold uppercase text-ink-inverse-muted"
           >
             ORGANISME PARTENAIRE
           </span>
-          <h1 class="mt-xl font-display text-h2 font-extrabold leading-tight md:text-hero">
+          <h1 class="mt-xl font-display text-h2 font-extrabold md:text-hero">
             Référencer vos centres,
             <span class="text-accent"> recevez des demandes qualifiées</span>.
           </h1>
@@ -25,22 +27,15 @@
             aux partenaires de leur territoire.
           </p>
           <div class="mt-xl flex flex-wrap gap-md">
-            <Button
-              as-child
-              class="h-control w-full rounded-full bg-accent px-xl text-button font-bold text-ink transition-colors hover:bg-accent-text hover:text-ink-inverse sm:w-auto"
-            >
+            <Button as-child variant="accent" size="pill-lg" class="w-full sm:w-auto">
               <NuxtLink to="#candidater">Référencer mon organisme</NuxtLink>
             </Button>
 
-            <Button
-              as-child
-              variant="outline"
-              class="h-control w-full rounded-full border-outline-inverse bg-transparent px-xl text-button font-bold text-ink-inverse transition-colors hover:bg-ink-inverse/10 hover:text-ink-inverse sm:w-auto"
-            >
+            <Button as-child variant="outline-inverse" size="pill-lg" class="w-full sm:w-auto">
               <NuxtLink to="#modele">Comment fonctionne le réseau</NuxtLink>
             </Button>
           </div>
-          <p class="mt-xl text-sm text-ink-inverse-muted">
+          <p class="mt-xl text-small text-ink-inverse-muted">
             La candidature se dépose sur la page Rejoindre le réseau — réponse sous 5 jours ouvrés.
           </p>
         </div>
@@ -57,44 +52,44 @@
           last-step-variant="accent"
           title-size="h4"
           class="mt-2xl"
-          max-width-class="md:max-w-[15rem]"
+          max-width-class="md:max-w-3xs"
         />
       </section>
 
       <!-- Benefits -->
       <Benefits id="modele" title="Ce que le partenariat apporte" :benefits="benefits" />
 
-      <section id="maillage" class="mt-4xl" aria-labelledby="maillage">
-        <div class="flex flex-col md:flex-row gap-14 items-center">
+      <section id="maillage" class="mt-4xl" aria-labelledby="maillage-title">
+        <div class="flex flex-col md:flex-row gap-xl items-center">
           <!-- Colonne gauche -->
-          <div class="w-81 md:w-98 shrink-0 pt-2">
-            <h2 class="text-h2 font-extrabold leading-snug tracking-tight">
+          <div class="w-80 md:w-96 shrink-0 pt-sm">
+            <h2 id="maillage-title" class="text-h2 font-extrabold">
               Un maillage qui s'étend avec ses partenaires
             </h2>
-            <p class="text-body text-ink-muted leading-relaxed mt-3">
+            <p class="text-body text-ink-muted mt-md">
               Le référencement d'un organisme étend la couverture du réseau sur son territoire et
               ses domaines. Les demandes des entreprises sont transmises au plus près.
             </p>
 
-            <div class="flex mt-6">
-              <div class="pr-5">
-                <div class="text-2xl font-extrabold tracking-tight">+400</div>
-                <div class="text-xs mt-1 leading-tight whitespace-nowrap">centres partenaires</div>
+            <div class="flex mt-lg">
+              <div class="pr-lg">
+                <div class="text-h2 font-extrabold">+400</div>
+                <div class="text-meta mt-xs whitespace-nowrap">centres partenaires</div>
               </div>
-              <div class="border-l border-bunting/15 pl-5 pr-5">
-                <div class="text-2xl font-extrabold tracking-tight">96</div>
-                <div class="text-xs mt-1 leading-tight">départements couverts</div>
+              <div class="border-l px-md">
+                <div class="text-h2 font-extrabold">96</div>
+                <div class="text-meta mt-xs">départements couverts</div>
               </div>
-              <div class="border-l border-bunting/15 pl-5">
-                <div class="text-2xl font-extrabold tracking-tight">+250</div>
-                <div class="text-xs mt-1 leading-tight">formations au catalogue</div>
+              <div class="border-l pl-md">
+                <div class="text-h2 font-extrabold">+250</div>
+                <div class="text-meta mt-xs">formations au catalogue</div>
               </div>
             </div>
           </div>
 
           <!-- Carte placeholder -->
           <div
-            class="flex-1 w-full h-113 rounded-2xl bg-linkwater border border-dashed border-biscay/30 flex items-center justify-center text-center text-bayoux text-sm font-medium leading-relaxed px-6 bg-surface"
+            class="flex-1 w-full h-96 rounded-2xl border border-dashed flex items-center justify-center text-center text-small font-medium px-lg bg-surface"
           >
             Carte de France interactive<br />départements couverts + centres du réseau
           </div>
@@ -102,20 +97,19 @@
       </section>
     </div>
 
-    <div id="candidater" class="bg-navy-primary text-white p-12">
-      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+    <div id="candidater" class="bg-primary text-ink-inverse p-2xl">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-md">
         <div>
-          <h3 class="text-h2 font-extrabold tracking-tight">Référencer votre organisme</h3>
-          <p class="text-sm text-ink-inverse-muted mt-1.5">
+          <h3 class="text-h2 font-extrabold">Référencer votre organisme</h3>
+          <p class="text-small text-ink-inverse-muted mt-xs">
             La candidature décrit vos centres, vos domaines et votre territoire. L'étude ne comporte
             aucun engagement.
           </p>
         </div>
-        <Button
-          type="submit"
-          class="h-control w-full shrink-0 rounded-full bg-accent px-xl text-small font-semibold text-ink hover:bg-accent-text hover:text-paper sm:w-auto"
-        >
-          Déposer une candidature
+        <Button as-child variant="accent" size="pill-lg" class="w-full shrink-0 md:w-auto">
+          <NuxtLink to="/centres/demande-de-formation?sujet=organisme">
+            Déposer une candidature</NuxtLink
+          >
         </Button>
       </div>
     </div>

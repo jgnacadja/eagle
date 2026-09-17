@@ -10,7 +10,7 @@
       </CardTitle>
     </CardHeader>
     <CardContent class="flex-1 px-md py-sm">
-      <p v-if="description" class="flex-1 text-small text-ink-body font-bold">
+      <p v-if="description" class="flex-1 text-small text-ink-body">
         {{ description }}
       </p>
       <CardDescription>{{ meta }}</CardDescription>

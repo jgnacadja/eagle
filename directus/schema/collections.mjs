@@ -799,11 +799,71 @@ export const collections = [
         field: 'sessions',
         type: 'json',
         meta: {
-          interface: 'input-code',
+          interface: 'list',
           width: 'full',
-          readonly: true,
-          note: 'Sessions JSON — réécrites par la sync à chaque run',
-          ...fr('Sessions')
+          note: 'Réécrites par la sync à chaque run — les retours éditoriaux sont perdus au run suivant',
+          ...fr('Sessions'),
+          options: {
+            template: '{{startDate}} → {{endDate}} · {{modality}}',
+            fields: [
+              {
+                field: 'id',
+                name: 'ID Digiforma',
+                type: 'string',
+                meta: { interface: 'input', width: 'half' },
+                schema: {}
+              },
+              {
+                field: 'startDate',
+                name: 'Date de début',
+                type: 'date',
+                meta: { interface: 'datetime', width: 'half' },
+                schema: {}
+              },
+              {
+                field: 'endDate',
+                name: 'Date de fin',
+                type: 'date',
+                meta: { interface: 'datetime', width: 'half' },
+                schema: {}
+              },
+              {
+                field: 'modality',
+                name: 'Modalité',
+                type: 'string',
+                meta: {
+                  interface: 'select-dropdown',
+                  width: 'half',
+                  options: {
+                    allowOther: true,
+                    choices: [
+                      { text: 'Présentiel', value: 'presentiel' },
+                      { text: 'Distanciel', value: 'distanciel' }
+                    ]
+                  }
+                },
+                schema: {}
+              },
+              {
+                field: 'seatsRemaining',
+                name: 'Places restantes',
+                type: 'integer',
+                meta: { interface: 'input', width: 'half' },
+                schema: {}
+              },
+              {
+                field: 'location',
+                name: 'Lieu',
+                type: 'json',
+                meta: {
+                  interface: 'input-code',
+                  width: 'full',
+                  note: 'Objet — clés : name, city, postalCode, department, region, centreSlug'
+                },
+                schema: {}
+              }
+            ]
+          }
         }
       },
       {
@@ -1011,8 +1071,8 @@ export const collections = [
       }
       // famille + sous_famille (relations M2O, voir relations).
       // Tous les champs contenu sont éditables : la sync ne remplit que
-      // les champs vides. Readonly restants : digiforma_id, sessions,
-      // raw, created_at, updated_at.
+      // les champs vides. Readonly restants : digiforma_id, raw,
+      // created_at, updated_at.
     ]
   }
 ]

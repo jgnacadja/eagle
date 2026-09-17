@@ -28,6 +28,11 @@
     "*.{ts,vue}": "eslint --fix"
   },
   "pnpm": {
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "@vee-validate/zod@zod": "^4.0.0"
+      }
+    },
     "onlyBuiltDependencies": [
       "@parcel/watcher",
       "@swc/core",

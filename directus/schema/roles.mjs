@@ -55,7 +55,7 @@ export function permissionsFor(roleName) {
           collection: 'formations',
           action: 'update',
           // Tous les champs contenu + éditoriaux ; hors techniques
-          // (digiforma_id, sessions, raw, timestamps) et status
+          // (digiforma_id, raw, timestamps) et status
           // (publication réservée au modérateur).
           fields: [
             'sort',
@@ -73,6 +73,7 @@ export function permissionsFor(roleName) {
             'modalities',
             'center_slug',
             'center_slugs',
+            'sessions',
             'locations_text',
             'blocks',
             'generated_program_url',

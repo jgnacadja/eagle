@@ -97,7 +97,18 @@ export default defineNuxtConfig({
     cachePurgeSecret: process.env.NUXT_CACHE_PURGE_SECRET ?? '',
     public: {
       apiBase: publicApiBase,
-      siteUrl
+      siteUrl,
+      // Soumission directe des formulaires lead à la Forms API HubSpot —
+      // endpoint non authentifié, pas de secret côté client.
+      hubspot: {
+        portalId: process.env.NUXT_PUBLIC_HUBSPOT_PORTAL_ID ?? '',
+        formsBaseUrl: process.env.NUXT_PUBLIC_HUBSPOT_FORMS_BASE_URL ?? 'https://api.hsforms.com',
+        formGuids: {
+          newsletter: process.env.NUXT_PUBLIC_HUBSPOT_FORM_NEWSLETTER ?? '',
+          demande: process.env.NUXT_PUBLIC_HUBSPOT_FORM_DEMANDE ?? '',
+          candidature: process.env.NUXT_PUBLIC_HUBSPOT_FORM_CANDIDATURE ?? ''
+        }
+      }
     }
   }
 })

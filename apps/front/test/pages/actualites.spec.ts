@@ -162,6 +162,15 @@ vi.stubGlobal('useDirectusClient', () => ({
     return applyFilter(articles, params?.filter)
   })
 }))
+// Stub du composable de soumission : le mock contrôle le résultat de l'appel API.
+const leadSubmitMock = vi.fn<(endpoint: string, payload: unknown) => Promise<boolean>>()
+const leadError = ref<string | null>(null)
+vi.stubGlobal('useLeadSubmit', () => ({
+  submit: leadSubmitMock,
+  sending: ref(false),
+  error: leadError
+}))
+
 vi.stubGlobal('useAsyncData', async (key: unknown, handler: () => Promise<unknown>) => {
   const data = ref(await handler())
   if (typeof key === 'function' || isRef(key)) {
@@ -223,6 +232,8 @@ describe('pages/actualites/index', () => {
   beforeEach(() => {
     route.query = {}
     vi.clearAllMocks()
+    leadSubmitMock.mockReset().mockResolvedValue(true)
+    leadError.value = null
   })
 
   it('affiche le bandeau d’intro avec le titre et les filtres', async () => {
@@ -289,6 +300,49 @@ describe('pages/actualites/index', () => {
     expect(wrapper.text()).toContain('Recevez les échéances réglementaires')
     expect(wrapper.find('input[type="email"]').exists()).toBe(true)
     expect(wrapper.text()).toContain("S'abonner")
+  })
+
+  it('poste l’inscription newsletter au module leads puis confirme', async () => {
+    const wrapper = await mountPage()
+
+    await wrapper.find('input[type="email"]').setValue('abonne@site.fr')
+    await wrapper.find('section[aria-labelledby="newsletter-heading"] form').trigger('submit')
+    // vee-validate valide en async : attendre que handleSubmit appelle l'API.
+    await vi.waitFor(() => expect(leadSubmitMock).toHaveBeenCalledTimes(1))
+
+    expect(leadSubmitMock).toHaveBeenCalledWith(
+      'newsletter',
+      expect.objectContaining({ email: 'abonne@site.fr' })
+    )
+    expect(wrapper.text()).toContain('Inscription confirmée')
+    // v-show : le formulaire reste monté mais masqué après confirmation.
+    expect(wrapper.find('form').attributes('style')).toContain('display: none')
+  })
+
+  it('bloque la soumission et affiche l’erreur si l’e-mail est invalide', async () => {
+    const wrapper = await mountPage()
+
+    await wrapper.find('input[type="email"]').setValue('pas-un-email')
+    await wrapper.find('section[aria-labelledby="newsletter-heading"] form').trigger('submit')
+    // Attendre que la validation rejette et affiche l'erreur.
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Format d’e-mail invalide'))
+
+    expect(leadSubmitMock).not.toHaveBeenCalled()
+  })
+
+  it('affiche l’erreur et garde le formulaire si l’inscription échoue', async () => {
+    leadSubmitMock.mockResolvedValue(false)
+    leadError.value = 'L’envoi a échoué — réessayez dans un instant.'
+    const wrapper = await mountPage()
+
+    await wrapper.find('input[type="email"]').setValue('abonne@site.fr')
+    await wrapper.find('section[aria-labelledby="newsletter-heading"] form').trigger('submit')
+    await vi.waitFor(() => expect(leadSubmitMock).toHaveBeenCalledTimes(1))
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('envoi a échoué')
+    expect(wrapper.text()).not.toContain('Inscription confirmée')
+    expect(wrapper.find('input[type="email"]').exists()).toBe(true)
   })
 
   it('applique le SEO de la page', async () => {

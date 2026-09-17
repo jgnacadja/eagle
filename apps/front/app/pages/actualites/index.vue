@@ -184,29 +184,54 @@
                   >
                 </p>
               </div>
-              <form
-                class="flex flex-col gap-md sm:flex-row lg:mt-0 lg:w-auto lg:shrink-0"
-                @submit.prevent="onSubscribe"
-              >
-                <Label for="newsletter-email" class="sr-only">Adresse e-mail professionnelle</Label>
-                <Input
-                  id="newsletter-email"
-                  v-model="newsletterEmail"
-                  type="email"
-                  required
-                  placeholder="votre@email-professionnel.fr"
-                  variant="field-lg"
-                  class="sm:w-72"
-                />
-                <Button
-                  type="submit"
-                  variant="accent"
-                  size="pill-sm"
-                  class="w-full shrink-0 px-xl sm:w-auto"
+              <div class="flex flex-col gap-sm lg:mt-0 lg:shrink-0">
+                <p
+                  v-if="newsletterDone"
+                  class="flex items-center gap-sm text-small font-semibold text-success"
                 >
-                  S'abonner
-                </Button>
-              </form>
+                  Inscription confirmée — merci&nbsp;!
+                </p>
+                <form
+                  v-show="!newsletterDone"
+                  novalidate
+                  class="flex flex-col gap-md sm:flex-row lg:w-auto"
+                  @submit.prevent="onSubscribe"
+                >
+                  <div class="flex flex-col gap-xs">
+                    <Label for="newsletter-email" class="sr-only"
+                      >Adresse e-mail professionnelle</Label
+                    >
+                    <Input
+                      id="newsletter-email"
+                      v-model="newsletterEmail"
+                      type="email"
+                      placeholder="votre@email-professionnel.fr"
+                      variant="field-lg"
+                      class="sm:w-72"
+                      :disabled="newsletterSending"
+                      :aria-invalid="showEmailError || undefined"
+                    />
+                    <p v-if="showEmailError" class="text-small font-semibold text-danger">
+                      {{ newsletterFieldError }}
+                    </p>
+                  </div>
+                  <Button
+                    type="submit"
+                    variant="accent"
+                    size="pill-sm"
+                    class="w-full shrink-0 px-xl sm:w-auto"
+                    :disabled="newsletterSending"
+                  >
+                    {{ newsletterSending ? 'Envoi…' : "S'abonner" }}
+                  </Button>
+                </form>
+                <p
+                  v-if="!newsletterDone && newsletterError"
+                  class="text-small font-semibold text-danger"
+                >
+                  {{ newsletterError }}
+                </p>
+              </div>
             </section>
 
             <!-- Pagination -->
@@ -250,7 +275,10 @@
 
 <script setup lang="ts">
 import { aggregate, readItems } from '@directus/sdk'
+import { toTypedSchema } from '@vee-validate/zod'
 import type { Article } from '@learnup/types'
+import { useForm } from 'vee-validate'
+import { z } from 'zod'
 import { articleAssetUrl, articleReadingTime, formatArticleDate } from '~/utils/article'
 import { formatRegionLabel } from '~/utils/region'
 import { revealStagger } from '~/utils/reveal'
@@ -507,9 +535,43 @@ const readingTime = computed(() => {
   return articleReadingTime(featuredArticle.value?.content)
 })
 
-const newsletterEmail = ref('')
-function onSubscribe() {
-  // Branchement API à venir — la maquette se contente de l'envoi simulé.
-  newsletterEmail.value = ''
-}
+const newsletterDone = ref(false)
+const { submit: submitLead, sending: newsletterSending, error: newsletterError } = useLeadSubmit()
+
+const {
+  handleSubmit,
+  errors: newsletterErrors,
+  submitCount: newsletterSubmitCount,
+  defineField
+} = useForm({
+  validationSchema: toTypedSchema(
+    z.object({
+      email: z
+        .string({ error: 'Indiquez votre e-mail professionnel.' })
+        .trim()
+        .min(1, 'Indiquez votre e-mail professionnel.')
+        .pipe(z.email('Format d’e-mail invalide.'))
+    })
+  )
+})
+
+const [newsletterEmail] = defineField('email')
+
+// Erreur masquée jusqu'à la 1re tentative d'envoi, puis en direct.
+const newsletterFieldError = computed(() => newsletterErrors.value.email)
+const showEmailError = computed(
+  () => newsletterSubmitCount.value > 0 && !!newsletterErrors.value.email
+)
+
+const onSubscribe = handleSubmit(async (values) => {
+  const ok = await submitLead('newsletter', {
+    email: values.email,
+    pageUri: window.location.href,
+    pageName: 'Actualités'
+  })
+  if (ok) {
+    newsletterDone.value = true
+    newsletterEmail.value = ''
+  }
+})
 </script>

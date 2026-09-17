@@ -41,8 +41,43 @@
       </div>
 
       <div class="grid grid-cols-1 items-start gap-lg lg:grid-cols-3">
-        <!-- Formulaire -->
-        <form class="space-y-lg lg:col-span-2" @submit.prevent="onSubmit">
+        <!-- Confirmation d'envoi -->
+        <Card
+          v-if="submitted"
+          class="flex flex-col items-center gap-lg p-xl text-center lg:col-span-2"
+        >
+          <p
+            class="flex h-4xl w-4xl items-center justify-center rounded-full bg-success-soft text-success"
+          >
+            <IconCheck :size="32" />
+          </p>
+          <div>
+            <h2 class="font-display text-h3 font-extrabold text-ink">
+              Votre demande est transmise
+            </h2>
+            <p class="mt-sm max-w-prose text-body text-ink-muted">
+              Un conseiller LEARN&nbsp;UP&nbsp;ACADEMY prend en charge votre demande et vous
+              recontacte sous 24&nbsp;h ouvrées.
+            </p>
+          </div>
+          <div class="flex flex-wrap justify-center gap-md">
+            <Button as-child variant="dark" size="pill-lg">
+              <NuxtLink to="/">Retour à l'accueil</NuxtLink>
+            </Button>
+            <Button as-child variant="outline" size="pill-lg">
+              <NuxtLink to="/formations">Explorer le catalogue</NuxtLink>
+            </Button>
+          </div>
+        </Card>
+
+        <!-- Formulaire (v-show : jamais démonté — le swap v-if/v-else casse le
+             retrait de fragment sous happy-dom en test) -->
+        <form
+          v-show="!submitted"
+          novalidate
+          class="space-y-lg lg:col-span-2"
+          @submit.prevent="onSubmit"
+        >
           <!-- Votre besoin -->
           <Card class="p-lg sm:py-lg sm:px-xl">
             <fieldset class="space-y-md">
@@ -57,17 +92,32 @@
                   <Label for="salaries" class="mb-xs block"> Salariés à former </Label>
                   <Input
                     id="salaries"
-                    v-model="form.salaries"
+                    v-model="salaries"
                     type="number"
                     min="1"
                     variant="field"
+                    class="aria-invalid:border-danger"
+                    :aria-invalid="showError('salaries') || undefined"
+                    :aria-describedby="showError('salaries') ? 'salaries-error' : undefined"
                   />
+                  <p
+                    v-if="showError('salaries')"
+                    id="salaries-error"
+                    class="mt-xs text-small font-semibold text-danger"
+                  >
+                    {{ errors.salaries }}
+                  </p>
                 </div>
                 <div>
                   <Label for="echeance" class="block">
                     <span class="mb-xs block">Échéance souhaitée</span>
-                    <Select v-model="form.echeance">
-                      <SelectTrigger id="echeance" variant="field">
+                    <Select v-model="echeance">
+                      <SelectTrigger
+                        id="echeance"
+                        variant="field"
+                        :aria-invalid="showError('echeance') || undefined"
+                        :aria-describedby="showError('echeance') ? 'echeance-error' : undefined"
+                      >
                         <SelectValue placeholder="Choisir une échéance" />
                       </SelectTrigger>
                       <SelectContent>
@@ -82,6 +132,13 @@
                       </SelectContent>
                     </Select>
                   </Label>
+                  <p
+                    v-if="showError('echeance')"
+                    id="echeance-error"
+                    class="mt-xs text-small font-semibold text-danger"
+                  >
+                    {{ errors.echeance }}
+                  </p>
                 </div>
               </div>
 
@@ -91,7 +148,7 @@
                 </Label>
                 <Textarea
                   id="precisions"
-                  v-model="form.precisions"
+                  v-model="precisions"
                   rows="3"
                   placeholder="Contraintes d'horaires, site concerné, niveau des salariés…"
                   class="resize-none"
@@ -114,22 +171,44 @@
                   <Label for="raison-sociale" class="mb-xs block"> Raison sociale </Label>
                   <Input
                     id="raison-sociale"
-                    v-model="form.raisonSociale"
+                    v-model="raisonSociale"
                     type="text"
                     placeholder="Nom de l'entreprise"
                     variant="field"
+                    class="aria-invalid:border-danger"
+                    :aria-invalid="showError('raisonSociale') || undefined"
+                    :aria-describedby="
+                      showError('raisonSociale') ? 'raison-sociale-error' : undefined
+                    "
                   />
+                  <p
+                    v-if="showError('raisonSociale')"
+                    id="raison-sociale-error"
+                    class="mt-xs text-small font-semibold text-danger"
+                  >
+                    {{ errors.raisonSociale }}
+                  </p>
                 </div>
                 <div>
                   <Label for="siret" class="mb-xs block">SIRET</Label>
                   <Input
                     id="siret"
-                    v-model="form.siret"
+                    v-model="siret"
                     type="text"
                     inputmode="numeric"
                     placeholder="14 chiffres"
                     variant="field"
+                    class="aria-invalid:border-danger"
+                    :aria-invalid="showError('siret') || undefined"
+                    :aria-describedby="showError('siret') ? 'siret-error' : undefined"
                   />
+                  <p
+                    v-if="showError('siret')"
+                    id="siret-error"
+                    class="mt-xs text-small font-semibold text-danger"
+                  >
+                    {{ errors.siret }}
+                  </p>
                 </div>
               </div>
             </fieldset>
@@ -149,58 +228,113 @@
                   <Label for="nom" class="mb-xs block"> Nom et prénom </Label>
                   <Input
                     id="nom"
-                    v-model="form.nom"
+                    v-model="nom"
                     type="text"
                     autocomplete="name"
                     variant="field"
+                    class="aria-invalid:border-danger"
+                    :aria-invalid="showError('nom') || undefined"
+                    :aria-describedby="showError('nom') ? 'nom-error' : undefined"
                   />
+                  <p
+                    v-if="showError('nom')"
+                    id="nom-error"
+                    class="mt-xs text-small font-semibold text-danger"
+                  >
+                    {{ errors.nom }}
+                  </p>
                 </div>
                 <div>
                   <Label for="fonction" class="mb-xs block"> Fonction </Label>
                   <Input
                     id="fonction"
-                    v-model="form.fonction"
+                    v-model="fonction"
                     type="text"
                     placeholder="RH, QHSE, direction…"
                     variant="field"
+                    class="aria-invalid:border-danger"
+                    :aria-invalid="showError('fonction') || undefined"
+                    :aria-describedby="showError('fonction') ? 'fonction-error' : undefined"
                   />
+                  <p
+                    v-if="showError('fonction')"
+                    id="fonction-error"
+                    class="mt-xs text-small font-semibold text-danger"
+                  >
+                    {{ errors.fonction }}
+                  </p>
                 </div>
                 <div>
                   <Label for="email" class="mb-xs block"> E-mail professionnel </Label>
                   <Input
                     id="email"
-                    v-model="form.email"
+                    v-model="email"
                     type="email"
                     autocomplete="email"
                     placeholder="nom@entreprise.fr"
                     variant="field"
+                    class="aria-invalid:border-danger"
+                    :aria-invalid="showError('email') || undefined"
+                    :aria-describedby="showError('email') ? 'email-error' : undefined"
                   />
+                  <p
+                    v-if="showError('email')"
+                    id="email-error"
+                    class="mt-xs text-small font-semibold text-danger"
+                  >
+                    {{ errors.email }}
+                  </p>
                 </div>
                 <div>
                   <Label for="telephone" class="mb-xs block"> Téléphone </Label>
                   <Input
                     id="telephone"
-                    v-model="form.telephone"
+                    v-model="telephone"
                     type="tel"
                     autocomplete="tel"
                     placeholder="06 -- -- -- --"
                     variant="field"
+                    class="aria-invalid:border-danger"
+                    :aria-invalid="showError('telephone') || undefined"
+                    :aria-describedby="showError('telephone') ? 'telephone-error' : undefined"
                   />
+                  <p
+                    v-if="showError('telephone')"
+                    id="telephone-error"
+                    class="mt-xs text-small font-semibold text-danger"
+                  >
+                    {{ errors.telephone }}
+                  </p>
                 </div>
               </div>
 
-              <div class="flex items-start gap-sm pt-xs">
-                <Checkbox id="consentement" v-model="form.consentement" required class="mt-xs" />
-                <Label for="consentement" variant="muted">
-                  J'accepte que ces informations soient utilisées pour le traitement de ma demande
-                  de formation.
-                  <NuxtLink
-                    to="#"
-                    class="font-medium text-primary transition-colors hover:text-accent-text"
-                  >
-                    Politique de confidentialité
-                  </NuxtLink>
-                </Label>
+              <div class="pt-xs">
+                <div class="flex items-start gap-sm">
+                  <Checkbox
+                    id="consentement"
+                    v-model="consentement"
+                    class="mt-xs"
+                    :aria-invalid="showError('consentement') || undefined"
+                    :aria-describedby="showError('consentement') ? 'consentement-error' : undefined"
+                  />
+                  <Label for="consentement" variant="muted">
+                    J'accepte que ces informations soient utilisées pour le traitement de ma demande
+                    de formation.
+                    <NuxtLink
+                      to="#"
+                      class="font-medium text-primary transition-colors hover:text-accent-text"
+                    >
+                      Politique de confidentialité
+                    </NuxtLink>
+                  </Label>
+                </div>
+                <p
+                  v-if="showError('consentement')"
+                  id="consentement-error"
+                  class="mt-xs text-small font-semibold text-danger"
+                >
+                  {{ errors.consentement }}
+                </p>
               </div>
             </fieldset>
           </Card>
@@ -212,13 +346,22 @@
               variant="accent"
               size="pill-sm"
               class="w-full px-2xl shadow-sm sm:w-auto"
+              :disabled="sending"
             >
-              Envoyer ma demande
+              <span
+                v-if="sending"
+                class="mr-sm block h-md w-md animate-spin rounded-full border-2 border-ink/25 border-t-ink"
+                aria-hidden="true"
+              />
+              {{ sending ? 'Envoi en cours…' : 'Envoyer ma demande' }}
             </Button>
             <p class="text-meta text-ink-subtle">
               Demande sans engagement, traitée sous 24&nbsp;h ouvrées.
             </p>
           </div>
+          <p v-if="submitError" class="text-small font-semibold text-danger" role="alert">
+            {{ submitError }}
+          </p>
         </form>
 
         <!-- Sidebar : contexte de la demande -->
@@ -298,6 +441,9 @@
 
 <script setup lang="ts">
 import type { Centre, Course } from '@learnup/types'
+import { toTypedSchema } from '@vee-validate/zod'
+import { useForm } from 'vee-validate'
+import { z } from 'zod'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 
 definePageMeta({
@@ -351,7 +497,9 @@ const centresData = centreSlug.value
       limit: 1
     })
   : ref<Centre[]>([])
-const centre = computed(() => centresData.value[0] ?? null)
+// data vaut undefined tant que le fetch client n'est pas résolu
+// (useAsyncData n'est pas awaitable à travers le composable).
+const centre = computed(() => centresData.value?.[0] ?? null)
 
 const formationData =
   familleSlug.value && formationSlug.value
@@ -476,27 +624,104 @@ useContentSeo(
 
 const echeanceOptions = ['Septembre 2026', 'Octobre 2026', 'Novembre 2026']
 
-const form = reactive({
-  // Input émet string | number : la saisie reste une chaîne tant qu'on ne convertit pas.
-  salaries: 8 as string | number,
-  echeance: 'Septembre 2026',
-  precisions: '',
-  raisonSociale: '',
-  siret: '',
-  nom: '',
-  fonction: '',
-  email: '',
-  telephone: '',
-  consentement: false
+const { handleSubmit, errors, submitCount, defineField, setValues, values } = useForm({
+  validationSchema: toTypedSchema(
+    z.object({
+      // Input émet string | number : la saisie reste une chaîne tant qu'on ne convertit pas.
+      salaries: z.coerce
+        .number({ error: 'Indiquez le nombre de salariés à former.' })
+        .min(1, 'Indiquez le nombre de salariés à former.'),
+      echeance: z.string({ error: 'Choisissez une échéance.' }).min(1, 'Choisissez une échéance.'),
+      precisions: z.string().optional(),
+      raisonSociale: z
+        .string({ error: "Indiquez la raison sociale de l'entreprise." })
+        .trim()
+        .min(1, "Indiquez la raison sociale de l'entreprise."),
+      siret: z
+        .string({ error: 'Indiquez le SIRET de votre entreprise.' })
+        .trim()
+        .min(1, 'Indiquez le SIRET de votre entreprise.')
+        // Espaces tolérés à la saisie, supprimés avant envoi à HubSpot.
+        .transform((value) => value.replace(/\s/g, ''))
+        .refine((value) => /^\d{14}$/.test(value), 'SIRET invalide — 14 chiffres attendus.'),
+      nom: z
+        .string({ error: 'Indiquez votre nom et prénom.' })
+        .trim()
+        .min(1, 'Indiquez votre nom et prénom.'),
+      fonction: z
+        .string({ error: 'Indiquez votre fonction.' })
+        .trim()
+        .min(1, 'Indiquez votre fonction.'),
+      email: z
+        .string({ error: 'Indiquez votre e-mail professionnel.' })
+        .trim()
+        .min(1, 'Indiquez votre e-mail professionnel.')
+        .pipe(z.email('Format d’e-mail invalide.')),
+      telephone: z
+        .string({ error: 'Indiquez votre téléphone.' })
+        .trim()
+        .min(1, 'Indiquez votre téléphone.')
+        .refine(
+          (value) => value.replace(/\D/g, '').length >= 10,
+          'Numéro incomplet — 10 chiffres attendus.'
+        ),
+      consentement: z
+        .boolean({ error: 'Consentement requis pour envoyer la demande.' })
+        .refine((value) => value, 'Consentement requis pour envoyer la demande.')
+    })
+  ),
+  initialValues: {
+    salaries: 8,
+    echeance: 'Septembre 2026',
+    precisions: '',
+    consentement: false
+  }
 })
+
+const [salaries] = defineField('salaries')
+const [echeance] = defineField('echeance')
+const [precisions] = defineField('precisions')
+const [raisonSociale] = defineField('raisonSociale')
+const [siret] = defineField('siret')
+const [nom] = defineField('nom')
+const [fonction] = defineField('fonction')
+const [email] = defineField('email')
+const [telephone] = defineField('telephone')
+const [consentement] = defineField('consentement')
+
+type DemandeField =
+  | 'salaries'
+  | 'echeance'
+  | 'raisonSociale'
+  | 'siret'
+  | 'nom'
+  | 'fonction'
+  | 'email'
+  | 'telephone'
+  | 'consentement'
+
+// Erreurs masquées jusqu'à la 1re tentative d'envoi, puis en direct.
+const showError = (field: DemandeField) => submitCount.value > 0 && !!errors.value[field]
 
 // Persistance de la saisie : le lien « Modifier » renvoie au point d'origine
 // sans perdre le formulaire déjà rempli (RG06).
 const DRAFT_KEY = 'demande-formation-draft'
+const DRAFT_FIELDS = new Set<string>([
+  'salaries',
+  'echeance',
+  'precisions',
+  'raisonSociale',
+  'siret',
+  'nom',
+  'fonction',
+  'email',
+  'telephone',
+  'consentement'
+])
 
 function saveDraft() {
   if (typeof window === 'undefined') return
-  window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify(form))
+  window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify(values))
 }
 
 onMounted(() => {
@@ -505,19 +730,44 @@ onMounted(() => {
   try {
     const parsed: unknown = JSON.parse(raw)
     if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      Object.assign(form, parsed)
+      // Ne restaure que les champs du schéma — ignore toute clé étrangère.
+      const draft = Object.fromEntries(
+        Object.entries(parsed as Record<string, unknown>).filter(([key]) => DRAFT_FIELDS.has(key))
+      )
+      setValues(draft)
     }
   } catch {
     window.sessionStorage.removeItem(DRAFT_KEY)
   }
 })
 
-function onSubmit() {
-  // Consentement obligatoire (le submit programmatique contourne la validation native).
-  if (!form.consentement) return
-  // Branchement API à venir — la maquette se contente de l'envoi simulé.
-  if (typeof window !== 'undefined') {
+const { submit: submitLead, sending, error: submitError } = useLeadSubmit()
+const submitted = ref(false)
+
+// `v` = valeurs parsées zod (siret normalisé, salaries coercé) — pas le brut.
+const onSubmit = handleSubmit(async (v) => {
+  const ok = await submitLead('demande', {
+    nom: v.nom,
+    email: v.email,
+    telephone: v.telephone,
+    raisonSociale: v.raisonSociale,
+    siret: v.siret,
+    fonction: v.fonction,
+    salaries: v.salaries,
+    echeance: v.echeance,
+    precisions: v.precisions || undefined,
+    // Libellés résolus — HubSpot reçoit du texte lisible, pas les slugs.
+    centre: centreName.value || centreSlug.value || undefined,
+    formation: formationName.value || undefined,
+    session: sessionName.value || undefined,
+    sujet: sujetSlug.value || undefined,
+    consentement: true,
+    pageUri: window.location.href,
+    pageName: 'Demande de formation'
+  })
+  if (ok) {
+    submitted.value = true
     window.sessionStorage.removeItem(DRAFT_KEY)
   }
-}
+})
 </script>

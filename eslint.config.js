@@ -64,8 +64,10 @@ const nuxtGlobals = {
   useCentres: 'readonly',
   useCentresTotal: 'readonly',
   useCentreDepartments: 'readonly',
+  useLeadSubmit: 'readonly',
   sanitizeHtml: 'readonly',
   logServerError: 'readonly',
+  logClientError: 'readonly',
   internalSsrHeaders: 'readonly'
 }
 

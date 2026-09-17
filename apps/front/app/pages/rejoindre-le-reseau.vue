@@ -38,7 +38,7 @@
     </section>
 
     <div class="mx-auto px-gutter-mobile py-section md:px-gutter md:py-4xl">
-      <section aria-labelledby="options-title">
+      <section id="candidater" aria-labelledby="options-title">
         <h2 id="options-title" class="font-display text-h2 font-extrabold text-ink">
           Trois façons de rejoindre le réseau
         </h2>
@@ -55,7 +55,16 @@
             </div>
             <h3 class="mt-lg font-display text-h3 font-extrabold text-ink">{{ option.title }}</h3>
             <p class="mt-sm flex-1 text-body text-ink-muted">{{ option.body }}</p>
+            <button
+              v-if="option.voie"
+              type="button"
+              class="mt-lg self-start text-small font-bold text-primary underline underline-offset-4 transition-colors hover:text-accent-text"
+              @click="openCandidature(option.voie)"
+            >
+              {{ option.cta }} <span class="link-arrow">→</span>
+            </button>
             <NuxtLink
+              v-else
               :to="option.to"
               class="mt-lg text-small font-bold text-primary underline underline-offset-4 transition-colors hover:text-accent-text"
             >
@@ -68,7 +77,7 @@
       <!-- Benefits -->
       <Benefits id="modele" title="Ce que le réseau apporte" :benefits="benefits" />
 
-      <section id="candidater" class="mt-4xl" aria-labelledby="process-title">
+      <section class="mt-4xl" aria-labelledby="process-title">
         <h2 id="process-title" class="md:text-center font-display text-h2 font-extrabold text-ink">
           De la candidature à l'ouverture
         </h2>
@@ -82,19 +91,28 @@
             Prérequis : expérience de la formation professionnelle ou de la direction
             d'établissement · démarche qualité · ancrage local.
           </p>
-          <Button as-child variant="accent" size="pill-lg" class="w-full shrink-0 md:w-auto">
-            <NuxtLink to="/centres/demande-de-formation?sujet=franchise">Candidater</NuxtLink>
+          <Button
+            variant="accent"
+            size="pill-lg"
+            class="w-full shrink-0 md:w-auto"
+            @click="openCandidature('centre')"
+          >
+            Candidater
           </Button>
         </div>
       </section>
     </div>
+
+    <Candidature v-model:open="candidatureOpen" :voie="candidatureVoie" />
   </div>
 </template>
 
 <script setup lang="ts">
+import type { Component } from 'vue'
 import IconAward from '~/components/icons/IconAward.vue'
 import IconBook from '~/components/icons/IconBook.vue'
 import IconBuilding from '~/components/icons/IconBuilding.vue'
+import type { CandidatureVoie } from '~/types/candidature'
 
 useContentSeo(
   {
@@ -105,13 +123,28 @@ useContentSeo(
   'Rejoindre le réseau — LEARN UP ACADEMY'
 )
 
-const joinOptions = [
+const candidatureOpen = ref(false)
+const candidatureVoie = ref<CandidatureVoie>('centre')
+
+function openCandidature(voie: CandidatureVoie) {
+  candidatureVoie.value = voie
+  candidatureOpen.value = true
+}
+
+const joinOptions: {
+  icon: Component
+  title: string
+  body: string
+  cta: string
+  to?: string
+  voie?: CandidatureVoie
+}[] = [
   {
     icon: IconBuilding,
     title: 'Ouvrir un centre LEARN UP ACADEMY',
     body: "Je suis un candidat à la franchise dynamique et rigoureux, fort d'une expérience confirmée en gestion de centre de profit et en management d'équipe.",
     cta: 'Candidater pour un centre',
-    to: '/centres/demande-de-formation?sujet=franchise'
+    voie: 'centre'
   },
   {
     icon: IconBook,
@@ -125,7 +158,7 @@ const joinOptions = [
     title: 'Intervenir comme formateur',
     body: 'Formateurs indépendants certifiés : intervenez pour les centres du réseau, sur vos domaines et votre zone géographique.',
     cta: 'Proposer mes interventions',
-    to: '/centres/demande-de-formation?sujet=formateur'
+    voie: 'formateur'
   }
 ]
 

@@ -26,7 +26,11 @@ const stubs = {
         props: ['value', 'label'],
         template: '<div class="stat">{{ value }} {{ label }}</div>'
       },
-      Benefits: { props: ['title'], template: '<section><h2>{{ title }}</h2></section>' }
+      Benefits: { props: ['title'], template: '<section><h2>{{ title }}</h2></section>' },
+      Candidature: {
+        props: ['open', 'voie'],
+        template: '<div class="candidature-dialog" :data-open="String(open)" :data-voie="voie" />'
+      }
     }
   }
 }
@@ -88,10 +92,17 @@ describe('pages/referencer-mon-organisme.vue', () => {
     expect(wrapper.text()).toContain('Carte de France interactive')
   })
 
-  it('le CTA final pointe vers le formulaire de candidature organisme', async () => {
+  it('le CTA final ouvre le dialog de candidature voie « organisme »', async () => {
     const wrapper = await mountOrganisme()
-    const cta = wrapper.find('a[href="/centres/demande-de-formation?sujet=organisme"]')
 
-    expect(cta.exists()).toBe(true)
+    const dialog = () => wrapper.find('.candidature-dialog')
+    expect(dialog().attributes('data-voie')).toBe('organisme')
+    expect(dialog().attributes('data-open')).toBe('false')
+
+    const cta = wrapper.findAll('button').find((b) => b.text() === 'Déposer une candidature')
+    expect(cta).toBeTruthy()
+    await cta!.trigger('click')
+
+    expect(dialog().attributes('data-open')).toBe('true')
   })
 })

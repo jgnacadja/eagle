@@ -6,10 +6,8 @@ ACADEMY).
 ## Contenu
 
 - `schema/snapshot.yaml` — snapshot du schéma (collections, champs, relations),
-  exporté via `directus schema snapshot`. **Actuellement obsolète** : il date de
-  ST-11 et ne reflète pas les champs ajoutés ensuite (`latitude`/`longitude`,
-  `department`, `region`, etc.). Il ne doit pas être utilisé pour `schema apply`
-  tant qu'il n'a pas été régénéré (voir Maintenance du snapshot ci-dessous).
+  exporté via `directus schema snapshot`. À régénérer après chaque modification
+  du schéma (voir Maintenance du snapshot ci-dessous).
 - `schema/collections.mjs`, `schema/roles.mjs` — définitions source des
   collections et de la matrice de rôles/permissions, lisibles par un humain
   (le YAML du snapshot est dense et peu adapté à la revue).

@@ -21,7 +21,9 @@ collections:
       singleton: false
       sort: null
       sort_field: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Articles
       unarchive_value: null
       versioning: false
     schema:
@@ -45,7 +47,9 @@ collections:
       singleton: false
       sort: null
       sort_field: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Centres
       unarchive_value: null
       versioning: false
     schema:
@@ -69,7 +73,9 @@ collections:
       singleton: false
       sort: null
       sort_field: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Familles de formation
       unarchive_value: null
       versioning: false
     schema:
@@ -95,7 +101,9 @@ collections:
       singleton: false
       sort: null
       sort_field: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Formations
       unarchive_value: null
       versioning: false
     schema:
@@ -119,7 +127,9 @@ collections:
       singleton: false
       sort: null
       sort_field: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Blocs de page
       unarchive_value: null
       versioning: false
     schema:
@@ -143,11 +153,41 @@ collections:
       singleton: false
       sort: null
       sort_field: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Pages
       unarchive_value: null
       versioning: false
     schema:
       name: pages
+  - collection: pages_legales
+    meta:
+      accountability: all
+      archive_app_filter: true
+      archive_field: null
+      archive_value: null
+      collapse: open
+      collection: pages_legales
+      color: null
+      display_template: null
+      group: null
+      hidden: false
+      icon: null
+      item_duplication_fields: null
+      note: >-
+        Pages légales (mentions légales, confidentialité, CGU, accessibilité,
+        cookies).
+      preview_url: null
+      singleton: false
+      sort: null
+      sort_field: null
+      translations:
+        - language: fr-FR
+          translation: Pages légales
+      unarchive_value: null
+      versioning: false
+    schema:
+      name: pages_legales
   - collection: sous_familles_formation
     meta:
       accountability: all
@@ -169,7 +209,9 @@ collections:
       singleton: false
       sort: null
       sort_field: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Sous-familles de formation
       unarchive_value: null
       versioning: false
     schema:
@@ -193,7 +235,9 @@ collections:
       singleton: false
       sort: null
       sort_field: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Statistiques
       unarchive_value: null
       versioning: false
     schema:
@@ -218,7 +262,9 @@ fields:
       searchable: true
       sort: 1
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: ID
       validation: null
       validation_message: null
       width: full
@@ -265,7 +311,9 @@ fields:
       searchable: true
       sort: 2
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Statut
       validation: null
       validation_message: null
       width: half
@@ -305,7 +353,9 @@ fields:
       searchable: true
       sort: 3
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Ordre
       validation: null
       validation_message: null
       width: full
@@ -345,7 +395,9 @@ fields:
       searchable: true
       sort: 4
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Slug
       validation: null
       validation_message: null
       width: half
@@ -385,7 +437,9 @@ fields:
       searchable: true
       sort: 5
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Titre
       validation: null
       validation_message: null
       width: full
@@ -425,7 +479,9 @@ fields:
       searchable: true
       sort: 6
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Extrait
       validation: null
       validation_message: null
       width: full
@@ -465,7 +521,9 @@ fields:
       searchable: true
       sort: 7
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Contenu
       validation: null
       validation_message: null
       width: full
@@ -505,7 +563,9 @@ fields:
       searchable: true
       sort: 8
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Catégorie
       validation: null
       validation_message: null
       width: half
@@ -545,7 +605,9 @@ fields:
       searchable: true
       sort: 9
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Nom de l’auteur
       validation: null
       validation_message: null
       width: half
@@ -578,14 +640,16 @@ fields:
       group: null
       hidden: false
       interface: file-image
-      note: Image auteur / signature
+      note: Image auteur
       options: null
       readonly: false
       required: false
       searchable: true
       sort: 10
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Photo de l’auteur
       validation: null
       validation_message: null
       width: half
@@ -625,7 +689,9 @@ fields:
       searchable: true
       sort: 11
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Région
       validation: null
       validation_message: null
       width: half
@@ -665,7 +731,9 @@ fields:
       searchable: true
       sort: 12
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Date de publication
       validation: null
       validation_message: null
       width: half
@@ -705,7 +773,9 @@ fields:
       searchable: true
       sort: 13
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Titre SEO
       validation: null
       validation_message: null
       width: half
@@ -745,7 +815,9 @@ fields:
       searchable: true
       sort: 14
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Description SEO
       validation: null
       validation_message: null
       width: full
@@ -785,7 +857,9 @@ fields:
       searchable: true
       sort: 15
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: URL canonique
       validation: null
       validation_message: null
       width: half
@@ -825,7 +899,9 @@ fields:
       searchable: true
       sort: 16
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Centre
       validation: null
       validation_message: null
       width: full
@@ -865,7 +941,9 @@ fields:
       searchable: true
       sort: 17
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Formation liée
       validation: null
       validation_message: null
       width: half
@@ -905,7 +983,9 @@ fields:
       searchable: true
       sort: 18
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Image de couverture
       validation: null
       validation_message: null
       width: full
@@ -945,7 +1025,9 @@ fields:
       searchable: true
       sort: 1
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: ID
       validation: null
       validation_message: null
       width: full
@@ -992,7 +1074,9 @@ fields:
       searchable: true
       sort: 2
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Statut
       validation: null
       validation_message: null
       width: half
@@ -1032,7 +1116,9 @@ fields:
       searchable: true
       sort: 3
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Ordre
       validation: null
       validation_message: null
       width: full
@@ -1072,7 +1158,9 @@ fields:
       searchable: true
       sort: 4
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Slug
       validation: null
       validation_message: null
       width: half
@@ -1112,7 +1200,9 @@ fields:
       searchable: true
       sort: 5
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Nom
       validation: null
       validation_message: null
       width: half
@@ -1154,7 +1244,9 @@ fields:
       searchable: true
       sort: 6
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Adresse
       validation: null
       validation_message: null
       width: full
@@ -1194,7 +1286,9 @@ fields:
       searchable: true
       sort: 7
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Ville
       validation: null
       validation_message: null
       width: half
@@ -1234,7 +1328,9 @@ fields:
       searchable: true
       sort: 8
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Code postal
       validation: null
       validation_message: null
       width: half
@@ -1274,7 +1370,9 @@ fields:
       searchable: true
       sort: 9
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Département
       validation: null
       validation_message: null
       width: half
@@ -1314,7 +1412,9 @@ fields:
       searchable: true
       sort: 10
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Région
       validation: null
       validation_message: null
       width: half
@@ -1354,7 +1454,9 @@ fields:
       searchable: true
       sort: 11
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Latitude
       validation: null
       validation_message: null
       width: half
@@ -1394,7 +1496,9 @@ fields:
       searchable: true
       sort: 12
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Longitude
       validation: null
       validation_message: null
       width: half
@@ -1434,7 +1538,9 @@ fields:
       searchable: true
       sort: 13
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Adresse géocodée
       validation: null
       validation_message: null
       width: full
@@ -1474,7 +1580,9 @@ fields:
       searchable: true
       sort: 14
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Description
       validation: null
       validation_message: null
       width: full
@@ -1515,7 +1623,9 @@ fields:
       sort: 15
       special:
         - cast-json
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Spécialités
       validation: null
       validation_message: null
       width: full
@@ -1555,7 +1665,9 @@ fields:
       searchable: true
       sort: 16
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Horaires d'ouverture
       validation: null
       validation_message: null
       width: half
@@ -1595,7 +1707,9 @@ fields:
       searchable: true
       sort: 17
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Transports
       validation: null
       validation_message: null
       width: half
@@ -1635,7 +1749,9 @@ fields:
       searchable: true
       sort: 18
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Parking
       validation: null
       validation_message: null
       width: half
@@ -1675,7 +1791,9 @@ fields:
       searchable: true
       sort: 19
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Accessible PMR
       validation: null
       validation_message: null
       width: half
@@ -1715,7 +1833,9 @@ fields:
       searchable: true
       sort: 20
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Téléphone
       validation: null
       validation_message: null
       width: half
@@ -1755,7 +1875,9 @@ fields:
       searchable: true
       sort: 21
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: E-mail
       validation: null
       validation_message: null
       width: half
@@ -1795,7 +1917,9 @@ fields:
       searchable: true
       sort: 22
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Nom du contact
       validation: null
       validation_message: null
       width: half
@@ -1835,7 +1959,9 @@ fields:
       searchable: true
       sort: 23
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Rôle du contact
       validation: null
       validation_message: null
       width: half
@@ -1876,7 +2002,9 @@ fields:
       sort: 24
       special:
         - cast-json
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Départements couverts
       validation: null
       validation_message: null
       width: full
@@ -1916,7 +2044,9 @@ fields:
       searchable: true
       sort: 25
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: URL Digiforma
       validation: null
       validation_message: null
       width: half
@@ -1956,7 +2086,9 @@ fields:
       searchable: true
       sort: 26
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Certifié Qualiopi
       validation: null
       validation_message: null
       width: half
@@ -1996,7 +2128,9 @@ fields:
       searchable: true
       sort: 27
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Numéro de certificat Qualiopi
       validation: null
       validation_message: null
       width: half
@@ -2036,7 +2170,9 @@ fields:
       searchable: true
       sort: 28
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Certificat Qualiopi
       validation: null
       validation_message: null
       width: half
@@ -2076,7 +2212,9 @@ fields:
       searchable: true
       sort: 29
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Titre SEO
       validation: null
       validation_message: null
       width: half
@@ -2116,7 +2254,9 @@ fields:
       searchable: true
       sort: 30
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Description SEO
       validation: null
       validation_message: null
       width: full
@@ -2156,7 +2296,9 @@ fields:
       searchable: true
       sort: 31
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: URL canonique
       validation: null
       validation_message: null
       width: half
@@ -2196,7 +2338,9 @@ fields:
       searchable: true
       sort: 32
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Image
       validation: null
       validation_message: null
       width: full
@@ -2236,7 +2380,9 @@ fields:
       searchable: true
       sort: 1
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: ID
       validation: null
       validation_message: null
       width: full
@@ -2283,7 +2429,9 @@ fields:
       searchable: true
       sort: 2
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Statut
       validation: null
       validation_message: null
       width: half
@@ -2323,7 +2471,9 @@ fields:
       searchable: true
       sort: 3
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Ordre
       validation: null
       validation_message: null
       width: full
@@ -2363,7 +2513,9 @@ fields:
       searchable: true
       sort: 4
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Slug
       validation: null
       validation_message: null
       width: half
@@ -2403,7 +2555,9 @@ fields:
       searchable: true
       sort: 5
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Nom
       validation: null
       validation_message: null
       width: half
@@ -2443,7 +2597,9 @@ fields:
       searchable: true
       sort: 6
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Introduction
       validation: null
       validation_message: null
       width: full
@@ -2483,7 +2639,9 @@ fields:
       searchable: true
       sort: 7
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Image
       validation: null
       validation_message: null
       width: half
@@ -2523,7 +2681,9 @@ fields:
       searchable: true
       sort: 8
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Titre des sous-familles
       validation: null
       validation_message: null
       width: half
@@ -2563,10 +2723,12 @@ fields:
       searchable: true
       sort: 9
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Qui est concerné ?
       validation: null
       validation_message: null
-      width: half
+      width: full
     schema:
       name: audience_text
       table: familles_formation
@@ -2603,10 +2765,12 @@ fields:
       searchable: true
       sort: 10
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Validité et renouvellement
       validation: null
       validation_message: null
-      width: half
+      width: full
     schema:
       name: validity_text
       table: familles_formation
@@ -2643,7 +2807,9 @@ fields:
       searchable: true
       sort: 11
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Titre SEO
       validation: null
       validation_message: null
       width: half
@@ -2683,7 +2849,9 @@ fields:
       searchable: true
       sort: 12
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Description SEO
       validation: null
       validation_message: null
       width: full
@@ -2723,7 +2891,9 @@ fields:
       searchable: true
       sort: 13
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: URL canonique
       validation: null
       validation_message: null
       width: half
@@ -2763,7 +2933,9 @@ fields:
       searchable: true
       sort: 14
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Icône
       validation: null
       validation_message: null
       width: full
@@ -2803,7 +2975,9 @@ fields:
       searchable: true
       sort: 1
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: ID
       validation: null
       validation_message: null
       width: full
@@ -2850,7 +3024,9 @@ fields:
       searchable: true
       sort: 2
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Statut
       validation: null
       validation_message: null
       width: half
@@ -2890,7 +3066,9 @@ fields:
       searchable: true
       sort: 3
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Ordre
       validation: null
       validation_message: null
       width: full
@@ -2930,7 +3108,9 @@ fields:
       searchable: true
       sort: 4
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: ID Digiforma
       validation: null
       validation_message: null
       width: half
@@ -2970,7 +3150,9 @@ fields:
       searchable: true
       sort: 5
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Slug
       validation: null
       validation_message: null
       width: half
@@ -3010,7 +3192,9 @@ fields:
       searchable: true
       sort: 6
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Titre
       validation: null
       validation_message: null
       width: full
@@ -3050,7 +3234,9 @@ fields:
       searchable: true
       sort: 7
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Description
       validation: null
       validation_message: null
       width: full
@@ -3090,7 +3276,9 @@ fields:
       searchable: true
       sort: 8
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Durée (jours)
       validation: null
       validation_message: null
       width: half
@@ -3130,7 +3318,9 @@ fields:
       searchable: true
       sort: 9
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Durée (heures)
       validation: null
       validation_message: null
       width: half
@@ -3170,7 +3360,9 @@ fields:
       searchable: true
       sort: 10
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Prix
       validation: null
       validation_message: null
       width: half
@@ -3210,7 +3402,9 @@ fields:
       searchable: true
       sort: 11
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Éligible CPF
       validation: null
       validation_message: null
       width: half
@@ -3250,7 +3444,9 @@ fields:
       searchable: true
       sort: 12
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Code CPF
       validation: null
       validation_message: null
       width: half
@@ -3290,7 +3486,9 @@ fields:
       searchable: true
       sort: 13
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Certification
       validation: null
       validation_message: null
       width: half
@@ -3330,7 +3528,9 @@ fields:
       searchable: true
       sort: 14
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Certificateur
       validation: null
       validation_message: null
       width: half
@@ -3370,7 +3570,9 @@ fields:
       searchable: true
       sort: 15
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Catégorie Digiforma
       validation: null
       validation_message: null
       width: half
@@ -3411,7 +3613,9 @@ fields:
       sort: 16
       special:
         - cast-json
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Modalités
       validation: null
       validation_message: null
       width: full
@@ -3451,7 +3655,9 @@ fields:
       searchable: true
       sort: 17
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Centre (slug)
       validation: null
       validation_message: null
       width: half
@@ -3492,7 +3698,9 @@ fields:
       sort: 18
       special:
         - cast-json
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Centres (slugs)
       validation: null
       validation_message: null
       width: full
@@ -3524,16 +3732,74 @@ fields:
       field: sessions
       group: null
       hidden: false
-      interface: input-code
-      note: Sessions JSON — réécrites par la sync à chaque run
-      options: null
-      readonly: true
+      interface: list
+      note: >-
+        Réécrites par la sync à chaque run — les retours éditoriaux sont perdus
+        au run suivant
+      options:
+        fields:
+          - field: id
+            meta:
+              interface: input
+              width: half
+            name: ID Digiforma
+            schema: {}
+            type: string
+          - field: startDate
+            meta:
+              interface: datetime
+              width: half
+            name: Date de début
+            schema: {}
+            type: date
+          - field: endDate
+            meta:
+              interface: datetime
+              width: half
+            name: Date de fin
+            schema: {}
+            type: date
+          - field: modality
+            meta:
+              interface: select-dropdown
+              options:
+                allowOther: true
+                choices:
+                  - text: Présentiel
+                    value: presentiel
+                  - text: Distanciel
+                    value: distanciel
+              width: half
+            name: Modalité
+            schema: {}
+            type: string
+          - field: seatsRemaining
+            meta:
+              interface: input
+              width: half
+            name: Places restantes
+            schema: {}
+            type: integer
+          - field: location
+            meta:
+              interface: input-code
+              note: >-
+                Objet — clés : name, city, postalCode, department, region,
+                centreSlug
+              width: full
+            name: Lieu
+            schema: {}
+            type: json
+        template: '{{startDate}} → {{endDate}} · {{modality}}'
+      readonly: false
       required: false
       searchable: true
       sort: 19
       special:
         - cast-json
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Sessions
       validation: null
       validation_message: null
       width: full
@@ -3573,7 +3839,9 @@ fields:
       searchable: true
       sort: 20
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Localisations
       validation: null
       validation_message: null
       width: full
@@ -3605,16 +3873,100 @@ fields:
       field: blocks
       group: null
       hidden: false
-      interface: input-code
-      note: Blocs pédagogiques JSON (programme) — remplis par la sync, éditables
-      options: null
+      interface: list
+      note: Blocs pédagogiques (programme) — remplis par la sync, éditables
+      options:
+        fields:
+          - field: name
+            meta:
+              interface: input
+              required: true
+              width: full
+            name: Nom
+            schema: {}
+            type: string
+          - field: subtitle
+            meta:
+              interface: input
+              note: Ligne résumée sur la fiche
+              width: full
+            name: Sous-titre
+            schema: {}
+            type: string
+          - field: description
+            meta:
+              interface: input-rich-text-html
+              width: full
+            name: Description
+            schema: {}
+            type: text
+          - field: goals
+            meta:
+              interface: list
+              note: Objectifs du bloc
+              options:
+                fields:
+                  - field: text
+                    meta:
+                      interface: input
+                      required: true
+                      width: full
+                    name: Texte
+                    schema: {}
+                    type: string
+              width: full
+            name: Objectifs
+            schema: {}
+            type: json
+          - field: type
+            meta:
+              interface: select-dropdown
+              options:
+                allowOther: true
+                choices:
+                  - text: Théorie
+                    value: theorie
+                  - text: Pratique
+                    value: pratique
+                  - text: Évaluation
+                    value: evaluation
+              width: half
+            name: Type
+            schema: {}
+            type: string
+          - field: position
+            meta:
+              interface: input
+              note: Ordre d’affichage
+              width: half
+            name: Position
+            schema: {}
+            type: integer
+          - field: durationInHours
+            meta:
+              interface: input
+              note: Durée en heures
+              width: half
+            name: Durée (heures)
+            schema: {}
+            type: float
+          - field: durationInDays
+            meta:
+              interface: input
+              note: Durée en jours (si pas d’heures)
+              width: half
+            name: Durée (jours)
+            schema: {}
+            type: float
       readonly: false
       required: false
       searchable: true
       sort: 21
       special:
         - cast-json
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Programme
       validation: null
       validation_message: null
       width: full
@@ -3654,7 +4006,9 @@ fields:
       searchable: true
       sort: 22
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: URL du programme généré
       validation: null
       validation_message: null
       width: full
@@ -3697,12 +4051,14 @@ fields:
               interface: input
               required: true
               width: full
+            name: Titre
             schema: {}
             type: string
           - field: description
             meta:
               interface: input-multiline
               width: full
+            name: Description
             schema: {}
             type: text
       readonly: false
@@ -3711,7 +4067,9 @@ fields:
       sort: 23
       special:
         - cast-json
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Pédagogie
       validation: null
       validation_message: null
       width: full
@@ -3754,7 +4112,9 @@ fields:
       sort: 24
       special:
         - cast-json
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Évaluation
       validation: null
       validation_message: null
       width: full
@@ -3794,7 +4154,9 @@ fields:
       searchable: true
       sort: 25
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Validité
       validation: null
       validation_message: null
       width: half
@@ -3834,7 +4196,9 @@ fields:
       searchable: true
       sort: 26
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Titre SEO
       validation: null
       validation_message: null
       width: half
@@ -3874,7 +4238,9 @@ fields:
       searchable: true
       sort: 27
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Description SEO
       validation: null
       validation_message: null
       width: full
@@ -3914,7 +4280,9 @@ fields:
       searchable: true
       sort: 28
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: URL canonique
       validation: null
       validation_message: null
       width: half
@@ -3955,7 +4323,9 @@ fields:
       sort: 29
       special:
         - cast-json
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Données brutes Digiforma
       validation: null
       validation_message: null
       width: full
@@ -3996,7 +4366,9 @@ fields:
       sort: 30
       special:
         - date-created
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Date de création
       validation: null
       validation_message: null
       width: half
@@ -4037,7 +4409,9 @@ fields:
       sort: 31
       special:
         - date-updated
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Dernière modification
       validation: null
       validation_message: null
       width: half
@@ -4079,7 +4453,9 @@ fields:
       searchable: true
       sort: 32
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Image
       validation: null
       validation_message: null
       width: full
@@ -4119,7 +4495,9 @@ fields:
       searchable: true
       sort: 33
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Famille
       validation: null
       validation_message: null
       width: full
@@ -4159,7 +4537,9 @@ fields:
       searchable: true
       sort: 34
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Sous-famille
       validation: null
       validation_message: null
       width: full
@@ -4199,7 +4579,9 @@ fields:
       searchable: true
       sort: 1
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: ID
       validation: null
       validation_message: null
       width: full
@@ -4239,7 +4621,9 @@ fields:
       searchable: true
       sort: 2
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Ordre
       validation: null
       validation_message: null
       width: full
@@ -4288,7 +4672,9 @@ fields:
       searchable: true
       sort: 3
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Type de bloc
       validation: null
       validation_message: null
       width: half
@@ -4328,7 +4714,9 @@ fields:
       searchable: true
       sort: 4
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Titre
       validation: null
       validation_message: null
       width: full
@@ -4368,7 +4756,9 @@ fields:
       searchable: true
       sort: 5
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Contenu
       validation: null
       validation_message: null
       width: full
@@ -4408,7 +4798,9 @@ fields:
       searchable: true
       sort: 6
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Page
       validation: null
       validation_message: null
       width: full
@@ -4448,7 +4840,9 @@ fields:
       searchable: true
       sort: 7
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Image
       validation: null
       validation_message: null
       width: full
@@ -4488,7 +4882,9 @@ fields:
       searchable: true
       sort: 1
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: ID
       validation: null
       validation_message: null
       width: full
@@ -4535,7 +4931,9 @@ fields:
       searchable: true
       sort: 2
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Statut
       validation: null
       validation_message: null
       width: half
@@ -4575,7 +4973,9 @@ fields:
       searchable: true
       sort: 3
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Slug
       validation: null
       validation_message: null
       width: half
@@ -4615,7 +5015,9 @@ fields:
       searchable: true
       sort: 4
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Titre
       validation: null
       validation_message: null
       width: full
@@ -4655,7 +5057,9 @@ fields:
       searchable: true
       sort: 5
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Titre SEO
       validation: null
       validation_message: null
       width: half
@@ -4695,7 +5099,9 @@ fields:
       searchable: true
       sort: 6
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Description SEO
       validation: null
       validation_message: null
       width: full
@@ -4735,7 +5141,9 @@ fields:
       searchable: true
       sort: 7
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: URL canonique
       validation: null
       validation_message: null
       width: half
@@ -4745,6 +5153,679 @@ fields:
       data_type: character varying
       default_value: null
       max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales
+    field: id
+    type: integer
+    meta:
+      collection: pages_legales
+      conditions: null
+      display: null
+      display_options: null
+      field: id
+      group: null
+      hidden: true
+      interface: input
+      note: null
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 1
+      special: null
+      translations:
+        - language: fr-FR
+          translation: ID
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: id
+      table: pages_legales
+      data_type: integer
+      default_value: nextval('pages_legales_id_seq'::regclass)
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: false
+      is_unique: true
+      is_indexed: false
+      is_primary_key: true
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: true
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales
+    field: status
+    type: string
+    meta:
+      collection: pages_legales
+      conditions: null
+      display: null
+      display_options: null
+      field: status
+      group: null
+      hidden: false
+      interface: select-dropdown
+      note: null
+      options:
+        choices:
+          - text: Brouillon
+            value: draft
+          - text: Publié
+            value: published
+          - text: Archivé
+            value: archived
+      readonly: false
+      required: false
+      searchable: true
+      sort: 2
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Statut
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: status
+      table: pages_legales
+      data_type: character varying
+      default_value: draft
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales
+    field: sort
+    type: integer
+    meta:
+      collection: pages_legales
+      conditions: null
+      display: null
+      display_options: null
+      field: sort
+      group: null
+      hidden: true
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 3
+      special:
+        - sort
+      translations:
+        - language: fr-FR
+          translation: Ordre
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: sort
+      table: pages_legales
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales
+    field: slug
+    type: string
+    meta:
+      collection: pages_legales
+      conditions: null
+      display: null
+      display_options: null
+      field: slug
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: true
+      searchable: true
+      sort: 4
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Slug
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: slug
+      table: pages_legales
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: true
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales
+    field: label
+    type: string
+    meta:
+      collection: pages_legales
+      conditions: null
+      display: null
+      display_options: null
+      field: label
+      group: null
+      hidden: false
+      interface: input
+      note: Libellé court (onglets, menus)
+      options: null
+      readonly: false
+      required: true
+      searchable: true
+      sort: 5
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Libellé
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: label
+      table: pages_legales
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales
+    field: title
+    type: string
+    meta:
+      collection: pages_legales
+      conditions: null
+      display: null
+      display_options: null
+      field: title
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: true
+      searchable: true
+      sort: 6
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Titre
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: title
+      table: pages_legales
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales
+    field: show_in_tabs
+    type: boolean
+    meta:
+      collection: pages_legales
+      conditions: null
+      display: null
+      display_options: null
+      field: show_in_tabs
+      group: null
+      hidden: false
+      interface: boolean
+      note: Afficher dans la navigation par onglets des pages légales
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 7
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Afficher dans les onglets
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: show_in_tabs
+      table: pages_legales
+      data_type: boolean
+      default_value: true
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales
+    field: sections
+    type: json
+    meta:
+      collection: pages_legales
+      conditions: null
+      display: null
+      display_options: null
+      field: sections
+      group: null
+      hidden: false
+      interface: list
+      note: Sections de la page — ancre, titre, paragraphes, puces
+      options:
+        fields:
+          - field: id
+            meta:
+              interface: input
+              note: 'Ancre HTML (ex: editeur)'
+              required: true
+              width: half
+            name: Ancre
+            schema: {}
+            type: string
+          - field: title
+            meta:
+              interface: input
+              required: true
+              width: half
+            name: Titre
+            schema: {}
+            type: string
+          - field: paragraphs
+            meta:
+              interface: tags
+              width: full
+            name: Paragraphes
+            schema: {}
+            type: json
+          - field: bullets
+            meta:
+              interface: tags
+              width: full
+            name: Puces
+            schema: {}
+            type: json
+      readonly: false
+      required: false
+      searchable: true
+      sort: 8
+      special:
+        - cast-json
+      translations:
+        - language: fr-FR
+          translation: Sections
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: sections
+      table: pages_legales
+      data_type: json
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales
+    field: cta_label
+    type: string
+    meta:
+      collection: pages_legales
+      conditions: null
+      display: null
+      display_options: null
+      field: cta_label
+      group: null
+      hidden: false
+      interface: input
+      note: Libellé du bouton en bas de page
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 9
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Libellé CTA
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: cta_label
+      table: pages_legales
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales
+    field: cta_to
+    type: string
+    meta:
+      collection: pages_legales
+      conditions: null
+      display: null
+      display_options: null
+      field: cta_to
+      group: null
+      hidden: false
+      interface: input
+      note: Lien du bouton (mailto:… ou route)
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 10
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Lien CTA
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: cta_to
+      table: pages_legales
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales
+    field: seo_title
+    type: string
+    meta:
+      collection: pages_legales
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_title
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 11
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Titre SEO
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_title
+      table: pages_legales
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales
+    field: seo_description
+    type: text
+    meta:
+      collection: pages_legales
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_description
+      group: null
+      hidden: false
+      interface: input-multiline
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 12
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Description SEO
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: seo_description
+      table: pages_legales
+      data_type: text
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales
+    field: seo_canonical
+    type: string
+    meta:
+      collection: pages_legales
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_canonical
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 13
+      special: null
+      translations:
+        - language: fr-FR
+          translation: URL canonique
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_canonical
+      table: pages_legales
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales
+    field: created_at
+    type: timestamp
+    meta:
+      collection: pages_legales
+      conditions: null
+      display: null
+      display_options: null
+      field: created_at
+      group: null
+      hidden: true
+      interface: datetime
+      note: null
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 14
+      special:
+        - date-created
+      translations:
+        - language: fr-FR
+          translation: Date de création
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: created_at
+      table: pages_legales
+      data_type: timestamp with time zone
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales
+    field: updated_at
+    type: timestamp
+    meta:
+      collection: pages_legales
+      conditions: null
+      display: null
+      display_options: null
+      field: updated_at
+      group: null
+      hidden: true
+      interface: datetime
+      note: null
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 15
+      special:
+        - date-updated
+      translations:
+        - language: fr-FR
+          translation: Dernière modification
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: updated_at
+      table: pages_legales
+      data_type: timestamp with time zone
+      default_value: null
+      max_length: null
       numeric_precision: null
       numeric_scale: null
       is_nullable: true
@@ -4775,7 +5856,9 @@ fields:
       searchable: true
       sort: 1
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: ID
       validation: null
       validation_message: null
       width: full
@@ -4822,7 +5905,9 @@ fields:
       searchable: true
       sort: 2
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Statut
       validation: null
       validation_message: null
       width: half
@@ -4862,7 +5947,9 @@ fields:
       searchable: true
       sort: 3
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Ordre
       validation: null
       validation_message: null
       width: full
@@ -4902,7 +5989,9 @@ fields:
       searchable: true
       sort: 4
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Slug
       validation: null
       validation_message: null
       width: half
@@ -4942,7 +6031,9 @@ fields:
       searchable: true
       sort: 5
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Nom
       validation: null
       validation_message: null
       width: half
@@ -4982,7 +6073,9 @@ fields:
       searchable: true
       sort: 6
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Accroche
       validation: null
       validation_message: null
       width: half
@@ -5022,7 +6115,9 @@ fields:
       searchable: true
       sort: 7
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Famille
       validation: null
       validation_message: null
       width: full
@@ -5062,7 +6157,9 @@ fields:
       searchable: true
       sort: 1
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: ID
       validation: null
       validation_message: null
       width: full
@@ -5102,7 +6199,9 @@ fields:
       searchable: true
       sort: 2
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Ordre
       validation: null
       validation_message: null
       width: full
@@ -5142,7 +6241,9 @@ fields:
       searchable: true
       sort: 3
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Libellé
       validation: null
       validation_message: null
       width: half
@@ -5182,7 +6283,9 @@ fields:
       searchable: true
       sort: 4
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Valeur
       validation: null
       validation_message: null
       width: half
@@ -5222,7 +6325,9 @@ fields:
       searchable: true
       sort: 5
       special: null
-      translations: null
+      translations:
+        - language: fr-FR
+          translation: Icône
       validation: null
       validation_message: null
       width: full

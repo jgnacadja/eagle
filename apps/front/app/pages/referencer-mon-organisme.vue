@@ -117,18 +117,23 @@
             aucun engagement.
           </p>
         </div>
-        <Button as-child variant="accent" size="pill-lg" class="w-full shrink-0 md:w-auto">
-          <NuxtLink to="/centres/demande-de-formation?sujet=organisme">
-            Déposer une candidature</NuxtLink
-          >
+        <Button
+          variant="accent"
+          size="pill-lg"
+          class="w-full shrink-0 md:w-auto"
+          @click="candidatureOpen = true"
+        >
+          Déposer une candidature
         </Button>
       </div>
     </div>
+
+    <Candidature v-model:open="candidatureOpen" voie="organisme" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { Centre } from '@learnup/types'
 import { useGeolocation } from '~/composables/useGeolocation'
 import type { CenterResult } from '~/types/center-result'
@@ -199,6 +204,8 @@ const centresData = await useDirectusList<Centre>('centres', 'organisme-map-cent
 })
 
 const { position: userPosition } = useGeolocation()
+
+const candidatureOpen = ref(false)
 
 const mapCenters = computed<CenterResult[]>(() =>
   (centresData.value ?? []).map((centre) => {

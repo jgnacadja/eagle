@@ -9,7 +9,7 @@
 
         <nav aria-label="Pages légales" class="mt-2xl hidden border-b border-rule pb-0 md:block">
           <ul class="-mb-px flex items-center gap-md">
-            <li v-for="tab in tabbedPages" :key="tab.slug">
+            <li v-for="tab in tabs" :key="tab.slug">
               <NuxtLink
                 :to="`/${tab.slug}`"
                 :aria-current="tab.slug === currentSlug ? 'page' : undefined"
@@ -41,12 +41,7 @@
             <span class="truncate">{{ currentLabel }}</span>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem
-              v-for="tab in tabbedPages"
-              :key="tab.slug"
-              :value="tab.slug"
-              class="text-small"
-            >
+            <SelectItem v-for="tab in tabs" :key="tab.slug" :value="tab.slug" class="text-small">
               {{ tab.label }}
             </SelectItem>
           </SelectContent>
@@ -132,20 +127,19 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { cn } from '@/lib/utils'
-import { tabbedLegalPages, type LegalPage } from '~/data/legal'
+import type { LegalPage, LegalPageTab } from '~/types/legal'
 
 const props = defineProps<{
   page: LegalPage
+  tabs: LegalPageTab[]
 }>()
 
 const route = useRoute()
-const currentSlug = computed(() => (route.params.legal as string) || props.page.slug)
-
-const tabbedPages = tabbedLegalPages
+const currentSlug = computed(() => (route.params.slug as string) || props.page.slug)
 
 const selectedPage = ref(currentSlug.value)
 const currentLabel = computed(
-  () => tabbedPages.find((p) => p.slug === currentSlug.value)?.label ?? props.page.label
+  () => props.tabs.find((p) => p.slug === currentSlug.value)?.label ?? props.page.label
 )
 
 watch(selectedPage, (newSlug) => {

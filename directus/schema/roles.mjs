@@ -24,6 +24,7 @@ const CONTENT_COLLECTIONS = [
   'articles',
   'pages',
   'page_blocks',
+  'pages_legales',
   'stats',
   'formations'
 ]
@@ -45,7 +46,9 @@ export function permissionsFor(roleName) {
         ...['articles', 'page_blocks', 'sous_familles_formation'].flatMap((c) =>
           grants(c, ['create', 'read', 'update'])
         ),
-        ...['centres', 'familles_formation', 'pages', 'stats'].flatMap((c) => grants(c, ['read'])),
+        ...['centres', 'familles_formation', 'pages', 'pages_legales', 'stats'].flatMap((c) =>
+          grants(c, ['read'])
+        ),
         ...grants('directus_files', ['create', 'read']),
         { collection: 'formations', action: 'read' },
         {
@@ -94,6 +97,7 @@ export function permissionsFor(roleName) {
           'familles_formation',
           'sous_familles_formation',
           'pages',
+          'pages_legales',
           'stats',
           'directus_files'
         ].flatMap((c) => grants(c, ['read'])),
@@ -121,6 +125,7 @@ const PUBLIC_STATUS_FILTERED = [
   'sous_familles_formation',
   'articles',
   'pages',
+  'pages_legales',
   'formations'
 ]
 const PUBLIC_UNRESTRICTED = ['page_blocks', 'stats', 'directus_files']

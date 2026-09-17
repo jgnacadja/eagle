@@ -18,6 +18,8 @@ const COLLECTION_ROUTES: Record<string, string[]> = {
   pages: ['/'],
   page_blocks: ['/'],
   stats: ['/']
+  // pages_legales volontairement absente : ses routes sont des slugs racine
+  // (/{slug}) impossibles à cibler par préfixe — non mappée → purge complète.
 }
 
 // Le format interne des clés ISR Nitro n'est pas un contrat stable : on

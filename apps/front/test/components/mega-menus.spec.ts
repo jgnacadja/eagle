@@ -77,6 +77,15 @@ vi.mock('~/composables/useMenuData', async () => {
         ])
       )
     }),
+    useMenuLegalPages: () =>
+      ref([
+        { slug: 'mentions-legales', label: 'Mentions légales', showInTabs: true },
+        {
+          slug: 'confidentialite',
+          label: 'Politique de confidentialité',
+          showInTabs: true
+        }
+      ]),
     useMenuActualites: () => ({
       rubriques: ref([
         { slug: 'toute-actualite', label: 'Toute l’actualité du réseau' },

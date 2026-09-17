@@ -32,6 +32,7 @@
       >
         <IconClose :size="14" />
       </button>
+      <slot name="action" />
       <Button
         type="button"
         size="icon-sm"

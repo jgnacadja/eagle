@@ -1,6 +1,7 @@
-import { mount } from '@vue/test-utils'
-import { defineComponent, h, ref, Suspense } from 'vue'
-import { describe, expect, it, vi } from 'vitest'
+import { DOMWrapper, mount } from '@vue/test-utils'
+import { defineComponent, h, nextTick, ref, Suspense } from 'vue'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { useGeolocation } from '~/composables/useGeolocation'
 import HomePage from '~/pages/index.vue'
 
 const seoMock = vi.fn()
@@ -117,7 +118,8 @@ const stubs = {
   SearchInput: {
     props: ['modelValue'],
     emits: ['update:modelValue', 'submit'],
-    template: '<input :value="modelValue" @keydown.enter="$emit(\'submit\', \'vitry\')" />'
+    template:
+      '<span><input v-bind="$attrs" :value="modelValue" @keydown.enter="$emit(\'submit\', \'vitry\')" /><slot name="action" /></span>'
   },
   NetworkCard: {
     props: ['title', 'to'],
@@ -155,6 +157,13 @@ async function mountPage() {
 }
 
 describe('pages/index', () => {
+  beforeEach(() => {
+    // État géo partagé au niveau module : reset entre tests.
+    const geo = useGeolocation()
+    geo.clear()
+    geo.permission.value = null
+  })
+
   it('affiche le hero et les sections principales', async () => {
     const wrapper = await mountPage()
 
@@ -194,7 +203,7 @@ describe('pages/index', () => {
     expect(hrefs).toContain('/centres')
   })
 
-  it('demande la géolocalisation au montage et affiche les distances réelles', async () => {
+  it('le badge « Autour de moi » déclenche la géolocalisation et affiche les distances réelles', async () => {
     const getCurrentPosition = vi.fn(
       (success: (pos: { coords: { latitude: number; longitude: number } }) => void) => {
         success({ coords: { latitude: 48.7909, longitude: 2.4534 } })
@@ -205,6 +214,18 @@ describe('pages/index', () => {
 
     try {
       const wrapper = await mountPage()
+
+      // Jamais automatique : clic badge → dialog → « Utiliser ma position ».
+      // Le Dialog reka-ui est téléporté dans document.body.
+      expect(getCurrentPosition).not.toHaveBeenCalled()
+      await wrapper.find('button[aria-label="Activer la géolocalisation"]').trigger('click')
+      await nextTick()
+      const confirmEl = [...document.body.querySelectorAll('button')].find((b) =>
+        b.textContent?.includes('Utiliser ma position')
+      )
+      expect(confirmEl, 'le dialog de consentement doit être ouvert').toBeTruthy()
+      await new DOMWrapper(confirmEl!).trigger('click')
+      await nextTick()
 
       expect(getCurrentPosition).toHaveBeenCalled()
       // Position = Créteil : la carte affiche la distance réelle, pas ville·dept.

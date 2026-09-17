@@ -22,15 +22,23 @@ function mockDeps(centres: GeocodableCentre[]) {
   const fetchCentresForGeocoding = vi.fn().mockResolvedValue(centres)
   const updateCentre = vi.fn().mockResolvedValue(undefined)
   const invalidateCatalog = vi.fn().mockResolvedValue(undefined)
+  const cacheGet = vi.fn().mockResolvedValue(null)
+  const cacheSet = vi.fn().mockResolvedValue(undefined)
   return {
     directus: {
       fetchCentresForGeocoding,
       updateCentre
     } as unknown as DirectusCatalogService,
-    cache: { invalidateCatalog } as unknown as CacheService,
+    cache: {
+      invalidateCatalog,
+      get: cacheGet,
+      set: cacheSet
+    } as unknown as CacheService,
     fetchCentresForGeocoding,
     updateCentre,
-    invalidateCatalog
+    invalidateCatalog,
+    cacheGet,
+    cacheSet
   }
 }
 
@@ -142,5 +150,85 @@ describe('GeocodingService', () => {
     const result = await service.syncMissing()
 
     expect(result).toEqual({ geocoded: 0, failed: 1 })
+  })
+
+  describe('reverseGeocode', () => {
+    const reverseResponse = {
+      features: [
+        {
+          geometry: { coordinates: [2.45, 48.79] },
+          properties: {
+            city: 'Créteil',
+            postcode: '94000',
+            context: '94, Val-de-Marne, Île-de-France'
+          }
+        }
+      ]
+    }
+
+    it('résout ville et département depuis les coordonnées', async () => {
+      const deps = await build([])
+      fetchMock.mockResolvedValue({ ok: true, json: () => Promise.resolve(reverseResponse) })
+
+      const result = await service.reverseGeocode(48.7909, 2.4534)
+
+      expect(result).toEqual({
+        city: 'Créteil',
+        postcode: '94000',
+        department: 'Val-de-Marne',
+        region: 'Île-de-France'
+      })
+      const url = fetchMock.mock.calls[0]?.[0] as URL
+      expect(url.pathname).toBe('/reverse/')
+      expect(url.searchParams.get('lat')).toBe('48.7909')
+      expect(url.searchParams.get('lon')).toBe('2.4534')
+      expect(deps.cacheSet).toHaveBeenCalled()
+    })
+
+    it('sert le résultat depuis le cache sans rappeler la BAN', async () => {
+      const cached = {
+        city: 'Créteil',
+        postcode: '94000',
+        department: 'Val-de-Marne',
+        region: 'Île-de-France'
+      }
+      const deps = await build([])
+      deps.cacheGet.mockResolvedValue(cached)
+
+      const result = await service.reverseGeocode(48.7909, 2.4534)
+
+      expect(result).toEqual(cached)
+      expect(fetchMock).not.toHaveBeenCalled()
+      expect(deps.cacheSet).not.toHaveBeenCalled()
+    })
+
+    it('retourne des champs null et ne met pas en cache quand la BAN ne résout rien', async () => {
+      const deps = await build([])
+      fetchMock.mockResolvedValue({ ok: true, json: () => Promise.resolve({ features: [] }) })
+
+      const result = await service.reverseGeocode(0, 0)
+
+      expect(result).toEqual({ city: null, postcode: null, department: null, region: null })
+      expect(deps.cacheSet).not.toHaveBeenCalled()
+    })
+
+    it('retourne des champs null et ne met pas en cache quand la BAN répond une erreur HTTP', async () => {
+      const deps = await build([])
+      fetchMock.mockResolvedValue({ ok: false, status: 500 })
+
+      const result = await service.reverseGeocode(48.79, 2.45)
+
+      expect(result).toEqual({ city: null, postcode: null, department: null, region: null })
+      expect(deps.cacheSet).not.toHaveBeenCalled()
+    })
+
+    it('retourne des champs null quand la requête BAN échoue', async () => {
+      await build([])
+      fetchMock.mockRejectedValue(new Error('network'))
+
+      const result = await service.reverseGeocode(48.79, 2.45)
+
+      expect(result).toEqual({ city: null, postcode: null, department: null, region: null })
+    })
   })
 })

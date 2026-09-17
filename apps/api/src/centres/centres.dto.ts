@@ -1,6 +1,6 @@
-import { ApiPropertyOptional } from '@nestjs/swagger'
-import { IsOptional, IsString, MaxLength } from 'class-validator'
-import { Transform } from 'class-transformer'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { IsLatitude, IsLongitude, IsOptional, IsString, MaxLength } from 'class-validator'
+import { Transform, Type } from 'class-transformer'
 
 function toOptionalTrimmed(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined
@@ -22,4 +22,16 @@ export class ListCentresDto {
   @MaxLength(200)
   @Transform(({ value }) => toOptionalTrimmed(value))
   search?: string
+}
+
+export class ReverseGeocodeDto {
+  @ApiProperty({ description: 'Latitude GPS (WGS84)' })
+  @Type(() => Number)
+  @IsLatitude()
+  lat!: number
+
+  @ApiProperty({ description: 'Longitude GPS (WGS84)' })
+  @Type(() => Number)
+  @IsLongitude()
+  lng!: number
 }

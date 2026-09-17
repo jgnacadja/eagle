@@ -222,6 +222,9 @@
             <template #icon>
               <IconSearch :size="20" class="shrink-0 text-primary" />
             </template>
+            <template #action>
+              <GeoNearMe />
+            </template>
           </SearchInput>
 
           <CenterCard
@@ -414,7 +417,7 @@ import { computed, ref } from 'vue'
 import type { Article, Centre } from '@learnup/types'
 import { mapCourse, useCatalog } from '~/composables/useCatalog'
 import { availabilityStatus, useCentreSessionDates } from '~/composables/useCentres'
-import { useAutoGeolocation } from '~/composables/useGeolocation'
+import { useGeolocation } from '~/composables/useGeolocation'
 import { distanceKm, formatDistance } from '~/utils/geo'
 import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
@@ -545,7 +548,9 @@ const derniersCentresData = await useDirectusList<Centre>('centres', 'home-centr
   sort: ['-id'],
   limit: -1
 })
-const { position: userPosition } = useAutoGeolocation()
+// Position partagée : activée via le badge « Autour de moi » (ici ou sur
+// /centres), jamais automatiquement.
+const { position: userPosition } = useGeolocation()
 
 // Centres « à proximité » : triés par distance quand la position est connue,
 // sinon les deux plus récents (ordre Directus).

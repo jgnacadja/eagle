@@ -15,11 +15,12 @@ function normalizeSearch(text: string | null | undefined): string {
 
 /**
  * Forme de comparaison d'une valeur de département : casse et accents via
- * `normalizeSearch`, plus espaces et tirets ignorés — « Val de Marne »
- * (tag libre) et « Val-de-Marne » (géocodé BAN) doivent se rejoindre.
+ * `normalizeSearch`, plus espaces, apostrophes et tirets ignorés —
+ * « Val de Marne » (tag libre), « Val-de-Marne » (géocodé BAN) et
+ * « Côtes-d'Armor » doivent se rejoindre.
  */
 function normalizeDepartment(text: string | null | undefined): string {
-  return normalizeSearch(text).replace(/[\s-]+/g, '')
+  return normalizeSearch(text).replace(/[\s'’-]+/g, '')
 }
 
 /**

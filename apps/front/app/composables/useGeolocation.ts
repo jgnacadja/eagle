@@ -1,7 +1,8 @@
-import { getCurrentScope, onMounted, onScopeDispose, ref, type Ref } from 'vue'
+import { ref, watch, type Ref } from 'vue'
 import type { GeoPoint } from '~/utils/geo'
 
 export type GeolocationStatus = 'idle' | 'locating' | 'granted' | 'denied' | 'unavailable' | 'error'
+export type GeolocationPermission = 'prompt' | 'granted' | 'denied' | null
 
 interface GeolocationOptions {
   enableHighAccuracy?: boolean
@@ -23,98 +24,157 @@ const DEFAULT_OPTIONS: GeolocationOptions = {
   maximumAge: 60_000
 }
 
-export interface UseGeolocationReturn {
-  status: Ref<GeolocationStatus>
-  position: Ref<GeoPoint | null>
-  error: Ref<GeolocationErrorLike | null>
-  request: () => void
+// État partagé au niveau module : la position de l'utilisateur est globale à la
+// session — activée sur une page (home ou /centres), elle s'applique partout où
+// `useGeolocation()` est consommé. Mutations uniquement côté client
+// (`request()` est impossible sans `navigator`) : pas de fuite SSR entre requêtes.
+const status = ref<GeolocationStatus>('idle')
+const position = ref<GeoPoint | null>(null)
+const error = ref<GeolocationErrorLike | null>(null)
+const permission = ref<GeolocationPermission>(null)
+
+// Le listener `change` est rattaché une seule fois par objet PermissionStatus —
+// un nouvel objet (nouvelle query) réenregistre.
+let watchedPerm: { addEventListener: (type: string, fn: () => void) => void } | null = null
+
+function refreshPermissionState() {
+  if (typeof navigator === 'undefined' || typeof navigator.permissions?.query !== 'function') {
+    return
+  }
+  navigator.permissions
+    .query({ name: 'geolocation' })
+    .then((perm) => {
+      permission.value = perm.state as GeolocationPermission
+      if (watchedPerm === perm) return
+      watchedPerm = perm
+      perm.addEventListener('change', () => {
+        permission.value = perm.state as GeolocationPermission
+        // Un accord tardif (popup native laissée ouverte, réactivation via les
+        // réglages du site) relance la demande si aucune position n'est connue.
+        if (perm.state === 'granted' && !position.value) request()
+      })
+    })
+    .catch(() => {
+      // Permissions API indisponible (ou nom non supporté) : la demande
+      // simple suffit, l'état reste inconnu (`null`).
+    })
 }
 
-/**
- * Adapter client autour de `navigator.geolocation`.
- * Pas d'appel automatique : l'appelant déclenche `request()` quand il le souhaite
- * (typiquement dans `onMounted` de la page concernée, pour éviter un mismatch SSR).
- */
-export function useGeolocation(): UseGeolocationReturn {
-  const status = ref<GeolocationStatus>('idle')
-  const position = ref<GeoPoint | null>(null)
-  const error = ref<GeolocationErrorLike | null>(null)
-
-  function request() {
-    if (
-      typeof navigator === 'undefined' ||
-      !navigator?.geolocation ||
-      typeof navigator.geolocation.getCurrentPosition !== 'function'
-    ) {
-      status.value = 'unavailable'
-      return
-    }
-
-    status.value = 'locating'
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        position.value = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude
-        }
-        status.value = 'granted'
-      },
-      (err: GeolocationErrorLike) => {
-        error.value = err
-        // 1 = GeolocationPositionError.PERMISSION_DENIED
-        status.value = err.code === 1 ? 'denied' : 'error'
-      },
-      DEFAULT_OPTIONS
-    )
+function request() {
+  if (
+    typeof navigator === 'undefined' ||
+    !navigator?.geolocation ||
+    typeof navigator.geolocation.getCurrentPosition !== 'function'
+  ) {
+    status.value = 'unavailable'
+    return
   }
 
-  // Si la demande échoue (timeout le temps que l'utilisateur lise la popup),
-  // un accord tardif ne s'appliquait qu'au refresh : on relance la demande
-  // dès que la permission passe à granted.
-  if (typeof navigator !== 'undefined' && typeof navigator.permissions?.query === 'function') {
-    navigator.permissions
-      .query({ name: 'geolocation' })
-      .then((perm) => {
-        const onChange = () => {
-          if (perm.state === 'granted' && !position.value) request()
-        }
-        perm.addEventListener('change', onChange)
-        if (getCurrentScope()) {
-          onScopeDispose(() => perm.removeEventListener('change', onChange))
-        }
-      })
-      .catch(() => {
-        // Permissions API indisponible (ou nom non supporté) : la demande
-        // simple suffit, pas de relance possible.
-      })
-  }
+  status.value = 'locating'
 
-  return { status, position, error, request }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      position.value = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude
+      }
+      status.value = 'granted'
+      permission.value = 'granted'
+    },
+    (err: GeolocationErrorLike) => {
+      error.value = err
+      // 1 = GeolocationPositionError.PERMISSION_DENIED — le navigateur ne
+      // réaffichera plus la popup native ; seul le site settings débloque.
+      status.value = err.code === 1 ? 'denied' : 'error'
+      if (err.code === 1) permission.value = 'denied'
+    },
+    DEFAULT_OPTIONS
+  )
+}
+
+function clear() {
+  position.value = null
+  status.value = 'idle'
+  error.value = null
 }
 
 // Viewport « desktop » : même seuil que le breakpoint Tailwind `lg`.
 export const DESKTOP_QUERY = '(min-width: 1024px)'
 
+export interface UseGeolocationReturn {
+  status: Ref<GeolocationStatus>
+  position: Ref<GeoPoint | null>
+  error: Ref<GeolocationErrorLike | null>
+  permission: Ref<GeolocationPermission>
+  request: () => void
+  clear: () => void
+}
+
 /**
- * Variante qui déclenche `request()` au montage du composant :
- * - desktop (viewport ≥ `lg`) : demande automatique ;
- * - mobile : uniquement via un geste explicite — `force()` (bouton
- *   « Autour de moi » → `/centres?geo=1`) ou un appel direct à `request()`.
- *
- * `force` n'est évalué qu'une fois, au montage. Pour un re-déclenchement
- * (navigation interne changeant la query), la page appelle `request()`.
+ * Adapter client autour de `navigator.geolocation`, état partagé entre pages.
+ * Pas d'appel automatique : la demande part uniquement d'un geste explicite
+ * (badge « Autour de moi », consent dialog).
  */
-export function useAutoGeolocation(force?: () => boolean): UseGeolocationReturn {
-  const geo = useGeolocation()
+export function useGeolocation(): UseGeolocationReturn {
+  refreshPermissionState()
+  return { status, position, error, permission, request, clear }
+}
 
-  onMounted(() => {
-    // matchMedia absent (vieux navigateur) → on demande quand même : mieux
-    // vaut une popup en trop qu'une géolocalisation silencieusement inactive.
-    const isDesktop =
-      typeof window.matchMedia !== 'function' || window.matchMedia(DESKTOP_QUERY).matches
-    if (isDesktop || force?.()) geo.request()
-  })
+export interface ReverseGeocodeResult {
+  city: string | null
+  department: string | null
+  region: string | null
+  postcode: string | null
+}
 
-  return geo
+/**
+ * Reverse geocoding via l'API (`GET /centres/reverse` → BAN) : convertit
+ * la position GPS en ville/département — utilisé pour pré-remplir le
+ * filtre département de `/centres`. Dégradation silencieuse : en cas
+ * d'échec les refs restent `null`, la position seule continue de trier
+ * les centres par distance.
+ */
+export function useReverseGeocode(position: Ref<GeoPoint | null>) {
+  const apiBase = useRuntimeConfig().public.apiBase
+
+  const city = ref<string | null>(null)
+  const department = ref<string | null>(null)
+
+  let fetchedKey: string | null = null
+  let requestSeq = 0
+  watch(
+    position,
+    async (pos) => {
+      if (!pos) {
+        city.value = null
+        department.value = null
+        fetchedKey = null
+        return
+      }
+      // Clé arrondie au dixième de degré (~10 km) : un rafraîchissement de
+      // position à quelques mètres près ne relance pas l'API.
+      const key = `${pos.lat.toFixed(1)}:${pos.lng.toFixed(1)}`
+      if (key === fetchedKey) return
+      fetchedKey = key
+      const seq = ++requestSeq
+      try {
+        const res = await $fetch<ReverseGeocodeResult>(`${apiBase}/centres/reverse`, {
+          query: { lat: pos.lat, lng: pos.lng }
+        })
+        // Réponse périmée : une position plus récente a déjà été demandée —
+        // on n'écrase pas ses valeurs.
+        if (seq !== requestSeq) return
+        city.value = res?.city ?? null
+        department.value = res?.department ?? null
+      } catch {
+        // Silencieux : le filtre département reste non pré-rempli. La clé
+        // n'est retenue que si la requête courante a échoué — sinon un
+        // échec périmé dédouanerait une position plus récente.
+        if (seq === requestSeq) fetchedKey = null
+      }
+    },
+    { immediate: true }
+  )
+
+  return { city, department }
 }

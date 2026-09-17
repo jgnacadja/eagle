@@ -24,7 +24,7 @@
             <div class="flex flex-col gap-md sm:flex-row sm:items-center">
               <Label for="dept-select" class="relative block">
                 <span class="sr-only">Sélectionner un département</span>
-                <Select v-model="selectedDept">
+                <Select v-model="selectedDept" @update:model-value="deptUserTouched = true">
                   <SelectTrigger id="dept-select" variant="field-lg" class="sm:w-64">
                     <span class="truncate">{{ selectedDeptLabel }}</span>
                   </SelectTrigger>
@@ -48,9 +48,13 @@
                 sr-label="Rechercher par ville ou code postal"
                 placeholder="Ville ou code postal"
                 :loading="centresPending"
-                class="w-full sm:w-72"
+                class="w-full sm:w-96"
                 @submit="onSearch"
-              />
+              >
+                <template #action>
+                  <GeoNearMe ref="geoNearMe" />
+                </template>
+              </SearchInput>
             </div>
 
             <div class="flex items-center justify-between gap-sm">
@@ -229,8 +233,8 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { DESKTOP_QUERY, useAutoGeolocation } from '~/composables/useGeolocation'
-import { densestClusterCenter, distanceKm } from '~/utils/geo'
+import { DESKTOP_QUERY, useGeolocation, useReverseGeocode } from '~/composables/useGeolocation'
+import { densestClusterCenter, distanceKm, normalizeDepartment } from '~/utils/geo'
 import type { CentresQuery } from '~/composables/useCentres'
 import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
@@ -272,11 +276,15 @@ const isMobileMapOpen = ref(false)
 // Destructuration : `position` devient un binding top-level, donc auto-déplié
 // dans le template (un Ref imbriqué dans un objet ne l'est pas — CenterMap
 // recevrait le Ref lui-même et non { lat, lng }).
-// « Autour de moi » (menu mobile) pointe vers /centres?geo=1 : la demande
-// part du geste utilisateur. Sur desktop elle est automatique au montage.
-const { position: userPosition, request: requestGeolocation } = useAutoGeolocation(
-  () => route.query.geo === '1'
-)
+// La géolocalisation n'est jamais automatique : elle part d'un geste
+// explicite — badge « Autour de moi » de la barre de recherche (dialog de
+// consentement maison puis popup native) ou lien `?geo=1` du menu mobile.
+const { position: userPosition } = useGeolocation()
+const geoNearMe = ref<{ activate: () => void } | null>(null)
+
+// Reverse geocoding : la position GPS est convertie en département côté
+// API (BAN) pour pré-remplir le filtre — sans rechargement de page.
+const { department: geoDepartment } = useReverseGeocode(userPosition)
 
 const centresFilters = computed<CentresQuery>(() => ({
   department: selectedDept.value === 'all' ? undefined : selectedDept.value,
@@ -307,13 +315,39 @@ const centresCount = computed(() => centresTotal.value ?? 0)
 const departmentsCount = computed(() => departments.value?.length ?? 0)
 
 // La page déjà affichée ne remonte pas : seul le changement de query
-// redéclenche la demande (mobile : « Autour de moi » depuis le menu).
+// rouvre le parcours de consentement (mobile : « Autour de moi » du menu).
 watch(
   () => route.query.geo,
   (value) => {
-    if (value === '1') requestGeolocation()
+    if (value === '1') geoNearMe.value?.activate()
   }
 )
+
+// Le filtre département se remplit dès que le département est détecté.
+// Jamais après un choix explicite : `deptUserTouched` (sélection dans le
+// select ou reset des filtres) désactive l'auto-remplissage pour le reste
+// du montage — sinon une liste `departments` rafraîchie réécrirait un
+// « Tous les départements » choisi à la main. Tant qu'il n'y a pas eu de
+// geste, on n'écrit que sur 'all' ou sur la valeur posée par
+// l'auto-remplissage — dont on corrige alors la graphie quand la liste
+// canonique arrive (« Val-de-Marne » géocodé vs tag libre « Val de Marne »).
+// `departments` dans les sources du watch couvre le cas où la liste
+// arrive après la position.
+const deptUserTouched = ref(false)
+watch([geoDepartment, departments], ([dept, list]) => {
+  if (!dept) {
+    // Géoloc désactivée (ou reverse en échec) : le filtre ne revient à
+    // 'all' que si la valeur affichée vient de l'auto-remplissage —
+    // `deptUserTouched` garantit qu'un choix manuel est conservé.
+    if (!deptUserTouched.value) selectedDept.value = 'all'
+    return
+  }
+  if (deptUserTouched.value) return
+  const detected = normalizeDepartment(dept)
+  const current = selectedDept.value
+  if (current !== 'all' && normalizeDepartment(current) !== detected) return
+  selectedDept.value = list?.find((d) => normalizeDepartment(d) === detected) ?? dept
+})
 
 const LIST_CHUNK_SIZE = 12
 const visibleCount = ref(LIST_CHUNK_SIZE)
@@ -465,6 +499,10 @@ onMounted(() => {
   if (sentinelEl.value) loadMoreObserver.observe(sentinelEl.value)
   window.addEventListener('resize', onResize)
   nextTick(onResize)
+  // Arrivée directe sur /centres?geo=1 (« Autour de moi » du menu) : le
+  // dialog de consentement s'ouvre une fois le badge monté — le watch sur
+  // la query, non immédiat, ne couvre que les changements ultérieurs.
+  if (route.query.geo === '1') geoNearMe.value?.activate()
 })
 
 watch(sentinelEl, (el, prev) => {
@@ -516,6 +554,7 @@ function onSearch(value: string) {
 }
 
 function resetFilters() {
+  deptUserTouched.value = true
   selectedDept.value = 'all'
   searchQuery.value = ''
   appliedSearch.value = ''

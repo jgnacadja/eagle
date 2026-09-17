@@ -184,7 +184,9 @@ export default defineConfig(
       'vue/multi-word-component-names': 'off',
       // v-html autorisé uniquement après sanitizeHtml() (convention AGENTS,
       // règle de revue bloquante) — la règle eslint ne voit pas le sanitiser.
-      'vue/no-v-html': 'off'
+      'vue/no-v-html': 'off',
+      // Convention maison : template en tête de SFC (autofix `eslint --fix`).
+      'vue/block-order': ['error', { order: ['template', 'script', 'style'] }]
     }
   },
   {

@@ -11,6 +11,20 @@ export interface GeocodedAddress {
   longitude: number
 }
 
+export interface ReverseGeocodedLocation {
+  city: string | null
+  postcode: string | null
+  department: string | null
+  region: string | null
+}
+
+const EMPTY_LOCATION: ReverseGeocodedLocation = {
+  city: null,
+  postcode: null,
+  department: null,
+  region: null
+}
+
 interface BanFeature {
   geometry?: { coordinates?: [number, number] }
   properties?: {
@@ -23,6 +37,7 @@ interface BanFeature {
 
 // API Adresse (BAN) : officielle, gratuite, sans clé.
 const BAN_SEARCH_URL = 'https://api-adresse.data.gouv.fr/search/'
+const BAN_REVERSE_URL = 'https://api-adresse.data.gouv.fr/reverse/'
 
 function parseBanContext(context: string | undefined): {
   department: string | null
@@ -76,6 +91,50 @@ export class GeocodingService {
     } catch (error) {
       this.logger.warn({ error, address }, 'BAN geocoding request failed')
       return null
+    }
+  }
+
+  /**
+   * Reverse geocoding : coordonnées GPS → ville/département, pour le
+   * pré-remplissage du filtre département de `/centres` côté front.
+   * Résultat en cache Redis, clé arrondie au centième de degré (~1 km) et
+   * versionnée catalogue comme le reste du cache : une invalidation la
+   * purge aussi, ce qui reste sans effet à TTL égal. Hors du territoire
+   * ou en cas d'erreur BAN, retourne des champs `null` plutôt qu'une
+   * erreur — le front dégrade alors en tri par distance sans filtre
+   * territorial.
+   */
+  async reverseGeocode(lat: number, lng: number): Promise<ReverseGeocodedLocation> {
+    const cacheKey = `geo:reverse:${lat.toFixed(2)}:${lng.toFixed(2)}`
+    const cached = await this.cache.get<ReverseGeocodedLocation>(cacheKey)
+    if (cached) return cached
+
+    const url = new URL(BAN_REVERSE_URL)
+    url.searchParams.set('lon', String(lng))
+    url.searchParams.set('lat', String(lat))
+    url.searchParams.set('limit', '1')
+
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(8_000) })
+      if (!response.ok) return { ...EMPTY_LOCATION }
+      const body = (await response.json()) as { features?: BanFeature[] }
+      const feature = body.features?.[0]
+      if (!feature) return { ...EMPTY_LOCATION }
+
+      const { department, region } = parseBanContext(feature.properties?.context)
+      const result: ReverseGeocodedLocation = {
+        city: feature.properties?.city ?? null,
+        postcode: feature.properties?.postcode ?? null,
+        department,
+        region
+      }
+      // Un résultat vide n'est pas mis en cache : une réponse BAN
+      // transitoirement pauvre ne doit pas être gelée pour tout le TTL.
+      if (result.department) await this.cache.set(cacheKey, result)
+      return result
+    } catch (error) {
+      this.logger.warn({ error, lat, lng }, 'BAN reverse geocoding request failed')
+      return { ...EMPTY_LOCATION }
     }
   }
 

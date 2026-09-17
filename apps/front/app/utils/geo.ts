@@ -52,6 +52,20 @@ export function densestClusterCenter(points: GeoPoint[], radiusKm = 15): GeoPoin
 }
 
 /**
+ * Forme de comparaison d'une valeur de département : casse et accents
+ * ignorés, espaces, apostrophes et tirets supprimés — « Val de Marne » (tag libre) et
+ * « Val-de-Marne » (géocodage BAN) doivent se rejoindre. Même règle que
+ * `normalizeDepartment` côté API (`apps/api/src/centres`).
+ */
+export function normalizeDepartment(text: string | null | undefined): string {
+  return (text ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\s'’-]+/g, '')
+}
+
+/**
  * Formate une distance en kilomètres pour l'affichage :
  * - moins de 1 km : « 800 m »
  * - 1 km ou plus : « 12,4 km »

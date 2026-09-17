@@ -354,7 +354,7 @@ import {
   type FormationItem
 } from '~/composables/useCatalog'
 import { availabilityStatus } from '~/composables/useCentres'
-import { useAutoGeolocation } from '~/composables/useGeolocation'
+import { useGeolocation } from '~/composables/useGeolocation'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
 import { directusAssetUrl } from '~/utils/directusAsset'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
@@ -417,7 +417,7 @@ const heroAddress = computed(() =>
     .join(', ')
 )
 
-const { position: userPosition } = useAutoGeolocation()
+const { position: userPosition } = useGeolocation()
 
 const singleCenter = computed<CenterResult[]>(() => {
   if (!centre.value || centre.value.latitude == null || centre.value.longitude == null) return []

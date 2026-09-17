@@ -130,7 +130,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Centre } from '@learnup/types'
-import { useAutoGeolocation } from '~/composables/useGeolocation'
+import { useGeolocation } from '~/composables/useGeolocation'
 import type { CenterResult } from '~/types/center-result'
 
 useContentSeo(
@@ -198,7 +198,7 @@ const centresData = await useDirectusList<Centre>('centres', 'organisme-map-cent
   limit: -1
 })
 
-const { position: userPosition } = useAutoGeolocation()
+const { position: userPosition } = useGeolocation()
 
 const mapCenters = computed<CenterResult[]>(() =>
   (centresData.value ?? []).map((centre) => {

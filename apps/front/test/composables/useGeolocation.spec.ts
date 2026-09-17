@@ -1,11 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises, mount } from '@vue/test-utils'
-import { defineComponent, h, nextTick } from 'vue'
-import {
-  useAutoGeolocation,
-  useGeolocation,
-  type UseGeolocationReturn
-} from '~/composables/useGeolocation'
+import { flushPromises } from '@vue/test-utils'
+import { nextTick, ref } from 'vue'
+import { useGeolocation, useReverseGeocode } from '~/composables/useGeolocation'
 
 interface MockPosition {
   coords: {
@@ -47,6 +43,10 @@ function makeError(code: number): MockPositionError {
 describe('useGeolocation', () => {
   beforeEach(() => {
     vi.stubGlobal('navigator', undefined)
+    // État partagé au niveau module : chaque test repart d'une ardoise vide.
+    const geo = useGeolocation()
+    geo.clear()
+    geo.permission.value = null
   })
 
   it('passe à unavailable si navigator.geolocation est absent', () => {
@@ -151,59 +151,184 @@ describe('useGeolocation', () => {
     expect(position.value).toEqual({ lat: 48.8566, lng: 2.3522 })
     expect(status.value).toBe('granted')
   })
+
+  it('partage position et status entre deux instances (pages différentes)', async () => {
+    const getCurrentPosition = vi.fn((success: (position: MockPosition) => void) => {
+      success(makePosition(45.764, 4.835))
+    })
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
+
+    const home = useGeolocation()
+    const centres = useGeolocation()
+
+    home.request()
+    await flushPromises()
+
+    expect(centres.position.value).toEqual({ lat: 45.764, lng: 4.835 })
+    expect(centres.status.value).toBe('granted')
+  })
+
+  it('clear() oublie la position et repasse à idle', async () => {
+    const getCurrentPosition = vi.fn((success: (position: MockPosition) => void) => {
+      success(makePosition(45.764, 4.835))
+    })
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
+
+    const { status, position, request, clear } = useGeolocation()
+    request()
+    await flushPromises()
+    expect(position.value).not.toBeNull()
+
+    clear()
+
+    expect(position.value).toBeNull()
+    expect(status.value).toBe('idle')
+  })
+
+  it('expose l’état de permission via navigator.permissions', async () => {
+    const getCurrentPosition = vi.fn(
+      (
+        _success: (position: MockPosition) => void,
+        onError?: (error: MockPositionError) => void
+      ) => {
+        onError?.(makeError(1))
+      }
+    )
+    vi.stubGlobal('navigator', {
+      geolocation: { getCurrentPosition },
+      permissions: {
+        query: vi.fn(async () => ({ state: 'prompt', addEventListener: vi.fn() }))
+      }
+    })
+
+    const { permission, request } = useGeolocation()
+    await flushPromises()
+    expect(permission.value).toBe('prompt')
+
+    request()
+    await flushPromises()
+    expect(permission.value).toBe('denied')
+  })
 })
 
-describe('useAutoGeolocation', () => {
-  const originalMatchMedia = window.matchMedia
+describe('useReverseGeocode', () => {
+  beforeEach(() => {
+    vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
+  })
 
   afterEach(() => {
-    window.matchMedia = originalMatchMedia
     vi.unstubAllGlobals()
   })
 
-  function stubMobileViewport() {
-    window.matchMedia = (() => ({ matches: false }) as MediaQueryList) as typeof window.matchMedia
-  }
+  it('résout le département depuis la position via l’API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      city: 'Créteil',
+      department: 'Val-de-Marne',
+      region: 'Île-de-France',
+      postcode: '94000'
+    })
+    vi.stubGlobal('$fetch', fetchMock)
 
-  function mountAutoGeolocation(force?: () => boolean) {
-    const holder: { api?: UseGeolocationReturn } = {}
-    mount(
-      defineComponent({
-        setup() {
-          holder.api = useAutoGeolocation(force)
-          return () => h('div')
-        }
-      })
-    )
-    return holder.api!
-  }
+    const position = ref<{ lat: number; lng: number } | null>(null)
+    const { city, department } = useReverseGeocode(position)
 
-  it('demande la position au montage sur desktop', () => {
-    const getCurrentPosition = vi.fn()
-    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
+    expect(fetchMock).not.toHaveBeenCalled()
 
-    mountAutoGeolocation()
+    position.value = { lat: 48.7909, lng: 2.4534 }
+    await flushPromises()
 
-    expect(getCurrentPosition).toHaveBeenCalledOnce()
+    expect(fetchMock).toHaveBeenCalledWith('http://api.test/centres/reverse', {
+      query: { lat: 48.7909, lng: 2.4534 }
+    })
+    expect(city.value).toBe('Créteil')
+    expect(department.value).toBe('Val-de-Marne')
   })
 
-  it('ne demande pas la position sur mobile sans geste explicite', () => {
-    const getCurrentPosition = vi.fn()
-    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
-    stubMobileViewport()
+  it('ne rappelle pas l’API pour un rafraîchissement de position proche', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ city: null, department: null })
+    vi.stubGlobal('$fetch', fetchMock)
 
-    mountAutoGeolocation()
+    const position = ref<{ lat: number; lng: number } | null>(null)
+    useReverseGeocode(position)
 
-    expect(getCurrentPosition).not.toHaveBeenCalled()
+    position.value = { lat: 48.7909, lng: 2.4534 }
+    await flushPromises()
+    position.value = { lat: 48.7901, lng: 2.4535 }
+    await flushPromises()
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
-  it('demande la position sur mobile quand force() est vrai', () => {
-    const getCurrentPosition = vi.fn()
-    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
-    stubMobileViewport()
+  it('reste à null quand l’API échoue', async () => {
+    vi.stubGlobal('$fetch', vi.fn().mockRejectedValue(new Error('network')))
 
-    mountAutoGeolocation(() => true)
+    const position = ref<{ lat: number; lng: number } | null>({ lat: 48.79, lng: 2.45 })
+    const { department } = useReverseGeocode(position)
+    await flushPromises()
 
-    expect(getCurrentPosition).toHaveBeenCalledOnce()
+    expect(department.value).toBeNull()
+  })
+
+  it('réinitialise ville et département quand la position est effacée', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      city: 'Lyon',
+      department: 'Rhône'
+    })
+    vi.stubGlobal('$fetch', fetchMock)
+
+    const position = ref<{ lat: number; lng: number } | null>(null)
+    const { city, department } = useReverseGeocode(position)
+
+    position.value = { lat: 45.764, lng: 4.835 }
+    await flushPromises()
+    expect(department.value).toBe('Rhône')
+
+    position.value = null
+    await flushPromises()
+    expect(city.value).toBeNull()
+    expect(department.value).toBeNull()
+  })
+
+  it('retente l’appel après un échec au prochain rafraîchissement', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('network'))
+      .mockResolvedValue({ city: 'Lyon', department: 'Rhône' })
+    vi.stubGlobal('$fetch', fetchMock)
+
+    const position = ref<{ lat: number; lng: number } | null>(null)
+    const { department } = useReverseGeocode(position)
+
+    position.value = { lat: 45.764, lng: 4.8357 }
+    await flushPromises()
+    position.value = { lat: 45.7641, lng: 4.8358 }
+    await flushPromises()
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(department.value).toBe('Rhône')
+  })
+
+  it('ignore une réponse périmée quand une position plus récente a été demandée', async () => {
+    let resolveFirst: ((value: unknown) => void) | undefined
+    const fetchMock = vi
+      .fn()
+      .mockImplementationOnce(() => new Promise((resolve) => (resolveFirst = resolve)))
+      .mockResolvedValue({ city: 'Lyon', department: 'Rhône' })
+    vi.stubGlobal('$fetch', fetchMock)
+
+    const position = ref<{ lat: number; lng: number } | null>(null)
+    const { city, department } = useReverseGeocode(position)
+
+    position.value = { lat: 48.79, lng: 2.45 } // Créteil — fetch lent
+    await nextTick()
+    position.value = { lat: 45.76, lng: 4.83 } // Lyon — fetch rapide
+    await flushPromises()
+    expect(department.value).toBe('Rhône')
+
+    resolveFirst?.({ city: 'Créteil', department: 'Val-de-Marne' })
+    await flushPromises()
+
+    expect(city.value).toBe('Lyon')
+    expect(department.value).toBe('Rhône')
   })
 })

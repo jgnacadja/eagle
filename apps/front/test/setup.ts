@@ -20,6 +20,10 @@ const uiComponents = import.meta.glob('~/components/ui/**/*.vue', {
 registerByName(icons)
 registerByName(uiComponents)
 
+// Enregistré explicitement : les autres composants Map/ sont stubbés par spec.
+import GeoNearMe from '~/components/Map/GeoNearMe.vue'
+config.global.components.GeoNearMe = GeoNearMe
+
 config.global.stubs = {
   ...config.global.stubs,
   NuxtLink: { template: '<a :href="to"><slot /></a>' },
@@ -46,9 +50,10 @@ config.global.directives = {
 }
 
 // happy-dom n'expose pas IntersectionObserver (requis par motion-v/inView).
+const noop = () => undefined
 class IntersectionObserverStub {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe = noop
+  unobserve = noop
+  disconnect = noop
 }
 vi.stubGlobal('IntersectionObserver', IntersectionObserverStub)

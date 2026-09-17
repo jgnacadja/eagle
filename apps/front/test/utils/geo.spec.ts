@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { densestClusterCenter, distanceKm, formatDistance } from '~/utils/geo'
+import { densestClusterCenter, distanceKm, formatDistance, normalizeDepartment } from '~/utils/geo'
 
 describe('geo', () => {
   describe('distanceKm', () => {
@@ -86,6 +86,19 @@ describe('geo', () => {
       // Groupes ex æquo : le premier gagne — centroïde du point seul.
       const center = densestClusterCenter(points)!
       expect(center).toEqual(points[0])
+    })
+  })
+
+  describe('normalizeDepartment', () => {
+    it('ignore casse, accents, espaces et tirets', () => {
+      expect(normalizeDepartment('Val-de-Marne')).toBe(normalizeDepartment('val de marne'))
+      expect(normalizeDepartment('Côtes-d’Armor')).toBe(normalizeDepartment('cotes d armor'))
+      expect(normalizeDepartment('Rhône')).toBe(normalizeDepartment('rhone'))
+    })
+
+    it('tolère null et undefined', () => {
+      expect(normalizeDepartment(null)).toBe('')
+      expect(normalizeDepartment(undefined)).toBe('')
     })
   })
 })

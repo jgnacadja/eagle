@@ -21,6 +21,7 @@
       :is-last="index === steps.length - 1"
       :last-step-variant="lastStepVariant"
       :title-size="titleSize"
+      :max-width-class="maxWidthClass"
     />
   </ol>
 </template>
@@ -40,10 +41,12 @@ const props = withDefaults(
     steps: StepItem[]
     lastStepVariant?: 'success' | 'accent' | 'primary'
     titleSize?: 'body' | 'h4'
+    maxWidthClass?: string
   }>(),
   {
     lastStepVariant: 'success',
-    titleSize: 'body'
+    titleSize: 'body',
+    maxWidthClass: ''
   }
 )
 

@@ -1,6 +1,6 @@
 <template>
   <Card
-    class="relative flex flex-col transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-md"
+    class="relative flex h-full flex-col transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-md"
   >
     <CardHeader class="space-y-sm p-md pb-0">
       <p v-if="eyebrow" class="mb-md text-overline text-ink-subtle font-bold">{{ eyebrow }}</p>
@@ -15,7 +15,7 @@
       </p>
       <CardDescription>{{ meta }}</CardDescription>
     </CardContent>
-    <CardFooter class="flex flex-col items-start px-md pb-md pt-sm">
+    <CardFooter class="mt-auto flex flex-col items-start px-md pb-md pt-sm">
       <Badge v-if="status" :variant="status.type" class="w-fit flex justify-center items-center">
         <span
           v-if="status.type !== 'warning'"

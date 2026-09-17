@@ -15,7 +15,8 @@ describe('Rejoindre le réseau page', () => {
           IconAward: true,
           IconBook: true,
           IconBuilding: true,
-          ProcessSteps: true
+          ProcessSteps: true,
+          Benefits: { props: ['title'], template: '<section><h2>{{ title }}</h2></section>' }
         }
       }
     })
@@ -27,7 +28,7 @@ describe('Rejoindre le réseau page', () => {
 
     const hrefs = wrapper.findAll('a').map((link) => link.attributes('href'))
     expect(hrefs).toContain('/centres/demande-de-formation?sujet=franchise')
-    expect(hrefs).toContain('/centres/demande-de-formation?sujet=organisme')
+    expect(hrefs).toContain('/organisme')
     expect(hrefs).toContain('/centres/demande-de-formation?sujet=formateur')
   })
 })

@@ -65,22 +65,8 @@
         </div>
       </section>
 
-      <section id="modele" class="mt-4xl" aria-labelledby="benefits-title">
-        <h2 id="benefits-title" class="font-display text-h2 font-extrabold text-ink">
-          Ce que le réseau apporte
-        </h2>
-        <div class="mt-xl grid gap-grid sm:grid-cols-2 lg:grid-cols-4">
-          <article
-            v-for="benefit in benefits"
-            :key="benefit.label"
-            class="rounded-md bg-surface p-lg"
-          >
-            <p class="text-overline font-bold uppercase text-accent-text">{{ benefit.label }}</p>
-            <h3 class="mt-md font-display text-h4 font-extrabold text-ink">{{ benefit.title }}</h3>
-            <p class="mt-sm text-small text-ink-muted">{{ benefit.body }}</p>
-          </article>
-        </div>
-      </section>
+      <!-- Benefits -->
+      <Benefits id="modele" title="Ce que le réseau apporte" :benefits="benefits" />
 
       <section id="candidater" class="mt-4xl" aria-labelledby="process-title">
         <h2 id="process-title" class="md:text-center font-display text-h2 font-extrabold text-ink">
@@ -132,7 +118,7 @@ const joinOptions = [
     title: 'Référencer mon organisme',
     body: 'Votre organisme de formation conserve son identité juridique et reçoit des demandes du réseau sur son territoire et ses domaines.',
     cta: 'Référencer mon organisme',
-    to: '/centres/demande-de-formation?sujet=organisme'
+    to: '/organisme'
   },
   {
     icon: IconAward,

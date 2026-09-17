@@ -25,7 +25,7 @@
           </NavigationMenuItem>
 
           <NavigationMenuItem value="centres">
-            <NavigationMenuTrigger variant="header"> Centres </NavigationMenuTrigger>
+            <NavigationMenuTrigger variant="header"> Trouver un Centre </NavigationMenuTrigger>
             <NavigationMenuContent>
               <MegaMenuCentres @close="close" />
             </NavigationMenuContent>

@@ -22,12 +22,16 @@ export const aproposLiens = [
   {
     slug: 'qui-sommes-nous',
     label: 'Qui sommes-nous',
-    description: 'La marque, la mission, notre franchise'
+    description: 'La marque, le réseau, notre fonctionnement'
   },
   {
     slug: 'qualite-certifications',
     label: 'Qualité & certifications',
-    description: 'Engagements & référentiels de niveau'
+    description: 'Engagements et référentiels du réseau'
   },
-  { slug: 'contact', label: 'Contact', description: 'Formulaire et coordonnées' }
+  {
+    slug: 'contact',
+    label: 'Contact',
+    description: 'Formulaire et coordonnées'
+  }
 ]

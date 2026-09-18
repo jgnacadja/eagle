@@ -362,4 +362,51 @@ describe('pages/formations/index', () => {
       'Catalogue de formations — LEARN UP ACADEMY'
     )
   })
+
+  describe('raccourcis familles (showAllFamilies)', () => {
+    it('clic « Parcourir » affiche toutes les familles publiées puis « Réduire » referme', async () => {
+      const wrapper = await mountPage()
+      const shortcutsList = () => wrapper.get('[data-testid="family-shortcuts"]')
+
+      const shortcuts = shortcutsList().findAll('li')
+      expect(shortcuts.at(3)!.text()).toContain('Toutes les familles')
+
+      const parcourirButton = shortcuts.at(3)!.find('button')
+      expect(parcourirButton.exists()).toBe(true)
+      await parcourirButton.trigger('click')
+      await flushPromises()
+
+      expect(wrapper.text()).toContain('Réduire')
+
+      const expandedShortcuts = shortcutsList().findAll('li')
+      expect(expandedShortcuts).toHaveLength(families.length)
+      for (const family of families) {
+        expect(wrapper.text()).toContain(family.name)
+      }
+
+      const reduireButton = wrapper.findAll('button').find((b) => b.text().includes('Réduire'))
+      expect(reduireButton).toBeDefined()
+      await reduireButton!.trigger('click')
+      await flushPromises()
+
+      const collapsedShortcuts = shortcutsList().findAll('li')
+      expect(collapsedShortcuts).toHaveLength(4)
+      expect(wrapper.text()).toContain('Toutes les familles')
+      expect(wrapper.text()).not.toContain('Réduire')
+    })
+
+    it('le mode déplié utilise les compteurs globaux, pas les facettes filtrées', async () => {
+      const wrapper = await mountPage()
+      const shortcutsList = wrapper.get('[data-testid="family-shortcuts"]')
+
+      const allCard = shortcutsList.findAll('li').at(3)!
+      await allCard.find('button').trigger('click')
+      await flushPromises()
+
+      for (const familyCount of counts) {
+        const label = `${familyCount.count} formation${familyCount.count > 1 ? 's' : ''}`
+        expect(wrapper.text()).toContain(label)
+      }
+    })
+  })
 })

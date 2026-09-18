@@ -1,6 +1,15 @@
 <template>
   <article v-if="variant === 'full'" class="flex h-full flex-col gap-md">
+    <div v-if="image" class="aspect-2/1 overflow-hidden rounded-md bg-primary-card">
+      <img
+        :src="image"
+        :alt="imageSub || title"
+        class="h-full w-full object-cover"
+        loading="lazy"
+      />
+    </div>
     <div
+      v-else
       class="flex aspect-2/1 items-center justify-center rounded-md border border-dashed border-outline-inverse bg-primary-card px-md text-center text-small font-medium text-ink-inverse/60"
     >
       <span>{{ imageLabel }}<br v-if="imageSub" />{{ imageSub }}</span>
@@ -12,11 +21,21 @@
     </div>
   </article>
 
-  <div
-    v-else-if="variant === 'image'"
-    class="flex aspect-2/1 basis-3/4 shrink-0 snap-start items-center justify-center rounded-md border border-dashed border-outline-inverse bg-primary-card px-md text-center text-small font-medium text-ink-inverse/60 md:min-w-0"
-  >
-    <span>{{ imageLabel }}<br v-if="imageSub" />{{ imageSub }}</span>
+  <div v-else-if="variant === 'image'" class="basis-3/4 shrink-0 snap-start md:min-w-0">
+    <div v-if="image" class="aspect-2/1 overflow-hidden rounded-md bg-primary-card">
+      <img
+        :src="image"
+        :alt="imageSub || title"
+        class="h-full w-full object-cover"
+        loading="lazy"
+      />
+    </div>
+    <div
+      v-else
+      class="flex aspect-2/1 items-center justify-center rounded-md border border-dashed border-outline-inverse bg-primary-card px-md text-center text-small font-medium text-ink-inverse/60"
+    >
+      <span>{{ imageLabel }}<br v-if="imageSub" />{{ imageSub }}</span>
+    </div>
   </div>
 
   <div v-else class="flex flex-col gap-1.5 rounded-md bg-primary-card p-lg">
@@ -34,10 +53,12 @@ withDefaults(
     body: string
     imageLabel: string
     imageSub?: string
+    image?: string
     variant?: 'full' | 'image' | 'detail'
   }>(),
   {
     imageSub: '',
+    image: '',
     variant: 'full'
   }
 )

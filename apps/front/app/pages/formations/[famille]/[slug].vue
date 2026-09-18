@@ -292,7 +292,7 @@
                   </div>
                 </CardContent>
               </Card>
-              <div v-if="sessionsList.length" class="mt-1">
+              <div v-if="sessionsList.length" class="mt-3">
                 <NuxtLink href="#" class="text-ink-muted font-bold text-h4"
                   >Voir toutes les sessions de cette formation
                   <span class="link-arrow">→</span></NuxtLink

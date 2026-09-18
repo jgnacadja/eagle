@@ -36,7 +36,6 @@
                 : 'font-medium text-primary'
             "
             :aria-current="region.slug === selectedRegion ? 'true' : undefined"
-            @mouseenter="selectedRegion = region.slug"
             @focus="selectedRegion = region.slug"
             @click="selectedRegion = region.slug"
           >

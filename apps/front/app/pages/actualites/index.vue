@@ -1,8 +1,8 @@
 <template>
   <div class="flex flex-1 flex-col">
     <!-- Bandeau d'intro : titre, filtre région, catégories -->
-    <section class="bg-primary-dark text-paper">
-      <div class="mx-auto px-gutter-mobile py-lg md:py-2xl md:px-gutter">
+    <section class="flex flex-col justify-center bg-primary-dark text-paper min-h-72">
+      <div class="mx-auto w-full px-gutter-mobile py-lg md:py-2xl md:px-gutter">
         <p class="text-overline text-accent font-extrabold">ACTUALITÉS DU RÉSEAU</p>
 
         <div class="mt-md flex flex-col gap-lg lg:flex-row lg:items-end lg:justify-between">
@@ -19,7 +19,7 @@
                   <span class="truncate">{{ selectedRegionLabel }}</span>
                 </span>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent align="end">
                 <SelectItem
                   v-for="region in regionOptions"
                   :key="region.value"
@@ -108,7 +108,7 @@
                 />
                 <span v-else>Visuel article à fournir</span>
               </div>
-              <div class="flex flex-1 flex-col justify-center gap-md bg-paper p-lg lg:p-xl">
+              <div class="flex flex-1 flex-col gap-md bg-paper p-lg 2xl:mt-lg">
                 <p class="text-overline text-accent-text">
                   <span class="font-bold uppercase">{{ featuredArticle.category }}</span>
                   <span class="font-medium text-ink-subtle">

@@ -72,7 +72,7 @@
                   <span class="font-extrabold">{{ selectedDept }}</span>
                 </template>
                 <template v-else-if="appliedSearch.trim()">
-                  pour « {{ appliedSearch.trim() }} »
+                  pour « {{ appliedSearch.trim() }} » et environs
                 </template>
                 <template v-else> au total</template>
               </p>

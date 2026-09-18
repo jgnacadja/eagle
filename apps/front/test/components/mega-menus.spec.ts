@@ -166,7 +166,7 @@ describe('MegaMenuFormations', () => {
 
     expect(wrapper.text()).toContain('Familles')
     expect(wrapper.text()).toContain('Sécurité & prévention')
-    expect(wrapper.text()).toContain('À la une')
+    expect(wrapper.text()).toContain('Les plus consultés')
     expect(wrapper.text()).toContain('CACES R489 — chariots élévateurs')
   })
 

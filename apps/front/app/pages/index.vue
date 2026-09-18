@@ -194,7 +194,7 @@
 
       <div class="mt-xl grid gap-grid lg:grid-cols-3">
         <div
-          class="h-80 overflow-hidden rounded-md border border-rule bg-surface md:h-96 lg:col-span-2"
+          class="h-80 overflow-hidden rounded-md border border-rule bg-surface md:h-112 lg:col-span-2"
         >
           <CenterMap
             v-if="homeMapCenters.length"
@@ -211,7 +211,7 @@
           </div>
         </div>
 
-        <div class="flex flex-col gap-md lg:col-span-1">
+        <div class="flex flex-col gap-md lg:col-span-1 h-fit">
           <SearchInput
             v-model="mapSearch"
             input-id="map-search"

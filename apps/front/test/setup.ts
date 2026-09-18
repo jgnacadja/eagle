@@ -26,7 +26,7 @@ config.global.components.GeoNearMe = GeoNearMe
 
 config.global.stubs = {
   ...config.global.stubs,
-  NuxtLink: { template: '<a :href="to"><slot /></a>' },
+  NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
   CenterMap: {
     props: ['centers', 'activeId', 'caption', 'mode'],
     template: '<div class="center-map" />'
@@ -57,3 +57,11 @@ class IntersectionObserverStub {
   disconnect = noop
 }
 vi.stubGlobal('IntersectionObserver', IntersectionObserverStub)
+
+// Pointer capture absent de happy-dom : requis par reka-ui (SelectTrigger
+// appelle hasPointerCapture au pointerdown).
+if (typeof Element !== 'undefined') {
+  Element.prototype.hasPointerCapture ??= () => false
+  Element.prototype.setPointerCapture ??= noop
+  Element.prototype.releasePointerCapture ??= noop
+}

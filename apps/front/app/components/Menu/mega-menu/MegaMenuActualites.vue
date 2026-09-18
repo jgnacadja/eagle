@@ -1,5 +1,5 @@
 <template>
-  <div class="grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter">
+  <div class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter">
     <!-- RUBRIQUES -->
     <div class="border-r border-rule pr-lg">
       <h3 class="text-small font-semibold text-ink-muted uppercase">Rubriques</h3>
@@ -72,27 +72,24 @@
       </h3>
 
       <Transition name="menu-panel" mode="out-in">
-        <ul :key="`${selectedRubrique}-${selectedRegion}`" class="mt-sm space-y-xs">
+        <ul :key="`${selectedRubrique}-${selectedRegion}`" class="mt-sm grid gap-sm">
           <li v-for="actu in featuredNews" :key="actu.slug">
-            <NuxtLink
+            <MegaMenuCard
               :to="`/actualites/${actu.slug}`"
-              class="group block rounded-md bg-surface px-md py-sm transition-colors hover:bg-surface-alt"
-              @click="$emit('close')"
+              :title="actu.title"
+              @select="$emit('close')"
             >
-              <p class="flex items-center gap-sm text-overline">
-                <span class="font-bold uppercase text-accent-text">
-                  {{ actu.tag }}
+              <template #eyebrow>
+                <span class="flex items-center gap-sm text-overline">
+                  <span class="font-bold uppercase text-accent-text">
+                    {{ actu.tag }}
+                  </span>
+                  <span class="font-medium text-ink-subtle">
+                    {{ actu.date }}
+                  </span>
                 </span>
-                <span class="font-medium text-ink-subtle">
-                  {{ actu.date }}
-                </span>
-              </p>
-              <span
-                class="text-small font-semibold text-ink transition-colors group-hover:text-accent-text"
-              >
-                {{ actu.title }}
-              </span>
-            </NuxtLink>
+              </template>
+            </MegaMenuCard>
           </li>
           <li v-if="!featuredNews.length" class="px-2 py-1.5 text-small text-ink-muted">
             {{ emptyMessage }}
@@ -116,6 +113,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useMenuActualites } from '~/composables/useMenuData'
+import MegaMenuCard from '~/components/Menu/mega-menu/MegaMenuCard.vue'
 
 defineEmits<{
   close: []

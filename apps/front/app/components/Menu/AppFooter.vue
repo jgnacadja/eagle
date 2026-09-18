@@ -15,18 +15,11 @@
         <nav class="col-span-1 md:col-span-1" aria-label="Formations">
           <h3 class="text-badge md:text-xs font-bold text-ink-inverse uppercase">Formations</h3>
           <ul class="mt-md space-y-sm text-small">
-            <li>
+            <li v-for="famille in familles.slice(0, 2)" :key="famille.slug">
               <NuxtLink
-                to="/"
+                :to="`/formations/${famille.slug}`"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
-                >CACES &amp; conduite d'engins</NuxtLink
-              >
-            </li>
-            <li>
-              <NuxtLink
-                to="/"
-                class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
-                >Habilitations électriques</NuxtLink
+                >{{ famille.label }}</NuxtLink
               >
             </li>
             <li>
@@ -44,21 +37,21 @@
           <ul class="mt-md space-y-sm text-small">
             <li>
               <NuxtLink
-                to="/"
+                to="/centres/demande-de-formation"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Confier mes formations</NuxtLink
               >
             </li>
             <li>
               <NuxtLink
-                to="/"
+                :to="{ path: '/formations', query: { modalites: 'intra' } }"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Formation intra &amp; sur site</NuxtLink
               >
             </li>
             <li>
               <NuxtLink
-                to="/"
+                to="/centres/demande-de-formation?sujet=conseiller"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Gestion multi-sites</NuxtLink
               >
@@ -71,21 +64,21 @@
           <ul class="mt-md space-y-sm text-small">
             <li>
               <NuxtLink
-                to="/"
+                to="/rejoindre-le-reseau"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Devenir franchisé</NuxtLink
               >
             </li>
             <li>
               <NuxtLink
-                to="/"
+                to="/referencer-mon-organisme"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Référencer mon organisme</NuxtLink
               >
             </li>
             <li>
               <NuxtLink
-                to="/"
+                to="/rejoindre-le-reseau#candidater"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Formateur indépendant</NuxtLink
               >
@@ -139,9 +132,10 @@
 </template>
 
 <script setup lang="ts">
-import { useMenuLegalPages } from '~/composables/useMenuData'
+import { useMenuFamilles, useMenuLegalPages } from '~/composables/useMenuData'
 
 const year = new Date().getFullYear()
 
 const footerLegalLinks = useMenuLegalPages()
+const familles = useMenuFamilles()
 </script>

@@ -1,12 +1,12 @@
 <template>
-  <div class="grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter">
+  <div class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter">
     <div class="col-span-3">
       <h3 class="text-small font-semibold uppercase text-ink-muted">Learn Up Academy</h3>
       <ul class="mt-md space-y-2">
         <li v-for="lien in aproposLiens" :key="lien.slug">
           <NuxtLink
             :to="`/${lien.slug}`"
-            class="group block w-full rounded-lg px-md py-3 transition-colors hover:bg-surface"
+            class="group block w-full rounded-md px-md py-3 transition-colors hover:bg-surface"
             @click="$emit('close')"
           >
             <span

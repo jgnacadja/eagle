@@ -77,7 +77,7 @@ export interface MenuActualitesData {
 const MAX_FAMILLES = 4
 const MAX_REGIONS = 4
 const MAX_CENTRES_PER_REGION = 4
-const MAX_FORMATIONS_A_LA_UNE = 6
+const MAX_FORMATIONS_A_LA_UNE = 4
 const MAX_FORMATIONS_PAR_FAMILLE = 4
 // Rubriques et régions du méga-menu ne reflètent que les MAX_ACTUALITES
 // articles les plus récents — trade-off assumé pour limiter le payload SSR.
@@ -340,7 +340,7 @@ export function useMenuCentres() {
   return { regions, centresParRegion }
 }
 
-/** Six dernières formations publiées — colonne « À la une » du méga-menu. */
+/** Quatre dernières formations publiées — colonne « À la une » du méga-menu. */
 export function useMenuFormationsALaUne() {
   const config = useRuntimeConfig()
   const apiBase = import.meta.server ? config.apiBase : config.public.apiBase
@@ -371,6 +371,19 @@ export function useMenuFormationsALaUne() {
   )
 
   return data
+}
+
+/**
+ * Précharge les données des méga-menus pendant le SSR — appelé par AppHeader.
+ * Sans cela, les useAsyncData ne se déclenchent qu'au montage des panneaux
+ * (premier clic) et le menu grandit quand les données arrivent.
+ */
+export function useMenuPreload() {
+  useMenuFamillesData()
+  useMenuCentres()
+  useMenuActualites()
+  useMenuFormationsALaUne()
+  useMenuLegalPages()
 }
 
 /** Actualités publiées regroupées pour le méga-menu et le menu mobile. */

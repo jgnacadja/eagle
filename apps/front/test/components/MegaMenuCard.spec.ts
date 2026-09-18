@@ -28,6 +28,18 @@ describe('MegaMenuCard', () => {
     expect(wrapper.findAll('span')).toHaveLength(1)
   })
 
+  it('rend le slot eyebrow au-dessus du titre', () => {
+    const wrapper = mount(MegaMenuCard, {
+      props: { to: '/actualites/foo', title: 'Une actualité' },
+      slots: { eyebrow: '<span class="eyebrow-test">PRESSE · 12 mai</span>' },
+      global: { stubs }
+    })
+
+    const eyebrow = wrapper.find('.eyebrow-test')
+    expect(eyebrow.exists()).toBe(true)
+    expect(eyebrow.text()).toBe('PRESSE · 12 mai')
+  })
+
   it('émet select au clic', async () => {
     const wrapper = mount(MegaMenuCard, {
       props: { to: '/centres/creteil', title: 'Centre de Créteil' },

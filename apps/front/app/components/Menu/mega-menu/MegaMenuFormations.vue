@@ -1,5 +1,5 @@
 <template>
-  <div class="grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter">
+  <div class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter">
     <!-- FAMILLES -->
     <div>
       <h3 class="text-small font-semibold text-ink-muted">Familles</h3>
@@ -37,7 +37,11 @@
       <h3 class="text-overline uppercase text-ink-muted">{{ selectedFamilleLabel }}</h3>
       <Transition name="menu-panel" mode="out-in">
         <ul :key="selectedFamille" class="mt-sm grid grid-cols-2 gap-sm">
-          <li v-for="formation in formationsFamille" :key="formation.slug">
+          <li
+            v-for="formation in formationsFamille"
+            :key="formation.slug"
+            :class="{ 'col-span-2': formationsFamille.length === 1 }"
+          >
             <MegaMenuCard
               :to="formation.to"
               :title="formation.label"
@@ -60,7 +64,7 @@
 
     <!-- À LA UNE + CTA -->
     <div>
-      <h3 class="text-small font-semibold text-ink-muted">À la une</h3>
+      <h3 class="text-small font-semibold text-ink-muted uppercase">Les plus consultés</h3>
       <ul class="mt-sm space-y-1">
         <li v-for="formation in formationsALaUne" :key="formation.slug">
           <NuxtLink
@@ -74,12 +78,12 @@
         </li>
       </ul>
 
-      <div class="mt-md rounded-lg bg-ink px-md py-md text-paper">
+      <Card variant="dark" class="mt-md px-md py-lg">
         <p class="text-body font-semibold">Vous ne savez pas quelle formation choisir ?</p>
         <Button as-child variant="paper" size="pill-sm" class="mt-sm w-full">
           <NuxtLink to="/etre-guide" @click="$emit('close')">Être guidé dans mon choix</NuxtLink>
         </Button>
-      </div>
+      </Card>
     </div>
   </div>
 </template>

@@ -99,6 +99,7 @@ import {
   NavigationMenuTrigger
 } from '~/components/ui/navigation-menu'
 import { useMegaMenu, type MegaMenuKey } from '~/composables/useMegaMenu'
+import { useMenuPreload } from '~/composables/useMenuData'
 import MegaMenuFormations from '~/components/Menu/mega-menu/MegaMenuFormations.vue'
 import MegaMenuCentres from '~/components/Menu/mega-menu/MegaMenuCentres.vue'
 import MegaMenuAPropos from '~/components/Menu/mega-menu/MegaMenuAPropos.vue'
@@ -106,6 +107,7 @@ import MegaMenuActualites from '~/components/Menu/mega-menu/MegaMenuActualites.v
 import MobileMenu from '~/components/Menu/MobileMenu.vue'
 
 const { openMenu, rootEl, close } = useMegaMenu()
+useMenuPreload()
 const isMobileOpen = ref(false)
 
 // reka-ui gère l'ouverture des triggers (clic/survol) : on synchronise

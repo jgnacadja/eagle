@@ -1,5 +1,5 @@
 <template>
-  <div class="grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter">
+  <div class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter">
     <!-- RÉGIONS -->
     <div>
       <h3 class="text-small font-semibold text-ink-muted uppercase">Régions</h3>
@@ -39,7 +39,11 @@
       </h3>
       <Transition name="menu-panel" mode="out-in">
         <ul :key="selectedRegion" class="mt-sm grid grid-cols-2 gap-sm">
-          <li v-for="centre in centresAffiches" :key="centre.slug">
+          <li
+            v-for="centre in centresAffiches"
+            :key="centre.slug"
+            :class="{ 'col-span-2': centresAffiches.length === 1 }"
+          >
             <MegaMenuCard
               :to="`/centres/${centre.slug}`"
               :title="centre.name"
@@ -73,16 +77,16 @@
         />
       </form>
 
-      <div class="mt-md rounded-lg bg-ink px-md py-md text-paper">
+      <Card variant="dark" class="mt-md px-md py-lg">
         <p class="whitespace-nowrap text-small font-semibold">
           Besoin d’une formation sur votre site ?
         </p>
         <Button as-child variant="paper" size="pill-sm" class="mt-sm w-full">
-          <NuxtLink to="/formation-intra" @click="$emit('close')">
+          <NuxtLink to="/centres/demande-de-formation" @click="$emit('close')">
             Organiser une formation intra
           </NuxtLink>
         </Button>
-      </div>
+      </Card>
     </div>
   </div>
 </template>

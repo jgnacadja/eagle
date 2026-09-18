@@ -220,6 +220,10 @@
 }
 
 @layer utilities {
+  .mega-menu-panel {
+    min-height: calc(6 * var(--spacing-4xl) + var(--spacing-md));
+  }
+
   .link-arrow {
     @apply inline-block transition-transform duration-200 ease-out motion-reduce:transition-none;
   }

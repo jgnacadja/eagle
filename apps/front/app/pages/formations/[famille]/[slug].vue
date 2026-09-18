@@ -258,9 +258,6 @@
                 <h2 id="sessions-title" class="font-display text-h2 font-extrabold text-ink">
                   Prochaines sessions
                 </h2>
-                <p class="text-small text-ink-subtle">
-                  Sessions inter-entreprises publiées — disponibilités actualisées en continu.
-                </p>
               </div>
               <ul v-if="sessionsList.length" class="mt-md space-y-md">
                 <li v-for="session in sessionsList" :key="session.key">
@@ -291,9 +288,6 @@
                   <div class="flex flex-wrap items-center justify-center gap-md">
                     <Button as-child variant="dark" size="pill">
                       <NuxtLink :to="demandeTo">Demander une session</NuxtLink>
-                    </Button>
-                    <Button as-child variant="outline" size="pill">
-                      <NuxtLink :to="demandeTo">Être informé des prochaines dates</NuxtLink>
                     </Button>
                   </div>
                 </CardContent>

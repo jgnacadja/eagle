@@ -90,6 +90,7 @@
         </div>
 
         <ul
+          data-testid="family-shortcuts"
           class="hidden grid-cols-1 gap-md sm:grid"
           :class="[
             showAllFamilies
@@ -762,18 +763,30 @@ const certifyingFilterVisible = computed(
 
 const showAllFamilies = ref(false)
 
-const familyShortcuts = computed(() => {
+const familyShortcuts = computed<
+  { slug: string; label: string; caption: string; linkLabel: string; to: string | null }[]
+>(() => {
+  const publishedSlugs = new Set((directusFamilies.value ?? []).map((f) => f.slug))
+
   if (showAllFamilies.value) {
-    return familyOptions.value.map((family) => {
-      const count = family.count ?? 0
-      return {
-        slug: family.key,
-        label: family.label,
+    const globalCounts = new Map<string, number>(
+      (familyCounts.value ?? []).map((f) => [f.slug, f.count])
+    )
+
+    return Array.from(publishedSlugs)
+      .map((slug) => {
+        const count = globalCounts.get(slug) ?? 0
+        const label = familyNames.value.get(slug) ?? slug
+        return { slug, label, count }
+      })
+      .sort((a, b) => b.count - a.count)
+      .map(({ slug, label, count }) => ({
+        slug,
+        label,
         caption: `${count} formation${count > 1 ? 's' : ''}`,
         linkLabel: 'Voir la famille',
-        to: `/formations/${family.key}` as string | null
-      }
-    })
+        to: `/formations/${slug}`
+      }))
   }
 
   const top = familyOptions.value.slice(0, 3).map((family) => {
@@ -783,7 +796,7 @@ const familyShortcuts = computed(() => {
       label: family.label,
       caption: `${count} formation${count > 1 ? 's' : ''}`,
       linkLabel: 'Voir la famille',
-      to: `/formations/${family.key}` as string | null
+      to: publishedSlugs.has(family.key) ? `/formations/${family.key}` : null
     }
   })
 

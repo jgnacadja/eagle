@@ -622,7 +622,7 @@ const confierCards = [
     body: "Diagnostic des obligations et des recyclages à échéance, même à partir d'une demande imprécise.",
     imageLabel: 'Photo terrain à fournir',
     imageSub: 'chantier BTP — casque & harnais',
-    image: '/images/formation3.png'
+    image: '/images/formation3.jpeg'
   },
   {
     tag: 'Externalisation',
@@ -630,7 +630,7 @@ const confierCards = [
     body: 'Sessions programmées, convocations envoyées, attestations suivies, budget consolidé.',
     imageLabel: 'Photo terrain à fournir',
     imageSub: 'entrepôt logistique — cariste en formation',
-    image: '/images/OIP.jpeg'
+    image: '/images/formation2.jpg'
   },
   {
     tag: 'Multi-sites',
@@ -638,7 +638,7 @@ const confierCards = [
     body: 'Reporting site par site, alertes avant expiration, un seul point de contact national.',
     imageLabel: 'Photo terrain à fournir',
     imageSub: 'formateur en situation avec équipe RH',
-    image: '/images/Formation-en-management.jpg'
+    image: '/images/formation1.jpg'
   }
 ]
 

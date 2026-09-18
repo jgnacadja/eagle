@@ -102,7 +102,6 @@
             :centers="filteredCenters"
             :active-id="hasUserSelection ? activeCenterId : null"
             :caption="selectedDeptLabel"
-            :min-zoom="8"
             :popup="false"
             :user-position="userPosition"
             :focus-center="mapFocus"
@@ -220,7 +219,6 @@
             :centers="filteredCenters"
             :active-id="activeCenterId"
             :caption="selectedDeptLabel"
-            :min-zoom="8"
             :user-position="userPosition"
             :focus-center="mapFocus"
             @select="selectCenter"
@@ -267,9 +265,8 @@ function searchFromQuery(q: unknown, region: unknown): string {
 const appliedSearch = ref(searchFromQuery(route.query.q, route.query.region))
 const searchQuery = ref(appliedSearch.value)
 const activeCenterId = ref<string | null>(null)
-// Sélection explicite (clic sur une carte ou un marqueur) — distincte de
-// l'auto-sélection du premier centre : sur mobile, la carte n'ouvre la
-// popup d'un centre que si l'utilisateur l'a choisi, jamais d'office.
+// Sélection explicite (clic sur une carte ou un marqueur) : sur mobile, la
+// carte n'ouvre la popup d'un centre que si l'utilisateur l'a choisi.
 const hasUserSelection = ref(false)
 const isMobileMapOpen = ref(false)
 
@@ -400,22 +397,18 @@ const selectedDeptLabel = computed(() =>
   selectedDept.value === 'all' ? 'Tous les départements' : selectedDept.value
 )
 
-// Vue de la carte : sans département ni recherche → Paris (cœur du réseau),
-// ou la position de l'utilisateur s'il est géolocalisé ; département choisi
-// → centroïde du groupe le plus dense de ses centres (les centres
-// « couvrant » un département peuvent être implantés chez les voisins, un
-// fit global cadrerait trop large) ; recherche seule → `fitBounds` cadre
-// les résultats.
-const PARIS_CENTER = { lat: 48.8566, lng: 2.3522 }
+// Vue de la carte : département choisi → centroïde du groupe le plus dense
+// de ses centres (les centres « couvrant » un département peuvent être
+// implantés chez les voisins, un fit global cadrerait trop large) ;
+// « Tous les départements » — à l'arrivée comme après un reset — →
+// `fitBounds` cadre tout le réseau, comme sur l'accueil (la position de
+// l'utilisateur entre dans les bounds quand il est géolocalisé).
 const mapFocus = computed(() => {
-  if (selectedDept.value !== 'all') {
-    const points = filteredCenters.value.flatMap((c) =>
-      c.lat != null && c.lng != null ? [{ lat: c.lat, lng: c.lng }] : []
-    )
-    return densestClusterCenter(points)
-  }
-  if (!appliedSearch.value.trim()) return userPosition.value ?? PARIS_CENTER
-  return null
+  if (selectedDept.value === 'all') return null
+  const points = filteredCenters.value.flatMap((c) =>
+    c.lat != null && c.lng != null ? [{ lat: c.lat, lng: c.lng }] : []
+  )
+  return densestClusterCenter(points)
 })
 
 // « Département sans centre » (RG01) : le périmètre reste strict — l'état
@@ -476,8 +469,10 @@ watch(
       visibleCount.value = LIST_CHUNK_SIZE
       isLoadingMore.value = false
       hasUserSelection.value = false
-      if (!activeCenterId.value || !list.some((c) => c.id === activeCenterId.value)) {
-        activeCenterId.value = list[0]?.id ?? null
+      // Pas d'auto-sélection du premier centre : la carte s'ouvre neutre —
+      // on ne fait que nettoyer une sélection sortie du filtre courant.
+      if (activeCenterId.value && !list.some((c) => c.id === activeCenterId.value)) {
+        activeCenterId.value = null
       }
     }
     nextTick(measureListOverflow)

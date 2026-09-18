@@ -125,18 +125,31 @@
             </section>
 
             <!-- Carte d'accès -->
-            <section
-              v-if="centre.latitude != null && centre.longitude != null"
-              aria-labelledby="carte-title"
-            >
+            <section v-if="mapCenters.length" aria-labelledby="carte-title">
               <h2 id="carte-title" class="sr-only">Carte d'accès</h2>
-              <CenterMap
-                mode="single"
-                :centers="singleCenter"
-                :active-id="null"
-                caption=""
-                :user-position="userPosition"
-              />
+              <div class="h-64 overflow-hidden rounded-md border border-rule bg-surface">
+                <CenterMap
+                  :centers="mapCenters"
+                  :active-id="activeMapCenterId"
+                  :caption="mapCaption"
+                  :user-position="userPosition"
+                  @select="onMapSelect"
+                />
+              </div>
+              <div
+                v-if="centre.latitude != null && centre.longitude != null"
+                class="mt-sm flex items-center justify-between gap-md text-small"
+              >
+                <span class="text-ink-body">{{ heroAddress }}</span>
+                <a
+                  :href="directionsUrl"
+                  target="_blank"
+                  rel="noopener"
+                  class="whitespace-nowrap font-semibold text-primary transition-colors hover:text-accent-text"
+                >
+                  Ouvrir l'itinéraire <span class="link-arrow">→</span>
+                </a>
+              </div>
             </section>
 
             <!-- Qualité -->
@@ -419,21 +432,39 @@ const heroAddress = computed(() =>
 
 const { position: userPosition } = useGeolocation()
 
-const singleCenter = computed<CenterResult[]>(() => {
-  if (!centre.value || centre.value.latitude == null || centre.value.longitude == null) return []
-  return [
-    {
-      id: String(centre.value.id),
-      name: centre.value.name,
-      cp: centre.value.postal_code ?? '',
-      address: heroAddress.value,
-      tags: '',
-      tagsShort: '',
-      lat: centre.value.latitude,
-      lng: centre.value.longitude
+// Tout le réseau publié sur la carte — même rendu que l'accueil : pins
+// clusterisés, popup « Voir le centre » au clic. Le centre courant est
+// surligné (`activeMapCenterId` = son slug, comme `id` des marqueurs).
+const activeMapCenterId = ref<string | null>(slug)
+
+const mapCenters = computed<CenterResult[]>(() =>
+  (allCentres.value ?? []).map((c) => {
+    const location = [c.address, c.postal_code, c.city, c.department].filter(Boolean).join(', ')
+    const tags = (c.specialties ?? []).join(' · ')
+    return {
+      id: c.slug,
+      name: c.name,
+      cp: c.postal_code ?? '',
+      address: location,
+      tags,
+      tagsShort: tags,
+      lat: c.latitude ?? undefined,
+      lng: c.longitude ?? undefined
     }
-  ]
+  })
+)
+
+const mapCaption = computed(() => centre.value?.region ?? 'Réseau national')
+
+const directionsUrl = computed(() => {
+  const c = centre.value
+  if (!c || c.latitude == null || c.longitude == null) return ''
+  return `https://www.google.com/maps/dir/?api=1&destination=${c.latitude},${c.longitude}`
 })
+
+function onMapSelect(id: string) {
+  activeMapCenterId.value = id || null
+}
 
 const specialties = computed(() => centre.value?.specialties ?? [])
 
@@ -601,7 +632,18 @@ const sessions = computed<CentreSession[]>(() =>
 
 // Autres centres de la même région, chargés depuis Directus.
 const allCentres = await useDirectusList<Centre>('centres', 'centres-siblings', {
-  fields: ['slug', 'name', 'city', 'region', 'specialties'],
+  fields: [
+    'slug',
+    'name',
+    'city',
+    'region',
+    'specialties',
+    'address',
+    'postal_code',
+    'department',
+    'latitude',
+    'longitude'
+  ],
   filter: { status: { _eq: 'published' } },
   limit: -1
 })

@@ -229,8 +229,8 @@ describe('pages/centres/index', () => {
     expect(wrapper.text()).toContain('Réseau de centres')
     expect(wrapper.findAll('.center-card')).toHaveLength(3)
     expect(wrapper.text()).toContain('3 centres')
-    // Le premier centre est actif par défaut (watch immediate).
-    expect(wrapper.find('.center-card').attributes('data-active')).toBe('true')
+    // Aucun centre actif par défaut : la sélection reste un geste explicite.
+    expect(wrapper.find('.center-card').attributes('data-active')).toBe('false')
   })
 
   it('limite la liste au panneau desktop sans bloquer le scroll de la page', async () => {
@@ -444,14 +444,13 @@ describe('pages/centres/index', () => {
     const mapToggle = wrapper.findAll('button').find((b) => b.text().includes('Voir la carte'))
     await mapToggle!.trigger('click')
 
-    // Sans sélection explicite : pas de carte épinglée, la carte mobile ne
-    // reçoit pas le centre auto-sélectionné (pas de popup au chargement).
+    // Sans sélection explicite : pas de carte épinglée, aucun centre actif
+    // sur les cartes (pas de popup au chargement).
     expect(wrapper.findAll('.center-card')).toHaveLength(3)
     let maps = wrapper.findAll('.center-map')
     expect(maps[0]!.attributes('data-active-id')).toBeUndefined()
     expect(maps[0]!.attributes('data-popup')).toBe('false')
-    // La carte desktop garde le premier centre actif.
-    expect(maps[1]!.attributes('data-active-id')).toBe('creteil')
+    expect(maps[1]!.attributes('data-active-id')).toBeUndefined()
 
     // Après un clic explicite : carte épinglée + centre actif sur la carte.
     await wrapper.findAll('.center-card')[1]!.trigger('click')
@@ -467,12 +466,12 @@ describe('pages/centres/index', () => {
     expect(pinnedCard.attributes('style')).toBeUndefined()
   })
 
-  it('centre la carte sur Paris par défaut et sur le groupe dense d’un département', async () => {
+  it('cadre tout le réseau par défaut et le groupe dense d’un département', async () => {
     const wrapper = await mountPage()
 
     let maps = wrapper.findAll('.center-map')
-    // Sans filtre : focus Paris (48.8566, 2.3522).
-    expect(maps[0]!.attributes('data-focus')).toBe('48.8566,2.3522')
+    // Sans filtre : pas de focus forcé — fitBounds cadre tout le réseau.
+    expect(maps[0]!.attributes('data-focus')).toBe('')
 
     await wrapper.find('.dept-select').setValue('Val-de-Marne')
     // Département choisi : centroïde du groupe Créteil+Vitry ≈ 48.79, 2.42.
@@ -531,13 +530,13 @@ describe('pages/centres/index', () => {
     const wrapper = await mountPage()
 
     const first = wrapper.find('.center-card')
-    expect(first.attributes('data-active')).toBe('true')
-
-    await first.trigger('click')
     expect(first.attributes('data-active')).toBe('false')
 
     await first.trigger('click')
     expect(first.attributes('data-active')).toBe('true')
+
+    await first.trigger('click')
+    expect(first.attributes('data-active')).toBe('false')
   })
 
   it('définit le SEO de la page réseau', async () => {

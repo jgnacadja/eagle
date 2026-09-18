@@ -76,7 +76,27 @@
         </div>
 
         <!-- Raccourcis familles -->
-        <ul class="mt-2xl hidden grid-cols-1 gap-md sm:grid sm:grid-cols-2 lg:grid-cols-4">
+        <div v-if="showAllFamilies" class="mt-2xl hidden items-center justify-between sm:flex">
+          <h2 class="font-sans text-h4 font-bold text-ink">Toutes les familles</h2>
+          <Button
+            type="button"
+            variant="link"
+            size="inline"
+            class="font-semibold underline"
+            @click="showAllFamilies = false"
+          >
+            Réduire
+          </Button>
+        </div>
+
+        <ul
+          class="hidden grid-cols-1 gap-md sm:grid"
+          :class="[
+            showAllFamilies
+              ? 'mt-lg sm:grid-cols-3 lg:grid-cols-4'
+              : 'mt-2xl sm:grid-cols-2 lg:grid-cols-4'
+          ]"
+        >
           <li
             v-for="(shortcut, i) in familyShortcuts"
             :key="shortcut.slug"
@@ -85,12 +105,22 @@
           >
             <p class="font-semibold text-ink">{{ shortcut.label }}</p>
             <p class="mt-xs text-small text-ink-muted">{{ shortcut.caption }}</p>
+
             <NuxtLink
+              v-if="shortcut.to"
               :to="shortcut.to"
               class="mt-md inline-block text-small font-semibold text-primary transition-colors hover:text-accent-text"
             >
               {{ shortcut.linkLabel }} <span class="link-arrow">→</span>
             </NuxtLink>
+            <button
+              v-else
+              type="button"
+              class="mt-md inline-block text-small font-semibold text-primary transition-colors hover:text-accent-text"
+              @click="showAllFamilies = true"
+            >
+              {{ shortcut.linkLabel }} <span class="link-arrow">→</span>
+            </button>
           </li>
         </ul>
       </div>
@@ -730,7 +760,22 @@ const certifyingFilterVisible = computed(
   () => !facets.value || facets.value.certifying > 0 || certifying.value
 )
 
+const showAllFamilies = ref(false)
+
 const familyShortcuts = computed(() => {
+  if (showAllFamilies.value) {
+    return familyOptions.value.map((family) => {
+      const count = family.count ?? 0
+      return {
+        slug: family.key,
+        label: family.label,
+        caption: `${count} formation${count > 1 ? 's' : ''}`,
+        linkLabel: 'Voir la famille',
+        to: `/formations/${family.key}` as string | null
+      }
+    })
+  }
+
   const top = familyOptions.value.slice(0, 3).map((family) => {
     const count = family.count ?? 0
     return {
@@ -738,7 +783,7 @@ const familyShortcuts = computed(() => {
       label: family.label,
       caption: `${count} formation${count > 1 ? 's' : ''}`,
       linkLabel: 'Voir la famille',
-      to: `/formations/${family.key}`
+      to: `/formations/${family.key}` as string | null
     }
   })
 
@@ -749,7 +794,7 @@ const familyShortcuts = computed(() => {
       label: 'Toutes les familles',
       caption: 'Management, bureautique, qualité…',
       linkLabel: 'Parcourir',
-      to: '/formations'
+      to: null
     }
   ]
 })

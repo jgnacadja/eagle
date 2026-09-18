@@ -275,6 +275,7 @@
             :body="card.body"
             :image-label="card.imageLabel"
             :image-sub="card.imageSub"
+            :image="card.image"
           />
         </div>
 
@@ -291,6 +292,7 @@
             :body="card.body"
             :image-label="card.imageLabel"
             :image-sub="card.imageSub"
+            :image="card.image"
           />
         </div>
 
@@ -305,6 +307,7 @@
             :body="card.body"
             :image-label="card.imageLabel"
             :image-sub="card.imageSub"
+            :image="card.image"
           />
         </div>
 
@@ -489,7 +492,7 @@ const networkCards = [
     subtitle: 'Référencez vos centres, développez votre activité',
     body: 'Rendez vos sessions visibles et recevez des demandes qualifiées de tout le territoire.',
     cta: 'Référencer mon organisme',
-    to: '/centres/demande-de-formation?sujet=organisme'
+    to: '/referencer-mon-organisme'
   },
   {
     title: 'Formateur indépendant',
@@ -618,21 +621,24 @@ const confierCards = [
     title: 'Qualifier le besoin réglementaire',
     body: "Diagnostic des obligations et des recyclages à échéance, même à partir d'une demande imprécise.",
     imageLabel: 'Photo terrain à fournir',
-    imageSub: 'chantier BTP — casque & harnais'
+    imageSub: 'chantier BTP — casque & harnais',
+    image: '/images/formation3.png'
   },
   {
     tag: 'Externalisation',
     title: "Déléguer l'exécution du plan",
     body: 'Sessions programmées, convocations envoyées, attestations suivies, budget consolidé.',
     imageLabel: 'Photo terrain à fournir',
-    imageSub: 'entrepôt logistique — cariste en formation'
+    imageSub: 'entrepôt logistique — cariste en formation',
+    image: '/images/OIP.jpeg'
   },
   {
     tag: 'Multi-sites',
     title: 'Piloter la conformité partout',
     body: 'Reporting site par site, alertes avant expiration, un seul point de contact national.',
     imageLabel: 'Photo terrain à fournir',
-    imageSub: 'formateur en situation avec équipe RH'
+    imageSub: 'formateur en situation avec équipe RH',
+    image: '/images/Formation-en-management.jpg'
   }
 ]
 

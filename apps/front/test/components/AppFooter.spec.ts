@@ -5,6 +5,7 @@ import AppFooter from '~/components/Menu/AppFooter.vue'
 vi.mock('~/composables/useMenuData', async () => {
   const { ref } = await import('vue')
   return {
+    useMenuFamilles: () => ref([]),
     useMenuLegalPages: () =>
       ref([
         { slug: 'mentions-legales', label: 'Mentions légales', showInTabs: true },

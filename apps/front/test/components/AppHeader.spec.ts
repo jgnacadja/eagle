@@ -1,7 +1,13 @@
 import { mount } from '@vue/test-utils'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { nextTick } from 'vue'
 import AppHeader from '~/components/Menu/AppHeader.vue'
+
+// useMenuPreload déclenche des useAsyncData qui dépendent des auto-imports
+// Nuxt (useRuntimeConfig, $fetch…) absents sous Vitest — on le neutralise.
+vi.mock('~/composables/useMenuData', () => ({
+  useMenuPreload: () => undefined
+}))
 
 const stubs = {
   NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },

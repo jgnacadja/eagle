@@ -1,0 +1,67 @@
+import { config } from '@vue/test-utils'
+import { type Component } from 'vue'
+
+function registerByName(modules: Record<string, unknown>) {
+  for (const [path, component] of Object.entries(modules)) {
+    const base = path.slice(path.lastIndexOf('/') + 1)
+    const name = base.endsWith('.vue') ? base.slice(0, -4) : undefined
+    if (name) {
+      config.global.components[name] = component as Component
+    }
+  }
+}
+
+const icons = import.meta.glob('~/components/icons/*.vue', { eager: true, import: 'default' })
+const uiComponents = import.meta.glob('~/components/ui/**/*.vue', {
+  eager: true,
+  import: 'default'
+})
+
+registerByName(icons)
+registerByName(uiComponents)
+
+// Enregistré explicitement : les autres composants Map/ sont stubbés par spec.
+import GeoNearMe from '~/components/Map/GeoNearMe.vue'
+config.global.components.GeoNearMe = GeoNearMe
+
+config.global.stubs = {
+  ...config.global.stubs,
+  NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
+  CenterMap: {
+    props: ['centers', 'activeId', 'caption', 'mode'],
+    template: '<div class="center-map" />'
+  },
+  CenterFormationCard: {
+    props: ['title', 'subFamily'],
+    template: '<div class="formation-card">{{ subFamily }} — {{ title }}</div>'
+  }
+}
+
+// Auto-imports Nuxt absents sous Vitest : le header interne SSR n'a pas à
+// exister en environnement de test.
+vi.stubGlobal('internalSsrHeaders', () => undefined)
+
+// Directives motion-v (enregistrées par le module Nuxt, absentes ici) et
+// utilitaires de reveal utilisés dans les templates.
+config.global.directives = {
+  ...config.global.directives,
+  motion: {},
+  reveal: {}
+}
+
+// happy-dom n'expose pas IntersectionObserver (requis par motion-v/inView).
+const noop = () => undefined
+class IntersectionObserverStub {
+  observe = noop
+  unobserve = noop
+  disconnect = noop
+}
+vi.stubGlobal('IntersectionObserver', IntersectionObserverStub)
+
+// Pointer capture absent de happy-dom : requis par reka-ui (SelectTrigger
+// appelle hasPointerCapture au pointerdown).
+if (typeof Element !== 'undefined') {
+  Element.prototype.hasPointerCapture ??= () => false
+  Element.prototype.setPointerCapture ??= noop
+  Element.prototype.releasePointerCapture ??= noop
+}

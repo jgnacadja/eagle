@@ -36,6 +36,7 @@
                 : 'font-medium text-primary'
             "
             :aria-current="region.slug === selectedRegion ? 'true' : undefined"
+            @focus="selectedRegion = region.slug"
             @click="selectedRegion = region.slug"
           >
             <span>{{ region.label }}</span>

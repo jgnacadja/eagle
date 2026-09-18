@@ -108,7 +108,7 @@
                 />
                 <span v-else>Visuel article à fournir</span>
               </div>
-              <div class="flex flex-1 flex-col gap-md bg-paper p-lg lg:p-lg 2xl:mt-lg">
+              <div class="flex flex-1 flex-col gap-md bg-paper p-lg 2xl:mt-lg">
                 <p class="text-overline text-accent-text">
                   <span class="font-bold uppercase">{{ featuredArticle.category }}</span>
                   <span class="font-medium text-ink-subtle">

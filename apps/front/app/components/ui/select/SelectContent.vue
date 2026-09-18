@@ -12,9 +12,7 @@
       "
     >
       <SelectScrollUpButton />
-      <SelectViewport
-        :class="cn('p-1', position === 'popper' && 'w-full min-w-(--reka-select-trigger-width)')"
-      >
+      <SelectViewport :class="cn('p-1', position === 'popper' && 'w-full')">
         <slot />
       </SelectViewport>
       <SelectScrollDownButton />

@@ -78,7 +78,7 @@
       <div class="mx-auto px-gutter-mobile py-section md:px-gutter">
         <div class="flex flex-col gap-2xl lg:flex-row">
           <!-- Colonne principale -->
-          <div class="min-w-0 flex-1 space-y-2xl">
+          <div class="min-w-0 flex-1 space-y-2xl md:px-16">
             <!-- À propos -->
             <section v-if="course.description" aria-labelledby="apropos-title">
               <h2 id="apropos-title" class="font-display text-h2 font-extrabold text-ink">

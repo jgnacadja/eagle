@@ -181,7 +181,7 @@
           </aside>
 
           <!-- Colonne principale -->
-          <div class="order-2 flex flex-1 flex-col gap-2xl lg:order-1">
+          <div class="order-2 flex flex-1 flex-col gap-2xl md:px-16 lg:order-1">
             <!-- Le centre -->
             <section v-if="centre.description" aria-labelledby="le-centre-title">
               <h2 id="le-centre-title" class="font-display text-h2 font-extrabold text-ink">

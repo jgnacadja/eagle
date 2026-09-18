@@ -50,7 +50,7 @@
       <div class="ml-auto flex items-center gap-sm">
         <NuxtLink
           to="/rejoindre-le-reseau"
-          class="hidden text-body font-bold text-primary transition-colors hover:text-accent-text md:inline"
+          class="hidden text-body font-bold text-primary transition-colors hover:text-accent-text md:inline underline"
         >
           Rejoindre le réseau
         </NuxtLink>

@@ -548,7 +548,7 @@ const derniersCentresData = await useDirectusList<Centre>('centres', 'home-centr
   sort: ['-id'],
   limit: -1
 })
-// Position partagée : activée via le badge « Autour de moi » (ici ou sur
+// Position partagée : activée via le badge « Près de moi » (ici ou sur
 // /centres), jamais automatiquement.
 const { position: userPosition } = useGeolocation()
 

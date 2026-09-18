@@ -195,12 +195,12 @@ function findDialogButton(text: string) {
   return el ? new DOMWrapper(el) : undefined
 }
 
-// Parcours explicite « Autour de moi » : clic badge → dialog de
-// consentement maison → « Utiliser ma position » → demande navigateur.
+// Parcours explicite « Près de moi » : clic badge → dialog de
+// consentement maison → « Autoriser la géolocalisation » → demande navigateur.
 async function activateGeo(wrapper: Awaited<ReturnType<typeof mountPage>>) {
   await wrapper.find('button[aria-label="Activer la géolocalisation"]').trigger('click')
   await nextTick()
-  const confirm = findDialogButton('Utiliser ma position')
+  const confirm = findDialogButton('Autoriser la géolocalisation')
   expect(confirm, 'le dialog de consentement doit être ouvert').toBeTruthy()
   await confirm!.trigger('click')
   await flushPromises()
@@ -549,7 +549,7 @@ describe('pages/centres/index', () => {
     )
   })
 
-  it('ne demande pas la géolocalisation au montage — le badge « Autour de moi » trie par distance', async () => {
+  it('ne demande pas la géolocalisation au montage — le badge « Près de moi » trie par distance', async () => {
     interface MockPosition {
       coords: {
         latitude: number
@@ -644,12 +644,12 @@ describe('pages/centres/index', () => {
       await mountPage()
       expect(getCurrentPosition).not.toHaveBeenCalled()
 
-      // « Autour de moi » (menu mobile) navigue vers /centres?geo=1 — le
+      // « Près de moi » (menu mobile) navigue vers /centres?geo=1 — le
       // changement de query rouvre le dialog sans remonter la page.
       routeStub.query = { geo: '1' }
       await flushPromises()
 
-      const confirm = findDialogButton('Utiliser ma position')
+      const confirm = findDialogButton('Autoriser la géolocalisation')
       expect(confirm, 'le dialog de consentement doit être ouvert').toBeTruthy()
       await confirm!.trigger('click')
       await flushPromises()
@@ -775,7 +775,7 @@ describe('pages/centres/index', () => {
 
       await wrapper.find('button[aria-label="Activer la géolocalisation"]').trigger('click')
       await nextTick()
-      const confirm = findDialogButton('Utiliser ma position')
+      const confirm = findDialogButton('Autoriser la géolocalisation')
       await confirm!.trigger('click')
 
       // L'utilisateur choisit son périmètre avant la réponse du reverse.

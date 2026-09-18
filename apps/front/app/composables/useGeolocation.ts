@@ -113,7 +113,7 @@ export interface UseGeolocationReturn {
 /**
  * Adapter client autour de `navigator.geolocation`, état partagé entre pages.
  * Pas d'appel automatique : la demande part uniquement d'un geste explicite
- * (badge « Autour de moi », consent dialog).
+ * (badge « Près de moi », consent dialog).
  */
 export function useGeolocation(): UseGeolocationReturn {
   refreshPermissionState()

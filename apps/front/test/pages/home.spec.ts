@@ -203,7 +203,7 @@ describe('pages/index', () => {
     expect(hrefs).toContain('/centres')
   })
 
-  it('le badge « Autour de moi » déclenche la géolocalisation et affiche les distances réelles', async () => {
+  it('le badge « Près de moi » déclenche la géolocalisation et affiche les distances réelles', async () => {
     const getCurrentPosition = vi.fn(
       (success: (pos: { coords: { latitude: number; longitude: number } }) => void) => {
         success({ coords: { latitude: 48.7909, longitude: 2.4534 } })
@@ -215,13 +215,13 @@ describe('pages/index', () => {
     try {
       const wrapper = await mountPage()
 
-      // Jamais automatique : clic badge → dialog → « Utiliser ma position ».
+      // Jamais automatique : clic badge → dialog → « Autoriser la géolocalisation ».
       // Le Dialog reka-ui est téléporté dans document.body.
       expect(getCurrentPosition).not.toHaveBeenCalled()
       await wrapper.find('button[aria-label="Activer la géolocalisation"]').trigger('click')
       await nextTick()
       const confirmEl = [...document.body.querySelectorAll('button')].find((b) =>
-        b.textContent?.includes('Utiliser ma position')
+        b.textContent?.includes('Autoriser la géolocalisation')
       )
       expect(confirmEl, 'le dialog de consentement doit être ouvert').toBeTruthy()
       await new DOMWrapper(confirmEl!).trigger('click')

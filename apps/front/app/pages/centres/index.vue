@@ -277,7 +277,7 @@ const isMobileMapOpen = ref(false)
 // dans le template (un Ref imbriqué dans un objet ne l'est pas — CenterMap
 // recevrait le Ref lui-même et non { lat, lng }).
 // La géolocalisation n'est jamais automatique : elle part d'un geste
-// explicite — badge « Autour de moi » de la barre de recherche (dialog de
+// explicite — badge « Près de moi » de la barre de recherche (dialog de
 // consentement maison puis popup native) ou lien `?geo=1` du menu mobile.
 const { position: userPosition } = useGeolocation()
 const geoNearMe = ref<{ activate: () => void } | null>(null)
@@ -315,7 +315,7 @@ const centresCount = computed(() => centresTotal.value ?? 0)
 const departmentsCount = computed(() => departments.value?.length ?? 0)
 
 // La page déjà affichée ne remonte pas : seul le changement de query
-// rouvre le parcours de consentement (mobile : « Autour de moi » du menu).
+// rouvre le parcours de consentement (mobile : « Près de moi » du menu).
 watch(
   () => route.query.geo,
   (value) => {
@@ -499,7 +499,7 @@ onMounted(() => {
   if (sentinelEl.value) loadMoreObserver.observe(sentinelEl.value)
   window.addEventListener('resize', onResize)
   nextTick(onResize)
-  // Arrivée directe sur /centres?geo=1 (« Autour de moi » du menu) : le
+  // Arrivée directe sur /centres?geo=1 (« Près de moi » du menu) : le
   // dialog de consentement s'ouvre une fois le badge monté — le watch sur
   // la query, non immédiat, ne couvre que les changements ultérieurs.
   if (route.query.geo === '1') geoNearMe.value?.activate()

@@ -27,10 +27,10 @@
 
     <Dialog :open="dialogVariant !== null" @update:open="onOpenChange">
       <DialogContent>
-        <p class="flex h-touch w-touch items-center justify-center rounded-full bg-primary-faint">
-          <IconLocate :size="20" class="text-accent-text" />
-        </p>
-        <DialogTitle>{{ dialogTitle }}</DialogTitle>
+        <DialogTitle class="flex items-center gap-sm">
+          <IconLocate :size="20" class="shrink-0 text-accent-text" />
+          {{ dialogTitle }}
+        </DialogTitle>
         <DialogDescription>{{ dialogText }}</DialogDescription>
         <DialogFooter>
           <Button
@@ -39,10 +39,10 @@
             size="control"
             @click="confirmConsent"
           >
-            Utiliser ma position
+            Autoriser la géolocalisation
           </Button>
           <Button type="button" variant="ghost" size="control" @click="closeDialog">
-            {{ dialogVariant === 'blocked' ? "J'ai compris" : 'Plus tard' }}
+            {{ dialogVariant === 'blocked' ? "J'ai compris" : 'Refuser' }}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -59,7 +59,7 @@ withDefaults(
     label?: string
     activeLabel?: string
   }>(),
-  { label: 'Autour de moi', activeLabel: 'Autour de moi' }
+  { label: 'Près de moi', activeLabel: 'Près de moi' }
 )
 
 const { status, position, permission, request, clear } = useGeolocation()
@@ -76,7 +76,7 @@ const dialogTitle = computed(() =>
 const dialogText = computed(() =>
   dialogVariant.value === 'blocked'
     ? 'Votre navigateur a mémorisé le refus de géolocalisation. Pour la réactiver : icône cadenas dans la barre d’adresse → Paramètres du site → Localisation → Autoriser, puis rechargez la page.'
-    : 'Votre position sert uniquement à afficher les centres les plus proches et à pré-remplir le filtre département. Votre navigateur vous demandera confirmation — rien n’est utilisé sans votre accord.'
+    : 'Ce site requiert votre autorisation pour connaître votre position afin d’afficher les centres de formation les plus proches de vous.'
 )
 
 function closeDialog() {
@@ -87,7 +87,7 @@ function onOpenChange(open: boolean) {
   if (!open) closeDialog()
 }
 
-// Point d'entrée unique — clic badge ou « Autour de moi » du menu mobile.
+// Point d'entrée unique — clic badge ou « Près de moi » du menu mobile.
 // Position déjà connue : rien à re-demander, la popup ne se rouvre pas.
 function activate() {
   if (status.value === 'locating' || isActive.value) return

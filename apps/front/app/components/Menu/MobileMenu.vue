@@ -123,7 +123,7 @@
                       @click="closeMenu"
                     >
                       <IconLocate :size="16" class="text-accent" />
-                      Autour de moi
+                      Près de moi
                     </NuxtLink>
                   </div>
 

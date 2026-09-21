@@ -147,8 +147,8 @@ export class LeadsService {
   ): Promise<{ submitted: true }> {
     const formGuid = this.formGuids[form]
     if (!this.portalId || !formGuid) {
-      this.logger.error(`Configuration HubSpot manquante (form: ${form})`)
-      throw new ServiceUnavailableException('Le service de soumission est indisponible.')
+      this.logger.error(`Missing HubSpot configuration (form: ${form})`)
+      throw new ServiceUnavailableException('The submission service is unavailable.')
     }
 
     const body: Record<string, unknown> = { fields: hubspotFields }
@@ -176,7 +176,7 @@ export class LeadsService {
 
       if (!response.ok) {
         this.logger.error(`HubSpot Forms HTTP ${response.status} (form: ${form})`)
-        throw new ServiceUnavailableException('Le service de soumission est indisponible.')
+        throw new ServiceUnavailableException('The submission service is unavailable.')
       }
     } catch (error) {
       if (error instanceof ServiceUnavailableException) throw error
@@ -184,7 +184,7 @@ export class LeadsService {
         `HubSpot Forms submit failed (form: ${form})`,
         error instanceof Error ? error.stack : String(error)
       )
-      throw new ServiceUnavailableException('Le service de soumission est indisponible.')
+      throw new ServiceUnavailableException('The submission service is unavailable.')
     }
 
     return { submitted: true }

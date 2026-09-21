@@ -33,5 +33,10 @@ export const aproposLiens = [
     slug: 'contact',
     label: 'Contact',
     description: 'Formulaire et coordonnées'
+  },
+  {
+    slug: 'partenaires',
+    label: 'Le réseau et ses partenaires',
+    description: 'Devenir partenaire de LEARN UP ACADEMY'
   }
 ]

@@ -10,17 +10,23 @@ import {
   accordionTriggerVariants
 } from '~/components/ui/accordion'
 
-function createAccordion(props: { itemVariant?: string; triggerVariant?: string } = {}) {
+function createAccordion(
+  props: { itemVariant?: string; triggerVariant?: string; customIcon?: boolean } = {}
+) {
   return defineComponent({
     components: { Accordion, AccordionContent, AccordionItem, AccordionTrigger },
     setup: () => ({
       itemVariant: props.itemVariant ?? 'default',
-      triggerVariant: props.triggerVariant ?? 'default'
+      triggerVariant: props.triggerVariant ?? 'default',
+      customIcon: props.customIcon ?? false
     }),
     template: `
       <Accordion type="single" collapsible>
         <AccordionItem value="a" :variant="itemVariant">
-          <AccordionTrigger :variant="triggerVariant">Titre section</AccordionTrigger>
+          <AccordionTrigger :variant="triggerVariant">
+            Titre section
+            <template v-if="customIcon" #icon><span data-testid="custom-icon" /></template>
+          </AccordionTrigger>
           <AccordionContent>Contenu section</AccordionContent>
         </AccordionItem>
       </Accordion>
@@ -55,21 +61,7 @@ describe('ui/Accordion', () => {
   })
 
   it('fusionne les classes du slot icon', () => {
-    const Host = defineComponent({
-      components: { Accordion, AccordionContent, AccordionItem, AccordionTrigger },
-      template: `
-        <Accordion type="single" collapsible>
-          <AccordionItem value="a">
-            <AccordionTrigger>
-              Titre
-              <template #icon><span data-testid="custom-icon" /></template>
-            </AccordionTrigger>
-            <AccordionContent>x</AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      `
-    })
-    const wrapper = mount(Host)
+    const wrapper = mount(createAccordion({ customIcon: true }))
 
     expect(wrapper.find('[data-testid="custom-icon"]').exists()).toBe(true)
     expect(wrapper.find('button svg').exists()).toBe(false)

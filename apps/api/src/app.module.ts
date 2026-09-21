@@ -10,6 +10,7 @@ import { DigiformaModule } from './digiforma/digiforma.module'
 import { SyncModule } from './sync/sync.module'
 import { CatalogModule } from './catalog/catalog.module'
 import { CentresModule } from './centres/centres.module'
+import { LeadsModule } from './leads/leads.module'
 import { CacheModule } from './common/cache/cache.module'
 import { DirectusModule } from './directus/directus.module'
 
@@ -33,6 +34,14 @@ function isHealthRoute(context: ExecutionContext): boolean {
   const request = context.switchToHttp().getRequest<{ originalUrl?: string }>()
   const url = request.originalUrl ?? ''
   return url === '/health' || url.startsWith('/health/')
+}
+
+// Les formulaires leads ont leur propre quota, plus strict : le endpoint
+// relaie vers HubSpot — 100 soumissions/min pousseraient du spam dans le CRM.
+function isLeadsRoute(context: ExecutionContext): boolean {
+  const request = context.switchToHttp().getRequest<{ originalUrl?: string }>()
+  const url = request.originalUrl ?? ''
+  return url === '/leads' || url.startsWith('/leads/')
 }
 
 // Le SSR du front appelle l'API depuis l'IP du serveur Nuxt : sans bypass,
@@ -110,6 +119,7 @@ function createRedisThrottlerStorage(url: string): ThrottlerStorage {
                 isAdminRoute(context) ||
                 isDirectusRoute(context) ||
                 isHealthRoute(context) ||
+                isLeadsRoute(context) ||
                 isInternalSsr(context, internalSsrToken),
               getTracker: (req) => req.ip ?? req.socket?.remoteAddress ?? 'anonymous'
             },
@@ -119,6 +129,13 @@ function createRedisThrottlerStorage(url: string): ThrottlerStorage {
               limit: 600,
               skipIf: (context) =>
                 !isDirectusRoute(context) || isInternalSsr(context, internalSsrToken),
+              getTracker: (req) => req.ip ?? req.socket?.remoteAddress ?? 'anonymous'
+            },
+            {
+              name: 'leads',
+              ttl: 60_000,
+              limit: 10,
+              skipIf: (context) => !isLeadsRoute(context),
               getTracker: (req) => req.ip ?? req.socket?.remoteAddress ?? 'anonymous'
             },
             {
@@ -144,7 +161,8 @@ function createRedisThrottlerStorage(url: string): ThrottlerStorage {
     SyncModule,
     CatalogModule,
     CentresModule,
-    DirectusModule
+    DirectusModule,
+    LeadsModule
   ],
   controllers: [HealthController],
   providers: [

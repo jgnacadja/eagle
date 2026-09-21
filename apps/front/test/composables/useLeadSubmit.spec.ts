@@ -4,34 +4,14 @@ import { useLeadSubmit } from '~/composables/useLeadSubmit'
 const fetchMock = vi.fn()
 
 vi.stubGlobal('useRuntimeConfig', () => ({
-  public: {
-    hubspot: {
-      portalId: '149356688',
-      formsBaseUrl: 'https://api-eu1.hsforms.com',
-      formGuids: {
-        newsletter: 'guid-newsletter',
-        demande: 'guid-demande',
-        candidature: 'guid-candidature'
-      }
-    }
-  }
+  public: { apiBase: 'http://localhost:3001' }
 }))
 vi.stubGlobal('logClientError', vi.fn())
 vi.stubGlobal('$fetch', fetchMock)
 
-interface SubmittedBody {
-  fields: { name: string; value: string }[]
-  context?: { pageUri?: string; pageName?: string }
-  legalConsentOptions?: { consent: { consentToProcess: boolean; text: string } }
-}
-
-function lastCall(): { url: string; body: SubmittedBody } {
-  const [url, init] = fetchMock.mock.calls.at(-1) as [string, { body: SubmittedBody }]
+function lastCall(): { url: string; body: Record<string, unknown> } {
+  const [url, init] = fetchMock.mock.calls.at(-1) as [string, { body: Record<string, unknown> }]
   return { url, body: init.body }
-}
-
-function fieldNames(body: SubmittedBody): Record<string, string> {
-  return Object.fromEntries(body.fields.map((f) => [f.name, f.value]))
 }
 
 describe('useLeadSubmit', () => {
@@ -39,22 +19,18 @@ describe('useLeadSubmit', () => {
     fetchMock.mockReset().mockResolvedValue({})
   })
 
-  it('newsletter : poste email seul, sans contexte ni consentement', async () => {
+  it('newsletter : poste le payload à /leads/newsletter', async () => {
     const { submit } = useLeadSubmit()
 
     const ok = await submit('newsletter', { email: 'abonne@site.fr' })
 
     expect(ok).toBe(true)
     const { url, body } = lastCall()
-    expect(url).toBe(
-      'https://api-eu1.hsforms.com/submissions/v3/integration/submit/149356688/guid-newsletter'
-    )
-    expect(fieldNames(body)).toEqual({ email: 'abonne@site.fr' })
-    expect(body.context).toBeUndefined()
-    expect(body.legalConsentOptions).toBeUndefined()
+    expect(url).toBe('http://localhost:3001/leads/newsletter')
+    expect(body).toEqual({ email: 'abonne@site.fr' })
   })
 
-  it('demande : mappe les champs HubSpot, joint contexte et consentement', async () => {
+  it('demande : poste le payload métier tel quel à /leads/demande', async () => {
     const { submit } = useLeadSubmit()
 
     await submit('demande', {
@@ -77,50 +53,17 @@ describe('useLeadSubmit', () => {
     })
 
     const { url, body } = lastCall()
-    expect(url).toContain('guid-demande')
-    expect(fieldNames(body)).toEqual({
-      firstname: 'Jean',
-      lastname: 'Dupont Martin',
-      email: 'jean@acme.fr',
-      phone: '0612345678',
-      company: 'ACME',
-      jobtitle: 'DRH',
-      learnup_siret: '12345678901234',
-      learnup_salaries: '12',
-      learnup_echeance: 'Octobre 2026',
-      learnup_precisions: 'En intra.',
-      learnup_centre: 'LEARN UP Créteil',
-      learnup_formation: 'CACES R489',
-      learnup_session: '12-14 octobre',
-      learnup_type_projet: 'centre'
-    })
-    expect(body.context?.pageUri).toBe('https://learnup.fr/centres/demande-de-formation')
-    expect(body.legalConsentOptions?.consent.consentToProcess).toBe(true)
-  })
-
-  it('demande : n’envoie pas les champs contextuels vides', async () => {
-    const { submit } = useLeadSubmit()
-
-    await submit('demande', {
-      nom: 'Jean Dupont',
-      email: 'jean@acme.fr',
-      telephone: '0612345678',
-      raisonSociale: 'ACME',
+    expect(url).toBe('http://localhost:3001/leads/demande')
+    expect(body).toMatchObject({
+      nom: 'Jean Dupont Martin',
       siret: '12345678901234',
-      fonction: 'DRH',
-      salaries: 3,
-      echeance: 'Flexible',
-      consentement: true
+      sujet: 'franchise',
+      consentement: true,
+      pageUri: 'https://learnup.fr/centres/demande-de-formation'
     })
-
-    const { body } = lastCall()
-    const names = Object.keys(fieldNames(body))
-    expect(names).not.toContain('learnup_centre')
-    expect(names).not.toContain('learnup_formation')
-    expect(names).not.toContain('learnup_type_projet')
   })
 
-  it('candidature : mappe voie, territoire et parcours', async () => {
+  it('candidature : poste le payload à /leads/candidature', async () => {
     const { submit } = useLeadSubmit()
 
     await submit('candidature', {
@@ -134,15 +77,8 @@ describe('useLeadSubmit', () => {
     })
 
     const { url, body } = lastCall()
-    expect(url).toContain('guid-candidature')
-    expect(fieldNames(body)).toMatchObject({
-      firstname: 'Marie',
-      lastname: 'Curie',
-      learnup_territoire: 'Lyon',
-      learnup_parcours: '10 ans de formation SST.',
-      learnup_type_projet: 'formateur'
-    })
-    expect(body.legalConsentOptions?.consent.consentToProcess).toBe(true)
+    expect(url).toBe('http://localhost:3001/leads/candidature')
+    expect(body).toMatchObject({ voie: 'formateur', ville: 'Lyon' })
   })
 
   it('échec réseau : expose l’erreur et retourne false', async () => {
@@ -166,9 +102,9 @@ describe('useLeadSubmit', () => {
     expect(error.value).toBeNull()
   })
 
-  it('config absente : retourne false sans appeler HubSpot', async () => {
+  it('config absente : retourne false sans appeler l’API', async () => {
     vi.stubGlobal('useRuntimeConfig', () => ({
-      public: { hubspot: { portalId: '', formsBaseUrl: '', formGuids: {} } }
+      public: { apiBase: '' }
     }))
     const { submit, error } = useLeadSubmit()
 

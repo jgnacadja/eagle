@@ -7,14 +7,17 @@ réseau.
 ## Architecture
 
 ```
-Site Nuxt (navigateur) ──POST──> HubSpot Forms API v3
-     api{-eu1}.hsforms.com/submissions/v3/integration/submit/{portalId}/{formGuid}
+Site Nuxt (navigateur) ──POST /leads/{form}──> API NestJS ──POST──> HubSpot Forms API v3
+                     api{-eu1}.hsforms.com/submissions/v3/integration/submit/{portalId}/{formGuid}
 ```
 
-- Soumission **directe depuis le navigateur**, sans passer par l'API du site.
+- Le front poste le **payload métier** à l'API (`POST /leads/newsletter`,
+  `/leads/demande`, `/leads/candidature`) — c'est l'API qui mappe les
+  propriétés HubSpot (`learnup_*`, split nom/prénom), ajoute le contexte
+  de page et les options de consentement, puis relaie à la Forms API.
 - L'endpoint Forms API n'est **pas authentifié** : `portalId` + GUIDs de
-  formulaires suffisent. Aucun secret n'est exposé côté client.
-- Le token d'app privée n'est requis **que pour l'administration** (création
+  formulaires suffisent. L'API n'a donc besoin d'aucun secret pour soumettre.
+- La clé de service n'est requise **que pour l'administration** (création
   des propriétés et des formulaires, inspection) — jamais dans le front.
 
 ## 1. Prérequis
@@ -22,16 +25,21 @@ Site Nuxt (navigateur) ──POST──> HubSpot Forms API v3
 | Élément                    | Où                                                                                              | Notes                                 |
 | -------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------- |
 | **Portal ID (Hub ID)**     | Settings → Account Setup → Account Defaults (ou dans l'URL du portail)                          | Valeur numérique, ex. `149356688`     |
-| **App privée**             | Settings → Integrations → Private Apps → Create                                                 | Uniquement pour le provisioning/admin |
+| **Clé de service**         | Development → Keys → Service Keys                                                               | Uniquement pour le provisioning/admin |
 | **Domaine du site tracké** | Settings → Tracking & Analytics → Tracking Code → Advanced tracking → _Additional site domains_ | **Critique** — voir §5                |
 
-Scopes de l'app privée (provisioning uniquement) :
+Scopes de la clé de service (provisioning uniquement) :
 
 - `crm.schemas.contacts.read` + `crm.schemas.contacts.write` — propriétés
 - `crm.objects.contacts.read` + `crm.objects.contacts.write` — inspection
 - `forms` — formulaires et soumissions
 
-Le token n'est affiché qu'une fois → le stocker dans `.env`
+Les Service Keys remplacent les apps privées legacy (création retirée de
+l'UI fin octobre 2026 ; les apps existantes continuent de fonctionner).
+La clé est un Bearer utilisable sur les REST APIs — pas de webhooks
+(inutile ici).
+
+La clé n'est affichée qu'une fois → la stocker dans `.env`
 (`HUBSPOT_PRIVATE_APP_TOKEN`), jamais dans le repo.
 
 ## 2. Propriétés de contact
@@ -77,7 +85,7 @@ site dépend de ces valeurs) :
 | `conseiller` | Échanger avec un conseiller |
 
 > Les internal names `learnup_*` et les valeurs d'enum doivent rester
-> identiques d'un portail à l'autre : le front envoie ces noms directement.
+> identiques d'un portail à l'autre : l'API envoie ces noms directement.
 
 ## 3. Formulaires
 
@@ -137,22 +145,19 @@ Trois formulaires à créer (Marketing → Lead Capture → Forms, ou via
 Après création, récupérer le **GUID** de chaque formulaire dans l'URL
 d'édition (`app{region}.hubspot.com/.../forms/editor/{guid}`).
 
-## 4. Variables d'environnement du site
+## 4. Variables d'environnement
 
 ```bash
-# Publiques — soumission directe front → Forms API
-NUXT_PUBLIC_HUBSPOT_PORTAL_ID=          # Hub ID du portail
-NUXT_PUBLIC_HUBSPOT_FORM_NEWSLETTER=    # GUID du form newsletter
-NUXT_PUBLIC_HUBSPOT_FORM_DEMANDE=       # GUID du form demande
-NUXT_PUBLIC_HUBSPOT_FORM_CANDIDATURE=   # GUID du form candidature
-NUXT_PUBLIC_HUBSPOT_FORMS_BASE_URL=     # https://api-eu1.hsforms.com (portail EU)
+# Consommées par l'API (POST /leads/*) — jamais exposées au front
+HUBSPOT_PORTAL_ID=                      # Hub ID du portail
+HUBSPOT_FORM_NEWSLETTER=                # GUID du form newsletter
+HUBSPOT_FORM_DEMANDE=                   # GUID du form demande
+HUBSPOT_FORM_CANDIDATURE=               # GUID du form candidature
+HUBSPOT_FORMS_BASE_URL=                 # https://api-eu1.hsforms.com (portail EU)
                                         # https://api.hsforms.com sinon
 
-# Privée — provisioning/admin uniquement (jamais exposée au front)
+# Provisioning/admin uniquement (jamais utilisée par les soumissions)
 HUBSPOT_PRIVATE_APP_TOKEN=pat-...
-HUBSPOT_PORTAL_ID=                      # mêmes valeurs, usage MCP/scripts
-HUBSPOT_FORM_NEWSLETTER= / _DEMANDE= / _CANDIDATURE=
-HUBSPOT_FORMS_BASE_URL=
 ```
 
 - Portail **EU** (`app-eu1.hubspot.com`) → `api-eu1.hsforms.com`. Portail
@@ -167,7 +172,8 @@ HUBSPOT_FORMS_BASE_URL=
 jette silencieusement si `context.pageUri` porte un domaine non tracké par
 le portail.**
 
-Le front envoie `window.location.href` comme `pageUri`. Il faut donc :
+Le front passe `window.location.href` comme `pageUri` — l'API la relaie dans
+`context.pageUri`. Il faut donc :
 
 1. Settings → Tracking & Analytics → Tracking Code → Advanced tracking
 2. Ajouter le domaine du site (ex. `learnup.fr`, `www.learnup.fr`) dans
@@ -224,25 +230,24 @@ Options côté HubSpot :
 
 ## 9. Dépannage
 
-| Symptôme                                  | Cause probable                                                 | Correctif                                                     |
-| ----------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------- |
-| Soumission 200 mais rien dans Submissions | `context.pageUri` sur un domaine non tracké                    | Ajouter le domaine (§5) ou omettre `context`                  |
-| Soumission 200 mais rien enregistré (bis) | `legalConsentOptions` sur un form sans mention de consentement | Ne pas envoyer l'option (newsletter) ou configurer la mention |
-| 400 à la création d'un champ nombre       | `minAllowedDigits`/`maxAllowedDigits` manquants                | Ajouter les deux bornes                                       |
-| 400 à la création du formulaire           | Plus de 3 champs dans un `fieldGroup`                          | Découper en plusieurs groupes                                 |
-| 400 — champ `hidden` + `required`         | Combinaison interdite                                          | `hidden: true` ⇒ `required: false`                            |
-| Enum rejetée à la soumission              | Valeur hors options (`franchise` n'existe pas)                 | Utiliser `centre` — le front mappe déjà `franchise → centre`  |
-| GUID introuvable                          | Form recréé (nouveau GUID)                                     | Mettre à jour `NUXT_PUBLIC_HUBSPOT_FORM_*`                    |
+| Symptôme                                  | Cause probable                                                 | Correctif                                                                            |
+| ----------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Soumission 200 mais rien dans Submissions | `context.pageUri` sur un domaine non tracké                    | Ajouter le domaine (§5) ou omettre `context`                                         |
+| Soumission 200 mais rien enregistré (bis) | `legalConsentOptions` sur un form sans mention de consentement | Ne pas envoyer l'option (newsletter) ou configurer la mention                        |
+| 400 à la création d'un champ nombre       | `minAllowedDigits`/`maxAllowedDigits` manquants                | Ajouter les deux bornes                                                              |
+| 400 à la création du formulaire           | Plus de 3 champs dans un `fieldGroup`                          | Découper en plusieurs groupes                                                        |
+| 400 — champ `hidden` + `required`         | Combinaison interdite                                          | `hidden: true` ⇒ `required: false`                                                   |
+| Enum rejetée à la soumission              | Valeur hors options (`franchise` n'existe pas)                 | Utiliser `centre` — l'API mappe `franchise → centre` et ignore les valeurs inconnues |
+| GUID introuvable                          | Form recréé (nouveau GUID)                                     | Mettre à jour `HUBSPOT_FORM_*`                                                       |
 
 ## 10. Migration vers un autre portail
 
-1. Créer l'app privée sur le nouveau portail (mêmes scopes).
+1. Créer la clé de service sur le nouveau portail (mêmes scopes).
 2. Recréer le groupe `learnup` + les 10 propriétés avec les **mêmes internal
    names** (et les 4 options de `learnup_type_projet`).
 3. Recréer les 3 formulaires → nouveaux GUIDs.
 4. Ajouter le domaine du site aux domaines trackés du nouveau portail.
-5. Mettre à jour les variables `NUXT_PUBLIC_*` (et `HUBSPOT_*` pour
-   l'admin) — aucune modification de code.
+5. Mettre à jour les variables `HUBSPOT_*` — aucune modification de code.
 
 Les workflows, listes et e-mails automatisés ne sont **pas** portables —
 à recréer manuellement sur le nouveau portail.

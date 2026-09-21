@@ -1,7 +1,7 @@
 /**
- * Payloads des formulaires « lead » du site — postés directement par le
- * navigateur à la Forms API v3 de HubSpot (endpoint non authentifié,
- * `useLeadSubmit`), sans passer par l'API du site.
+ * Payloads des formulaires « lead » du site — postés par le navigateur à
+ * l'API du site (`POST /leads/{form}`, `useLeadSubmit`), qui fait pivot
+ * vers la Forms API v3 de HubSpot.
  */
 
 /** Contexte de la page d'origine, transmis à HubSpot pour l'attribution. */

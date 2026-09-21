@@ -193,6 +193,15 @@
               </AccordionContent>
             </AccordionItem>
 
+            <!-- ENTREPRISE -->
+            <NuxtLink
+              to="/entreprise"
+              class="flex w-full items-center px-3 py-4 text-body font-medium text-primary transition-colors hover:text-accent-text"
+              @click="closeMenu"
+            >
+              Entreprise
+            </NuxtLink>
+
             <!-- À PROPOS -->
             <AccordionItem value="apropos" variant="menu">
               <AccordionTrigger variant="menu">À propos</AccordionTrigger>

@@ -31,6 +31,15 @@
             </NavigationMenuContent>
           </NavigationMenuItem>
 
+          <NavigationMenuItem value="entreprise">
+            <NuxtLink
+              to="/entreprise"
+              class="group inline-flex items-center justify-center p-2 text-body font-semibold text-primary hover:text-accent-text"
+            >
+              Entreprise
+            </NuxtLink>
+          </NavigationMenuItem>
+
           <NavigationMenuItem value="apropos">
             <NavigationMenuTrigger variant="header"> À propos </NavigationMenuTrigger>
             <NavigationMenuContent>

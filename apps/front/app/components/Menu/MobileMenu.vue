@@ -196,7 +196,7 @@
             <!-- ENTREPRISE -->
             <NuxtLink
               to="/entreprise"
-              class="flex w-full items-center px-3 py-4 text-body font-medium text-primary transition-colors hover:text-accent-text"
+              class="flex w-full items-center py-md text-h3 text-ink transition-all hover:text-accent-text"
               @click="closeMenu"
             >
               Entreprise

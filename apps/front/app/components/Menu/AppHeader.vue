@@ -34,7 +34,7 @@
           <NavigationMenuItem value="entreprise">
             <NuxtLink
               to="/entreprise"
-              class="group inline-flex items-center justify-center p-2 text-body font-semibold text-primary hover:text-accent-text"
+              class="mx-sm inline-flex h-9 items-center justify-center rounded-none border-b-2 border-transparent px-0 py-2 text-body font-semibold text-primary transition-colors hover:text-accent-text router-link-active:border-accent"
             >
               Entreprise
             </NuxtLink>

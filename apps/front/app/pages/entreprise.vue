@@ -23,10 +23,8 @@
           <h1
             class="mx-auto mt-lg max-w-prose font-display text-h2 font-extrabold text-ink md:text-hero"
           >
-            <span class="block md:inline">Simplifiez la gestion de </span>
-            <span class="text-accent-text">
-              <span class="block md:inline">vos </span>formations.
-            </span>
+            Simplifiez la gestion de <span class="text-accent-text">vos</span><br />
+            <span class="text-accent-text">formations.</span>
           </h1>
 
           <p class="mx-auto mt-md max-w-prose font-semibold text-ink text-base">

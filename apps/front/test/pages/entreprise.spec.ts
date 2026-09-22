@@ -62,7 +62,11 @@ function mountPage() {
            `
         },
         Form: { template: '<form @submit.prevent><slot /></form>' },
-        Button: { template: '<button><slot /></button>' }
+        Button: { template: '<button><slot /></button>' },
+        TestimonialCard: {
+          props: ['quote', 'author', 'stars'],
+          template: '<div class="testimonial-card">{{ quote }} {{ author }}</div>'
+        }
       }
     }
   })
@@ -129,7 +133,7 @@ describe('EntreprisePage', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Ils nous font confiance')
-    expect(wrapper.text()).toContain('Logo Client')
+    expect(wrapper.text()).toContain('Logo à fournir')
     expect(wrapper.text()).toContain('Douze habilitations à renouveler')
     expect(wrapper.text()).toContain('Avis réels et références publiées')
   })

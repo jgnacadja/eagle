@@ -344,7 +344,7 @@
           :key="n"
           class="flex h-16 w-32 shrink-0 snap-start items-center justify-center rounded-2xl border border-dashed border-rule/80 bg-paper shadow-2xs text-meta font-medium text-ink-subtle md:h-20 md:w-auto"
         >
-          Logo
+          Logo à fournir
         </div>
       </div>
 

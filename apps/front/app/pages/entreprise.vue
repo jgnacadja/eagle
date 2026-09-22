@@ -242,20 +242,20 @@
 
       <div class="mt-xl grid grid-cols-2 gap-3 sm:gap-4 md:gap-md lg:grid-cols-4">
         <article
-          v-for="family in formationFamilies"
-          :key="family.title"
+          v-for="formation in formations"
+          :key="formation.title"
           class="flex flex-col justify-between rounded-2xl border border-rule bg-paper p-3.5 sm:p-4 shadow-2xs transition-all hover:border-primary/40 hover:shadow-md"
         >
           <div>
             <h3 class="font-display text-small sm:text-base md:text-h4 font-bold text-ink">
-              {{ family.title }}
+              {{ formation.title }}
             </h3>
-            <p v-if="family.body" class="hidden md:line-clamp-2 mt-xs text-small text-ink-muted">
-              {{ family.body }}
+            <p v-if="formation.body" class="hidden md:line-clamp-2 mt-xs text-small text-ink-muted">
+              {{ formation.body }}
             </p>
           </div>
           <NuxtLink
-            :to="family.to"
+            :to="formation.to"
             class="mt-2 inline-flex items-center gap-1.5 text-xs sm:text-small font-bold text-primary transition-colors hover:text-accent-text"
           >
             Voir le détail <span class="link-arrow">→</span>
@@ -438,8 +438,8 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { Centre, FamilleFormation } from '@learnup/types'
-import { htmlToText } from '~/utils/sanitizeHtml'
+import type { Centre, SousFamilleFormation } from '@learnup/types'
+import { mapCourse, useCatalog } from '~/composables/useCatalog'
 import type { CenterResult } from '~/types/center-result'
 import IconSparkle from '~/components/icons/IconSparkle.vue'
 import IconUser from '~/components/icons/IconUser.vue'
@@ -546,53 +546,68 @@ const multisiteSteps = [
   { title: 'Suivi consolidé' }
 ]
 
-const fallbackFormationFamilies = [
+const fallbackFormations = [
   {
-    title: 'CACES® & engins',
-    body: 'Chariots, PEMP, engins de chantier, grues.',
-    to: '/formations/caces-conduite-engins'
+    title: 'CACES® R489 Chariots élévateurs',
+    body: 'Catégories 1A, 1B, 3 et 5 — Initiale et recyclage.',
+    to: '/formations/caces-conduite-engins/caces-r489-chariots-elevateurs'
   },
   {
-    title: 'Habilitations électriques',
-    body: 'B0, H0, BS, BE, BR, B1, B2…',
-    to: '/formations/habilitation-electrique'
+    title: 'Habilitation électrique B1V / B2V / BR / BC',
+    body: 'Travaux électriques basse tension et interventions.',
+    to: '/formations/habilitation-electrique/habilitation-electrique-b1v-b2v-br-bc'
   },
   {
-    title: 'Santé, secours & incendie',
-    body: 'SST, gestes qui sauvent, EPI, évacuation.',
-    to: '/formations/secourisme'
+    title: 'SST — Sauveteur Secouriste du Travail',
+    body: 'Formation initiale aux premiers secours en entreprise.',
+    to: '/formations/secourisme/sauveteur-secouriste-du-travail-sst'
   },
   {
-    title: 'Hauteur & échafaudages',
-    body: 'Harnais, montage, réception, vérification.',
-    to: '/formations/hauteur'
+    title: 'Travail en hauteur & port du harnais',
+    body: 'Prévention des chutes et utilisation des EPI.',
+    to: '/formations/hauteur/travail-en-hauteur-port-du-harnais'
   }
 ]
 
-const famillesData = await useDirectusList<FamilleFormation>(
-  'familles_formation',
-  'entreprise-familles-formation',
+const { data: catalogue } = await useCatalog({ limit: 4, sort: 'updatedAt', order: 'desc' })
+
+const formations = computed(() => {
+  const items = catalogue.value?.items ?? []
+  if (items.length) {
+    return items.slice(0, 4).map((c) => {
+      const mapped = mapCourse(c)
+      return {
+        title: mapped.title,
+        body: mapped.description,
+        to: mapped.to ?? '/formations'
+      }
+    })
+  }
+  return fallbackFormations
+})
+
+const fallbackFormationTags = ['AIPR', 'CATEC®', 'Amiante SS4', 'SECUFER', 'Gestes & postures']
+
+const tagsData = await useDirectusList<SousFamilleFormation>(
+  'sous_familles_formation',
+  'entreprise-formation-tags',
   {
-    fields: ['slug', 'name', 'intro'],
+    fields: ['name', 'slug'],
     filter: { status: { _eq: 'published' } },
-    sort: ['sort', 'name'],
-    limit: -1
+    sort: ['-id'],
+    limit: 5
   }
 )
 
-const formationFamilies = computed(() => {
-  const items = (famillesData.value ?? []).filter((f) => f.slug && f.name)
+const formationTags = computed(() => {
+  const items = (tagsData.value ?? [])
+    .map((s) => s.name?.trim())
+    .filter((name): name is string => Boolean(name))
   if (items.length) {
-    return items.slice(0, 4).map((f) => ({
-      title: f.name,
-      body: f.intro ? htmlToText(f.intro) : '',
-      to: `/formations/${f.slug}`
-    }))
+    return items
   }
-  return fallbackFormationFamilies
+  return fallbackFormationTags
 })
-
-const formationTags = ['AIPR', 'CATEC®', 'Amiante SS4', 'SECUFER', 'Gestes & postures']
 
 const howItWorksSteps = [
   { number: 1, title: 'Vous exprimez votre besoin', body: 'Avec vos mots, en une phrase.' },

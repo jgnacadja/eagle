@@ -10,19 +10,56 @@ vi.stubGlobal('ref', ref)
 vi.stubGlobal('definePageMeta', vi.fn())
 vi.stubGlobal('useContentSeo', seoMock)
 vi.stubGlobal('navigateTo', navigateToMock)
+vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
+
+vi.mock('~/composables/useCatalog', () => ({
+  mapCourse: (c: {
+    slug: string
+    title: string
+    familySlug?: string | null
+    description?: string
+  }) => ({
+    slug: c.slug,
+    title: c.title,
+    description: c.description ?? '',
+    family: c.familySlug ?? 'Autre',
+    meta: '',
+    to: c.familySlug ? `/formations/${c.familySlug}/${c.slug}` : `/formations/${c.slug}`
+  }),
+  useCatalog: vi.fn(async () => ({
+    data: ref({
+      items: [
+        {
+          slug: 'caces-r489-chariots-elevateurs',
+          title: 'CACES® R489 Chariots élévateurs',
+          familySlug: 'caces-conduite-engins',
+          description: 'Catégories 1A, 1B, 3 et 5 — Initiale et recyclage.'
+        },
+        {
+          slug: 'habilitation-electrique-b1v-b2v',
+          title: 'Habilitation électrique B1V / B2V',
+          familySlug: 'habilitation-electrique',
+          description: 'Travaux électriques basse tension et interventions.'
+        }
+      ],
+      total: 2,
+      page: 1,
+      pages: 1
+    }),
+    pending: ref(false),
+    error: ref(null),
+    refresh: vi.fn()
+  }))
+}))
+
 vi.stubGlobal('useDirectusList', (collection: string) => {
-  if (collection === 'familles_formation') {
+  if (collection === 'sous_familles_formation') {
     return ref([
-      {
-        slug: 'caces-conduite-engins',
-        name: 'CACES® & engins',
-        intro: '<p>Chariots, PEMP, engins de chantier, grues.</p>'
-      },
-      {
-        slug: 'habilitation-electrique',
-        name: 'Habilitations électriques',
-        intro: '<p>B0, H0, BS, BE, BR, B1, B2…</p>'
-      }
+      { name: 'AIPR', slug: 'aipr' },
+      { name: 'CATEC®', slug: 'catec' },
+      { name: 'Amiante SS4', slug: 'amiante-ss4' },
+      { name: 'SECUFER', slug: 'secufer' },
+      { name: 'Gestes & postures', slug: 'gestes-postures' }
     ])
   }
   return ref([
@@ -161,14 +198,33 @@ describe('EntreprisePage', () => {
     expect(wrapper.text()).toContain('Les partenaires du réseau')
   })
 
-  it('affiche les familles de formations dynamiques issues de Directus', async () => {
+  it('affiche les formations dynamiques issues du catalogue', async () => {
     const wrapper = mountPage()
     await flushPromises()
 
     expect(wrapper.text()).toContain('Les formations réglementaires dont vos équipes ont besoin')
-    expect(wrapper.text()).toContain('CACES® & engins')
-    expect(wrapper.text()).toContain('Chariots, PEMP, engins de chantier, grues.')
-    expect(wrapper.text()).toContain('Habilitations électriques')
-    expect(wrapper.find('a[href="/formations/caces-conduite-engins"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('CACES® R489 Chariots élévateurs')
+    expect(wrapper.text()).toContain('Catégories 1A, 1B, 3 et 5 — Initiale et recyclage.')
+    expect(wrapper.text()).toContain('Habilitation électrique B1V / B2V')
+    expect(
+      wrapper
+        .find('a[href="/formations/caces-conduite-engins/caces-r489-chariots-elevateurs"]')
+        .exists()
+    ).toBe(true)
+  })
+
+  it('affiche les tags de formation dynamiques avec liens de recherche', async () => {
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('AIPR')
+    expect(wrapper.text()).toContain('CATEC®')
+    expect(wrapper.text()).toContain('Amiante SS4')
+    expect(wrapper.text()).toContain('SECUFER')
+    expect(wrapper.text()).toContain('Gestes & postures')
+    expect(wrapper.find('a[href="/formations?q=AIPR"]').exists()).toBe(true)
+    expect(wrapper.find(`a[href="/formations?q=${encodeURIComponent('CATEC®')}"]`).exists()).toBe(
+      true
+    )
   })
 })

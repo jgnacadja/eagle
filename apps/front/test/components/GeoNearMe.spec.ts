@@ -120,6 +120,19 @@ describe('components/GeoNearMe', () => {
     await waitUntil(() => Boolean(document.body.textContent?.includes('Localisation bloquée')))
   })
 
+  it('ne rouvre pas le dialogue quand la permission est déjà accordée', async () => {
+    geo.permission.value = 'granted'
+    const getCurrentPosition = vi.fn()
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
+    const wrapper = mount(GeoNearMe, { attachTo: document.body })
+
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+
+    expect(getCurrentPosition).toHaveBeenCalledTimes(1)
+    expect(document.body.textContent).not.toContain('Voir les centres autour de vous')
+  })
+
   it('désactive la géolocalisation quand la position est déjà connue', async () => {
     geo.position.value = { lat: 48.8566, lng: 2.3522 }
     const wrapper = mount(GeoNearMe, { attachTo: document.body })

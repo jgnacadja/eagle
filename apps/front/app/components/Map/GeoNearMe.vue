@@ -88,9 +88,14 @@ function onOpenChange(open: boolean) {
 }
 
 // Point d'entrée unique — clic badge ou « Près de moi » du menu mobile.
-// Position déjà connue : rien à re-demander, la popup ne se rouvre pas.
+// Position déjà connue ou permission déjà accordée : rien à re-demander,
+// la popup ne se rouvre pas.
 function activate() {
   if (status.value === 'locating' || isActive.value) return
+  if (permission.value === 'granted') {
+    request()
+    return
+  }
   dialogVariant.value =
     permission.value === 'denied' || status.value === 'denied' ? 'blocked' : 'consent'
 }

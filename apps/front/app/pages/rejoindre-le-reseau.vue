@@ -44,8 +44,9 @@
         </h2>
         <div class="mt-xl grid gap-grid md:grid-cols-3">
           <article
-            v-for="option in joinOptions"
+            v-for="(option, i) in joinOptions"
             :key="option.title"
+            v-reveal="revealStagger(i)"
             class="group flex flex-col rounded-md border border-rule bg-paper p-lg shadow-sm transition-shadow hover:border-primary hover:shadow-md"
           >
             <div
@@ -85,6 +86,7 @@
         <ProcessSteps :steps="steps" last-step-variant="accent" title-size="h4" class="mt-2xl" />
 
         <div
+          v-reveal
           class="mt-2xl flex flex-col items-center justify-between gap-lg border-t border-rule pt-xl text-center md:flex-row md:text-left md:px-20"
         >
           <p class="text-small text-ink-muted">
@@ -113,6 +115,7 @@ import IconAward from '~/components/icons/IconAward.vue'
 import IconBook from '~/components/icons/IconBook.vue'
 import IconBuilding from '~/components/icons/IconBuilding.vue'
 import type { CandidatureVoie } from '~/types/candidature'
+import { revealStagger } from '~/utils/reveal'
 
 useContentSeo(
   {

@@ -76,6 +76,7 @@
             v-for="section in page.sections"
             :id="section.id"
             :key="section.id"
+            v-reveal
             class="scroll-mt-24"
           >
             <h2 class="font-display text-h3 font-extrabold text-ink">

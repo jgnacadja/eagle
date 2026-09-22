@@ -99,6 +99,7 @@
                 <li
                   v-for="(objectif, idx) in objectives"
                   :key="idx"
+                  v-reveal="revealStagger(idx)"
                   class="flex gap-sm items-center"
                 >
                   <IconCheck :size="20" class="mt-xs shrink-0 text-success" />
@@ -110,7 +111,7 @@
             <!-- Public & prérequis -->
             <section v-if="course.targets || course.prerequisites" aria-label="Public et prérequis">
               <div class="grid gap-md sm:grid-cols-2">
-                <Card v-if="course.targets?.length" variant="surface">
+                <Card v-if="course.targets?.length" v-reveal variant="surface">
                   <CardHeader class="p-lg pb-0">
                     <h3 class="font-sans text-h4 font-semibold text-ink">Public concerné</h3>
                   </CardHeader>
@@ -120,7 +121,7 @@
                     </ul>
                   </CardContent>
                 </Card>
-                <Card variant="surface">
+                <Card v-reveal variant="surface">
                   <CardHeader class="p-lg pb-0">
                     <h3 class="font-sans text-h4 font-semibold text-ink">Prérequis</h3>
                   </CardHeader>
@@ -205,7 +206,7 @@
               aria-label="Modalités pédagogiques et évaluation"
             >
               <div class="grid gap-md sm:grid-cols-2">
-                <Card v-if="pedagogyItems.length">
+                <Card v-if="pedagogyItems.length" v-reveal>
                   <CardHeader class="p-lg pb-0">
                     <h3 class="font-sans text-h4 font-semibold text-ink">Modalités pédagogiques</h3>
                   </CardHeader>
@@ -228,7 +229,7 @@
                     </div>
                   </CardContent>
                 </Card>
-                <Card v-if="evaluationItems.length">
+                <Card v-if="evaluationItems.length" v-reveal>
                   <CardHeader class="p-lg pb-0">
                     <h3 class="font-sans text-h4 font-semibold text-ink">Évaluation</h3>
                   </CardHeader>
@@ -260,7 +261,11 @@
                 </h2>
               </div>
               <ul v-if="sessionsList.length" id="formation-sessions-list" class="mt-md space-y-md">
-                <li v-for="session in visibleSessions" :key="session.key">
+                <li
+                  v-for="(session, i) in visibleSessions"
+                  :key="session.key"
+                  v-reveal="revealStagger(i)"
+                >
                   <SessionCard
                     :day="session.day"
                     :month="session.month"
@@ -320,7 +325,7 @@
                 </p>
               </div>
               <ul class="mt-md grid gap-md sm:grid-cols-2 xl:grid-cols-3">
-                <li v-for="lieu in lieux" :key="lieu.key">
+                <li v-for="(lieu, i) in lieux" :key="lieu.key" v-reveal="revealStagger(i % 3)">
                   <CenterCard
                     :name="lieu.name"
                     :distance="lieu.department"
@@ -341,7 +346,7 @@
           >
             <!-- L'essentiel -->
             <section id="demande" aria-labelledby="essentiel-title">
-              <Card variant="surface">
+              <Card v-reveal variant="surface">
                 <CardHeader class="p-lg pb-0">
                   <h2 id="essentiel-title" class="font-sans text-h4 font-semibold text-ink">
                     L'essentiel
@@ -376,7 +381,7 @@
 
             <!-- Certification -->
             <section v-if="course.certification" aria-labelledby="certification-title">
-              <Card>
+              <Card v-reveal>
                 <CardHeader class="p-lg pb-0">
                   <h2 id="certification-title" class="font-sans text-h4 font-semibold text-ink">
                     Certification
@@ -402,7 +407,7 @@
             </section>
 
             <!-- Formation en intra -->
-            <Card variant="dark" class="p-lg" aria-labelledby="intra-title">
+            <Card v-reveal variant="dark" class="p-lg" aria-labelledby="intra-title">
               <h2 id="intra-title" class="font-sans text-h4 font-semibold text-ink-inverse">
                 Formation en intra
               </h2>
@@ -434,6 +439,7 @@
         <!-- Bandeau CTA + formations similaires : pleine largeur -->
         <div class="mt-2xl space-y-2xl">
           <CtaBanner
+            v-reveal
             title="Vous ne savez pas quelle formation choisir ?"
             text="Décrivez votre besoin : LEARN UP identifie la formation, la catégorie et le format adaptés à votre situation."
           >
@@ -458,8 +464,9 @@
             </div>
             <div class="mt-md grid gap-md sm:grid-cols-3">
               <CenterFormationCard
-                v-for="similaire in similaires"
+                v-for="(similaire, i) in similaires"
                 :key="similaire.slug"
+                v-reveal="revealStagger(i)"
                 variant="similar"
                 :family="similaire.family"
                 :sub-family="similaire.subFamily"
@@ -545,6 +552,7 @@ import { directusAssetUrl } from '~/utils/directusAsset'
 import { htmlToText, sanitizeHtml } from '~/utils/sanitizeHtml'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
+import { revealStagger } from '~/utils/reveal'
 import { availabilityStatus } from '~/composables/useCentres'
 
 interface ProgrammeModule {

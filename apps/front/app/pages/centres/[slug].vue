@@ -69,7 +69,7 @@
           >
             <!-- Informations pratiques -->
             <section aria-labelledby="infos-title">
-              <Card variant="surface" class="h-fit">
+              <Card v-reveal variant="surface" class="h-fit">
                 <CardHeader class="p-lg pb-0">
                   <h2 id="infos-title" class="font-sans text-h4 font-semibold text-ink">
                     Informations pratiques
@@ -154,7 +154,7 @@
 
             <!-- Qualité -->
             <section v-if="centre.qualiopi_certified" aria-labelledby="qualite-title">
-              <Card variant="paper" class="h-fit">
+              <Card v-reveal variant="paper" class="h-fit">
                 <CardHeader class="p-lg pb-0">
                   <h2 id="qualite-title" class="font-sans text-h4 font-semibold text-ink">
                     Qualité et certifications
@@ -220,8 +220,9 @@
               </div>
               <div v-if="formations.length" class="mt-md grid gap-grid sm:grid-cols-2">
                 <CenterFormationCard
-                  v-for="formation in formations"
+                  v-for="(formation, i) in formations"
                   :key="formation.slug"
+                  v-reveal="revealStagger(i)"
                   :sub-family="formation.subFamily"
                   :title="formation.title"
                   :description="formation.description"
@@ -254,7 +255,11 @@
               </h2>
               <p class="mt-sm text-small text-ink-muted">Disponibilités actualisées en continu.</p>
               <ul id="centre-sessions-list" class="mt-md space-y-md">
-                <li v-for="session in visibleSessions" :key="session.key">
+                <li
+                  v-for="(session, i) in visibleSessions"
+                  :key="session.key"
+                  v-reveal="revealStagger(i)"
+                >
                   <SessionCard
                     :day="session.day"
                     :month="session.month"
@@ -287,6 +292,7 @@
 
         <!-- Bandeau CTA -->
         <CtaBanner
+          v-reveal
           class="mt-2xl"
           title="Un besoin de formation sur ce territoire ?"
           text="La demande transmet automatiquement le centre, la ville et la formation concernée — sans ressaisie."
@@ -315,8 +321,9 @@
           </div>
           <div class="mt-md grid gap-grid sm:grid-cols-3">
             <NuxtLink
-              v-for="nearby in nearbyCenters"
+              v-for="(nearby, i) in nearbyCenters"
               :key="nearby.slug"
+              v-reveal="revealStagger(i)"
               :to="`/centres/${nearby.slug}`"
               class="block"
             >
@@ -386,6 +393,7 @@ import { sanitizeHtml } from '~/utils/sanitizeHtml'
 import { directusAssetUrl } from '~/utils/directusAsset'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
+import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
 
 definePageMeta({

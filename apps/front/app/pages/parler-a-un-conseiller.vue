@@ -15,6 +15,7 @@
         <!-- Confirmation d'envoi -->
         <Card
           v-if="submitted"
+          v-reveal
           class="flex flex-col items-center gap-lg p-xl text-center lg:col-span-2"
         >
           <p
@@ -48,7 +49,7 @@
 
         <!-- Formulaire (v-show : jamais démonté — cf. demande-de-formation) -->
         <form v-show="!submitted" novalidate class="lg:col-span-2" @submit.prevent="onSubmit">
-          <Card class="space-y-lg p-lg sm:px-xl sm:py-lg">
+          <Card v-reveal class="space-y-lg p-lg sm:px-xl sm:py-lg">
             <fieldset>
               <legend class="mb-md text-small font-semibold text-ink">
                 Votre besoin <span class="text-danger" aria-hidden="true">*</span>
@@ -247,7 +248,7 @@
 
         <!-- Sidebar : suite de la demande -->
         <aside class="space-y-lg sm:sticky sm:top-lg">
-          <Card class="p-lg">
+          <Card v-reveal class="p-lg">
             <h2 class="mb-lg text-small font-semibold text-ink">Ce qui se passe ensuite</h2>
             <ol class="space-y-md">
               <li v-for="(step, index) in nextSteps" :key="step" class="flex items-start gap-md">
@@ -261,7 +262,7 @@
             </ol>
           </Card>
 
-          <Card variant="dark" class="p-lg">
+          <Card v-reveal variant="dark" class="p-lg">
             <h2 class="text-small font-semibold text-paper">Vous préférez téléphoner&nbsp;?</h2>
             <p class="mt-md text-small text-ink-inverse-muted">
               Chaque centre affiche son numéro direct — trouvez celui de votre territoire.

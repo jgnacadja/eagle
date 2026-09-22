@@ -62,7 +62,7 @@
       <section id="maillage" class="mt-4xl" aria-labelledby="maillage-title">
         <div class="flex flex-col md:flex-row gap-xl items-center">
           <!-- Colonne gauche -->
-          <div class="w-80 md:w-96 shrink-0 pt-sm">
+          <div v-reveal class="w-80 md:w-96 shrink-0 pt-sm">
             <h2 id="maillage-title" class="text-h2 font-extrabold">
               Un maillage qui s'étend avec ses partenaires
             </h2>
@@ -89,7 +89,10 @@
           </div>
 
           <!-- Carte -->
-          <div class="flex-1 w-full h-96 rounded-md border border-rule overflow-hidden bg-surface">
+          <div
+            v-reveal
+            class="flex-1 w-full h-96 rounded-md border border-rule overflow-hidden bg-surface"
+          >
             <CenterMap
               v-if="mapCenters.length"
               :centers="mapCenters"
@@ -108,7 +111,7 @@
       </section>
     </div>
 
-    <div id="candidater" class="bg-primary text-ink-inverse p-2xl">
+    <div id="candidater" v-reveal class="bg-primary text-ink-inverse p-2xl">
       <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-md">
         <div>
           <h3 class="text-h2 font-extrabold">Référencer votre organisme</h3>

@@ -44,6 +44,7 @@
         <!-- Confirmation d'envoi -->
         <Card
           v-if="submitted"
+          v-reveal
           class="flex flex-col items-center gap-lg p-xl text-center lg:col-span-2"
         >
           <p
@@ -79,7 +80,7 @@
           @submit.prevent="onSubmit"
         >
           <!-- Votre besoin -->
-          <Card class="p-lg sm:py-lg sm:px-xl">
+          <Card v-reveal class="p-lg sm:py-lg sm:px-xl">
             <fieldset class="space-y-md">
               <legend
                 class="mb-md text-meta font-semibold uppercase tracking-wide text-accent-text"
@@ -158,7 +159,7 @@
           </Card>
 
           <!-- Votre entreprise -->
-          <Card class="p-lg sm:py-lg sm:px-xl">
+          <Card v-reveal class="p-lg sm:py-lg sm:px-xl">
             <fieldset class="space-y-md">
               <legend
                 class="mb-md text-meta font-semibold uppercase tracking-wide text-accent-text"
@@ -215,7 +216,7 @@
           </Card>
 
           <!-- Vos coordonnées -->
-          <Card class="p-lg sm:py-lg sm:px-xl">
+          <Card v-reveal class="p-lg sm:py-lg sm:px-xl">
             <fieldset class="space-y-md">
               <legend
                 class="mb-md text-meta font-semibold uppercase tracking-wide text-accent-text"
@@ -362,7 +363,7 @@
 
         <!-- Sidebar : contexte de la demande -->
         <aside class="space-y-lg sm:sticky sm:top-lg">
-          <Card variant="surface" class="p-lg">
+          <Card v-reveal variant="surface" class="p-lg">
             <div class="mb-lg flex items-center justify-between">
               <h2 class="text-meta font-semibold uppercase tracking-wide text-ink-subtle">
                 Votre demande concerne
@@ -412,7 +413,7 @@
             </ul>
           </Card>
 
-          <Card class="p-lg">
+          <Card v-reveal class="p-lg">
             <ul class="space-y-sm text-small text-ink-muted">
               <li class="flex items-start gap-sm">
                 <IconCheck :size="16" class="mt-xs shrink-0 text-success" />

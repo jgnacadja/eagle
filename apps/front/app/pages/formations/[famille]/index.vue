@@ -66,7 +66,11 @@
         </h2>
 
         <ul class="mt-lg grid grid-cols-1 gap-md sm:grid-cols-2 lg:grid-cols-4">
-          <li v-for="subFamily in subFamilyCards" :key="subFamily.slug">
+          <li
+            v-for="(subFamily, i) in subFamilyCards"
+            :key="subFamily.slug"
+            v-reveal="revealStagger(i)"
+          >
             <SubFamilyCard
               :name="subFamily.name"
               :caption="subFamily.caption"
@@ -205,7 +209,11 @@
           v-else-if="!catalog.pending.value"
           class="mt-lg grid grid-cols-1 gap-md md:grid-cols-2 lg:grid-cols-3"
         >
-          <li v-for="formation in formations" :key="formation.slug">
+          <li
+            v-for="(formation, i) in formations"
+            :key="formation.slug"
+            v-reveal="revealStagger(i % 3)"
+          >
             <CenterFormationCard
               :sub-family="formation.subFamily"
               :title="formation.title"
@@ -271,7 +279,7 @@
         class="mx-auto w-full px-gutter-mobile pb-section md:px-gutter"
       >
         <ul class="grid grid-cols-1 gap-md md:grid-cols-2">
-          <li v-if="familleData?.audience_text">
+          <li v-if="familleData?.audience_text" v-reveal>
             <Card variant="panel" class="h-full p-lg">
               <h3 class="font-sans text-h5 font-bold text-ink">Qui est concerné ?</h3>
               <p class="mt-sm whitespace-pre-line text-body text-ink-body">
@@ -279,7 +287,7 @@
               </p>
             </Card>
           </li>
-          <li v-if="familleData?.validity_text">
+          <li v-if="familleData?.validity_text" v-reveal>
             <Card variant="panel" class="h-full p-lg">
               <h3 class="font-sans text-h5 font-bold text-ink">Validité et renouvellement</h3>
               <p class="mt-sm whitespace-pre-line text-body text-ink-body">
@@ -293,6 +301,7 @@
       <!-- Bandeau CTA -->
       <section class="mx-auto w-full px-gutter-mobile pb-section md:px-gutter">
         <CtaBanner
+          v-reveal
           title="Quelle catégorie pour vos équipes ?"
           text="Décrivez vos engins et votre site : LEARN UP identifie les recommandations et catégories applicables."
         >
@@ -355,6 +364,7 @@ import {
 import { useDirectusClient } from '~/composables/useDirectus'
 import { MODALITY_LABELS, MODALITY_OPTIONS } from '~/utils/catalog-filters'
 import { directusAssetUrl } from '~/utils/directusAsset'
+import { revealStagger } from '~/utils/reveal'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
 
 definePageMeta({

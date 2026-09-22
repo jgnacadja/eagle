@@ -5,7 +5,12 @@
     </h2>
 
     <div class="mt-xl grid gap-grid sm:grid-cols-2 lg:grid-cols-4">
-      <article v-for="benefit in benefits" :key="benefit.label" class="rounded-md bg-surface p-lg">
+      <article
+        v-for="(benefit, i) in benefits"
+        :key="benefit.label"
+        v-reveal="revealStagger(i)"
+        class="rounded-md bg-surface p-lg"
+      >
         <p class="text-overline font-bold uppercase text-accent-text">
           {{ benefit.label }}
         </p>
@@ -23,6 +28,8 @@
 </template>
 
 <script setup lang="ts">
+import { revealStagger } from '~/utils/reveal'
+
 export interface BenefitItem {
   label: string
   title: string

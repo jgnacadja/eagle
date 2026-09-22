@@ -180,7 +180,10 @@ const stubs = {
   CardContent: true,
   CardFooter: true,
   CenterFormationCard: true,
-  SessionCard: true,
+  SessionCard: {
+    props: ['title', 'meta', 'places'],
+    template: '<div class="session-card">{{ title }}</div>'
+  },
   CtaBanner: true,
   CenterCard: true,
   IconMapPin: true,
@@ -228,6 +231,23 @@ describe('pages/centres/[slug]', () => {
       path: '/centres/creteil',
       meta: {}
     }
+    catalogueCourses.items[0]!.sessions = [
+      {
+        id: 'sess-1',
+        startDate: '2026-10-12',
+        endDate: '2026-10-13',
+        modality: 'presentiel',
+        seatsRemaining: 5,
+        location: {
+          name: 'Centre de Créteil',
+          city: 'Créteil',
+          postalCode: '94000',
+          department: 'Val-de-Marne',
+          region: 'Île-de-France',
+          centreSlug: 'creteil'
+        }
+      }
+    ]
   })
 
   it('affiche le centre et le breadcrumb par défaut pour un slug connu', async () => {
@@ -257,6 +277,54 @@ describe('pages/centres/[slug]', () => {
     expect(wrapper.text()).toContain('Les formations disponibles dans ce centre')
     expect(wrapper.text()).toContain('1 formation')
     expect(wrapper.text()).toContain('Prochaines sessions')
+  })
+
+  it('gère le déploiement progressif (2 -> 6 -> tout) et le repli avec aria-expanded', async () => {
+    const loc = {
+      name: 'Centre de Créteil',
+      city: 'Créteil',
+      postalCode: '94000',
+      department: 'Val-de-Marne',
+      region: 'Île-de-France',
+      centreSlug: 'creteil'
+    }
+    // 8 sessions au total
+    catalogueCourses.items[0]!.sessions = Array.from({ length: 8 }, (_, i) => ({
+      id: `sess-${i + 1}`,
+      startDate: `2026-${String(10 + Math.floor(i / 3)).padStart(2, '0')}-${String(10 + (i % 20)).padStart(2, '0')}`,
+      endDate: `2026-${String(10 + Math.floor(i / 3)).padStart(2, '0')}-${String(11 + (i % 20)).padStart(2, '0')}`,
+      modality: 'presentiel',
+      seatsRemaining: 5,
+      location: loc
+    }))
+
+    const wrapper = await mountPage()
+
+    // 1. Initial : 2 sessions affichées, bouton Voir plus, aria-expanded false
+    expect(wrapper.findAll('.session-card')).toHaveLength(2)
+    const button = wrapper.find('button.text-h4')
+    expect(button.exists()).toBe(true)
+    expect(button.text()).toContain('Voir plus')
+    expect(button.attributes('aria-expanded')).toBe('false')
+    expect(button.attributes('aria-controls')).toBe('centre-sessions-list')
+
+    // 2. Premier clic : déploie jusqu'à 6 sessions, bouton toujours Voir plus car 8 > 6
+    await button.trigger('click')
+    expect(wrapper.findAll('.session-card')).toHaveLength(6)
+    expect(button.text()).toContain('Voir plus')
+    expect(button.attributes('aria-expanded')).toBe('false')
+
+    // 3. Deuxième clic : déploie les 8 sessions, bouton bascule sur Voir moins
+    await button.trigger('click')
+    expect(wrapper.findAll('.session-card')).toHaveLength(8)
+    expect(button.text()).toContain('Voir moins')
+    expect(button.attributes('aria-expanded')).toBe('true')
+
+    // 4. Troisième clic : replie à 2 sessions
+    await button.trigger('click')
+    expect(wrapper.findAll('.session-card')).toHaveLength(2)
+    expect(button.text()).toContain('Voir plus')
+    expect(button.attributes('aria-expanded')).toBe('false')
   })
 
   it('affiche l’état introuvable et adapte breadcrumb/SEO pour un slug inconnu', async () => {

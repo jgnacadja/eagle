@@ -253,8 +253,8 @@
                 Prochaines sessions
               </h2>
               <p class="mt-sm text-small text-ink-muted">Disponibilités actualisées en continu.</p>
-              <ul class="mt-md space-y-md">
-                <li v-for="session in sessions" :key="session.key">
+              <ul id="centre-sessions-list" class="mt-md space-y-md">
+                <li v-for="session in visibleSessions" :key="session.key">
                   <SessionCard
                     :day="session.day"
                     :month="session.month"
@@ -267,6 +267,20 @@
                   />
                 </li>
               </ul>
+              <div v-if="sessions.length > INITIAL_SESSIONS_COUNT" class="mt-3">
+                <button
+                  type="button"
+                  class="text-ink-muted font-bold text-h4 hover:text-ink transition-colors"
+                  :aria-expanded="isAllSessionsVisible"
+                  aria-controls="centre-sessions-list"
+                  @click="toggleSessions"
+                >
+                  <template v-if="!isAllSessionsVisible">
+                    Voir plus <span class="link-arrow">→</span>
+                  </template>
+                  <template v-else> Voir moins <span class="link-arrow">↑</span> </template>
+                </button>
+              </div>
             </section>
           </div>
         </div>
@@ -620,6 +634,11 @@ function toCentreSession(
   }
 }
 
+const INITIAL_SESSIONS_COUNT = 2
+const SESSIONS_STEP = 4
+
+const visibleSessionsCount = ref(INITIAL_SESSIONS_COUNT)
+
 const sessions = computed<CentreSession[]>(() =>
   (centreCatalog.data.value?.items ?? [])
     .flatMap((course) =>
@@ -627,8 +646,19 @@ const sessions = computed<CentreSession[]>(() =>
     )
     .filter((s): s is CentreSession & { startDate: string } => s !== null)
     .sort((a, b) => a.startDate.localeCompare(b.startDate))
-    .slice(0, 4)
 )
+
+const isAllSessionsVisible = computed(() => visibleSessionsCount.value >= sessions.value.length)
+
+const visibleSessions = computed(() => sessions.value.slice(0, visibleSessionsCount.value))
+
+function toggleSessions() {
+  if (isAllSessionsVisible.value) {
+    visibleSessionsCount.value = INITIAL_SESSIONS_COUNT
+  } else {
+    visibleSessionsCount.value += SESSIONS_STEP
+  }
+}
 
 // Autres centres de la même région, chargés depuis Directus.
 const allCentres = await useDirectusList<Centre>('centres', 'centres-siblings', {

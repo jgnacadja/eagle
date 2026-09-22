@@ -41,325 +41,324 @@
       </div>
 
       <div class="grid grid-cols-1 items-start gap-lg lg:grid-cols-3">
-        <!-- Confirmation d'envoi -->
-        <Card
-          v-if="submitted"
-          v-reveal
-          class="flex flex-col items-center gap-lg p-xl text-center lg:col-span-2"
-        >
-          <p
-            class="flex h-4xl w-4xl items-center justify-center rounded-full bg-success-soft text-success"
+        <div class="lg:col-span-2 md:px-16">
+          <!-- Confirmation d'envoi -->
+          <Card
+            v-if="submitted"
+            v-reveal
+            class="flex flex-col items-center gap-lg p-xl text-center"
           >
-            <IconCheck :size="32" />
-          </p>
-          <div>
-            <h2 class="font-display text-h3 font-extrabold text-ink">
-              Votre demande est transmise
-            </h2>
-            <p class="mt-sm max-w-prose text-body text-ink-muted">
-              Un conseiller LEARN&nbsp;UP&nbsp;ACADEMY prend en charge votre demande et vous
-              recontacte sous 24&nbsp;h ouvrées.
-            </p>
-          </div>
-          <div class="flex flex-wrap justify-center gap-md">
-            <Button as-child variant="dark" size="pill-lg">
-              <NuxtLink to="/">Retour à l'accueil</NuxtLink>
-            </Button>
-            <Button as-child variant="outline" size="pill-lg">
-              <NuxtLink to="/formations">Explorer le catalogue</NuxtLink>
-            </Button>
-          </div>
-        </Card>
-
-        <!-- Formulaire (v-show : jamais démonté — le swap v-if/v-else casse le
-             retrait de fragment sous happy-dom en test) -->
-        <form
-          v-show="!submitted"
-          novalidate
-          class="space-y-lg lg:col-span-2"
-          @submit.prevent="onSubmit"
-        >
-          <!-- Votre besoin -->
-          <Card v-reveal class="p-lg sm:py-lg sm:px-xl">
-            <fieldset class="space-y-md">
-              <legend
-                class="mb-md text-meta font-semibold uppercase tracking-wide text-accent-text"
-              >
-                Votre besoin
-              </legend>
-
-              <div class="grid grid-cols-1 gap-md sm:grid-cols-2">
-                <div>
-                  <Label for="salaries" class="mb-xs block"> Salariés à former </Label>
-                  <Input
-                    id="salaries"
-                    v-model="salaries"
-                    type="number"
-                    min="1"
-                    variant="field"
-                    class="aria-invalid:border-danger"
-                    :aria-invalid="showError('salaries') || undefined"
-                    :aria-describedby="showError('salaries') ? 'salaries-error' : undefined"
-                  />
-                  <p
-                    v-if="showError('salaries')"
-                    id="salaries-error"
-                    class="mt-xs text-small font-semibold text-danger"
-                  >
-                    {{ errors.salaries }}
-                  </p>
-                </div>
-                <div>
-                  <Label for="echeance" class="block">
-                    <span class="mb-xs block">Échéance souhaitée</span>
-                    <Select v-model="echeance">
-                      <SelectTrigger
-                        id="echeance"
-                        variant="field"
-                        :aria-invalid="showError('echeance') || undefined"
-                        :aria-describedby="showError('echeance') ? 'echeance-error' : undefined"
-                      >
-                        <SelectValue placeholder="Choisir une échéance" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem
-                          v-for="option in echeanceOptions"
-                          :key="option"
-                          :value="option"
-                          class="text-small"
-                        >
-                          {{ option }}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </Label>
-                  <p
-                    v-if="showError('echeance')"
-                    id="echeance-error"
-                    class="mt-xs text-small font-semibold text-danger"
-                  >
-                    {{ errors.echeance }}
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <Label for="precisions" class="mb-xs block">
-                  Précisions <span class="font-normal text-ink-subtle">(facultatif)</span>
-                </Label>
-                <Textarea
-                  id="precisions"
-                  v-model="precisions"
-                  rows="3"
-                  placeholder="Contraintes d'horaires, site concerné, niveau des salariés…"
-                  class="resize-none"
-                />
-              </div>
-            </fieldset>
-          </Card>
-
-          <!-- Votre entreprise -->
-          <Card v-reveal class="p-lg sm:py-lg sm:px-xl">
-            <fieldset class="space-y-md">
-              <legend
-                class="mb-md text-meta font-semibold uppercase tracking-wide text-accent-text"
-              >
-                Votre entreprise
-              </legend>
-
-              <div class="grid grid-cols-1 gap-md sm:grid-cols-2">
-                <div>
-                  <Label for="raison-sociale" class="mb-xs block"> Raison sociale </Label>
-                  <Input
-                    id="raison-sociale"
-                    v-model="raisonSociale"
-                    type="text"
-                    placeholder="Nom de l'entreprise"
-                    variant="field"
-                    class="aria-invalid:border-danger"
-                    :aria-invalid="showError('raisonSociale') || undefined"
-                    :aria-describedby="
-                      showError('raisonSociale') ? 'raison-sociale-error' : undefined
-                    "
-                  />
-                  <p
-                    v-if="showError('raisonSociale')"
-                    id="raison-sociale-error"
-                    class="mt-xs text-small font-semibold text-danger"
-                  >
-                    {{ errors.raisonSociale }}
-                  </p>
-                </div>
-                <div>
-                  <Label for="siret" class="mb-xs block">SIRET</Label>
-                  <Input
-                    id="siret"
-                    v-model="siret"
-                    type="text"
-                    inputmode="numeric"
-                    placeholder="14 chiffres"
-                    variant="field"
-                    class="aria-invalid:border-danger"
-                    :aria-invalid="showError('siret') || undefined"
-                    :aria-describedby="showError('siret') ? 'siret-error' : undefined"
-                  />
-                  <p
-                    v-if="showError('siret')"
-                    id="siret-error"
-                    class="mt-xs text-small font-semibold text-danger"
-                  >
-                    {{ errors.siret }}
-                  </p>
-                </div>
-              </div>
-            </fieldset>
-          </Card>
-
-          <!-- Vos coordonnées -->
-          <Card v-reveal class="p-lg sm:py-lg sm:px-xl">
-            <fieldset class="space-y-md">
-              <legend
-                class="mb-md text-meta font-semibold uppercase tracking-wide text-accent-text"
-              >
-                Vos coordonnées
-              </legend>
-
-              <div class="grid grid-cols-1 gap-md sm:grid-cols-2">
-                <div>
-                  <Label for="nom" class="mb-xs block"> Nom et prénom </Label>
-                  <Input
-                    id="nom"
-                    v-model="nom"
-                    type="text"
-                    autocomplete="name"
-                    variant="field"
-                    class="aria-invalid:border-danger"
-                    :aria-invalid="showError('nom') || undefined"
-                    :aria-describedby="showError('nom') ? 'nom-error' : undefined"
-                  />
-                  <p
-                    v-if="showError('nom')"
-                    id="nom-error"
-                    class="mt-xs text-small font-semibold text-danger"
-                  >
-                    {{ errors.nom }}
-                  </p>
-                </div>
-                <div>
-                  <Label for="fonction" class="mb-xs block"> Fonction </Label>
-                  <Input
-                    id="fonction"
-                    v-model="fonction"
-                    type="text"
-                    placeholder="RH, QHSE, direction…"
-                    variant="field"
-                    class="aria-invalid:border-danger"
-                    :aria-invalid="showError('fonction') || undefined"
-                    :aria-describedby="showError('fonction') ? 'fonction-error' : undefined"
-                  />
-                  <p
-                    v-if="showError('fonction')"
-                    id="fonction-error"
-                    class="mt-xs text-small font-semibold text-danger"
-                  >
-                    {{ errors.fonction }}
-                  </p>
-                </div>
-                <div>
-                  <Label for="email" class="mb-xs block"> E-mail professionnel </Label>
-                  <Input
-                    id="email"
-                    v-model="email"
-                    type="email"
-                    autocomplete="email"
-                    placeholder="nom@entreprise.fr"
-                    variant="field"
-                    class="aria-invalid:border-danger"
-                    :aria-invalid="showError('email') || undefined"
-                    :aria-describedby="showError('email') ? 'email-error' : undefined"
-                  />
-                  <p
-                    v-if="showError('email')"
-                    id="email-error"
-                    class="mt-xs text-small font-semibold text-danger"
-                  >
-                    {{ errors.email }}
-                  </p>
-                </div>
-                <div>
-                  <Label for="telephone" class="mb-xs block"> Téléphone </Label>
-                  <Input
-                    id="telephone"
-                    v-model="telephone"
-                    type="tel"
-                    autocomplete="tel"
-                    placeholder="06 -- -- -- --"
-                    variant="field"
-                    class="aria-invalid:border-danger"
-                    :aria-invalid="showError('telephone') || undefined"
-                    :aria-describedby="showError('telephone') ? 'telephone-error' : undefined"
-                  />
-                  <p
-                    v-if="showError('telephone')"
-                    id="telephone-error"
-                    class="mt-xs text-small font-semibold text-danger"
-                  >
-                    {{ errors.telephone }}
-                  </p>
-                </div>
-              </div>
-
-              <div class="pt-xs">
-                <div class="flex items-center gap-sm">
-                  <Checkbox
-                    id="consentement"
-                    v-model="consentement"
-                    :aria-invalid="showError('consentement') || undefined"
-                    :aria-describedby="showError('consentement') ? 'consentement-error' : undefined"
-                  />
-                  <Label for="consentement" variant="muted">
-                    J'accepte que ces informations soient utilisées pour le traitement de ma demande
-                    de formation.
-                    <NuxtLink
-                      to="#"
-                      class="font-medium text-primary transition-colors hover:text-accent-text"
-                    >
-                      Politique de confidentialité
-                    </NuxtLink>
-                  </Label>
-                </div>
-                <p
-                  v-if="showError('consentement')"
-                  id="consentement-error"
-                  class="mt-xs text-small font-semibold text-danger"
-                >
-                  {{ errors.consentement }}
-                </p>
-              </div>
-            </fieldset>
-          </Card>
-
-          <!-- Envoi -->
-          <div class="flex flex-col gap-sm sm:flex-row sm:items-center">
-            <Button
-              type="submit"
-              variant="accent"
-              size="pill-sm"
-              class="w-full px-2xl shadow-sm sm:w-auto"
-              :disabled="sending"
+            <p
+              class="flex h-4xl w-4xl items-center justify-center rounded-full bg-success-soft text-success"
             >
-              <span
-                v-if="sending"
-                class="mr-sm block h-md w-md animate-spin rounded-full border-2 border-ink/25 border-t-ink"
-                aria-hidden="true"
-              />
-              {{ sending ? 'Envoi en cours…' : 'Envoyer ma demande' }}
-            </Button>
-          </div>
-          <p v-if="submitError" class="text-small font-semibold text-danger" role="alert">
-            {{ submitError }}
-          </p>
-        </form>
+              <IconCheck :size="32" />
+            </p>
+            <div>
+              <h2 class="font-display text-h3 font-extrabold text-ink">
+                Votre demande est transmise
+              </h2>
+              <p class="mt-sm max-w-prose text-body text-ink-muted">
+                Un conseiller LEARN&nbsp;UP&nbsp;ACADEMY prend en charge votre demande et vous
+                recontacte sous 24&nbsp;h ouvrées.
+              </p>
+            </div>
+            <div class="flex flex-wrap justify-center gap-md">
+              <Button as-child variant="dark" size="pill-lg">
+                <NuxtLink to="/">Retour à l'accueil</NuxtLink>
+              </Button>
+              <Button as-child variant="outline" size="pill-lg">
+                <NuxtLink to="/formations">Explorer le catalogue</NuxtLink>
+              </Button>
+            </div>
+          </Card>
+
+          <!-- Formulaire (v-show : jamais démonté — le swap v-if/v-else casse le
+             retrait de fragment sous happy-dom en test) -->
+          <form v-show="!submitted" novalidate class="space-y-lg" @submit.prevent="onSubmit">
+            <!-- Votre besoin -->
+            <Card v-reveal class="p-lg sm:py-lg sm:px-xl">
+              <fieldset class="space-y-md">
+                <legend
+                  class="mb-md text-meta font-semibold uppercase tracking-wide text-accent-text"
+                >
+                  Votre besoin
+                </legend>
+
+                <div class="grid grid-cols-1 gap-md sm:grid-cols-2">
+                  <div>
+                    <Label for="salaries" class="mb-xs block"> Salariés à former </Label>
+                    <Input
+                      id="salaries"
+                      v-model="salaries"
+                      type="number"
+                      min="1"
+                      variant="field"
+                      class="aria-invalid:border-danger"
+                      :aria-invalid="showError('salaries') || undefined"
+                      :aria-describedby="showError('salaries') ? 'salaries-error' : undefined"
+                    />
+                    <p
+                      v-if="showError('salaries')"
+                      id="salaries-error"
+                      class="mt-xs text-small font-semibold text-danger"
+                    >
+                      {{ errors.salaries }}
+                    </p>
+                  </div>
+                  <div>
+                    <Label for="echeance" class="block">
+                      <span class="mb-xs block">Échéance souhaitée</span>
+                      <Select v-model="echeance">
+                        <SelectTrigger
+                          id="echeance"
+                          variant="field"
+                          :aria-invalid="showError('echeance') || undefined"
+                          :aria-describedby="showError('echeance') ? 'echeance-error' : undefined"
+                        >
+                          <SelectValue placeholder="Choisir une échéance" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem
+                            v-for="option in echeanceOptions"
+                            :key="option"
+                            :value="option"
+                            class="text-small"
+                          >
+                            {{ option }}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </Label>
+                    <p
+                      v-if="showError('echeance')"
+                      id="echeance-error"
+                      class="mt-xs text-small font-semibold text-danger"
+                    >
+                      {{ errors.echeance }}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <Label for="precisions" class="mb-xs block">
+                    Précisions <span class="font-normal text-ink-subtle">(facultatif)</span>
+                  </Label>
+                  <Textarea
+                    id="precisions"
+                    v-model="precisions"
+                    rows="3"
+                    placeholder="Contraintes d'horaires, site concerné, niveau des salariés…"
+                    class="resize-none"
+                  />
+                </div>
+              </fieldset>
+            </Card>
+
+            <!-- Votre entreprise -->
+            <Card v-reveal class="p-lg sm:py-lg sm:px-xl">
+              <fieldset class="space-y-md">
+                <legend
+                  class="mb-md text-meta font-semibold uppercase tracking-wide text-accent-text"
+                >
+                  Votre entreprise
+                </legend>
+
+                <div class="grid grid-cols-1 gap-md sm:grid-cols-2">
+                  <div>
+                    <Label for="raison-sociale" class="mb-xs block"> Raison sociale </Label>
+                    <Input
+                      id="raison-sociale"
+                      v-model="raisonSociale"
+                      type="text"
+                      placeholder="Nom de l'entreprise"
+                      variant="field"
+                      class="aria-invalid:border-danger"
+                      :aria-invalid="showError('raisonSociale') || undefined"
+                      :aria-describedby="
+                        showError('raisonSociale') ? 'raison-sociale-error' : undefined
+                      "
+                    />
+                    <p
+                      v-if="showError('raisonSociale')"
+                      id="raison-sociale-error"
+                      class="mt-xs text-small font-semibold text-danger"
+                    >
+                      {{ errors.raisonSociale }}
+                    </p>
+                  </div>
+                  <div>
+                    <Label for="siret" class="mb-xs block">SIRET</Label>
+                    <Input
+                      id="siret"
+                      v-model="siret"
+                      type="text"
+                      inputmode="numeric"
+                      placeholder="14 chiffres"
+                      variant="field"
+                      class="aria-invalid:border-danger"
+                      :aria-invalid="showError('siret') || undefined"
+                      :aria-describedby="showError('siret') ? 'siret-error' : undefined"
+                    />
+                    <p
+                      v-if="showError('siret')"
+                      id="siret-error"
+                      class="mt-xs text-small font-semibold text-danger"
+                    >
+                      {{ errors.siret }}
+                    </p>
+                  </div>
+                </div>
+              </fieldset>
+            </Card>
+
+            <!-- Vos coordonnées -->
+            <Card v-reveal class="p-lg sm:py-lg sm:px-xl">
+              <fieldset class="space-y-md">
+                <legend
+                  class="mb-md text-meta font-semibold uppercase tracking-wide text-accent-text"
+                >
+                  Vos coordonnées
+                </legend>
+
+                <div class="grid grid-cols-1 gap-md sm:grid-cols-2">
+                  <div>
+                    <Label for="nom" class="mb-xs block"> Nom et prénom </Label>
+                    <Input
+                      id="nom"
+                      v-model="nom"
+                      type="text"
+                      autocomplete="name"
+                      variant="field"
+                      class="aria-invalid:border-danger"
+                      :aria-invalid="showError('nom') || undefined"
+                      :aria-describedby="showError('nom') ? 'nom-error' : undefined"
+                    />
+                    <p
+                      v-if="showError('nom')"
+                      id="nom-error"
+                      class="mt-xs text-small font-semibold text-danger"
+                    >
+                      {{ errors.nom }}
+                    </p>
+                  </div>
+                  <div>
+                    <Label for="fonction" class="mb-xs block"> Fonction </Label>
+                    <Input
+                      id="fonction"
+                      v-model="fonction"
+                      type="text"
+                      placeholder="RH, QHSE, direction…"
+                      variant="field"
+                      class="aria-invalid:border-danger"
+                      :aria-invalid="showError('fonction') || undefined"
+                      :aria-describedby="showError('fonction') ? 'fonction-error' : undefined"
+                    />
+                    <p
+                      v-if="showError('fonction')"
+                      id="fonction-error"
+                      class="mt-xs text-small font-semibold text-danger"
+                    >
+                      {{ errors.fonction }}
+                    </p>
+                  </div>
+                  <div>
+                    <Label for="email" class="mb-xs block"> E-mail professionnel </Label>
+                    <Input
+                      id="email"
+                      v-model="email"
+                      type="email"
+                      autocomplete="email"
+                      placeholder="nom@entreprise.fr"
+                      variant="field"
+                      class="aria-invalid:border-danger"
+                      :aria-invalid="showError('email') || undefined"
+                      :aria-describedby="showError('email') ? 'email-error' : undefined"
+                    />
+                    <p
+                      v-if="showError('email')"
+                      id="email-error"
+                      class="mt-xs text-small font-semibold text-danger"
+                    >
+                      {{ errors.email }}
+                    </p>
+                  </div>
+                  <div>
+                    <Label for="telephone" class="mb-xs block"> Téléphone </Label>
+                    <Input
+                      id="telephone"
+                      v-model="telephone"
+                      type="tel"
+                      autocomplete="tel"
+                      placeholder="06 -- -- -- --"
+                      variant="field"
+                      class="aria-invalid:border-danger"
+                      :aria-invalid="showError('telephone') || undefined"
+                      :aria-describedby="showError('telephone') ? 'telephone-error' : undefined"
+                    />
+                    <p
+                      v-if="showError('telephone')"
+                      id="telephone-error"
+                      class="mt-xs text-small font-semibold text-danger"
+                    >
+                      {{ errors.telephone }}
+                    </p>
+                  </div>
+                </div>
+
+                <div class="pt-xs">
+                  <div class="flex items-center gap-sm">
+                    <Checkbox
+                      id="consentement"
+                      v-model="consentement"
+                      :aria-invalid="showError('consentement') || undefined"
+                      :aria-describedby="
+                        showError('consentement') ? 'consentement-error' : undefined
+                      "
+                    />
+                    <Label for="consentement" variant="muted">
+                      J'accepte que ces informations soient utilisées pour le traitement de ma
+                      demande de formation.
+                      <NuxtLink
+                        to="#"
+                        class="font-medium text-primary transition-colors hover:text-accent-text"
+                      >
+                        Politique de confidentialité
+                      </NuxtLink>
+                    </Label>
+                  </div>
+                  <p
+                    v-if="showError('consentement')"
+                    id="consentement-error"
+                    class="mt-xs text-small font-semibold text-danger"
+                  >
+                    {{ errors.consentement }}
+                  </p>
+                </div>
+              </fieldset>
+            </Card>
+
+            <!-- Envoi -->
+            <div class="flex flex-col gap-sm sm:flex-row sm:items-center">
+              <Button
+                type="submit"
+                variant="accent"
+                size="pill-sm"
+                class="w-full px-2xl shadow-sm sm:w-auto"
+                :disabled="sending"
+              >
+                <span
+                  v-if="sending"
+                  class="mr-sm block h-md w-md animate-spin rounded-full border-2 border-ink/25 border-t-ink"
+                  aria-hidden="true"
+                />
+                {{ sending ? 'Envoi en cours…' : 'Envoyer ma demande' }}
+              </Button>
+            </div>
+            <p v-if="submitError" class="text-small font-semibold text-danger" role="alert">
+              {{ submitError }}
+            </p>
+          </form>
+        </div>
 
         <!-- Sidebar : contexte de la demande — affichée avant le
              formulaire sur mobile (maquette 1b), à droite sur desktop. -->

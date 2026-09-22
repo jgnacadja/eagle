@@ -8,7 +8,7 @@
             Demande de formation
           </h1>
           <p class="mt-sm max-w-prose text-body text-ink-muted">
-            La demande est prise en charge par notre réseau nous vous répondons sous 24&nbsp;h
+            La demande est prise en charge par notre réseau. Nous vous répondons sous 24&nbsp;h
             ouvrées.
           </p>
         </div>

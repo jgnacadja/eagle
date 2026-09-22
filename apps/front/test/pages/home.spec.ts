@@ -158,7 +158,10 @@ async function mountPage() {
 
 describe('pages/index', () => {
   beforeEach(() => {
-    // État géo partagé au niveau module : reset entre tests.
+    // État géo partagé au niveau module : reset entre tests. `navigator`
+    // sans `permissions` : happy-dom résoudrait `granted`, ce qui court-
+    // circuite le dialog de consentement (permission déjà accordée).
+    vi.stubGlobal('navigator', {})
     const geo = useGeolocation()
     geo.clear()
     geo.permission.value = null

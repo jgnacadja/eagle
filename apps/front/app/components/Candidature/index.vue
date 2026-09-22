@@ -8,10 +8,10 @@
         <!-- Formulaire de candidature -->
         <div v-else class="grid gap-md">
           <DialogHeader>
-            <DialogTitle class="text-h3">Candidater au réseau</DialogTitle>
+            <DialogTitle class="text-h3">Candidater pour rejoindre le réseau</DialogTitle>
             <DialogDescription>
-              Votre candidature est étudiée par l'équipe développement du réseau. Réponse sous 5
-              jours ouvrés.
+              Votre candidature est étudiée par l'équipe de développement du réseau. Nous vous
+              répondrons sous 5 jours ouvrés.
             </DialogDescription>
           </DialogHeader>
 
@@ -64,7 +64,7 @@ async function onSubmit(payload: CandidaturePayload) {
     ...payload,
     consentement: true,
     pageUri: window.location.href,
-    pageName: 'Candidater au réseau'
+    pageName: 'Candidater pour rejoindre le réseau'
   })
   if (!ok) return
   const lieu = payload.ville ? ` — ${payload.ville}` : ''

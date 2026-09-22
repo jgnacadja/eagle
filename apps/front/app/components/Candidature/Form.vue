@@ -176,7 +176,6 @@
         />
         {{ sending ? 'Envoi en cours…' : 'Envoyer ma candidature' }}
       </Button>
-      <p class="text-meta text-ink-subtle">Réponse sous 5 jours ouvrés.</p>
     </div>
   </form>
 </template>

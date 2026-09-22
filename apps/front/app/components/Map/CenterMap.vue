@@ -82,8 +82,17 @@ const props = withDefaults(
     userPosition?: { lat: number; lng: number } | null
     /** Vue forcée (ville/zoom) — prioritaire sur le fit des marqueurs. */
     focusCenter?: { lat: number; lng: number } | null
+    /** Zoom appliqué avec `focusCenter` (10 = commune et proche couronne). */
+    focusZoom?: number
   }>(),
-  { mode: 'network', minZoom: 5, popup: true, userPosition: null, focusCenter: null }
+  {
+    mode: 'network',
+    minZoom: 5,
+    popup: true,
+    userPosition: null,
+    focusCenter: null,
+    focusZoom: 10
+  }
 )
 
 const emit = defineEmits<{
@@ -99,6 +108,9 @@ let Leaf: typeof import('leaflet') | null = null
 let popupApp: ReturnType<typeof createApp> | null = null
 let popupMarker: Leaflet.Marker | null = null
 let pendingReveal: (() => void) | null = null
+// Dernier focus appliqué : un changement de `centers`/`userPosition` ne doit
+// pas re-cadrer la carte si l'utilisateur l'a déjà déplacée.
+let lastFocus: { lat: number; lng: number } | null = null
 
 const hasVisibleCenters = computed(() => props.centers.some((c) => c.lat != null && c.lng != null))
 
@@ -282,9 +294,13 @@ function buildMarkers(L: typeof import('leaflet')) {
 function fitToMarkers(L: typeof import('leaflet')) {
   if (props.focusCenter) {
     // Zoom communal-départemental : la ville et sa proche couronne.
-    mapInstance.value?.setView([props.focusCenter.lat, props.focusCenter.lng], 10)
+    if (props.focusCenter !== lastFocus) {
+      mapInstance.value?.setView([props.focusCenter.lat, props.focusCenter.lng], props.focusZoom)
+      lastFocus = props.focusCenter
+    }
     return
   }
+  lastFocus = null
   const coords = props.centers
     .filter((c) => c.lat != null && c.lng != null)
     .map((c) => [c.lat, c.lng] as [number, number])
@@ -434,14 +450,13 @@ watch(
   }
 )
 
-watch(
-  () => props.focusCenter,
-  async () => {
-    if (!mapInstance.value) return
-    const L = await ensureLeaflet()
-    fitToMarkers(L)
-  }
-)
+watch([() => props.focusCenter, () => props.focusZoom], async () => {
+  if (!mapInstance.value) return
+  const L = await ensureLeaflet()
+  // Force le re-cadrage : le watcher réagit aussi à `focusZoom` seul.
+  lastFocus = null
+  fitToMarkers(L)
+})
 
 onBeforeUnmount(() => {
   closePopup()

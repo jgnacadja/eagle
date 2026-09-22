@@ -99,6 +99,7 @@ interface CenterMapProps {
   minZoom?: number
   userPosition?: { lat: number; lng: number } | null
   focusCenter?: { lat: number; lng: number } | null
+  focusZoom?: number
 }
 
 function mountWithStubs(props: CenterMapProps) {
@@ -267,6 +268,63 @@ describe('CenterMap', () => {
     }
     expect(map.setView).toHaveBeenCalledWith([48.8566, 2.3522], 10)
     expect(map.fitBounds).not.toHaveBeenCalled()
+  })
+
+  it('applies a custom focusZoom with focusCenter', async () => {
+    mountWithStubs({
+      centers,
+      activeId: null,
+      caption: 'Tous les départements',
+      focusCenter: { lat: 48.8566, lng: 2.3522 },
+      focusZoom: 13
+    })
+    await flushPromises()
+
+    const map = vi.mocked(Leaflet.map).mock.results[0]?.value as unknown as {
+      setView: ReturnType<typeof vi.fn>
+    }
+    expect(map.setView).toHaveBeenCalledWith([48.8566, 2.3522], 13)
+  })
+
+  it('does not re-center on the focus when userPosition resolves', async () => {
+    const focusCenter = { lat: 48.8566, lng: 2.3522 }
+    const wrapper = mountWithStubs({
+      centers,
+      activeId: null,
+      caption: 'Tous les départements',
+      focusCenter
+    })
+    await flushPromises()
+
+    const map = vi.mocked(Leaflet.map).mock.results[0]?.value as unknown as {
+      setView: ReturnType<typeof vi.fn>
+    }
+    map.setView.mockClear()
+
+    await wrapper.setProps({ userPosition: { lat: 48.9, lng: 2.4 } })
+    await flushPromises()
+
+    expect(map.setView).not.toHaveBeenCalled()
+  })
+
+  it('re-centers when focusCenter changes', async () => {
+    const wrapper = mountWithStubs({
+      centers,
+      activeId: null,
+      caption: 'Tous les départements',
+      focusCenter: { lat: 48.8566, lng: 2.3522 }
+    })
+    await flushPromises()
+
+    const map = vi.mocked(Leaflet.map).mock.results[0]?.value as unknown as {
+      setView: ReturnType<typeof vi.fn>
+    }
+    map.setView.mockClear()
+
+    await wrapper.setProps({ focusCenter: { lat: 45.764, lng: 4.8357 } })
+    await flushPromises()
+
+    expect(map.setView).toHaveBeenCalledWith([45.764, 4.8357], 10)
   })
 
   it('skips the user marker when userPosition is null', async () => {

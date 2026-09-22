@@ -132,7 +132,10 @@
                   :centers="mapCenters"
                   :active-id="activeMapCenterId"
                   :caption="mapCaption"
+                  :popup="false"
                   :user-position="userPosition"
+                  :focus-center="mapFocus"
+                  :focus-zoom="13"
                   @select="onMapSelect"
                 />
               </div>
@@ -454,9 +457,9 @@ const heroAddress = computed(() =>
 
 const { position: userPosition } = useGeolocation()
 
-// Tout le réseau publié sur la carte — même rendu que l'accueil : pins
-// clusterisés, popup « Voir le centre » au clic. Le centre courant est
-// surligné (`activeMapCenterId` = son slug, comme `id` des marqueurs).
+// Tout le réseau publié sur la carte — même rendu que l'accueil mais sans
+// popup : le centre courant est surligné (`activeMapCenterId` = son slug,
+// comme `id` des marqueurs), un clic sur un autre pin ouvre sa fiche.
 const activeMapCenterId = ref<string | null>(slug)
 
 const mapCenters = computed<CenterResult[]>(() =>
@@ -478,6 +481,14 @@ const mapCenters = computed<CenterResult[]>(() =>
 
 const mapCaption = computed(() => centre.value?.region ?? 'Réseau national')
 
+// Vue centrée sur le centre (contrairement à l'explorateur qui cadre le
+// département) : la mini-carte de la fiche doit pointer l'adresse.
+const mapFocus = computed(() =>
+  centre.value?.latitude != null && centre.value?.longitude != null
+    ? { lat: centre.value.latitude, lng: centre.value.longitude }
+    : null
+)
+
 const directionsUrl = computed(() => {
   const c = centre.value
   if (!c || c.latitude == null || c.longitude == null) return ''
@@ -485,6 +496,11 @@ const directionsUrl = computed(() => {
 })
 
 function onMapSelect(id: string) {
+  // Mini-carte sans popup : le pin d'un autre centre mène à sa fiche.
+  if (id && id !== slug) {
+    navigateTo(`/centres/${id}`)
+    return
+  }
   activeMapCenterId.value = id || null
 }
 

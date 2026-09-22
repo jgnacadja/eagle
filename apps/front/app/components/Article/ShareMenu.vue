@@ -1,5 +1,5 @@
 <template>
-  <DropdownMenuRoot>
+  <DropdownMenuRoot :modal="false">
     <DropdownMenuTrigger as-child>
       <Button type="button" variant="icon-outline" size="icon-sm" aria-label="Partager l'article">
         <IconShare :size="18" />

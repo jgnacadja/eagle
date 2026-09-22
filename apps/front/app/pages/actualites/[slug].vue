@@ -44,24 +44,24 @@
                 </div>
               </div>
               <div class="flex items-center gap-md text-ink-subtle">
+                <ShareMenu
+                  :url="shareUrl"
+                  :title="article?.title"
+                  :text="article?.excerpt ?? undefined"
+                />
                 <Button
                   type="button"
                   variant="icon-outline"
                   size="icon-sm"
-                  aria-label="Partager l'article"
-                  @click="onShare"
-                >
-                  <IconShare :size="18" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="icon-outline"
-                  size="icon-sm"
-                  aria-label="Copier le lien de l'article"
+                  :aria-label="linkCopied ? 'Lien copié' : 'Copier le lien de l\'article'"
                   @click="onCopyLink"
                 >
-                  <IconLink :size="18" />
+                  <IconCheck v-if="linkCopied" :size="18" class="text-success" />
+                  <IconLink v-else :size="18" />
                 </Button>
+                <output class="sr-only" aria-live="polite">{{
+                  linkCopied ? 'Lien copié dans le presse-papiers' : ''
+                }}</output>
               </div>
             </div>
 
@@ -233,6 +233,7 @@ import type { Article, Course } from '@learnup/types'
 import { buildMeta, mapCourse, type FormationItem } from '~/composables/useCatalog'
 import { articleAssetUrl, articleReadingTime, formatArticleDate } from '~/utils/article'
 import { sanitizeHtmlWithHeadings } from '~/utils/sanitizeHtml'
+import { copyTextToClipboard } from '~/utils/clipboard'
 
 definePageMeta({
   layout: 'with-breadcrumb',
@@ -471,18 +472,25 @@ function assetUrl(id: string | null): string | undefined {
   return articleAssetUrl(id, config.public.apiBase) ?? undefined
 }
 
-function onShare() {
+const linkCopied = ref(false)
+let linkCopiedTimer: ReturnType<typeof setTimeout> | undefined
+
+// Lien de partage « propre » : origine + chemin, sans query (?from=,
+// ?category=, ?error=1) ni ancre du sommaire. Vide en SSR — les actions
+// partager/copier ne sont utilisables que côté client.
+const shareUrl = computed(() =>
+  typeof window === 'undefined' ? '' : `${window.location.origin}${route.path}`
+)
+
+async function onCopyLink() {
   if (typeof window === 'undefined') return
-  if (navigator.share) {
-    navigator.share({ title: article.value?.title, url: window.location.href }).catch(() => {})
-  } else {
-    onCopyLink()
-  }
+  if (!(await copyTextToClipboard(shareUrl.value))) return
+  linkCopied.value = true
+  clearTimeout(linkCopiedTimer)
+  linkCopiedTimer = setTimeout(() => {
+    linkCopied.value = false
+  }, 2000)
 }
 
-function onCopyLink() {
-  if (typeof window !== 'undefined') {
-    navigator.clipboard?.writeText(window.location.href)
-  }
-}
+onScopeDispose(() => clearTimeout(linkCopiedTimer))
 </script>

@@ -1,6 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { computed, defineComponent, h, ref, Suspense, watchEffect } from 'vue'
+import { computed, defineComponent, h, onScopeDispose, ref, Suspense, watchEffect } from 'vue'
 import type { Article, Course } from '@learnup/types'
 import LoadError from '~/components/ErrorState/LoadError.vue'
 import NotFound from '~/components/ErrorState/NotFound.vue'
@@ -90,6 +90,7 @@ type DirectusCommand = () => { path: string }
 vi.stubGlobal('computed', computed)
 vi.stubGlobal('ref', ref)
 vi.stubGlobal('watchEffect', watchEffect)
+vi.stubGlobal('onScopeDispose', onScopeDispose)
 vi.stubGlobal('definePageMeta', vi.fn())
 vi.stubGlobal('useRoute', () => routeMock)
 vi.stubGlobal('useAsyncData', async (key: string, handler: () => Promise<unknown>) => {
@@ -120,6 +121,12 @@ vi.stubGlobal('useDirectusList', () =>
 )
 vi.stubGlobal('$fetch', fetchMock)
 
+const ShareMenuStub = {
+  name: 'ShareMenu',
+  props: ['url', 'title', 'text'],
+  template: '<button type="button" aria-label="Partager l\'article" />'
+}
+
 const stubs = {
   NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
   NuxtImg: { props: ['src', 'alt'], template: '<img :src="src" :alt="alt" />' },
@@ -134,8 +141,9 @@ const stubs = {
     emits: ['update:modelValue', 'submit'],
     template: '<button class="search-stub" @click="$emit(\'submit\', \'caces\')" />'
   },
-  IconShare: true,
+  ShareMenu: ShareMenuStub,
   IconLink: true,
+  IconCheck: true,
   IconFileOff: true,
   IconRefresh: true,
   IconSparkle: true
@@ -177,6 +185,8 @@ describe('pages/actualites/[slug]', () => {
       path: '/actualites/recyclage-caces-echeances-2027',
       meta: {}
     }
+    Object.defineProperty(window.navigator, 'share', { value: undefined, configurable: true })
+    Object.defineProperty(window.navigator, 'clipboard', { value: undefined, configurable: true })
   })
 
   it('affiche l’en-tête de l’article : catégorie, date, titre, chapô', async () => {
@@ -197,6 +207,38 @@ describe('pages/actualites/[slug]', () => {
     const labels = wrapper.findAll('button').map((b) => b.attributes('aria-label'))
     expect(labels).toContain("Partager l'article")
     expect(labels).toContain("Copier le lien de l'article")
+  })
+
+  it('copie l’URL propre de l’article (sans query ni ancre) dans le presse-papiers', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(window.navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true
+    })
+    routeMock.query = { from: '/formations', category: 'SST' }
+    const wrapper = await mountPage()
+    const buttonByLabel = (label: string) =>
+      wrapper.findAll('button').find((b) => b.attributes('aria-label') === label)!
+
+    await buttonByLabel("Copier le lien de l'article").trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith(
+      `${window.location.origin}/actualites/recyclage-caces-echeances-2027`
+    )
+    expect(buttonByLabel('Lien copié').exists()).toBe(true)
+  })
+
+  it('passe l’URL propre de l’article au menu de partage', async () => {
+    routeMock.query = { from: '/formations', category: 'SST' }
+    const wrapper = await mountPage()
+
+    const share = wrapper.findComponent(ShareMenuStub)
+    expect(share.exists()).toBe(true)
+    expect(share.props('url')).toBe(
+      `${window.location.origin}/actualites/recyclage-caces-echeances-2027`
+    )
+    expect(share.props('title')).toBe('Recyclage CACES : échéance en 2027')
   })
 
   it('affiche les sections du corps et l’encart À retenir', async () => {

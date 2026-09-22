@@ -49,12 +49,31 @@ describe('LocationSuggest', () => {
     const wrapper = mountSuggest()
 
     await typeAndSuggest(wrapper, 'lyon')
-    expect(wrapper.find('datalist option').exists()).toBe(true)
+    expect(wrapper.find('li button').exists()).toBe(true)
 
     await wrapper.find('input').setValue('Lyon (69)')
 
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['45.764,4.8357'])
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('Lyon (69)')
+  })
+
+  it('emits lat,lng when a suggestion is clicked in the list', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/communes')) {
+        return Promise.resolve([
+          { nom: 'Lyon', codeDepartement: '69', centre: { coordinates: [4.8357, 45.764] } }
+        ])
+      }
+      return Promise.resolve([])
+    })
+    const wrapper = mountSuggest()
+
+    await typeAndSuggest(wrapper, 'lyon')
+    await wrapper.find('li button').trigger('click')
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['45.764,4.8357'])
+    expect((wrapper.find('input').element as HTMLInputElement).value).toBe('Lyon (69)')
+    expect(wrapper.find('ul').exists()).toBe(false)
   })
 
   it('emits the département code when a département suggestion is picked', async () => {
@@ -89,7 +108,7 @@ describe('LocationSuggest', () => {
 
     await typeAndSuggest(wrapper, 'lyon')
 
-    expect(wrapper.find('datalist option').exists()).toBe(false)
+    expect(wrapper.find('li button').exists()).toBe(false)
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['lyon'])
   })
 

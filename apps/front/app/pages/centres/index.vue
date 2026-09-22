@@ -331,6 +331,23 @@ watch(
 // `departments` dans les sources du watch couvre le cas où la liste
 // arrive après la position.
 const deptUserTouched = ref(false)
+
+// `?dept=` (département choisi dans l'autocomplétion de l'accueil)
+// pré-remplit le filtre territoire — choix explicite : `deptUserTouched`
+// empêche l'auto-remplissage géoloc de l'écraser. La valeur brute tient
+// le temps que la liste `departments` arrive, puis est ramenée à la
+// graphie canonique (même normalisation que la géoloc).
+watch(
+  [departments, () => route.query.dept],
+  ([list, queryDept]) => {
+    if (typeof queryDept !== 'string' || !queryDept) return
+    const wanted = normalizeDepartment(queryDept)
+    selectedDept.value = list?.find((d) => normalizeDepartment(d) === wanted) ?? queryDept
+    deptUserTouched.value = true
+  },
+  { immediate: true }
+)
+
 watch([geoDepartment, departments], ([dept, list]) => {
   if (!dept) {
     // Géoloc désactivée (ou reverse en échec) : le filtre ne revient à

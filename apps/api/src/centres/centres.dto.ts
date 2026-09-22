@@ -16,7 +16,9 @@ export class ListCentresDto {
   @Transform(({ value }) => toOptionalTrimmed(value))
   department?: string
 
-  @ApiPropertyOptional({ description: 'Search on name, city, postal code, address, specialties' })
+  @ApiPropertyOptional({
+    description: 'Search on name, city, postal code, department, address, specialties'
+  })
   @IsOptional()
   @IsString()
   @MaxLength(200)

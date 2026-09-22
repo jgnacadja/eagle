@@ -7,10 +7,12 @@ import HomePage from '~/pages/index.vue'
 const seoMock = vi.fn()
 const headMock = vi.fn()
 const navigateMock = vi.fn()
+const geoFetchMock = vi.fn().mockResolvedValue([])
 
 vi.stubGlobal('useContentSeo', seoMock)
 vi.stubGlobal('useHead', headMock)
 vi.stubGlobal('navigateTo', navigateMock)
+vi.stubGlobal('$fetch', geoFetchMock)
 vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
 
 vi.mock('~/composables/useCatalog', () => ({
@@ -116,10 +118,10 @@ vi.stubGlobal(
 const stubs = {
   NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
   SearchInput: {
-    props: ['modelValue'],
-    emits: ['update:modelValue', 'submit'],
+    props: ['modelValue', 'suggestions'],
+    emits: ['update:modelValue', 'submit', 'input'],
     template:
-      '<span><input v-bind="$attrs" :value="modelValue" @keydown.enter="$emit(\'submit\', \'vitry\')" /><slot name="action" /></span>'
+      '<span><input v-bind="$attrs" :value="modelValue" @input="$emit(\'input\', $event.target.value)" @keydown.enter="$emit(\'submit\', $event.target.value)" /><datalist v-if="suggestions"><option v-for="s in suggestions" :key="s" :value="s" /></datalist><slot name="action" /></span>'
   },
   NetworkCard: {
     props: ['title', 'to'],
@@ -165,6 +167,8 @@ describe('pages/index', () => {
     const geo = useGeolocation()
     geo.clear()
     geo.permission.value = null
+    geoFetchMock.mockReset().mockResolvedValue([])
+    navigateMock.mockReset()
   })
 
   it('affiche le hero et les sections principales', async () => {
@@ -242,9 +246,64 @@ describe('pages/index', () => {
   it('envoie la recherche carte en query q vers /centres', async () => {
     const wrapper = await mountPage()
 
-    await wrapper.find('input[input-id="map-search"]').trigger('keydown.enter')
+    const input = wrapper.find('input[input-id="map-search"]')
+    await input.setValue('vitry')
+    await input.trigger('keydown.enter')
 
     expect(navigateMock).toHaveBeenCalledWith({ path: '/centres', query: { q: 'vitry' } })
+  })
+
+  it('autocomplète la recherche carte et soumet le terme de la suggestion', async () => {
+    geoFetchMock.mockImplementation((url: string) =>
+      Promise.resolve(
+        url.endsWith('/communes')
+          ? [{ nom: 'Lyon', codeDepartement: '69', centre: { coordinates: [4.8357, 45.764] } }]
+          : []
+      )
+    )
+    const wrapper = await mountPage()
+    vi.useFakeTimers()
+
+    try {
+      const input = wrapper.find('input[input-id="map-search"]')
+      await input.setValue('lyon')
+      await vi.advanceTimersByTimeAsync(250)
+
+      expect(wrapper.findAll('datalist option').map((o) => o.attributes('value'))).toContain(
+        'Lyon (69)'
+      )
+
+      await input.setValue('Lyon (69)')
+      await input.trigger('keydown.enter')
+
+      expect(navigateMock).toHaveBeenCalledWith({ path: '/centres', query: { q: 'Lyon' } })
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('une suggestion département part en query dept vers /centres', async () => {
+    geoFetchMock.mockImplementation((url: string) =>
+      Promise.resolve(url.endsWith('/departements') ? [{ code: '76', nom: 'Seine-Maritime' }] : [])
+    )
+    const wrapper = await mountPage()
+    vi.useFakeTimers()
+
+    try {
+      const input = wrapper.find('input[input-id="map-search"]')
+      await input.setValue('seine')
+      await vi.advanceTimersByTimeAsync(250)
+
+      await input.setValue('Seine-Maritime (76)')
+      await input.trigger('keydown.enter')
+
+      expect(navigateMock).toHaveBeenCalledWith({
+        path: '/centres',
+        query: { dept: 'Seine-Maritime' }
+      })
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('définit le SEO et le JSON-LD', async () => {

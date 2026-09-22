@@ -393,6 +393,17 @@ describe('pages/centres/index', () => {
     expect(cards[0]!.text()).toContain('Lyon')
   })
 
+  it('pré-remplit le filtre département depuis ?dept= (autocomplétion accueil)', async () => {
+    routeStub.query = { dept: 'Rhône' }
+    const wrapper = await mountPage()
+
+    // Le Select territoire est pré-rempli, pas le champ de recherche.
+    expect((wrapper.find('.dept-select').element as HTMLSelectElement).value).toBe('Rhône')
+    expect((wrapper.find('.city-search').element as HTMLInputElement).value).toBe('')
+    expect(wrapper.findAll('.center-card')).toHaveLength(1)
+    expect(wrapper.text()).toContain('Centre de Lyon')
+  })
+
   it('applique une recherche arrivée via ?q= après le montage', async () => {
     const wrapper = await mountPage()
     expect(wrapper.findAll('.center-card')).toHaveLength(3)

@@ -52,12 +52,16 @@ function matchesCentre(centre: DirectusCentre, query: ListCentresDto): boolean {
 
   const search = normalizeSearch(query.search)
   if (search) {
+    // `centreDepartmentValues` couvre nom géocodé, codes et noms des
+    // départements couverts : « rhone » et « 69 » matchent, comme le
+    // filtre `department`.
     const haystack = [
       centre.name,
       centre.city,
       centre.postal_code,
       centre.address,
       centre.region,
+      ...centreDepartmentValues(centre),
       ...(centre.specialties ?? [])
     ]
       .map(normalizeSearch)

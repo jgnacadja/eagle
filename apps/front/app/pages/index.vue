@@ -217,6 +217,8 @@
             input-id="map-search"
             sr-label="Rechercher une ville, code postal ou département"
             placeholder="Ville, code postal ou département"
+            :suggestions="mapSearchSuggestions"
+            @input="onMapSearchInput"
             @submit="onMapSearch"
           >
             <template #icon>
@@ -419,6 +421,7 @@ import type { Article, Centre } from '@learnup/types'
 import { mapCourse, useCatalog } from '~/composables/useCatalog'
 import { availabilityStatus, useCentreSessionDates } from '~/composables/useCentres'
 import { useGeolocation } from '~/composables/useGeolocation'
+import { useGeoSuggest } from '~/composables/useGeoSuggest'
 import { distanceKm, formatDistance } from '~/utils/geo'
 import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
@@ -469,6 +472,15 @@ useHead({
 })
 
 const mapSearch = ref('')
+
+// Autocomplétion de la recherche réseau : mêmes suggestions que le filtre
+// « Localisation » du catalogue (ville, code postal ou département).
+const geoSuggest = useGeoSuggest()
+const mapSearchSuggestions = computed(() => geoSuggest.suggestions.value.map((s) => s.label))
+
+function onMapSearchInput(value: string) {
+  geoSuggest.request(value)
+}
 
 const tickerItems = [
   { key: 'sessions', value: '312', label: 'sessions ouvertes' },
@@ -606,10 +618,17 @@ function centreStatus(centre: Centre) {
   return availabilityStatus(centreSessionDates.value.get(centre.slug) ?? [])
 }
 
-// Soumission de la recherche réseau : la requête part en query `q` et la
-// page /centres l'applique automatiquement via route.query.q.
+// Soumission de la recherche réseau : ville/code postal part en query `q`
+// (champ de recherche de /centres) ; un département choisi dans
+// l'autocomplétion part en query `dept` — la page pré-remplit alors le
+// filtre territoire plutôt que le champ texte.
 function onMapSearch(value: string) {
-  const q = value.trim()
+  const picked = geoSuggest.byLabel(value)
+  if (picked?.kind === 'department') {
+    navigateTo({ path: '/centres', query: { dept: picked.term } })
+    return
+  }
+  const q = (picked?.term ?? value).trim()
   navigateTo({ path: '/centres', query: q ? { q } : {} })
 }
 

@@ -254,7 +254,7 @@
               </h2>
               <p class="mt-sm text-small text-ink-muted">Disponibilités actualisées en continu.</p>
               <ul class="mt-md space-y-md">
-                <li v-for="session in sessions" :key="session.key">
+                <li v-for="session in visibleSessions" :key="session.key">
                   <SessionCard
                     :day="session.day"
                     :month="session.month"
@@ -267,6 +267,15 @@
                   />
                 </li>
               </ul>
+              <div v-if="sessions.length > 2 && !showAllSessions" class="mt-3">
+                <button
+                  type="button"
+                  class="text-ink-muted font-bold text-h4 hover:text-ink transition-colors"
+                  @click="showAllSessions = true"
+                >
+                  Voir plus <span class="link-arrow">→</span>
+                </button>
+              </div>
             </section>
           </div>
         </div>
@@ -620,6 +629,8 @@ function toCentreSession(
   }
 }
 
+const showAllSessions = ref(false)
+
 const sessions = computed<CentreSession[]>(() =>
   (centreCatalog.data.value?.items ?? [])
     .flatMap((course) =>
@@ -627,7 +638,10 @@ const sessions = computed<CentreSession[]>(() =>
     )
     .filter((s): s is CentreSession & { startDate: string } => s !== null)
     .sort((a, b) => a.startDate.localeCompare(b.startDate))
-    .slice(0, 4)
+)
+
+const visibleSessions = computed(() =>
+  showAllSessions.value ? sessions.value : sessions.value.slice(0, 2)
 )
 
 // Autres centres de la même région, chargés depuis Directus.

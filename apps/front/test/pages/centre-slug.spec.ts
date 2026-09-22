@@ -180,7 +180,10 @@ const stubs = {
   CardContent: true,
   CardFooter: true,
   CenterFormationCard: true,
-  SessionCard: true,
+  SessionCard: {
+    props: ['title', 'meta', 'places'],
+    template: '<div class="session-card">{{ title }}</div>'
+  },
   CtaBanner: true,
   CenterCard: true,
   IconMapPin: true,
@@ -228,6 +231,23 @@ describe('pages/centres/[slug]', () => {
       path: '/centres/creteil',
       meta: {}
     }
+    catalogueCourses.items[0]!.sessions = [
+      {
+        id: 'sess-1',
+        startDate: '2026-10-12',
+        endDate: '2026-10-13',
+        modality: 'presentiel',
+        seatsRemaining: 5,
+        location: {
+          name: 'Centre de Créteil',
+          city: 'Créteil',
+          postalCode: '94000',
+          department: 'Val-de-Marne',
+          region: 'Île-de-France',
+          centreSlug: 'creteil'
+        }
+      }
+    ]
   })
 
   it('affiche le centre et le breadcrumb par défaut pour un slug connu', async () => {
@@ -257,6 +277,54 @@ describe('pages/centres/[slug]', () => {
     expect(wrapper.text()).toContain('Les formations disponibles dans ce centre')
     expect(wrapper.text()).toContain('1 formation')
     expect(wrapper.text()).toContain('Prochaines sessions')
+  })
+
+  it('limite l’affichage à 2 sessions par défaut et affiche le bouton Voir plus si > 2', async () => {
+    const loc = {
+      name: 'Centre de Créteil',
+      city: 'Créteil',
+      postalCode: '94000',
+      department: 'Val-de-Marne',
+      region: 'Île-de-France',
+      centreSlug: 'creteil'
+    }
+    catalogueCourses.items[0]!.sessions = [
+      {
+        id: 'sess-1',
+        startDate: '2026-10-12',
+        endDate: '2026-10-13',
+        modality: 'presentiel',
+        seatsRemaining: 5,
+        location: loc
+      },
+      {
+        id: 'sess-2',
+        startDate: '2026-11-12',
+        endDate: '2026-11-13',
+        modality: 'presentiel',
+        seatsRemaining: 3,
+        location: loc
+      },
+      {
+        id: 'sess-3',
+        startDate: '2026-12-12',
+        endDate: '2026-12-13',
+        modality: 'presentiel',
+        seatsRemaining: 2,
+        location: loc
+      }
+    ]
+
+    const wrapper = await mountPage()
+
+    expect(wrapper.findAll('.session-card')).toHaveLength(2)
+    const button = wrapper.find('button.text-h4')
+    expect(button.exists()).toBe(true)
+    expect(button.text()).toContain('Voir plus')
+
+    await button.trigger('click')
+    expect(wrapper.findAll('.session-card')).toHaveLength(3)
+    expect(wrapper.find('button.text-h4').exists()).toBe(false)
   })
 
   it('affiche l’état introuvable et adapte breadcrumb/SEO pour un slug inconnu', async () => {

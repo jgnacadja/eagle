@@ -260,7 +260,7 @@
                 </h2>
               </div>
               <ul v-if="sessionsList.length" class="mt-md space-y-md">
-                <li v-for="session in sessionsList" :key="session.key">
+                <li v-for="session in visibleSessions" :key="session.key">
                   <SessionCard
                     :day="session.day"
                     :month="session.month"
@@ -292,11 +292,14 @@
                   </div>
                 </CardContent>
               </Card>
-              <div v-if="sessionsList.length" class="mt-3">
-                <NuxtLink href="#" class="text-ink-muted font-bold text-h4"
-                  >Voir toutes les sessions de cette formation
-                  <span class="link-arrow">→</span></NuxtLink
+              <div v-if="sessionsList.length > 2 && !showAllSessions" class="mt-3">
+                <button
+                  type="button"
+                  class="text-ink-muted font-bold text-h4 hover:text-ink transition-colors"
+                  @click="showAllSessions = true"
                 >
+                  Voir plus <span class="link-arrow">→</span>
+                </button>
               </div>
             </section>
 
@@ -931,6 +934,8 @@ function sessionTitle(s: CourseSession, modality: string): string {
   return place ? `${base} — ${place}${department}` : base
 }
 
+const showAllSessions = ref(false)
+
 const sessionsList = computed(() => {
   const raw = (course.value ? upcomingSessions(course.value) : [])
     .slice()
@@ -962,6 +967,10 @@ const sessionsList = computed(() => {
     }
   })
 })
+
+const visibleSessions = computed(() =>
+  showAllSessions.value ? sessionsList.value : sessionsList.value.slice(0, 2)
+)
 
 const hasSessions = computed(() => sessionsList.value.length > 0)
 

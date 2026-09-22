@@ -16,6 +16,10 @@ import {
 
 const VOIES = ['centre', 'organisme', 'formateur'] as const
 
+// Besoins du formulaire « Parler à un conseiller » — les valeurs matchent
+// l'enum HubSpot `learnup_type_projet` (routage back-office).
+const BESOINS = ['conseiller', 'centre', 'organisme', 'formateur'] as const
+
 class LeadContextDto {
   @ApiPropertyOptional({ description: 'URL of the originating page (HubSpot attribution)' })
   @IsOptional()
@@ -167,5 +171,51 @@ export class CandidatureLeadDto extends LeadContextDto {
   @ApiProperty({ description: 'Consent to processing — must be accepted' })
   @IsBoolean()
   @Equals(true, { message: 'Consent is required to submit the application.' })
+  consentement!: boolean
+}
+
+export class ConseillerLeadDto extends LeadContextDto {
+  @ApiProperty({ description: 'Nature of the need', enum: BESOINS })
+  @IsIn(BESOINS)
+  besoin!: (typeof BESOINS)[number]
+
+  @ApiProperty({ description: 'Full name' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(200)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  nom!: string
+
+  @ApiProperty({ description: 'Email' })
+  @IsEmail()
+  @MaxLength(320)
+  email!: string
+
+  @ApiProperty({ description: 'Phone — at least 10 digits' })
+  @IsString()
+  @Matches(/^\D*(?:\d\D*){10,}$/, {
+    message: 'Incomplete phone number — at least 10 digits expected.'
+  })
+  @MaxLength(30)
+  telephone!: string
+
+  @ApiPropertyOptional({ description: 'SIRET — 14 digits, spaces allowed' })
+  @IsOptional()
+  @Matches(/^\d{14}$/, { message: 'Invalid SIRET — 14 digits expected.' })
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.replace(/\s/g, '') || undefined : value
+  )
+  siret?: string
+
+  @ApiPropertyOptional({ description: 'Need in a few words' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(5000)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  message?: string
+
+  @ApiProperty({ description: 'Consent to processing — must be accepted' })
+  @IsBoolean()
+  @Equals(true, { message: 'Consent is required to submit the request.' })
   consentement!: boolean
 }

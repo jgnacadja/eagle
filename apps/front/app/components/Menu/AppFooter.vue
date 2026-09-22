@@ -51,9 +51,9 @@
             </li>
             <li>
               <NuxtLink
-                to="/centres/demande-de-formation?sujet=conseiller"
+                to="/parler-a-un-conseiller"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
-                >Gestion multi-sites</NuxtLink
+                >Parler à un conseiller</NuxtLink
               >
             </li>
           </ul>

@@ -1,6 +1,11 @@
 import { Body, Controller, Post } from '@nestjs/common'
 import { ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger'
-import { CandidatureLeadDto, DemandeLeadDto, NewsletterLeadDto } from './leads.dto'
+import {
+  CandidatureLeadDto,
+  ConseillerLeadDto,
+  DemandeLeadDto,
+  NewsletterLeadDto
+} from './leads.dto'
 import { LeadsService } from './leads.service'
 
 @ApiTags('Leads')
@@ -27,5 +32,12 @@ export class LeadsController {
   @ApiCreatedResponse({ description: 'Submission forwarded to HubSpot Forms' })
   candidature(@Body() dto: CandidatureLeadDto): Promise<{ submitted: true }> {
     return this.leadsService.submitCandidature(dto)
+  }
+
+  @Post('conseiller')
+  @ApiOperation({ summary: 'Submit an advisor contact request to HubSpot' })
+  @ApiCreatedResponse({ description: 'Submission forwarded to HubSpot Forms' })
+  conseiller(@Body() dto: ConseillerLeadDto): Promise<{ submitted: true }> {
+    return this.leadsService.submitConseiller(dto)
   }
 }

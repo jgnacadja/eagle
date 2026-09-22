@@ -148,7 +148,7 @@
                   série avec vos équipes.
                 </p>
                 <Button as-child variant="paper" size="pill" class="mt-lg w-full">
-                  <NuxtLink to="/centres/demande-de-formation">Parler à un conseiller</NuxtLink>
+                  <NuxtLink to="/parler-a-un-conseiller">Parler à un conseiller</NuxtLink>
                 </Button>
               </Card>
             </div>

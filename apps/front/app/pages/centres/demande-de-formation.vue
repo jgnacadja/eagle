@@ -465,6 +465,11 @@ const sessionSlug = computed(() => queryValue(route.query.session))
 const familleSlug = computed(() => queryValue(route.query.famille))
 const sujetSlug = computed(() => queryValue(route.query.sujet))
 
+// L'ancien CTA « conseiller » (?sujet=conseiller, home/footer) a sa page dédiée.
+if (sujetSlug.value === 'conseiller') {
+  await navigateTo('/parler-a-un-conseiller')
+}
+
 // Les CTA « Rejoindre le réseau » et la home arrivent avec ?sujet= : le sujet
 // est affiché dans le bloc contexte — le formulaire reste générique.
 const SUJETS: Record<string, { title: string; body: string }> = {
@@ -479,10 +484,6 @@ const SUJETS: Record<string, { title: string; body: string }> = {
   formateur: {
     title: 'Intervenir comme formateur',
     body: 'Vos interventions sont proposées aux centres du réseau.'
-  },
-  conseiller: {
-    title: 'Échanger avec un conseiller',
-    body: 'Un conseiller LEARN UP ACADEMY vous recontacte.'
   }
 }
 const sujet = computed(() => (sujetSlug.value ? (SUJETS[sujetSlug.value] ?? null) : null))

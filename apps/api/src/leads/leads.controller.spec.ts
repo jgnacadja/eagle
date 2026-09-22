@@ -27,19 +27,31 @@ const validCandidature = {
   consentement: true
 }
 
+const validConseiller = {
+  besoin: 'centre',
+  nom: 'Jean Dupont',
+  email: 'jean@acme.fr',
+  telephone: '06 12 34 56 78',
+  siret: '123 456 789 01234',
+  message: 'Former 8 salariés près de Lyon.',
+  consentement: true
+}
+
 describe('LeadsController', () => {
   let app: INestApplication
   let service: {
     submitNewsletter: ReturnType<typeof vi.fn>
     submitDemande: ReturnType<typeof vi.fn>
     submitCandidature: ReturnType<typeof vi.fn>
+    submitConseiller: ReturnType<typeof vi.fn>
   }
 
   beforeEach(async () => {
     service = {
       submitNewsletter: vi.fn().mockResolvedValue({ submitted: true }),
       submitDemande: vi.fn().mockResolvedValue({ submitted: true }),
-      submitCandidature: vi.fn().mockResolvedValue({ submitted: true })
+      submitCandidature: vi.fn().mockResolvedValue({ submitted: true }),
+      submitConseiller: vi.fn().mockResolvedValue({ submitted: true })
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -100,6 +112,8 @@ describe('LeadsController', () => {
       .post('/leads/demande')
       .send({ ...validDemande, siret: '123' })
       .expect(400)
+
+    expect(service.submitDemande).not.toHaveBeenCalled()
   })
 
   it('POST /leads/candidature rejette une voie inconnue', async () => {
@@ -119,10 +133,57 @@ describe('LeadsController', () => {
     )
   })
 
+  it('POST /leads/conseiller accepte un payload complet et nettoie le SIRET', async () => {
+    await request(app.getHttpServer()).post('/leads/conseiller').send(validConseiller).expect(201)
+
+    expect(service.submitConseiller).toHaveBeenCalledWith(
+      expect.objectContaining({ besoin: 'centre', siret: '12345678901234' })
+    )
+  })
+
+  it('POST /leads/conseiller accepte l’absence de SIRET et de message', async () => {
+    const { siret: _siret, message: _message, ...minimal } = validConseiller
+
+    await request(app.getHttpServer()).post('/leads/conseiller').send(minimal).expect(201)
+
+    expect(service.submitConseiller).toHaveBeenCalledWith(
+      expect.objectContaining({ besoin: 'centre' })
+    )
+  })
+
+  it('POST /leads/conseiller rejette un besoin inconnu', async () => {
+    await request(app.getHttpServer())
+      .post('/leads/conseiller')
+      .send({ ...validConseiller, besoin: 'franchise' })
+      .expect(400)
+
+    expect(service.submitConseiller).not.toHaveBeenCalled()
+  })
+
+  it('POST /leads/conseiller rejette un SIRET invalide', async () => {
+    await request(app.getHttpServer())
+      .post('/leads/conseiller')
+      .send({ ...validConseiller, siret: '123' })
+      .expect(400)
+
+    expect(service.submitConseiller).not.toHaveBeenCalled()
+  })
+
+  it('POST /leads/conseiller rejette sans consentement', async () => {
+    await request(app.getHttpServer())
+      .post('/leads/conseiller')
+      .send({ ...validConseiller, consentement: false })
+      .expect(400)
+
+    expect(service.submitConseiller).not.toHaveBeenCalled()
+  })
+
   it('rejette les propriétés non listées (forbidNonWhitelisted)', async () => {
     await request(app.getHttpServer())
       .post('/leads/newsletter')
       .send({ email: 'abonne@site.fr', hacker: 'x' })
       .expect(400)
+
+    expect(service.submitNewsletter).not.toHaveBeenCalled()
   })
 })

@@ -1,7 +1,12 @@
 import type { ConfigService } from '@nestjs/config'
 import { ServiceUnavailableException } from '@nestjs/common'
 import { LeadsService } from './leads.service'
-import type { CandidatureLeadDto, DemandeLeadDto, NewsletterLeadDto } from './leads.dto'
+import type {
+  CandidatureLeadDto,
+  ConseillerLeadDto,
+  DemandeLeadDto,
+  NewsletterLeadDto
+} from './leads.dto'
 
 const fetchMock = vi.fn()
 vi.stubGlobal('fetch', fetchMock)
@@ -13,6 +18,7 @@ function mockConfig(values: Record<string, string | undefined> = {}): ConfigServ
     HUBSPOT_FORM_NEWSLETTER: 'guid-newsletter',
     HUBSPOT_FORM_DEMANDE: 'guid-demande',
     HUBSPOT_FORM_CANDIDATURE: 'guid-candidature',
+    HUBSPOT_FORM_CONSEILLER: 'guid-conseiller',
     ...values
   }
   return { get: (key: string) => env[key] } as unknown as ConfigService
@@ -60,6 +66,18 @@ const candidature: CandidatureLeadDto = {
   ville: 'Créteil',
   parcours: 'Déjà formateur.',
   consentement: true
+}
+
+const conseiller: ConseillerLeadDto = {
+  besoin: 'conseiller',
+  nom: 'Jean Dupont Martin',
+  email: 'jean@acme.fr',
+  telephone: '0612345678',
+  siret: '12345678901234',
+  message: 'Former 8 salariés près de Lyon.',
+  consentement: true,
+  pageUri: 'https://learnup.fr/parler-a-un-conseiller',
+  pageName: 'Parler à un conseiller'
 }
 
 describe('LeadsService', () => {
@@ -156,6 +174,40 @@ describe('LeadsService', () => {
     expect(fieldNames(body).learnup_type_projet).toBe('organisme')
     expect(fieldNames(body).learnup_territoire).toBe('Créteil')
     expect(body.legalConsentOptions?.consent.consentToProcess).toBe(true)
+  })
+
+  it('conseiller : mappe le besoin sur learnup_type_projet, joint le consentement', async () => {
+    const service = new LeadsService(mockConfig())
+
+    await service.submitConseiller(conseiller)
+
+    const { url, body } = lastCall()
+    expect(url).toContain('guid-conseiller')
+    expect(fieldNames(body)).toEqual({
+      firstname: 'Jean',
+      lastname: 'Dupont Martin',
+      email: 'jean@acme.fr',
+      phone: '0612345678',
+      learnup_siret: '12345678901234',
+      learnup_precisions: 'Former 8 salariés près de Lyon.',
+      learnup_type_projet: 'conseiller'
+    })
+    expect(body.context).toEqual({
+      pageUri: 'https://learnup.fr/parler-a-un-conseiller',
+      pageName: 'Parler à un conseiller'
+    })
+    expect(body.legalConsentOptions?.consent.consentToProcess).toBe(true)
+  })
+
+  it('conseiller : ignore SIRET et message absents', async () => {
+    const service = new LeadsService(mockConfig())
+
+    await service.submitConseiller({ ...conseiller, siret: undefined, message: undefined })
+
+    const names = fieldNames(lastCall().body)
+    expect(names.learnup_siret).toBeUndefined()
+    expect(names.learnup_precisions).toBeUndefined()
+    expect(names.learnup_type_projet).toBe('conseiller')
   })
 
   it('lève 503 si la configuration HubSpot est absente', async () => {

@@ -221,10 +221,10 @@ describe('pages/actualites/[slug]', () => {
     expect(link.exists()).toBe(true)
   })
 
-  it('affiche le CTA conseiller vers la demande de formation', async () => {
+  it('affiche le CTA conseiller vers le formulaire dédié', async () => {
     const wrapper = await mountPage()
 
-    const link = wrapper.find('a[href="/centres/demande-de-formation"]')
+    const link = wrapper.find('a[href="/parler-a-un-conseiller"]')
     expect(link.exists()).toBe(true)
     expect(link.text()).toContain('Parler à un conseiller')
   })

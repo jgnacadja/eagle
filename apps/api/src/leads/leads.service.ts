@@ -2,12 +2,18 @@ import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import type {
   CandidatureLeadPayload,
+  ConseillerLeadPayload,
   DemandeLeadPayload,
   NewsletterLeadPayload
 } from '@learnup/types'
-import type { CandidatureLeadDto, DemandeLeadDto, NewsletterLeadDto } from './leads.dto'
+import type {
+  CandidatureLeadDto,
+  ConseillerLeadDto,
+  DemandeLeadDto,
+  NewsletterLeadDto
+} from './leads.dto'
 
-export type LeadFormName = 'newsletter' | 'demande' | 'candidature'
+export type LeadFormName = 'newsletter' | 'demande' | 'candidature' | 'conseiller'
 
 interface HubSpotField {
   objectTypeId: '0-1'
@@ -72,7 +78,8 @@ export class LeadsService {
     this.formGuids = {
       newsletter: config.get<string>('HUBSPOT_FORM_NEWSLETTER'),
       demande: config.get<string>('HUBSPOT_FORM_DEMANDE'),
-      candidature: config.get<string>('HUBSPOT_FORM_CANDIDATURE')
+      candidature: config.get<string>('HUBSPOT_FORM_CANDIDATURE'),
+      conseiller: config.get<string>('HUBSPOT_FORM_CONSEILLER')
     }
   }
 
@@ -91,12 +98,19 @@ export class LeadsService {
     return this.post('candidature', fields, dto, true)
   }
 
+  submitConseiller(dto: ConseillerLeadDto): Promise<{ submitted: true }> {
+    const fields = this.buildFields('conseiller', dto)
+    return this.post('conseiller', fields, dto, true)
+  }
+
   private buildFields(form: 'newsletter', payload: NewsletterLeadPayload): HubSpotField[]
   private buildFields(form: 'demande', payload: DemandeLeadPayload): HubSpotField[]
   private buildFields(form: 'candidature', payload: CandidatureLeadPayload): HubSpotField[]
+  private buildFields(form: 'conseiller', payload: ConseillerLeadPayload): HubSpotField[]
   private buildFields(
     form: LeadFormName,
-    payload: NewsletterLeadPayload | DemandeLeadPayload | CandidatureLeadPayload
+    payload:
+      NewsletterLeadPayload | DemandeLeadPayload | CandidatureLeadPayload | ConseillerLeadPayload
   ): HubSpotField[] {
     switch (form) {
       case 'newsletter': {
@@ -134,6 +148,20 @@ export class LeadsService {
           field('learnup_territoire', p.ville),
           field('learnup_parcours', p.parcours),
           field('learnup_type_projet', p.voie)
+        ])
+      }
+      case 'conseiller': {
+        const p = payload as ConseillerLeadPayload
+        const { firstname, lastname } = splitName(p.nom)
+        return fields([
+          field('firstname', firstname),
+          field('lastname', lastname),
+          field('email', p.email),
+          field('phone', p.telephone),
+          field('learnup_siret', p.siret),
+          field('learnup_precisions', p.message),
+          // besoin est déjà une valeur de l'enum HubSpot (DTO @IsIn).
+          field('learnup_type_projet', p.besoin)
         ])
       }
     }

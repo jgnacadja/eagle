@@ -36,7 +36,7 @@
                   <NuxtLink to="#formations">Trouver une formation dans ce centre</NuxtLink>
                 </Button>
                 <Button as-child variant="outline" size="pill" class="w-full sm:w-auto">
-                  <NuxtLink to="#">Parler à un conseiller</NuxtLink>
+                  <NuxtLink to="/parler-a-un-conseiller">Parler à un conseiller</NuxtLink>
                 </Button>
                 <NuxtLink
                   v-if="centre.phone"
@@ -283,7 +283,7 @@
             >
           </Button>
           <Button as-child variant="outline-inverse" size="pill-lg" class="w-full sm:w-auto">
-            <NuxtLink to="#">Parler à un conseiller</NuxtLink>
+            <NuxtLink to="/parler-a-un-conseiller">Parler à un conseiller</NuxtLink>
           </Button>
         </CtaBanner>
 

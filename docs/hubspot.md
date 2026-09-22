@@ -1,8 +1,8 @@
 # Configuration HubSpot — Formulaires LEARN UP
 
-Guide de mise en place du portail HubSpot pour les trois formulaires de
-génération de leads du site : newsletter, demande de formation et candidature
-réseau.
+Guide de mise en place du portail HubSpot pour les quatre formulaires de
+génération de leads du site : newsletter, demande de formation, candidature
+réseau et contact conseiller.
 
 ## Architecture
 
@@ -12,7 +12,8 @@ Site Nuxt (navigateur) ──POST /leads/{form}──> API NestJS ──POST─�
 ```
 
 - Le front poste le **payload métier** à l'API (`POST /leads/newsletter`,
-  `/leads/demande`, `/leads/candidature`) — c'est l'API qui mappe les
+  `/leads/demande`, `/leads/candidature`, `/leads/conseiller`) — c'est l'API
+  qui mappe les
   propriétés HubSpot (`learnup_*`, split nom/prénom), ajoute le contexte
   de page et les options de consentement, puis relaie à la Forms API.
 - L'endpoint Forms API n'est **pas authentifié** : `portalId` + GUIDs de
@@ -89,8 +90,9 @@ site dépend de ces valeurs) :
 
 ## 3. Formulaires
 
-Trois formulaires à créer (Marketing → Lead Capture → Forms, ou via
-`POST /marketing/v3/forms`).
+Quatre formulaires à créer (Marketing → Lead Capture → Forms, ou via
+`POST /marketing/v3/forms` — l'API exige `createdAt`/`updatedAt` au niveau
+racine et un objet `validation` par champ, même `{}`).
 
 ### 3.1 Newsletter — Site LEARN UP
 
@@ -142,6 +144,31 @@ Trois formulaires à créer (Marketing → Lead Capture → Forms, ou via
 - Attention : un champ `hidden` **ne doit pas être `required`** (rejet à la
   création du formulaire).
 
+### 3.4 Contact conseiller — Site LEARN UP
+
+Formulaire unique derrière les CTA « Parler à un conseiller » : le `besoin`
+alimente le routage back-office vers l'entité compétente via
+`learnup_type_projet` — jamais exposé côté client.
+
+| Champ            | Propriété             | Visibilité | Requis |
+| ---------------- | --------------------- | ---------- | ------ |
+| Prénom           | `firstname`           | visible    | non    |
+| Nom              | `lastname`            | visible    | non    |
+| E-mail           | `email`               | visible    | oui    |
+| Téléphone        | `phone`               | visible    | oui    |
+| SIRET            | `learnup_siret`       | visible    | non    |
+| Besoin exprimé   | `learnup_precisions`  | visible    | non    |
+| Nature du besoin | `learnup_type_projet` | **masqué** | non    |
+
+- `postSubmitAction` : message « Votre demande est transmise — un conseiller
+  vous recontacte sous 24 h ouvrées. »
+- La case « Un besoin de formation » envoie `learnup_type_projet` =
+  `conseiller` : le conseiller route le besoin de formation vers le centre
+  compétent du territoire.
+- La référence de suivi affichée à l'utilisateur (`LU-AAAA-MMDD-NNN`) est
+  suffixée au `message` → `learnup_precisions` : elle reste retrouvable
+  dans HubSpot.
+
 Après création, récupérer le **GUID** de chaque formulaire dans l'URL
 d'édition (`app{region}.hubspot.com/.../forms/editor/{guid}`).
 
@@ -153,6 +180,7 @@ HUBSPOT_PORTAL_ID=                      # Hub ID du portail
 HUBSPOT_FORM_NEWSLETTER=                # GUID du form newsletter
 HUBSPOT_FORM_DEMANDE=                   # GUID du form demande
 HUBSPOT_FORM_CANDIDATURE=               # GUID du form candidature
+HUBSPOT_FORM_CONSEILLER=                # GUID du form contact conseiller
 HUBSPOT_FORMS_BASE_URL=                 # https://api-eu1.hsforms.com (portail EU)
                                         # https://api.hsforms.com sinon
 
@@ -185,7 +213,7 @@ devient alors tracké automatiquement.
 
 ## 6. Consentement et mentions légales
 
-- Les soumissions **demande** et **candidature** envoient
+- Les soumissions **demande**, **candidature** et **conseiller** envoient
   `legalConsentOptions.consent` (la case consentement est cochée
   explicitement par l'utilisateur). Configurer une mention de consentement
   sur ces formulaires côté HubSpot si le portail l'exige.
@@ -245,7 +273,7 @@ Options côté HubSpot :
 1. Créer la clé de service sur le nouveau portail (mêmes scopes).
 2. Recréer le groupe `learnup` + les 10 propriétés avec les **mêmes internal
    names** (et les 4 options de `learnup_type_projet`).
-3. Recréer les 3 formulaires → nouveaux GUIDs.
+3. Recréer les 4 formulaires → nouveaux GUIDs.
 4. Ajouter le domaine du site aux domaines trackés du nouveau portail.
 5. Mettre à jour les variables `HUBSPOT_*` — aucune modification de code.
 

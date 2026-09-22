@@ -316,9 +316,7 @@
             <NuxtLink to="/centres/demande-de-formation">Confier mes formations</NuxtLink>
           </Button>
           <Button as-child variant="outline-inverse" size="pill-lg" class="w-full md:w-auto">
-            <NuxtLink to="/centres/demande-de-formation?sujet=conseiller"
-              >Parler à un conseiller</NuxtLink
-            >
+            <NuxtLink to="/parler-a-un-conseiller">Parler à un conseiller</NuxtLink>
           </Button>
         </div>
       </div>

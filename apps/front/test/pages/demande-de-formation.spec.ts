@@ -57,6 +57,9 @@ const routeStub = {
 }
 vi.stubGlobal('useRoute', () => routeStub)
 
+const navigateMock = vi.fn()
+vi.stubGlobal('navigateTo', navigateMock)
+
 const courseSst = {
   slug: 'sst-initial',
   title: 'SST — Sauveteur secouriste du travail',
@@ -197,6 +200,13 @@ describe('pages/centres/demande-de-formation', () => {
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain('Votre projet de formation')
+  })
+
+  it('redirige l’ancien sujet « conseiller » vers le formulaire dédié', async () => {
+    routeStub.query = { sujet: 'conseiller' }
+    await mountPage()
+
+    expect(navigateMock).toHaveBeenCalledWith('/parler-a-un-conseiller')
   })
 
   it('affiche le contexte générique sans paramètres (RG04)', async () => {

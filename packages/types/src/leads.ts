@@ -13,6 +13,13 @@ export interface LeadPageContext {
 /** Voie de candidature réseau (sélecteur du dialog Candidature). */
 export type LeadVoie = 'centre' | 'organisme' | 'formateur'
 
+/**
+ * Nature du besoin exprimé sur le formulaire « Parler à un conseiller ».
+ * Alimente le routage back-office (`learnup_type_projet`) — jamais exposé
+ * côté client : « conseiller » couvre le besoin de formation générique.
+ */
+export type ConseillerBesoin = LeadVoie | 'conseiller'
+
 export interface NewsletterLeadPayload extends LeadPageContext {
   email: string
 }
@@ -43,5 +50,15 @@ export interface CandidatureLeadPayload extends LeadPageContext {
   telephone: string
   ville: string
   parcours: string
+  consentement: boolean
+}
+
+export interface ConseillerLeadPayload extends LeadPageContext {
+  besoin: ConseillerBesoin
+  nom: string
+  email: string
+  telephone: string
+  siret?: string
+  message?: string
   consentement: boolean
 }

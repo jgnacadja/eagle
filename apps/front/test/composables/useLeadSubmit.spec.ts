@@ -81,6 +81,27 @@ describe('useLeadSubmit', () => {
     expect(body).toMatchObject({ voie: 'formateur', ville: 'Lyon' })
   })
 
+  it('conseiller : poste le payload à /leads/conseiller', async () => {
+    const { submit } = useLeadSubmit()
+
+    const ok = await submit('conseiller', {
+      besoin: 'centre',
+      nom: 'Camille Moreau',
+      email: 'camille@acme.fr',
+      telephone: '06 12 34 56 78',
+      siret: '12345678901234',
+      message: 'Former 8 salariés près de Lyon.',
+      consentement: true,
+      pageUri: 'https://learnup.fr/parler-a-un-conseiller',
+      pageName: 'Parler à un conseiller'
+    })
+
+    expect(ok).toBe(true)
+    const { url, body } = lastCall()
+    expect(url).toBe('http://localhost:3001/leads/conseiller')
+    expect(body).toMatchObject({ besoin: 'centre', siret: '12345678901234' })
+  })
+
   it('échec réseau : expose l’erreur et retourne false', async () => {
     fetchMock.mockRejectedValue(new Error('network down'))
     const { submit, error } = useLeadSubmit()

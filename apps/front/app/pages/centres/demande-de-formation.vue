@@ -8,7 +8,7 @@
             Demande de formation
           </h1>
           <p class="mt-sm max-w-prose text-body text-ink-muted">
-            La demande est prise en charge par LEARN&nbsp;UP&nbsp;ACADEMY. Réponse sous 24&nbsp;h
+            La demande est prise en charge par notre réseau nous vous répondons sous 24&nbsp;h
             ouvrées.
           </p>
         </div>
@@ -354,9 +354,6 @@
               />
               {{ sending ? 'Envoi en cours…' : 'Envoyer ma demande' }}
             </Button>
-            <p class="text-meta text-ink-subtle">
-              Demande sans engagement, traitée sous 24&nbsp;h ouvrées.
-            </p>
           </div>
           <p v-if="submitError" class="text-small font-semibold text-danger" role="alert">
             {{ submitError }}

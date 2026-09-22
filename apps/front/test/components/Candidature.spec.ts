@@ -214,7 +214,7 @@ describe('components/Candidature', () => {
     await wrapper.setProps({ open: false })
     await wrapper.setProps({ open: true, voie: 'centre' })
 
-    expect(document.body.textContent).toContain('Candidater au réseau')
+    expect(document.body.textContent).toContain('Candidater pour rejoindre le réseau')
     expect(checkedVoieLabel()).toContain('Ouvrir un centre')
   })
 })

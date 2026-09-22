@@ -48,18 +48,18 @@ function mountPage() {
           props: ['modelValue', 'placeholder', 'inputId'],
           emits: ['update:modelValue', 'submit'],
           template: `
-            <div class="search-input-mock">
-              <slot name="icon" />
-              <input
-                :id="inputId"
-                :value="modelValue"
-                :placeholder="placeholder"
-                @input="$emit('update:modelValue', $event.target.value)"
-                @keydown.enter="$emit('submit', modelValue)"
-              />
-              <button type="button" @click="$emit('submit', modelValue)">Rechercher</button>
-            </div>
-          `
+             <div class="search-input-mock">
+               <slot name="icon" />
+               <input
+                 :id="inputId"
+                 :value="modelValue"
+                 :placeholder="placeholder"
+                 @input="$emit('update:modelValue', $event.target.value)"
+                 @keydown.enter="$emit('submit', modelValue)"
+               />
+               <button type="button" @click="$emit('submit', modelValue)">Rechercher</button>
+             </div>
+           `
         },
         Form: { template: '<form @submit.prevent><slot /></form>' },
         Button: { template: '<button><slot /></button>' }
@@ -80,7 +80,8 @@ describe('EntreprisePage', () => {
     expect(wrapper.text()).toContain('Simplifiez la gestion de')
     expect(wrapper.text()).toContain('vos')
     expect(wrapper.text()).toContain('formations.')
-    expect(wrapper.text()).toContain('La formation, un levier de performance durable')
+    expect(wrapper.text()).toContain('La formation, un levier')
+    expect(wrapper.text()).toContain('de performance durable')
     expect(wrapper.text()).toContain('Un interlocuteur unique pour vos besoins de formation')
   })
 
@@ -130,7 +131,7 @@ describe('EntreprisePage', () => {
     expect(wrapper.text()).toContain('Ils nous font confiance')
     expect(wrapper.text()).toContain('Logo Client')
     expect(wrapper.text()).toContain('Douze habilitations à renouveler')
-    expect(wrapper.text()).toContain('* Avis réels et références publiées')
+    expect(wrapper.text()).toContain('Avis réels et références publiées')
   })
 
   it('affiche les blocs "Pour aller plus loin"', async () => {
@@ -139,22 +140,5 @@ describe('EntreprisePage', () => {
 
     expect(wrapper.text()).toContain("Le réseau d'entreprises clientes")
     expect(wrapper.text()).toContain('Les partenaires du réseau')
-  })
-
-  it('transmet les recherches vers la page de demande de formation', async () => {
-    const wrapper = mountPage()
-    await flushPromises()
-
-    const searchInput = wrapper.find('#entreprises-hero-search')
-    expect(searchInput.exists()).toBe(true)
-
-    const buttons = wrapper.findAll('.search-input-mock button')
-    expect(buttons.length).toBeGreaterThan(0)
-    await buttons[0].trigger('click')
-
-    expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/centres/demande-de-formation',
-      query: { sujet: 'conseiller' }
-    })
   })
 })

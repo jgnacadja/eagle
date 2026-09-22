@@ -279,7 +279,7 @@ describe('pages/centres/[slug]', () => {
     expect(wrapper.text()).toContain('Prochaines sessions')
   })
 
-  it('limite l’affichage à 2 sessions par défaut et affiche le bouton Voir plus si > 2', async () => {
+  it('gère le déploiement progressif (2 -> 6 -> tout) et le repli avec aria-expanded', async () => {
     const loc = {
       name: 'Centre de Créteil',
       city: 'Créteil',
@@ -288,43 +288,43 @@ describe('pages/centres/[slug]', () => {
       region: 'Île-de-France',
       centreSlug: 'creteil'
     }
-    catalogueCourses.items[0]!.sessions = [
-      {
-        id: 'sess-1',
-        startDate: '2026-10-12',
-        endDate: '2026-10-13',
-        modality: 'presentiel',
-        seatsRemaining: 5,
-        location: loc
-      },
-      {
-        id: 'sess-2',
-        startDate: '2026-11-12',
-        endDate: '2026-11-13',
-        modality: 'presentiel',
-        seatsRemaining: 3,
-        location: loc
-      },
-      {
-        id: 'sess-3',
-        startDate: '2026-12-12',
-        endDate: '2026-12-13',
-        modality: 'presentiel',
-        seatsRemaining: 2,
-        location: loc
-      }
-    ]
+    // 8 sessions au total
+    catalogueCourses.items[0]!.sessions = Array.from({ length: 8 }, (_, i) => ({
+      id: `sess-${i + 1}`,
+      startDate: `2026-${String(10 + Math.floor(i / 3)).padStart(2, '0')}-${String(10 + (i % 20)).padStart(2, '0')}`,
+      endDate: `2026-${String(10 + Math.floor(i / 3)).padStart(2, '0')}-${String(11 + (i % 20)).padStart(2, '0')}`,
+      modality: 'presentiel',
+      seatsRemaining: 5,
+      location: loc
+    }))
 
     const wrapper = await mountPage()
 
+    // 1. Initial : 2 sessions affichées, bouton Voir plus, aria-expanded false
     expect(wrapper.findAll('.session-card')).toHaveLength(2)
     const button = wrapper.find('button.text-h4')
     expect(button.exists()).toBe(true)
     expect(button.text()).toContain('Voir plus')
+    expect(button.attributes('aria-expanded')).toBe('false')
+    expect(button.attributes('aria-controls')).toBe('centre-sessions-list')
 
+    // 2. Premier clic : déploie jusqu'à 6 sessions, bouton toujours Voir plus car 8 > 6
     await button.trigger('click')
-    expect(wrapper.findAll('.session-card')).toHaveLength(3)
-    expect(wrapper.find('button.text-h4').exists()).toBe(false)
+    expect(wrapper.findAll('.session-card')).toHaveLength(6)
+    expect(button.text()).toContain('Voir plus')
+    expect(button.attributes('aria-expanded')).toBe('false')
+
+    // 3. Deuxième clic : déploie les 8 sessions, bouton bascule sur Voir moins
+    await button.trigger('click')
+    expect(wrapper.findAll('.session-card')).toHaveLength(8)
+    expect(button.text()).toContain('Voir moins')
+    expect(button.attributes('aria-expanded')).toBe('true')
+
+    // 4. Troisième clic : replie à 2 sessions
+    await button.trigger('click')
+    expect(wrapper.findAll('.session-card')).toHaveLength(2)
+    expect(button.text()).toContain('Voir plus')
+    expect(button.attributes('aria-expanded')).toBe('false')
   })
 
   it('affiche l’état introuvable et adapte breadcrumb/SEO pour un slug inconnu', async () => {

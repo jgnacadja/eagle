@@ -259,7 +259,7 @@
                   Prochaines sessions
                 </h2>
               </div>
-              <ul v-if="sessionsList.length" class="mt-md space-y-md">
+              <ul v-if="sessionsList.length" id="formation-sessions-list" class="mt-md space-y-md">
                 <li v-for="session in visibleSessions" :key="session.key">
                   <SessionCard
                     :day="session.day"
@@ -292,13 +292,18 @@
                   </div>
                 </CardContent>
               </Card>
-              <div v-if="sessionsList.length > 2 && !showAllSessions" class="mt-3">
+              <div v-if="sessionsList.length > INITIAL_SESSIONS_COUNT" class="mt-3">
                 <button
                   type="button"
                   class="text-ink-muted font-bold text-h4 hover:text-ink transition-colors"
-                  @click="showAllSessions = true"
+                  :aria-expanded="isAllSessionsVisible"
+                  aria-controls="formation-sessions-list"
+                  @click="toggleSessions"
                 >
-                  Voir plus <span class="link-arrow">→</span>
+                  <template v-if="!isAllSessionsVisible">
+                    Voir plus <span class="link-arrow">→</span>
+                  </template>
+                  <template v-else> Voir moins <span class="link-arrow">↑</span> </template>
                 </button>
               </div>
             </section>
@@ -934,7 +939,10 @@ function sessionTitle(s: CourseSession, modality: string): string {
   return place ? `${base} — ${place}${department}` : base
 }
 
-const showAllSessions = ref(false)
+const INITIAL_SESSIONS_COUNT = 2
+const SESSIONS_STEP = 4
+
+const visibleSessionsCount = ref(INITIAL_SESSIONS_COUNT)
 
 const sessionsList = computed(() => {
   const raw = (course.value ? upcomingSessions(course.value) : [])
@@ -968,9 +976,17 @@ const sessionsList = computed(() => {
   })
 })
 
-const visibleSessions = computed(() =>
-  showAllSessions.value ? sessionsList.value : sessionsList.value.slice(0, 2)
-)
+const isAllSessionsVisible = computed(() => visibleSessionsCount.value >= sessionsList.value.length)
+
+const visibleSessions = computed(() => sessionsList.value.slice(0, visibleSessionsCount.value))
+
+function toggleSessions() {
+  if (isAllSessionsVisible.value) {
+    visibleSessionsCount.value = INITIAL_SESSIONS_COUNT
+  } else {
+    visibleSessionsCount.value += SESSIONS_STEP
+  }
+}
 
 const hasSessions = computed(() => sessionsList.value.length > 0)
 

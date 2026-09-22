@@ -61,6 +61,7 @@
                 <label
                   v-for="option in BESOIN_OPTIONS"
                   :key="option.value"
+                  :for="`conseiller-besoin-${option.value}`"
                   :class="[
                     'flex cursor-pointer items-center gap-md rounded-md border p-md transition-colors has-focus-visible:ring-1 has-focus-visible:ring-primary',
                     besoin === option.value
@@ -68,7 +69,7 @@
                       : 'border-rule bg-paper hover:border-outline'
                   ]"
                 >
-                  <RadioGroupItem :value="option.value" />
+                  <RadioGroupItem :id="`conseiller-besoin-${option.value}`" :value="option.value" />
                   <span>
                     <span class="block text-small font-semibold text-ink">{{ option.title }}</span>
                     <span class="block text-meta text-ink-muted">{{ option.body }}</span>
@@ -386,11 +387,18 @@ const reference = ref('')
 // Référence de suivi LU-AAAA-MMDD-NNN : générée à l'envoi et suffixée au
 // message — elle remonte dans learnup_precisions, où le back-office peut la
 // retrouver (l'API ne renvoie que { submitted: true }).
+// Plus grand multiple de 1000 contenu dans 2^32 : les valeurs au-delà sont
+// rejetées pour que le modulo reste uniforme (pas de biais sur le suffixe).
+const UINT32_LIMIT_1000 = 4_294_967_000
+
 function makeReference(): string {
   const now = new Date()
   const pad = (n: number) => String(n).padStart(2, '0')
-  const [n] = crypto.getRandomValues(new Uint32Array(1))
-  const suffix = String((n ?? 0) % 1000).padStart(3, '0')
+  let n = crypto.getRandomValues(new Uint32Array(1))[0] ?? 0
+  while (n >= UINT32_LIMIT_1000) {
+    n = crypto.getRandomValues(new Uint32Array(1))[0] ?? 0
+  }
+  const suffix = String(n % 1000).padStart(3, '0')
   return `LU-${now.getFullYear()}-${pad(now.getMonth() + 1)}${pad(now.getDate())}-${suffix}`
 }
 

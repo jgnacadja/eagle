@@ -64,6 +64,8 @@ describe('components/GeoNearMe', () => {
     await waitUntil(() =>
       Boolean(document.body.textContent?.includes('Autoriser la géolocalisation'))
     )
+
+    expect(document.body.textContent).toContain('Autoriser la géolocalisation')
   })
 
   it('demande la position après consentement explicite', async () => {
@@ -118,6 +120,8 @@ describe('components/GeoNearMe', () => {
 
     await wrapper.find('button').trigger('click')
     await waitUntil(() => Boolean(document.body.textContent?.includes('Localisation bloquée')))
+
+    expect(document.body.textContent).toContain('Localisation bloquée')
   })
 
   it('ne rouvre pas le dialogue quand la permission est déjà accordée', async () => {

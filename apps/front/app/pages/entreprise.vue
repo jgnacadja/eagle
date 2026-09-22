@@ -32,7 +32,7 @@
               pour vos besoins de formation</span
             >, partout en France.
           </p>
-          <p class="mx-auto mt-sm text-ink-muted text-sm">
+          <p class="mx-auto mt-sm text-ink-muted text-sm max-w-140">
             <span class="hidden md:inline">Learn Up Academy vous accompagne dans la r</span
             ><span class="md:hidden">R</span>echerche, l'organisation et le déploiement de vos
             formations réglementaires, au plus près de vos équipes.
@@ -250,7 +250,9 @@
             <h3 class="font-display text-small sm:text-base md:text-h4 font-bold text-ink">
               {{ family.title }}
             </h3>
-            <p class="hidden md:block mt-xs text-small text-ink-muted">{{ family.body }}</p>
+            <p v-if="family.body" class="hidden md:line-clamp-2 mt-xs text-small text-ink-muted">
+              {{ family.body }}
+            </p>
           </div>
           <NuxtLink
             :to="family.to"
@@ -338,11 +340,16 @@
         class="mt-lg flex snap-x snap-mandatory gap-3 overflow-x-auto pb-sm md:grid md:grid-cols-6 md:gap-md md:overflow-visible"
       >
         <div
-          v-for="n in 6"
-          :key="n"
-          class="flex h-16 w-32 shrink-0 snap-start items-center justify-center rounded-2xl border border-dashed border-rule/80 bg-paper shadow-2xs text-meta font-medium text-ink-subtle md:h-20 md:w-auto"
+          v-for="company in techCompanyLogos"
+          :key="company.name"
+          class="flex h-16 w-32 shrink-0 snap-start items-center justify-center rounded-2xl border border-rule bg-paper p-3.5 shadow-2xs transition-all hover:border-primary/40 hover:shadow-xs md:h-20 md:w-auto"
         >
-          Logo à fournir
+          <img
+            :src="company.logoUrl"
+            :alt="`Logo ${company.name}`"
+            class="max-h-7 max-w-[80%] object-contain grayscale opacity-75 transition-[filter,opacity] hover:grayscale-0 hover:opacity-100 md:max-h-8"
+            loading="lazy"
+          />
         </div>
       </div>
 
@@ -431,7 +438,8 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { Centre } from '@learnup/types'
+import type { Centre, FamilleFormation } from '@learnup/types'
+import { htmlToText } from '~/utils/sanitizeHtml'
 import type { CenterResult } from '~/types/center-result'
 import IconSparkle from '~/components/icons/IconSparkle.vue'
 import IconUser from '~/components/icons/IconUser.vue'
@@ -512,21 +520,21 @@ const segments = [
     title: 'BTP',
     body: 'Formations essentielles chantiers.',
     cta: 'Voir les formations',
-    to: '/formations?secteur=btp'
+    to: `/formations?q=${encodeURIComponent('BTP')}`
   },
   {
     icon: IconFactory,
     title: 'Industrie',
     body: 'Habilitations et interventions.',
     cta: 'Voir les formations',
-    to: '/formations?secteur=industrie'
+    to: `/formations?q=${encodeURIComponent('Industrie')}`
   },
   {
     icon: IconBriefcase,
     title: 'Travail temporaire',
     body: 'Recyclages des intérimaires.',
     cta: 'Voir les formations',
-    to: '/formations?secteur=interim'
+    to: `/formations?q=${encodeURIComponent('Travail temporaire')}`
   }
 ]
 
@@ -538,28 +546,51 @@ const multisiteSteps = [
   { title: 'Suivi consolidé' }
 ]
 
-const formationFamilies = [
+const fallbackFormationFamilies = [
   {
     title: 'CACES® & engins',
     body: 'Chariots, PEMP, engins de chantier, grues.',
-    to: '/formations?famille=caces'
+    to: '/formations/caces-conduite-engins'
   },
   {
     title: 'Habilitations électriques',
     body: 'B0, H0, BS, BE, BR, B1, B2…',
-    to: '/formations?famille=habilitations-electriques'
+    to: '/formations/habilitation-electrique'
   },
   {
     title: 'Santé, secours & incendie',
     body: 'SST, gestes qui sauvent, EPI, évacuation.',
-    to: '/formations?famille=secourisme'
+    to: '/formations/secourisme'
   },
   {
     title: 'Hauteur & échafaudages',
     body: 'Harnais, montage, réception, vérification.',
-    to: '/formations?famille=hauteur'
+    to: '/formations/hauteur'
   }
 ]
+
+const famillesData = await useDirectusList<FamilleFormation>(
+  'familles_formation',
+  'entreprise-familles-formation',
+  {
+    fields: ['slug', 'name', 'intro'],
+    filter: { status: { _eq: 'published' } },
+    sort: ['sort', 'name'],
+    limit: -1
+  }
+)
+
+const formationFamilies = computed(() => {
+  const items = (famillesData.value ?? []).filter((f) => f.slug && f.name)
+  if (items.length) {
+    return items.slice(0, 4).map((f) => ({
+      title: f.name,
+      body: f.intro ? htmlToText(f.intro) : '',
+      to: `/formations/${f.slug}`
+    }))
+  }
+  return fallbackFormationFamilies
+})
 
 const formationTags = ['AIPR', 'CATEC®', 'Amiante SS4', 'SECUFER', 'Gestes & postures']
 
@@ -579,6 +610,33 @@ const howItWorksSteps = [
     number: 4,
     title: "Vous bénéficiez d'un suivi centralisé",
     body: 'Attestations, échéances, recyclages.'
+  }
+]
+
+const techCompanyLogos = [
+  {
+    name: 'Capgemini',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/9d/Capgemini_201x_logo.svg'
+  },
+  {
+    name: 'Microsoft',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg'
+  },
+  {
+    name: 'Google Cloud',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/51/Google_Cloud_logo.svg'
+  },
+  {
+    name: 'Amazon',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg'
+  },
+  {
+    name: 'IBM',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg'
+  },
+  {
+    name: 'Oracle',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg'
   }
 ]
 

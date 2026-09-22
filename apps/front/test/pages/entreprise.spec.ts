@@ -10,8 +10,22 @@ vi.stubGlobal('ref', ref)
 vi.stubGlobal('definePageMeta', vi.fn())
 vi.stubGlobal('useContentSeo', seoMock)
 vi.stubGlobal('navigateTo', navigateToMock)
-vi.stubGlobal('useDirectusList', () =>
-  ref([
+vi.stubGlobal('useDirectusList', (collection: string) => {
+  if (collection === 'familles_formation') {
+    return ref([
+      {
+        slug: 'caces-conduite-engins',
+        name: 'CACES® & engins',
+        intro: '<p>Chariots, PEMP, engins de chantier, grues.</p>'
+      },
+      {
+        slug: 'habilitation-electrique',
+        name: 'Habilitations électriques',
+        intro: '<p>B0, H0, BS, BE, BR, B1, B2…</p>'
+      }
+    ])
+  }
+  return ref([
     {
       slug: 'centre-lyon',
       name: 'Centre Lyon Est',
@@ -25,7 +39,7 @@ vi.stubGlobal('useDirectusList', () =>
       longitude: 4.8357
     }
   ])
-)
+})
 
 function mountPage() {
   const TestWrapper = defineComponent({
@@ -128,12 +142,13 @@ describe('EntreprisePage', () => {
     expect(wrapper.text()).toContain("Vous bénéficiez d'un suivi centralisé")
   })
 
-  it('affiche les avis clients et mentions', async () => {
+  it('affiche les avis clients, logos partenaires et mentions', async () => {
     const wrapper = mountPage()
     await flushPromises()
 
     expect(wrapper.text()).toContain('Ils nous font confiance')
-    expect(wrapper.text()).toContain('Logo à fournir')
+    expect(wrapper.find('img[alt="Logo Capgemini"]').exists()).toBe(true)
+    expect(wrapper.find('img[alt="Logo Amazon"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Douze habilitations à renouveler')
     expect(wrapper.text()).toContain('Avis réels et références publiées')
   })
@@ -144,5 +159,16 @@ describe('EntreprisePage', () => {
 
     expect(wrapper.text()).toContain("Le réseau d'entreprises clientes")
     expect(wrapper.text()).toContain('Les partenaires du réseau')
+  })
+
+  it('affiche les familles de formations dynamiques issues de Directus', async () => {
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Les formations réglementaires dont vos équipes ont besoin')
+    expect(wrapper.text()).toContain('CACES® & engins')
+    expect(wrapper.text()).toContain('Chariots, PEMP, engins de chantier, grues.')
+    expect(wrapper.text()).toContain('Habilitations électriques')
+    expect(wrapper.find('a[href="/formations/caces-conduite-engins"]').exists()).toBe(true)
   })
 })

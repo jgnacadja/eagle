@@ -91,7 +91,7 @@ describe('EntreprisePage', () => {
 
     expect(wrapper.text()).toContain('Un interlocuteur unique')
     expect(wrapper.text()).toContain('Des solutions adaptées à vos métiers')
-    expect(wrapper.text()).toContain('Présent sur toute la France')
+    expect(wrapper.text()).toContain('Une couverture nationale')
     expect(wrapper.text()).toContain('Des sessions rapidement disponibles')
     expect(wrapper.text()).toContain('Un suivi simplifié de vos formations')
   })

@@ -15,7 +15,7 @@
       <div class="relative mx-auto px-gutter-mobile md:px-gutter pb-section pt-4xl text-center">
         <div class="text-center md:relative">
           <span
-            class="inline-block rounded-full border border-primary bg-paper px-4 py-2 text-h4 font-bold uppercase tracking-widest text-primary"
+            class="inline-block rounded-full border border-primary bg-paper px-3 py-1 text-xs md:text-sm font-bold uppercase tracking-wider text-primary"
           >
             Entreprises
           </span>
@@ -23,28 +23,22 @@
           <h1
             class="mx-auto mt-lg max-w-prose font-display text-h2 font-extrabold text-ink md:text-hero"
           >
-            Simplifiez la gestion de
-            <span class="text-accent-text">vos</span><br class="hidden sm:inline" />
-            <span class="text-accent-text">formations.</span>
+            <span class="block md:inline">Simplifiez la gestion de </span>
+            <span class="text-accent-text">
+              <span class="block md:inline">vos </span>formations.
+            </span>
           </h1>
 
           <p class="mx-auto mt-md max-w-prose font-semibold text-ink text-base">
-            Un interlocuteur unique pour vos besoins de formation, partout en France.
+            Un interlocuteur unique<span class="hidden md:inline">
+              pour vos besoins de formation</span
+            >, partout en France.
           </p>
-          <p class="mx-auto mt-sm max-w-prose text-ink-muted text-sm">
-            Learn Up Academy vous accompagne dans la recherche, l'organisation et le déploiement de
-            vos formations réglementaires, au plus près de vos équipes.
+          <p class="mx-auto mt-sm text-ink-muted text-sm">
+            <span class="hidden md:inline">Learn Up Academy vous accompagne dans la r</span
+            ><span class="md:hidden">R</span>echerche, l'organisation et le déploiement de vos
+            formations réglementaires, au plus près de vos équipes.
           </p>
-
-          <!-- Carte citation flottante (desktop uniquement en position absolue) -->
-          <div
-            class="mx-auto mt-lg max-w-57.5 rounded-2xl border border-rule/80 bg-paper p-md text-left shadow-md transition-shadow hover:shadow-lg md:absolute md:-top-4 md:right-0 lg:right-4 md:mt-0"
-          >
-            <p class="font-sans text-small font-bold leading-snug text-ink">
-              La formation, un levier<br />de performance durable
-            </p>
-            <span class="mt-sm block h-1 w-12 rounded-full bg-accent" />
-          </div>
 
           <form class="mx-auto mt-xl w-full max-w-prose" @submit.prevent="onHeroSearch()">
             <SearchInput
@@ -60,9 +54,11 @@
             </SearchInput>
           </form>
 
-          <p class="mx-auto mt-lg max-w-200 text-meta text-ink-subtle">
-            Vous pouvez écrire comme vous le feriez à un conseiller — ex. « Nous avons 12 agences en
-            France et souhaitons centraliser nos formations réglementaires. »
+          <p class="mx-auto mt-lg max-w-200 text-meta text-ink-muted leading-relaxed">
+            Vous pouvez écrire comme vous le feriez à un conseiller<span class="hidden md:inline">
+              — ex. « Nous avons 12 agences en France et souhaitons centraliser nos formations
+              réglementaires. »</span
+            >
           </p>
 
           <NuxtLink
@@ -71,22 +67,34 @@
           >
             Vous préférez échanger ? Parler à un conseiller <span class="link-arrow">→</span>
           </NuxtLink>
-        </div>
 
-        <!-- Bénéfices -->
-        <ul
-          class="mt-2xl flex flex-col gap-y-4 border-t border-rule/60 pt-xl md:flex-row md:flex-nowrap md:items-center md:justify-between md:gap-y-0"
-        >
-          <li
-            v-for="benefit in heroBenefits"
-            :key="benefit.label"
-            class="flex items-center gap-sm text-small font-medium text-ink-muted"
+          <!-- Carte citation flottante (desktop : absolue haut-droite, mobile : centrée sous le lien) -->
+          <div
+            class="mx-auto mt-lg max-w-57.5 -rotate-2 rounded-2xl border border-rule/80 bg-paper p-md text-left shadow-md transition-all hover:rotate-0 hover:shadow-lg md:absolute md:-top-4 md:right-0 lg:right-4 md:mt-0"
           >
-            <component :is="benefit.icon" :size="20" class="shrink-0 text-primary" />
-            <span class="font-semibold">{{ benefit.label }}</span>
-          </li>
-        </ul>
+            <p class="font-sans text-small font-bold italic leading-snug text-primary">
+              La formation, un levier<br />de performance durable
+            </p>
+            <span class="mt-sm block h-1 w-12 rounded-full bg-accent" />
+          </div>
+        </div>
       </div>
+    </section>
+
+    <!-- Bénéfices -->
+    <section class="border-y border-rule/60 bg-surface">
+      <ul
+        class="mx-auto flex flex-col gap-y-4 px-gutter-mobile py-6 md:grid md:grid-cols-5 md:gap-y-0 md:px-gutter md:py-6"
+      >
+        <li
+          v-for="benefit in heroBenefits"
+          :key="benefit.label"
+          class="flex items-center gap-3 md:border-l md:border-rule/80 md:pl-5 md:pr-3 md:first:border-l-0 md:first:pl-0"
+        >
+          <component :is="benefit.icon" :size="24" class="shrink-0 text-primary" />
+          <span class="text-small font-bold text-ink leading-snug">{{ benefit.label }}</span>
+        </li>
+      </ul>
     </section>
 
     <!-- Types d'entreprises -->
@@ -96,21 +104,21 @@
     >
       <h2
         id="solutions-title"
-        class="text-center font-display text-h3 font-extrabold text-ink md:text-h2"
+        class="text-center font-display text-h3 font-extrabold text-ink md:text-h2 text-xl"
       >
         Des solutions pour tous les types d'entreprises
       </h2>
-      <p class="mx-auto mt-sm text-center text-small text-ink-muted md:text-body">
+      <p class="hidden md:block mx-auto mt-sm text-center text-small text-ink-muted md:text-body">
         Une réponse adaptée à votre organisation, quelle que soit votre taille ou votre secteur
         d'activité.
       </p>
 
-      <div class="mt-xl grid grid-cols-1 gap-lg sm:grid-cols-2 lg:grid-cols-3">
+      <div class="mt-xl grid grid-cols-2 gap-3 sm:gap-4 md:gap-lg lg:grid-cols-3">
         <article
           v-for="(segment, i) in segments"
           :key="segment.title"
-          class="group flex flex-col justify-between rounded-xl p-lg shadow-2xs transition-all hover:border-primary/40 hover:shadow-md"
-          :class="i < 3 ? 'bg-surface' : 'bg-paper border border-rule'"
+          class="group flex flex-col justify-between rounded-2xl border border-rule p-4 shadow-2xs transition-all hover:border-primary/40 hover:shadow-md"
+          :class="i < 3 ? 'bg-surface' : 'bg-paper'"
         >
           <div>
             <div
@@ -119,29 +127,34 @@
             >
               <component :is="segment.icon" :size="22" />
             </div>
-            <h3 class="mt-md font-display text-h4 font-bold text-ink">{{ segment.title }}</h3>
-            <p class="mt-xs text-small text-ink-muted">{{ segment.body }}</p>
+            <h3 class="mt-0 md:mt-2 font-display text-small md:text-h4 font-bold text-ink">
+              {{ segment.title }}
+            </h3>
+            <p class="mt-1 md:mt-xs text-xs md:text-small text-ink-muted leading-relaxed">
+              {{ segment.body }}
+            </p>
           </div>
           <NuxtLink
             :to="segment.to"
-            class="mt-md inline-flex items-center gap-1.5 text-small font-bold text-primary transition-colors hover:text-accent-text"
+            class="md:mt-2 inline-flex items-center gap-1.5 text-small font-bold text-primary transition-colors hover:text-accent-text"
           >
-            {{ segment.cta }} <span class="link-arrow">→</span>
+            <span class="hidden md:inline">{{ segment.cta }}</span>
+            <span class="link-arrow">→</span>
           </NuxtLink>
         </article>
       </div>
     </section>
 
     <!-- Gestion multisites -->
-    <section class="bg-primary-dark text-ink-inverse">
+    <section class="bg-primary-muted text-ink-inverse">
       <div class="mx-auto px-gutter-mobile md:px-gutter py-section">
-        <p class="text-overline font-bold uppercase tracking-widest text-accent-text">
+        <p class="text-overline font-bold uppercase tracking-widest text-accent">
           Gestion multisites
         </p>
         <h2 class="mt-sm max-w-prose font-display text-h3 font-extrabold md:text-h2">
           Un seul partenaire pour coordonner vos formations partout en France
         </h2>
-        <p class="mt-sm max-w-prose text-small text-ink-inverse-muted md:text-body">
+        <p class="hidden md:block mt-sm max-w-prose text-small text-ink-inverse-muted md:text-body">
           Vos demandes sont centralisées, qualifiées, puis déployées site par site avec les centres
           du territoire — vous gardez un interlocuteur et une vision d'ensemble.
         </p>
@@ -149,9 +162,9 @@
         <ol class="mt-xl flex flex-col gap-md lg:flex-row lg:items-stretch">
           <template v-for="(step, i) in multisiteSteps" :key="step.title">
             <li
-              class="flex flex-1 flex-row items-center gap-sm rounded-xl border border-white/15 bg-white/[0.08] p-md transition-colors hover:bg-white/[0.12] lg:flex-col lg:items-start"
+              class="flex flex-1 flex-row items-center gap-sm rounded-xl border border-white/15 bg-white/8 p-3 transition-colors hover:bg-white/12 lg:flex-col lg:items-start"
             >
-              <span class="shrink-0 font-display text-h4 font-extrabold text-accent-text">
+              <span class="shrink-0 font-display text-h4 font-extrabold text-accent">
                 {{ i + 1 }}
               </span>
 
@@ -178,7 +191,7 @@
           <h2 class="font-display text-h3 font-extrabold text-ink md:text-h2">
             Un réseau de centres au plus près de vos équipes
           </h2>
-          <p class="mt-sm text-body text-ink-muted">
+          <p class="mt-sm text-body text-ink-muted hidden md:block">
             Accédez aux formations dont vous avez besoin, en centre, sur votre site ou en intra — la
             carte matérialise la couverture du réseau.
           </p>
@@ -189,7 +202,7 @@
             class="hidden lg:inline-flex mt-lg w-full sm:w-auto"
           >
             <NuxtLink to="/centres">
-              Voir la carte des centres <span class="link-arrow">→</span>
+              Voir la carte des centres <span class="link-arrow pl-1">→</span>
             </NuxtLink>
           </Button>
         </div>
@@ -222,23 +235,28 @@
       class="mx-auto px-gutter-mobile md:px-gutter py-section bg-surface"
       aria-labelledby="formations-title"
     >
-      <h2 id="formations-title" class="font-display text-h3 font-extrabold text-ink md:text-h2">
+      <h2
+        id="formations-title"
+        class="font-display text-xl sm:text-h3 font-extrabold text-ink md:text-h2"
+      >
         Les formations réglementaires dont vos équipes ont besoin
       </h2>
 
-      <div class="mt-xl grid grid-cols-1 gap-md sm:grid-cols-2 lg:grid-cols-4">
+      <div class="mt-xl grid grid-cols-2 gap-3 sm:gap-4 md:gap-md lg:grid-cols-4">
         <article
           v-for="family in formationFamilies"
           :key="family.title"
-          class="flex flex-col justify-between rounded-xl border border-rule bg-paper p-lg shadow-2xs transition-all hover:border-primary/40 hover:shadow-md"
+          class="flex flex-col justify-between rounded-2xl border border-rule bg-paper p-3.5 sm:p-4 shadow-2xs transition-all hover:border-primary/40 hover:shadow-md"
         >
           <div>
-            <h3 class="font-display text-h4 font-bold text-ink">{{ family.title }}</h3>
-            <p class="mt-xs text-small text-ink-muted">{{ family.body }}</p>
+            <h3 class="font-display text-small sm:text-base md:text-h4 font-bold text-ink">
+              {{ family.title }}
+            </h3>
+            <p class="hidden md:block mt-xs text-small text-ink-muted">{{ family.body }}</p>
           </div>
           <NuxtLink
             :to="family.to"
-            class="mt-md inline-flex items-center gap-1.5 text-small font-bold text-primary transition-colors hover:text-accent-text-text"
+            class="mt-2 inline-flex items-center gap-1.5 text-xs sm:text-small font-bold text-primary transition-colors hover:text-accent-text"
           >
             Voir le détail <span class="link-arrow">→</span>
           </NuxtLink>
@@ -246,7 +264,7 @@
       </div>
 
       <div class="mt-lg flex flex-col gap-md sm:flex-row sm:items-center sm:justify-between">
-        <div class="flex flex-wrap gap-sm">
+        <div class="hidden md:flex flex-wrap gap-sm">
           <NuxtLink
             v-for="tag in formationTags"
             :key="tag"
@@ -286,7 +304,7 @@
               </span>
 
               <div>
-                <h3 class="font-display text-h4 font-bold text-ink">
+                <h3 class="font-display text-small md:text-h4 font-bold text-ink">
                   {{ step.title }}
                 </h3>
                 <p class="hidden lg:block mt-xs text-small text-ink-muted">{{ step.body }}</p>
@@ -310,41 +328,47 @@
       class="mx-auto px-gutter-mobile md:px-gutter py-section bg-surface"
       aria-labelledby="confiance-title"
     >
-      <h2 id="confiance-title" class="font-display text-h3 font-extrabold text-ink md:text-h2">
+      <h2
+        id="confiance-title"
+        class="font-display text-xl sm:text-h3 font-extrabold text-ink md:text-h2"
+      >
         Ils nous font confiance
       </h2>
 
-      <div class="mt-lg grid grid-cols-2 gap-md sm:grid-cols-3 md:grid-cols-6">
+      <!-- Logos avec scroll horizontal sur mobile -->
+      <div
+        class="mt-lg flex snap-x snap-mandatory gap-3 overflow-x-auto pb-sm md:grid md:grid-cols-6 md:gap-md md:overflow-visible"
+      >
         <div
           v-for="n in 6"
           :key="n"
-          class="flex h-16 items-center justify-center rounded-xl border border-rule bg-paper shadow-2xs text-meta font-medium text-ink-subtle md:h-20"
+          class="flex h-16 w-32 shrink-0 snap-start items-center justify-center rounded-2xl border border-dashed border-rule/80 bg-paper shadow-2xs text-meta font-medium text-ink-subtle md:h-20 md:w-auto"
         >
-          Logo Client
+          Logo
         </div>
       </div>
 
-      <div class="mt-xl grid gap-lg md:grid-cols-2">
-        <blockquote
+      <div class="mt-lg grid gap-grid md:grid-cols-2">
+        <TestimonialCard
           v-for="testimonial in testimonials"
           :key="testimonial.author"
-          class="rounded-xl border border-rule bg-paper p-lg shadow-2xs transition-shadow hover:shadow-sm"
-        >
-          <p class="text-small tracking-wider text-accent" aria-hidden="true">★★★★★</p>
-          <p class="mt-sm text-body text-ink leading-relaxed">{{ testimonial.quote }}</p>
-          <footer class="mt-md text-small font-medium text-ink-muted">
-            {{ testimonial.author }}
-          </footer>
-        </blockquote>
+          variant="white"
+          :stars="testimonial.stars"
+          :quote="testimonial.quote"
+          :author="testimonial.author"
+        />
       </div>
 
-      <p class="mt-lg text-meta text-ink-subtle">
-        Avis réels et références publiées avec l'accord écrit des entreprises concernées.
+      <p class="mt-4 text-xs text-ink-subtle">
+        <span class="hidden md:inline">
+          Avis réels et références publiées avec l'accord écrit des entreprises concernées.
+        </span>
+        <span class="md:hidden"> Avis réels — références publiées avec accord écrit. </span>
       </p>
     </section>
 
     <!-- CTA final -->
-    <section class="bg-primary-dark py-section text-ink-inverse">
+    <section class="bg-primary-muted py-section text-ink-inverse">
       <div class="px-gutter-mobile text-center">
         <h2 class="font-display text-xl font-extrabold text-ink-inverse md:text-h2">
           Un projet de formation pour votre entreprise ?
@@ -414,9 +438,9 @@ import type { CenterResult } from '~/types/center-result'
 import IconSparkle from '~/components/icons/IconSparkle.vue'
 import IconUser from '~/components/icons/IconUser.vue'
 import IconFileText from '~/components/icons/IconFileText.vue'
-import IconMapPin from '~/components/icons/IconMapPin.vue'
+import IconGlobe from '~/components/icons/IconGlobe.vue'
 import IconCalendar from '~/components/icons/IconCalendar.vue'
-import IconAward from '~/components/icons/IconAward.vue'
+import IconLayoutGrid from '~/components/icons/IconLayoutGrid.vue'
 import IconBuilding from '~/components/icons/IconBuilding.vue'
 import IconUsers from '~/components/icons/IconUsers.vue'
 import IconHardHat from '~/components/icons/IconHardHat.vue'
@@ -458,51 +482,51 @@ function onFinalSearch(value?: string) {
 const heroBenefits = [
   { icon: IconUser, label: 'Un interlocuteur unique' },
   { icon: IconFileText, label: 'Des solutions adaptées à vos métiers' },
-  { icon: IconMapPin, label: 'Présent sur toute la France' },
+  { icon: IconGlobe, label: 'Une couverture nationale' },
   { icon: IconCalendar, label: 'Des sessions rapidement disponibles' },
-  { icon: IconAward, label: 'Un suivi simplifié de vos formations' }
+  { icon: IconLayoutGrid, label: 'Un suivi simplifié de vos formations' }
 ]
 
 const segments = [
   {
     icon: IconBuilding,
     title: 'TPE / PME',
-    body: 'Des solutions souples, au plus près de votre organisation.',
+    body: 'Des solutions souples et adaptées.',
     cta: 'Comment nous travaillons',
     to: '/entreprises/tpe-pme'
   },
   {
     icon: IconBuilding,
     title: 'ETI',
-    body: 'Un accompagnement personnalisé, multi-territoires.',
+    body: 'Un accompagnement personnalisé.',
     cta: 'Comment nous travaillons',
     to: '/entreprises/eti'
   },
   {
     icon: IconUsers,
     title: 'Grands comptes',
-    body: 'Une gestion centralisée pour tous vos sites.',
+    body: 'Une gestion centralisée multi-sites.',
     cta: 'Comment nous travaillons',
     to: '/entreprises/grands-comptes'
   },
   {
     icon: IconHardHat,
     title: 'BTP',
-    body: 'CACES, hauteur, échafaudages pour vos chantiers.',
+    body: 'Formations essentielles chantiers.',
     cta: 'Voir les formations',
     to: '/formations?secteur=btp'
   },
   {
     icon: IconFactory,
     title: 'Industrie',
-    body: 'Habilitations et sécurité des interventions.',
+    body: 'Habilitations et interventions.',
     cta: 'Voir les formations',
     to: '/formations?secteur=industrie'
   },
   {
     icon: IconBriefcase,
     title: 'Travail temporaire',
-    body: 'Recyclages et CACES des intérimaires, multi-agences.',
+    body: 'Recyclages des intérimaires.',
     cta: 'Voir les formations',
     to: '/formations?secteur=interim'
   }
@@ -518,7 +542,7 @@ const multisiteSteps = [
 
 const formationFamilies = [
   {
-    title: "CACES® & conduite d'engins",
+    title: 'CACES® & engins',
     body: 'Chariots, PEMP, engins de chantier, grues.',
     to: '/formations?famille=caces'
   },
@@ -533,7 +557,7 @@ const formationFamilies = [
     to: '/formations?famille=secourisme'
   },
   {
-    title: 'Travaux en hauteur & échafaudages',
+    title: 'Hauteur & échafaudages',
     body: 'Harnais, montage, réception, vérification.',
     to: '/formations?famille=hauteur'
   }
@@ -562,14 +586,16 @@ const howItWorksSteps = [
 
 const testimonials = [
   {
-    quote:
-      '« Douze habilitations à renouveler sur trois sites, une seule interlocutrice, tout était planifié en une semaine. »',
-    author: 'Responsable QHSE — logistique, 240 salariés'
-  },
-  {
+    stars: '★★★★★',
     quote:
       '« Nous avons centralisé les formations réglementaires de nos agences : un vrai gain de temps et une grande réactivité. »',
     author: 'Responsable formation — groupe national, BTP'
+  },
+  {
+    stars: '★★★★★',
+    quote:
+      '« Douze habilitations à renouveler sur trois sites, une seule interlocutrice, tout était planifié en une semaine. »',
+    author: 'Responsable QHSE — logistique, 240 salariés'
   }
 ]
 

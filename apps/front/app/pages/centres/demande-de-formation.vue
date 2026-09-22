@@ -361,8 +361,9 @@
           </p>
         </form>
 
-        <!-- Sidebar : contexte de la demande -->
-        <aside class="space-y-lg sm:sticky sm:top-lg">
+        <!-- Sidebar : contexte de la demande — affichée avant le
+             formulaire sur mobile (maquette 1b), à droite sur desktop. -->
+        <aside class="order-first space-y-lg sm:sticky sm:top-lg lg:order-last">
           <Card v-reveal variant="surface" class="p-lg">
             <div class="mb-lg flex items-center justify-between">
               <h2 class="text-meta font-semibold uppercase tracking-wide text-ink-subtle">
@@ -377,37 +378,15 @@
               </NuxtLink>
             </div>
 
+            <!-- RG06 : un seul élément contexte — icône de l'ancre,
+                 titre = centre quand il est connu, méta selon le niveau
+                 transmis. RG04 : jamais de ligne vide (méta conditionnelle). -->
             <ul class="space-y-md text-small">
-              <li v-if="centreSlug" class="flex items-start gap-sm">
-                <IconMapPin :size="20" class="mt-xs shrink-0 text-primary" />
+              <li class="flex items-start gap-sm">
+                <component :is="contextIcon" :size="20" class="mt-xs shrink-0 text-primary" />
                 <div>
-                  <p class="font-medium text-ink">{{ centreName || 'Centre partenaire' }}</p>
-                  <p v-if="centreMeta" class="text-ink-muted">{{ centreMeta }}</p>
-                </div>
-              </li>
-              <li v-else class="flex items-start gap-sm">
-                <IconMapPin :size="20" class="mt-xs shrink-0 text-primary" />
-                <div>
-                  <p class="font-medium text-ink">
-                    {{ sujet?.title ?? 'Votre projet de formation' }}
-                  </p>
-                  <p class="text-ink-muted">
-                    {{ sujet?.body ?? 'Un conseiller identifie le centre et la session adaptés.' }}
-                  </p>
-                </div>
-              </li>
-              <li v-if="formationSlug" class="flex items-start gap-sm">
-                <IconBook :size="20" class="mt-xs shrink-0 text-primary" />
-                <div>
-                  <p class="font-medium text-ink">{{ formationName }}</p>
-                  <p v-if="formationMeta" class="text-ink-muted">{{ formationMeta }}</p>
-                </div>
-              </li>
-              <li v-if="sessionSlug" class="flex items-start gap-sm">
-                <IconCalendar :size="20" class="mt-xs shrink-0 text-primary" />
-                <div>
-                  <p class="font-medium text-ink">{{ sessionName }}</p>
-                  <p v-if="sessionMeta" class="text-ink-muted">{{ sessionMeta }}</p>
+                  <p class="font-medium text-ink">{{ contextTitle }}</p>
+                  <p v-if="contextMeta" class="text-ink-muted">{{ contextMeta }}</p>
                 </div>
               </li>
             </ul>
@@ -442,6 +421,9 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
+import IconMapPin from '~/components/icons/IconMapPin.vue'
+import IconBook from '~/components/icons/IconBook.vue'
+import IconCalendar from '~/components/icons/IconCalendar.vue'
 
 definePageMeta({
   layout: 'with-breadcrumb'
@@ -486,19 +468,8 @@ const SUJETS: Record<string, { title: string; body: string }> = {
 }
 const sujet = computed(() => (sujetSlug.value ? (SUJETS[sujetSlug.value] ?? null) : null))
 
-// Libellés résolus dynamiquement : le centre vient de Directus,
-// la formation et la session de l'API catalogue.
-const centresData = centreSlug.value
-  ? await useDirectusList<Centre>('centres', `demande-centre-${centreSlug.value}`, {
-      fields: ['name', 'city', 'department', 'postal_code'],
-      filter: { slug: { _eq: centreSlug.value }, status: { _eq: 'published' } },
-      limit: 1
-    })
-  : ref<Centre[]>([])
-// data vaut undefined tant que le fetch client n'est pas résolu
-// (useAsyncData n'est pas awaitable à travers le composable).
-const centre = computed(() => centresData.value?.[0] ?? null)
-
+// Libellés résolus dynamiquement : la formation et la session viennent de
+// l'API catalogue, le centre de Directus.
 const formationData =
   familleSlug.value && formationSlug.value
     ? await useAsyncData(
@@ -524,14 +495,51 @@ const session = computed(
   () => formation.value?.sessions?.find((s) => s.id === sessionSlug.value) ?? null
 )
 
-const centreName = computed(() => (centreSlug.value ? (centre.value?.name ?? '') : ''))
-const centreMeta = computed(() =>
-  centre.value
-    ? [centre.value.city, centre.value.department, centre.value.postal_code]
-        .filter(Boolean)
-        .join(' · ')
-    : ''
+// Centre ancre de l'encart : transmis par ?centre=, sinon déduit de la
+// session choisie, sinon le centre principal de la formation (centerSlug)
+// — une fiche formation connaît son centre sans le passer en query (RG06).
+const demandeCentreSlug = computed(
+  () =>
+    centreSlug.value ?? session.value?.location?.centreSlug ?? formation.value?.centerSlug ?? null
 )
+// Query en getter + watch : une navigation client vers la même route avec
+// un autre ?centre= (page-key = route.path, pas de remount) relance le
+// fetch au lieu de figer le premier slug résolu.
+const centresData = await useDirectusList<Centre>(
+  'centres',
+  'demande-centre',
+  () =>
+    demandeCentreSlug.value
+      ? {
+          fields: ['name', 'city', 'department', 'postal_code'],
+          filter: { slug: { _eq: demandeCentreSlug.value }, status: { _eq: 'published' } },
+          limit: 1
+        }
+      : null,
+  { watch: [demandeCentreSlug] }
+)
+// data vaut undefined tant que le fetch client n'est pas résolu
+// (useAsyncData n'est pas awaitable à travers le composable).
+const centre = computed(() => centresData.value?.[0] ?? null)
+
+const centreName = computed(() => (demandeCentreSlug.value ? (centre.value?.name ?? '') : ''))
+// « Créteil · Val-de-Marne (94) » : code département entre parenthèses —
+// 3 chiffres pour l'outre-mer (971…), 2A/2B pour la Corse, et pas de
+// doublon « Paris · Paris » quand ville et département se confondent.
+const centreMeta = computed(() => {
+  const c = centre.value
+  if (!c) return ''
+  const cp = c.postal_code ?? ''
+  let code = ''
+  if (/^\d{5}$/.test(cp)) {
+    if (cp.startsWith('97')) code = cp.slice(0, 3)
+    else if (cp.startsWith('20')) code = cp < '20200' ? '2A' : '2B'
+    else code = cp.slice(0, 2)
+  }
+  const department = c.department === c.city ? '' : c.department
+  const deptParts = [department, code ? `(${code})` : ''].filter(Boolean)
+  return [c.city, deptParts.join(' ')].filter(Boolean).join(' · ')
+})
 // RG04 : pas de valeur de repli — le bloc n'est rendu que si le slug est transmis.
 const formationName = computed(() =>
   formationSlug.value ? (formation.value?.title ?? 'Formation du catalogue') : ''
@@ -555,24 +563,68 @@ const sessionName = computed(() => {
   }).format(new Date(`${start}T00:00:00Z`))
   return `Session du ${date}`
 })
-const sessionMeta = computed(() => {
-  const s = session.value
-  if (!sessionSlug.value || !s) return ''
-  return [
-    formation.value?.durationDays ? `${formation.value.durationDays} jours` : null,
-    s.modality ? (MODALITY_LABELS[s.modality] ?? s.modality) : null,
-    s.location?.city ?? null,
-    s.seatsRemaining != null ? `${s.seatsRemaining} places disponibles` : null
-  ]
-    .filter(Boolean)
-    .join(' · ')
+// Date courte pour la ligne de détail : « session du 12 sept. 2026 ».
+const sessionDateShort = computed(() => {
+  const start = session.value?.startDate
+  if (!start) return ''
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC'
+  }).format(new Date(`${start}T00:00:00Z`))
 })
 
-// RG06 : niveau de contexte le plus profond transmis.
-const contextLevel = computed<'centre' | 'formation' | 'session'>(() => {
-  if (sessionSlug.value) return 'session'
+// RG06 : niveau de contexte le plus profond réellement exploitable
+// (?session= sans formation ne résout rien — retombe sur le générique).
+// Pilote l'encart ET le lien « Modifier ».
+const contextLevel = computed<'centre' | 'formation' | 'session' | 'sujet' | 'generic'>(() => {
+  if (sessionSlug.value && formationSlug.value) return 'session'
   if (formationSlug.value) return 'formation'
-  return 'centre'
+  if (demandeCentreSlug.value) return 'centre'
+  if (sujet.value) return 'sujet'
+  return 'generic'
+})
+
+// Icône de l'élément contexte : l'ancre est le centre dès qu'il est connu
+// (query ou session), sinon le niveau transmis (RG06).
+const contextIcon = computed(() => {
+  if (demandeCentreSlug.value) return IconMapPin
+  if (contextLevel.value === 'session') return IconCalendar
+  if (contextLevel.value === 'formation') return IconBook
+  return IconMapPin
+})
+
+const contextTitle = computed(() => {
+  if (demandeCentreSlug.value) return centre.value?.name ?? 'Centre partenaire'
+  if (formationSlug.value) return formationName.value
+  if (sujet.value) return sujet.value.title
+  return 'Votre projet de formation'
+})
+
+const contextMeta = computed(() => {
+  switch (contextLevel.value) {
+    case 'session': {
+      // « CACES R489 cat. 3 · Présentiel · session du 12 sept. 2026 · 5 places » —
+      // le titre de la formation n'est répété que si le centre porte le bloc.
+      const parts: string[] = []
+      if (demandeCentreSlug.value && formation.value?.title) parts.push(formation.value.title)
+      const modality = session.value?.modality
+      if (modality) parts.push(MODALITY_LABELS[modality] ?? modality)
+      if (sessionDateShort.value) parts.push(`session du ${sessionDateShort.value}`)
+      const seats = session.value?.seatsRemaining
+      if (seats != null) parts.push(`${seats} places`)
+      return parts.join(' · ')
+    }
+    case 'formation':
+      return demandeCentreSlug.value ? formationName.value : formationMeta.value
+    case 'centre':
+      return centreMeta.value
+    case 'sujet':
+      return sujet.value?.body ?? ''
+    default:
+      return 'Un conseiller identifie le centre et la session adaptés.'
+  }
 })
 
 // « Modifier » renvoie au point d'origine sans perdre la saisie.
@@ -589,7 +641,7 @@ const modifierTo = computed(() => {
   if (contextLevel.value === 'formation' && formationPath.value) {
     return formationPath.value
   }
-  return centreSlug.value ? `/centres/${centreSlug.value}` : '/centres'
+  return demandeCentreSlug.value ? `/centres/${demandeCentreSlug.value}` : '/centres'
 })
 
 // Breadcrumb : le nom du centre s'affiche quand le contexte est transmis.
@@ -599,11 +651,11 @@ const defaultBreadcrumb = [
   { label: 'Demande de formation' }
 ]
 watchEffect(() => {
-  route.meta.breadcrumb = centreSlug.value
+  route.meta.breadcrumb = demandeCentreSlug.value
     ? [
         { label: 'Accueil', to: '/' },
         { label: 'Centres', to: '/centres' },
-        { label: centreName.value, to: `/centres/${centreSlug.value}` },
+        { label: centreName.value, to: `/centres/${demandeCentreSlug.value}` },
         { label: 'Demande de formation' }
       ]
     : defaultBreadcrumb
@@ -755,7 +807,7 @@ const onSubmit = handleSubmit(async (v) => {
     echeance: v.echeance,
     precisions: v.precisions || undefined,
     // Libellés résolus — HubSpot reçoit du texte lisible, pas les slugs.
-    centre: centreName.value || centreSlug.value || undefined,
+    centre: centreName.value || demandeCentreSlug.value || undefined,
     formation: formationName.value || undefined,
     session: sessionName.value || undefined,
     sujet: sujetSlug.value || undefined,

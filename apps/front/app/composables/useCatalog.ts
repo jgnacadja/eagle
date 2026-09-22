@@ -5,6 +5,10 @@ import { htmlToText } from '~/utils/sanitizeHtml'
 import { placesLabel } from '~/utils/placesLabel'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 
+// Sémantique partagée avec `availabilityStatus` (useCentres) et
+// `sessionSeatType` (placesLabel) : warning = tension, neutral = sur demande.
+export type AvailabilityType = 'success' | 'warning' | 'neutral'
+
 export interface CatalogQuery {
   search?: string
   family?: string
@@ -19,7 +23,7 @@ export interface CatalogQuery {
   modalities?: string[]
   location?: string
   center?: string
-  availability?: 'success' | 'warning' | 'neutral'
+  availability?: AvailabilityType
 }
 
 export interface FormationItem {
@@ -33,7 +37,7 @@ export interface FormationItem {
   days: number
   duration: 'courte' | 'moyenne' | 'longue'
   certifications: string[]
-  status?: { type: 'success' | 'warning' | 'neutral'; label: string; labelShort?: string }
+  status?: { type: AvailabilityType; label: string; labelShort?: string }
   image: string | null
   to: string | null
 }
@@ -119,7 +123,7 @@ export function buildSessionBadge(course: CourseListItem): string | null {
 // quand aucune session n'est publiée (formation organisable).
 export function buildStatus(
   course: CourseListItem
-): { type: 'success' | 'warning' | 'neutral'; label: string; labelShort?: string } | undefined {
+): { type: AvailabilityType; label: string; labelShort?: string } | undefined {
   const upcoming = upcomingSessions(course).sort((a, b) =>
     (a.startDate ?? '').localeCompare(b.startDate ?? '')
   )[0]

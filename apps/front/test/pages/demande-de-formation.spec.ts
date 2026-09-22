@@ -38,9 +38,15 @@ const centreCreteil = {
   postal_code: '94000'
 }
 
+// Le mock résout le slug depuis la query (objet ou getter) : un mauvais
+// slug remonterait [] et ferait échouer les tests de contexte.
 vi.stubGlobal(
   'useDirectusList',
-  vi.fn(async () => ref([centreCreteil]))
+  vi.fn(async (_collection: string, _key: string, query?: unknown) => {
+    const q = typeof query === 'function' ? (query as () => unknown)() : query
+    const slug = (q as { filter?: { slug?: { _eq?: string } } } | null)?.filter?.slug?._eq
+    return ref(slug === centreCreteil.slug ? [centreCreteil] : [])
+  })
 )
 
 // Stub du composable de soumission : le mock contrôle le résultat de l'appel API.
@@ -223,7 +229,7 @@ describe('pages/centres/demande-de-formation', () => {
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain('Centre LEARN UP de Créteil')
-    expect(wrapper.text()).toContain('Créteil · Val-de-Marne · 94000')
+    expect(wrapper.text()).toContain('Créteil · Val-de-Marne (94)')
     expect(routeStub.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
       { label: 'Centres', to: '/centres' },
@@ -239,10 +245,24 @@ describe('pages/centres/demande-de-formation', () => {
     expect(fetchMock).toHaveBeenCalledWith('http://api.test/courses/sante/sst-initial')
     expect(wrapper.text()).toContain('SST — Sauveteur secouriste du travail')
     expect(wrapper.text()).toContain('2 jours · Certificat SST · INRS')
-    expect(wrapper.text()).not.toContain('Session du')
+    // RG04 : pas de ligne générique quand un contexte est transmis.
+    expect(wrapper.text()).not.toContain('Votre projet de formation')
+    expect(wrapper.text()).not.toContain('session du')
   })
 
-  it('affiche les 3 blocs quand centre + formation + session sont transmis', async () => {
+  it('ancre l’encart sur le centre quand centre + formation sont transmis', async () => {
+    routeStub.query = {
+      centre: 'creteil',
+      famille: 'sante',
+      formation: 'sst-initial'
+    }
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Centre LEARN UP de Créteil')
+    expect(wrapper.text()).toContain('SST — Sauveteur secouriste du travail')
+  })
+
+  it('affiche le bloc session agrégé quand centre + formation + session sont transmis', async () => {
     routeStub.query = {
       centre: 'creteil',
       famille: 'sante',
@@ -252,9 +272,36 @@ describe('pages/centres/demande-de-formation', () => {
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain('Centre LEARN UP de Créteil')
+    expect(wrapper.text()).toContain(
+      'SST — Sauveteur secouriste du travail · Présentiel · session du 12 oct. 2026 · 5 places'
+    )
+  })
+
+  it('déduit le centre principal de la formation quand ?centre= est absent', async () => {
+    fetchMock.mockImplementation(async () => ({
+      ...courseSst,
+      centerSlug: 'creteil',
+      centerSlugs: ['creteil', 'paris']
+    }))
+    routeStub.query = { famille: 'sante', formation: 'sst-initial' }
+    const wrapper = await mountPage()
+
+    // centerSlug = 'creteil' → l'encart s'ancre sur le centre (RG06).
+    expect(wrapper.text()).toContain('Centre LEARN UP de Créteil')
     expect(wrapper.text()).toContain('SST — Sauveteur secouriste du travail')
-    expect(wrapper.text()).toContain('Session du 12 octobre 2026')
-    expect(wrapper.text()).toContain('5 places disponibles')
+  })
+
+  it('déduit le centre de la session quand ?centre= est absent (RG06)', async () => {
+    routeStub.query = {
+      famille: 'sante',
+      formation: 'sst-initial',
+      session: 'sess-1'
+    }
+    const wrapper = await mountPage()
+
+    // location.centreSlug = 'creteil' → résolution Directus du centre.
+    expect(wrapper.text()).toContain('Centre LEARN UP de Créteil')
+    expect(wrapper.text()).toContain('session du 12 oct. 2026')
   })
 
   it('affiche un libellé générique pour une formation introuvable dans l’API', async () => {

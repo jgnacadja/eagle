@@ -916,7 +916,16 @@ function pedagogyIcon(title: string) {
 
 // Params encodés : famille/slug/id de session peuvent contenir des
 // caractères spéciaux — ne jamais les interpoler bruts dans la query.
-const demandeTo = `/centres/demande-de-formation?famille=${encodeURIComponent(famille)}&formation=${encodeURIComponent(slug)}`
+// Le centre ancre l'encart « Votre demande concerne » (RG06) : celui de la
+// session cliquée, sinon le centre principal de la formation (centerSlug).
+function demandeUrl(session?: CourseSession): string {
+  const params = new URLSearchParams({ famille, formation: slug })
+  const centre = session?.location?.centreSlug ?? course.value?.centerSlug ?? null
+  if (centre) params.set('centre', centre)
+  if (session?.id) params.set('session', session.id)
+  return `/centres/demande-de-formation?${params.toString()}`
+}
+const demandeTo = computed(() => demandeUrl())
 
 // Titre de session par modalité (label déjà traduit via MODALITY_LABELS).
 const SESSION_TITLES: Record<string, string> = {
@@ -979,7 +988,7 @@ const sessionsList = computed(() => {
       places,
       type: sessionSeatType(places),
       ctaLabel: places === 0 ? "Être informé d'une place" : "S'inscrire",
-      to: s.id ? `${demandeTo}&session=${encodeURIComponent(s.id)}` : demandeTo
+      to: demandeUrl(s)
     }
   })
 })

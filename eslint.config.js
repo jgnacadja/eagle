@@ -99,6 +99,7 @@ const vueGlobals = {
   onBeforeMount: 'readonly',
   onBeforeUnmount: 'readonly',
   onUpdated: 'readonly',
+  onScopeDispose: 'readonly',
   defineComponent: 'readonly',
   defineProps: 'readonly',
   defineEmits: 'readonly',

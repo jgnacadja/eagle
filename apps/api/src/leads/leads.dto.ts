@@ -52,7 +52,9 @@ export class DemandeLeadDto extends LeadContextDto {
 
   @ApiProperty({ description: 'Phone — at least 10 digits' })
   @IsString()
-  @Matches(/^\D*(?:\d\D*){10,}$/, { message: 'Incomplete phone number — at least 10 digits expected.' })
+  @Matches(/^\D*(?:\d\D*){10,}$/, {
+    message: 'Incomplete phone number — at least 10 digits expected.'
+  })
   @MaxLength(30)
   telephone!: string
 
@@ -142,7 +144,9 @@ export class CandidatureLeadDto extends LeadContextDto {
 
   @ApiProperty({ description: 'Phone — at least 10 digits' })
   @IsString()
-  @Matches(/^\D*(?:\d\D*){10,}$/, { message: 'Incomplete phone number — at least 10 digits expected.' })
+  @Matches(/^\D*(?:\d\D*){10,}$/, {
+    message: 'Incomplete phone number — at least 10 digits expected.'
+  })
   @MaxLength(30)
   telephone!: string
 

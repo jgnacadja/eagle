@@ -138,11 +138,10 @@
     </div>
 
     <div>
-      <div class="flex items-start gap-sm">
+      <div class="flex items-center gap-sm">
         <Checkbox
           id="candidature-consentement"
           v-model="consentement"
-          class="mt-xs"
           :aria-invalid="showError('consentement') || undefined"
           :aria-describedby="
             showError('consentement') ? 'candidature-consentement-error' : undefined

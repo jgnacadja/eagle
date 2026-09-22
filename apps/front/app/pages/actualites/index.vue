@@ -222,7 +222,12 @@
                     class="w-full shrink-0 px-xl sm:w-auto"
                     :disabled="newsletterSending"
                   >
-                    {{ newsletterSending ? 'Envoi…' : "S'abonner" }}
+                    <span
+                      v-if="newsletterSending"
+                      class="mr-sm block h-md w-md animate-spin rounded-full border-2 border-ink/25 border-t-ink"
+                      aria-hidden="true"
+                    />
+                    {{ newsletterSending ? 'Envoi en cours…' : "S'abonner" }}
                   </Button>
                 </form>
                 <p

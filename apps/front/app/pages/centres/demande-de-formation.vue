@@ -309,11 +309,10 @@
               </div>
 
               <div class="pt-xs">
-                <div class="flex items-start gap-sm">
+                <div class="flex items-center gap-sm">
                   <Checkbox
                     id="consentement"
                     v-model="consentement"
-                    class="mt-xs"
                     :aria-invalid="showError('consentement') || undefined"
                     :aria-describedby="showError('consentement') ? 'consentement-error' : undefined"
                   />
@@ -678,7 +677,7 @@ const { handleSubmit, errors, submitCount, defineField, setValues, values } = us
   }
 })
 
-const [salaries] = defineField('salaries')
+const [salaries] = defineField<'salaries', string | number>('salaries')
 const [echeance] = defineField('echeance')
 const [precisions] = defineField('precisions')
 const [raisonSociale] = defineField('raisonSociale')

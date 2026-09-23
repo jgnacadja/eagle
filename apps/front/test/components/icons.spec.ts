@@ -22,6 +22,7 @@ import IconFilter from '~/components/icons/IconFilter.vue'
 import IconGlobe from '~/components/icons/IconGlobe.vue'
 import IconHardHat from '~/components/icons/IconHardHat.vue'
 import IconLayoutGrid from '~/components/icons/IconLayoutGrid.vue'
+import IconGrid from '~/components/icons/IconGrid.vue'
 import IconLink from '~/components/icons/IconLink.vue'
 import IconList from '~/components/icons/IconList.vue'
 import IconLocate from '~/components/icons/IconLocate.vue'
@@ -29,6 +30,7 @@ import IconMail from '~/components/icons/IconMail.vue'
 import IconMap from '~/components/icons/IconMap.vue'
 import IconMapPin from '~/components/icons/IconMapPin.vue'
 import IconMapPinOff from '~/components/icons/IconMapPinOff.vue'
+import IconMessageCircle from '~/components/icons/IconMessageCircle.vue'
 import IconMinus from '~/components/icons/IconMinus.vue'
 import IconMoreHorizontal from '~/components/icons/IconMoreHorizontal.vue'
 import IconParking from '~/components/icons/IconParking.vue'
@@ -43,6 +45,7 @@ import IconSparkle from '~/components/icons/IconSparkle.vue'
 import IconTimetable from '~/components/icons/IconTimetable.vue'
 import IconUser from '~/components/icons/IconUser.vue'
 import IconUsers from '~/components/icons/IconUsers.vue'
+import IconZap from '~/components/icons/IconZap.vue'
 
 const icons = {
   IconAccessibility,
@@ -68,6 +71,7 @@ const icons = {
   IconGlobe,
   IconHardHat,
   IconLayoutGrid,
+  IconGrid,
   IconLink,
   IconList,
   IconLocate,
@@ -75,6 +79,7 @@ const icons = {
   IconMap,
   IconMapPin,
   IconMapPinOff,
+  IconMessageCircle,
   IconMinus,
   IconParking,
   IconPhone,
@@ -87,7 +92,8 @@ const icons = {
   IconSparkle,
   IconTimetable,
   IconUser,
-  IconUsers
+  IconUsers,
+  IconZap
 }
 
 describe('icons', () => {

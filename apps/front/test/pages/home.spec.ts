@@ -145,6 +145,7 @@ const stubs = {
   ArticleCard: { props: ['title'], template: '<div class="article">{{ title }}</div>' },
   IconSparkle: true,
   IconSearch: true,
+  IconCheck: true,
   ProcessSteps: true
 }
 
@@ -179,7 +180,7 @@ describe('pages/index', () => {
     expect(wrapper.text()).toContain('Comment ça marche')
     expect(wrapper.text()).toContain('Nos formations')
     expect(wrapper.text()).toContain('Le réseau Learn Up Academy')
-    expect(wrapper.text()).toContain('Confier mes formations')
+    expect(wrapper.text()).toContain('Simplifiez la gestion de vos formations')
     expect(wrapper.text()).toContain("Ce qu'en disent les entreprises")
     expect(wrapper.text()).toContain('Actualités')
   })
@@ -191,10 +192,51 @@ describe('pages/index', () => {
     expect(wrapper.findAll('.formation-card')).toHaveLength(4)
     // La fixture contient 3 centres : l'affichage est plafonné à 2.
     expect(wrapper.findAll('.center-card')).toHaveLength(2)
-    expect(wrapper.findAll('.confier-card')).toHaveLength(9)
     expect(wrapper.findAll('.stat')).toHaveLength(4)
     expect(wrapper.findAll('.testimonial')).toHaveLength(3)
     expect(wrapper.findAll('.article')).toHaveLength(3)
+  })
+
+  it('affiche la section Entreprises avec ses bénéfices et CTAs', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Simplifiez la gestion de vos formations')
+    expect(wrapper.text()).toContain('Interlocuteur unique')
+    expect(wrapper.text()).toContain('Gestion multi-sites')
+    expect(wrapper.text()).toContain('Suivi centralisé')
+    expect(wrapper.text()).toContain('Découvrir nos solutions entreprises')
+  })
+
+  it('affiche la section Prochaines sessions avec ses cartes et le CTA catalogue', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Les prochaines sessions près de chez vous')
+    expect(wrapper.text()).toContain(
+      'Personnalisées selon votre localisation ou votre dernière recherche.'
+    )
+    expect(wrapper.text()).toContain('CACES® R489 cat. 3')
+    expect(wrapper.text()).toContain('Habilitation électrique BS-BE')
+    expect(wrapper.text()).toContain('Travail en hauteur — port du harnais')
+    expect(wrapper.text()).toContain('Voir toutes les sessions')
+  })
+
+  it('affiche la section Pourquoi Learn Up Academy avec ses 6 bénéfices', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Pourquoi Learn Up Academy ?')
+    expect(wrapper.text()).toContain('Conseil personnalisé')
+    expect(wrapper.text()).toContain('Interlocuteur unique')
+    expect(wrapper.text()).toContain('Proximité')
+    expect(wrapper.text()).toContain('Réactivité')
+    expect(wrapper.text()).toContain('Couverture nationale')
+    expect(wrapper.text()).toContain('Centralisation')
+  })
+
+  it('affiche la section Actualités et conseils avec ses articles', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Actualités et conseils')
+    expect(wrapper.text()).toContain('Toutes les actualités')
   })
 
   it('pointe les CTA vers la page de demande et le catalogue', async () => {
@@ -209,6 +251,7 @@ describe('pages/index', () => {
     expect(hrefs).toContain('/parler-a-votre-conseiller')
     expect(hrefs).toContain('/formations')
     expect(hrefs).toContain('/centres')
+    expect(hrefs).toContain('/actualites')
   })
 
   it('le badge « Près de moi » déclenche la géolocalisation et affiche les distances réelles', async () => {

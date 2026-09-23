@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent, h, Suspense, ref } from 'vue'
-import ReseauPage from '~/pages/partenaires.vue'
+import ReseauPage from '~/pages/entreprise-reseau.vue'
 
 beforeEach(() => {
   vi.stubGlobal('useContentSeo', vi.fn())

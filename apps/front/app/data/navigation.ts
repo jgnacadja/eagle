@@ -35,7 +35,7 @@ export const aproposLiens = [
     description: 'Formulaire et coordonnées'
   },
   {
-    slug: 'partenaires',
+    slug: 'entreprise-reseau',
     label: 'Le réseau et ses partenaires',
     description: 'Devenir partenaire de LEARN UP ACADEMY'
   }

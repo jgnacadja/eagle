@@ -8,10 +8,21 @@
           Réseau de centres
         </h1>
         <p class="mt-sm max-w-prose text-body text-ink-body">
-          {{ centresCount }} centre{{ centresCount > 1 ? 's' : '' }}
-          {{ centresCount > 1 ? 'couvrent' : 'couvre' }}
-          {{ departmentsCount }} département{{ departmentsCount > 1 ? 's' : '' }}. La sélection d'un
-          département affiche les centres de ce territoire.
+          <!-- Fetch non bloquant en navigation client : pendant le
+               chargement on affiche un placeholder plutôt que
+               « 0 centre couvre 0 département », qui flasherait avant
+               l'arrivée des compteurs. -->
+          <span
+            v-if="heroPending"
+            class="inline-block h-xs w-48 animate-pulse rounded-full bg-surface align-middle"
+            aria-hidden="true"
+          />
+          <template v-else>
+            {{ centresCount }} centre{{ centresCount > 1 ? 's' : '' }}
+            {{ centresCount > 1 ? 'couvrent' : 'couvre' }}
+            {{ departmentsCount }} département{{ departmentsCount > 1 ? 's' : '' }}.
+          </template>
+          La sélection d'un département affiche les centres de ce territoire.
         </p>
       </div>
     </section>
@@ -58,10 +69,9 @@
             </div>
 
             <div class="flex items-center justify-between gap-sm">
-              <p
-                v-if="filteredCenters.length || selectedDept !== 'all'"
-                class="text-small text-ink"
-              >
+              <!-- Compteur masqué sans résultat : « 0 centre en X » n'a
+                   pas de sens — l'état vide en dessous porte le message. -->
+              <p v-if="filteredCenters.length" class="text-small text-ink">
                 <span class="font-extrabold">{{ filteredCenters.length }}</span>
                 {{ ' ' }}
                 <span class="font-extrabold">{{
@@ -98,7 +108,16 @@
       <!-- Mobile: map replaces list when open -->
       <div v-if="isMobileMapOpen" class="relative flex h-[60vh] flex-col justify-end lg:hidden">
         <div class="absolute inset-0 overflow-hidden">
+          <!-- Pendant le chargement initial : placeholder — sinon le
+               « Aucun centre à afficher » interne de CenterMap flasherait
+               avant l'arrivée des données. -->
+          <div
+            v-if="centresPending && !filteredCenters.length"
+            class="h-full animate-pulse bg-surface"
+            aria-hidden="true"
+          />
           <CenterMap
+            v-else
             :centers="filteredCenters"
             :active-id="hasUserSelection ? activeCenterId : null"
             :caption="selectedDeptLabel"
@@ -178,6 +197,33 @@
           </p>
         </div>
 
+        <!-- Chargement initial : skeletons tant que la première réponse
+             n'est pas arrivée — sinon l'état vide flasherait avant que la
+             liste et la carte ne s'affichent (fetch non bloquant en
+             navigation client). La grille 2 colonnes est conservée pour
+             éviter tout saut de layout à l'arrivée des données. -->
+        <div
+          v-else-if="centresPending"
+          class="flex flex-col gap-md px-gutter-mobile py-lg md:pl-gutter lg:h-full lg:min-h-0 lg:overflow-hidden lg:pl-0 lg:pr-lg"
+          aria-busy="true"
+        >
+          <output class="sr-only">Chargement des centres</output>
+          <div
+            v-for="i in 3"
+            :key="i"
+            class="flex animate-pulse flex-col gap-sm rounded-md border border-rule p-md"
+            aria-hidden="true"
+          >
+            <div class="flex justify-between gap-sm">
+              <div class="h-xs w-2xl rounded-full bg-surface" />
+              <div class="h-xs w-lg rounded-full bg-surface" />
+            </div>
+            <div class="h-xs w-3/4 rounded-full bg-surface" />
+            <div class="h-xs w-1/2 rounded-full bg-surface" />
+            <div class="ml-auto h-control w-2xl rounded-full bg-surface" />
+          </div>
+        </div>
+
         <!-- Empty state -->
         <div
           v-else
@@ -223,6 +269,9 @@
             :focus-center="mapFocus"
             @select="selectCenter"
           />
+        </div>
+        <div v-else-if="centresPending" class="hidden lg:block lg:h-full lg:min-h-0">
+          <div class="h-full animate-pulse rounded-md bg-surface" aria-hidden="true" />
         </div>
       </div>
     </section>
@@ -306,8 +355,9 @@ if (import.meta.server) {
 }
 
 const { data: centres, pending: centresPending } = centresResult
-const { data: centresTotal } = centresTotalResult
-const { data: departments } = departmentsResult
+const { data: centresTotal, pending: centresTotalPending } = centresTotalResult
+const { data: departments, pending: departmentsPending } = departmentsResult
+const heroPending = computed(() => centresTotalPending.value || departmentsPending.value)
 const centresCount = computed(() => centresTotal.value ?? 0)
 const departmentsCount = computed(() => departments.value?.length ?? 0)
 

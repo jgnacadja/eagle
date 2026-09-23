@@ -390,7 +390,7 @@ export function useMenuPreload() {
 export function useMenuActualites() {
   const directus = useDirectusClient()
 
-  const { data } = useAsyncData<MenuActualitesData>(
+  const { data, pending } = useAsyncData<MenuActualitesData>(
     'menu-actualites',
     async () => {
       try {
@@ -466,6 +466,7 @@ export function useMenuActualites() {
   )
 
   return {
+    pending,
     rubriques: computed(() => data.value?.rubriques ?? []),
     regions: computed(() => data.value?.regions ?? []),
     actualitesParRegion: computed(() => data.value?.actualitesParRegion ?? {})

@@ -524,7 +524,9 @@ describe('pages/centres/index', () => {
     expect(wrapper.text()).toContain("d'un département voisin")
     expect(wrapper.text()).toContain('Choisir un autre département')
     expect(wrapper.text()).toContain("Aucun centre voisin n'est injecté automatiquement")
-    expect(wrapper.text()).toMatch(/0\s+centre\s+en\s+Ain/)
+    // Pas de compteur « 0 centre en Ain » : il ne s'affiche qu'avec au
+    // moins un résultat — l'état vide suffit.
+    expect(wrapper.text()).not.toContain('centre en Ain')
 
     // « Choisir un autre département » ré-élargit le périmètre.
     const reset = wrapper

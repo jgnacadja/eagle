@@ -44,7 +44,10 @@
           </button>
         </li>
 
-        <li v-if="!displayedRegions.length" class="px-2 py-1.5 text-small text-ink-muted">
+        <li
+          v-if="!pending && !displayedRegions.length"
+          class="px-2 py-1.5 text-small text-ink-muted"
+        >
           Aucune région disponible.
         </li>
 
@@ -90,7 +93,7 @@
               </template>
             </MegaMenuCard>
           </li>
-          <li v-if="!featuredNews.length" class="px-2 py-1.5 text-small text-ink-muted">
+          <li v-if="!pending && !featuredNews.length" class="px-2 py-1.5 text-small text-ink-muted">
             {{ emptyMessage }}
           </li>
           <li>
@@ -118,7 +121,7 @@ defineEmits<{
   close: []
 }>()
 
-const { rubriques, regions, actualitesParRegion } = useMenuActualites()
+const { pending, rubriques, regions, actualitesParRegion } = useMenuActualites()
 
 const selectedRubrique = ref(rubriques.value[0]?.slug ?? '')
 watch(rubriques, (list) => {

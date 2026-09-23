@@ -823,6 +823,13 @@ function onCtaSearch() {
 
 const mapSearch = ref('')
 
+const geoSuggest = useGeoSuggest()
+const mapSearchSuggestions = computed(() => geoSuggest.suggestions.value.map((s) => s.label))
+
+function onMapSearchInput(value: string) {
+  geoSuggest.request(value)
+}
+
 // Barre de stats (ticker) — fond primary-dark sous le hero
 const tickerItems = [
   {

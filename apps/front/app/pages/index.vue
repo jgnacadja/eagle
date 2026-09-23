@@ -619,9 +619,9 @@ function centreStatus(centre: Centre) {
 }
 
 // Soumission de la recherche réseau : ville/code postal part en query `q`
-// (champ de recherche de /centres) ; un département choisi dans
-// l'autocomplétion part en query `dept` — la page pré-remplit alors le
-// filtre territoire plutôt que le champ texte.
+// (champ de recherche de /centres) — son département de rattachement part
+// en `dept` pour présélectionner le filtre territoire ; un département
+// choisi dans l'autocomplétion part seul en query `dept`.
 function onMapSearch(value: string) {
   const picked = geoSuggest.byLabel(value)
   if (picked?.kind === 'department') {
@@ -629,7 +629,13 @@ function onMapSearch(value: string) {
     return
   }
   const q = (picked?.term ?? value).trim()
-  navigateTo({ path: '/centres', query: q ? { q } : {} })
+  navigateTo({
+    path: '/centres',
+    query: {
+      ...(q ? { q } : {}),
+      ...(picked?.departmentName ? { dept: picked.departmentName } : {})
+    }
+  })
 }
 
 const confierCards = [

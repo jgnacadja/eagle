@@ -253,11 +253,18 @@ describe('pages/index', () => {
     expect(navigateMock).toHaveBeenCalledWith({ path: '/centres', query: { q: 'vitry' } })
   })
 
-  it('autocomplète la recherche carte et soumet le terme de la suggestion', async () => {
+  it('autocomplète la recherche carte et soumet terme + département de la ville', async () => {
     geoFetchMock.mockImplementation((url: string) =>
       Promise.resolve(
         url.endsWith('/communes')
-          ? [{ nom: 'Lyon', codeDepartement: '69', centre: { coordinates: [4.8357, 45.764] } }]
+          ? [
+              {
+                nom: 'Lyon',
+                codeDepartement: '69',
+                departement: { code: '69', nom: 'Rhône' },
+                centre: { coordinates: [4.8357, 45.764] }
+              }
+            ]
           : []
       )
     )
@@ -276,7 +283,11 @@ describe('pages/index', () => {
       await input.setValue('Lyon (69)')
       await input.trigger('keydown.enter')
 
-      expect(navigateMock).toHaveBeenCalledWith({ path: '/centres', query: { q: 'Lyon' } })
+      // Ville choisie : ?q= recherche texte + ?dept= présélectionne le filtre.
+      expect(navigateMock).toHaveBeenCalledWith({
+        path: '/centres',
+        query: { q: 'Lyon', dept: 'Rhône' }
+      })
     } finally {
       vi.useRealTimers()
     }

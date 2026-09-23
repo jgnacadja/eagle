@@ -32,11 +32,16 @@ describe('useGeoSuggest', () => {
     expect(fetchMock).toHaveBeenCalled()
   })
 
-  it('mappe une commune en label + lat,lng + terme nom', async () => {
+  it('mappe une commune en label + lat,lng + terme nom + département', async () => {
     fetchMock.mockImplementation((url: string) => {
       if (url.endsWith('/communes')) {
         return Promise.resolve([
-          { nom: 'Lyon', codeDepartement: '69', centre: { coordinates: [4.8357, 45.764] } }
+          {
+            nom: 'Lyon',
+            codeDepartement: '69',
+            departement: { code: '69', nom: 'Rhône' },
+            centre: { coordinates: [4.8357, 45.764] }
+          }
         ])
       }
       return Promise.resolve([])
@@ -46,7 +51,13 @@ describe('useGeoSuggest', () => {
     await request(suggest, 'lyon')
 
     expect(suggest.suggestions.value).toEqual([
-      { label: 'Lyon (69)', location: '45.764,4.8357', term: 'Lyon', kind: 'commune' }
+      {
+        label: 'Lyon (69)',
+        location: '45.764,4.8357',
+        term: 'Lyon',
+        kind: 'commune',
+        departmentName: 'Rhône'
+      }
     ])
     expect(suggest.byLabel('Lyon (69)')?.term).toBe('Lyon')
     expect(suggest.byLocation('45.764,4.8357')?.label).toBe('Lyon (69)')
@@ -56,7 +67,12 @@ describe('useGeoSuggest', () => {
     fetchMock.mockImplementation((url: string) => {
       if (url.endsWith('/communes')) {
         return Promise.resolve([
-          { nom: 'Paris', codeDepartement: '75', centre: { coordinates: [2.3522, 48.8566] } }
+          {
+            nom: 'Paris',
+            codeDepartement: '75',
+            departement: { code: '75', nom: 'Paris' },
+            centre: { coordinates: [2.3522, 48.8566] }
+          }
         ])
       }
       return Promise.resolve([{ code: '75', nom: 'Paris' }])
@@ -68,7 +84,13 @@ describe('useGeoSuggest', () => {
     // La ville n'est plus absorbée par le département : des libellés
     // distincts (« (département XX) ») font coexister les deux entrées.
     expect(suggest.suggestions.value).toEqual([
-      { label: 'Paris (75)', location: '48.8566,2.3522', term: 'Paris', kind: 'commune' },
+      {
+        label: 'Paris (75)',
+        location: '48.8566,2.3522',
+        term: 'Paris',
+        kind: 'commune',
+        departmentName: 'Paris'
+      },
       { label: 'Paris (département 75)', location: '75', term: 'Paris', kind: 'department' }
     ])
   })
@@ -100,6 +122,7 @@ describe('useGeoSuggest', () => {
           {
             nom: 'Paris',
             codeDepartement: '75',
+            departement: { code: '75', nom: 'Paris' },
             codesPostaux: ['75001', '75002', '75020', '75116'],
             centre: { coordinates: [2.347, 48.8589] }
           }
@@ -119,10 +142,34 @@ describe('useGeoSuggest', () => {
     )
     expect(suggest.suggestions.value).toEqual([
       { label: 'Paris (département 75)', location: '75', term: 'Paris', kind: 'department' },
-      { label: '75001 Paris', location: '48.8589,2.347', term: '75001', kind: 'commune' },
-      { label: '75002 Paris', location: '48.8589,2.347', term: '75002', kind: 'commune' },
-      { label: '75020 Paris', location: '48.8589,2.347', term: '75020', kind: 'commune' },
-      { label: '75116 Paris', location: '48.8589,2.347', term: '75116', kind: 'commune' }
+      {
+        label: '75001 Paris',
+        location: '48.8589,2.347',
+        term: '75001',
+        kind: 'commune',
+        departmentName: 'Paris'
+      },
+      {
+        label: '75002 Paris',
+        location: '48.8589,2.347',
+        term: '75002',
+        kind: 'commune',
+        departmentName: 'Paris'
+      },
+      {
+        label: '75020 Paris',
+        location: '48.8589,2.347',
+        term: '75020',
+        kind: 'commune',
+        departmentName: 'Paris'
+      },
+      {
+        label: '75116 Paris',
+        location: '48.8589,2.347',
+        term: '75116',
+        kind: 'commune',
+        departmentName: 'Paris'
+      }
     ])
   })
 

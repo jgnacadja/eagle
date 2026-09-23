@@ -404,6 +404,16 @@ describe('pages/centres/index', () => {
     expect(wrapper.text()).toContain('Centre de Lyon')
   })
 
+  it('combine recherche ?q= et département ?dept= (ville choisie à l’accueil)', async () => {
+    routeStub.query = { q: 'lyon', dept: 'Rhône' }
+    const wrapper = await mountPage()
+
+    expect((wrapper.find('.city-search').element as HTMLInputElement).value).toBe('lyon')
+    expect((wrapper.find('.dept-select').element as HTMLSelectElement).value).toBe('Rhône')
+    expect(wrapper.findAll('.center-card')).toHaveLength(1)
+    expect(wrapper.text()).toContain('Centre de Lyon')
+  })
+
   it('applique une recherche arrivée via ?q= après le montage', async () => {
     const wrapper = await mountPage()
     expect(wrapper.findAll('.center-card')).toHaveLength(3)

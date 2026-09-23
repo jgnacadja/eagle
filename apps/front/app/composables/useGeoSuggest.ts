@@ -20,11 +20,18 @@ export interface GeoSuggestion {
   term: string
   /** Nature de la suggestion — un département pré-remplit le filtre territoire. */
   kind: 'commune' | 'department'
+  /**
+   * Nom du département de rattachement (villes et codes postaux) : la
+   * recherche centres de l'accueil l'envoie en `?dept=` pour présélectionner
+   * le filtre territoire de /centres en plus de `?q=`.
+   */
+  departmentName?: string
 }
 
 interface GeoCommune {
   nom: string
   codeDepartement?: string
+  departement?: { code: string; nom: string }
   codesPostaux?: string[]
   centre?: { coordinates: [number, number] }
 }
@@ -46,7 +53,13 @@ function communeToSuggestion(commune: GeoCommune): GeoSuggestion {
   const location = commune.centre
     ? `${commune.centre.coordinates[1]},${commune.centre.coordinates[0]}`
     : commune.nom
-  return { label: `${commune.nom}${suffix}`, location, term: commune.nom, kind: 'commune' }
+  return {
+    label: `${commune.nom}${suffix}`,
+    location,
+    term: commune.nom,
+    kind: 'commune',
+    departmentName: commune.departement?.nom
+  }
 }
 
 /**
@@ -58,7 +71,13 @@ function codePostalToSuggestion(codePostal: string, commune: GeoCommune): GeoSug
   const location = commune.centre
     ? `${commune.centre.coordinates[1]},${commune.centre.coordinates[0]}`
     : codePostal
-  return { label: `${codePostal} ${commune.nom}`, location, term: codePostal, kind: 'commune' }
+  return {
+    label: `${codePostal} ${commune.nom}`,
+    location,
+    term: codePostal,
+    kind: 'commune',
+    departmentName: commune.departement?.nom
+  }
 }
 
 // « (département XX) » distingue le territoire de la ville homonyme :
@@ -99,7 +118,7 @@ async function fetchSuggestions(query: string): Promise<GeoSuggestion[]> {
         await Promise.all(
           candidates.slice(0, MAX_DEPARTEMENT_FETCH).map((d) =>
             $fetch<GeoCommune[]>(`${GEO_API}/departements/${d.code}/communes`, {
-              params: { fields: 'nom,codesPostaux,codeDepartement,centre' }
+              params: { fields: 'nom,codesPostaux,codeDepartement,centre,departement' }
             })
           )
         )
@@ -121,7 +140,7 @@ async function fetchSuggestions(query: string): Promise<GeoSuggestion[]> {
       $fetch<GeoCommune[]>(`${GEO_API}/communes`, {
         params: {
           nom: trimmed,
-          fields: 'nom,codeDepartement,centre',
+          fields: 'nom,codeDepartement,centre,departement',
           boost: 'population',
           limit: 5
         }

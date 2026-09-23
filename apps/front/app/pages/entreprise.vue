@@ -586,28 +586,7 @@ const formations = computed(() => {
   return fallbackFormations
 })
 
-const fallbackFormationTags = ['AIPR', 'CATEC®', 'Amiante SS4', 'SECUFER', 'Gestes & postures']
-
-const tagsData = await useDirectusList<SousFamilleFormation>(
-  'sous_familles_formation',
-  'entreprise-formation-tags',
-  {
-    fields: ['name', 'slug'],
-    filter: { status: { _eq: 'published' } },
-    sort: ['-id'],
-    limit: 5
-  }
-)
-
-const formationTags = computed(() => {
-  const items = (tagsData.value ?? [])
-    .map((s) => s.name?.trim())
-    .filter((name): name is string => Boolean(name))
-  if (items.length) {
-    return items
-  }
-  return fallbackFormationTags
-})
+const formationTags = ['AIPR', 'CATEC®', 'Amiante SS4', 'SECUFER', 'Gestes & postures']
 
 const howItWorksSteps = [
   { number: 1, title: 'Vous exprimez votre besoin', body: 'Avec vos mots, en une phrase.' },

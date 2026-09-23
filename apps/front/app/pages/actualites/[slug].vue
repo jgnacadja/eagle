@@ -80,7 +80,7 @@
               />
             </figure>
 
-            <div class="mt-2xl max-w-prose space-y-xl text-body text-ink-body">
+            <div class="mt-2xl space-y-xl text-body text-ink-body">
               <div class="post__content" v-html="sanitizedArticle.html"></div>
 
               <CenterFormationCard

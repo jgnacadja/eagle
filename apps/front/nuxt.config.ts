@@ -1,6 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import tailwindcss from '@tailwindcss/vite'
-import { typography } from '@learnup/ui'
+import { colors, typography } from '@learnup/ui'
 import { REVEAL_TRANSITION } from './app/utils/reveal'
 
 const apiBase = process.env.NUXT_API_BASE ?? 'http://localhost:3001'
@@ -22,6 +22,10 @@ export default defineNuxtConfig({
     head: {
       htmlAttrs: { lang: 'fr' },
       link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32x32.png' },
+        { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon-16x16.png' },
+        { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' },
         // Figtree (charte §03) — l'URL vit dans @learnup/ui avec les autres tokens.
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },

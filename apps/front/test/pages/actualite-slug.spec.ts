@@ -266,9 +266,9 @@ describe('pages/actualites/[slug]', () => {
   it('affiche le CTA conseiller vers le formulaire dédié', async () => {
     const wrapper = await mountPage()
 
-    const link = wrapper.find('a[href="/parler-a-un-conseiller"]')
+    const link = wrapper.find('a[href="/parler-a-votre-conseiller"]')
     expect(link.exists()).toBe(true)
-    expect(link.text()).toContain('Parler à un conseiller')
+    expect(link.text()).toContain('Parler à votre conseiller')
   })
 
   it('affiche la table des matières et les articles liés', async () => {

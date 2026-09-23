@@ -16,7 +16,7 @@ import {
 
 const VOIES = ['centre', 'organisme', 'formateur'] as const
 
-// Besoins du formulaire « Parler à un conseiller » — les valeurs matchent
+// Besoins du formulaire « Parler à votre conseiller » — les valeurs matchent
 // l'enum HubSpot `learnup_type_projet` (routage back-office).
 const BESOINS = ['conseiller', 'centre', 'organisme', 'formateur'] as const
 

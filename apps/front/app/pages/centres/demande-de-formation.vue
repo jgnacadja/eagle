@@ -446,7 +446,7 @@ const sujetSlug = computed(() => queryValue(route.query.sujet))
 
 // L'ancien CTA « conseiller » (?sujet=conseiller, home/footer) a sa page dédiée.
 if (sujetSlug.value === 'conseiller') {
-  await navigateTo('/parler-a-un-conseiller')
+  await navigateTo('/parler-a-votre-conseiller')
 }
 
 // Les CTA « Rejoindre le réseau » et la home arrivent avec ?sujet= : le sujet

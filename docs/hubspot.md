@@ -146,7 +146,7 @@ racine et un objet `validation` par champ, même `{}`).
 
 ### 3.4 Contact conseiller — Site LEARN UP
 
-Formulaire unique derrière les CTA « Parler à un conseiller » : le `besoin`
+Formulaire unique derrière les CTA « Parler à votre conseiller » : le `besoin`
 alimente le routage back-office vers l'entité compétente via
 `learnup_type_projet` — jamais exposé côté client.
 

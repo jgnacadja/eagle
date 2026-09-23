@@ -212,7 +212,7 @@ describe('pages/centres/demande-de-formation', () => {
     routeStub.query = { sujet: 'conseiller' }
     await mountPage()
 
-    expect(navigateMock).toHaveBeenCalledWith('/parler-a-un-conseiller')
+    expect(navigateMock).toHaveBeenCalledWith('/parler-a-votre-conseiller')
   })
 
   it('affiche le contexte générique sans paramètres (RG04)', async () => {

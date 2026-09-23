@@ -258,7 +258,7 @@
                 <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
               </Button>
               <Button as-child variant="outline" size="pill-sm">
-                <NuxtLink to="/parler-a-un-conseiller">Parler à un conseiller</NuxtLink>
+                <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
               </Button>
             </div>
             <div class="mt-lg flex gap-lg text-small font-semibold">
@@ -365,7 +365,7 @@
           <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
         </Button>
         <Button as-child variant="outline-inverse" size="pill-sm" class="w-full sm:w-auto">
-          <NuxtLink to="/parler-a-un-conseiller">Parler à un conseiller</NuxtLink>
+          <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
         </Button>
       </CtaBanner>
     </section>

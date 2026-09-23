@@ -3,7 +3,7 @@
     <div class="mx-auto px-gutter-mobile py-section md:px-gutter">
       <div class="mb-2xl">
         <h1 class="font-display text-h2 font-extrabold text-ink lg:text-h1">
-          Parler à un conseiller
+          Parler à votre conseiller
         </h1>
         <p class="mt-sm max-w-prose text-body text-ink-muted">
           Décrivez votre besoin&nbsp;: votre demande est transmise à l'interlocuteur compétent de
@@ -307,18 +307,18 @@ import { z } from 'zod'
 
 definePageMeta({
   layout: 'with-breadcrumb',
-  breadcrumb: [{ label: 'Accueil', to: '/' }, { label: 'Parler à un conseiller' }]
+  breadcrumb: [{ label: 'Accueil', to: '/' }, { label: 'Parler à votre conseiller' }]
 })
 
 useContentSeo(
   {
-    seo_title: 'Parler à un conseiller | LEARN UP ACADEMY',
+    seo_title: 'Parler à votre conseiller | LEARN UP ACADEMY',
     seo_description:
       'Décrivez votre besoin : votre demande est transmise à l’interlocuteur compétent de votre territoire, qui vous recontacte sous 24 h ouvrées.',
     // Formulaire de contact : hors indexation.
     seo_noindex: true
   },
-  'Parler à un conseiller'
+  'Parler à votre conseiller'
 )
 
 // Le besoin alimente le routage back-office (learnup_type_projet) — jamais
@@ -426,7 +426,7 @@ const onSubmit = handleSubmit(async (v) => {
     message: [v.message, `Référence : ${ref}`].filter(Boolean).join('\n\n'),
     consentement: v.consentement,
     pageUri: window.location.href,
-    pageName: 'Parler à un conseiller'
+    pageName: 'Parler à votre conseiller'
   })
   if (ok) {
     reference.value = ref

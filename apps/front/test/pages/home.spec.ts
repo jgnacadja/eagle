@@ -202,7 +202,7 @@ describe('pages/index', () => {
     expect(hrefs).toContain('/centres/demande-de-formation?sujet=franchise')
     expect(hrefs).toContain('/referencer-mon-organisme')
     expect(hrefs).toContain('/centres/demande-de-formation?sujet=formateur')
-    expect(hrefs).toContain('/parler-a-un-conseiller')
+    expect(hrefs).toContain('/parler-a-votre-conseiller')
     expect(hrefs).toContain('/formations')
     expect(hrefs).toContain('/centres')
   })

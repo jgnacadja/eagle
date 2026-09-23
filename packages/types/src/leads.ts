@@ -14,7 +14,7 @@ export interface LeadPageContext {
 export type LeadVoie = 'centre' | 'organisme' | 'formateur'
 
 /**
- * Nature du besoin exprimé sur le formulaire « Parler à un conseiller ».
+ * Nature du besoin exprimé sur le formulaire « Parler à votre conseiller ».
  * Alimente le routage back-office (`learnup_type_projet`) — jamais exposé
  * côté client : « conseiller » couvre le besoin de formation générique.
  */

@@ -368,7 +368,7 @@
                       <NuxtLink :to="demandeTo">Demander cette formation</NuxtLink>
                     </Button>
                     <Button as-child variant="outline" size="pill" class="w-full">
-                      <NuxtLink to="/parler-a-un-conseiller">Parler à un conseiller</NuxtLink>
+                      <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
                     </Button>
                   </div>
                   <p class="mt-sm text-meta leading-relaxed text-ink-subtle">
@@ -447,7 +447,7 @@
               <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
             </Button>
             <Button as-child variant="outline-inverse" size="control" class="w-full sm:w-auto">
-              <NuxtLink to="/parler-a-un-conseiller">Parler à un conseiller</NuxtLink>
+              <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
             </Button>
           </CtaBanner>
 

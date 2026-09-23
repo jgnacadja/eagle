@@ -36,7 +36,7 @@
                   <NuxtLink to="#formations">Trouver une formation dans ce centre</NuxtLink>
                 </Button>
                 <Button as-child variant="outline" size="pill" class="w-full sm:w-auto">
-                  <NuxtLink to="/parler-a-un-conseiller">Parler à un conseiller</NuxtLink>
+                  <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
                 </Button>
                 <NuxtLink
                   v-if="centre.phone"
@@ -297,7 +297,7 @@
         <CtaBanner
           v-reveal
           class="mt-2xl"
-          title="Un besoin de formation sur ce territoire ?"
+          title="Besoin de formation ?"
           text="La demande transmet automatiquement le centre, la ville et la formation concernée — sans ressaisie."
         >
           <Button as-child variant="paper" size="pill-lg" class="w-full sm:w-auto">
@@ -306,7 +306,7 @@
             >
           </Button>
           <Button as-child variant="outline-inverse" size="pill-lg" class="w-full sm:w-auto">
-            <NuxtLink to="/parler-a-un-conseiller">Parler à un conseiller</NuxtLink>
+            <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
           </Button>
         </CtaBanner>
 

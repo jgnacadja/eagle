@@ -9,48 +9,212 @@
         class="pointer-events-none absolute -right-36 -top-32 h-96 w-96 rounded-full bg-accent/5"
       />
 
-      <div class="relative mx-auto px-gutter-mobile md:px-gutter pb-section pt-4xl text-center">
-        <span
-          class="inline-block rounded-full border border-primary bg-paper px-4 py-2 text-h4 font-bold uppercase tracking-widest text-primary"
-        >
-          Réseau national d'organismes de formation et plateforme de conseil
-        </span>
+      <!-- Floating badge on desktop (placed at section level, top right of the screen) -->
+      <div
+        class="pointer-events-none absolute right-6 top-8 hidden lg:block xl:right-12 xl:top-10 -rotate-3 z-10"
+      >
+        <div class="rounded-2xl border border-rule/50 bg-paper px-6 py-4 shadow-md text-left">
+          <p class="font-display text-lead font-bold italic leading-snug text-ink">
+            Des compétences aujourd'hui<br />
+            pour les défis de demain
+          </p>
+          <div class="mt-2 h-1 w-14 rounded-full bg-accent" />
+        </div>
+      </div>
 
-        <h1 class="mt-5 font-display text-h2 md:text-hero font-extrabold text-ink">
-          Vos besoins de formation,<br />
-          <span class="text-accent-text">orchestrés</span> de bout en bout.
-        </h1>
-
-        <p class="mt-md font-sans text-body md:text-lead font-semibold text-ink">
-          La bonne formation. Au bon endroit. Au bon moment.
-        </p>
-
-        <form class="mx-auto mt-xl w-full max-w-prose" @submit.prevent>
-          <SearchInput
-            input-id="hero-search"
-            sr-label="Rechercher une formation"
-            placeholder="« Je dois former 8 salariés au CACES près de Lyon avant septembre »"
+      <div
+        class="relative mx-auto max-w-container px-gutter-mobile md:px-gutter pb-section pt-3xl md:pt-4xl text-center"
+      >
+        <div class="mx-auto max-w-prose md:max-w-180">
+          <!-- Pill category badge -->
+          <span
+            class="inline-block rounded-full border border-primary/25 bg-paper px-4 py-1.5 text-xs md:text-small font-bold uppercase tracking-wider text-primary shadow-xs"
           >
-            <template #icon>
-              <IconSparkle :size="20" class="shrink-0 text-accent" />
-            </template>
-          </SearchInput>
-        </form>
+            Plateforme de conseil et d'orientation en formation professionnelle
+          </span>
 
-        <p class="mx-auto mt-lg text-small md:whitespace-nowrap">
-          <span class="font-bold text-ink">LEARN UP</span
-          ><span class="font-medium text-ink-body"
-            >, organisme de formation et de recommandation, vous accompagne pour identifier et
-            organiser la formation la plus adaptée à vos équipes.</span
+          <!-- Main H1 title -->
+          <h1
+            class="mt-4 md:mt-5 font-display text-h2 md:text-h1 font-extrabold leading-tight text-ink"
           >
-        </p>
+            Vos besoins de formation,<br />
+            <span class="text-accent-text">orchestrés</span> de bout en bout.
+          </h1>
 
-        <NuxtLink
-          to="/centres/demande-de-formation"
-          class="mt-sm inline-block text-small font-bold text-accent-text underline underline-offset-4 transition-colors hover:text-primary"
-        >
-          Confier ma formation <span class="link-arrow">→</span>
-        </NuxtLink>
+          <!-- Subtitle -->
+          <p class="mt-3 md:mt-4 font-sans text-body md:text-lead font-bold text-ink">
+            La bonne formation. Au bon endroit. Au bon moment. Partout en France.
+          </p>
+
+          <!-- Prompt section -->
+          <div class="mt-6 md:mt-8">
+            <h2 class="font-display text-h4 md:text-h3 font-extrabold text-ink">
+              Besoin d'aide pour choisir votre formation&nbsp;?
+            </h2>
+            <p class="mx-auto mt-2 text-small md:text-sm text-ink-muted max-w-132.5">
+              Décrivez votre besoin ou posez votre question. Nous vous guidons vers la solution
+              adaptée.
+            </p>
+          </div>
+
+          <!-- Search bar -->
+          <form class="mx-auto mt-6 w-full max-w-prose md:max-w-170" @submit.prevent="onHeroSearch">
+            <div
+              class="flex h-14 md:h-16 items-center gap-3 rounded-full border-2 border-primary/75 bg-paper pl-4 md:pl-6 pr-2 shadow-sm transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"
+            >
+              <IconSparkle :size="22" class="shrink-0 text-accent" />
+              <label for="hero-search-input" class="sr-only"
+                >Décrivez votre besoin de formation</label
+              >
+              <input
+                id="hero-search-input"
+                v-model="heroSearch"
+                type="text"
+                class="h-auto flex-1 border-0 bg-transparent px-0 text-small md:text-body text-ink placeholder:text-ink-subtle focus:outline-none"
+                placeholder="Ex. : Je dois former 8 salariés au CACES près de Lyon avant septembre."
+              />
+              <button
+                type="submit"
+                aria-label="Lancer la recherche"
+                class="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-full bg-primary text-paper transition-colors hover:bg-primary-dark"
+              >
+                <IconSearch :size="18" class="text-paper" />
+              </button>
+            </div>
+            <p
+              class="mt-3 text-xs md:text-small text-ink-muted whitespace-normal md:whitespace-nowrap"
+            >
+              Vous pouvez écrire comme vous le feriez à un conseiller.
+            </p>
+          </form>
+
+          <!-- 3 Value propositions -->
+          <div
+            class="mx-auto mt-6 flex w-fit flex-col items-start gap-3 text-small font-bold text-ink md:w-auto md:flex-row md:items-center md:justify-center md:gap-5"
+          >
+            <div class="inline-flex items-center gap-2">
+              <IconMessageCircle :size="18" class="shrink-0 text-accent" />
+              <span>Obtenez des conseils personnalisés</span>
+            </div>
+            <span class="hidden text-rule md:inline" aria-hidden="true">|</span>
+            <div class="inline-flex items-center gap-2">
+              <IconMapPin :size="18" class="shrink-0 text-accent" />
+              <span>Trouvez la formation près de chez vous</span>
+            </div>
+            <span class="hidden text-rule md:inline" aria-hidden="true">|</span>
+            <div class="inline-flex items-center gap-2">
+              <IconCalendar :size="18" class="shrink-0 text-accent" />
+              <span>Consultez les prochaines sessions</span>
+            </div>
+          </div>
+
+          <!-- CTA Link -->
+          <div class="mt-5">
+            <NuxtLink
+              to="/parler-a-un-conseiller"
+              class="inline-block text-small md:text-body font-bold text-accent-text underline underline-offset-4 transition-colors hover:text-primary"
+            >
+              Besoin d'être accompagné&nbsp;? Parler à un conseiller
+              <span class="link-arrow">→</span>
+            </NuxtLink>
+            <p class="mx-auto mt-1 max-w-callout text-xs text-ink-subtle md:hidden">
+              Ouvre le formulaire « Demande conseiller » — identité, contact, SIRET, nature du
+              besoin.
+            </p>
+          </div>
+        </div>
+
+        <!-- Floating badge on mobile (Image 2) -->
+        <div class="my-6 flex justify-center lg:hidden">
+          <div class="rounded-xl border border-rule/60 bg-paper px-5 py-3 shadow-md text-left">
+            <p class="font-display text-sm font-extrabold italic leading-snug text-ink">
+              Des compétences aujourd'hui<br />
+              pour les défis de demain
+            </p>
+            <div class="mt-1.5 h-1 w-12 rounded-full bg-accent" />
+          </div>
+        </div>
+
+        <!-- 4 Cards at bottom -->
+        <div class="mt-8 md:mt-12">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 md:gap-md">
+            <!-- Card 1: Entreprises de toutes tailles -->
+            <div
+              class="flex items-center gap-3.5 rounded-xl border border-rule/60 bg-paper p-4 text-left shadow-xs transition-shadow hover:shadow-sm"
+            >
+              <div
+                class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-surface-alt text-primary"
+              >
+                <IconUsers :size="24" />
+              </div>
+              <div>
+                <p class="text-small font-bold text-ink">Entreprises de toutes tailles</p>
+                <p class="mt-0.5 text-xs text-ink-muted">TPE, PME, ETI, grands comptes</p>
+              </div>
+            </div>
+
+            <!-- Card 2: Partout en France -->
+            <div
+              class="flex items-center gap-3.5 rounded-xl border border-rule/60 bg-paper p-4 text-left shadow-xs transition-shadow hover:shadow-sm"
+            >
+              <div
+                class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-surface-alt text-primary"
+              >
+                <IconMapPin :size="24" />
+              </div>
+              <div>
+                <p class="text-small font-bold text-ink">Partout en France</p>
+                <p class="mt-0.5 text-xs text-ink-muted">
+                  Un réseau de centres proches de vos équipes
+                </p>
+              </div>
+            </div>
+
+            <!-- Card 3: Formations réglementaires -->
+            <div
+              class="flex items-center gap-3.5 rounded-xl border border-rule/60 bg-paper p-4 text-left shadow-xs transition-shadow hover:shadow-sm"
+            >
+              <div
+                class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-surface-alt text-primary"
+              >
+                <IconFileText :size="24" />
+              </div>
+              <div>
+                <p class="text-small font-bold text-ink">Formations réglementaires</p>
+                <p class="mt-0.5 text-xs text-ink-muted">Des solutions adaptées à vos métiers</p>
+              </div>
+            </div>
+
+            <!-- Card 4: Certifié Qualiopi -->
+            <div
+              class="flex items-center gap-3.5 rounded-xl border border-warning/40 bg-paper p-4 text-left shadow-xs transition-shadow hover:shadow-sm"
+            >
+              <div
+                class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-warning-soft text-warning"
+              >
+                <IconRibbon :size="24" />
+              </div>
+              <div>
+                <p class="text-small font-bold text-ink">Certifié Qualiopi</p>
+                <a
+                  href="/certificat-qualiopi.pdf"
+                  target="_blank"
+                  rel="noopener"
+                  class="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-ink underline underline-offset-2 transition-colors hover:text-accent-text"
+                >
+                  Télécharger le certificat (PDF)
+                  <IconDownload :size="13" class="shrink-0" />
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Annotation mobile Qualiopi -->
+          <p class="mx-auto mt-2 text-left text-xs text-ink-subtle md:hidden">
+            Certificat Qualiopi téléchargeable (PDF) — périmètre et numéro à confirmer avant mise en
+            ligne.
+          </p>
+        </div>
       </div>
     </section>
 
@@ -470,6 +634,13 @@ useHead({
     }
   ]
 })
+
+const heroSearch = ref('')
+
+function onHeroSearch() {
+  const q = heroSearch.value.trim()
+  navigateTo({ path: '/formations', query: q ? { q } : {} })
+}
 
 const mapSearch = ref('')
 

@@ -416,7 +416,9 @@
                 formulaire conserve la formation et le besoin — le centre n'est pas imposé.
               </p>
               <Button as-child variant="paper" size="pill" class="mt-md w-full">
-                <NuxtLink :to="demandeTo">Organiser cette formation dans mon entreprise</NuxtLink>
+                <NuxtLink :to="demandeIntraTo">
+                  Organiser cette formation dans mon entreprise
+                </NuxtLink>
               </Button>
             </Card>
 
@@ -926,6 +928,13 @@ function demandeUrl(session?: CourseSession): string {
   return `/centres/demande-de-formation?${params.toString()}`
 }
 const demandeTo = computed(() => demandeUrl())
+
+// Variante intra : aucun centre imposé — le lieu de la session est saisi
+// par le client dans le formulaire (« sans centre imposé »).
+const demandeIntraTo = computed(() => {
+  const params = new URLSearchParams({ famille, formation: slug, intra: '1' })
+  return `/centres/demande-de-formation?${params.toString()}`
+})
 
 // Titre de session par modalité (label déjà traduit via MODALITY_LABELS).
 const SESSION_TITLES: Record<string, string> = {

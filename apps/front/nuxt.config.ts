@@ -1,6 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import tailwindcss from '@tailwindcss/vite'
-import { colors, typography } from '@learnup/ui'
+import { typography } from '@learnup/ui'
 import { REVEAL_TRANSITION } from './app/utils/reveal'
 
 const apiBase = process.env.NUXT_API_BASE ?? 'http://localhost:3001'

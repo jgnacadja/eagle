@@ -82,7 +82,7 @@
             aria-label="Informations complémentaires"
           >
             <!-- Informations pratiques -->
-            <section aria-labelledby="infos-title">
+            <section aria-labelledby="infos-title" class="order-1 lg:order-0">
               <Card v-reveal variant="surface" class="h-fit">
                 <CardHeader class="p-lg pb-0">
                   <h2 id="infos-title" class="font-sans text-h4 font-bold text-ink">
@@ -152,6 +152,7 @@
             <section
               v-if="centre.latitude != null && centre.longitude != null"
               aria-labelledby="carte-title"
+              class="order-2 lg:order-0"
             >
               <h2 id="carte-title" class="sr-only">Carte d'accès</h2>
               <CenterMap
@@ -168,11 +169,11 @@
             </section>
 
             <!-- Qualité : 3e carte de la barre latérale — collée
-                 sous la carte sur desktop ; `order-3` la renvoie
-                 après le contenu principal sur mobile. -->
+                 sous la carte sur desktop ; `order-5` la place après
+                 les prochaines sessions sur mobile (maquette). -->
             <section
               v-if="centre.qualiopi_certified"
-              class="order-3 lg:order-0"
+              class="order-5 lg:order-0"
               aria-labelledby="qualite-title"
             >
               <Card v-reveal variant="paper" class="h-fit">
@@ -220,12 +221,21 @@
             </section>
           </aside>
 
-          <!-- Colonne principale -->
+          <!-- Colonne principale : `contents` sur mobile pour ordonner
+               ses sections avec celles de la barre latérale (formations
+               et sessions avant « Le centre », maquette mobile) ;
+               redevient une colonne flex sur desktop. `md:px-16` est
+               reporté sur chaque section puisque contents ne génère
+               pas de boîte. -->
           <div
-            class="order-2 flex min-w-0 flex-col gap-2xl md:px-16 lg:order-0 lg:col-start-1 lg:row-start-1"
+            class="order-2 contents min-w-0 flex-col gap-2xl lg:order-0 lg:col-start-1 lg:row-start-1 lg:flex"
           >
             <!-- Le centre -->
-            <section v-if="centre.description" aria-labelledby="le-centre-title">
+            <section
+              v-if="centre.description"
+              aria-labelledby="le-centre-title"
+              class="order-6 md:px-16 lg:order-0 lg:px-0"
+            >
               <h2 id="le-centre-title" class="font-display text-h2 font-extrabold text-ink">
                 Le centre
               </h2>
@@ -236,7 +246,11 @@
             </section>
 
             <!-- Formations disponibles -->
-            <section id="formations" aria-labelledby="formations-title">
+            <section
+              id="formations"
+              aria-labelledby="formations-title"
+              class="order-3 md:px-16 lg:order-0 lg:px-0"
+            >
               <div class="flex flex-wrap items-baseline justify-between gap-sm">
                 <h2 id="formations-title" class="font-display text-h2 font-extrabold text-ink">
                   Les formations disponibles dans ce centre
@@ -283,7 +297,11 @@
             </section>
 
             <!-- Prochaines sessions dans ce centre -->
-            <section v-if="sessions.length" aria-labelledby="sessions-title">
+            <section
+              v-if="sessions.length"
+              aria-labelledby="sessions-title"
+              class="order-4 md:px-16 lg:order-0 lg:px-0"
+            >
               <h2 id="sessions-title" class="font-display text-h2 font-extrabold text-ink">
                 Prochaines sessions
               </h2>
@@ -325,7 +343,11 @@
             </section>
 
             <!-- Avis — collection Directus `avis`, section masquée si vide -->
-            <section v-if="centreAvis.length" aria-labelledby="avis-title">
+            <section
+              v-if="centreAvis.length"
+              aria-labelledby="avis-title"
+              class="order-7 md:px-16 lg:order-0 lg:px-0"
+            >
               <h2 id="avis-title" class="font-display text-h2 font-extrabold text-ink">Avis</h2>
               <p class="mt-xs flex flex-wrap items-baseline gap-x-sm">
                 <span class="font-display text-h3 font-extrabold text-ink"
@@ -352,7 +374,11 @@
             </section>
 
             <!-- Actualités liées au centre (relation M2O `articles.centre`) -->
-            <section v-if="centreArticles.length" aria-labelledby="actus-title">
+            <section
+              v-if="centreArticles.length"
+              aria-labelledby="actus-title"
+              class="order-8 md:px-16 lg:order-0 lg:px-0"
+            >
               <div class="flex flex-wrap items-baseline justify-between gap-sm">
                 <h2 id="actus-title" class="font-display text-h2 font-extrabold text-ink">
                   Actualités de votre centre
@@ -386,24 +412,7 @@
           </div>
         </div>
 
-        <!-- Bandeau CTA -->
-        <CtaBanner
-          v-reveal
-          class="mt-2xl"
-          title="Besoin de formation ?"
-          text="La demande transmet automatiquement le centre, la ville et la formation concernée — sans ressaisie."
-        >
-          <Button as-child variant="paper" size="pill-lg" class="w-full sm:w-auto">
-            <NuxtLink :to="`/centres/demande-de-formation?centre=${slug}`"
-              >Demander une formation</NuxtLink
-            >
-          </Button>
-          <Button as-child variant="outline-inverse" size="pill-lg" class="w-full sm:w-auto">
-            <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
-          </Button>
-        </CtaBanner>
-
-        <!-- Autres centres de la région -->
+        <!-- Autres centres de la région — avant le bandeau CTA (maquette) -->
         <section v-if="nearbyCenters.length" class="mt-2xl" aria-labelledby="autres-title">
           <div class="flex flex-wrap items-baseline justify-between gap-sm">
             <h2 id="autres-title" class="font-display text-h2 font-extrabold text-ink">
@@ -435,6 +444,23 @@
             >
           </Button>
         </section>
+
+        <!-- Bandeau CTA — dernière section avant le footer -->
+        <CtaBanner
+          v-reveal
+          class="mt-2xl"
+          title="Besoin de formation ?"
+          text="La demande transmet automatiquement le centre, la ville et la formation concernée — sans ressaisie."
+        >
+          <Button as-child variant="paper" size="pill-lg" class="w-full sm:w-auto">
+            <NuxtLink :to="`/centres/demande-de-formation?centre=${slug}`"
+              >Demander une formation</NuxtLink
+            >
+          </Button>
+          <Button as-child variant="outline-inverse" size="pill-lg" class="w-full sm:w-auto">
+            <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
+          </Button>
+        </CtaBanner>
       </div>
     </template>
 

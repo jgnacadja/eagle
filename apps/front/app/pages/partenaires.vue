@@ -2,186 +2,245 @@
   <div class="bg-paper">
     <!-- Intro + stats -->
     <section class="bg-surface">
-      <div class="mx-auto px-gutter-mobile py-2xl md:px-gutter md:py-4xl">
-        <h1 class="mt-lg font-display text-h1 font-extrabold text-ink">
-          Le réseau et ses partenaires
+      <div class="mx-auto px-gutter-mobile py-xl md:px-gutter md:py-4xl">
+        <h1 class="font-display text-2xl font-extrabold text-ink leading-tight sm:text-h1">
+          <span class="sm:hidden">Les entreprises qui forment<br />avec le réseau</span>
+          <span class="hidden sm:inline">Les entreprises qui forment avec<br />le réseau</span>
         </h1>
 
-        <p class="mt-md max-w-prose text-lead text-ink-muted">
-          LEARN UP ACADEMY réunit des centres de formation et des organismes partenaires sous une
-          marque commune. Les formations sont assurées par les centres du réseau, en centre, sur
-          site ou en intra-entreprise.
+        <p
+          class="mt-sm md:mt-md max-w-prose text-small md:text-lead text-ink-muted leading-relaxed"
+        >
+          Des PME aux groupes multi-sites, les entreprises confient au réseau
+          <span class="hidden md:inline"
+            >LEARN UP ACADEMY la formation réglementaire de leurs équipes — en centre, sur leur site
+            ou en intra-entreprise,</span
+          >
+          <span class="md:hidden">la formation réglementaire de leurs équipes,</span> partout en
+          France.
         </p>
 
-        <div class="mt-xl flex">
+        <!-- Stats mobile (pleine largeur 3 colonnes) -->
+        <div class="mt-lg grid grid-cols-3 divide-x divide-rule md:hidden">
           <StatItem
-            value="+400"
-            label="centres partenaires"
+            value="+250"
+            label="formations"
+            size="sm"
+            class="pr-2 [&_p:first-child]:text-xl [&_p:last-child]:text-[11px]"
+          />
+          <StatItem
+            value="France entière"
+            label="couverte par le réseau"
+            size="sm"
+            class="px-2 [&_p:first-child]:text-sm [&_p:last-child]:text-[11px]"
+          />
+          <StatItem
+            value="312"
+            label="sessions ouvertes"
+            size="sm"
+            class="pl-2 [&_p:first-child]:text-xl [&_p:last-child]:text-[11px]"
+          />
+        </div>
+
+        <!-- Stats desktop (inline non-full) -->
+        <div class="mt-xl hidden md:flex flex-wrap gap-y-6">
+          <StatItem
+            value="+250"
+            label="formations au catalogue"
             size="sm"
             class="pr-lg whitespace-nowrap"
           />
-          <StatItem value="96" label="départements couverts" size="sm" class="border-l px-md" />
-          <StatItem value="+250" label="formations au catalogue" size="sm" class="border-l pl-md" />
+          <StatItem
+            value="France entière"
+            label="couverte par le réseau national"
+            size="sm"
+            class="border-l border-rule px-lg"
+          />
+          <StatItem
+            value="312"
+            label="sessions ouvertes"
+            size="sm"
+            class="border-l border-rule pl-lg"
+          />
         </div>
       </div>
     </section>
 
     <div class="mx-auto px-gutter-mobile md:px-gutter">
-      <!-- Qui compose le réseau -->
-      <section class="py-section" aria-labelledby="composition-title">
-        <h2 id="composition-title" class="font-display text-h2 font-extrabold text-ink">
-          Qui compose le réseau
+      <!-- Certificateurs -->
+      <section class="py-8 md:py-section" aria-labelledby="certificateurs-title">
+        <h2
+          id="certificateurs-title"
+          class="font-display text-xl sm:text-h2 font-extrabold text-ink"
+        >
+          Ils confient leurs formations au réseau
         </h2>
 
-        <div class="mt-xl grid gap-grid md:grid-cols-2">
-          <article
-            v-for="option in networkMembers"
-            :key="option.title"
-            class="group flex flex-col rounded-md border border-rule bg-paper p-lg shadow-sm transition-shadow hover:border-primary hover:shadow-md"
+        <div class="mt-lg grid grid-cols-3 gap-2 sm:gap-grid md:grid-cols-6">
+          <div
+            v-for="company in techCompanyLogos"
+            :key="company.name"
+            class="flex h-16 sm:h-24 items-center justify-center rounded-xl border border-rule px-3 sm:px-md bg-surface"
           >
-            <div
-              class="hidden md:flex h-control w-control items-center justify-center rounded-sm bg-primary-soft text-primary transition-colors group-hover:bg-primary group-hover:text-accent-text"
-            >
-              <component :is="option.icon" :size="22" />
-            </div>
-            <h3 class="md:mt-lg font-display text-h3 font-extrabold text-ink">
-              {{ option.title }}
+            <img
+              :src="company.logoUrl"
+              :alt="company.name"
+              class="max-h-7 sm:max-h-9 max-w-[80%] object-contain"
+              loading="lazy"
+            />
+          </div>
+        </div>
+        <p class="mt-sm text-xs sm:text-meta text-ink-muted">
+          Références publiées avec l'accord des entreprises concernées.
+        </p>
+      </section>
+
+      <!-- Secteurs réglementaires -->
+      <section class="pb-8 md:pb-section" aria-labelledby="secteurs-title">
+        <h2 id="secteurs-title" class="font-display text-xl sm:text-h2 font-extrabold text-ink">
+          Des secteurs soumis à obligations réglementaires
+        </h2>
+
+        <div class="mt-lg md:mt-xl grid grid-cols-1 gap-3 md:gap-md md:grid-cols-2 lg:grid-cols-3">
+          <article
+            v-for="(sector, idx) in sectors"
+            :key="sector.title"
+            class="flex-col justify-center rounded-2xl bg-surface p-4 sm:p-6"
+            :class="idx >= 4 ? 'hidden md:flex' : 'flex'"
+          >
+            <h3 class="font-display text-small sm:text-base font-bold text-ink">
+              {{ sector.title }}
             </h3>
-            <p class="mt-sm flex-1 text-body text-ink-muted">{{ option.body }}</p>
-            <NuxtLink
-              v-if="option.to"
-              :to="option.to"
-              class="mt-lg text-small font-bold text-primary underline underline-offset-4 transition-colors hover:text-accent-text"
+            <p class="mt-1 sm:mt-xs text-xs sm:text-small text-ink-muted leading-relaxed">
+              {{ sector.body }}
+            </p>
+          </article>
+
+          <article
+            class="hidden md:flex flex-col justify-between gap-md rounded-2xl bg-navy-deep p-6 text-ink-inverse sm:flex-row sm:items-center md:col-span-2 lg:col-span-2"
+          >
+            <div class="flex-1">
+              <h3 class="font-display text-base font-bold text-ink-inverse">
+                Votre secteur n'est pas listé ?
+              </h3>
+              <p class="mt-xs text-small text-ink-inverse-muted leading-relaxed">
+                Le catalogue complet couvre l'ensemble des formations réglementaires, tous secteurs
+                confondus.
+              </p>
+            </div>
+            <Button
+              as-child
+              variant="paper"
+              size="pill"
+              class="shrink-0 self-start font-bold sm:self-center"
             >
-              {{ option.cta }} <span class="link-arrow">→</span>
-            </NuxtLink>
-            <p v-else class="mt-lg text-small text-ink-subtle">{{ option.note }}</p>
+              <NuxtLink to="/formations">Voir le catalogue complet</NuxtLink>
+            </Button>
+          </article>
+        </div>
+
+        <NuxtLink
+          to="/formations"
+          class="mt-md inline-flex items-center gap-1 text-small font-bold text-ink transition-colors hover:text-primary md:hidden"
+        >
+          Voir le catalogue complet <span class="link-arrow">→</span>
+        </NuxtLink>
+      </section>
+
+      <!-- De la PME au groupe multi-sites -->
+      <section class="pb-8 md:pb-section" aria-labelledby="segments-title">
+        <h2 id="segments-title" class="font-display text-xl sm:text-h2 font-extrabold text-ink">
+          De la PME au groupe multi-sites
+        </h2>
+
+        <div class="mt-lg md:mt-xl grid grid-cols-1 gap-3 md:gap-md md:grid-cols-3">
+          <article
+            v-for="segment in segments"
+            :key="segment.title"
+            class="flex flex-col justify-between rounded-2xl border border-rule bg-surface p-4 sm:p-6"
+          >
+            <div>
+              <p class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-accent-text">
+                {{ segment.tag }}
+              </p>
+              <h3 class="mt-1 sm:mt-sm font-display text-small sm:text-base font-bold text-ink">
+                {{ segment.title }}
+              </h3>
+              <p class="mt-1 sm:mt-xs text-xs sm:text-small text-ink-muted leading-relaxed">
+                {{ segment.body }}
+              </p>
+            </div>
           </article>
         </div>
       </section>
 
-      <!-- Engagements qualité -->
-      <section class="pb-section" aria-labelledby="engagements-title">
-        <h2 id="engagements-title" class="font-display text-h2 font-extrabold text-ink">
-          Les engagements qualité du réseau
+      <!-- Ce que les entreprises trouvent dans le réseau -->
+      <section class="pb-8 md:pb-section" aria-labelledby="benefices-title">
+        <h2 id="benefices-title" class="font-display text-xl sm:text-h2 font-extrabold text-ink">
+          Ce que les entreprises <span class="hidden md:inline">trouvent dans le réseau</span
+          ><span class="md:hidden">y trouvent</span>
         </h2>
-        <p class="mt-sm max-w-prose text-body text-ink-muted">
-          Tous les centres du réseau, quel que soit leur mode d'entrée, appliquent le même cadre.
-        </p>
 
-        <div class="mt-xl grid gap-grid md:grid-cols-2">
+        <div class="mt-lg md:mt-xl grid grid-cols-1 gap-3 md:gap-md md:grid-cols-2">
           <div
-            v-for="item in commitments"
-            :key="item.title"
-            class="flex gap-md rounded-md bg-surface p-lg"
+            v-for="benefit in networkBenefits"
+            :key="benefit.title"
+            class="flex items-center gap-3 sm:gap-md rounded-xl sm:rounded-2xl bg-surface p-3.5 sm:p-6"
           >
             <div
-              class="flex h-control w-control shrink-0 items-center justify-center rounded-full bg-success-soft text-success"
+              class="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-success-soft text-success"
             >
-              <IconCheck :size="18" />
+              <IconCheck :size="16" class="sm:hidden" />
+              <IconCheck :size="18" class="hidden sm:block" />
             </div>
             <div>
-              <h3 class="text-sm font-bold text-ink">{{ item.title }}</h3>
-              <p class="mt-xs text-small text-ink-muted">{{ item.body }}</p>
+              <h3 class="font-display text-badge sm:text-base font-bold text-ink">
+                <span class="">{{ benefit.title }}</span>
+              </h3>
+              <p
+                v-if="benefit.body"
+                class="hidden md:block mt-xs text-small text-ink-muted leading-relaxed"
+              >
+                {{ benefit.body }}
+              </p>
             </div>
           </div>
-        </div>
-      </section>
-
-      <!-- Certificateurs -->
-      <section class="pb-section" aria-labelledby="certificateurs-title">
-        <h2 id="certificateurs-title" class="font-display text-h2 font-extrabold text-ink">
-          Certificateurs et organismes de référence
-        </h2>
-        <p class="mt-sm max-w-prose text-body text-ink-muted">
-          Les formations du catalogue s'appuient sur les référentiels des certificateurs et
-          organismes de branche. Chaque certification est détaillée sur la page de la formation
-          concernée.
-        </p>
-
-        <div class="mt-xl grid grid-cols-2 gap-grid sm:grid-cols-3 md:grid-cols-5">
-          <div
-            v-for="logo in certifiers"
-            :key="logo"
-            class="flex h-24 items-center justify-center rounded-md border border-dashed border-rule px-md text-center text-meta text-ink-subtle"
-          >
-            {{ logo }}
-          </div>
-        </div>
-      </section>
-
-      <!-- Carte -->
-      <section class="pb-section" aria-labelledby="carte-title">
-        <div class="flex items-end justify-between">
-          <h2 id="carte-title" class="font-display text-h2 font-extrabold text-ink">
-            Un réseau présent partout en France
-          </h2>
-          <NuxtLink
-            to="/centres"
-            class="hidden text-sm font-bold text-primary transition-colors hover:text-accent-text md:block"
-          >
-            Explorer la carte des centres <span class="link-arrow">→</span>
-          </NuxtLink>
-        </div>
-
-        <div class="mt-lg h-96 overflow-hidden rounded-md border border-rule bg-surface">
-          <CenterMap
-            v-if="mapCenters.length"
-            :centers="mapCenters"
-            :active-id="null"
-            :caption="''"
-          />
-          <div
-            v-else
-            class="flex h-full items-center justify-center px-lg text-center text-small text-ink-muted"
-          >
-            Carte de France interactive<br />départements couverts + centres du réseau
-          </div>
-        </div>
-
-        <div class="mt-lg flex justify-center md:hidden">
-          <NuxtLink
-            to="/centres"
-            class="text-small font-bold text-primary transition-colors hover:text-accent-text"
-          >
-            Explorer la carte des centres <span class="link-arrow">→</span>
-          </NuxtLink>
         </div>
       </section>
     </div>
+
     <!-- CTA -->
-    <section class="bg-surface py-section">
+    <section class="bg-surface py-8 md:py-section">
       <div class="mx-auto px-gutter-mobile md:px-gutter">
-        <div class="flex flex-col gap-lg md:flex-row md:items-center md:justify-between">
+        <div class="flex flex-col gap-lg text-left md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 class="font-display text-h2 font-extrabold text-ink">Un besoin de formation ?</h2>
-            <p class="mt-xs text-body text-ink-muted">
+            <h2 class="font-display text-xl sm:text-h2 font-extrabold text-ink">
+              Un besoin de formation ?
+            </h2>
+            <p class="mt-xs text-xs sm:text-small text-ink-muted">
               Le catalogue couvre les formations réglementaires ; un conseiller peut orienter votre
               recherche.
             </p>
           </div>
-          <div class="flex shrink-0 flex-col gap-md sm:flex-row">
-            <Button as-child size="pill-lg" class="w-full sm:w-auto">
+          <div class="flex shrink-0 flex-col gap-3 w-full sm:w-auto sm:flex-row sm:items-center">
+            <Button
+              as-child
+              size="pill"
+              class="w-full sm:w-auto font-bold bg-navy-deep text-ink-inverse hover:bg-primary"
+            >
               <NuxtLink to="/formations">Parcourir le catalogue</NuxtLink>
             </Button>
-            <Button as-child variant="outline" size="pill-lg" class="w-full sm:w-auto">
+            <Button
+              as-child
+              variant="outline"
+              size="pill"
+              class="w-full sm:w-auto font-bold bg-paper text-primary border-primary/30 hover:border-primary hover:text-accent-text"
+            >
               <NuxtLink to="/centres/demande-de-formation?sujet=conseiller">
                 Être guidé dans mon choix
               </NuxtLink>
             </Button>
           </div>
-        </div>
-
-        <div class="mt-lg border-t border-rule pt-lg">
-          <p class="text-small text-ink-muted">
-            Vous êtes un organisme de formation ?
-            <NuxtLink
-              to="/rejoindre-le-reseau"
-              class="font-bold text-primary underline underline-offset-4 transition-colors hover:text-accent-text"
-            >
-              Rejoindre le réseau
-            </NuxtLink>
-          </p>
         </div>
       </div>
     </section>
@@ -189,107 +248,121 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { Centre } from '@learnup/types'
-import type { CenterResult } from '~/types/center-result'
-import IconBuilding from '~/components/icons/IconBuilding.vue'
 import IconCheck from '~/components/icons/IconCheck.vue'
 
 definePageMeta({
   layout: 'with-breadcrumb',
   layoutProps: {
-    color: 'bg-paper-warm'
-  }
+    color: 'bg-surface'
+  },
+  breadcrumb: [
+    { label: 'Accueil', to: '/' },
+    { label: 'Entreprises', to: '/entreprises' },
+    { label: "Le réseau d'entreprises clientes" }
+  ]
 })
 
 useContentSeo(
   {
-    seo_title: 'Le réseau et ses partenaires — LEARN UP ACADEMY',
+    seo_title: 'Les entreprises qui forment avec le réseau — LEARN UP ACADEMY',
     seo_description:
-      'LEARN UP ACADEMY réunit des centres de formation et des organismes partenaires sous une marque commune, avec un cadre qualité commun à tout le réseau.'
+      'Des PME aux groupes multi-sites, les entreprises confient au réseau LEARN UP ACADEMY la formation réglementaire de leurs équipes — en centre, sur leur site ou en intra-entreprise, partout en France.'
   },
-  'Le réseau et ses partenaires — LEARN UP ACADEMY'
+  'Les entreprises qui forment avec le réseau — LEARN UP ACADEMY'
 )
 
-const networkMembers = [
+const sectors = [
   {
-    icon: IconBuilding,
-    title: 'Des centres de formation partout en France',
-    body: "Chaque centre dispose d'une page avec ses sessions, ses équipements et ses moyens d'accès. Les formations ont lieu en centre, sur site ou en intra-entreprise.",
-    cta: 'Explorer la carte des centres',
-    to: '/centres'
+    title: 'BTP & construction',
+    body: 'CACES engins de chantier, travail en hauteur, échafaudages.'
   },
   {
-    icon: IconCheck,
-    title: 'Des organismes de formation référencés',
-    body: "Des organismes existants rejoignent le réseau après étude de leur dossier : certifications à jour, formateurs habilités, capacité d'accueil vérifiée. Ils interviennent sous la marque LEARN UP ACADEMY.",
-    note: 'La liste des centres est consultable sur la carte du réseau.'
+    title: 'Travail temporaire',
+    body: 'CACES, habilitations et recyclages des intérimaires — gestion multi-agences.'
+  },
+  {
+    title: 'Industrie & énergie',
+    body: 'Habilitations électriques, consignation, sécurité des interventions.'
+  },
+  {
+    title: 'Collectivités & services techniques',
+    body: "Conduite d'engins, habilitations, prévention des risques."
+  },
+  {
+    title: 'Grande distribution',
+    body: 'Manutention, chariots en entrepôt et surface de vente.'
+  },
+  {
+    title: 'Tertiaire & immobilier',
+    body: 'Sécurité incendie, habilitations pour la maintenance des bâtiments.'
+  },
+  {
+    title: 'Transport & logistique',
+    body: 'CACES chariots et engins de manutention, gerbeurs, ponts roulants.'
   }
 ]
 
-const commitments = [
+const segments = [
   {
-    title: 'Certifications et habilitations à jour',
-    body: 'Vérifiées au référencement, puis périodiquement pendant toute la présence dans le réseau.'
+    tag: 'PME & ARTISANS',
+    title: 'Un centre à proximité',
+    body: 'Quelques salariés à former : inscription sur les sessions planifiées du centre le plus proche.'
   },
   {
-    title: 'Des formateurs habilités',
-    body: 'Chaque session est animée par un formateur habilité sur le domaine enseigné.'
+    tag: 'ENTREPRISES MULTI-SITES',
+    title: 'Un interlocuteur, plusieurs territoires',
+    body: 'Chaque site est servi par les centres de son territoire ; les inscriptions et échéances sont suivies de façon consolidée.'
+  },
+  {
+    tag: 'GRANDS COMPTES',
+    title: 'Des besoins récurrents planifiés',
+    body: 'Campagnes de recyclage, sessions intra dédiées et planification annuelle des obligations réglementaires.'
+  }
+]
+
+const networkBenefits = [
+  {
+    title: 'Une réponse locale partout en France',
+    body: 'Les demandes sont prises en charge par les centres du territoire concerné.'
   },
   {
     title: 'Des sessions réelles, publiées en temps réel',
-    body: 'Les dates et disponibilités affichées correspondent aux sessions effectivement programmées.'
+    body: 'Les dates et places affichées correspondent aux sessions effectivement programmées.'
   },
   {
     title: 'Un interlocuteur unique',
-    body: 'De la demande au suivi, la relation est assurée sous la marque LEARN UP ACADEMY.'
+    body: 'De la demande aux attestations, la relation est assurée sous la marque LEARN UP ACADEMY.'
+  },
+  {
+    title: 'Le suivi des échéances réglementaires',
+    body: 'Recyclages et renouvellements suivis dans le temps, site par site.'
   }
 ]
 
-const certifiers = [
-  'Logo certificateur\nà fournir',
-  'Logo certificateur\nà fournir',
-  'Logo organisme\nde branche',
-  'Logo organisme\nde branche',
-  'Label qualité\nà fournir'
+const techCompanyLogos = [
+  {
+    name: 'Capgemini',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/9d/Capgemini_201x_logo.svg'
+  },
+  {
+    name: 'Microsoft',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg'
+  },
+  {
+    name: 'Google Cloud',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/51/Google_Cloud_logo.svg'
+  },
+  {
+    name: 'Amazon',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg'
+  },
+  {
+    name: 'IBM',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg'
+  },
+  {
+    name: 'Oracle',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg'
+  }
 ]
-
-// Même pattern que organisme.vue : liste des centres publiés pour la carte,
-// fallback texte si vide.
-const centresData = await useDirectusList<Centre>('centres', 'reseau-map-centres', {
-  fields: [
-    'slug',
-    'name',
-    'address',
-    'postal_code',
-    'city',
-    'department',
-    'region',
-    'specialties',
-    'latitude',
-    'longitude'
-  ],
-  filter: { status: { _eq: 'published' } },
-  sort: ['-id'],
-  limit: -1
-})
-
-const mapCenters = computed<CenterResult[]>(() =>
-  (centresData.value ?? []).map((centre) => {
-    const location = [centre.address, centre.postal_code, centre.city, centre.department]
-      .filter(Boolean)
-      .join(', ')
-    const tags = (centre.specialties ?? []).join(' · ')
-    return {
-      id: centre.slug,
-      name: centre.name,
-      cp: centre.postal_code ?? '',
-      address: location,
-      tags,
-      tagsShort: tags,
-      lat: centre.latitude ?? undefined,
-      lng: centre.longitude ?? undefined
-    }
-  })
-)
 </script>

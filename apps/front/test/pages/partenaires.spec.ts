@@ -56,48 +56,63 @@ describe('pages/a-propos/reseau.vue', () => {
     const h1 = wrapper.find('h1')
 
     expect(h1.exists()).toBe(true)
-    expect(h1.text()).toContain('Le réseau et ses partenaires')
+    expect(h1.text()).toContain('Les entreprises qui forment avec')
+    expect(h1.text()).toContain('le réseau')
   })
 
   it('affiche les trois statistiques du réseau', async () => {
     const wrapper = await mountReseau()
 
-    expect(wrapper.text()).toContain('+400')
-    expect(wrapper.text()).toContain('centres partenaires')
-    expect(wrapper.text()).toContain('96')
-    expect(wrapper.text()).toContain('départements couverts')
     expect(wrapper.text()).toContain('+250')
-    expect(wrapper.text()).toContain('formations au catalogue')
+    expect(wrapper.text()).toContain('formations')
+    expect(wrapper.text()).toContain('France entière')
+    expect(wrapper.text()).toContain('couverte par le réseau')
+    expect(wrapper.text()).toContain('312')
+    expect(wrapper.text()).toContain('sessions ouvertes')
   })
 
-  it('présente les deux types de membres du réseau', async () => {
+  it('liste les secteurs soumis à obligations réglementaires', async () => {
     const wrapper = await mountReseau()
 
-    expect(wrapper.text()).toContain('Des centres de formation partout en France')
-    expect(wrapper.text()).toContain('Des organismes de formation référencés')
+    expect(wrapper.text()).toContain('Des secteurs soumis à obligations réglementaires')
+    expect(wrapper.text()).toContain('BTP & construction')
+    expect(wrapper.text()).toContain('Travail temporaire')
+    expect(wrapper.text()).toContain('Industrie & énergie')
+    expect(wrapper.text()).toContain('Collectivités & services techniques')
+    expect(wrapper.text()).toContain('Grande distribution')
+    expect(wrapper.text()).toContain('Tertiaire & immobilier')
+    expect(wrapper.text()).toContain('Transport & logistique')
+    expect(wrapper.text()).toContain("Votre secteur n'est pas listé ?")
+    expect(wrapper.text()).toContain('Voir le catalogue complet')
   })
 
-  it('liste les quatre engagements qualité', async () => {
+  it('présente les segments d’entreprises de la PME au groupe multi-sites', async () => {
     const wrapper = await mountReseau()
 
-    expect(wrapper.text()).toContain('Certifications et habilitations à jour')
-    expect(wrapper.text()).toContain('Des formateurs habilités')
+    expect(wrapper.text()).toContain('De la PME au groupe multi-sites')
+    expect(wrapper.text()).toContain('PME & ARTISANS')
+    expect(wrapper.text()).toContain('Un centre à proximité')
+    expect(wrapper.text()).toContain('ENTREPRISES MULTI-SITES')
+    expect(wrapper.text()).toContain('Un interlocuteur, plusieurs territoires')
+    expect(wrapper.text()).toContain('GRANDS COMPTES')
+    expect(wrapper.text()).toContain('Des besoins récurrents planifiés')
+  })
+
+  it('présente ce que les entreprises trouvent dans le réseau', async () => {
+    const wrapper = await mountReseau()
+
+    expect(wrapper.text()).toContain('Ce que les entreprises trouvent dans le réseau')
+    expect(wrapper.text()).toContain('Une réponse locale partout en France')
     expect(wrapper.text()).toContain('Des sessions réelles, publiées en temps réel')
     expect(wrapper.text()).toContain('Un interlocuteur unique')
+    expect(wrapper.text()).toContain('Le suivi des échéances réglementaires')
   })
 
-  it("affiche le placeholder carte quand aucun centre n'est retourné", async () => {
-    const wrapper = await mountReseau()
-
-    expect(wrapper.text()).toContain('Carte de France interactive')
-  })
-
-  it('propose les CTA catalogue, conseiller et rejoindre le réseau', async () => {
+  it('propose les CTA catalogue et conseiller', async () => {
     const wrapper = await mountReseau()
     const hrefs = wrapper.findAll('a').map((link) => link.attributes('href'))
 
     expect(hrefs).toContain('/formations')
     expect(hrefs).toContain('/centres/demande-de-formation?sujet=conseiller')
-    expect(hrefs).toContain('/rejoindre-le-reseau')
   })
 })

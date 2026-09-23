@@ -224,6 +224,11 @@ export const collections = [
         meta: { interface: 'input', width: 'half', ...fr('Téléphone') }
       },
       {
+        field: 'mobile',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', ...fr('Mobile') }
+      },
+      {
         field: 'email',
         type: 'string',
         meta: { interface: 'input', width: 'half', ...fr('E-mail') }
@@ -275,6 +280,26 @@ export const collections = [
           interface: 'input',
           width: 'half',
           ...fr('Numéro de certificat Qualiopi')
+        }
+      },
+      {
+        field: 'qualiopi_certifier',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          note: 'Organisme certificateur (ex. AFNOR)',
+          ...fr('Certificateur Qualiopi')
+        }
+      },
+      {
+        field: 'qualiopi_valid_until',
+        type: 'timestamp',
+        meta: {
+          interface: 'datetime',
+          width: 'half',
+          note: 'Date de fin de validité du certificat',
+          ...fr('Validité Qualiopi')
         }
       },
       {
@@ -1074,6 +1099,62 @@ export const collections = [
       // les champs vides. Readonly restants : digiforma_id, raw,
       // created_at, updated_at.
     ]
+  },
+  {
+    collection: 'avis',
+    icon: 'reviews',
+    note: 'Avis clients affichés dans la section « Avis » des fiches centres. Sans centre associé, l’avis vaut pour la marque (toutes implantations).',
+    ...fr('Avis'),
+    fields: [
+      primaryKey(),
+      statusField(),
+      sortField(),
+      slugField(),
+      {
+        field: 'author',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          required: true,
+          note: 'Libellé affiché en gras (ex. « Responsable logistique »)',
+          ...fr('Auteur')
+        }
+      },
+      {
+        field: 'published_at',
+        type: 'timestamp',
+        meta: {
+          interface: 'datetime',
+          width: 'half',
+          note: 'Affichée « mois année » après l’auteur (ex. « juin 2026 »)',
+          ...fr('Date de publication')
+        }
+      },
+      {
+        field: 'stars',
+        type: 'integer',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          required: true,
+          note: 'Note sur 5 (ex. 5 = ★★★★★)',
+          ...fr('Note')
+        },
+        schema: { default_value: 5 }
+      },
+      {
+        field: 'quote',
+        type: 'text',
+        meta: {
+          interface: 'input-multiline',
+          width: 'full',
+          required: true,
+          ...fr('Témoignage')
+        }
+      }
+      // centre = relation M2O vers centres (voir relations) — vide = avis marque.
+    ]
   }
 ]
 
@@ -1085,6 +1166,16 @@ export const relations = [
     field: 'centre',
     related_collection: 'centres',
     meta: { interface: 'select-dropdown-m2o', ...fr('Centre') }
+  },
+  {
+    collection: 'avis',
+    field: 'centre',
+    related_collection: 'centres',
+    meta: {
+      interface: 'select-dropdown-m2o',
+      note: 'Vide = avis marque, affiché sur toutes les fiches centres',
+      ...fr('Centre')
+    }
   },
   {
     collection: 'articles',

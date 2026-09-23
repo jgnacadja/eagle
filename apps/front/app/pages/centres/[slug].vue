@@ -30,48 +30,62 @@
                   {{ tag }}
                 </Badge>
               </ul>
-
-              <div class="mt-control-sm flex flex-wrap items-center gap-md">
-                <Button as-child variant="accent" size="pill" class="w-full sm:w-auto">
-                  <NuxtLink to="#formations">Trouver une formation dans ce centre</NuxtLink>
-                </Button>
-                <Button as-child variant="outline" size="pill" class="w-full sm:w-auto">
-                  <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
-                </Button>
-                <NuxtLink
-                  v-if="centre.phone"
-                  :to="`tel:${centre.phone.replace(/\s/g, '')}`"
-                  class="hidden items-center gap-2 font-medium text-ink sm:inline-flex"
-                >
-                  <IconPhone :size="16" class="text-primary" />
-                  {{ centre.phone }}
-                </NuxtLink>
-              </div>
             </div>
 
+            <!-- La figure précède les boutons dans le DOM : sur mobile elle
+                 s'affiche avant les CTA ; sur desktop elle occupe la colonne
+                 droite sur les deux lignes (row-span-2). -->
             <figure
               v-if="imageSrc"
-              class="relative aspect-video overflow-hidden rounded-md bg-surface-alt shadow-lg lg:col-span-2 lg:aspect-4/3"
+              class="relative aspect-video overflow-hidden rounded-md bg-surface-alt shadow-lg lg:col-span-2 lg:row-span-2 lg:aspect-4/3"
             >
               <img :src="imageSrc" :alt="centre.name" class="h-full w-full object-cover" />
             </figure>
+
+            <div class="flex flex-wrap items-center gap-md lg:col-span-3">
+              <Button as-child variant="accent" size="pill" class="w-full sm:w-auto">
+                <NuxtLink to="#formations">Trouver une formation dans ce centre</NuxtLink>
+              </Button>
+              <Button as-child variant="outline" size="pill" class="w-full sm:w-auto">
+                <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
+              </Button>
+              <NuxtLink
+                v-if="centre.phone"
+                :to="`tel:${centre.phone.replace(/\s/g, '')}`"
+                class="inline-flex items-center gap-2 font-medium text-ink"
+              >
+                <IconPhone :size="16" class="text-primary" />
+                {{ centre.phone }}
+              </NuxtLink>
+            </div>
           </div>
         </div>
       </section>
 
       <!-- Contenu principal -->
       <div class="mx-auto px-gutter-mobile md:px-gutter py-section">
-        <div class="flex flex-col gap-2xl lg:flex-row">
-          <!-- Barre latérale -->
+        <!-- Grille 2 colonnes : la colonne principale (sessions incluses)
+             s'étale sur les deux lignes à gauche ; la carte « Qualité »
+             occupe la 2e ligne de la colonne latérale — donc après les
+             prochaines sessions, comme le veut la maquette. Sur mobile,
+             l'ordre DOM donne : infos + carte, contenu, puis qualité. -->
+        <div
+          class="grid grid-cols-1 items-start gap-2xl lg:grid-cols-[minmax(0,1fr)_var(--spacing-callout)]"
+        >
+          <!-- Barre latérale : `contents` sur mobile pour que ses
+               sections s'ordonnent dans la grille parente (infos →
+               carte → contenu → qualité) ; redevient une vraie
+               colonne flex sur desktop pour que la qualité reste
+               collée sous la carte (maquette). -->
           <aside
-            class="order-1 flex w-full shrink-0 flex-col gap-2xl lg:order-2 lg:w-callout"
+            class="contents w-full lg:col-start-2 lg:row-start-1 lg:flex lg:flex-col lg:gap-lg"
             aria-label="Informations complémentaires"
           >
             <!-- Informations pratiques -->
             <section aria-labelledby="infos-title">
               <Card v-reveal variant="surface" class="h-fit">
                 <CardHeader class="p-lg pb-0">
-                  <h2 id="infos-title" class="font-sans text-h4 font-semibold text-ink">
+                  <h2 id="infos-title" class="font-sans text-h4 font-bold text-ink">
                     Informations pratiques
                   </h2>
                 </CardHeader>
@@ -80,7 +94,7 @@
                     <li class="flex gap-sm">
                       <IconMapPin :size="17" class="mt-xs shrink-0 text-primary" />
                       <span class="text-ink-body">
-                        {{ centre.address }}<br />{{ centre.postal_code }} {{ centre.city
+                        {{ streetAddress }}<br />{{ centre.postal_code }} {{ centre.city
                         }}<template v-if="centre.department"> · {{ centre.department }}</template
                         ><template v-if="centre.region"> · {{ centre.region }}</template>
                       </span>
@@ -89,18 +103,27 @@
                       <IconPhone :size="17" class="mt-xs shrink-0 text-primary" />
                       <NuxtLink
                         :to="`tel:${centre.phone.replace(/\s/g, '')}`"
-                        class="font-medium text-ink transition-colors hover:text-accent-text"
+                        class="font-semibold text-ink transition-colors hover:text-accent-text"
                       >
                         {{ centre.phone }}
                       </NuxtLink>
                     </li>
-                    <li v-if="centre.email" class="flex gap-sm">
+                    <li v-if="centre.mobile" class="flex gap-sm">
+                      <IconSmartphone :size="17" class="mt-xs shrink-0 text-primary" />
+                      <NuxtLink
+                        :to="`tel:${centre.mobile.replace(/\s/g, '')}`"
+                        class="font-semibold text-ink transition-colors hover:text-accent-text"
+                      >
+                        {{ centre.mobile }}
+                      </NuxtLink>
+                    </li>
+                    <li v-if="contactEmail" class="flex gap-sm">
                       <IconMail :size="17" class="mt-xs shrink-0 text-primary" />
                       <NuxtLink
-                        :to="`mailto:${centre.email}`"
+                        :to="`mailto:${contactEmail}`"
                         class="text-ink transition-colors hover:text-accent-text"
                       >
-                        {{ centre.email }}
+                        {{ contactEmail }}
                       </NuxtLink>
                     </li>
                     <li v-if="centre.opening_hours" class="flex gap-sm">
@@ -124,42 +147,37 @@
               </Card>
             </section>
 
-            <!-- Carte d'accès -->
-            <section v-if="mapCenters.length" aria-labelledby="carte-title">
+            <!-- Carte d'accès : mode « single » du CenterMap — pin unique
+                 centré, carte bordée et pied adresse/itinéraire intégrés. -->
+            <section
+              v-if="centre.latitude != null && centre.longitude != null"
+              aria-labelledby="carte-title"
+            >
               <h2 id="carte-title" class="sr-only">Carte d'accès</h2>
-              <div class="h-64 overflow-hidden rounded-md border border-rule bg-surface">
-                <CenterMap
-                  :centers="mapCenters"
-                  :active-id="activeMapCenterId"
-                  :caption="mapCaption"
-                  :popup="false"
-                  :user-position="userPosition"
-                  :focus-center="mapFocus"
-                  :focus-zoom="13"
-                  @select="onMapSelect"
-                />
-              </div>
-              <div
-                v-if="centre.latitude != null && centre.longitude != null"
-                class="mt-sm flex items-center justify-between gap-md text-small"
-              >
-                <span class="text-ink-body">{{ heroAddress }}</span>
-                <a
-                  :href="directionsUrl"
-                  target="_blank"
-                  rel="noopener"
-                  class="whitespace-nowrap font-semibold text-primary transition-colors hover:text-accent-text"
-                >
-                  Ouvrir l'itinéraire <span class="link-arrow">→</span>
-                </a>
-              </div>
+              <CenterMap
+                mode="single"
+                :centers="singleMapCenters"
+                :active-id="activeMapCenterId"
+                :caption="mapCaption"
+                :popup="false"
+                :user-position="userPosition"
+                :focus-center="mapFocus"
+                :focus-zoom="13"
+                @select="onMapSelect"
+              />
             </section>
 
-            <!-- Qualité -->
-            <section v-if="centre.qualiopi_certified" aria-labelledby="qualite-title">
+            <!-- Qualité : 3e carte de la barre latérale — collée
+                 sous la carte sur desktop ; `order-3` la renvoie
+                 après le contenu principal sur mobile. -->
+            <section
+              v-if="centre.qualiopi_certified"
+              class="order-3 lg:order-0"
+              aria-labelledby="qualite-title"
+            >
               <Card v-reveal variant="paper" class="h-fit">
                 <CardHeader class="p-lg pb-0">
-                  <h2 id="qualite-title" class="font-sans text-h4 font-semibold text-ink">
+                  <h2 id="qualite-title" class="font-sans text-h4 font-bold text-ink">
                     Qualité et certifications
                   </h2>
                 </CardHeader>
@@ -174,9 +192,14 @@
                     <div class="text-small">
                       <p class="font-semibold text-ink">Certification Qualiopi</p>
                       <p class="text-ink-body">
-                        Actions de formation<template v-if="centre.qualiopi_certificate_number">
+                        Actions de formation<template v-if="centre.qualiopi_certifier">
+                          · certificateur {{ centre.qualiopi_certifier }}</template
+                        ><template v-else-if="centre.qualiopi_certificate_number">
                           · réf. {{ centre.qualiopi_certificate_number }}</template
-                        >.
+                        >
+                      </p>
+                      <p v-if="qualiopiValidUntilLabel" class="text-ink-body">
+                        Certification · valide jusqu'au {{ qualiopiValidUntilLabel }}.
                       </p>
                     </div>
                   </div>
@@ -188,6 +211,7 @@
                     class="mt-md w-full"
                   >
                     <a :href="qualiopiCertificateUrl" target="_blank" rel="noopener">
+                      <IconDownload :size="14" class="mr-xs" aria-hidden="true" />
                       Télécharger le certificat Qualiopi
                     </a>
                   </Button>
@@ -197,7 +221,9 @@
           </aside>
 
           <!-- Colonne principale -->
-          <div class="order-2 flex flex-1 flex-col gap-2xl md:px-16 lg:order-1">
+          <div
+            class="order-2 flex min-w-0 flex-col gap-2xl md:px-16 lg:order-0 lg:col-start-1 lg:row-start-1"
+          >
             <!-- Le centre -->
             <section v-if="centre.description" aria-labelledby="le-centre-title">
               <h2 id="le-centre-title" class="font-display text-h2 font-extrabold text-ink">
@@ -218,7 +244,11 @@
                 <span v-if="centreCatalog.data.value" class="text-small text-ink-muted">
                   {{ centreCatalog.data.value.total }} formation{{
                     centreCatalog.data.value.total > 1 ? 's' : ''
-                  }}
+                  }}<template v-if="formationsFamiliesCount">
+                    · {{ formationsFamiliesCount }} famille{{
+                      formationsFamiliesCount > 1 ? 's' : ''
+                    }}</template
+                  >
                 </span>
               </div>
               <div v-if="formations.length" class="mt-md grid gap-grid sm:grid-cols-2">
@@ -246,7 +276,8 @@
                 class="mt-md font-bold"
               >
                 <NuxtLink :to="`/formations?lieu=${centre.city ?? ''}`"
-                  >Voir toutes les formations du centre <span class="link-arrow">→</span></NuxtLink
+                  >Voir les {{ centreCatalog.data.value?.total }} formations du centre
+                  <span class="link-arrow">→</span></NuxtLink
                 >
               </Button>
             </section>
@@ -275,10 +306,12 @@
                   />
                 </li>
               </ul>
-              <div v-if="sessions.length > INITIAL_SESSIONS_COUNT" class="mt-3">
-                <button
+              <div v-if="sessions.length > INITIAL_SESSIONS_COUNT" class="mt-md">
+                <Button
                   type="button"
-                  class="text-ink-muted font-bold text-h4 hover:text-ink transition-colors"
+                  variant="link"
+                  size="inline"
+                  class="font-bold"
                   :aria-expanded="isAllSessionsVisible"
                   aria-controls="centre-sessions-list"
                   @click="toggleSessions"
@@ -287,8 +320,68 @@
                     Voir plus <span class="link-arrow">→</span>
                   </template>
                   <template v-else> Voir moins <span class="link-arrow">↑</span> </template>
-                </button>
+                </Button>
               </div>
+            </section>
+
+            <!-- Avis — collection Directus `avis`, section masquée si vide -->
+            <section v-if="centreAvis.length" aria-labelledby="avis-title">
+              <h2 id="avis-title" class="font-display text-h2 font-extrabold text-ink">Avis</h2>
+              <p class="mt-xs flex flex-wrap items-baseline gap-x-sm">
+                <span class="font-display text-h3 font-extrabold text-ink"
+                  >4,7<span class="font-sans text-body font-medium text-ink-muted">/5</span></span
+                >
+                <span class="text-small font-semibold text-accent" aria-hidden="true">★★★★★</span>
+                <span class="text-small text-ink-muted"
+                  >214 avis Google — marque LEARN UP ACADEMY</span
+                >
+              </p>
+              <p class="mt-sm text-small text-ink-muted">
+                Ces avis portent sur la marque LEARN UP ACADEMY, toutes implantations confondues.
+              </p>
+              <div class="mt-md grid gap-grid sm:grid-cols-2">
+                <TestimonialCard
+                  v-for="(avis, i) in centreAvis"
+                  :key="avis.slug"
+                  v-reveal="revealStagger(i)"
+                  :stars="avis.stars"
+                  :quote="avis.quote"
+                  :author="avis.author"
+                />
+              </div>
+            </section>
+
+            <!-- Actualités liées au centre (relation M2O `articles.centre`) -->
+            <section v-if="centreArticles.length" aria-labelledby="actus-title">
+              <div class="flex flex-wrap items-baseline justify-between gap-sm">
+                <h2 id="actus-title" class="font-display text-h2 font-extrabold text-ink">
+                  Actualités de votre centre
+                </h2>
+                <Button as-child variant="link" size="inline" class="hidden font-bold sm:inline">
+                  <NuxtLink to="/actualites"
+                    >Toutes les actualités <span class="link-arrow">→</span></NuxtLink
+                  >
+                </Button>
+              </div>
+              <div class="mt-md grid gap-grid sm:grid-cols-2">
+                <ArticleCard
+                  v-for="(article, i) in centreArticles"
+                  :key="article.slug"
+                  v-reveal="revealStagger(i)"
+                  :category="article.category ?? 'Actualité'"
+                  :title="article.title"
+                  :date="formatArticleDate(article.publish_at)"
+                  :excerpt="article.excerpt ?? ''"
+                  :image-url="directusAssetUrl(article.cover_image) ?? undefined"
+                  :to="`/actualites/${article.slug}`"
+                  class="h-full"
+                />
+              </div>
+              <Button as-child variant="link" size="inline" class="mt-md font-bold sm:hidden">
+                <NuxtLink to="/actualites"
+                  >Toutes les actualités <span class="link-arrow">→</span></NuxtLink
+                >
+              </Button>
             </section>
           </div>
         </div>
@@ -323,22 +416,18 @@
             </Button>
           </div>
           <div class="mt-md grid gap-grid sm:grid-cols-3">
-            <NuxtLink
+            <CenterCard
               v-for="(nearby, i) in nearbyCenters"
               :key="nearby.slug"
               v-reveal="revealStagger(i)"
+              :name="nearby.name"
+              :distance="nearby.distance"
+              :formations="nearby.specialties"
+              :tags="[]"
               :to="`/centres/${nearby.slug}`"
-              class="block"
-            >
-              <CenterCard
-                :name="nearby.name"
-                :distance="nearby.city ?? ''"
-                :formations="nearby.specialties"
-                :tags="[]"
-                :title-to="null"
-                class="h-full transition hover:shadow-md"
-              />
-            </NuxtLink>
+              :title-to="`/centres/${nearby.slug}`"
+              class="h-full transition hover:shadow-md"
+            />
           </div>
           <Button as-child variant="link" size="inline" class="mt-md font-bold sm:hidden">
             <NuxtLink to="/centres"
@@ -383,7 +472,14 @@
 
 <script setup lang="ts">
 import { readItems } from '@directus/sdk'
-import type { Centre, CourseListItem, CourseSession, FamilleFormation } from '@learnup/types'
+import type {
+  Article,
+  Avis,
+  Centre,
+  CourseListItem,
+  CourseSession,
+  FamilleFormation
+} from '@learnup/types'
 import {
   mapCourse,
   upcomingSessions,
@@ -394,6 +490,9 @@ import { availabilityStatus } from '~/composables/useCentres'
 import { useGeolocation } from '~/composables/useGeolocation'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
 import { directusAssetUrl } from '~/utils/directusAsset'
+import { departmentCodeFromPostalCode, distanceKm, formatDistance } from '~/utils/geo'
+import { formatArticleDate } from '~/utils/article'
+import { formatMonthYearFr } from '~/utils/date'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
 import { revealStagger } from '~/utils/reveal'
@@ -450,34 +549,41 @@ if (requestEvent) {
 }
 
 const heroAddress = computed(() =>
-  [centre.value?.address, centre.value?.postal_code, centre.value?.city, centre.value?.region]
+  [streetAddress.value, centre.value?.postal_code, centre.value?.city, centre.value?.region]
     .filter(Boolean)
     .join(', ')
 )
 
+// Adresse de contact du centre : règle réseau « contact{dept}@learnup-academy.com »
+// dérivée du code postal (94 → contact94@…). Repli sur le champ `email`
+// Directus quand le code postal est absent ou invalide.
+const contactEmail = computed(() => {
+  const code = departmentCodeFromPostalCode(centre.value?.postal_code)
+  return code ? `contact${code}@learnup-academy.com` : (centre.value?.email ?? null)
+})
+
 const { position: userPosition } = useGeolocation()
 
-// Tout le réseau publié sur la carte — même rendu que l'accueil mais sans
-// popup : le centre courant est surligné (`activeMapCenterId` = son slug,
-// comme `id` des marqueurs), un clic sur un autre pin ouvre sa fiche.
+// Mode « single » : un seul pin — le centre affiché. L'`activeId`
+// surligne le marqueur (même convention `id` = slug que l'explorateur).
 const activeMapCenterId = ref<string | null>(slug)
 
-const mapCenters = computed<CenterResult[]>(() =>
-  (allCentres.value ?? []).map((c) => {
-    const location = [c.address, c.postal_code, c.city, c.department].filter(Boolean).join(', ')
-    const tags = (c.specialties ?? []).join(' · ')
-    return {
+const singleMapCenters = computed<CenterResult[]>(() => {
+  const c = centre.value
+  if (!c) return []
+  return [
+    {
       id: c.slug,
       name: c.name,
       cp: c.postal_code ?? '',
-      address: location,
-      tags,
-      tagsShort: tags,
+      address: mapAddress.value,
+      tags: '',
+      tagsShort: '',
       lat: c.latitude ?? undefined,
       lng: c.longitude ?? undefined
     }
-  })
-)
+  ]
+})
 
 const mapCaption = computed(() => centre.value?.region ?? 'Réseau national')
 
@@ -489,11 +595,27 @@ const mapFocus = computed(() =>
     : null
 )
 
-const directionsUrl = computed(() => {
-  const c = centre.value
-  if (!c || c.latitude == null || c.longitude == null) return ''
-  return `https://www.google.com/maps/dir/?api=1&destination=${c.latitude},${c.longitude}`
+// Localité « cp ville » et rue seule : le champ `address` peut déjà
+// contenir la localité (anciennes données) — on la retire pour recomposer
+// proprement les affichages sans doublon.
+const addressLocality = computed(() =>
+  [centre.value?.postal_code, centre.value?.city].filter(Boolean).join(' ')
+)
+
+const streetAddress = computed(() => {
+  const address = centre.value?.address ?? ''
+  const locality = addressLocality.value
+  if (locality && address.endsWith(locality)) {
+    return address.slice(0, -locality.length).replace(/,\s*$/, '')
+  }
+  return address
 })
+
+// Adresse courte du pied de carte : rue + « code postal ville » (sans
+// département/région — contrairement à `heroAddress`).
+const mapAddress = computed(() =>
+  [streetAddress.value, addressLocality.value].filter(Boolean).join(', ')
+)
 
 function onMapSelect(id: string) {
   // Mini-carte sans popup : le pin d'un autre centre mène à sa fiche.
@@ -509,6 +631,20 @@ const specialties = computed(() => centre.value?.specialties ?? [])
 const qualiopiCertificateUrl = computed(
   () => directusAssetUrl(centre.value?.qualiopi_certificate) ?? ''
 )
+
+// « valide jusqu'au 14 mars 2027 » — date de fin de validité Qualiopi
+// éditée dans Directus, formatée en français.
+const qualiopiValidUntilLabel = computed(() => {
+  const raw = centre.value?.qualiopi_valid_until
+  if (!raw) return null
+  const date = new Date(raw)
+  if (Number.isNaN(date.getTime())) return null
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(date)
+})
 
 const imageSrc = computed(() => directusAssetUrl(centre.value?.image))
 
@@ -606,6 +742,12 @@ const formations = computed<FormationItem[]>(
       meta: centreFormationMeta(course),
       status: centreFormationStatus(course)
     })) ?? []
+)
+
+// « N formations · X familles » — les facettes famille du catalogue sont
+// déjà calculées sur le résultat filtré par centre.
+const formationsFamiliesCount = computed(
+  () => Object.keys(centreCatalog.data.value?.facets?.families ?? {}).length
 )
 
 interface CentreSession {
@@ -709,10 +851,66 @@ const nearbyCenters = computed(() =>
     .map((c) => ({
       slug: c.slug,
       name: c.name,
-      city: c.city,
+      distance: nearbyDistance(c),
       specialties: (c.specialties ?? []).join(' · ')
     }))
 )
+
+// « à 9,0 km » à vol d'oiseau depuis la position de l'utilisateur — même
+// règle que les cartes de /centres et de l'accueil ; repli sur la ville
+// quand la géolocalisation ou les coordonnées manquent.
+function nearbyDistance(c: Centre): string {
+  const pos = userPosition.value
+  if (!pos || c.latitude == null || c.longitude == null) return c.city ?? ''
+  return `à ${formatDistance(distanceKm(pos, { lat: c.latitude, lng: c.longitude }))}`
+}
+
+// Avis — collection Directus `avis` : items rattachés au centre (M2O) ou
+// avis marque (`centre` vide, affichés sur toutes les fiches). La section
+// se masque quand aucun avis publié n'est retourné.
+const centreAvisData = await useDirectusList<Avis>('avis', `centre-${slug}-avis`, () =>
+  centre.value
+    ? {
+        fields: ['slug', 'author', 'quote', 'stars', 'published_at', 'centre'],
+        filter: {
+          status: { _eq: 'published' },
+          _or: [{ centre: { _eq: centre.value.id } }, { centre: { _null: true } }]
+        },
+        sort: ['sort', '-published_at'],
+        limit: 4
+      }
+    : null
+)
+
+const centreAvis = computed(() =>
+  (centreAvisData.value ?? []).map((avis) => {
+    const stars = Math.min(5, Math.max(0, avis.stars ?? 0))
+    const date = formatMonthYearFr(avis.published_at)
+    return {
+      slug: avis.slug,
+      stars: '★'.repeat(stars) + '☆'.repeat(5 - stars),
+      quote: avis.quote,
+      author: date ? `${avis.author} · ${date}` : avis.author
+    }
+  })
+)
+
+// Actualités rattachées au centre via la relation M2O `articles.centre` —
+// la section se masque si aucune n'est publiée.
+const centreArticlesData = await useDirectusList<Article>(
+  'articles',
+  `centre-${slug}-articles`,
+  () =>
+    centre.value
+      ? {
+          fields: ['slug', 'title', 'excerpt', 'category', 'publish_at', 'cover_image'],
+          filter: { centre: { _eq: centre.value.id }, status: { _eq: 'published' } },
+          sort: ['-publish_at'],
+          limit: 3
+        }
+      : null
+)
+const centreArticles = computed(() => centreArticlesData.value ?? [])
 
 function retry() {
   if (route.query.error === '1') {

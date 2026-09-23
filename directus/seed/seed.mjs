@@ -9,6 +9,7 @@
 
 import {
   articles,
+  avis,
   centres,
   famillesFormation,
   formations,
@@ -46,6 +47,12 @@ const DATASETS = [
     // `relatedFormationSlug` résolu en id de formations — la collection
     // doit donc être seedée avant les articles.
     refs: [{ key: 'relatedFormationSlug', collection: 'formations', field: 'related_formation' }]
+  },
+  {
+    collection: 'avis',
+    items: avis,
+    // `centreSlug` résolu en id de centres — absent = avis marque.
+    refs: [{ key: 'centreSlug', collection: 'centres', field: 'centre' }]
   }
 ]
 

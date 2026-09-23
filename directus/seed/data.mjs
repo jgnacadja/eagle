@@ -11,7 +11,7 @@ export const centres = [
     slug: 'creteil',
     name: 'Centre LEARN UP de Créteil',
     status: 'published',
-    address: '14 rue des Refuzniks, 94000 Créteil',
+    address: '14 rue des Refuzniks',
     city: 'Créteil',
     postal_code: '94000',
     department: 'Val-de-Marne',
@@ -26,10 +26,13 @@ export const centres = [
     parking: 'Parking visiteurs sur place',
     pmr_accessible: true,
     phone: '01 84 20 45 30',
-    email: 'creteil@learnupacademy.fr',
+    mobile: '06 12 20 45 30',
+    email: 'contact94@learnup-academy.com',
     departments_covered: ['94', '93', '77'],
     qualiopi_certified: true,
-    qualiopi_certificate_number: 'QUAL-2026-CRETEIL'
+    qualiopi_certificate_number: 'QUAL-2026-CRETEIL',
+    qualiopi_certifier: 'AFNOR',
+    qualiopi_valid_until: '2027-03-14T00:00:00Z'
   },
   {
     slug: 'paris',
@@ -50,10 +53,13 @@ export const centres = [
     parking: 'Parking public à 200 m',
     pmr_accessible: true,
     phone: '01 84 20 45 31',
-    email: 'paris@learnupacademy.fr',
+    mobile: '06 12 20 45 31',
+    email: 'contact75@learnup-academy.com',
     departments_covered: ['75', '92', '93', '94'],
     qualiopi_certified: true,
-    qualiopi_certificate_number: 'QUAL-2026-PARIS'
+    qualiopi_certificate_number: 'QUAL-2026-PARIS',
+    qualiopi_certifier: 'AFNOR',
+    qualiopi_valid_until: '2027-03-14T00:00:00Z'
   },
   {
     slug: 'lyon',
@@ -74,10 +80,13 @@ export const centres = [
     parking: 'Parking Lafayette souterrain',
     pmr_accessible: true,
     phone: '04 78 20 45 32',
-    email: 'lyon@learnupacademy.fr',
+    mobile: '06 12 20 45 32',
+    email: 'contact69@learnup-academy.com',
     departments_covered: ['69', '01', '42', '38'],
     qualiopi_certified: true,
-    qualiopi_certificate_number: 'QUAL-2026-LYON'
+    qualiopi_certificate_number: 'QUAL-2026-LYON',
+    qualiopi_certifier: 'AFNOR',
+    qualiopi_valid_until: '2027-03-14T00:00:00Z'
   },
   {
     slug: 'marseille',
@@ -98,10 +107,13 @@ export const centres = [
     parking: 'Parking Euroméditerranée',
     pmr_accessible: false,
     phone: '04 91 20 45 33',
-    email: 'marseille@learnupacademy.fr',
+    mobile: '06 12 20 45 33',
+    email: 'contact13@learnup-academy.com',
     departments_covered: ['13', '84', '83'],
     qualiopi_certified: true,
-    qualiopi_certificate_number: 'QUAL-2026-MARSEILLE'
+    qualiopi_certificate_number: 'QUAL-2026-MARSEILLE',
+    qualiopi_certifier: 'AFNOR',
+    qualiopi_valid_until: '2027-03-14T00:00:00Z'
   },
   {
     slug: 'lille',
@@ -122,10 +134,13 @@ export const centres = [
     parking: 'Parking Nouveau Siècle',
     pmr_accessible: true,
     phone: '03 20 20 45 34',
-    email: 'lille@learnupacademy.fr',
+    mobile: '06 12 20 45 34',
+    email: 'contact59@learnup-academy.com',
     departments_covered: ['59', '62', '02'],
     qualiopi_certified: true,
-    qualiopi_certificate_number: 'QUAL-2026-LILLE'
+    qualiopi_certificate_number: 'QUAL-2026-LILLE',
+    qualiopi_certifier: 'AFNOR',
+    qualiopi_valid_until: '2027-03-14T00:00:00Z'
   },
   {
     slug: 'bordeaux',
@@ -146,10 +161,13 @@ export const centres = [
     parking: 'Parking Bourse-Jean Jaurès',
     pmr_accessible: true,
     phone: '05 56 20 45 35',
-    email: 'bordeaux@learnupacademy.fr',
+    mobile: '06 12 20 45 35',
+    email: 'contact33@learnup-academy.com',
     departments_covered: ['33', '24', '47'],
     qualiopi_certified: true,
-    qualiopi_certificate_number: 'QUAL-2026-BORDEAUX'
+    qualiopi_certificate_number: 'QUAL-2026-BORDEAUX',
+    qualiopi_certifier: 'AFNOR',
+    qualiopi_valid_until: '2027-03-14T00:00:00Z'
   },
   {
     slug: 'nantes',
@@ -170,10 +188,13 @@ export const centres = [
     parking: 'Parking Commerce',
     pmr_accessible: true,
     phone: '02 40 20 45 36',
-    email: 'nantes@learnupacademy.fr',
+    mobile: '06 12 20 45 36',
+    email: 'contact44@learnup-academy.com',
     departments_covered: ['44', '49', '85'],
     qualiopi_certified: true,
-    qualiopi_certificate_number: 'QUAL-2026-NANTES'
+    qualiopi_certificate_number: 'QUAL-2026-NANTES',
+    qualiopi_certifier: 'AFNOR',
+    qualiopi_valid_until: '2027-03-14T00:00:00Z'
   },
   {
     slug: 'toulouse',
@@ -193,10 +214,13 @@ export const centres = [
     parking: 'Parking Capitole',
     pmr_accessible: false,
     phone: '05 61 20 45 37',
-    email: 'toulouse@learnupacademy.fr',
+    mobile: '06 12 20 45 37',
+    email: 'contact31@learnup-academy.com',
     departments_covered: ['31', '81', '82'],
     qualiopi_certified: true,
-    qualiopi_certificate_number: 'QUAL-2026-TOULOUSE'
+    qualiopi_certificate_number: 'QUAL-2026-TOULOUSE',
+    qualiopi_certifier: 'AFNOR',
+    qualiopi_valid_until: '2027-03-14T00:00:00Z'
   }
 ]
 
@@ -971,5 +995,30 @@ export const pagesLegales = [
     cta_to: 'mailto:contact@learnup.fr',
     seo_title: 'Gestion des cookies',
     seo_description: 'Politique de gestion des cookies du site LEARN UP ACADEMY.'
+  }
+]
+
+// Avis affichés dans la section « Avis » des fiches centres. `centreSlug`
+// absent = avis marque (toutes implantations confondues, comme l'en-tête).
+export const avis = [
+  {
+    slug: 'avis-caces-logistique',
+    status: 'published',
+    sort: 1,
+    author: 'Responsable logistique',
+    published_at: '2026-06-15T09:00:00+00:00',
+    stars: 5,
+    quote:
+      '« Organisation de la session CACES en moins de deux semaines pour nos 6 caristes. Convocations et attestations transmises dans les délais. »'
+  },
+  {
+    slug: 'avis-habilitation-qhse',
+    status: 'published',
+    sort: 2,
+    author: 'Chargée QHSE',
+    published_at: '2026-04-20T09:00:00+00:00',
+    stars: 4,
+    quote:
+      '« Recyclages d’habilitation planifiés sur deux sites. Suivi des échéances par l’équipe LEARN UP. »'
   }
 ]

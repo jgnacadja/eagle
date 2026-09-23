@@ -38,6 +38,7 @@ const centreCreteil = {
   parking: 'Parking visiteurs',
   pmr_accessible: true,
   phone: '01 84 20 45 30',
+  mobile: '06 12 20 45 30',
   email: 'creteil@learnupacademy.fr',
   contact_name: null,
   contact_role: null,
@@ -45,6 +46,10 @@ const centreCreteil = {
   digiforma_url: null,
   qualiopi_certified: true,
   qualiopi_certificate_number: 'QUAL-2026-CRETEIL',
+  qualiopi_certifier: 'AFNOR',
+  qualiopi_valid_until: '2027-03-14T00:00:00Z',
+  latitude: 48.7909,
+  longitude: 2.4534,
   image: null,
   seo_title: null,
   seo_description: null,
@@ -56,7 +61,10 @@ const centreVitry = {
   id: 2,
   slug: 'vitry',
   name: 'Centre de Vitry-sur-Seine',
-  region: 'Île-de-France'
+  city: 'Vitry-sur-Seine',
+  region: 'Île-de-France',
+  latitude: 48.7872,
+  longitude: 2.3928
 }
 
 const catalogueCourses = {
@@ -105,9 +113,18 @@ const catalogueCourses = {
       seoCanonical: null
     }
   ],
-  total: 1,
+  total: 12,
   page: 1,
-  pageSize: 12
+  pageSize: 12,
+  facets: {
+    families: { sante: 12 },
+    subFamilies: {},
+    modalities: {},
+    durations: {},
+    locations: {},
+    cpf: 0,
+    certifying: 0
+  }
 }
 
 vi.stubGlobal('computed', computed)
@@ -131,7 +148,46 @@ vi.stubGlobal('useContentSeo', seoMock)
 vi.stubGlobal('navigateTo', navigateToMock)
 vi.stubGlobal('logServerError', vi.fn())
 vi.stubGlobal('useDirectusClient', () => ({ request: directusRequestMock }))
-vi.stubGlobal('useDirectusList', async () => ref([centreCreteil, centreVitry]))
+
+// Position pilotable par test : la page importe `useGeolocation`
+// explicitement — le mock remplace le module, `geoPosition` décide si la
+// distance ou la ville s'affiche sur les cartes des autres centres.
+const geoPosition = vi.hoisted(() => ({ value: null as { lat: number; lng: number } | null }))
+vi.mock('~/composables/useGeolocation', () => ({
+  useGeolocation: () => ({ position: geoPosition })
+}))
+const centreArticlesFixture = [
+  {
+    slug: 'actu-creteil',
+    title: 'Actualité du centre de Créteil',
+    excerpt: 'Résumé de l’actualité.',
+    category: 'SST & sécurité',
+    publish_at: '2026-09-01T09:00:00+00:00',
+    cover_image: null
+  }
+]
+const centreAvisFixture = [
+  {
+    slug: 'avis-qhse',
+    author: 'Chargée QHSE',
+    quote: '« Suivi des échéances impeccable, équipe très réactive. »',
+    stars: 4,
+    published_at: '2026-04-20T09:00:00+00:00',
+    centre: null
+  }
+]
+// Mutable pour tester le masquage de la section quand la collection est vide.
+const avisFixture: typeof centreAvisFixture = []
+
+vi.stubGlobal('useDirectusList', async (collection: string) =>
+  ref(
+    collection === 'articles'
+      ? centreArticlesFixture
+      : collection === 'avis'
+        ? avisFixture
+        : [centreCreteil, centreVitry]
+  )
+)
 vi.stubGlobal('useMenuFamilles', async () => ref([{ slug: 'sante', label: 'Santé', count: 2 }]))
 
 vi.mock('~/composables/useCatalog', () => ({
@@ -175,20 +231,34 @@ const stubs = {
     template: '<button class="search-stub" @click="$emit(\'submit\', \'caces\')" />'
   },
   Badge: true,
-  Card: true,
-  CardHeader: true,
-  CardContent: true,
-  CardFooter: true,
+  // Slots rendus : sans ça le contenu des cartes (infos pratiques,
+  // qualité) est absent du DOM de test.
+  Card: { template: '<div><slot /></div>' },
+  CardHeader: { template: '<div><slot /></div>' },
+  CardContent: { template: '<div><slot /></div>' },
+  CardFooter: { template: '<div><slot /></div>' },
   CenterFormationCard: true,
   SessionCard: {
     props: ['title', 'meta', 'places'],
     template: '<div class="session-card">{{ title }}</div>'
   },
   CtaBanner: true,
-  CenterCard: true,
+  CenterCard: {
+    props: ['name', 'distance', 'formations', 'to'],
+    template: '<div class="center-card">{{ name }} {{ distance }}</div>'
+  },
+  ArticleCard: {
+    props: ['title'],
+    template: '<div class="article-card">{{ title }}</div>'
+  },
+  TestimonialCard: {
+    props: ['quote', 'author'],
+    template: '<div class="testimonial-card">{{ quote }}</div>'
+  },
   IconMapPin: true,
   IconMapPinOff: true,
   IconPhone: true,
+  IconSmartphone: true,
   IconMail: true,
   IconClock: true,
   IconTimetable: true,
@@ -222,6 +292,8 @@ describe('pages/centres/[slug]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     forceError = null
+    geoPosition.value = null
+    avisFixture.splice(0, avisFixture.length, ...centreAvisFixture)
     directusRequestMock.mockImplementation(async () => {
       return routeMock.params.slug === 'creteil' ? [centreCreteil] : []
     })
@@ -275,8 +347,112 @@ describe('pages/centres/[slug]', () => {
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain('Les formations disponibles dans ce centre')
-    expect(wrapper.text()).toContain('1 formation')
+    expect(wrapper.text()).toContain('12 formations')
+    expect(wrapper.text()).toContain('1 famille')
+    expect(wrapper.text()).toContain('Voir les 12 formations du centre')
     expect(wrapper.text()).toContain('Prochaines sessions')
+  })
+
+  it('compose l’email du centre depuis le code postal (règle réseau)', async () => {
+    const wrapper = await mountPage()
+
+    // 94000 → contact94@learnup-academy.com — le champ `email` Directus
+    // n'est qu'un repli quand le code postal manque.
+    expect(wrapper.text()).toContain('contact94@learnup-academy.com')
+    expect(wrapper.text()).not.toContain('creteil@learnupacademy.fr')
+  })
+
+  it('retombe sur l’email Directus quand le code postal est absent', async () => {
+    directusRequestMock.mockImplementation(async () => [{ ...centreCreteil, postal_code: null }])
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('creteil@learnupacademy.fr')
+  })
+
+  it('affiche le téléphone à côté de « Parler à votre conseiller », sans masquage responsive', async () => {
+    const wrapper = await mountPage()
+
+    const phoneLink = wrapper.findAll('a').find((a) => a.text().includes('01 84 20 45 30'))
+    expect(phoneLink).toBeTruthy()
+    expect(phoneLink!.classes()).not.toContain('hidden')
+  })
+
+  it('affiche le mobile en gras comme le fixe dans les informations pratiques', async () => {
+    const wrapper = await mountPage()
+
+    const mobileLink = wrapper.findAll('a').find((a) => a.text().includes('06 12 20 45 30'))
+    expect(mobileLink).toBeTruthy()
+    expect(mobileLink!.classes()).toContain('font-semibold')
+  })
+
+  it('affiche certificateur et validité dans la carte qualité', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Qualité et certifications')
+    expect(wrapper.text()).toContain('certificateur AFNOR')
+    expect(wrapper.text()).toContain("valide jusqu'au 14 mars 2027")
+  })
+
+  it('affiche l’adresse et le lien itinéraire dans le pied de la carte d’accès', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('14 rue des Refuzniks, 94000 Créteil')
+    const link = wrapper.findAll('a').find((a) => a.text().includes("Ouvrir l'itinéraire"))
+    expect(link).toBeTruthy()
+  })
+
+  it('déduplique la localité quand le champ address la contient déjà', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      { ...centreCreteil, address: '14 rue des Refuzniks, 94000 Créteil' }
+    ])
+    const wrapper = await mountPage()
+
+    // Le pied de carte ne doit pas répéter « 94000 Créteil » en double.
+    expect(wrapper.text()).not.toContain('94000 Créteil, 94000')
+    expect(wrapper.text()).toContain('14 rue des Refuzniks, 94000 Créteil')
+  })
+
+  it('affiche la ville par défaut sur les cartes des autres centres', async () => {
+    const wrapper = await mountPage()
+
+    const card = wrapper.findAll('.center-card').find((c) => c.text().includes('Vitry'))
+    expect(card).toBeTruthy()
+    expect(card!.text()).toContain('Vitry-sur-Seine')
+  })
+
+  it('affiche la distance depuis la position utilisateur quand elle est connue', async () => {
+    geoPosition.value = { lat: 48.85, lng: 2.35 }
+    const wrapper = await mountPage()
+
+    const card = wrapper.findAll('.center-card').find((c) => c.text().includes('Vitry'))
+    expect(card).toBeTruthy()
+    expect(card!.text()).toMatch(/à \d+(,\d+)? km/)
+  })
+
+  it('affiche les avis puis les actualités du centre', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Avis')
+    expect(wrapper.findAll('.testimonial-card').length).toBeGreaterThan(0)
+    expect(wrapper.text()).toContain('Actualités de votre centre')
+    expect(wrapper.findAll('.article-card')).toHaveLength(1)
+    expect(wrapper.text()).toContain('Actualité du centre de Créteil')
+  })
+
+  it('affiche les avis dynamiques de la collection Directus', async () => {
+    const wrapper = await mountPage()
+
+    const cards = wrapper.findAll('.testimonial-card')
+    expect(cards).toHaveLength(1)
+    expect(cards[0]!.text()).toContain('Suivi des échéances impeccable')
+  })
+
+  it('masque la section avis quand la collection est vide', async () => {
+    avisFixture.length = 0
+    const wrapper = await mountPage()
+
+    expect(wrapper.findAll('.testimonial-card')).toHaveLength(0)
+    expect(wrapper.find('[aria-labelledby="avis-title"]').exists()).toBe(false)
   })
 
   it('gère le déploiement progressif (2 -> 6 -> tout) et le repli avec aria-expanded', async () => {
@@ -302,7 +478,7 @@ describe('pages/centres/[slug]', () => {
 
     // 1. Initial : 2 sessions affichées, bouton Voir plus, aria-expanded false
     expect(wrapper.findAll('.session-card')).toHaveLength(2)
-    const button = wrapper.find('button.text-h4')
+    const button = wrapper.findAll('button').find((b) => b.text().includes('Voir plus'))!
     expect(button.exists()).toBe(true)
     expect(button.text()).toContain('Voir plus')
     expect(button.attributes('aria-expanded')).toBe('false')

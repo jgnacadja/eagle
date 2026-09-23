@@ -22,6 +22,7 @@ const CONTENT_COLLECTIONS = [
   'familles_formation',
   'sous_familles_formation',
   'articles',
+  'avis',
   'pages',
   'page_blocks',
   'pages_legales',
@@ -43,7 +44,7 @@ export function permissionsFor(roleName) {
 
     case 'editeur':
       return [
-        ...['articles', 'page_blocks', 'sous_familles_formation'].flatMap((c) =>
+        ...['articles', 'avis', 'page_blocks', 'sous_familles_formation'].flatMap((c) =>
           grants(c, ['create', 'read', 'update'])
         ),
         ...['centres', 'familles_formation', 'pages', 'pages_legales', 'stats'].flatMap((c) =>
@@ -92,7 +93,7 @@ export function permissionsFor(roleName) {
 
     case 'moderateur':
       return [
-        ...['articles', 'page_blocks'].flatMap((c) => grants(c, ['read', 'update'])),
+        ...['articles', 'avis', 'page_blocks'].flatMap((c) => grants(c, ['read', 'update'])),
         ...[
           'centres',
           'familles_formation',
@@ -125,6 +126,7 @@ const PUBLIC_STATUS_FILTERED = [
   'familles_formation',
   'sous_familles_formation',
   'articles',
+  'avis',
   'pages',
   'pages_legales',
   'formations'

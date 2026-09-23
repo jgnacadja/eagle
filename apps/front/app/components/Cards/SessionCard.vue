@@ -33,7 +33,7 @@
             <span class="sm:hidden">{{ placesLabel(places, false) }}</span>
           </Badge>
         </div>
-        <Button as-child variant="outline" size="chip" class="shrink-0 font-bold">
+        <Button as-child variant="outline" size="pill-sm" class="h-control-sm shrink-0 font-bold">
           <NuxtLink :to="to">{{ ctaLabel }}</NuxtLink>
         </Button>
       </div>

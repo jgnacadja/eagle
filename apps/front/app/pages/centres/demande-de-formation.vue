@@ -391,9 +391,7 @@
         <aside class="order-first space-y-lg sm:sticky sm:top-lg lg:order-last">
           <Card v-reveal variant="surface" class="p-lg">
             <div class="mb-lg flex items-center justify-between">
-              <h2 class="text-meta font-semibold uppercase tracking-wide text-ink-subtle">
-                Votre demande concerne
-              </h2>
+              <h2 class="font-sans text-h4 font-bold text-ink">Votre demande concerne</h2>
               <NuxtLink
                 :to="modifierTo"
                 class="text-small font-medium text-primary transition-colors hover:text-accent-text"
@@ -410,7 +408,7 @@
               <li class="flex items-start gap-sm">
                 <component :is="contextIcon" :size="20" class="mt-xs shrink-0 text-primary" />
                 <div>
-                  <p class="font-medium text-ink">{{ contextTitle }}</p>
+                  <p class="font-bold text-ink">{{ contextTitle }}</p>
                   <p v-if="contextMeta" class="text-ink-muted">{{ contextMeta }}</p>
                 </div>
               </li>

@@ -1,6 +1,6 @@
 <template>
   <article
-    class="relative flex flex-row gap-md rounded-md border border-rule bg-paper p-md shadow-sm transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-md md:flex-col md:gap-0 md:overflow-hidden md:p-0"
+    class="group relative flex flex-row gap-md rounded-md border border-rule bg-paper p-md shadow-sm transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-md md:flex-col md:gap-0 md:overflow-hidden md:p-0"
   >
     <div
       class="flex aspect-3/2 w-2/5 shrink-0 items-center justify-center overflow-hidden rounded-sm text-center md:w-auto md:rounded-none"
@@ -29,6 +29,14 @@
         <h3 class="mt-sm font-sans md:text-h4 font-bold text-small text-ink">{{ title }}</h3>
       </NuxtLink>
       <p class="mt-sm hidden text-small text-ink-body md:block">{{ excerpt }}</p>
+      <!-- Lien visuel seulement : le titre porte le stretched-link qui
+           rend toute la carte cliquable — le hover s'applique via `group`. -->
+      <p
+        class="mt-auto hidden pt-md text-small font-bold text-primary transition-colors group-hover:text-accent-text md:block"
+      >
+        Lire l'article
+        <span class="link-arrow group-hover:translate-x-xs">→</span>
+      </p>
       <p class="mt-auto pt-xs text-meta text-ink-subtle font-medium md:hidden">{{ date }}</p>
     </div>
   </article>

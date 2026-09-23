@@ -28,6 +28,32 @@ collections:
       versioning: false
     schema:
       name: articles
+  - collection: avis
+    meta:
+      accountability: all
+      archive_app_filter: true
+      archive_field: null
+      archive_value: null
+      collapse: open
+      collection: avis
+      color: null
+      display_template: null
+      group: null
+      hidden: false
+      icon: null
+      item_duplication_fields: null
+      note: Avis clients affichés dans la section « Avis » des fiches centres. Sans centre associé, l’avis vaut pour la marque (toutes implantations).
+      preview_url: null
+      singleton: false
+      sort: null
+      sort_field: null
+      translations:
+        - language: fr-FR
+          translation: Avis
+      unarchive_value: null
+      versioning: false
+    schema:
+      name: avis
   - collection: centres
     meta:
       accountability: all
@@ -1005,6 +1031,391 @@ fields:
       generation_expression: null
       has_auto_increment: false
       foreign_key_table: directus_files
+      foreign_key_column: id
+  - collection: avis
+    field: id
+    type: integer
+    meta:
+      collection: avis
+      conditions: null
+      display: null
+      display_options: null
+      field: id
+      group: null
+      hidden: true
+      interface: input
+      note: null
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 1
+      special: null
+      translations:
+        - language: fr-FR
+          translation: ID
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: id
+      table: avis
+      data_type: integer
+      default_value: nextval('avis_id_seq'::regclass)
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: false
+      is_unique: true
+      is_indexed: false
+      is_primary_key: true
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: true
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: avis
+    field: status
+    type: string
+    meta:
+      collection: avis
+      conditions: null
+      display: null
+      display_options: null
+      field: status
+      group: null
+      hidden: false
+      interface: select-dropdown
+      note: null
+      options:
+        choices:
+          - text: Brouillon
+            value: draft
+          - text: Publié
+            value: published
+          - text: Archivé
+            value: archived
+      readonly: false
+      required: false
+      searchable: true
+      sort: 2
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Statut
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: status
+      table: avis
+      data_type: character varying
+      default_value: draft
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: avis
+    field: sort
+    type: integer
+    meta:
+      collection: avis
+      conditions: null
+      display: null
+      display_options: null
+      field: sort
+      group: null
+      hidden: true
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 3
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Ordre
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: sort
+      table: avis
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: avis
+    field: slug
+    type: string
+    meta:
+      collection: avis
+      conditions: null
+      display: null
+      display_options: null
+      field: slug
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: true
+      searchable: true
+      sort: 4
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Slug
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: slug
+      table: avis
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: true
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: avis
+    field: author
+    type: string
+    meta:
+      collection: avis
+      conditions: null
+      display: null
+      display_options: null
+      field: author
+      group: null
+      hidden: false
+      interface: input
+      note: Libellé affiché en gras (ex. « Responsable logistique »)
+      options: null
+      readonly: false
+      required: true
+      searchable: true
+      sort: 5
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Auteur
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: author
+      table: avis
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: avis
+    field: published_at
+    type: timestamp
+    meta:
+      collection: avis
+      conditions: null
+      display: null
+      display_options: null
+      field: published_at
+      group: null
+      hidden: false
+      interface: datetime
+      note: Affichée « mois année » après l’auteur (ex. « juin 2026 »)
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 6
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Date de publication
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: published_at
+      table: avis
+      data_type: timestamp with time zone
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: avis
+    field: stars
+    type: integer
+    meta:
+      collection: avis
+      conditions: null
+      display: null
+      display_options: null
+      field: stars
+      group: null
+      hidden: false
+      interface: input
+      note: Note sur 5 (ex. 5 = ★★★★★)
+      options: null
+      readonly: false
+      required: true
+      searchable: true
+      sort: 7
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Note
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: stars
+      table: avis
+      data_type: integer
+      default_value: 5
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: avis
+    field: quote
+    type: text
+    meta:
+      collection: avis
+      conditions: null
+      display: null
+      display_options: null
+      field: quote
+      group: null
+      hidden: false
+      interface: input-multiline
+      note: null
+      options: null
+      readonly: false
+      required: true
+      searchable: true
+      sort: 8
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Témoignage
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: quote
+      table: avis
+      data_type: text
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: avis
+    field: centre
+    type: integer
+    meta:
+      collection: avis
+      conditions: null
+      display: null
+      display_options: null
+      field: centre
+      group: null
+      hidden: false
+      interface: select-dropdown-m2o
+      note: Vide = avis marque, affiché sur toutes les fiches centres
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 9
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Centre
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: centre
+      table: avis
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: centres
       foreign_key_column: id
   - collection: centres
     field: id
@@ -2361,6 +2772,132 @@ fields:
       has_auto_increment: false
       foreign_key_table: directus_files
       foreign_key_column: id
+  - collection: centres
+    field: mobile
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: mobile
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 33
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Mobile
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: mobile
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: qualiopi_certifier
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: qualiopi_certifier
+      group: null
+      hidden: false
+      interface: input
+      note: Organisme certificateur (ex. AFNOR)
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 34
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Certificateur Qualiopi
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: qualiopi_certifier
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: qualiopi_valid_until
+    type: timestamp
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: qualiopi_valid_until
+      group: null
+      hidden: false
+      interface: datetime
+      note: Date de fin de validité du certificat
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 35
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Validité Qualiopi
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: qualiopi_valid_until
+      table: centres
+      data_type: timestamp with time zone
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
   - collection: familles_formation
     field: id
     type: integer
@@ -6444,6 +6981,27 @@ relations:
       foreign_key_table: directus_files
       foreign_key_column: id
       constraint_name: articles_cover_image_foreign
+      on_update: NO ACTION
+      on_delete: NO ACTION
+  - collection: avis
+    field: centre
+    related_collection: centres
+    meta:
+      junction_field: null
+      many_collection: avis
+      many_field: centre
+      one_allowed_collections: null
+      one_collection: centres
+      one_collection_field: null
+      one_deselect_action: nullify
+      one_field: null
+      sort_field: null
+    schema:
+      table: avis
+      column: centre
+      foreign_key_table: centres
+      foreign_key_column: id
+      constraint_name: avis_centre_foreign
       on_update: NO ACTION
       on_delete: NO ACTION
   - collection: centres

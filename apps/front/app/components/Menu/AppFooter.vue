@@ -53,7 +53,7 @@
               <NuxtLink
                 to="/parler-a-un-conseiller"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
-                >Parler à un conseiller</NuxtLink
+                >Parler à votre conseiller</NuxtLink
               >
             </li>
           </ul>

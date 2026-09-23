@@ -13,7 +13,7 @@
         <span
           class="inline-block rounded-full border border-primary bg-paper px-4 py-2 text-h4 font-bold uppercase tracking-widest text-primary"
         >
-          Plateforme de conseil en formation professionnelle
+          Réseau national d'organisme de formation et Plateforme de conseil
         </span>
 
         <h1 class="mt-5 font-display text-h2 md:text-hero font-extrabold text-ink">
@@ -316,7 +316,7 @@
             <NuxtLink to="/centres/demande-de-formation">Confier mes formations</NuxtLink>
           </Button>
           <Button as-child variant="outline-inverse" size="pill-lg" class="w-full md:w-auto">
-            <NuxtLink to="/parler-a-un-conseiller">Parler à un conseiller</NuxtLink>
+            <NuxtLink to="/parler-a-un-conseiller">Parler à votre conseiller</NuxtLink>
           </Button>
         </div>
       </div>

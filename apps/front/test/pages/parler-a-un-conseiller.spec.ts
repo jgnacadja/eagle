@@ -82,7 +82,7 @@ describe('pages/parler-a-un-conseiller', () => {
   it('affiche le titre, le formulaire et la sidebar', async () => {
     const wrapper = await mountPage()
 
-    expect(wrapper.text()).toContain('Parler à un conseiller')
+    expect(wrapper.text()).toContain('Parler à votre conseiller')
     expect(wrapper.text()).toContain('Ce qui se passe ensuite')
     expect(wrapper.text()).toContain('Vous préférez téléphoner')
     expect(wrapper.text()).toContain('politique de confidentialité')
@@ -170,7 +170,7 @@ describe('pages/parler-a-un-conseiller', () => {
       expect.objectContaining({
         besoin: 'formateur',
         consentement: true,
-        pageName: 'Parler à un conseiller'
+        pageName: 'Parler à votre conseiller'
       })
     )
   })
@@ -211,10 +211,10 @@ describe('pages/parler-a-un-conseiller', () => {
 
     expect(seoMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        seo_title: 'Parler à un conseiller | LEARN UP ACADEMY',
+        seo_title: 'Parler à votre conseiller | LEARN UP ACADEMY',
         seo_noindex: true
       }),
-      'Parler à un conseiller'
+      'Parler à votre conseiller'
     )
   })
 })

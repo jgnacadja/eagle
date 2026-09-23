@@ -268,7 +268,7 @@ describe('pages/actualites/[slug]', () => {
 
     const link = wrapper.find('a[href="/parler-a-un-conseiller"]')
     expect(link.exists()).toBe(true)
-    expect(link.text()).toContain('Parler à un conseiller')
+    expect(link.text()).toContain('Parler à votre conseiller')
   })
 
   it('affiche la table des matières et les articles liés', async () => {

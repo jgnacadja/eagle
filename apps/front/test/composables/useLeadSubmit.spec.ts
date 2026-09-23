@@ -93,7 +93,7 @@ describe('useLeadSubmit', () => {
       message: 'Former 8 salariés près de Lyon.',
       consentement: true,
       pageUri: 'https://learnup.fr/parler-a-un-conseiller',
-      pageName: 'Parler à un conseiller'
+      pageName: 'Parler à votre conseiller'
     })
 
     expect(ok).toBe(true)

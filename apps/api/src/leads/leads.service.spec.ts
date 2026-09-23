@@ -77,7 +77,7 @@ const conseiller: ConseillerLeadDto = {
   message: 'Former 8 salariés près de Lyon.',
   consentement: true,
   pageUri: 'https://learnup.fr/parler-a-un-conseiller',
-  pageName: 'Parler à un conseiller'
+  pageName: 'Parler à votre conseiller'
 }
 
 describe('LeadsService', () => {
@@ -194,7 +194,7 @@ describe('LeadsService', () => {
     })
     expect(body.context).toEqual({
       pageUri: 'https://learnup.fr/parler-a-un-conseiller',
-      pageName: 'Parler à un conseiller'
+      pageName: 'Parler à votre conseiller'
     })
     expect(body.legalConsentOptions?.consent.consentToProcess).toBe(true)
   })

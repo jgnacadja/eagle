@@ -1,7 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, ref } from 'vue'
-import ConseillerPage from '~/pages/parler-a-un-conseiller.vue'
+import ConseillerPage from '~/pages/parler-a-votre-conseiller.vue'
 
 const seoMock = vi.fn()
 
@@ -73,7 +73,7 @@ async function fillValidForm(wrapper: Awaited<ReturnType<typeof mountPage>>) {
   }
 }
 
-describe('pages/parler-a-un-conseiller', () => {
+describe('pages/parler-a-votre-conseiller', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     leadSubmitMock.mockReset().mockResolvedValue(true)

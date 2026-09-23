@@ -76,7 +76,7 @@ const conseiller: ConseillerLeadDto = {
   siret: '12345678901234',
   message: 'Former 8 salariés près de Lyon.',
   consentement: true,
-  pageUri: 'https://learnup.fr/parler-a-un-conseiller',
+  pageUri: 'https://learnup.fr/parler-a-votre-conseiller',
   pageName: 'Parler à votre conseiller'
 }
 
@@ -193,7 +193,7 @@ describe('LeadsService', () => {
       learnup_type_projet: 'conseiller'
     })
     expect(body.context).toEqual({
-      pageUri: 'https://learnup.fr/parler-a-un-conseiller',
+      pageUri: 'https://learnup.fr/parler-a-votre-conseiller',
       pageName: 'Parler à votre conseiller'
     })
     expect(body.legalConsentOptions?.consent.consentToProcess).toBe(true)

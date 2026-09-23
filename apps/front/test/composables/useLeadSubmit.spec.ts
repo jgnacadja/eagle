@@ -92,7 +92,7 @@ describe('useLeadSubmit', () => {
       siret: '12345678901234',
       message: 'Former 8 salariés près de Lyon.',
       consentement: true,
-      pageUri: 'https://learnup.fr/parler-a-un-conseiller',
+      pageUri: 'https://learnup.fr/parler-a-votre-conseiller',
       pageName: 'Parler à votre conseiller'
     })
 

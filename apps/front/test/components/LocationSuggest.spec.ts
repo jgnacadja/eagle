@@ -77,29 +77,42 @@ describe('LocationSuggest', () => {
   })
 
   it('emits the département code when a département suggestion is picked', async () => {
-    fetchMock.mockResolvedValue([{ code: '69', nom: 'Rhône' }])
+    fetchMock.mockImplementation((url: string) =>
+      Promise.resolve(url.endsWith('/departements') ? [{ code: '69', nom: 'Rhône' }] : [])
+    )
     const wrapper = mountSuggest()
 
     await typeAndSuggest(wrapper, '69')
-    await wrapper.find('input').setValue('Rhône (69)')
+    await wrapper.find('input').setValue('Rhône (département 69)')
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://geo.api.gouv.fr/departements',
-      expect.objectContaining({ params: { code: '69' } })
-    )
+    expect(fetchMock).toHaveBeenCalledWith('https://geo.api.gouv.fr/departements')
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['69'])
   })
 
-  it('queries communes by postal code for a 5-digit input', async () => {
-    fetchMock.mockResolvedValue([{ nom: 'Lyon 3e', codeDepartement: '69' }])
+  it('proposes postal code suggestions for a numeric input', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/departements')) {
+        return Promise.resolve([{ code: '69', nom: 'Rhône' }])
+      }
+      if (url.includes('/departements/69/communes')) {
+        return Promise.resolve([
+          {
+            nom: 'Lyon 3e',
+            codeDepartement: '69',
+            codesPostaux: ['69003'],
+            centre: { coordinates: [4.9, 45.76] }
+          }
+        ])
+      }
+      return Promise.resolve([])
+    })
     const wrapper = mountSuggest()
 
     await typeAndSuggest(wrapper, '69003')
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://geo.api.gouv.fr/communes',
-      expect.objectContaining({ params: expect.objectContaining({ codePostal: '69003' }) })
-    )
+    expect(wrapper.find('li button').text()).toBe('69003 Lyon 3e')
+    await wrapper.find('input').setValue('69003 Lyon 3e')
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['45.76,4.9'])
   })
 
   it('keeps working when the geo API fails', async () => {

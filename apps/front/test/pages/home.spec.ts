@@ -294,7 +294,7 @@ describe('pages/index', () => {
       await input.setValue('seine')
       await vi.advanceTimersByTimeAsync(250)
 
-      await input.setValue('Seine-Maritime (76)')
+      await input.setValue('Seine-Maritime (département 76)')
       await input.trigger('keydown.enter')
 
       expect(navigateMock).toHaveBeenCalledWith({

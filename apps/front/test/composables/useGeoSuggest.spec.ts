@@ -52,7 +52,7 @@ describe('useGeoSuggest', () => {
     expect(suggest.byLocation('45.764,4.8357')?.label).toBe('Lyon (69)')
   })
 
-  it('déduplique département et commune de même libellé (« Paris (75) »)', async () => {
+  it('conserve ville et département homonymes (« paris » → ville + département)', async () => {
     fetchMock.mockImplementation((url: string) => {
       if (url.endsWith('/communes')) {
         return Promise.resolve([
@@ -65,37 +65,101 @@ describe('useGeoSuggest', () => {
 
     await request(suggest, 'paris')
 
-    // Le département (listé en premier) gagne : une seule entrée, kind department.
+    // La ville n'est plus absorbée par le département : des libellés
+    // distincts (« (département XX) ») font coexister les deux entrées.
     expect(suggest.suggestions.value).toEqual([
-      { label: 'Paris (75)', location: '75', term: 'Paris', kind: 'department' }
+      { label: 'Paris (75)', location: '48.8566,2.3522', term: 'Paris', kind: 'commune' },
+      { label: 'Paris (département 75)', location: '75', term: 'Paris', kind: 'department' }
     ])
   })
 
   it('mappe un département en label + code + terme nom', async () => {
-    fetchMock.mockResolvedValue([{ code: '69', nom: 'Rhône' }])
+    fetchMock.mockImplementation((url: string) =>
+      Promise.resolve(url.endsWith('/departements') ? [{ code: '69', nom: 'Rhône' }] : [])
+    )
     const suggest = useGeoSuggest()
 
     await request(suggest, '69')
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://geo.api.gouv.fr/departements',
-      expect.objectContaining({ params: { code: '69' } })
-    )
+    expect(fetchMock).toHaveBeenCalledWith('https://geo.api.gouv.fr/departements')
     expect(suggest.suggestions.value).toEqual([
-      { label: 'Rhône (69)', location: '69', term: 'Rhône', kind: 'department' }
+      { label: 'Rhône (département 69)', location: '69', term: 'Rhône', kind: 'department' }
     ])
   })
 
-  it('interroge les communes par code postal pour 5 chiffres', async () => {
-    fetchMock.mockResolvedValue([{ nom: 'Lyon', codeDepartement: '69' }])
+  it('propose les codes postaux du département pour une saisie de 2 chiffres', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/departements')) {
+        return Promise.resolve([
+          { code: '75', nom: 'Paris' },
+          { code: '77', nom: 'Seine-et-Marne' }
+        ])
+      }
+      if (url.includes('/departements/75/communes')) {
+        return Promise.resolve([
+          {
+            nom: 'Paris',
+            codeDepartement: '75',
+            codesPostaux: ['75001', '75002', '75020', '75116'],
+            centre: { coordinates: [2.347, 48.8589] }
+          }
+        ])
+      }
+      return Promise.resolve([])
+    })
+    const suggest = useGeoSuggest()
+
+    await request(suggest, '75')
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://geo.api.gouv.fr/departements/75/communes',
+      expect.objectContaining({
+        params: expect.objectContaining({ fields: expect.stringContaining('codesPostaux') })
+      })
+    )
+    expect(suggest.suggestions.value).toEqual([
+      { label: 'Paris (département 75)', location: '75', term: 'Paris', kind: 'department' },
+      { label: '75001 Paris', location: '48.8589,2.347', term: '75001', kind: 'commune' },
+      { label: '75002 Paris', location: '48.8589,2.347', term: '75002', kind: 'commune' },
+      { label: '75020 Paris', location: '48.8589,2.347', term: '75020', kind: 'commune' },
+      { label: '75116 Paris', location: '48.8589,2.347', term: '75116', kind: 'commune' }
+    ])
+  })
+
+  it('filtre les codes postaux par préfixe pour une saisie de 3-4 chiffres', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/departements')) return Promise.resolve([{ code: '75', nom: 'Paris' }])
+      if (url.includes('/departements/75/communes')) {
+        return Promise.resolve([
+          { nom: 'Paris', codesPostaux: ['75001', '75011', '75010', '75116'] }
+        ])
+      }
+      return Promise.resolve([])
+    })
+    const suggest = useGeoSuggest()
+
+    await request(suggest, '7501')
+
+    expect(suggest.suggestions.value.map((s) => s.label)).toEqual(['75010 Paris', '75011 Paris'])
+  })
+
+  it('résout un code postal complet en suggestion « CP + ville »', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/departements')) return Promise.resolve([{ code: '69', nom: 'Rhône' }])
+      if (url.includes('/departements/69/communes')) {
+        return Promise.resolve([
+          { nom: 'Lyon 3e', codesPostaux: ['69003'], centre: { coordinates: [4.9, 45.76] } }
+        ])
+      }
+      return Promise.resolve([])
+    })
     const suggest = useGeoSuggest()
 
     await request(suggest, '69003')
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://geo.api.gouv.fr/communes',
-      expect.objectContaining({ params: expect.objectContaining({ codePostal: '69003' }) })
-    )
+    expect(suggest.suggestions.value).toEqual([
+      { label: '69003 Lyon 3e', location: '45.76,4.9', term: '69003', kind: 'commune' }
+    ])
   })
 
   it('dégrade à [] quand l’API geo échoue', async () => {

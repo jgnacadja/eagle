@@ -65,10 +65,10 @@
                     :key="option.value"
                     :for="`conseiller-besoin-${option.value}`"
                     :class="[
-                      'flex cursor-pointer items-center gap-md rounded-md border p-md transition-colors has-focus-visible:ring-1 has-focus-visible:ring-primary',
+                      'flex cursor-pointer items-center gap-md rounded-md p-md transition-colors has-focus-visible:ring-1 has-focus-visible:ring-primary',
                       besoin === option.value
-                        ? 'border-primary bg-primary-soft'
-                        : 'border-rule bg-paper hover:border-outline'
+                        ? 'border-2 border-primary bg-primary-soft'
+                        : 'border border-rule bg-paper hover:border-outline'
                     ]"
                   >
                     <RadioGroupItem

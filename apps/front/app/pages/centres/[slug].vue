@@ -35,17 +35,19 @@
                 <Button as-child variant="accent" size="pill" class="w-full sm:w-auto">
                   <NuxtLink to="#formations">Trouver une formation dans ce centre</NuxtLink>
                 </Button>
-                <Button as-child variant="outline" size="pill" class="w-full sm:w-auto">
-                  <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
-                </Button>
-                <NuxtLink
-                  v-if="centre.phone"
-                  :to="`tel:${centre.phone.replace(/\s/g, '')}`"
-                  class="inline-flex items-center gap-2 font-medium text-ink"
-                >
-                  <IconPhone :size="16" class="text-primary" />
-                  {{ centre.phone }}
-                </NuxtLink>
+                <div class="flex w-full flex-wrap items-center gap-md sm:w-auto sm:contents">
+                  <Button as-child variant="outline" size="pill">
+                    <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
+                  </Button>
+                  <NuxtLink
+                    v-if="centre.phone"
+                    :to="`tel:${centre.phone.replace(/\s/g, '')}`"
+                    class="inline-flex items-center gap-2 font-medium text-ink"
+                  >
+                    <IconPhone :size="16" class="text-primary" />
+                    {{ centre.phone }}
+                  </NuxtLink>
+                </div>
               </div>
             </div>
 
@@ -109,7 +111,7 @@
                 <CardContent class="p-lg pt-md">
                   <ul class="space-y-md text-small">
                     <li class="flex gap-sm">
-                      <IconMapPin :size="17" class="mt-xs shrink-0 text-primary" />
+                      <IconMapPin :size="20" class="shrink-0 text-primary" />
                       <span class="text-ink-body">
                         {{ streetAddress }}<br />{{ centre.postal_code }} {{ centre.city
                         }}<template v-if="centre.department"> · {{ centre.department }}</template
@@ -117,7 +119,7 @@
                       </span>
                     </li>
                     <li v-if="centre.phone" class="flex gap-sm">
-                      <IconPhone :size="17" class="mt-xs shrink-0 text-primary" />
+                      <IconPhone :size="20" class="shrink-0 text-primary" />
                       <NuxtLink
                         :to="`tel:${centre.phone.replace(/\s/g, '')}`"
                         class="font-semibold text-ink transition-colors hover:text-accent-text"
@@ -126,7 +128,7 @@
                       </NuxtLink>
                     </li>
                     <li v-if="centre.mobile" class="flex gap-sm">
-                      <IconSmartphone :size="17" class="mt-xs shrink-0 text-primary" />
+                      <IconSmartphone :size="20" class="shrink-0 text-primary" />
                       <NuxtLink
                         :to="`tel:${centre.mobile.replace(/\s/g, '')}`"
                         class="font-semibold text-ink transition-colors hover:text-accent-text"
@@ -135,7 +137,7 @@
                       </NuxtLink>
                     </li>
                     <li v-if="contactEmail" class="flex gap-sm">
-                      <IconMail :size="17" class="mt-xs shrink-0 text-primary" />
+                      <IconMail :size="20" class="shrink-0 text-primary" />
                       <NuxtLink
                         :to="`mailto:${contactEmail}`"
                         class="text-ink transition-colors hover:text-accent-text"
@@ -144,19 +146,19 @@
                       </NuxtLink>
                     </li>
                     <li v-if="centre.opening_hours" class="flex gap-sm">
-                      <IconClock :size="17" class="mt-xs shrink-0 text-primary" />
+                      <IconClock :size="20" class="shrink-0 text-primary" />
                       <span class="text-ink-body">{{ centre.opening_hours }}</span>
                     </li>
                     <li v-if="centre.transport" class="flex gap-sm">
-                      <IconTimetable :size="17" class="mt-xs shrink-0 text-primary" />
+                      <IconTimetable :size="20" class="shrink-0 text-primary" />
                       <span class="text-ink-body">{{ centre.transport }}</span>
                     </li>
                     <li v-if="centre.parking" class="flex gap-sm">
-                      <IconParking :size="17" class="mt-xs shrink-0 text-primary" />
+                      <IconParking :size="20" class="shrink-0 text-primary" />
                       <span class="text-ink-body">{{ centre.parking }}</span>
                     </li>
                     <li v-if="centre.pmr_accessible" class="flex gap-sm">
-                      <IconAccessibility :size="17" class="mt-xs shrink-0 text-primary" />
+                      <IconAccessibility :size="20" class="shrink-0 text-primary" />
                       <span class="text-ink-body">Locaux accessibles PMR</span>
                     </li>
                   </ul>
@@ -429,7 +431,24 @@
           </div>
         </div>
 
-        <!-- Autres centres de la région — avant le bandeau CTA (maquette) -->
+        <!-- Bandeau CTA — avant la liste des autres centres -->
+        <CtaBanner
+          v-reveal
+          class="mt-2xl"
+          title="Besoin de formation ?"
+          text="La demande transmet automatiquement le centre, la ville et la formation concernée — sans ressaisie."
+        >
+          <Button as-child variant="paper" size="pill-lg" class="w-full sm:w-auto">
+            <NuxtLink :to="`/centres/demande-de-formation?centre=${slug}`"
+              >Demander une formation</NuxtLink
+            >
+          </Button>
+          <Button as-child variant="outline-inverse" size="pill-lg" class="w-full sm:w-auto">
+            <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
+          </Button>
+        </CtaBanner>
+
+        <!-- Autres centres de la région — dernière section avant le footer -->
         <section v-if="nearbyCenters.length" class="mt-2xl" aria-labelledby="autres-title">
           <div class="flex flex-wrap items-baseline justify-between gap-sm">
             <h2 id="autres-title" class="font-display text-h2 font-extrabold text-ink">
@@ -461,23 +480,6 @@
             >
           </Button>
         </section>
-
-        <!-- Bandeau CTA — dernière section avant le footer -->
-        <CtaBanner
-          v-reveal
-          class="mt-2xl"
-          title="Besoin de formation ?"
-          text="La demande transmet automatiquement le centre, la ville et la formation concernée — sans ressaisie."
-        >
-          <Button as-child variant="paper" size="pill-lg" class="w-full sm:w-auto">
-            <NuxtLink :to="`/centres/demande-de-formation?centre=${slug}`"
-              >Demander une formation</NuxtLink
-            >
-          </Button>
-          <Button as-child variant="outline-inverse" size="pill-lg" class="w-full sm:w-auto">
-            <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
-          </Button>
-        </CtaBanner>
       </div>
     </template>
 

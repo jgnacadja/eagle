@@ -12,7 +12,7 @@ withDefaults(
     stars: string
     quote: string
     author: string
-    variant?: 'surface' | 'paper' | 'white'
+    variant?: 'surface' | 'paper'
   }>(),
   {
     variant: 'surface'

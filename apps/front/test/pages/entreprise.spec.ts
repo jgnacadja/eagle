@@ -52,16 +52,7 @@ vi.mock('~/composables/useCatalog', () => ({
   }))
 }))
 
-vi.stubGlobal('useDirectusList', (collection: string) => {
-  if (collection === 'sous_familles_formation') {
-    return ref([
-      { name: 'AIPR', slug: 'aipr' },
-      { name: 'CATEC®', slug: 'catec' },
-      { name: 'Amiante SS4', slug: 'amiante-ss4' },
-      { name: 'SECUFER', slug: 'secufer' },
-      { name: 'Gestes & postures', slug: 'gestes-postures' }
-    ])
-  }
+vi.stubGlobal('useDirectusList', () => {
   return ref([
     {
       slug: 'centre-lyon',
@@ -117,7 +108,14 @@ function mountPage() {
         TestimonialCard: {
           props: ['quote', 'author', 'stars'],
           template: '<div class="testimonial-card">{{ quote }} {{ author }}</div>'
-        }
+        },
+        ProcessSteps: {
+          props: ['steps'],
+          template: `<ol class="process-steps-mock">
+            <li v-for="step in steps" :key="step.title">{{ step.number }} {{ step.title }} {{ step.body }}</li>
+          </ol>`
+        },
+        Badge: { template: '<span class="badge-mock"><slot /></span>' }
       }
     }
   })
@@ -213,7 +211,7 @@ describe('EntreprisePage', () => {
     ).toBe(true)
   })
 
-  it('affiche les tags de formation dynamiques avec liens de recherche', async () => {
+  it('affiche les tags de formation avec liens de recherche', async () => {
     const wrapper = mountPage()
     await flushPromises()
 
@@ -228,39 +226,39 @@ describe('EntreprisePage', () => {
     )
   })
 
-  it('redirige vers /parler-a-un-conseiller lors de la soumission de la recherche hero', async () => {
+  it('redirige vers /parler-a-votre-conseiller lors de la soumission de la recherche hero', async () => {
     const wrapper = mountPage()
     await flushPromises()
 
     const heroInput = wrapper.find('#entreprises-hero-search')
     await heroInput.setValue('   Besoin CACES pour 10 personnes   ')
-    await wrapper.findAll('.search-input-mock')[0].find('button').trigger('click')
+    await wrapper.findAll('.search-input-mock')[0]!.find('button').trigger('click')
 
     expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/parler-a-un-conseiller',
+      path: '/parler-a-votre-conseiller',
       query: { q: 'Besoin CACES pour 10 personnes' }
     })
 
     navigateToMock.mockClear()
     await heroInput.setValue('   ')
-    await wrapper.findAll('.search-input-mock')[0].find('button').trigger('click')
+    await wrapper.findAll('.search-input-mock')[0]!.find('button').trigger('click')
 
     expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/parler-a-un-conseiller',
+      path: '/parler-a-votre-conseiller',
       query: {}
     })
   })
 
-  it('redirige vers /parler-a-un-conseiller lors de la soumission de la recherche finale', async () => {
+  it('redirige vers /parler-a-votre-conseiller lors de la soumission de la recherche finale', async () => {
     const wrapper = mountPage()
     await flushPromises()
 
     const finalInput = wrapper.find('#entreprises-final-search')
     await finalInput.setValue('Renouveler 12 habilitations')
-    await wrapper.findAll('.search-input-mock')[1].find('button').trigger('click')
+    await wrapper.findAll('.search-input-mock')[1]!.find('button').trigger('click')
 
     expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/parler-a-un-conseiller',
+      path: '/parler-a-votre-conseiller',
       query: { q: 'Renouveler 12 habilitations' }
     })
   })

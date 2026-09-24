@@ -18,6 +18,9 @@ vi.stubGlobal('useLeadSubmit', () => ({
   error: ref(null)
 }))
 
+const routeStub = { query: {} as Record<string, string> }
+vi.stubGlobal('useRoute', () => routeStub)
+
 const stubs = {
   NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
   Button: { template: '<button><slot /></button>' },
@@ -77,6 +80,7 @@ describe('pages/parler-a-votre-conseiller', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     leadSubmitMock.mockReset().mockResolvedValue(true)
+    routeStub.query = {}
   })
 
   it('affiche le titre, le formulaire et la sidebar', async () => {
@@ -204,6 +208,16 @@ describe('pages/parler-a-votre-conseiller', () => {
 
     expect(wrapper.find('form').attributes('style') ?? '').not.toContain('display: none')
     expect(wrapper.text()).not.toContain('Demande transmise')
+  })
+
+  it('pré-remplit « Votre besoin en quelques mots » depuis ?q=', async () => {
+    routeStub.query = { q: '  Former 8 salariés au CACES près de Lyon  ' }
+    const wrapper = await mountPage()
+
+    const textarea = wrapper.find('#message')
+    expect((textarea.element as HTMLTextAreaElement).value).toBe(
+      'Former 8 salariés au CACES près de Lyon'
+    )
   })
 
   it('applique le SEO noindex de la page', async () => {

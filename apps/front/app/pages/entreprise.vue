@@ -14,7 +14,7 @@
       <div class="relative mx-auto px-gutter-mobile md:px-gutter pb-section pt-4xl text-center">
         <div class="text-center md:relative">
           <span
-            class="inline-block rounded-full border border-primary/25 bg-paper px-md py-xs text-meta font-bold uppercase tracking-wider text-primary shadow-xs"
+            class="inline-block rounded-full border border-primary/25 bg-paper px-md py-xs text-meta font-bold uppercase tracking-wider text-primary shadow-sm"
           >
             Entreprises
           </span>
@@ -27,14 +27,18 @@
           </h1>
 
           <p class="mx-auto mt-md max-w-prose font-semibold text-ink text-body">
-            Un interlocuteur unique<span class="hidden md:inline">
-              pour vos besoins de formation</span
-            >, partout en France.
+            <span class="hidden md:inline"
+              >Un interlocuteur unique pour vos besoins de formation, partout en France.</span
+            ><span class="md:hidden">Un interlocuteur unique, partout en France.</span>
           </p>
           <p class="mx-auto mt-sm text-ink-muted text-small max-w-prose">
-            <span class="hidden md:inline">Learn Up Academy vous accompagne dans la r</span
-            ><span class="md:hidden">R</span>echerche, l'organisation et le déploiement de vos
-            formations réglementaires, au plus près de vos équipes.
+            <span class="hidden md:inline"
+              >Learn Up Academy vous accompagne dans la recherche, l'organisation et le déploiement
+              de vos formations réglementaires, au plus près de vos équipes.</span
+            ><span class="md:hidden"
+              >Recherche, l'organisation et le déploiement de vos formations réglementaires, au plus
+              près de vos équipes.</span
+            >
           </p>
 
           <form class="mx-auto mt-xl w-full max-w-prose" @submit.prevent="onHeroSearch()">
@@ -51,15 +55,15 @@
             </SearchInput>
           </form>
 
-          <p class="mx-auto mt-lg max-w-prose text-meta text-ink-muted leading-relaxed">
-            Vous pouvez écrire comme vous le feriez à un conseiller<span class="hidden md:inline">
-              — ex. « Nous avons 12 agences en France et souhaitons centraliser nos formations
-              réglementaires. »</span
-            >
+          <p class="mx-auto mt-lg max-w-prose text-small text-ink-muted">
+            <span class="hidden md:inline"
+              >Vous pouvez écrire comme vous le feriez à un conseiller — ex. « Nous avons 12 agences
+              en France et souhaitons centraliser nos formations réglementaires. »</span
+            ><span class="md:hidden">Vous pouvez écrire comme vous le feriez à un conseiller.</span>
           </p>
 
           <NuxtLink
-            to="/parler-a-un-conseiller"
+            to="/parler-a-votre-conseiller"
             class="mt-sm inline-block text-small font-bold text-accent-text underline underline-offset-4 transition-colors hover:text-primary"
           >
             Vous préférez échanger ? Parler à un conseiller <span class="link-arrow">→</span>
@@ -67,9 +71,9 @@
 
           <!-- Carte citation flottante (desktop : absolue haut-droite, mobile : centrée sous le lien) -->
           <div
-            class="mx-auto mt-lg max-w-57.5 -rotate-2 rounded-2xl border border-rule/80 bg-paper p-md text-left shadow-md transition-all hover:rotate-0 hover:shadow-lg md:absolute md:-top-4 md:right-0 lg:right-4 md:mt-0"
+            class="mx-auto mt-lg max-w-57.5 -rotate-2 rounded-md border border-rule/80 bg-paper p-md text-left shadow-md transition-all hover:rotate-0 hover:shadow-lg md:absolute md:-top-4 md:right-0 lg:right-4 md:mt-0"
           >
-            <p class="font-sans text-small font-bold italic leading-snug text-primary">
+            <p class="font-sans text-small font-bold italic text-primary">
               La formation, un levier<br />de performance durable
             </p>
             <span class="mt-sm block h-1 w-12 rounded-full bg-accent" />
@@ -84,12 +88,13 @@
         class="mx-auto flex flex-col gap-y-md px-gutter-mobile py-xl md:grid md:grid-cols-5 md:gap-y-0 md:px-gutter md:py-xl"
       >
         <li
-          v-for="benefit in heroBenefits"
+          v-for="(benefit, i) in heroBenefits"
           :key="benefit.label"
+          v-reveal="revealStagger(i)"
           class="flex items-center gap-md md:border-l md:border-rule/80 md:pl-md md:pr-sm md:first:border-l-0 md:first:pl-0"
         >
           <component :is="benefit.icon" :size="24" class="shrink-0 text-primary" />
-          <span class="text-small font-bold text-ink leading-snug">{{ benefit.label }}</span>
+          <span class="text-small font-bold text-ink">{{ benefit.label }}</span>
         </li>
       </ul>
     </section>
@@ -101,7 +106,7 @@
     >
       <h2
         id="solutions-title"
-        class="text-center font-display text-xl md:text-h2 font-extrabold text-ink"
+        class="text-center font-display text-h3 font-extrabold text-ink md:text-h2"
       >
         Des solutions pour tous les types d'entreprises
       </h2>
@@ -114,26 +119,27 @@
         <article
           v-for="(segment, i) in segments"
           :key="segment.title"
-          class="group flex flex-col justify-between rounded-2xl border border-rule p-md shadow-2xs transition-all hover:border-primary/40 hover:shadow-md"
+          v-reveal="revealStagger(i)"
+          class="group flex flex-col justify-between rounded-md border border-rule p-md shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
           :class="i < 3 ? 'bg-surface' : 'bg-paper'"
         >
           <div>
             <div
-              class="hidden md:flex h-12 w-12 items-center justify-center rounded-xl text-primary transition-transform group-hover:scale-105"
+              class="hidden md:flex h-12 w-12 items-center justify-center rounded-sm text-primary transition-transform group-hover:scale-105"
               :class="i < 3 ? 'bg-paper' : 'bg-primary-soft'"
             >
               <component :is="segment.icon" :size="22" />
             </div>
-            <h3 class="mt-0 md:mt-2 font-display text-small md:text-h4 font-bold text-ink">
+            <h3 class="font-display text-small font-bold text-ink md:mt-sm md:text-h4">
               {{ segment.title }}
             </h3>
-            <p class="mt-xs text-xs md:text-small text-ink-muted leading-relaxed">
+            <p class="mt-xs text-small text-ink-muted">
               {{ segment.body }}
             </p>
           </div>
           <NuxtLink
             :to="segment.to"
-            class="md:mt-2 inline-flex items-center gap-1.5 text-small font-bold text-primary transition-colors hover:text-accent-text"
+            class="inline-flex items-center gap-sm text-small font-bold text-primary transition-colors hover:text-accent-text md:mt-sm"
           >
             <span class="hidden md:inline">{{ segment.cta }}</span>
             <span class="sr-only md:hidden">{{ segment.cta }} : {{ segment.title }}</span>
@@ -160,7 +166,8 @@
         <ol class="mt-xl flex flex-col gap-md lg:flex-row lg:items-stretch">
           <template v-for="(step, i) in multisiteSteps" :key="step.title">
             <li
-              class="flex flex-1 flex-row items-center gap-sm rounded-xl border border-outline-inverse/20 bg-paper/10 p-md transition-colors hover:bg-paper/15 lg:flex-col lg:items-start"
+              v-reveal="revealStagger(i)"
+              class="flex flex-1 flex-row items-center gap-sm rounded-sm border border-outline-inverse/20 bg-paper/10 p-md transition-colors hover:bg-paper/15 lg:flex-col lg:items-start"
             >
               <span class="shrink-0 font-display text-h4 font-extrabold text-accent">
                 {{ i + 1 }}
@@ -173,7 +180,7 @@
             <li
               v-if="i < multisiteSteps.length - 1"
               aria-hidden="true"
-              class="hidden shrink-0 self-center px-1 text-ink-inverse-muted/60 lg:flex"
+              class="hidden shrink-0 self-center px-xs text-ink-inverse-muted/60 lg:flex"
             >
               →
             </li>
@@ -197,15 +204,15 @@
             as-child
             variant="outline"
             size="pill-lg"
-            class="hidden lg:inline-flex mt-lg w-full sm:w-auto"
+            class="hidden lg:inline-flex gap-xs mt-lg w-full sm:w-auto"
           >
             <NuxtLink to="/centres">
-              Voir la carte des centres <span class="link-arrow pl-1">→</span>
+              Voir la carte des centres <span class="link-arrow">→</span>
             </NuxtLink>
           </Button>
         </div>
 
-        <div class="h-72 overflow-hidden rounded-xl border border-rule bg-surface md:h-96">
+        <div v-reveal class="h-72 overflow-hidden rounded-sm border border-rule bg-surface md:h-96">
           <CenterMap
             v-if="mapCenters.length"
             :centers="mapCenters"
@@ -220,7 +227,12 @@
           </div>
         </div>
 
-        <Button as-child variant="outline" size="pill-lg" class="md:hidden mt-lg w-full sm:w-auto">
+        <Button
+          as-child
+          variant="outline"
+          size="pill-lg"
+          class="gap-xs mt-lg w-full sm:w-auto lg:hidden"
+        >
           <NuxtLink to="/centres">
             Voir la carte des centres <span class="link-arrow">→</span>
           </NuxtLink>
@@ -233,18 +245,16 @@
       class="mx-auto px-gutter-mobile md:px-gutter py-section bg-surface"
       aria-labelledby="formations-title"
     >
-      <h2
-        id="formations-title"
-        class="font-display text-xl sm:text-h3 font-extrabold text-ink md:text-h2"
-      >
+      <h2 id="formations-title" class="font-display text-h3 font-extrabold text-ink md:text-h2">
         Les formations réglementaires dont vos équipes ont besoin
       </h2>
 
       <div class="mt-xl grid grid-cols-2 gap-md lg:grid-cols-4">
         <article
-          v-for="formation in formations"
+          v-for="(formation, i) in formations"
           :key="formation.title"
-          class="flex flex-col justify-between rounded-2xl border border-rule bg-paper p-md shadow-2xs transition-all hover:border-primary/40 hover:shadow-md"
+          v-reveal="revealStagger(i)"
+          class="flex flex-col justify-between rounded-md border border-rule bg-paper p-md shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
         >
           <div>
             <h3 class="font-display text-small md:text-h4 font-bold text-ink">
@@ -256,7 +266,7 @@
           </div>
           <NuxtLink
             :to="formation.to"
-            class="mt-2 inline-flex items-center gap-1.5 text-small font-bold text-primary transition-colors hover:text-accent-text"
+            class="mt-sm inline-flex items-center gap-sm text-small font-bold text-primary transition-colors hover:text-accent-text"
           >
             Voir le détail <span class="link-arrow">→</span>
           </NuxtLink>
@@ -265,16 +275,19 @@
 
       <div class="mt-lg flex flex-col gap-md sm:flex-row sm:items-center sm:justify-between">
         <div class="hidden md:flex flex-wrap gap-sm">
-          <NuxtLink
+          <Badge
             v-for="tag in formationTags"
             :key="tag"
-            :to="`/formations?q=${encodeURIComponent(tag)}`"
-            class="rounded-full border border-rule bg-paper p-3 text-meta font-medium text-ink transition-colors hover:border-primary hover:text-primary"
+            as-child
+            variant="outline"
+            class="font-medium transition-colors hover:border-primary hover:text-primary"
           >
-            {{ tag }}
-          </NuxtLink>
+            <NuxtLink :to="`/formations?q=${encodeURIComponent(tag)}`">
+              {{ tag }}
+            </NuxtLink>
+          </Badge>
         </div>
-        <Button as-child size="pill-lg" class="w-full sm:w-auto">
+        <Button as-child size="pill-lg" class="gap-xs w-full sm:w-auto">
           <NuxtLink to="/formations">
             Voir tout le catalogue <span class="link-arrow">→</span>
           </NuxtLink>
@@ -292,34 +305,7 @@
           Comment ça marche ?
         </h2>
 
-        <div class="mt-xl flex flex-col gap-md lg:flex-row lg:items-stretch">
-          <template v-for="(step, idx) in howItWorksSteps" :key="step.title">
-            <div
-              class="flex flex-1 flex-row items-center gap-md rounded-xl border border-rule bg-paper p-md shadow-2xs transition-shadow hover:shadow-sm lg:flex-col lg:items-start"
-            >
-              <span
-                class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-small font-bold text-ink"
-              >
-                {{ step.number }}
-              </span>
-
-              <div>
-                <h3 class="font-display text-small md:text-h4 font-bold text-ink">
-                  {{ step.title }}
-                </h3>
-                <p class="hidden lg:block mt-xs text-small text-ink-muted">{{ step.body }}</p>
-              </div>
-            </div>
-
-            <div
-              v-if="idx < howItWorksSteps.length - 1"
-              aria-hidden="true"
-              class="hidden shrink-0 self-center px-1 text-ink-subtle lg:flex"
-            >
-              →
-            </div>
-          </template>
-        </div>
+        <ProcessSteps :steps="howItWorksSteps" last-step-variant="accent" class="mt-xl" />
       </div>
     </section>
 
@@ -329,10 +315,7 @@
       class="mx-auto px-gutter-mobile md:px-gutter py-section bg-surface"
       aria-labelledby="confiance-title"
     >
-      <h2
-        id="confiance-title"
-        class="font-display text-xl sm:text-h3 font-extrabold text-ink md:text-h2"
-      >
+      <h2 id="confiance-title" class="font-display text-h3 font-extrabold text-ink md:text-h2">
         Ils nous font confiance
       </h2>
 
@@ -341,9 +324,10 @@
         class="mt-lg flex snap-x snap-mandatory gap-md overflow-x-auto pb-sm md:grid md:grid-cols-6 md:gap-md md:overflow-visible"
       >
         <div
-          v-for="company in techCompanyLogos"
+          v-for="(company, i) in techCompanyLogos"
           :key="company.name"
-          class="flex h-16 w-32 shrink-0 snap-start items-center justify-center rounded-xl border border-rule bg-paper p-md shadow-2xs transition-all hover:border-primary/40 hover:shadow-xs md:h-20 md:w-auto"
+          v-reveal="revealStagger(i)"
+          class="flex h-16 w-32 shrink-0 snap-start items-center justify-center rounded-sm border border-rule bg-paper p-md shadow-sm transition-all hover:border-primary/40 md:h-20 md:w-auto"
         >
           <img
             :src="company.logoUrl"
@@ -356,8 +340,9 @@
 
       <div class="mt-lg grid gap-grid md:grid-cols-2">
         <TestimonialCard
-          v-for="testimonial in testimonials"
+          v-for="(testimonial, i) in testimonials"
           :key="testimonial.author"
+          v-reveal="revealStagger(i)"
           variant="paper"
           :stars="testimonial.stars"
           :quote="testimonial.quote"
@@ -365,7 +350,7 @@
         />
       </div>
 
-      <p class="mt-4 text-xs text-ink-subtle">
+      <p class="mt-md text-small text-ink-subtle">
         <span class="hidden md:inline">
           Avis réels et références publiées avec l'accord des entreprises concernées.
         </span>
@@ -376,7 +361,7 @@
     <!-- CTA final -->
     <section class="bg-primary-muted py-section text-ink-inverse">
       <div class="px-gutter-mobile text-center">
-        <h2 class="font-display text-xl font-extrabold text-ink-inverse md:text-h2">
+        <h2 class="font-display text-h3 font-extrabold text-ink-inverse md:text-h2">
           Un projet de formation pour votre entreprise ?
         </h2>
 
@@ -394,12 +379,12 @@
           </SearchInput>
         </form>
 
-        <p class="mt-md text-meta text-ink-inverse-muted">
+        <p class="mt-md text-small text-ink-inverse-muted">
           Vous pouvez écrire comme vous le feriez à un conseiller.
         </p>
 
-        <Button as-child variant="accent" size="pill-lg" class="mt-lg w-full sm:w-auto">
-          <NuxtLink to="/parler-a-un-conseiller">
+        <Button as-child variant="accent" size="pill-lg" class="gap-xs mt-lg w-full sm:w-auto">
+          <NuxtLink to="/parler-a-votre-conseiller">
             Échanger avec un conseiller <span class="link-arrow">→</span>
           </NuxtLink>
         </Button>
@@ -414,16 +399,17 @@
 
       <div class="mt-xl grid gap-lg md:grid-cols-2">
         <NuxtLink
-          v-for="link in furtherLinks"
+          v-for="(link, i) in furtherLinks"
           :key="link.title"
+          v-reveal="revealStagger(i)"
           :to="link.to"
-          class="group flex items-center justify-between gap-md rounded-xl border border-rule bg-paper p-md md:p-lg shadow-2xs transition-all hover:border-primary hover:shadow-md"
+          class="group flex items-center justify-between gap-md rounded-md border border-rule bg-paper p-md shadow-sm transition-all hover:border-primary hover:shadow-md md:p-lg"
         >
           <div>
             <h3 class="font-display text-small font-bold uppercase tracking-wider text-ink">
               {{ link.title }}
             </h3>
-            <p class="mt-xs text-xs text-ink-muted">{{ link.body }}</p>
+            <p class="mt-xs text-small text-ink-muted">{{ link.body }}</p>
           </div>
           <span
             class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full lg:border lg:border-rule text-primary transition-all group-hover:border-primary group-hover:bg-primary group-hover:text-ink-inverse"
@@ -441,6 +427,7 @@
 import { computed, ref } from 'vue'
 import type { Centre } from '@learnup/types'
 import { mapCourse, useCatalog } from '~/composables/useCatalog'
+import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
 import IconSparkle from '~/components/icons/IconSparkle.vue'
 import IconUser from '~/components/icons/IconUser.vue'
@@ -473,7 +460,7 @@ const finalSearch = ref('')
 function onHeroSearch(value?: string) {
   const q = (value ?? heroSearch.value).trim()
   navigateTo({
-    path: '/parler-a-un-conseiller',
+    path: '/parler-a-votre-conseiller',
     query: q ? { q } : {}
   })
 }
@@ -481,7 +468,7 @@ function onHeroSearch(value?: string) {
 function onFinalSearch(value?: string) {
   const q = (value ?? finalSearch.value).trim()
   navigateTo({
-    path: '/parler-a-un-conseiller',
+    path: '/parler-a-votre-conseiller',
     query: q ? { q } : {}
   })
 }
@@ -583,8 +570,8 @@ const { data: catalogue } = await useCatalog({ limit: 12, sort: 'updatedAt', ord
 
 const formations = computed(() => {
   const items = catalogue.value?.items ?? []
-  const regulatoryItems = items.filter(
-    (c) => !c.familySlug || REGULATORY_FAMILIES.some((f) => c.familySlug?.includes(f))
+  const regulatoryItems = items.filter((c) =>
+    REGULATORY_FAMILIES.some((f) => c.familySlug?.includes(f))
   )
   const listToUse = regulatoryItems.length >= 2 ? regulatoryItems : items
   if (listToUse.length) {

@@ -42,6 +42,7 @@ const centreCreteil = {
   email: 'creteil@learnupacademy.fr',
   contact_name: null,
   contact_role: null,
+  franchise_since: null,
   departments_covered: ['94'],
   digiforma_url: null,
   qualiopi_certified: true,
@@ -148,6 +149,7 @@ vi.stubGlobal('useContentSeo', seoMock)
 vi.stubGlobal('navigateTo', navigateToMock)
 vi.stubGlobal('logServerError', vi.fn())
 vi.stubGlobal('useDirectusClient', () => ({ request: directusRequestMock }))
+vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
 
 // Position pilotable par test : la page importe `useGeolocation`
 // explicitement — le mock remplace le module, `geoPosition` décide si la
@@ -265,6 +267,7 @@ const stubs = {
   IconParking: true,
   IconAccessibility: true,
   IconAward: true,
+  IconBadgeCheck: true,
   IconDownload: true,
   IconRefresh: true,
   IconSparkle: true
@@ -383,6 +386,51 @@ describe('pages/centres/[slug]', () => {
     const mobileLink = wrapper.findAll('a').find((a) => a.text().includes('06 12 20 45 30'))
     expect(mobileLink).toBeTruthy()
     expect(mobileLink!.classes()).toContain('font-semibold')
+  })
+
+  it('affiche le nom et la date de franchise du responsable sur la photo du hero', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      {
+        ...centreCreteil,
+        contact_name: 'Alexander Bennett',
+        franchise_since: '2017-05-19',
+        image: 'portrait-responsable'
+      }
+    ])
+    const wrapper = await mountPage()
+
+    const hero = wrapper.find('figure')
+    expect(hero.exists()).toBe(true)
+    expect(hero.text()).toContain('Alexander Bennett')
+    expect(hero.text()).toContain('Franchisé depuis 19 mai 2017')
+    expect(hero.find('img').attributes('alt')).toBe('Alexander Bennett')
+  })
+
+  it('retombe sur le rôle du contact quand la date de franchise est absente', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      {
+        ...centreCreteil,
+        contact_name: 'Alexander Bennett',
+        contact_role: 'Dirigeant du centre',
+        image: 'portrait-responsable'
+      }
+    ])
+    const wrapper = await mountPage()
+
+    const hero = wrapper.find('figure')
+    expect(hero.text()).toContain('Dirigeant du centre')
+    expect(hero.text()).not.toContain('Franchisé depuis')
+  })
+
+  it('n’affiche pas la carte responsable sans nom de contact', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      { ...centreCreteil, image: 'photo-centre' }
+    ])
+    const wrapper = await mountPage()
+
+    const hero = wrapper.find('figure')
+    expect(hero.exists()).toBe(true)
+    expect(hero.find('figcaption').exists()).toBe(false)
   })
 
   it('affiche certificateur et validité dans la carte qualité', async () => {

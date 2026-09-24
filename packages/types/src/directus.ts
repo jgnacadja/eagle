@@ -30,6 +30,8 @@ export interface Centre extends SeoFields {
   email: string | null
   contact_name: string | null
   contact_role: string | null
+  /** Date d'entrée dans le réseau — affichée « Franchisé depuis … » sur la fiche. */
+  franchise_since: string | null
   departments_covered: string[] | null
   digiforma_url: string | null
   qualiopi_certified: boolean | null

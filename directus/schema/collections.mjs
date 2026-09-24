@@ -249,6 +249,16 @@ export const collections = [
         meta: { interface: 'input', width: 'half', ...fr('Rôle du contact') }
       },
       {
+        field: 'franchise_since',
+        type: 'date',
+        meta: {
+          interface: 'datetime',
+          width: 'half',
+          note: 'Date d’entrée dans le réseau — affichée « Franchisé depuis … » sous le nom du responsable sur la fiche',
+          ...fr('Franchisé depuis')
+        }
+      },
+      {
         field: 'departments_covered',
         type: 'json',
         meta: {
@@ -1204,7 +1214,11 @@ export const relations = [
     collection: 'centres',
     field: 'image',
     related_collection: 'directus_files',
-    meta: { interface: 'file-image', ...fr('Image') }
+    meta: {
+      interface: 'file-image',
+      note: 'Portrait du responsable affiché en hero de la fiche — plus une photo du centre',
+      ...fr('Photo du responsable')
+    }
   },
   {
     collection: 'centres',

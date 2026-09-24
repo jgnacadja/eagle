@@ -37,9 +37,28 @@
                  droite sur les deux lignes (row-span-2). -->
             <figure
               v-if="imageSrc"
-              class="relative aspect-video overflow-hidden rounded-md bg-surface-alt shadow-lg lg:col-span-2 lg:row-span-2 lg:aspect-4/3"
+              class="relative aspect-3/4 overflow-hidden rounded-md bg-surface-alt shadow-lg lg:col-span-2 lg:row-span-2"
             >
-              <img :src="imageSrc" :alt="centre.name" class="h-full w-full object-cover" />
+              <img
+                :src="imageSrc"
+                :alt="centre.contact_name ?? centre.name"
+                class="h-full w-full object-cover"
+              />
+              <span class="absolute inset-0 bg-ink/15" aria-hidden="true" />
+              <!-- Le visuel du hero est le portrait du responsable : nom +
+                   badge vérifié + ancienneté en franchise incrustés en bas. -->
+              <figcaption
+                v-if="centre.contact_name"
+                class="absolute inset-x-md bottom-md flex items-center justify-between gap-md rounded-md bg-paper px-md py-sm shadow-md"
+              >
+                <div class="min-w-0">
+                  <p class="truncate text-body font-bold text-ink">{{ centre.contact_name }}</p>
+                  <p v-if="managerCaption" class="mt-xs text-small text-ink-muted">
+                    {{ managerCaption }}
+                  </p>
+                </div>
+                <IconBadgeCheck :size="22" class="shrink-0 text-accent-text" />
+              </figcaption>
             </figure>
 
             <div class="flex flex-wrap items-center gap-md lg:col-span-3">
@@ -673,6 +692,21 @@ const qualiopiValidUntilLabel = computed(() => {
 })
 
 const imageSrc = computed(() => directusAssetUrl(centre.value?.image))
+
+// « Franchisé depuis 19 mai 2017 » sous le nom du responsable — repli
+// sur le rôle du contact quand la date de franchise n'est pas renseignée.
+const managerCaption = computed(() => {
+  const raw = centre.value?.franchise_since
+  const date = raw ? new Date(raw) : null
+  if (date && !Number.isNaN(date.getTime())) {
+    return `Franchisé depuis ${new Intl.DateTimeFormat('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    }).format(date)}`
+  }
+  return centre.value?.contact_role ?? null
+})
 
 // Breadcrumb adapté à l'état affiché. route.meta est partagé entre toutes
 // les routes /centres/:slug : on réassigne la valeur à chaque changement

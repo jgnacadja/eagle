@@ -1,5 +1,6 @@
 import type { CourseListItem } from '@learnup/types'
 import type { CatalogRetrievalEntry } from '../catalog/catalog.service'
+import { normalizeText } from '../common/utils/text.util'
 
 // Corpus de test du retrieval — dérivé de test/fixtures/programs.json,
 // enrichi de formations réglementaires (SST, CACES, habilitation) pour
@@ -51,7 +52,8 @@ export function makeCourse(seed: CourseSeed): CourseListItem {
 export function makeEntry(seed: CourseSeed): CatalogRetrievalEntry {
   return {
     course: makeCourse(seed),
-    locationText: (seed.cities ?? []).join(' ').toLowerCase()
+    // Comme CatalogService.buildLocationText : normalisé, sans accents.
+    locationText: normalizeText((seed.cities ?? []).join(' '))
   }
 }
 

@@ -23,6 +23,8 @@ vi.stubGlobal('useState', (key: string, init?: () => unknown) => {
   if (!states.has(key)) states.set(key, ref(init?.()))
   return states.get(key)
 })
+const hookOnce = vi.fn()
+vi.stubGlobal('useNuxtApp', () => ({ hooks: { hookOnce } }))
 
 function mountPage() {
   return mount(AssistantPage)
@@ -34,9 +36,22 @@ describe('pages/recherche-assistee', () => {
     seoMetaMock.mockReset()
     navigateMock.mockReset()
     backMock.mockReset()
+    hookOnce.mockReset()
     states.clear()
     route.query = {}
     window.history.replaceState({ back: null }, '')
+  })
+
+  it('à la sortie, programme le retour du focus vers le déclencheur d’origine', () => {
+    states.set(
+      'assistant-origin',
+      ref({ path: '/formations', triggerId: 'assistant-trigger-catalogue-empty' })
+    )
+    const wrapper = mountPage()
+
+    wrapper.unmount()
+
+    expect(hookOnce).toHaveBeenCalledWith('page:finish', expect.any(Function))
   })
 
   it('utilise le layout pleine page et se déclare noindex, follow', () => {

@@ -274,6 +274,14 @@ describe('pages/formations/[famille]', () => {
     expect(wrapper.text()).toContain('CACES R490 — grues de chargement')
   })
 
+  it('propose « Être guidé dans mon choix » (moteur IA) dans le bandeau CTA', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.find('#assistant-trigger-famille-cta').text()).toContain(
+      'Être guidé dans mon choix'
+    )
+  })
+
   it('affiche les cartes informations public concerné et validité', async () => {
     const wrapper = await mountPage()
 

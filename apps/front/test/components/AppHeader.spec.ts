@@ -28,7 +28,8 @@ const stubs = {
   MobileMenu: {
     props: ['open'],
     template: '<div v-if="open" id="mobile-menu" />'
-  }
+  },
+  AssistantHeaderPill: { template: '<button data-test="assistant-header-pill" />' }
 }
 
 function mountHeader() {
@@ -51,6 +52,8 @@ describe('AppHeader', () => {
     expect(wrapper.text()).toContain('À propos')
     expect(wrapper.text()).toContain('Actualités')
     expect(wrapper.text()).toContain('Rejoindre le réseau')
+    // Entrée compacte du moteur IA (pages intérieures), avant le CTA réseau.
+    expect(wrapper.find('[data-test="assistant-header-pill"]').exists()).toBe(true)
     wrapper.unmount()
   })
 

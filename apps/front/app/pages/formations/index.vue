@@ -254,9 +254,11 @@
               réponse adaptée vous sera proposée.
             </p>
             <div class="mt-lg flex flex-wrap justify-center gap-md">
-              <Button as-child size="pill-sm">
-                <NuxtLink :to="assistantEntry">Être guidé dans mon choix</NuxtLink>
-              </Button>
+              <AssistantTrigger
+                id="assistant-trigger-catalogue-empty"
+                :query="searchQuery"
+                size="pill-sm"
+              />
               <Button as-child variant="outline" size="pill-sm">
                 <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
               </Button>
@@ -361,9 +363,13 @@
         title="Vous ne savez pas quelle formation choisir ?"
         text="Décrivez votre besoin : LEARN UP identifie la formation, le format et le lieu adaptés à votre situation."
       >
-        <Button as-child variant="accent" size="pill-sm" class="w-full sm:w-auto">
-          <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
-        </Button>
+        <AssistantTrigger
+          id="assistant-trigger-catalogue-cta"
+          :query="searchQuery"
+          variant="accent"
+          size="pill-sm"
+          class="w-full sm:w-auto"
+        />
         <Button as-child variant="outline-inverse" size="pill-sm" class="w-full sm:w-auto">
           <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
         </Button>
@@ -450,7 +456,6 @@ import {
   MODALITY_OPTIONS
 } from '~/utils/catalog-filters'
 import { useDirectusClient } from '~/composables/useDirectus'
-import { assistantEntryHref } from '~/utils/assistant-route'
 import { revealStagger } from '~/utils/reveal'
 import { readItems } from '@directus/sdk'
 
@@ -504,10 +509,6 @@ const closeFilterButton = ref<HTMLButtonElement | null>(null)
 
 const perPage = 9
 const currentPage = ref(1)
-
-// Entrée « aucun résultat » du moteur IA : la recherche en cours est
-// transmise (?q=) pour ne pas la ressaisir.
-const assistantEntry = computed(() => assistantEntryHref(searchQuery.value))
 
 const sortOptions: SortOption[] = [
   { value: 'pertinence', label: 'Pertinence' },

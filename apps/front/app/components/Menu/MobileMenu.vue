@@ -282,9 +282,13 @@
           >
             Rejoindre le réseau
           </NuxtLink>
-          <Button as-child variant="accent" size="pill" class="w-full">
-            <NuxtLink to="/etre-guide" @click="closeMenu">Être guidé dans mon choix</NuxtLink>
-          </Button>
+          <AssistantTrigger
+            id="assistant-trigger-mobile-menu"
+            variant="accent"
+            size="pill"
+            class="w-full"
+            @open="closeMenu"
+          />
         </div>
       </dialog>
     </Transition>

@@ -62,6 +62,7 @@
       </NavigationMenu>
 
       <div class="ml-auto flex items-center gap-sm">
+        <AssistantHeaderPill class="hidden xl:inline-flex" />
         <Button as-child variant="outline" size="pill-sm" class="lg:inline-flex gap-xs">
           <NuxtLink to="/rejoindre-le-reseau">
             Rejoindre le réseau <span class="link-arrow">→</span>

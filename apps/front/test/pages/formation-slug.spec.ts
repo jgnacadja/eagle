@@ -378,6 +378,14 @@ describe('pages/formations/[famille]/[slug]', () => {
     expect(wrapper.text()).toContain('Télécharger le programme détaillé')
   })
 
+  it('propose « Être guidé dans mon choix » (moteur IA) dans le bandeau CTA', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.find('#assistant-trigger-formation-cta').text()).toContain(
+      'Être guidé dans mon choix'
+    )
+  })
+
   it('rend la description WYSIWYG en HTML sans balises littérales', async () => {
     const richCourse: Course = {
       ...course,

@@ -1,5 +1,5 @@
 import { config } from '@vue/test-utils'
-import { type Component } from 'vue'
+import { ref, type Component, type Ref } from 'vue'
 
 function registerByName(modules: Record<string, unknown>) {
   for (const [path, component] of Object.entries(modules)) {
@@ -27,11 +27,16 @@ config.global.components.GeoNearMe = GeoNearMe
 import ClientLogoWall from '~/components/Brand/ClientLogoWall.vue'
 config.global.components.ClientLogoWall = ClientLogoWall
 
-// Moteur IA : champ d'entrée partagé (Home, page moteur) et coquille.
+// Moteur IA : champ d'entrée partagé (Home, page moteur), coquille et
+// déclencheurs « Être guidé dans mon choix ».
 import AssistantSearchBar from '~/components/Assistant/AssistantSearchBar.vue'
 import AssistantShell from '~/components/Assistant/AssistantShell.vue'
+import AssistantTrigger from '~/components/Assistant/AssistantTrigger.vue'
+import AssistantHeaderPill from '~/components/Assistant/AssistantHeaderPill.vue'
 config.global.components.AssistantSearchBar = AssistantSearchBar
 config.global.components.AssistantShell = AssistantShell
+config.global.components.AssistantTrigger = AssistantTrigger
+config.global.components.AssistantHeaderPill = AssistantHeaderPill
 
 config.global.stubs = {
   ...config.global.stubs,
@@ -56,6 +61,19 @@ config.global.stubs = {
 // Auto-imports Nuxt absents sous Vitest : le header interne SSR n'a pas à
 // exister en environnement de test.
 vi.stubGlobal('internalSsrHeaders', () => undefined)
+
+// Auto-imports Nuxt de navigation (utilisés par useAssistantNavigation) :
+// valeurs neutres par défaut — les specs qui les observent posent leurs
+// propres stubs, qui priment.
+const sharedStates = new Map<string, Ref<unknown>>()
+vi.stubGlobal('navigateTo', vi.fn())
+vi.stubGlobal('useRoute', () => ({ path: '/', fullPath: '/', query: {}, params: {}, meta: {} }))
+vi.stubGlobal('useRouter', () => ({ back: vi.fn(), push: vi.fn(), replace: vi.fn() }))
+vi.stubGlobal('useState', (key: string, init?: () => unknown) => {
+  if (!sharedStates.has(key)) sharedStates.set(key, ref(init?.()))
+  return sharedStates.get(key)
+})
+vi.stubGlobal('useNuxtApp', () => ({ hooks: { hook: vi.fn(), hookOnce: vi.fn() } }))
 
 // Directives motion-v (enregistrées par le module Nuxt, absentes ici) et
 // utilitaires de reveal utilisés dans les templates.

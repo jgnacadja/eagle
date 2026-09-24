@@ -217,9 +217,12 @@
             <Button as-child variant="dark" size="pill" class="w-full sm:w-auto">
               <NuxtLink to="/formations">Parcourir le catalogue</NuxtLink>
             </Button>
-            <Button as-child variant="outline" size="pill" class="w-full sm:w-auto">
-              <NuxtLink to="/parler-a-votre-conseiller"> Être guidé dans mon choix </NuxtLink>
-            </Button>
+            <AssistantTrigger
+              id="assistant-trigger-entreprise-reseau"
+              variant="outline"
+              size="pill"
+              class="w-full sm:w-auto"
+            />
           </div>
         </div>
       </div>

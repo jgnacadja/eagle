@@ -3,6 +3,9 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import { defineComponent, h, nextTick, Suspense } from 'vue'
 import MobileMenu from '~/components/Menu/MobileMenu.vue'
 
+const navigateMock = vi.fn()
+vi.stubGlobal('navigateTo', navigateMock)
+
 vi.mock('~/composables/useMenuData', async () => {
   const { ref } = await import('vue')
   return {
@@ -87,6 +90,16 @@ afterEach(() => {
 })
 
 describe('MobileMenu', () => {
+  it('« Être guidé dans mon choix » ouvre le moteur IA et ferme le menu', async () => {
+    const wrapper = await mountMenu(true)
+
+    await wrapper.find('#assistant-trigger-mobile-menu').trigger('click')
+
+    expect(navigateMock).toHaveBeenCalledWith({ path: '/recherche-assistee' })
+    expect(wrapper.emitted('update:open')).toEqual([[false]])
+    wrapper.unmount()
+  })
+
   it('ne rend rien quand open est false', async () => {
     const wrapper = await mountMenu(false)
 

@@ -1176,6 +1176,115 @@ export const collections = [
       }
       // centre = relation M2O vers centres (voir relations) — vide = avis marque.
     ]
+  },
+  {
+    collection: 'recherches_sans_resultat',
+    icon: 'search_off',
+    note: 'Journal des recherches sans correspondance — catalogue « aucun résultat », moteur IA « hors catalogue ». Alimenté automatiquement par l’API (texte nettoyé des données personnelles, purge après SEARCH_MISS_RETENTION_DAYS jours) ; consultation et export pour la revue produit.',
+    ...fr('Recherches sans résultat'),
+    fields: [
+      primaryKey(),
+      {
+        field: 'date_created',
+        type: 'timestamp',
+        meta: {
+          special: ['date-created'],
+          interface: 'datetime',
+          width: 'half',
+          readonly: true,
+          ...fr('Date')
+        }
+      },
+      {
+        field: 'outcome',
+        type: 'string',
+        meta: {
+          interface: 'select-dropdown',
+          options: {
+            choices: [
+              { text: 'Aucun résultat', value: 'no_result' },
+              { text: 'Hors catalogue', value: 'out_of_catalog' }
+            ]
+          },
+          width: 'half',
+          readonly: true,
+          ...fr('Cas atteint')
+        }
+      },
+      {
+        field: 'source',
+        type: 'string',
+        meta: {
+          interface: 'select-dropdown',
+          options: {
+            choices: [
+              { text: 'Catalogue', value: 'catalog' },
+              { text: 'Moteur IA', value: 'assistant' }
+            ]
+          },
+          width: 'half',
+          readonly: true,
+          ...fr('Source')
+        }
+      },
+      {
+        field: 'query_text',
+        type: 'text',
+        meta: {
+          interface: 'input-multiline',
+          width: 'full',
+          readonly: true,
+          note: 'Texte saisi par le visiteur — e-mail, téléphone, SIRET et IBAN masqués avant enregistrement',
+          ...fr('Requête')
+        }
+      },
+      {
+        field: 'query_normalized',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          readonly: true,
+          hidden: true,
+          note: 'Clé de regroupement (minuscules, sans accents ni ponctuation)',
+          ...fr('Requête normalisée')
+        }
+      },
+      {
+        field: 'intent',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          readonly: true,
+          note: 'Intention détectée par le moteur IA — vide pour le catalogue',
+          ...fr('Intention')
+        }
+      },
+      {
+        field: 'context',
+        type: 'json',
+        meta: {
+          interface: 'input-code',
+          options: { language: 'json' },
+          width: 'full',
+          readonly: true,
+          note: 'Filtres actifs au moment de la recherche — jamais de donnée personnelle',
+          ...fr('Contexte')
+        }
+      },
+      {
+        field: 'reviewed',
+        type: 'boolean',
+        meta: {
+          interface: 'boolean',
+          width: 'half',
+          note: 'À cocher une fois la requête traitée en revue produit',
+          ...fr('Traité')
+        },
+        schema: { default_value: false }
+      }
+    ]
   }
 ]
 

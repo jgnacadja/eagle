@@ -2,7 +2,33 @@
   <div class="flex flex-1 flex-col">
     <AssistantShell @close="navigation.close()" @reset="startNewSearch" />
 
-    <section class="relative flex-1 overflow-hidden bg-linear-to-b from-paper to-surface">
+    <!-- É9 — moteur indisponible -->
+    <AssistantUnavailable v-if="view.kind === 'unavailable'" @retry="showState('analyzing')" />
+
+    <!-- É10 — comparaison des alternatives -->
+    <section
+      v-else-if="view.kind === 'comparison'"
+      class="mx-auto w-full max-w-container px-gutter-mobile py-lg md:px-gutter md:py-xl"
+    >
+      <AssistantComparison :comparison="view.comparison" @back="showState('recommendation')" />
+    </section>
+
+    <!-- É2 → É8, É11 — conversation -->
+    <section
+      v-else-if="view.kind === 'conversation'"
+      class="mx-auto w-full max-w-container px-gutter-mobile py-md md:px-gutter"
+    >
+      <AssistantThread
+        :conversation="view.conversation"
+        @answer="showState('analyzing')"
+        @compare="showState('comparison')"
+        @reformulate="showState('initial')"
+        @edit="showState('initial')"
+      />
+    </section>
+
+    <!-- É1 — état initial -->
+    <section v-else class="relative flex-1 overflow-hidden bg-linear-to-b from-paper to-surface">
       <div
         class="pointer-events-none absolute -bottom-44 -left-32 h-96 w-96 rounded-full bg-primary/5"
         aria-hidden="true"
@@ -41,6 +67,9 @@
           @submit="onSubmit"
         />
 
+        <!-- Exemples cliquables = pré-remplissage (§5). -->
+        <AssistantExamples class="mt-md" :examples="ASSISTANT_EXAMPLES" @pick="prefill" />
+
         <!-- Les deux parcours coexistent : le lien catalogue reste visible
              sans concurrencer le champ (§2). -->
         <p class="mt-lg text-small text-ink-muted">
@@ -58,9 +87,16 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useAssistantNavigation } from '~/composables/useAssistantNavigation'
-import { assistantRoute, readAssistantQuery } from '~/utils/assistant-route'
+import {
+  ASSISTANT_DEMO_STATES,
+  ASSISTANT_EXAMPLES,
+  isAssistantStateId,
+  type AssistantDemoView
+} from '~/data/assistant-demo'
+import type { AssistantStateId } from '~/types/assistant'
+import { ASSISTANT_ROUTE, assistantRoute, readAssistantQuery } from '~/utils/assistant-route'
 
 definePageMeta({ layout: 'assistant' })
 
@@ -89,6 +125,30 @@ watch(
     query.value = value
   }
 )
+
+// États statiques de démo (`?state=<id>`, revue design / recette) : jamais
+// en production sauf activation explicite — DEV-CORE branchera les données
+// réelles à la place des fixtures.
+const demoStatesEnabled = useRuntimeConfig().public.assistantDemoStates === true
+
+const view = computed<AssistantDemoView>(() => {
+  const state = route.query.state
+  return demoStatesEnabled && isAssistantStateId(state)
+    ? ASSISTANT_DEMO_STATES[state]
+    : ASSISTANT_DEMO_STATES.initial
+})
+
+async function showState(state: AssistantStateId): Promise<void> {
+  if (!demoStatesEnabled) return
+  await navigateTo(
+    { path: ASSISTANT_ROUTE, query: state === 'initial' ? {} : { state } },
+    { replace: true }
+  )
+}
+
+function prefill(example: string): void {
+  query.value = example
+}
 
 // L'entrée validée est reflétée dans l'URL (deep-link partageable) en
 // remplaçant l'entrée courante : les échanges suivants n'y toucheront plus.

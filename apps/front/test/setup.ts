@@ -27,16 +27,13 @@ config.global.components.GeoNearMe = GeoNearMe
 import ClientLogoWall from '~/components/Brand/ClientLogoWall.vue'
 config.global.components.ClientLogoWall = ClientLogoWall
 
-// Moteur IA : champ d'entrée partagé (Home, page moteur), coquille et
-// déclencheurs « Être guidé dans mon choix ».
-import AssistantSearchBar from '~/components/Assistant/AssistantSearchBar.vue'
-import AssistantShell from '~/components/Assistant/AssistantShell.vue'
-import AssistantTrigger from '~/components/Assistant/AssistantTrigger.vue'
-import AssistantHeaderPill from '~/components/Assistant/AssistantHeaderPill.vue'
-config.global.components.AssistantSearchBar = AssistantSearchBar
-config.global.components.AssistantShell = AssistantShell
-config.global.components.AssistantTrigger = AssistantTrigger
-config.global.components.AssistantHeaderPill = AssistantHeaderPill
+// Moteur IA : champ d'entrée partagé, coquille, déclencheurs « Être guidé
+// dans mon choix » et composants des 11 états (auto-importés par Nuxt).
+const assistantComponents = import.meta.glob('~/components/Assistant/*.vue', {
+  eager: true,
+  import: 'default'
+})
+registerByName(assistantComponents)
 
 config.global.stubs = {
   ...config.global.stubs,

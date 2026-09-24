@@ -107,7 +107,11 @@ export default defineNuxtConfig({
     cachePurgeSecret: process.env.NUXT_CACHE_PURGE_SECRET ?? '',
     public: {
       apiBase: publicApiBase,
-      siteUrl
+      siteUrl,
+      // États statiques de démo du moteur IA (`/recherche-assistee?state=`) :
+      // dev uniquement par défaut — NUXT_PUBLIC_ASSISTANT_DEMO_STATES=true
+      // pour les previews de revue design / recette.
+      assistantDemoStates: process.env.NODE_ENV !== 'production'
     }
   }
 })

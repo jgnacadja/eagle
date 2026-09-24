@@ -119,10 +119,6 @@
               Besoin d'être accompagné&nbsp;? Parler à votre conseiller
               <span class="link-arrow">→</span>
             </NuxtLink>
-            <p class="mx-auto mt-1 max-w-callout text-xs text-ink-subtle md:hidden">
-              Ouvre le formulaire « Demande conseiller » — identité, contact, SIRET, nature du
-              besoin.
-            </p>
           </div>
         </div>
 
@@ -205,12 +201,6 @@
               </div>
             </div>
           </div>
-
-          <!-- Annotation mobile Qualiopi -->
-          <p class="mx-auto mt-2 text-left text-xs text-ink-subtle md:hidden">
-            Certificat Qualiopi téléchargeable (PDF) — périmètre et numéro à confirmer avant mise en
-            ligne.
-          </p>
         </div>
       </div>
     </section>
@@ -367,9 +357,9 @@
           />
           <div
             v-else
-            class="flex h-full items-center justify-center px-md text-center text-meta text-ink-muted"
+            class="flex h-full items-center justify-center px-md text-center text-small text-ink-muted"
           >
-            Carte de France interactive<br />départements + pins centres — lisible, pas un outil SIG
+            La carte des centres est temporairement indisponible.
           </div>
         </div>
 

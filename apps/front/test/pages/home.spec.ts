@@ -57,7 +57,7 @@ vi.mock('~/composables/useCatalog', () => ({
   }))
 }))
 
-const directusCentres = ref([
+const initialCentres = [
   {
     slug: 'creteil',
     name: 'Centre de Créteil',
@@ -88,7 +88,9 @@ const directusCentres = ref([
     latitude: 50.6292,
     longitude: 3.0573
   }
-])
+]
+
+const directusCentres = ref([...initialCentres])
 
 const initialArticles = [
   {
@@ -186,6 +188,7 @@ describe('pages/index', () => {
     geoFetchMock.mockReset().mockResolvedValue([])
     navigateMock.mockReset()
     directusArticles.value = [...initialArticles]
+    directusCentres.value = [...initialCentres]
   })
 
   it('affiche le hero et les sections principales', async () => {
@@ -418,5 +421,24 @@ describe('pages/index', () => {
     directusArticles.value = []
     const wrapper = await mountPage()
     expect(wrapper.find('#actualites').exists()).toBe(false)
+  })
+
+  it('affiche un message utilisateur lorsque la carte des centres est indisponible', async () => {
+    directusCentres.value = []
+    const wrapper = await mountPage()
+    expect(wrapper.text()).toContain('La carte des centres est temporairement indisponible.')
+    expect(wrapper.text()).not.toContain('outil SIG')
+  })
+
+  it('ne contient pas de mentions ou annotations provisoires de développement', async () => {
+    const wrapper = await mountPage()
+    const text = wrapper.text()
+    expect(text).not.toContain('Ouvre le formulaire')
+    expect(text).not.toContain('à confirmer avant mise en ligne')
+    expect(text).not.toContain('pas un outil SIG')
+    expect(text).not.toContain("Sous réserve d'autorisation")
+    expect(text).not.toContain('Photo à fournir')
+    expect(text).not.toContain("Affichage d'exemple")
+    expect(text).not.toContain('Logo Qualiopi à confirmer')
   })
 })

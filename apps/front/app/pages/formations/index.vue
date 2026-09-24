@@ -255,7 +255,7 @@
             </p>
             <div class="mt-lg flex flex-wrap justify-center gap-md">
               <Button as-child size="pill-sm">
-                <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
+                <NuxtLink :to="assistantEntry">Être guidé dans mon choix</NuxtLink>
               </Button>
               <Button as-child variant="outline" size="pill-sm">
                 <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
@@ -450,6 +450,7 @@ import {
   MODALITY_OPTIONS
 } from '~/utils/catalog-filters'
 import { useDirectusClient } from '~/composables/useDirectus'
+import { assistantEntryHref } from '~/utils/assistant-route'
 import { revealStagger } from '~/utils/reveal'
 import { readItems } from '@directus/sdk'
 
@@ -503,6 +504,10 @@ const closeFilterButton = ref<HTMLButtonElement | null>(null)
 
 const perPage = 9
 const currentPage = ref(1)
+
+// Entrée « aucun résultat » du moteur IA : la recherche en cours est
+// transmise (?q=) pour ne pas la ressaisir.
+const assistantEntry = computed(() => assistantEntryHref(searchQuery.value))
 
 const sortOptions: SortOption[] = [
   { value: 'pertinence', label: 'Pertinence' },

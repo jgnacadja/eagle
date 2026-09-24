@@ -14,6 +14,15 @@ vi.stubGlobal('useHead', headMock)
 vi.stubGlobal('navigateTo', navigateMock)
 vi.stubGlobal('$fetch', geoFetchMock)
 vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
+// Entrée du moteur IA (useAssistantNavigation) : route courante, routeur et
+// état partagé de l'origine.
+vi.stubGlobal('useRoute', () => ({ path: '/', fullPath: '/' }))
+vi.stubGlobal('useRouter', () => ({ back: vi.fn() }))
+const sharedStates = new Map<string, ReturnType<typeof ref>>()
+vi.stubGlobal('useState', (key: string, init?: () => unknown) => {
+  if (!sharedStates.has(key)) sharedStates.set(key, ref(init?.()))
+  return sharedStates.get(key)
+})
 
 vi.mock('~/composables/useCatalog', () => ({
   upcomingSessions: (c: { sessions?: unknown[] }) => c.sessions ?? [],
@@ -201,6 +210,32 @@ describe('pages/index', () => {
     expect(wrapper.text()).toContain('Simplifiez la gestion de vos formations')
     expect(wrapper.text()).toContain('Les clients parlent de nous')
     expect(wrapper.text()).toContain('Actualités')
+  })
+
+  it('le besoin saisi dans le hero ouvre le moteur IA avec la requête transmise', async () => {
+    const wrapper = await mountPage()
+    const input = wrapper.find('input[input-id="hero-search-input"]')
+
+    await input.setValue('former 8 salariés au CACES')
+    await input.trigger('keydown', { key: 'Enter' })
+
+    expect(navigateMock).toHaveBeenCalledWith({
+      path: '/recherche-assistee',
+      query: { q: 'former 8 salariés au CACES' }
+    })
+  })
+
+  it('le champ du bandeau final ouvre aussi le moteur IA', async () => {
+    const wrapper = await mountPage()
+    const input = wrapper.find('input[input-id="cta-search-input"]')
+
+    await input.setValue('renouveler 12 habilitations')
+    await input.trigger('keydown', { key: 'Enter' })
+
+    expect(navigateMock).toHaveBeenCalledWith({
+      path: '/recherche-assistee',
+      query: { q: 'renouveler 12 habilitations' }
+    })
   })
 
   it('rend les cartes réseau, formations, centres et articles', async () => {

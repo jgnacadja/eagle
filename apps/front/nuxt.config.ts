@@ -84,6 +84,11 @@ export default defineNuxtConfig({
     '/centres/**': { isr: { expiration: 600, passQuery: true } },
     '/actualites': { isr: { expiration: 600, passQuery: true } },
     '/actualites/**': { isr: { expiration: 600, passQuery: true } },
+    // Moteur IA (vue de discussion pleine page) : contenu dynamique et
+    // paramétré (?q=), sans valeur SEO — rendu à la demande, noindex/follow
+    // (meta + en-tête), à exclure du sitemap (ticket [SEO]). La Home garde
+    // le champ d'entrée et son indexation.
+    '/recherche-assistee': { isr: false, headers: { 'X-Robots-Tag': 'noindex, follow' } },
     '/rejoindre-le-reseau': { prerender: true },
     '/referencer-mon-organisme': { prerender: true },
     '/entreprise-reseau': { prerender: true },

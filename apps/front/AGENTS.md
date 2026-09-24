@@ -25,6 +25,14 @@ Lire d'abord `AGENTS.md` à la racine.
 - Tailwind config étend `colors.primary`, `colors.ink`, `colors.surface`, `colors.paper`, `colors.rule`, `fontFamily.display/sans/mono`, `borderRadius`, `boxShadow`.
 - Classes courantes : `text-ink`, `text-ink-muted`, `bg-paper`, `bg-surface`, `border-rule`, `font-display`, `font-sans`, `rounded-md`, `shadow-sm`, `hover:shadow-md`.
 
+## Moteur IA — recherche assistée
+
+- Route dédiée `/recherche-assistee` (`ASSISTANT_ROUTE`, `app/utils/assistant-route.ts` — seule source du libellé, arbitrage encore ouvert), requête initiale en `?q=` (deep-link partageable de l'entrée). Les échanges de la conversation ne modifient jamais l'URL.
+- `layouts/assistant.vue` : vue pleine page (header du site, pas de footer). `AssistantShell` (`components/Assistant/`) porte les deux sorties : « Fermer » (retour à la page précédente) et « Nouvelle recherche » (réinitialise, reste dans le moteur).
+- `useAssistantNavigation()` : `open({ query })` mémorise l'origine (`useState('assistant-origin')`) et navigue côté client ; `reset()` retire `?q=` en `replace` ; `close()` revient sur l'entrée d'historique précédente (`history.state.back`, cohérent avec le bouton précédent), sinon origine mémorisée ou Home en `replace`.
+- `AssistantSearchBar` : champ d'entrée partagé (Home hero, bandeau final, page moteur) construit sur `SearchInput` taille `hero` — soumission vide = erreur de saisie liée au champ, jamais d'ouverture du moteur. L'état « aucun résultat » du catalogue pointe vers `assistantEntryHref(searchQuery)`.
+- SEO : page en `noindex, follow` (meta via `useSeoMeta` + en-tête `X-Robots-Tag` en `routeRules`, `isr: false`), à exclure du sitemap ; la Home reste indexable avec le champ d'entrée.
+
 ## SEO
 
 - `useContentSeo()` pour les pages dynamiques.

@@ -36,7 +36,7 @@ export const aproposLiens = [
   },
   {
     slug: 'entreprise-reseau',
-    label: 'Le réseau et ses partenaires',
-    description: 'Devenir partenaire de LEARN UP ACADEMY'
+    label: 'Les entreprises qui forment avec le réseau',
+    description: 'Accompagnement et formations des équipes en entreprise'
   }
 ]

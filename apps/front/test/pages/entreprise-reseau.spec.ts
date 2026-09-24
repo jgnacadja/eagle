@@ -113,6 +113,6 @@ describe('pages/a-propos/reseau.vue', () => {
     const hrefs = wrapper.findAll('a').map((link) => link.attributes('href'))
 
     expect(hrefs).toContain('/formations')
-    expect(hrefs).toContain('/centres/demande-de-formation?sujet=conseiller')
+    expect(hrefs).toContain('/parler-a-votre-conseiller')
   })
 })

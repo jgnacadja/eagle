@@ -406,8 +406,15 @@
               </Card>
             </section>
 
-            <!-- Formation en intra -->
-            <Card v-reveal variant="dark" class="p-lg" aria-labelledby="intra-title">
+            <!-- Formation en intra : affichée uniquement si la modalité est
+                 proposée sur la fiche (RG-CAT-04 — pas d'option fantôme). -->
+            <Card
+              v-if="hasIntra"
+              v-reveal
+              variant="dark"
+              class="p-lg"
+              aria-labelledby="intra-title"
+            >
               <h2 id="intra-title" class="font-sans text-h4 font-semibold text-ink-inverse">
                 Formation en intra
               </h2>
@@ -928,6 +935,9 @@ function demandeUrl(session?: CourseSession): string {
   return `/centres/demande-de-formation?${params.toString()}`
 }
 const demandeTo = computed(() => demandeUrl())
+
+// La carte intra n'est proposée que si la formation déclare la modalité.
+const hasIntra = computed(() => (course.value?.modalities ?? []).includes('intra'))
 
 // Variante intra : aucun centre imposé — le lieu de la session est saisi
 // par le client dans le formulaire (« sans centre imposé »).

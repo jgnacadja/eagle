@@ -415,6 +415,27 @@ describe('pages/formations/[famille]/[slug]', () => {
     expect(wrapper.text()).toContain('Épreuve pratique de conduite')
   })
 
+  it('affiche la carte intra uniquement quand la modalité est proposée', async () => {
+    const wrapper = await mountPage()
+    expect(wrapper.text()).not.toContain('Formation en intra')
+
+    const intraCourse: Course = { ...course, modalities: ['inter', 'intra'] }
+    vi.stubGlobal('useAsyncData', async (key: string) => {
+      if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+        return { data: ref(intraCourse), pending: ref(false), error: ref(null), refresh: vi.fn() }
+      }
+      return defaultUseAsyncData(key)
+    })
+
+    const intraWrapper = await mountPage()
+    expect(intraWrapper.text()).toContain('Formation en intra')
+    const intraLink = intraWrapper.find('a[href*="intra=1"]')
+    expect(intraLink.exists()).toBe(true)
+    expect(intraLink.attributes('href')).toContain(
+      'famille=caces-conduite-engins&formation=caces-r489-chariots-elevateurs'
+    )
+  })
+
   it('sert le visuel Directus via le proxy avant imageUrl', async () => {
     const withImage: Course = {
       ...course,

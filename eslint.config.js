@@ -52,6 +52,7 @@ const nuxtGlobals = {
   useSeoMeta: 'readonly',
   useState: 'readonly',
   useRequestEvent: 'readonly',
+  useRequestURL: 'readonly',
   setResponseStatus: 'readonly',
   createError: 'readonly',
   clearError: 'readonly',

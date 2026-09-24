@@ -13,13 +13,12 @@
 </template>
 
 <script setup lang="ts">
-const { public: publicConfig } = useRuntimeConfig()
+const { origin } = useRequestURL()
 
-// Image de preview par défaut (partage social) — les pages de contenu
-// peuvent la surcharger via useContentSeo sans entrer en conflit ici.
+// Image de preview par défaut (partage social)
 useSeoMeta({
-  ogImage: `${publicConfig.siteUrl}/images/learnup-review-card.png`,
+  ogImage: `${origin}/images/learnup-preview-card.png`,
   twitterCard: 'summary_large_image',
-  twitterImage: `${publicConfig.siteUrl}/images/learnup-review-card.png`
+  twitterImage: `${origin}/images/learnup-preview-card.png`
 })
 </script>

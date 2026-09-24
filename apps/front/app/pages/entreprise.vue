@@ -320,23 +320,7 @@
       </h2>
 
       <!-- Logos avec scroll horizontal sur mobile -->
-      <div
-        class="mt-lg flex snap-x snap-mandatory gap-md overflow-x-auto pb-sm md:grid md:grid-cols-6 md:gap-md md:overflow-visible"
-      >
-        <div
-          v-for="(company, i) in techCompanyLogos"
-          :key="company.name"
-          v-reveal="revealStagger(i)"
-          class="flex h-16 w-32 shrink-0 snap-start items-center justify-center rounded-sm border border-rule bg-paper p-md shadow-sm transition-all hover:border-primary/40 md:h-20 md:w-auto"
-        >
-          <img
-            :src="company.logoUrl"
-            :alt="`Logo ${company.name}`"
-            class="max-h-7 max-w-4/5 object-contain grayscale opacity-75 transition-[filter,opacity] hover:grayscale-0 hover:opacity-100 md:max-h-8"
-            loading="lazy"
-          />
-        </div>
-      </div>
+      <ClientLogoWall />
 
       <div class="mt-lg grid gap-grid md:grid-cols-2">
         <TestimonialCard
@@ -608,33 +592,6 @@ const howItWorksSteps = [
   }
 ]
 
-const techCompanyLogos = [
-  {
-    name: 'Capgemini',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/9d/Capgemini_201x_logo.svg'
-  },
-  {
-    name: 'Microsoft',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg'
-  },
-  {
-    name: 'Google Cloud',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/51/Google_Cloud_logo.svg'
-  },
-  {
-    name: 'Amazon',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg'
-  },
-  {
-    name: 'IBM',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg'
-  },
-  {
-    name: 'Oracle',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg'
-  }
-]
-
 const testimonials = [
   {
     stars: '★★★★★',
@@ -654,7 +611,7 @@ const furtherLinks = [
   {
     title: "Le réseau d'entreprises clientes",
     body: 'Secteurs, typologies, références.',
-    to: '#confiance'
+    to: '/entreprise-reseau'
   },
   {
     title: 'Les partenaires du réseau',

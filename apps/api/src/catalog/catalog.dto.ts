@@ -1,6 +1,13 @@
 import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger'
 import { IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator'
 import { Transform } from 'class-transformer'
+import {
+  toOptionalBoolean,
+  toOptionalInt,
+  toOptionalNumber,
+  toOptionalTrimmed,
+  toPositiveInt
+} from '../common/utils/dto-transforms.util'
 
 export enum CourseSortField {
   updatedAt = 'updatedAt',
@@ -19,45 +26,6 @@ export enum CourseAvailability {
   thisMonth = 'success',
   scheduled = 'warning',
   onDemand = 'neutral'
-}
-
-function toOptionalTrimmed(value: unknown): string | undefined {
-  if (typeof value !== 'string') return undefined
-  const trimmed = value.trim()
-  return trimmed || undefined
-}
-
-function toPositiveInt(value: unknown, fallback: number): number {
-  if (value === undefined || value === null || value === '') return fallback
-  const parsed = Number(value)
-  return Number.isInteger(parsed) ? parsed : Number.NaN
-}
-
-function toOptionalInt(value: unknown): number | undefined {
-  if (value === undefined || value === null || value === '') return undefined
-  const parsed = Number(value)
-  if (Number.isNaN(parsed) || !Number.isInteger(parsed)) {
-    return Number.NaN
-  }
-  return parsed
-}
-
-function toOptionalNumber(value: unknown): number | undefined {
-  if (value === undefined || value === null || value === '') return undefined
-  const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed : Number.NaN
-}
-
-function toOptionalBoolean(value: unknown): boolean | undefined {
-  if (value === undefined || value === null || value === '') return undefined
-  if (typeof value === 'boolean') return value
-  if (typeof value === 'string') {
-    const lowered = value.toLowerCase().trim()
-    if (['true', '1', 'yes'].includes(lowered)) return true
-    if (['false', '0', 'no'].includes(lowered)) return false
-  }
-  // Return the raw value so @IsBoolean rejects it with a 400.
-  return value as unknown as boolean
 }
 
 function toLowerSortOrder(value: unknown): CourseSortOrder | undefined {

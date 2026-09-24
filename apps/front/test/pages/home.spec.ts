@@ -145,8 +145,7 @@ const stubs = {
   ArticleCard: { props: ['title'], template: '<div class="article">{{ title }}</div>' },
   IconSparkle: true,
   IconSearch: true,
-  IconCheck: true,
-  ProcessSteps: true
+  IconCheck: true
 }
 
 const Host = defineComponent({
@@ -177,9 +176,8 @@ describe('pages/index', () => {
 
     expect(wrapper.text()).toContain('orchestrés')
     expect(wrapper.text()).toContain('Construisons ensemble le réseau Learn Up Academy')
-    expect(wrapper.text()).toContain('Comment ça marche')
-    expect(wrapper.text()).toContain('Nos formations')
-    expect(wrapper.text()).toContain('Le réseau Learn Up Academy')
+    expect(wrapper.text()).toContain('Les formations réglementaires adaptées à vos métiers')
+    expect(wrapper.text()).toContain('Trouvez le centre de formation le plus proche de chez vous')
     expect(wrapper.text()).toContain('Simplifiez la gestion de vos formations')
     expect(wrapper.text()).toContain("Ce qu'en disent les entreprises")
     expect(wrapper.text()).toContain('Actualités')

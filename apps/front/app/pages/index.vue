@@ -13,7 +13,7 @@
 
       <!-- Floating badge desktop -->
       <div
-        class="pointer-events-none absolute right-6 top-8 hidden lg:block xl:right-12 xl:top-10 -rotate-3 z-10"
+        class="pointer-events-none absolute right-6 top-8 hidden lg:block xl:right-5 xl:top-12 -rotate-3 z-10"
       >
         <div class="rounded-2xl border border-rule/50 bg-paper px-6 py-4 shadow-md text-left">
           <p class="font-display text-lead font-bold italic leading-snug text-ink">
@@ -261,12 +261,17 @@
           aria-label="Références clients"
         >
           <div
-            v-for="n in 8"
-            :key="n"
-            class="flex h-11 items-center justify-center rounded-xl border border-dashed border-rule px-2 text-xs text-ink-subtle md:h-11 md:w-32 md:rounded md:px-3"
-            :aria-label="`Logo client ${n} à fournir`"
+            v-for="company in techCompanyLogos"
+            :key="company.name"
+            class="flex h-14 items-center justify-center rounded-xl border border-dashed border-rule px-2 text-xs text-ink-subtle md:h-14 md:w-32 md:rounded md:px-3"
+            :aria-label="`Logo client ${company} à fournir`"
           >
-            Logo
+            <img
+              :src="company.logoUrl"
+              :alt="`Logo ${company.name}`"
+              class="max-h-7 max-w-[80%] object-contain"
+              loading="lazy"
+            />
           </div>
         </div>
 
@@ -462,9 +467,9 @@
           </div>
 
           <!-- Colonne droite : Placeholder visuel -->
-          <div v-reveal>
+          <div>
             <div
-              class="hidden md:flex aspect-16/10 w-full items-center justify-center rounded-2xl border border-dashed border-outline-inverse/60 p-md text-center sm:p-lg"
+              class="hidden md:flex aspect-16/10 w-full items-center justify-center rounded-2xl border border-dashed border-outline-inverse/60 p-md text-center sm:p-lg h-77.25"
               role="img"
               aria-label="Photo responsable formation en entreprise"
             >
@@ -566,7 +571,7 @@
             v-for="(benefit, i) in benefits"
             :key="benefit.title"
             v-reveal="revealStagger(i)"
-            class="flex flex-col items-start rounded-2xl border border-rule bg-paper p-3 md:p-6 shadow-xs transition-all duration-200 hover:border-primary/40 hover:shadow-sm"
+            class="flex flex-col items-start rounded-2xl border border-rule bg-paper p-3 md:p-5 shadow-xs transition-all duration-200 hover:border-primary/40 hover:shadow-sm"
           >
             <div
               class="hidden md:flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-alt text-primary"
@@ -1171,4 +1176,39 @@ const homeArticlesData = await useDirectusList<Article>('articles', 'home-actual
 const articles = computed(() => (homeArticlesData.value ?? []).slice(0, 3))
 
 const formationTags = ['AIPR', 'CATEC®', 'Amiante SS4', 'PASO', 'SECUFER', 'Gestes & postures']
+
+const techCompanyLogos = [
+  {
+    name: 'Capgemini',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/9d/Capgemini_201x_logo.svg'
+  },
+  {
+    name: 'Microsoft',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg'
+  },
+  {
+    name: 'Google Cloud',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/51/Google_Cloud_logo.svg'
+  },
+  {
+    name: 'Amazon',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg'
+  },
+  {
+    name: 'IBM',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg'
+  },
+  {
+    name: 'Oracle',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg'
+  },
+  {
+    name: 'IBM',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg'
+  },
+  {
+    name: 'Oracle',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg'
+  }
+]
 </script>

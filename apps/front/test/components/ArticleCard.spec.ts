@@ -47,7 +47,7 @@ describe('ArticleCard', () => {
     expect(wrapper.classes()).toContain('flex-row')
     expect(wrapper.classes()).toContain('md:flex-col')
     expect(wrapper.classes()).toContain('rounded-2xl')
-    expect(wrapper.text()).toContain('CONSEIL')
+    expect(wrapper.text()).toContain('Conseil')
     expect(wrapper.text()).toContain('Quelle AIPR choisir pour vos salariés ?')
     expect(wrapper.text()).toContain('8 sept. 2026 · 4 min')
     expect(wrapper.text()).toContain('Visuel')

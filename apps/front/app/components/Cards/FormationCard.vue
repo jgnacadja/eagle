@@ -14,7 +14,10 @@
     </div>
     <div class="mt-md">
       <h3 class="font-sans text-h4 text-ink">{{ title }}</h3>
-      <p class="font-sans text-sm md:text-body text-ink-muted line-clamp-2 h-[2lh] hidden md:block">
+      <p
+        v-if="body"
+        class="font-sans text-sm md:text-body text-ink-muted line-clamp-2 hidden md:block"
+      >
         {{ body }}
       </p>
       <NuxtLink
@@ -33,7 +36,7 @@ defineProps<{
   title: string
   imageTop: string
   imageBottom: string
-  body: string
+  body?: string
   image?: string | null
   to?: string | null
 }>()

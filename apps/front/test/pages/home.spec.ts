@@ -27,9 +27,24 @@ vi.mock('~/composables/useCatalog', () => ({
   useCatalog: vi.fn(async () => ({
     data: ref({
       items: [
-        { slug: 'formation-1', title: 'Formation 1', familySlug: 'management' },
-        { slug: 'formation-2', title: 'Formation 2', familySlug: 'sante' },
-        { slug: 'formation-3', title: 'Formation 3', familySlug: 'finance' },
+        {
+          slug: 'formation-1',
+          title: 'Formation 1',
+          familySlug: 'management',
+          sessions: [{ startDate: '2026-10-15', seatsRemaining: 5 }]
+        },
+        {
+          slug: 'formation-2',
+          title: 'Formation 2',
+          familySlug: 'sante',
+          sessions: [{ startDate: '2026-10-20', seatsRemaining: 2 }]
+        },
+        {
+          slug: 'formation-3',
+          title: 'Formation 3',
+          familySlug: 'finance',
+          sessions: [{ startDate: '2026-10-25', seatsRemaining: 0 }]
+        },
         { slug: 'formation-4', title: 'Formation 4', familySlug: 'informatique' }
       ],
       total: 15,
@@ -75,7 +90,7 @@ const directusCentres = ref([
   }
 ])
 
-const directusArticles = ref([
+const initialArticles = [
   {
     id: 1,
     status: 'published',
@@ -106,7 +121,9 @@ const directusArticles = ref([
     publish_at: '2026-01-03T00:00:00.000Z',
     cover_image: 'cover-3'
   }
-])
+]
+
+const directusArticles = ref([...initialArticles])
 
 vi.stubGlobal(
   'useDirectusList',
@@ -136,7 +153,6 @@ const stubs = {
     template:
       '<div class="center-card">{{ name }} <span class="centre-distance">{{ distance }}</span><a class="centre-cta" :href="to" /></div>'
   },
-  ConfierCard: { props: ['title'], template: '<div class="confier-card">{{ title }}</div>' },
   StatItem: {
     props: ['value', 'label'],
     template: '<div class="stat">{{ value }} {{ label }}</div>'
@@ -169,6 +185,7 @@ describe('pages/index', () => {
     geo.permission.value = null
     geoFetchMock.mockReset().mockResolvedValue([])
     navigateMock.mockReset()
+    directusArticles.value = [...initialArticles]
   })
 
   it('affiche le hero et les sections principales', async () => {
@@ -212,9 +229,9 @@ describe('pages/index', () => {
     expect(wrapper.text()).toContain(
       'Personnalisées selon votre localisation ou votre dernière recherche.'
     )
-    expect(wrapper.text()).toContain('CACES® R489 cat. 3')
-    expect(wrapper.text()).toContain('Habilitation électrique BS-BE')
-    expect(wrapper.text()).toContain('Travail en hauteur — port du harnais')
+    expect(wrapper.text()).toContain('Formation 1')
+    expect(wrapper.text()).toContain('Formation 2')
+    expect(wrapper.text()).toContain('Formation 3')
     expect(wrapper.text()).toContain('Voir toutes les sessions')
   })
 
@@ -370,5 +387,36 @@ describe('pages/index', () => {
     expect(headMock).toHaveBeenCalledWith(expect.objectContaining({ script: expect.any(Array) }))
     const ldJson = headMock.mock.calls[0]![0].script[0].innerHTML
     expect(JSON.parse(ldJson)['@graph']).toHaveLength(2)
+  })
+
+  it('masque la section Prochaines sessions quand aucune session n’est disponible', async () => {
+    const { useCatalog } = await import('~/composables/useCatalog')
+    vi.mocked(useCatalog).mockResolvedValueOnce({
+      data: ref({
+        items: [
+          {
+            slug: 'formation-1',
+            title: 'Formation 1',
+            familySlug: 'management',
+            sessions: []
+          }
+        ],
+        total: 1,
+        page: 1,
+        pages: 1
+      }),
+      pending: ref(false),
+      error: ref(null),
+      refresh: vi.fn()
+    })
+
+    const wrapper = await mountPage()
+    expect(wrapper.find('#sessions').exists()).toBe(false)
+  })
+
+  it('masque la section Actualités quand aucun article n’est publié', async () => {
+    directusArticles.value = []
+    const wrapper = await mountPage()
+    expect(wrapper.find('#actualites').exists()).toBe(false)
   })
 })

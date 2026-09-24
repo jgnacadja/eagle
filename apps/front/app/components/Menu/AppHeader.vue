@@ -62,12 +62,11 @@
       </NavigationMenu>
 
       <div class="ml-auto flex items-center gap-sm">
-        <NuxtLink
-          to="/rejoindre-le-reseau"
-          class="hidden text-body font-bold text-primary transition-colors hover:text-accent-text md:inline underline"
-        >
-          Rejoindre le réseau
-        </NuxtLink>
+        <Button as-child variant="outline" size="pill-sm">
+          <NuxtLink to="/rejoindre-le-reseau">
+            Rejoindre le réseau <span class="link-arrow">→</span>
+          </NuxtLink>
+        </Button>
 
         <button
           type="button"

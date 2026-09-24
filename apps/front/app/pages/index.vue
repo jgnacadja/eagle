@@ -13,12 +13,12 @@
 
       <!-- Floating badge desktop -->
       <div
-        class="pointer-events-none absolute right-6 top-8 hidden lg:block xl:right-5 xl:top-12 -rotate-3 z-10"
+        class="pointer-events-none absolute right-6 top-8 hidden lg:block xl:right-3 xl:top-12 -rotate-3 z-10"
       >
         <div class="rounded-2xl border border-rule/50 bg-paper px-6 py-4 shadow-md text-left">
           <p class="font-display text-lead font-bold italic leading-snug text-ink">
-            Des compétences aujourd'hui<br />
-            pour les défis de demain
+            Elargissez vos compétences<br />
+            aujourd'hui pour les défis de demain
           </p>
           <div class="mt-2 h-1 w-14 rounded-full bg-accent" />
         </div>
@@ -31,8 +31,7 @@
           <!-- Pill badge -->
           <span
             class="inline-block rounded-full border border-primary/25 bg-paper px-4 py-1.5 text-xs md:text-small font-bold uppercase tracking-wider text-primary shadow-xs"
-          >
-            Plateforme de conseil et d'orientation en formation professionnelle
+            >Réseau national d'organismes de formation et plateforme de conseil
           </span>
 
           <!-- H1 -->
@@ -45,7 +44,8 @@
 
           <!-- Subtitle -->
           <p class="mt-3 md:mt-4 font-sans text-body md:text-lead font-bold text-ink">
-            La bonne formation. Au bon endroit. Au bon moment. Partout en France.
+            La bonne formation. Au bon endroit. Au bon moment.
+            <span class="text-accent">Partout en France.</span>
           </p>
 
           <!-- Prompt -->
@@ -53,14 +53,14 @@
             <h2 class="font-display text-h4 md:text-h3 font-extrabold text-ink">
               Besoin d'aide pour choisir votre formation&nbsp;?
             </h2>
-            <p class="mx-auto mt-2 text-small md:text-sm text-ink-muted max-w-132.5">
+            <p class="mx-auto mt-2 text-small md:text-sm text-ink-muted max-w-prose">
               Décrivez votre besoin ou posez votre question. Nous vous guidons vers la solution
               adaptée.
             </p>
           </div>
 
           <!-- Search bar -->
-          <form class="mx-auto mt-6 w-full max-w-prose md:max-w-170" @submit.prevent="onHeroSearch">
+          <form class="mx-auto mt-6 w-full max-w-prose" @submit.prevent="onHeroSearch">
             <div
               class="flex h-14 md:h-16 items-center gap-3 rounded-full border-2 border-primary/75 bg-paper pl-4 md:pl-6 pr-2 shadow-sm transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"
             >
@@ -127,10 +127,10 @@
         </div>
 
         <!-- Floating badge mobile -->
-        <div class="my-6 flex justify-center lg:hidden">
+        <div class="my-6 flex justify-center -rotate-3 lg:hidden">
           <div class="rounded-xl border border-rule/60 bg-paper px-5 py-3 shadow-md text-left">
             <p class="font-display text-sm font-extrabold italic leading-snug text-ink">
-              Des compétences aujourd'hui<br />
+              Elargissez vos compétences aujourd'hui<br />
               pour les défis de demain
             </p>
             <div class="mt-1.5 h-1 w-12 rounded-full bg-accent" />
@@ -185,7 +185,7 @@
             </div>
 
             <div
-              class="flex items-center gap-3.5 rounded-xl border border-warning/40 bg-paper p-4 text-left shadow-xs transition-shadow hover:shadow-sm"
+              class="flex items-center gap-3.5 rounded-xl border border-warning/40 bg-accent/10 p-4 text-left shadow-xs transition-shadow hover:shadow-sm"
             >
               <div
                 class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-warning-soft text-warning"
@@ -195,7 +195,6 @@
               <div>
                 <p class="text-small font-bold text-ink">Certifié Qualiopi</p>
                 <a
-                  href="/certificat-qualiopi.pdf"
                   target="_blank"
                   rel="noopener"
                   class="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-ink underline underline-offset-2 transition-colors hover:text-accent-text"
@@ -221,7 +220,7 @@
     ════════════════════════════════════════════════════ -->
     <div class="bg-primary-dark">
       <div
-        class="mx-auto grid grid-cols-2 gap-px md:grid-cols-4 divide-x-0 md:divide-x divide-white/10"
+        class="mx-auto grid grid-cols-2 gap-px md:grid-cols-4 divide-x-0 md:divide-x divide-rule-strong p-sm"
       >
         <div
           v-for="item in tickerItems"
@@ -229,15 +228,15 @@
           class="flex items-center gap-3 px-gutter-mobile md:px-lg py-md"
         >
           <!-- icône -->
-          <component :is="item.icon" :size="22" class="shrink-0 text-white/50" />
+          <component :is="item.icon" :size="22" class="shrink-0 text-ink-inverse/50" />
           <div>
             <p
               v-if="item.value"
-              class="font-display text-h4 md:text-h3 font-extrabold leading-none text-white"
+              class="font-display text-h4 md:text-h3 font-extrabold leading-none text-ink-inverse"
             >
               {{ item.value }}
             </p>
-            <p class="text-xs md:text-small text-white/70 leading-tight mt-0.5">
+            <p class="text-xs md:text-small text-ink-inverse-muted leading-tight mt-0.5">
               {{ item.label }}
             </p>
           </div>
@@ -264,22 +263,22 @@
             v-for="company in techCompanyLogos"
             :key="company.name"
             class="flex h-14 items-center justify-center rounded-xl border border-dashed border-rule px-2 text-xs text-ink-subtle md:h-14 md:w-32 md:rounded md:px-3"
-            :aria-label="`Logo client ${company} à fournir`"
+            :aria-label="`Logo client ${company.name}`"
           >
             <img
               :src="company.logoUrl"
               :alt="`Logo ${company.name}`"
-              class="max-h-7 max-w-[80%] object-contain"
+              class="max-h-7 max-w-4/5 object-contain"
               loading="lazy"
             />
           </div>
         </div>
 
-        <p class="mt-sm text-center text-xs text-ink-subtle">
-          <span class="md:hidden">Sous réserve d'autorisation d'usage des logos</span>
+        <p class="mt-sm text-center text-meta text-ink-subtle">
           <span class="hidden md:inline">
-            Références clients — affichage sous réserve d'autorisation écrite d'usage des logos
+            Avis réels et références publiées avec l'accord des entreprises concernées.
           </span>
+          <span class="md:hidden">Références publiées avec accord des entreprises.</span>
         </p>
       </div>
     </section>
@@ -466,18 +465,14 @@
             </div>
           </div>
 
-          <!-- Colonne droite : Placeholder visuel -->
-          <div>
-            <div
-              class="hidden md:flex aspect-16/10 w-full items-center justify-center rounded-2xl border border-dashed border-outline-inverse/60 p-md text-center sm:p-lg h-77.25"
-              role="img"
-              aria-label="Photo responsable formation en entreprise"
-            >
-              <p class="text-xs md:text-small text-ink-inverse/60">
-                Photo à fournir — responsable formation en entreprise,<br />
-                contexte multi-sites (bureau / terrain)
-              </p>
-            </div>
+          <!-- Colonne droite : Visuel formation entreprise -->
+          <div v-reveal>
+            <img
+              src="/images/formation2.webp"
+              alt="Responsable formation en entreprise"
+              class="hidden md:block aspect-16/10 w-full rounded-md object-cover shadow-sm"
+              loading="lazy"
+            />
           </div>
         </div>
       </div>
@@ -486,7 +481,11 @@
     <!-- ═══════════════════════════════════════════════════
          5. PROCHAINES SESSIONS
     ════════════════════════════════════════════════════ -->
-    <section id="sessions" class="mx-auto px-gutter-mobile md:px-gutter py-section">
+    <section
+      v-if="displayUpcomingSessions.length"
+      id="sessions"
+      class="mx-auto px-gutter-mobile md:px-gutter py-section"
+    >
       <div>
         <h2 class="font-display text-xl md:text-h2 font-extrabold text-ink">
           Les prochaines sessions près de chez vous
@@ -512,7 +511,7 @@
               {{ session.day }}
             </span>
             <span
-              class="mt-xs text-[10px] font-extrabold uppercase tracking-wider text-accent-text"
+              class="mt-xs text-overline font-extrabold uppercase tracking-wider text-accent-text"
             >
               {{ session.month }}
             </span>
@@ -534,7 +533,9 @@
                 'mt-xs inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
                 session.badgeVariant === 'warning'
                   ? 'bg-warning-soft text-warning'
-                  : 'bg-success-soft text-success'
+                  : session.badgeVariant === 'neutral'
+                    ? 'bg-surface-alt text-ink-muted'
+                    : 'bg-success-soft text-success'
               ]"
             >
               {{ session.badgeText }}
@@ -542,11 +543,6 @@
           </div>
         </NuxtLink>
       </div>
-
-      <p class="mt-md text-xs text-ink-muted">
-        Affichage d'exemple : en production, les sessions proviennent exclusivement des données
-        réelles du réseau — aucune session fictive ; bloc masqué si aucune session à proximité.
-      </p>
 
       <div class="mt-xl flex justify-center">
         <Button as-child variant="outline" size="pill-lg" class="w-full sm:w-auto">
@@ -595,7 +591,7 @@
     <section class="border-b border-rule bg-paper py-section">
       <div class="mx-auto px-gutter-mobile md:px-gutter">
         <h2 class="font-display text-xl md:text-h2 font-extrabold text-ink">
-          Ce qu'en disent les entreprises
+          Les clients parlent de nous
         </h2>
 
         <!-- Bandeau Stats avec séparateurs -->
@@ -624,26 +620,17 @@
           />
         </div>
 
-        <!-- Pied de section : Qualiopi & CTA -->
+        <!-- Pied de section : Témoignages & CTA -->
         <div class="mt-xl flex flex-col gap-lg sm:flex-row sm:items-center sm:justify-between">
-          <div class="flex items-center gap-md">
-            <div
-              class="flex h-16 w-32 shrink-0 flex-col items-center justify-center rounded-xl border border-dashed border-rule-strong bg-surface/50 text-center text-[11px] leading-tight text-ink-muted/80"
-              role="img"
-              aria-label="Logo Qualiopi à confirmer"
-            >
-              <span>Logo Qualiopi</span>
-              <span>à confirmer</span>
-            </div>
-            <p class="max-w-119.25 text-xs text-ink-muted">
-              Certification Qualiopi — périmètre, catégories d'actions et numéro à confirmer avant
-              affichage.
-            </p>
-          </div>
+          <p class="text-meta text-ink-subtle">
+            Avis réels et références publiées avec l'accord des entreprises concernées.
+          </p>
 
           <div class="shrink-0">
             <Button as-child variant="outline" size="pill-lg" class="w-full sm:w-auto">
-              <NuxtLink to="/"> Voir tous les avis <span class="link-arrow">→</span> </NuxtLink>
+              <NuxtLink to="/formations">
+                Voir tous les avis <span class="link-arrow">→</span>
+              </NuxtLink>
             </Button>
           </div>
         </div>
@@ -675,7 +662,11 @@
     <!-- ═══════════════════════════════════════════════════
          10. ACTUALITÉS ET CONSEILS
     ════════════════════════════════════════════════════ -->
-    <section id="actualites" class="mx-auto px-gutter-mobile md:px-gutter py-section">
+    <section
+      v-if="articles.length"
+      id="actualites"
+      class="mx-auto px-gutter-mobile md:px-gutter py-section"
+    >
       <div>
         <h2 class="font-display text-xl md:text-h2 font-extrabold text-ink">
           Actualités et conseils
@@ -738,7 +729,7 @@
               <IconSearch :size="18" class="text-paper" />
             </button>
           </div>
-          <p class="mt-3 text-center text-xs md:text-small text-ink-inverse/70">
+          <p class="mt-3 text-center text-xs md:text-small text-ink-inverse-muted">
             Vous pouvez écrire comme vous le feriez à un conseiller.
           </p>
         </form>
@@ -765,7 +756,7 @@ import { useGeoSuggest } from '~/composables/useGeoSuggest'
 import { distanceKm, formatDistance } from '~/utils/geo'
 import { revealStagger } from '~/utils/reveal'
 import { articleAssetUrl, formatArticleDate } from '~/utils/article'
-import { placesLabel } from '~/utils/placesLabel'
+import { placesLabel, sessionSeatType } from '~/utils/placesLabel'
 import type { CenterResult } from '~/types/center-result'
 
 const config = useRuntimeConfig()
@@ -957,113 +948,78 @@ const dernieresFormations = computed(() =>
 
 // ── Sessions à venir ────────────────────────────────────────────────────────
 
-const sessionDateFmt = new Intl.DateTimeFormat('fr-FR', {
-  day: '2-digit',
-  month: 'short',
-  timeZone: 'UTC'
-})
-
-interface SessionListItem {
-  id: string
-  day: string
-  month: string
-  title: string
-  meta: string
-  to: string | null
-  places?: number
-  type?: 'success' | 'warning' | 'neutral'
-  price?: string
+const MONTH_ABBR_FR: Record<number, string> = {
+  0: 'JANV.',
+  1: 'FÉVR.',
+  2: 'MARS',
+  3: 'AVR.',
+  4: 'MAI',
+  5: 'JUIN',
+  6: 'JUIL.',
+  7: 'AOÛT',
+  8: 'SEPT.',
+  9: 'OCT.',
+  10: 'NOV.',
+  11: 'DÉC.'
 }
 
-const upcomingSessionList = computed<SessionListItem[]>(() => {
+const displayUpcomingSessions = computed(() => {
   const items = catalogue.value?.items ?? []
-  const result: SessionListItem[] = []
+
+  const candidates: {
+    course: (typeof items)[0]
+    session: NonNullable<ReturnType<typeof upcomingSessions>[0]>
+  }[] = []
 
   for (const course of items) {
-    const sessions = upcomingSessions(course)
-      .sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? ''))
-      .slice(0, 1)
-
-    for (const s of sessions) {
-      if (!s.startDate) continue
-      const date = new Date(`${s.startDate}T00:00:00Z`)
-      const parts = sessionDateFmt.formatToParts(date)
-      const day = parts.find((p) => p.type === 'day')?.value ?? ''
-      const month = parts.find((p) => p.type === 'month')?.value ?? ''
-
-      const mapped = mapCourse(course)
-      const seats = s.seatsRemaining
-      const type: 'success' | 'warning' | 'neutral' =
-        seats != null && seats <= 3 ? 'warning' : 'success'
-
-      result.push({
-        id: `${course.slug}-${s.startDate}`,
-        day,
-        month,
-        title: course.title,
-        meta: mapped.meta ?? '',
-        to: mapped.to,
-        places: seats ?? undefined,
-        type,
-        price: ''
-      })
+    for (const s of upcomingSessions(course)) {
+      if (s.startDate) {
+        candidates.push({ course, session: s })
+      }
     }
+  }
 
-    if (result.length >= 4) break
+  candidates.sort((a, b) => (a.session.startDate ?? '').localeCompare(b.session.startDate ?? ''))
+
+  const seenCourses = new Set<string>()
+  const result: {
+    id: string
+    day: string
+    month: string
+    title: string
+    location: string
+    badgeText: string
+    badgeVariant: 'success' | 'warning' | 'neutral'
+    to: string
+  }[] = []
+
+  for (const { course, session: s } of candidates) {
+    if (seenCourses.has(course.slug)) continue
+    seenCourses.add(course.slug)
+
+    const date = new Date(`${s.startDate}T00:00:00Z`)
+    const day = String(date.getUTCDate()).padStart(2, '0')
+    const month = MONTH_ABBR_FR[date.getUTCMonth()] ?? ''
+    const mapped = mapCourse(course)
+    const seats = s.seatsRemaining
+    const badgeVariant = sessionSeatType(seats ?? undefined) ?? 'success'
+    const badgeText = seats != null ? placesLabel(seats, true) : 'Places disponibles'
+
+    result.push({
+      id: `${course.slug}-${s.startDate}`,
+      day,
+      month,
+      title: course.title,
+      location: mapped.meta || 'Centre partenaire',
+      badgeText,
+      badgeVariant,
+      to: mapped.to ?? '/formations'
+    })
+
+    if (result.length >= 3) break
   }
 
   return result
-})
-
-const exampleUpcomingSessions = [
-  {
-    id: 'caces-r489-cat-3',
-    day: '22',
-    month: 'SEPT.',
-    title: 'CACES® R489 cat. 3',
-    location: 'Centre de Créteil · à 6 km',
-    badgeText: '4 places disponibles',
-    badgeVariant: 'success' as const,
-    to: '/formations'
-  },
-  {
-    id: 'habilitation-electrique-bs-be',
-    day: '28',
-    month: 'SEPT.',
-    title: 'Habilitation électrique BS-BE',
-    location: 'Centre de Créteil · à 6 km',
-    badgeText: 'Dernières places',
-    badgeVariant: 'warning' as const,
-    to: '/formations'
-  },
-  {
-    id: 'travail-en-hauteur',
-    day: '05',
-    month: 'OCT.',
-    title: 'Travail en hauteur — port du harnais',
-    location: 'Villeneuve-le-Roi · à 14 km',
-    badgeText: '6 places disponibles',
-    badgeVariant: 'success' as const,
-    to: '/formations'
-  }
-]
-
-const displayUpcomingSessions = computed(() => {
-  if (upcomingSessionList.value.length >= 3) {
-    return upcomingSessionList.value.slice(0, 3).map((s) => ({
-      id: s.id,
-      day: s.day,
-      month: s.month.endsWith('.')
-        ? s.month.toUpperCase()
-        : `${s.month.slice(0, 4).toUpperCase()}.`,
-      title: s.title,
-      location: s.meta || 'Centre partenaire',
-      badgeText: s.places != null ? placesLabel(s.places, true) : 'Places disponibles',
-      badgeVariant: s.type === 'warning' ? ('warning' as const) : ('success' as const),
-      to: s.to ?? '/formations'
-    }))
-  }
-  return exampleUpcomingSessions
 })
 
 // ── Centres ─────────────────────────────────────────────────────────────────
@@ -1203,12 +1159,12 @@ const techCompanyLogos = [
     logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg'
   },
   {
-    name: 'IBM',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg'
+    name: 'Salesforce',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg'
   },
   {
-    name: 'Oracle',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg'
+    name: 'SAP',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/59/SAP_2011_logo.svg'
   }
 ]
 </script>

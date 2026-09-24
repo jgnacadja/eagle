@@ -54,4 +54,23 @@ describe('FormationCard', () => {
 
     expect(wrapper.text()).not.toContain('Voir le détail')
   })
+
+  it('renders body when provided and omits it when absent', () => {
+    const withBody = mount(FormationCard, {
+      props: {
+        title: 'SST',
+        imageTop: '',
+        imageBottom: '',
+        body: 'Formation aux premiers secours'
+      },
+      global: { stubs }
+    })
+    expect(withBody.text()).toContain('Formation aux premiers secours')
+
+    const withoutBody = mount(FormationCard, {
+      props: { title: 'SST', imageTop: '', imageBottom: '' },
+      global: { stubs }
+    })
+    expect(withoutBody.find('p').exists()).toBe(false)
+  })
 })

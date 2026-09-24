@@ -37,6 +37,7 @@ import IconParking from '~/components/icons/IconParking.vue'
 import IconPhone from '~/components/icons/IconPhone.vue'
 import IconPlus from '~/components/icons/IconPlus.vue'
 import IconRefresh from '~/components/icons/IconRefresh.vue'
+import IconRibbon from '~/components/icons/IconRibbon.vue'
 import IconSearch from '~/components/icons/IconSearch.vue'
 import IconSearchMinus from '~/components/icons/IconSearchMinus.vue'
 import IconShare from '~/components/icons/IconShare.vue'
@@ -85,6 +86,7 @@ const icons = {
   IconPhone,
   IconPlus,
   IconRefresh,
+  IconRibbon,
   IconSearch,
   IconSearchMinus,
   IconShare,

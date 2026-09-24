@@ -33,10 +33,5 @@ export const aproposLiens = [
     slug: 'contact',
     label: 'Contact',
     description: 'Formulaire et coordonnées'
-  },
-  {
-    slug: 'entreprise-reseau',
-    label: 'Les entreprises qui forment avec le réseau',
-    description: 'Accompagnement et formations des équipes en entreprise'
   }
 ]

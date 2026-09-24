@@ -659,7 +659,7 @@ const furtherLinks = [
   {
     title: 'Les partenaires du réseau',
     body: 'Centres et organismes du réseau.',
-    to: '/rejoindre-le-reseau'
+    to: '/entreprise-reseau'
   }
 ]
 

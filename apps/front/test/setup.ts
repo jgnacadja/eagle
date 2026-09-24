@@ -40,6 +40,14 @@ config.global.components.AssistantSearchBar = AssistantSearchBar
 config.global.components.AssistantShell = AssistantShell
 config.global.components.AssistantHeaderPill = AssistantHeaderPill
 
+// États statiques de la recherche assistée (UI-STATIC) : auto-importés par
+// Nuxt sous leur nom de fichier.
+const assistantStates = import.meta.glob('~/components/AssistantStates/*.vue', {
+  eager: true,
+  import: 'default'
+})
+registerByName(assistantStates)
+
 config.global.stubs = {
   ...config.global.stubs,
   NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },

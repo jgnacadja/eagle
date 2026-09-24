@@ -79,6 +79,14 @@ Lire d'abord `AGENTS.md` à la racine.
 - Expansions métier de la requête (`retrieval.synonyms.ts` : secourisme → sst, chariot → caces…) et bruit ignoré (« formation », « salariés »…). Texte partagé : `common/utils/text.util.ts` (normalisation, tokens, mots vides, racinisation légère) — aussi utilisé par la recherche du catalogue.
 - Endpoints admin (clé `x-api-key`) : `GET /admin/retrieval/status`, `POST /admin/retrieval/reindex`, `GET /admin/retrieval/search?q=&limit=&family=&modalities=&location=` (jeu de requêtes de pertinence).
 
+## Moteur IA — garde-fous et mode dégradé (`src/assistant`)
+
+- Contrat partagé `@learnup/types` (`assistant.ts`) : `AssistantAnswer { outcome, mode: 'ai' | 'fallback', notice, intent }`, `outcome.kind` ∈ `recommendations` (1 principale + ≤ 2 alternatives + `source`) · `clarification` · `no-result` · `out-of-catalog`. L'orchestration Anthropic (BACKEND-A/B) et le repli déterministe produisent la même forme.
+- `guardrails/wording.guardrails.ts` : `sanitizeJustification()` réécrit les formulations assertives au conditionnel (« est adaptée » → « semble adaptée », « c'est la formation qu'il vous faut » → « semble correspondre à votre besoin »), neutralise les promesses réglementaires (« garantit », « vous serez certifié », « conforme à la réglementation »), limite à 2 phrases ; `applyWordingGuardrails()` dédoublonne, plafonne à 2 alternatives et impose la mention de source. `ASSISTANT_NOTICE` = transparence « assistant automatisé ».
+- `guardrails/recommendation.grounding.ts` : grounding 100 % catalogue publié (RG-IA-01) — toute formation absente est écartée, l'intitulé exact, les attributs factuels et la disponibilité (prochaine session réelle, jamais estimée — RG-IA-02/09) sont recalculés depuis le référentiel.
+- `fallback/FallbackRecommendationService.recommend({ text, location })` : recherche déterministe via `RetrievalService` (sans Claude) → recommandations (justifications au conditionnel reprenant les termes retrouvés), `no-result` (candidat trop faible) ou `out-of-catalog` (aucun candidat), avec journalisation `SearchMissesService` (`source: 'assistant'`). Exposé en `GET /assistant/fallback?q=&location=` (public, quota lecture).
+- `DegradedModeService.answer(query, attempt?)` : exécute la tentative IA avec `ASSISTANT_AI_TIMEOUT_MS` (12 s) et bascule sur le repli en cas d'erreur / délai / absence de tentative — BACKEND-A y branche son appel Claude.
+
 ## Pas de TDD explicite
 
 Les tests ne sont pas forcément écrits avant le code, mais chaque fonctionnalité livrée est couverte. Préférer écrire le test en même temps que l'implémentation.

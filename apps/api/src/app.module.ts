@@ -15,6 +15,7 @@ import { CacheModule } from './common/cache/cache.module'
 import { DirectusModule } from './directus/directus.module'
 import { SearchMissesModule } from './search-misses/search-misses.module'
 import { RetrievalModule } from './retrieval/retrieval.module'
+import { AssistantModule } from './assistant/assistant.module'
 
 function isAdminRoute(context: ExecutionContext): boolean {
   const request = context.switchToHttp().getRequest<{ originalUrl?: string }>()
@@ -166,7 +167,8 @@ function createRedisThrottlerStorage(url: string): ThrottlerStorage {
     DirectusModule,
     LeadsModule,
     SearchMissesModule,
-    RetrievalModule
+    RetrievalModule,
+    AssistantModule
   ],
   controllers: [HealthController],
   providers: [

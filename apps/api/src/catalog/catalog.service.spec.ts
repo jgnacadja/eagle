@@ -6,6 +6,7 @@ import {
   DirectusCatalogService,
   type DirectusFormation
 } from '../directus/directus.catalog.service'
+import { SearchMissesService } from '../search-misses/search-misses.service'
 import {
   CourseAvailability,
   CourseSortField,
@@ -120,21 +121,58 @@ describe('CatalogService', () => {
     fetchAllCentres: ReturnType<typeof vi.fn>
   }
 
+  let searchMisses: { record: ReturnType<typeof vi.fn> }
+
   beforeEach(async () => {
     const { cache: cacheMock, get, set } = mockCache()
     const { catalog: catalogMock, fetchAllFormations, fetchAllCentres } = mockCatalog()
+    searchMisses = { record: vi.fn().mockResolvedValue(true) }
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CatalogService,
         { provide: CacheService, useValue: cacheMock },
-        { provide: DirectusCatalogService, useValue: catalogMock }
+        { provide: DirectusCatalogService, useValue: catalogMock },
+        { provide: SearchMissesService, useValue: searchMisses }
       ]
     }).compile()
 
     service = module.get<CatalogService>(CatalogService)
     cache = { get, set }
     catalog = { fetchAllFormations, fetchAllCentres }
+  })
+
+  it('records a search miss when a text search returns nothing', async () => {
+    cache.get.mockResolvedValue(null)
+
+    const result = await service.list({
+      search: 'drone',
+      family: 'management',
+      location: 'lyon',
+      page: 1,
+      limit: 20
+    } as ListCoursesDto)
+
+    expect(result.total).toBe(0)
+    expect(searchMisses.record).toHaveBeenCalledWith({
+      query: 'drone',
+      outcome: 'no_result',
+      source: 'catalog',
+      context: { family: 'management', location: 'lyon' }
+    })
+    expect(cache.set).not.toHaveBeenCalledWith(
+      expect.stringMatching(/^courses:list:/),
+      expect.anything()
+    )
+  })
+
+  it('does not record a miss when results exist or without search text', async () => {
+    cache.get.mockResolvedValue(null)
+
+    await service.list({ search: 'piloter', page: 1, limit: 20 } as ListCoursesDto)
+    await service.list({ family: 'inconnue', page: 1, limit: 20 } as ListCoursesDto)
+
+    expect(searchMisses.record).not.toHaveBeenCalled()
   })
 
   it('returns cached list when available', async () => {
@@ -777,7 +815,8 @@ describe('CatalogService', () => {
       providers: [
         CatalogService,
         { provide: CacheService, useValue: mockCache().cache },
-        { provide: DirectusCatalogService, useValue: catalogMock }
+        { provide: DirectusCatalogService, useValue: catalogMock },
+        { provide: SearchMissesService, useValue: { record: vi.fn() } }
       ]
     }).compile()
     const local = module.get<CatalogService>(CatalogService)
@@ -805,7 +844,8 @@ describe('CatalogService', () => {
       providers: [
         CatalogService,
         { provide: CacheService, useValue: mockCache().cache },
-        { provide: DirectusCatalogService, useValue: catalogMock }
+        { provide: DirectusCatalogService, useValue: catalogMock },
+        { provide: SearchMissesService, useValue: { record: vi.fn() } }
       ]
     }).compile()
     const local = module.get<CatalogService>(CatalogService)

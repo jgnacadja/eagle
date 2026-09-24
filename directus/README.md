@@ -54,6 +54,23 @@ entrée dans `directus_roles`. Sans permissions dessus, un visiteur du site
 découvert en branchant le front (ST-12) : le manque avait échappé à la revue
 initiale de ST-11, qui n'avait modélisé que les rôles internes.
 
+## Recherches sans résultat
+
+La collection `recherches_sans_resultat` n'est pas une collection éditoriale :
+elle est alimentée par l'API (`apps/api/src/search-misses`) à chaque recherche
+sans correspondance — catalogue « aucun résultat », moteur IA « hors
+catalogue ». Elle sert à la revue produit (formations manquantes récurrentes,
+boucle corpus / prompt du moteur IA) : consultation dans l'admin, case
+« Traité » pour le suivi, export agrégé via `GET /admin/search-misses/export`.
+
+- Jamais lisible publiquement ; lecture pour tous les rôles internes,
+  `moderateur` peut cocher « Traité », `admin` peut supprimer.
+- Hors du flow « Invalidate site cache » (`schema/flows.mjs`) : une écriture
+  ne touche aucune page publique.
+- RGPD : texte nettoyé des données personnelles avant enregistrement, aucun
+  identifiant visiteur, purge automatique après `SEARCH_MISS_RETENTION_DAYS`
+  jours (`.env`, 180 par défaut).
+
 ## Déploiement
 
 Le schéma (collections, champs, relations, rôles, policies, permissions) est

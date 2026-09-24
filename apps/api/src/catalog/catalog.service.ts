@@ -7,9 +7,11 @@ import type {
   CoursePedagogyItem,
   CourseSession,
   CourseSessionLocation,
-  FamilyWithCount
+  FamilyWithCount,
+  SearchMissContext
 } from '@learnup/types'
 import { CacheService } from '../common/cache/cache.service'
+import { SearchMissesService } from '../search-misses/search-misses.service'
 import {
   DirectusCatalogService,
   type AssignmentProposal,
@@ -677,13 +679,31 @@ function sortCatalogRows(
 
 const ROWS_CACHE_KEY = 'courses:rows'
 
+// Filtres actifs conservés avec une recherche sans résultat — jamais de
+// donnée personnelle (la localisation « autour de moi » est dégradée par le
+// service de journalisation).
+function searchMissContext(query: ListCoursesDto): SearchMissContext {
+  const {
+    search: _search,
+    page: _page,
+    limit: _limit,
+    sort: _sort,
+    order: _order,
+    ...filters
+  } = query
+  return Object.fromEntries(
+    Object.entries(filters).filter(([, value]) => value !== undefined)
+  ) as SearchMissContext
+}
+
 @Injectable()
 export class CatalogService {
   private readonly logger = new Logger(CatalogService.name)
 
   constructor(
     private readonly cache: CacheService,
-    private readonly catalog: DirectusCatalogService
+    private readonly catalog: DirectusCatalogService,
+    private readonly searchMisses: SearchMissesService
   ) {}
 
   async list(query: ListCoursesDto): Promise<CoursePage> {
@@ -710,6 +730,18 @@ export class CatalogService {
       page: query.page,
       pageSize: query.limit,
       facets: computeCatalogFacets(rows, query)
+    }
+
+    // Recherche textuelle sans aucune correspondance : journalisée pour la
+    // revue produit (manques catalogue). Non bloquant — le service n'échoue
+    // jamais et ne doit pas retarder la réponse.
+    if (query.search && total === 0) {
+      void this.searchMisses.record({
+        query: query.search,
+        outcome: 'no_result',
+        source: 'catalog',
+        context: searchMissContext(query)
+      })
     }
 
     // Un résultat vide n'est jamais caché : dataset dégradé (Directus

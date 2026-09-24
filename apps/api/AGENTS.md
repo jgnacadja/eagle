@@ -63,6 +63,14 @@ Lire d'abord `AGENTS.md` à la racine.
 - Endpoints publics : `GET /courses`, `GET /courses/:family/:slug`, `GET /families`.
 - `POST /admin/families/apply` synchronise la relation `famille` entre Directus et les formations.
 
+## Recherches sans résultat (`src/search-misses`)
+
+- Journal des requêtes sans correspondance — « aucun résultat » (catalogue) et « hors catalogue » (moteur IA) — stocké dans la collection Directus `recherches_sans_resultat` via `DirectusItemsClient` (client REST générique `/items/*`, `src/directus`). Distinct des events analytics : on conserve le **contenu** de la requête pour la revue produit.
+- Capture : `SearchMissesService.record()` — jamais bloquant, jamais d'exception. `CatalogService.list()` l'appelle quand une recherche textuelle (`search`) renvoie 0 résultat ; le moteur IA l'appellera avec `source: 'assistant'` et l'intention détectée.
+- RGPD : e-mail, téléphone, SIRET, IBAN et longues suites de chiffres masqués (`scrubPersonalData`, `src/common/utils/pii.util.ts`) ; localisation « autour de moi » arrondie à ~10 km ; texte tronqué à 500 caractères ; doublons ignorés pendant 60 s ; purge quotidienne après `SEARCH_MISS_RETENTION_DAYS` jours (`SEARCH_MISS_PURGE_CRON`, `0` désactive).
+- Endpoints admin (clé `x-api-key`) : `GET /admin/search-misses` (liste paginée), `GET /admin/search-misses/aggregate` (regroupement par requête normalisée), `GET /admin/search-misses/export` (CSV UTF-8 BOM, séparateur `;`), `POST /admin/search-misses/purge`.
+- La collection n'est jamais lisible publiquement ; elle est hors du flow Directus d'invalidation de cache.
+
 ## Pas de TDD explicite
 
 Les tests ne sont pas forcément écrits avant le code, mais chaque fonctionnalité livrée est couverte. Préférer écrire le test en même temps que l'implémentation.

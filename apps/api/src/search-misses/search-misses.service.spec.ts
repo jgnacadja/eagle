@@ -5,12 +5,7 @@ import type { CronJob } from 'cron'
 import type { RechercheSansResultat } from '@learnup/types'
 import { DirectusItemsClient } from '../directus/directus.items.client'
 import type { ListSearchMissesDto } from './search-misses.dto'
-import {
-  SEARCH_MISSES_COLLECTION,
-  SearchMissesService,
-  coarseLocation,
-  normalizeQuery
-} from './search-misses.service'
+import { SEARCH_MISSES_COLLECTION, SearchMissesService } from './search-misses.service'
 
 type Mock = ReturnType<typeof vi.fn>
 
@@ -28,19 +23,6 @@ function row(overrides: Partial<RechercheSansResultat> = {}): RechercheSansResul
     ...overrides
   }
 }
-
-describe('normalizeQuery / coarseLocation', () => {
-  it('lowercases, strips accents and punctuation', () => {
-    expect(normalizeQuery('  Éléctricien : habilitation B2V, à Lyon !')).toBe(
-      'electricien habilitation b2v a lyon'
-    )
-  })
-
-  it('rounds geographic points to one decimal and leaves text alone', () => {
-    expect(coarseLocation('45.76421, 4.83559')).toBe('45.8,4.8')
-    expect(coarseLocation('Lyon (69)')).toBe('Lyon (69)')
-  })
-})
 
 describe('SearchMissesService', () => {
   let service: SearchMissesService

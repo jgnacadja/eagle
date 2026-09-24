@@ -130,6 +130,16 @@ describe('LeadsService', () => {
     expect(body.legalConsentOptions?.consent.consentToProcess).toBe(true)
   })
 
+  it('demande : verse le lieu intra dans learnup_precisions', async () => {
+    const service = new LeadsService(mockConfig())
+
+    await service.submitDemande({ ...demande, lieu: 'Lyon 69003' })
+
+    expect(fieldNames(lastCall().body).learnup_precisions).toBe(
+      'Lieu de la formation : Lyon 69003\nEn intra.'
+    )
+  })
+
   it('demande : ignore les champs vides pour ne pas écraser le CRM', async () => {
     const service = new LeadsService(mockConfig())
 

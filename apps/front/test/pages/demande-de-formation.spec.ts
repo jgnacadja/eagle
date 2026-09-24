@@ -277,6 +277,49 @@ describe('pages/centres/demande-de-formation', () => {
     )
   })
 
+  it('variante intra : titre dédié, carte formation sans centre et champ lieu', async () => {
+    fetchMock.mockImplementation(async () => ({ ...courseSst, centerSlug: 'creteil' }))
+    routeStub.query = { famille: 'sante', formation: 'sst-initial', intra: '1' }
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Organiser cette formation dans mon entreprise')
+    expect(wrapper.text()).toContain('Formation sur votre site, sur vos équipements')
+    expect(wrapper.text()).toContain('SST — Sauveteur secouriste du travail')
+    expect(wrapper.text()).toContain(
+      'Formation intra · sur votre site · devis selon effectif et catégories'
+    )
+    expect(wrapper.text()).toContain('Intra — sans centre imposé')
+    // Intra : le centre principal de la formation n'ancre pas la demande.
+    expect(wrapper.text()).not.toContain('Centre LEARN UP de Créteil')
+    expect(wrapper.find('#lieu').exists()).toBe(true)
+  })
+
+  it('exige le lieu de la formation en intra et le poste avec la demande', async () => {
+    routeStub.query = { famille: 'sante', formation: 'sst-initial', intra: '1' }
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.find('#lieu-error').exists())
+    expect(wrapper.text()).toContain('Indiquez le lieu de la formation')
+    expect(leadSubmitMock).not.toHaveBeenCalled()
+
+    await wrapper.find('#lieu').setValue('Lyon 69003')
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+    expect(leadSubmitMock).toHaveBeenCalledWith(
+      'demande',
+      expect.objectContaining({ lieu: 'Lyon 69003' })
+    )
+  })
+
+  it('n’affiche pas le champ lieu hors intra', async () => {
+    routeStub.query = { famille: 'sante', formation: 'sst-initial' }
+    const wrapper = await mountPage()
+
+    expect(wrapper.find('#lieu').exists()).toBe(false)
+  })
+
   it('déduit le centre principal de la formation quand ?centre= est absent', async () => {
     fetchMock.mockImplementation(async () => ({
       ...courseSst,

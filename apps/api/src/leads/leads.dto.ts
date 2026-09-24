@@ -93,6 +93,13 @@ export class DemandeLeadDto extends LeadContextDto {
   @MaxLength(200)
   echeance!: string
 
+  @ApiPropertyOptional({ description: 'On-site location for intra-company sessions' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  lieu?: string
+
   @ApiPropertyOptional({ description: 'Additional details' })
   @IsOptional()
   @IsString()

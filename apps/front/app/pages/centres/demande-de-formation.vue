@@ -5,9 +5,13 @@
       <div class="mb-2xl flex items-start justify-between gap-lg">
         <div>
           <h1 class="font-display text-h2 font-extrabold text-ink lg:text-h1">
-            Demande de formation
+            {{ isIntra ? 'Organiser cette formation dans mon entreprise' : 'Demande de formation' }}
           </h1>
-          <p class="mt-sm max-w-prose text-body text-ink-muted">
+          <p v-if="isIntra" class="mt-sm max-w-prose text-body text-ink-muted">
+            Formation sur votre site, sur vos équipements. LEARN&nbsp;UP&nbsp;ACADEMY organise
+            l'intervention.
+          </p>
+          <p v-else class="mt-sm max-w-prose text-body text-ink-muted">
             La demande est prise en charge par notre réseau. Nous vous répondons sous 24&nbsp;h
             ouvrées.
           </p>
@@ -83,6 +87,28 @@
                 >
                   Votre besoin
                 </legend>
+
+                <!-- Intra : le lieu est saisi par le client — aucun centre imposé. -->
+                <div v-if="isIntra">
+                  <Label for="lieu" class="mb-xs block"> Lieu de la formation </Label>
+                  <Input
+                    id="lieu"
+                    v-model="lieu"
+                    type="text"
+                    placeholder="Code postal ou ville de votre site"
+                    variant="field"
+                    class="aria-invalid:border-danger"
+                    :aria-invalid="showError('lieu') || undefined"
+                    :aria-describedby="showError('lieu') ? 'lieu-error' : undefined"
+                  />
+                  <p
+                    v-if="showError('lieu')"
+                    id="lieu-error"
+                    class="mt-xs text-small font-semibold text-danger"
+                  >
+                    {{ errors.lieu }}
+                  </p>
+                </div>
 
                 <div class="grid grid-cols-1 gap-md sm:grid-cols-2">
                   <div>
@@ -389,6 +415,9 @@
                 </div>
               </li>
             </ul>
+            <Badge v-if="isIntra" variant="neutral" class="mt-md">
+              Intra — sans centre imposé
+            </Badge>
           </Card>
 
           <Card v-reveal class="p-lg">
@@ -443,6 +472,9 @@ const formationSlug = computed(() => queryValue(route.query.formation))
 const sessionSlug = computed(() => queryValue(route.query.session))
 const familleSlug = computed(() => queryValue(route.query.famille))
 const sujetSlug = computed(() => queryValue(route.query.sujet))
+// Variante intra (?intra=1) : la formation se déroule sur le site du client —
+// aucun centre imposé, le lieu est collecté dans « Votre besoin ».
+const isIntra = computed(() => queryValue(route.query.intra) === '1')
 
 // L'ancien CTA « conseiller » (?sujet=conseiller, home/footer) a sa page dédiée.
 if (sujetSlug.value === 'conseiller') {
@@ -497,10 +529,13 @@ const session = computed(
 // Centre ancre de l'encart : transmis par ?centre=, sinon déduit de la
 // session choisie, sinon le centre principal de la formation (centerSlug)
 // — une fiche formation connaît son centre sans le passer en query (RG06).
-const demandeCentreSlug = computed(
-  () =>
+const demandeCentreSlug = computed(() => {
+  // En intra, aucun centre n'ancre la demande — « sans centre imposé ».
+  if (isIntra.value) return null
+  return (
     centreSlug.value ?? session.value?.location?.centreSlug ?? formation.value?.centerSlug ?? null
-)
+  )
+})
 // Query en getter + watch : une navigation client vers la même route avec
 // un autre ?centre= (page-key = route.path, pas de remount) relance le
 // fetch au lieu de figer le premier slug résolu.
@@ -616,6 +651,9 @@ const contextMeta = computed(() => {
       return parts.join(' · ')
     }
     case 'formation':
+      if (isIntra.value) {
+        return 'Formation intra · sur votre site · devis selon effectif et catégories'
+      }
       return demandeCentreSlug.value ? formationName.value : formationMeta.value
     case 'centre':
       return centreMeta.value
@@ -675,52 +713,68 @@ const echeanceOptions = ['Septembre 2026', 'Octobre 2026', 'Novembre 2026']
 
 const { handleSubmit, errors, submitCount, defineField, setValues, values } = useForm({
   validationSchema: toTypedSchema(
-    z.object({
-      // Input émet string | number : la saisie reste une chaîne tant qu'on ne convertit pas.
-      salaries: z.coerce
-        .number({ error: 'Indiquez le nombre de salariés à former.' })
-        .min(1, 'Indiquez le nombre de salariés à former.'),
-      echeance: z.string({ error: 'Choisissez une échéance.' }).min(1, 'Choisissez une échéance.'),
-      precisions: z.string().optional(),
-      raisonSociale: z
-        .string({ error: "Indiquez la raison sociale de l'entreprise." })
-        .trim()
-        .min(1, "Indiquez la raison sociale de l'entreprise."),
-      siret: z
-        .string({ error: 'Indiquez le SIRET de votre entreprise.' })
-        .trim()
-        .min(1, 'Indiquez le SIRET de votre entreprise.')
-        // Espaces tolérés à la saisie, supprimés avant envoi à HubSpot.
-        .transform((value) => value.replace(/\s/g, ''))
-        .refine((value) => /^\d{14}$/.test(value), 'SIRET invalide — 14 chiffres attendus.'),
-      nom: z
-        .string({ error: 'Indiquez votre nom et prénom.' })
-        .trim()
-        .min(1, 'Indiquez votre nom et prénom.'),
-      fonction: z
-        .string({ error: 'Indiquez votre fonction.' })
-        .trim()
-        .min(1, 'Indiquez votre fonction.'),
-      email: z
-        .string({ error: 'Indiquez votre e-mail professionnel.' })
-        .trim()
-        .min(1, 'Indiquez votre e-mail professionnel.')
-        .pipe(z.email('Format d’e-mail invalide.')),
-      telephone: z
-        .string({ error: 'Indiquez votre téléphone.' })
-        .trim()
-        .min(1, 'Indiquez votre téléphone.')
-        .refine(
-          (value) => value.replace(/\D/g, '').length >= 10,
-          'Numéro incomplet — 10 chiffres attendus.'
-        ),
-      consentement: z
-        .boolean({ error: 'Consentement requis pour envoyer la demande.' })
-        .refine((value) => value, 'Consentement requis pour envoyer la demande.')
-    })
+    z
+      .object({
+        // Input émet string | number : la saisie reste une chaîne tant qu'on ne convertit pas.
+        salaries: z.coerce
+          .number({ error: 'Indiquez le nombre de salariés à former.' })
+          .min(1, 'Indiquez le nombre de salariés à former.'),
+        echeance: z
+          .string({ error: 'Choisissez une échéance.' })
+          .min(1, 'Choisissez une échéance.'),
+        lieu: z.string().trim().optional(),
+        precisions: z.string().optional(),
+        raisonSociale: z
+          .string({ error: "Indiquez la raison sociale de l'entreprise." })
+          .trim()
+          .min(1, "Indiquez la raison sociale de l'entreprise."),
+        siret: z
+          .string({ error: 'Indiquez le SIRET de votre entreprise.' })
+          .trim()
+          .min(1, 'Indiquez le SIRET de votre entreprise.')
+          // Espaces tolérés à la saisie, supprimés avant envoi à HubSpot.
+          .transform((value) => value.replace(/\s/g, ''))
+          .refine((value) => /^\d{14}$/.test(value), 'SIRET invalide — 14 chiffres attendus.'),
+        nom: z
+          .string({ error: 'Indiquez votre nom et prénom.' })
+          .trim()
+          .min(1, 'Indiquez votre nom et prénom.'),
+        fonction: z
+          .string({ error: 'Indiquez votre fonction.' })
+          .trim()
+          .min(1, 'Indiquez votre fonction.'),
+        email: z
+          .string({ error: 'Indiquez votre e-mail professionnel.' })
+          .trim()
+          .min(1, 'Indiquez votre e-mail professionnel.')
+          .pipe(z.email('Format d’e-mail invalide.')),
+        telephone: z
+          .string({ error: 'Indiquez votre téléphone.' })
+          .trim()
+          .min(1, 'Indiquez votre téléphone.')
+          .refine(
+            (value) => value.replace(/\D/g, '').length >= 10,
+            'Numéro incomplet — 10 chiffres attendus.'
+          ),
+        consentement: z
+          .boolean({ error: 'Consentement requis pour envoyer la demande.' })
+          .refine((value) => value, 'Consentement requis pour envoyer la demande.')
+      })
+      // Le lieu n'est requis qu'en intra : la session se déroule sur le site
+      // du client, sans centre pour le localiser.
+      .superRefine((data, ctx) => {
+        if (isIntra.value && !data.lieu) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['lieu'],
+            message: 'Indiquez le lieu de la formation (code postal ou ville).'
+          })
+        }
+      })
   ),
   initialValues: {
     salaries: 8,
+    lieu: '',
     echeance: 'Septembre 2026',
     precisions: '',
     consentement: false
@@ -728,6 +782,7 @@ const { handleSubmit, errors, submitCount, defineField, setValues, values } = us
 })
 
 const [salaries] = defineField<'salaries', string | number>('salaries')
+const [lieu] = defineField('lieu')
 const [echeance] = defineField('echeance')
 const [precisions] = defineField('precisions')
 const [raisonSociale] = defineField('raisonSociale')
@@ -740,6 +795,7 @@ const [consentement] = defineField('consentement')
 
 type DemandeField =
   | 'salaries'
+  | 'lieu'
   | 'echeance'
   | 'raisonSociale'
   | 'siret'
@@ -757,6 +813,7 @@ const showError = (field: DemandeField) => submitCount.value > 0 && !!errors.val
 const DRAFT_KEY = 'demande-formation-draft'
 const DRAFT_FIELDS = new Set<string>([
   'salaries',
+  'lieu',
   'echeance',
   'precisions',
   'raisonSociale',
@@ -803,6 +860,7 @@ const onSubmit = handleSubmit(async (v) => {
     siret: v.siret,
     fonction: v.fonction,
     salaries: v.salaries,
+    lieu: v.lieu || undefined,
     echeance: v.echeance,
     precisions: v.precisions || undefined,
     // Libellés résolus — HubSpot reçoit du texte lisible, pas les slugs.

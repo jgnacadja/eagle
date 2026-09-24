@@ -33,6 +33,8 @@ export interface DemandeLeadPayload extends LeadPageContext {
   fonction: string
   salaries: number
   echeance: string
+  /** Site client renseigné en intra (?intra=1) — versé dans `precisions` côté HubSpot. */
+  lieu?: string
   precisions?: string
   consentement: boolean
   /** Libellés lisibles transmis à HubSpot (résolus côté front, pas les slugs). */

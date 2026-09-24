@@ -78,21 +78,7 @@
           Ils confient leurs formations au réseau
         </h2>
 
-        <div class="mt-lg grid grid-cols-3 gap-sm sm:gap-grid md:grid-cols-6">
-          <div
-            v-for="(company, idx) in techCompanyLogos"
-            :key="company.name"
-            v-reveal="revealStagger(idx)"
-            class="flex h-16 sm:h-20 items-center justify-center rounded-sm border border-rule bg-surface p-md shadow-sm transition-all hover:border-primary/40"
-          >
-            <img
-              :src="company.logoUrl"
-              :alt="`Logo ${company.name}`"
-              class="max-h-7 sm:max-h-9 max-w-full object-contain grayscale opacity-75 transition-[filter,opacity] hover:grayscale-0 hover:opacity-100"
-              loading="lazy"
-            />
-          </div>
-        </div>
+        <ClientLogoWall variant="grid" />
         <p class="mt-md text-meta text-ink-subtle">
           Références publiées avec l'accord des entreprises concernées.
         </p>
@@ -331,33 +317,6 @@ const networkBenefits = [
   {
     title: 'Le suivi des échéances réglementaires',
     body: 'Recyclages et renouvellements suivis dans le temps, site par site.'
-  }
-]
-
-const techCompanyLogos = [
-  {
-    name: 'Capgemini',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/9d/Capgemini_201x_logo.svg'
-  },
-  {
-    name: 'Microsoft',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg'
-  },
-  {
-    name: 'Google Cloud',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/51/Google_Cloud_logo.svg'
-  },
-  {
-    name: 'Amazon',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg'
-  },
-  {
-    name: 'IBM',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg'
-  },
-  {
-    name: 'Oracle',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg'
   }
 ]
 </script>

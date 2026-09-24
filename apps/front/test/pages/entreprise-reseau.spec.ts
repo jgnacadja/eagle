@@ -1,18 +1,12 @@
-// test/pages/reseau.spec.ts
+// test/pages/entreprise-reseau.spec.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
-import { defineComponent, h, Suspense, ref } from 'vue'
+import { defineComponent, h, Suspense } from 'vue'
 import ReseauPage from '~/pages/entreprise-reseau.vue'
 
 beforeEach(() => {
   vi.stubGlobal('useContentSeo', vi.fn())
   vi.stubGlobal('definePageMeta', vi.fn())
-  vi.stubGlobal('useHead', vi.fn())
-  vi.stubGlobal('useRuntimeConfig', () => ({ public: { siteUrl: 'https://learnup.fr' } }))
-  vi.stubGlobal(
-    'useDirectusList',
-    vi.fn(() => Promise.resolve(ref([])))
-  )
 })
 
 const stubs = {
@@ -22,10 +16,6 @@ const stubs = {
         props: ['to'],
         template: '<a :href="to"><slot /></a>'
       },
-      CenterMap: true,
-      IconBuilding: true,
-      IconLayers: true,
-      IconCheck: true,
       StatItem: {
         props: ['value', 'label'],
         template: '<div><span>{{ value }}</span><span>{{ label }}</span></div>'
@@ -50,7 +40,7 @@ async function mountReseau() {
   return wrapper
 }
 
-describe('pages/a-propos/reseau.vue', () => {
+describe('pages/entreprise-reseau.vue', () => {
   it('affiche le titre h1 attendu', async () => {
     const wrapper = await mountReseau()
     const h1 = wrapper.find('h1')

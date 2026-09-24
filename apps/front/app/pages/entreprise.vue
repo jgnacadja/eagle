@@ -654,12 +654,12 @@ const furtherLinks = [
   {
     title: "Le réseau d'entreprises clientes",
     body: 'Secteurs, typologies, références.',
-    to: '#confiance'
+    to: '/entreprise-reseau'
   },
   {
     title: 'Les partenaires du réseau',
     body: 'Centres et organismes du réseau.',
-    to: '/entreprise-reseau'
+    to: '/rejoindre-le-reseau'
   }
 ]
 

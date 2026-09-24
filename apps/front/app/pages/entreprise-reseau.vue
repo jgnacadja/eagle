@@ -4,7 +4,9 @@
     <section class="bg-surface">
       <div class="mx-auto px-gutter-mobile py-xl md:px-gutter md:py-4xl">
         <h1 class="font-display font-extrabold text-ink text-h2 sm:text-h1">
-          <span class="sm:hidden">Les entreprises qui forment<br />avec le réseau</span>
+          <span class="sm:hidden" aria-hidden="true"
+            >Les entreprises qui forment<br />avec le réseau</span
+          >
           <span class="hidden sm:inline">Les entreprises qui forment avec<br />le réseau</span>
         </h1>
 
@@ -14,12 +16,14 @@
             >LEARN UP ACADEMY la formation réglementaire de leurs équipes — en centre, sur leur site
             ou en intra-entreprise,</span
           >
-          <span class="md:hidden">la formation réglementaire de leurs équipes,</span> partout en
-          France.
+          <span class="md:hidden" aria-hidden="true"
+            >la formation réglementaire de leurs équipes,</span
+          >
+          partout en France.
         </p>
 
         <!-- Stats mobile (pleine largeur 3 colonnes) -->
-        <div class="mt-lg grid grid-cols-3 divide-x divide-rule md:hidden">
+        <div class="mt-lg grid grid-cols-3 divide-x divide-rule md:hidden" aria-hidden="true">
           <StatItem
             value="+250"
             label="formations"
@@ -83,8 +87,8 @@
           >
             <img
               :src="company.logoUrl"
-              :alt="company.name"
-              class="max-h-7 sm:max-h-9 max-w-full object-contain filter transition-all"
+              :alt="`Logo ${company.name}`"
+              class="max-h-7 sm:max-h-9 max-w-full object-contain grayscale opacity-75 transition-[filter,opacity] hover:grayscale-0 hover:opacity-100"
               loading="lazy"
             />
           </div>
@@ -180,7 +184,7 @@
       <section class="pb-xl md:pb-section" aria-labelledby="benefices-title">
         <h2 id="benefices-title" class="font-display text-h3 font-extrabold text-ink md:text-h2">
           Ce que les entreprises <span class="hidden md:inline">trouvent dans le réseau</span
-          ><span class="md:hidden">y trouvent</span>
+          ><span class="md:hidden" aria-hidden="true">y trouvent</span>
         </h2>
 
         <div class="mt-lg md:mt-xl grid grid-cols-1 gap-grid md:grid-cols-2">
@@ -191,6 +195,7 @@
             class="flex items-center gap-md rounded-md border border-rule bg-surface p-md shadow-sm transition-all hover:border-primary/40 hover:shadow-md sm:p-lg"
           >
             <div
+              aria-hidden="true"
               class="flex h-control-sm w-control-sm shrink-0 items-center justify-center rounded-full bg-success-soft text-success"
             >
               <IconCheck :size="16" class="sm:hidden" />

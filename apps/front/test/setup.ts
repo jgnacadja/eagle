@@ -32,7 +32,14 @@ config.global.stubs = {
   NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
   CenterMap: {
     props: ['centers', 'activeId', 'caption', 'mode'],
-    template: '<div class="center-map" />'
+    // Le pied « adresse + itinéraire » du mode single fait partie du
+    // contrat du composant : le stub le reproduit pour les assertions.
+    template: `<div class="center-map">
+      <template v-if="mode === 'single' && centers.length">
+        <span>{{ centers[0].address }}</span>
+        <a v-if="centers[0].lat != null">Ouvrir l'itinéraire →</a>
+      </template>
+    </div>`
   },
   CenterFormationCard: {
     props: ['title', 'subFamily'],

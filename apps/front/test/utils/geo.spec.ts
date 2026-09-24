@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { densestClusterCenter, distanceKm, formatDistance, normalizeDepartment } from '~/utils/geo'
+import {
+  densestClusterCenter,
+  departmentCodeFromPostalCode,
+  distanceKm,
+  formatDistance,
+  normalizeDepartment
+} from '~/utils/geo'
 
 describe('geo', () => {
   describe('distanceKm', () => {
@@ -99,6 +105,33 @@ describe('geo', () => {
     it('tolère null et undefined', () => {
       expect(normalizeDepartment(null)).toBe('')
       expect(normalizeDepartment(undefined)).toBe('')
+    })
+  })
+
+  describe('departmentCodeFromPostalCode', () => {
+    it('retourne les deux premiers chiffres pour un département métropolitain', () => {
+      expect(departmentCodeFromPostalCode('94000')).toBe('94')
+      expect(departmentCodeFromPostalCode('75012')).toBe('75')
+      expect(departmentCodeFromPostalCode('01300')).toBe('01')
+    })
+
+    it('retourne trois chiffres pour les DROM (97x)', () => {
+      expect(departmentCodeFromPostalCode('97100')).toBe('971')
+      expect(departmentCodeFromPostalCode('97400')).toBe('974')
+    })
+
+    it('distingue la Corse-du-Sud (2A) de la Haute-Corse (2B)', () => {
+      expect(departmentCodeFromPostalCode('20000')).toBe('2A')
+      expect(departmentCodeFromPostalCode('20169')).toBe('2A')
+      expect(departmentCodeFromPostalCode('20200')).toBe('2B')
+    })
+
+    it('retourne null quand le code postal est absent ou mal formé', () => {
+      expect(departmentCodeFromPostalCode(null)).toBeNull()
+      expect(departmentCodeFromPostalCode(undefined)).toBeNull()
+      expect(departmentCodeFromPostalCode('')).toBeNull()
+      expect(departmentCodeFromPostalCode('9400')).toBeNull()
+      expect(departmentCodeFromPostalCode('Créteil')).toBeNull()
     })
   })
 })

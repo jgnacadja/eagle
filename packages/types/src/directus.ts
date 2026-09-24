@@ -26,13 +26,18 @@ export interface Centre extends SeoFields {
   parking: string | null
   pmr_accessible: boolean | null
   phone: string | null
+  mobile: string | null
   email: string | null
   contact_name: string | null
   contact_role: string | null
+  /** Date d'entrée dans le réseau — affichée « Franchisé depuis … » sur la fiche. */
+  franchise_since: string | null
   departments_covered: string[] | null
   digiforma_url: string | null
   qualiopi_certified: boolean | null
   qualiopi_certificate_number: string | null
+  qualiopi_certifier: string | null
+  qualiopi_valid_until: string | null
   qualiopi_certificate: string | null
   image: string | null
   latitude: number | null
@@ -135,4 +140,20 @@ export interface Article extends SeoFields {
   publish_at: string | null
   centre: number | null
   cover_image: string | null
+}
+
+export interface Avis {
+  id: number
+  status: ContentStatus
+  sort: number | null
+  slug: string
+  /** Libellé affiché en gras (ex. « Responsable logistique »). */
+  author: string
+  /** Affichée « mois année » après l'auteur. */
+  published_at: string | null
+  /** Note sur 5. */
+  stars: number
+  quote: string
+  /** Relation M2O vers `centres` — null = avis marque (toutes implantations). */
+  centre: number | null
 }

@@ -44,9 +44,9 @@
 
     <div
       v-if="mode === 'single' && hasVisibleCenters"
-      class="flex items-center justify-between gap-md border-t border-rule bg-paper px-md py-sm text-small"
+      class="flex items-center justify-between gap-md border-t border-dashed border-rule bg-paper px-md py-md text-small"
     >
-      <span class="text-ink-body">{{ centers[0]?.address }}</span>
+      <span class="min-w-0 max-w-9/12 text-ink-body">{{ centers[0]?.address }}</span>
       <a
         v-if="centers[0]?.lat != null && centers[0]?.lng != null"
         :href="directionsUrl"

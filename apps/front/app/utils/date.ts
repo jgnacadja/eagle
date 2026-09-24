@@ -9,3 +9,14 @@ export function formatDateFr(value: string | null | undefined): string {
     timeZone: 'Europe/Paris'
   })
 }
+
+export function formatMonthYearFr(value: string | null | undefined): string {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleDateString('fr-FR', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'Europe/Paris'
+  })
+}

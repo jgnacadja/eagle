@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils'
 import { describe, it, expect } from 'vitest'
 import IconAccessibility from '~/components/icons/IconAccessibility.vue'
 import IconAward from '~/components/icons/IconAward.vue'
+import IconBadgeCheck from '~/components/icons/IconBadgeCheck.vue'
 import IconBook from '~/components/icons/IconBook.vue'
 import IconBriefcase from '~/components/icons/IconBriefcase.vue'
 import IconBuilding from '~/components/icons/IconBuilding.vue'
@@ -37,6 +38,7 @@ import IconRefresh from '~/components/icons/IconRefresh.vue'
 import IconSearch from '~/components/icons/IconSearch.vue'
 import IconSearchMinus from '~/components/icons/IconSearchMinus.vue'
 import IconShare from '~/components/icons/IconShare.vue'
+import IconSmartphone from '~/components/icons/IconSmartphone.vue'
 import IconSparkle from '~/components/icons/IconSparkle.vue'
 import IconTimetable from '~/components/icons/IconTimetable.vue'
 import IconUser from '~/components/icons/IconUser.vue'
@@ -45,6 +47,7 @@ import IconUsers from '~/components/icons/IconUsers.vue'
 const icons = {
   IconAccessibility,
   IconAward,
+  IconBadgeCheck,
   IconBook,
   IconBriefcase,
   IconBuilding,
@@ -80,6 +83,7 @@ const icons = {
   IconSearch,
   IconSearchMinus,
   IconShare,
+  IconSmartphone,
   IconSparkle,
   IconTimetable,
   IconUser,

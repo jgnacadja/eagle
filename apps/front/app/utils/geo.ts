@@ -52,6 +52,20 @@ export function densestClusterCenter(points: GeoPoint[], radiusKm = 15): GeoPoin
 }
 
 /**
+ * Numéro de département déduit du code postal — sert à composer les
+ * adresses mail du réseau (`contact{dept}@learnup-academy.com`).
+ * 5 chiffres attendus : préfixe « 97 » → 3 chiffres (DROM), Corse
+ * (20xxx) → « 2A » sous 20200, « 2B » au-delà, sinon les 2 premiers.
+ */
+export function departmentCodeFromPostalCode(postalCode: string | null | undefined): string | null {
+  const cp = postalCode?.trim() ?? ''
+  if (!/^\d{5}$/.test(cp)) return null
+  if (cp.startsWith('97')) return cp.slice(0, 3)
+  if (cp.startsWith('20')) return Number(cp.slice(0, 3)) < 202 ? '2A' : '2B'
+  return cp.slice(0, 2)
+}
+
+/**
  * Forme de comparaison d'une valeur de département : casse et accents
  * ignorés, espaces, apostrophes et tirets supprimés — « Val de Marne » (tag libre) et
  * « Val-de-Marne » (géocodage BAN) doivent se rejoindre. Même règle que

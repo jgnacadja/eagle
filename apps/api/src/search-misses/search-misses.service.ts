@@ -5,7 +5,6 @@ import { CronJob, validateCronExpression } from 'cron'
 import type {
   RechercheSansResultat,
   SearchMissAggregate,
-  SearchMissContext,
   SearchMissOutcome,
   SearchMissPage,
   SearchMissSource
@@ -13,6 +12,8 @@ import type {
 import { DirectusItemsClient, type DirectusFilter } from '../directus/directus.items.client'
 import { scrubPersonalData } from '../common/utils/pii.util'
 import type { ListSearchMissesDto, SearchMissRangeDto } from './search-misses.dto'
+import { normalizeQuery, sanitizeContext } from './search-misses.normalize'
+import { aggregateSearchMisses, searchMissesToCsv } from './search-misses.report'
 
 export const SEARCH_MISSES_COLLECTION = 'recherches_sans_resultat'
 
@@ -29,24 +30,6 @@ const DEFAULT_PURGE_CRON = '15 3 * * *'
 const PURGE_JOB_NAME = 'search-misses-purge'
 const DAY_MS = 86_400_000
 
-// UTF-8 avec BOM + « ; » : ouverture directe dans Excel (locale FR) sans
-// assistant d'import ni caractères accentués cassés.
-const CSV_BOM = '﻿'
-const CSV_SEPARATOR = ';'
-const CSV_EOL = '\r\n'
-const CSV_HEADER = [
-  'requete_normalisee',
-  'exemple',
-  'occurrences',
-  'premiere_occurrence',
-  'derniere_occurrence',
-  'aucun_resultat',
-  'hors_catalogue',
-  'catalogue',
-  'moteur_ia',
-  'intentions'
-]
-
 const ROW_FIELDS = [
   'id',
   'date_created',
@@ -58,8 +41,6 @@ const ROW_FIELDS = [
   'context',
   'reviewed'
 ]
-
-const GEO_POINT_PATTERN = /^(-?\d{1,2}(?:\.\d+)?),\s*(-?\d{1,3}(?:\.\d+)?)$/
 
 export interface RecordSearchMissInput {
   query: string
@@ -73,48 +54,6 @@ export interface RecordSearchMissInput {
 export interface PurgeResult {
   deleted: number
   cutoff: string | null
-}
-
-/** Clé de regroupement : minuscules, sans accents, ponctuation réduite à des espaces. */
-export function normalizeQuery(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^\p{L}\p{N}]+/gu, ' ')
-    .trim()
-}
-
-/**
- * Coordonnées « autour de moi » (lat,lng du visiteur) arrondies au dixième
- * de degré (~10 km) : la position précise est une donnée personnelle, la
- * zone suffit pour repérer un manque géographique.
- */
-export function coarseLocation(value: string): string {
-  const match = GEO_POINT_PATTERN.exec(value.trim())
-  if (!match) return value
-  return `${Number(match[1]).toFixed(1)},${Number(match[2]).toFixed(1)}`
-}
-
-function isContextValue(value: unknown): value is string | number | boolean | null {
-  return (
-    value === null ||
-    typeof value === 'string' ||
-    typeof value === 'number' ||
-    typeof value === 'boolean'
-  )
-}
-
-function sanitizeContext(
-  context: Record<string, unknown> | null | undefined
-): SearchMissContext | null {
-  if (!context) return null
-  const clean: SearchMissContext = {}
-  for (const [key, value] of Object.entries(context)) {
-    if (!isContextValue(value) || value === '') continue
-    clean[key] = key === 'location' && typeof value === 'string' ? coarseLocation(value) : value
-  }
-  return Object.keys(clean).length > 0 ? clean : null
 }
 
 function parseRetentionDays(raw: string | undefined): number {
@@ -135,64 +74,6 @@ function rangeFilter(range: SearchMissRangeDto): DirectusFilter {
 
 function withFilter(filter: DirectusFilter): DirectusFilter | undefined {
   return Object.keys(filter).length > 0 ? filter : undefined
-}
-
-function csvCell(value: string | number | null): string {
-  const text = value === null ? '' : String(value)
-  return /[";\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text
-}
-
-function earliest(a: string | null, b: string | null): string | null {
-  if (a === null) return b
-  if (b === null) return a
-  return a < b ? a : b
-}
-
-function latest(a: string | null, b: string | null): string | null {
-  if (a === null) return b
-  if (b === null) return a
-  return a > b ? a : b
-}
-
-function emptyAggregate(row: RechercheSansResultat): SearchMissAggregate {
-  return {
-    queryNormalized: row.query_normalized,
-    // Les lignes arrivent de la plus récente à la plus ancienne : le
-    // premier texte rencontré est le plus récent.
-    sampleQuery: row.query_text,
-    occurrences: 0,
-    firstSeen: null,
-    lastSeen: null,
-    outcomes: { no_result: 0, out_of_catalog: 0 },
-    sources: { catalog: 0, assistant: 0 },
-    intents: []
-  }
-}
-
-function accumulate(group: SearchMissAggregate, row: RechercheSansResultat): void {
-  group.occurrences += 1
-  group.outcomes[row.outcome] = (group.outcomes[row.outcome] ?? 0) + 1
-  group.sources[row.source] = (group.sources[row.source] ?? 0) + 1
-  if (row.intent && !group.intents.includes(row.intent)) group.intents.push(row.intent)
-  group.firstSeen = earliest(group.firstSeen, row.date_created)
-  group.lastSeen = latest(group.lastSeen, row.date_created)
-}
-
-function toCsvLine(aggregate: SearchMissAggregate): string {
-  return [
-    aggregate.queryNormalized,
-    aggregate.sampleQuery,
-    aggregate.occurrences,
-    aggregate.firstSeen,
-    aggregate.lastSeen,
-    aggregate.outcomes.no_result,
-    aggregate.outcomes.out_of_catalog,
-    aggregate.sources.catalog,
-    aggregate.sources.assistant,
-    aggregate.intents.join(', ')
-  ]
-    .map(csvCell)
-    .join(CSV_SEPARATOR)
 }
 
 /**
@@ -296,24 +177,11 @@ export class SearchMissesService implements OnModuleInit {
 
   /** Regroupe les requêtes par texte normalisé — les plus fréquentes d'abord. */
   async aggregate(range: SearchMissRangeDto): Promise<SearchMissAggregate[]> {
-    const rows = await this.fetchAll(range)
-    const groups = new Map<string, SearchMissAggregate>()
-
-    for (const row of rows) {
-      const group = groups.get(row.query_normalized) ?? emptyAggregate(row)
-      accumulate(group, row)
-      groups.set(row.query_normalized, group)
-    }
-
-    return [...groups.values()].sort(
-      (a, b) => b.occurrences - a.occurrences || (b.lastSeen ?? '').localeCompare(a.lastSeen ?? '')
-    )
+    return aggregateSearchMisses(await this.fetchAll(range))
   }
 
   async exportCsv(range: SearchMissRangeDto): Promise<string> {
-    const aggregates = await this.aggregate(range)
-    const lines = [CSV_HEADER.join(CSV_SEPARATOR), ...aggregates.map(toCsvLine)]
-    return `${CSV_BOM}${lines.join(CSV_EOL)}${CSV_EOL}`
+    return searchMissesToCsv(await this.aggregate(range))
   }
 
   /** Supprime les entrées plus anciennes que la durée de conservation. */

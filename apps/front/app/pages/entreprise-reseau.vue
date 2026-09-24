@@ -8,9 +8,7 @@
           <span class="hidden sm:inline">Les entreprises qui forment avec<br />le réseau</span>
         </h1>
 
-        <p
-          class="mt-sm md:mt-md max-w-prose text-small md:text-lead text-ink-muted leading-relaxed"
-        >
+        <p class="mt-sm md:mt-md max-w-prose text-small md:text-lead text-ink-muted">
           Des PME aux groupes multi-sites, les entreprises confient au réseau
           <span class="hidden md:inline"
             >LEARN UP ACADEMY la formation réglementaire de leurs équipes — en centre, sur leur site
@@ -71,61 +69,62 @@
       <section class="py-xl md:py-section" aria-labelledby="certificateurs-title">
         <h2
           id="certificateurs-title"
-          class="font-display text-h3 sm:text-h2 font-extrabold text-ink"
+          class="font-display text-h3 font-extrabold text-ink md:text-h2"
         >
           Ils confient leurs formations au réseau
         </h2>
 
         <div class="mt-lg grid grid-cols-3 gap-sm sm:gap-grid md:grid-cols-6">
           <div
-            v-for="company in techCompanyLogos"
+            v-for="(company, idx) in techCompanyLogos"
             :key="company.name"
-            class="flex py-md sm:py-lg items-center justify-center rounded-md border border-rule px-sm sm:px-md bg-surface"
+            v-reveal="revealStagger(idx)"
+            class="flex h-16 sm:h-20 items-center justify-center rounded-sm border border-rule bg-surface p-md shadow-sm transition-all hover:border-primary/40"
           >
             <img
               :src="company.logoUrl"
               :alt="company.name"
-              class="max-h-lg sm:max-h-xl max-w-4/5 object-contain"
+              class="max-h-7 sm:max-h-9 max-w-full object-contain filter transition-all"
               loading="lazy"
             />
           </div>
         </div>
-        <p class="mt-sm text-meta text-ink-muted">
+        <p class="mt-md text-meta text-ink-subtle">
           Références publiées avec l'accord des entreprises concernées.
         </p>
       </section>
 
       <!-- Secteurs réglementaires -->
       <section class="pb-xl md:pb-section" aria-labelledby="secteurs-title">
-        <h2 id="secteurs-title" class="font-display text-h3 sm:text-h2 font-extrabold text-ink">
+        <h2 id="secteurs-title" class="font-display text-h3 font-extrabold text-ink md:text-h2">
           Des secteurs soumis à obligations réglementaires
         </h2>
 
-        <div
-          class="mt-lg md:mt-xl grid grid-cols-1 gap-sm md:gap-grid md:grid-cols-2 lg:grid-cols-3"
-        >
+        <div class="mt-lg md:mt-xl grid grid-cols-1 gap-grid md:grid-cols-2 lg:grid-cols-3">
           <article
             v-for="(sector, idx) in sectors"
             :key="sector.title"
-            class="flex-col justify-center rounded-md bg-surface p-md sm:p-lg"
+            v-reveal="revealStagger(idx)"
+            class="flex flex-col justify-center rounded-md border border-rule bg-surface p-md shadow-sm transition-all hover:border-primary/40 hover:shadow-md sm:p-lg"
             :class="idx >= 4 ? 'hidden md:flex' : 'flex'"
           >
-            <h3 class="font-display text-small sm:text-h4 font-bold text-ink">
+            <h3 class="font-display text-small font-bold text-ink sm:text-h4">
               {{ sector.title }}
             </h3>
-            <p class="mt-xs text-small text-ink-muted leading-relaxed">
+            <p class="mt-xs text-small text-ink-muted">
               {{ sector.body }}
             </p>
           </article>
 
           <article
-            class="hidden md:flex flex-col justify-between gap-md rounded-md bg-navy-deep p-lg text-ink-inverse sm:flex-row sm:items-center md:col-span-2 lg:col-span-2"
+            v-reveal="revealStagger(sectors.length)"
+            class="hidden md:flex flex-col justify-between gap-md rounded-md bg-navy-deep p-lg text-ink-inverse shadow-sm sm:flex-row sm:items-center md:col-span-2 lg:col-span-2"
           >
             <div class="flex-1">
               <h3 class="font-display text-h4 font-bold text-ink-inverse">
                 Votre secteur n'est pas listé ?
               </h3>
-              <p class="mt-xs text-small text-ink-inverse-muted leading-relaxed">
+              <p class="mt-xs text-small text-ink-inverse-muted">
                 Le catalogue complet couvre l'ensemble des formations réglementaires, tous secteurs
                 confondus.
               </p>
@@ -151,24 +150,25 @@
 
       <!-- De la PME au groupe multi-sites -->
       <section class="pb-xl md:pb-section" aria-labelledby="segments-title">
-        <h2 id="segments-title" class="font-display text-h3 sm:text-h2 font-extrabold text-ink">
+        <h2 id="segments-title" class="font-display text-h3 font-extrabold text-ink md:text-h2">
           De la PME au groupe multi-sites
         </h2>
 
-        <div class="mt-lg md:mt-xl grid grid-cols-1 gap-sm md:gap-grid md:grid-cols-3">
+        <div class="mt-lg md:mt-xl grid grid-cols-1 gap-grid md:grid-cols-3">
           <article
-            v-for="segment in segments"
+            v-for="(segment, idx) in segments"
             :key="segment.title"
-            class="flex flex-col justify-between rounded-md border border-rule bg-surface p-md sm:p-lg"
+            v-reveal="revealStagger(idx)"
+            class="flex flex-col justify-between rounded-md border border-rule bg-surface p-md shadow-sm transition-all hover:border-primary/40 hover:shadow-md sm:p-lg"
           >
             <div>
               <p class="text-overline uppercase text-accent-text">
                 {{ segment.tag }}
               </p>
-              <h3 class="mt-xs sm:mt-sm font-display text-small sm:text-h4 font-bold text-ink">
+              <h3 class="mt-xs font-display text-small font-bold text-ink sm:mt-sm sm:text-h4">
                 {{ segment.title }}
               </h3>
-              <p class="mt-xs text-small text-ink-muted leading-relaxed">
+              <p class="mt-xs text-small text-ink-muted">
                 {{ segment.body }}
               </p>
             </div>
@@ -178,16 +178,17 @@
 
       <!-- Ce que les entreprises trouvent dans le réseau -->
       <section class="pb-xl md:pb-section" aria-labelledby="benefices-title">
-        <h2 id="benefices-title" class="font-display text-h3 sm:text-h2 font-extrabold text-ink">
+        <h2 id="benefices-title" class="font-display text-h3 font-extrabold text-ink md:text-h2">
           Ce que les entreprises <span class="hidden md:inline">trouvent dans le réseau</span
           ><span class="md:hidden">y trouvent</span>
         </h2>
 
-        <div class="mt-lg md:mt-xl grid grid-cols-1 gap-sm md:gap-grid md:grid-cols-2">
+        <div class="mt-lg md:mt-xl grid grid-cols-1 gap-grid md:grid-cols-2">
           <div
-            v-for="benefit in networkBenefits"
+            v-for="(benefit, idx) in networkBenefits"
             :key="benefit.title"
-            class="flex items-center gap-sm sm:gap-md rounded-md bg-surface p-md sm:p-lg"
+            v-reveal="revealStagger(idx)"
+            class="flex items-center gap-md rounded-md border border-rule bg-surface p-md shadow-sm transition-all hover:border-primary/40 hover:shadow-md sm:p-lg"
           >
             <div
               class="flex h-control-sm w-control-sm shrink-0 items-center justify-center rounded-full bg-success-soft text-success"
@@ -196,13 +197,10 @@
               <IconCheck :size="18" class="hidden sm:block" />
             </div>
             <div>
-              <h3 class="font-display text-small sm:text-h4 font-bold text-ink">
+              <h3 class="font-display text-small font-bold text-ink sm:text-h4">
                 <span>{{ benefit.title }}</span>
               </h3>
-              <p
-                v-if="benefit.body"
-                class="hidden md:block mt-xs text-small text-ink-muted leading-relaxed"
-              >
+              <p v-if="benefit.body" class="hidden md:block mt-xs text-small text-ink-muted">
                 {{ benefit.body }}
               </p>
             </div>
@@ -216,7 +214,7 @@
       <div class="mx-auto px-gutter-mobile md:px-gutter">
         <div class="flex flex-col gap-lg text-left md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 class="font-display text-h3 sm:text-h2 font-extrabold text-ink">
+            <h2 class="font-display text-h3 font-extrabold text-ink md:text-h2">
               Un besoin de formation ?
             </h2>
             <p class="mt-xs text-small text-ink-muted">
@@ -240,6 +238,7 @@
 
 <script setup lang="ts">
 import IconCheck from '~/components/icons/IconCheck.vue'
+import { revealStagger } from '~/utils/reveal'
 
 definePageMeta({
   layout: 'with-breadcrumb',

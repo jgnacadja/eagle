@@ -31,6 +31,20 @@
             </NavigationMenuContent>
           </NavigationMenuItem>
 
+          <NavigationMenuItem value="entreprise">
+            <NuxtLink
+              to="/entreprise"
+              :class="
+                cn(
+                  navigationMenuTriggerStyle({ variant: 'header' }),
+                  '[&.router-link-active]:border-accent'
+                )
+              "
+            >
+              Entreprise
+            </NuxtLink>
+          </NavigationMenuItem>
+
           <NavigationMenuItem value="apropos">
             <NavigationMenuTrigger variant="header"> À propos </NavigationMenuTrigger>
             <NavigationMenuContent>
@@ -91,12 +105,14 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { cn } from '@/lib/utils'
 import {
   NavigationMenu,
   NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuList,
-  NavigationMenuTrigger
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle
 } from '~/components/ui/navigation-menu'
 import { useMegaMenu, type MegaMenuKey } from '~/composables/useMegaMenu'
 import { useMenuPreload } from '~/composables/useMenuData'

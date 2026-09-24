@@ -94,12 +94,14 @@ describe('MobileMenu', () => {
     wrapper.unmount()
   })
 
-  it('affiche le dialog et les 4 rubriques quand open est true', async () => {
+  it('affiche le dialog et les rubriques quand open est true', async () => {
     const wrapper = await mountMenu(true)
 
     expect(wrapper.find('#mobile-menu').exists()).toBe(true)
     expect(wrapper.text()).toContain('Formations')
     expect(wrapper.text()).toContain('Trouver un Centre')
+    expect(wrapper.text()).toContain('Entreprise')
+    expect(wrapper.find('a[href="/entreprise"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('À propos')
     expect(wrapper.text()).toContain('Actualités')
     expect(wrapper.text()).toContain('Rejoindre le réseau')
@@ -150,6 +152,14 @@ describe('MobileMenu', () => {
     const wrapper = await mountMenu(true)
 
     await wrapper.find('a[href="/formations"]').trigger('click')
+    expect(wrapper.emitted('update:open')).toEqual([[false]])
+    wrapper.unmount()
+  })
+
+  it('ferme le menu au clic sur le lien Entreprise', async () => {
+    const wrapper = await mountMenu(true)
+
+    await wrapper.find('a[href="/entreprise"]').trigger('click')
     expect(wrapper.emitted('update:open')).toEqual([[false]])
     wrapper.unmount()
   })

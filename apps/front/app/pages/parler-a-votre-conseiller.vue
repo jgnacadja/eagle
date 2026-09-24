@@ -340,6 +340,11 @@ const nextSteps = [
   'Vous recevez une proposition adaptée : sessions, lieux, dates.'
 ]
 
+// Pré-remplit « Votre besoin en quelques mots » depuis ?q= — la recherche
+// libre de la home ou de la page entreprise bascule ici avec son texte.
+const route = useRoute()
+const initialMessage = typeof route.query.q === 'string' ? route.query.q.trim().slice(0, 2000) : ''
+
 const { handleSubmit, errors, submitCount, defineField } = useForm({
   validationSchema: toTypedSchema(
     z.object({
@@ -375,7 +380,7 @@ const { handleSubmit, errors, submitCount, defineField } = useForm({
         .refine((value) => value, 'Consentement requis pour envoyer la demande.')
     })
   ),
-  initialValues: { siret: '', message: '', consentement: false }
+  initialValues: { siret: '', message: initialMessage, consentement: false }
 })
 
 const [nom] = defineField('nom')

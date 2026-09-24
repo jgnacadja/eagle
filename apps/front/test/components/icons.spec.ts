@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest'
 import IconAccessibility from '~/components/icons/IconAccessibility.vue'
 import IconAward from '~/components/icons/IconAward.vue'
 import IconBook from '~/components/icons/IconBook.vue'
+import IconBriefcase from '~/components/icons/IconBriefcase.vue'
 import IconBuilding from '~/components/icons/IconBuilding.vue'
 import IconCalendar from '~/components/icons/IconCalendar.vue'
 import IconCheck from '~/components/icons/IconCheck.vue'
@@ -15,7 +16,11 @@ import IconClose from '~/components/icons/IconClose.vue'
 import IconDownload from '~/components/icons/IconDownload.vue'
 import IconFactory from '~/components/icons/IconFactory.vue'
 import IconFileOff from '~/components/icons/IconFileOff.vue'
+import IconFileText from '~/components/icons/IconFileText.vue'
 import IconFilter from '~/components/icons/IconFilter.vue'
+import IconGlobe from '~/components/icons/IconGlobe.vue'
+import IconHardHat from '~/components/icons/IconHardHat.vue'
+import IconLayoutGrid from '~/components/icons/IconLayoutGrid.vue'
 import IconLink from '~/components/icons/IconLink.vue'
 import IconList from '~/components/icons/IconList.vue'
 import IconLocate from '~/components/icons/IconLocate.vue'
@@ -34,11 +39,14 @@ import IconSearchMinus from '~/components/icons/IconSearchMinus.vue'
 import IconShare from '~/components/icons/IconShare.vue'
 import IconSparkle from '~/components/icons/IconSparkle.vue'
 import IconTimetable from '~/components/icons/IconTimetable.vue'
+import IconUser from '~/components/icons/IconUser.vue'
+import IconUsers from '~/components/icons/IconUsers.vue'
 
 const icons = {
   IconAccessibility,
   IconAward,
   IconBook,
+  IconBriefcase,
   IconBuilding,
   IconCalendar,
   IconCheck,
@@ -52,7 +60,11 @@ const icons = {
   IconDownload,
   IconFactory,
   IconFileOff,
+  IconFileText,
   IconFilter,
+  IconGlobe,
+  IconHardHat,
+  IconLayoutGrid,
   IconLink,
   IconList,
   IconLocate,
@@ -69,7 +81,9 @@ const icons = {
   IconSearchMinus,
   IconShare,
   IconSparkle,
-  IconTimetable
+  IconTimetable,
+  IconUser,
+  IconUsers
 }
 
 describe('icons', () => {

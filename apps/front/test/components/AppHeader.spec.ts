@@ -40,12 +40,14 @@ function navStub(wrapper: ReturnType<typeof mountHeader>) {
 }
 
 describe('AppHeader', () => {
-  it('renders the brand name and the 4 menu triggers', () => {
+  it('renders the brand name, the enterprise link and the 4 menu triggers', () => {
     const wrapper = mountHeader()
 
     expect(wrapper.find('[aria-label="LEARN UP ACADEMY — Accueil"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Formations')
     expect(wrapper.text()).toContain('Trouver un Centre')
+    expect(wrapper.text()).toContain('Entreprise')
+    expect(wrapper.find('a[href="/entreprise"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('À propos')
     expect(wrapper.text()).toContain('Actualités')
     expect(wrapper.text()).toContain('Rejoindre le réseau')

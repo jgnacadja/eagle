@@ -175,13 +175,13 @@ describe('CatalogService', () => {
     expect(result.items.map((item) => item.slug)).toEqual(['securite'])
   })
 
-  it('exposes the published courses with their location text for the retrieval index', async () => {
+  it('exposes the published courses with their location text to the assistant and the retrieval index', async () => {
     cache.get.mockResolvedValue(null)
 
-    const entries = await service.retrievalEntries()
+    const rows = await service.allCourses()
 
-    expect(entries.map((entry) => entry.course.slug)).toEqual(['pilotage-de-projet', 'securite'])
-    expect(entries[0]).toMatchObject({ locationText: '' })
+    expect(rows.map((row) => row.course.slug)).toEqual(['pilotage-de-projet', 'securite'])
+    expect(rows[0]).toMatchObject({ locationText: '' })
   })
 
   it('does not record a miss when results exist or without search text', async () => {

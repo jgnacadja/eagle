@@ -295,12 +295,6 @@ export interface CatalogRow {
   locations: ResolvedSessionLocation[]
 }
 
-/** Formation publiée + texte de localisation normalisé — matière de l'index de retrieval. */
-export interface CatalogRetrievalEntry {
-  course: CourseListItem
-  locationText: string
-}
-
 function toCatalogRow(
   raw: DirectusFormation,
   centresBySlug: Map<string, DirectusCentre>
@@ -712,17 +706,6 @@ export class CatalogService {
     const result = toCourse(raw)
     await this.cache.set(cacheKey, result)
     return result
-  }
-
-  /**
-   * Formations publiées telles qu'indexées par le moteur IA (retrieval) :
-   * mêmes rows que le catalogue public — jamais de brouillon ni d'archive.
-   */
-  async retrievalEntries(): Promise<CatalogRetrievalEntry[]> {
-    const rows = await this.getCatalogRows()
-    return rows
-      .filter((row) => row.course.status === 'published')
-      .map((row) => ({ course: row.course, locationText: row.locationText }))
   }
 
   async families(): Promise<FamilyWithCount[]> {

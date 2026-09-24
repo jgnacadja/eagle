@@ -245,24 +245,7 @@
           Ils nous font confiance
         </p>
 
-        <div
-          class="mt-md grid grid-cols-4 gap-2 sm:gap-3 md:flex md:flex-wrap md:items-center md:justify-center md:gap-md"
-          aria-label="Références clients"
-        >
-          <div
-            v-for="company in techCompanyLogos"
-            :key="company.name"
-            class="flex h-14 items-center justify-center rounded-xl border border-dashed border-rule px-2 text-xs text-ink-subtle md:h-14 md:w-32 md:rounded md:px-3"
-            :aria-label="`Logo client ${company.name}`"
-          >
-            <img
-              :src="company.logoUrl"
-              :alt="`Logo ${company.name}`"
-              class="max-h-7 max-w-4/5 object-contain"
-              loading="lazy"
-            />
-          </div>
-        </div>
+        <ClientLogoWall variant="wrap" :logos="homeLogos" />
 
         <p class="mt-sm text-center text-meta text-ink-subtle">
           <span class="hidden md:inline">
@@ -743,6 +726,7 @@ import { revealStagger } from '~/utils/reveal'
 import { articleAssetUrl, formatArticleDate } from '~/utils/article'
 import { placesLabel, sessionSeatType } from '~/utils/placesLabel'
 import type { CenterResult } from '~/types/center-result'
+import { homeLogos } from '~/data/companies'
 
 const config = useRuntimeConfig()
 
@@ -1117,39 +1101,4 @@ const homeArticlesData = await useDirectusList<Article>('articles', 'home-actual
 const articles = computed(() => (homeArticlesData.value ?? []).slice(0, 3))
 
 const formationTags = ['AIPR', 'CATEC®', 'Amiante SS4', 'PASO', 'SECUFER', 'Gestes & postures']
-
-const techCompanyLogos = [
-  {
-    name: 'Capgemini',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/9d/Capgemini_201x_logo.svg'
-  },
-  {
-    name: 'Microsoft',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg'
-  },
-  {
-    name: 'Google Cloud',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/51/Google_Cloud_logo.svg'
-  },
-  {
-    name: 'Amazon',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg'
-  },
-  {
-    name: 'IBM',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg'
-  },
-  {
-    name: 'Oracle',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg'
-  },
-  {
-    name: 'Salesforce',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg'
-  },
-  {
-    name: 'SAP',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/59/SAP_2011_logo.svg'
-  }
-]
 </script>

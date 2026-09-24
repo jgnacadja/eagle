@@ -40,4 +40,18 @@ describe('ClientLogoWall', () => {
     expect(container.classes()).toContain('grid')
     expect(container.classes()).toContain('grid-cols-3')
   })
+
+  it('variante wrap : grille 4 colonnes sur mobile et bordures dashed', () => {
+    const wrapper = mount(ClientLogoWall, { props: { variant: 'wrap' } })
+
+    const container = wrapper.find('div')
+    expect(container.classes()).toContain('grid-cols-4')
+    expect(container.classes()).toContain('md:flex-wrap')
+    expect(container.attributes('aria-label')).toBe('Références clients')
+
+    const firstCard = wrapper.find('[aria-label^="Logo client"]')
+    expect(firstCard.classes()).toContain('border-dashed')
+    expect(firstCard.classes()).toContain('h-14')
+    expect(firstCard.attributes('aria-label')).toMatch(/^Logo client /)
+  })
 })

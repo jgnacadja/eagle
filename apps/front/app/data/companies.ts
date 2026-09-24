@@ -29,3 +29,16 @@ export const companyLogos: CompanyLogo[] = [
     logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg'
   }
 ]
+
+/** Logos spécifiques à la page d'accueil (inclut Salesforce et SAP). */
+export const homeLogos: CompanyLogo[] = [
+  ...companyLogos,
+  {
+    name: 'Salesforce',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg'
+  },
+  {
+    name: 'SAP',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/59/SAP_2011_logo.svg'
+  }
+]

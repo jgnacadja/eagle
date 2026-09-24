@@ -227,4 +227,50 @@ describe('EntreprisePage', () => {
       true
     )
   })
+
+  it('redirige vers /parler-a-un-conseiller lors de la soumission de la recherche hero', async () => {
+    const wrapper = mountPage()
+    await flushPromises()
+
+    const heroInput = wrapper.find('#entreprises-hero-search')
+    await heroInput.setValue('   Besoin CACES pour 10 personnes   ')
+    await wrapper.findAll('.search-input-mock')[0].find('button').trigger('click')
+
+    expect(navigateToMock).toHaveBeenCalledWith({
+      path: '/parler-a-un-conseiller',
+      query: { q: 'Besoin CACES pour 10 personnes' }
+    })
+
+    navigateToMock.mockClear()
+    await heroInput.setValue('   ')
+    await wrapper.findAll('.search-input-mock')[0].find('button').trigger('click')
+
+    expect(navigateToMock).toHaveBeenCalledWith({
+      path: '/parler-a-un-conseiller',
+      query: {}
+    })
+  })
+
+  it('redirige vers /parler-a-un-conseiller lors de la soumission de la recherche finale', async () => {
+    const wrapper = mountPage()
+    await flushPromises()
+
+    const finalInput = wrapper.find('#entreprises-final-search')
+    await finalInput.setValue('Renouveler 12 habilitations')
+    await wrapper.findAll('.search-input-mock')[1].find('button').trigger('click')
+
+    expect(navigateToMock).toHaveBeenCalledWith({
+      path: '/parler-a-un-conseiller',
+      query: { q: 'Renouveler 12 habilitations' }
+    })
+  })
+
+  it('vérifie que les liens des segments et de "Pour aller plus loin" pointent vers des routes existantes', async () => {
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(wrapper.find('a[href="#multisites"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="#confiance"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/rejoindre-le-reseau"]').exists()).toBe(true)
+  })
 })

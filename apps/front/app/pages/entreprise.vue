@@ -1,21 +1,20 @@
-<!-- apps/front/app/pages/entreprise.vue -->
 <template>
   <div class="bg-paper">
     <!-- Hero -->
     <section class="relative overflow-hidden bg-linear-to-b from-paper to-surface">
       <div
         aria-hidden="true"
-        class="pointer-events-none absolute -bottom-64 -left-48 h-130 w-130 rounded-full bg-primary/5"
+        class="pointer-events-none absolute -bottom-64 -left-48 h-96 w-96 rounded-full bg-primary/5"
       />
       <div
         aria-hidden="true"
-        class="pointer-events-none absolute -right-40 -top-36 h-140 w-140 rounded-full bg-paper-warm"
+        class="pointer-events-none absolute -right-40 -top-36 h-96 w-96 rounded-full bg-paper-warm"
       />
 
       <div class="relative mx-auto px-gutter-mobile md:px-gutter pb-section pt-4xl text-center">
         <div class="text-center md:relative">
           <span
-            class="inline-block rounded-full border border-primary bg-paper px-3 py-1 text-xs md:text-sm font-bold uppercase tracking-wider text-primary"
+            class="inline-block rounded-full border border-primary/25 bg-paper px-md py-xs text-meta font-bold uppercase tracking-wider text-primary shadow-xs"
           >
             Entreprises
           </span>
@@ -27,12 +26,12 @@
             <span class="text-accent-text">formations.</span>
           </h1>
 
-          <p class="mx-auto mt-md max-w-prose font-semibold text-ink text-base">
+          <p class="mx-auto mt-md max-w-prose font-semibold text-ink text-body">
             Un interlocuteur unique<span class="hidden md:inline">
               pour vos besoins de formation</span
             >, partout en France.
           </p>
-          <p class="mx-auto mt-sm text-ink-muted text-sm max-w-140">
+          <p class="mx-auto mt-sm text-ink-muted text-small max-w-prose">
             <span class="hidden md:inline">Learn Up Academy vous accompagne dans la r</span
             ><span class="md:hidden">R</span>echerche, l'organisation et le déploiement de vos
             formations réglementaires, au plus près de vos équipes.
@@ -52,7 +51,7 @@
             </SearchInput>
           </form>
 
-          <p class="mx-auto mt-lg max-w-200 text-meta text-ink-muted leading-relaxed">
+          <p class="mx-auto mt-lg max-w-prose text-meta text-ink-muted leading-relaxed">
             Vous pouvez écrire comme vous le feriez à un conseiller<span class="hidden md:inline">
               — ex. « Nous avons 12 agences en France et souhaitons centraliser nos formations
               réglementaires. »</span
@@ -60,7 +59,7 @@
           </p>
 
           <NuxtLink
-            to="/centres/demande-de-formation?sujet=conseiller"
+            to="/parler-a-un-conseiller"
             class="mt-sm inline-block text-small font-bold text-accent-text underline underline-offset-4 transition-colors hover:text-primary"
           >
             Vous préférez échanger ? Parler à un conseiller <span class="link-arrow">→</span>
@@ -82,12 +81,12 @@
     <!-- Bénéfices -->
     <section class="border-y border-rule/60 bg-surface">
       <ul
-        class="mx-auto flex flex-col gap-y-4 px-gutter-mobile py-6 md:grid md:grid-cols-5 md:gap-y-0 md:px-gutter md:py-6"
+        class="mx-auto flex flex-col gap-y-md px-gutter-mobile py-xl md:grid md:grid-cols-5 md:gap-y-0 md:px-gutter md:py-xl"
       >
         <li
           v-for="benefit in heroBenefits"
           :key="benefit.label"
-          class="flex items-center gap-3 md:border-l md:border-rule/80 md:pl-5 md:pr-3 md:first:border-l-0 md:first:pl-0"
+          class="flex items-center gap-md md:border-l md:border-rule/80 md:pl-md md:pr-sm md:first:border-l-0 md:first:pl-0"
         >
           <component :is="benefit.icon" :size="24" class="shrink-0 text-primary" />
           <span class="text-small font-bold text-ink leading-snug">{{ benefit.label }}</span>
@@ -102,7 +101,7 @@
     >
       <h2
         id="solutions-title"
-        class="text-center font-display text-h3 font-extrabold text-ink md:text-h2 text-xl"
+        class="text-center font-display text-xl md:text-h2 font-extrabold text-ink"
       >
         Des solutions pour tous les types d'entreprises
       </h2>
@@ -111,11 +110,11 @@
         d'activité.
       </p>
 
-      <div class="mt-xl grid grid-cols-2 gap-3 sm:gap-4 md:gap-lg lg:grid-cols-3">
+      <div class="mt-xl grid grid-cols-2 gap-md md:gap-lg lg:grid-cols-3">
         <article
           v-for="(segment, i) in segments"
           :key="segment.title"
-          class="group flex flex-col justify-between rounded-2xl border border-rule p-4 shadow-2xs transition-all hover:border-primary/40 hover:shadow-md"
+          class="group flex flex-col justify-between rounded-2xl border border-rule p-md shadow-2xs transition-all hover:border-primary/40 hover:shadow-md"
           :class="i < 3 ? 'bg-surface' : 'bg-paper'"
         >
           <div>
@@ -128,7 +127,7 @@
             <h3 class="mt-0 md:mt-2 font-display text-small md:text-h4 font-bold text-ink">
               {{ segment.title }}
             </h3>
-            <p class="mt-1 md:mt-xs text-xs md:text-small text-ink-muted leading-relaxed">
+            <p class="mt-xs text-xs md:text-small text-ink-muted leading-relaxed">
               {{ segment.body }}
             </p>
           </div>
@@ -137,14 +136,15 @@
             class="md:mt-2 inline-flex items-center gap-1.5 text-small font-bold text-primary transition-colors hover:text-accent-text"
           >
             <span class="hidden md:inline">{{ segment.cta }}</span>
-            <span class="link-arrow">→</span>
+            <span class="sr-only md:hidden">{{ segment.cta }} : {{ segment.title }}</span>
+            <span class="link-arrow" aria-hidden="true">→</span>
           </NuxtLink>
         </article>
       </div>
     </section>
 
     <!-- Gestion multisites -->
-    <section class="bg-primary-muted text-ink-inverse">
+    <section id="multisites" class="bg-primary-muted text-ink-inverse">
       <div class="mx-auto px-gutter-mobile md:px-gutter py-section">
         <p class="text-overline font-bold uppercase tracking-widest text-accent">
           Gestion multisites
@@ -160,7 +160,7 @@
         <ol class="mt-xl flex flex-col gap-md lg:flex-row lg:items-stretch">
           <template v-for="(step, i) in multisiteSteps" :key="step.title">
             <li
-              class="flex flex-1 flex-row items-center gap-sm rounded-xl border border-white/15 bg-white/8 p-3 transition-colors hover:bg-white/12 lg:flex-col lg:items-start"
+              class="flex flex-1 flex-row items-center gap-sm rounded-xl border border-outline-inverse/20 bg-paper/10 p-md transition-colors hover:bg-paper/15 lg:flex-col lg:items-start"
             >
               <span class="shrink-0 font-display text-h4 font-extrabold text-accent">
                 {{ i + 1 }}
@@ -216,11 +216,11 @@
             v-else
             class="flex h-full items-center justify-center px-lg text-center text-small text-ink-muted"
           >
-            Carte de France interactive<br />départements + pins centres
+            La carte des centres est temporairement indisponible.
           </div>
         </div>
 
-        <Button as-child variant="outline" size="pill-lg" class="md:hidden w-full sm:w-auto">
+        <Button as-child variant="outline" size="pill-lg" class="md:hidden mt-lg w-full sm:w-auto">
           <NuxtLink to="/centres">
             Voir la carte des centres <span class="link-arrow">→</span>
           </NuxtLink>
@@ -240,14 +240,14 @@
         Les formations réglementaires dont vos équipes ont besoin
       </h2>
 
-      <div class="mt-xl grid grid-cols-2 gap-3 sm:gap-4 md:gap-md lg:grid-cols-4">
+      <div class="mt-xl grid grid-cols-2 gap-md lg:grid-cols-4">
         <article
           v-for="formation in formations"
           :key="formation.title"
-          class="flex flex-col justify-between rounded-2xl border border-rule bg-paper p-3.5 sm:p-4 shadow-2xs transition-all hover:border-primary/40 hover:shadow-md"
+          class="flex flex-col justify-between rounded-2xl border border-rule bg-paper p-md shadow-2xs transition-all hover:border-primary/40 hover:shadow-md"
         >
           <div>
-            <h3 class="font-display text-small sm:text-base md:text-h4 font-bold text-ink">
+            <h3 class="font-display text-small md:text-h4 font-bold text-ink">
               {{ formation.title }}
             </h3>
             <p v-if="formation.body" class="hidden md:line-clamp-2 mt-xs text-small text-ink-muted">
@@ -256,7 +256,7 @@
           </div>
           <NuxtLink
             :to="formation.to"
-            class="mt-2 inline-flex items-center gap-1.5 text-xs sm:text-small font-bold text-primary transition-colors hover:text-accent-text"
+            class="mt-2 inline-flex items-center gap-1.5 text-small font-bold text-primary transition-colors hover:text-accent-text"
           >
             Voir le détail <span class="link-arrow">→</span>
           </NuxtLink>
@@ -283,7 +283,7 @@
     </section>
 
     <!-- Comment ça marche -->
-    <section aria-labelledby="comment-title">
+    <section id="comment-marche" aria-labelledby="comment-title">
       <div class="mx-auto px-gutter-mobile md:px-gutter py-section">
         <h2
           id="comment-title"
@@ -295,7 +295,7 @@
         <div class="mt-xl flex flex-col gap-md lg:flex-row lg:items-stretch">
           <template v-for="(step, idx) in howItWorksSteps" :key="step.title">
             <div
-              class="flex flex-1 flex-row items-center gap-md rounded-xl border border-rule bg-paper p-3 shadow-2xs transition-shadow hover:shadow-sm lg:flex-col lg:items-start"
+              class="flex flex-1 flex-row items-center gap-md rounded-xl border border-rule bg-paper p-md shadow-2xs transition-shadow hover:shadow-sm lg:flex-col lg:items-start"
             >
               <span
                 class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-small font-bold text-ink"
@@ -325,6 +325,7 @@
 
     <!-- Confiance -->
     <section
+      id="confiance"
       class="mx-auto px-gutter-mobile md:px-gutter py-section bg-surface"
       aria-labelledby="confiance-title"
     >
@@ -337,17 +338,17 @@
 
       <!-- Logos avec scroll horizontal sur mobile -->
       <div
-        class="mt-lg flex snap-x snap-mandatory gap-3 overflow-x-auto pb-sm md:grid md:grid-cols-6 md:gap-md md:overflow-visible"
+        class="mt-lg flex snap-x snap-mandatory gap-md overflow-x-auto pb-sm md:grid md:grid-cols-6 md:gap-md md:overflow-visible"
       >
         <div
           v-for="company in techCompanyLogos"
           :key="company.name"
-          class="flex h-16 w-32 shrink-0 snap-start items-center justify-center rounded-2xl border border-rule bg-paper p-3.5 shadow-2xs transition-all hover:border-primary/40 hover:shadow-xs md:h-20 md:w-auto"
+          class="flex h-16 w-32 shrink-0 snap-start items-center justify-center rounded-xl border border-rule bg-paper p-md shadow-2xs transition-all hover:border-primary/40 hover:shadow-xs md:h-20 md:w-auto"
         >
           <img
             :src="company.logoUrl"
             :alt="`Logo ${company.name}`"
-            class="max-h-7 max-w-[80%] object-contain grayscale opacity-75 transition-[filter,opacity] hover:grayscale-0 hover:opacity-100 md:max-h-8"
+            class="max-h-7 max-w-4/5 object-contain grayscale opacity-75 transition-[filter,opacity] hover:grayscale-0 hover:opacity-100 md:max-h-8"
             loading="lazy"
           />
         </div>
@@ -357,7 +358,7 @@
         <TestimonialCard
           v-for="testimonial in testimonials"
           :key="testimonial.author"
-          variant="white"
+          variant="paper"
           :stars="testimonial.stars"
           :quote="testimonial.quote"
           :author="testimonial.author"
@@ -366,9 +367,9 @@
 
       <p class="mt-4 text-xs text-ink-subtle">
         <span class="hidden md:inline">
-          Avis réels et références publiées avec l'accord écrit des entreprises concernées.
+          Avis réels et références publiées avec l'accord des entreprises concernées.
         </span>
-        <span class="md:hidden"> Avis réels — références publiées avec accord écrit. </span>
+        <span class="md:hidden"> Avis réels — références publiées avec accord. </span>
       </p>
     </section>
 
@@ -398,7 +399,7 @@
         </p>
 
         <Button as-child variant="accent" size="pill-lg" class="mt-lg w-full sm:w-auto">
-          <NuxtLink to="/centres/demande-de-formation?sujet=conseiller">
+          <NuxtLink to="/parler-a-un-conseiller">
             Échanger avec un conseiller <span class="link-arrow">→</span>
           </NuxtLink>
         </Button>
@@ -416,7 +417,7 @@
           v-for="link in furtherLinks"
           :key="link.title"
           :to="link.to"
-          class="group flex items-center justify-between gap-md rounded-xl border border-rule bg-paper p-3 md:p-lg shadow-2xs transition-all hover:border-primary hover:shadow-md"
+          class="group flex items-center justify-between gap-md rounded-xl border border-rule bg-paper p-md md:p-lg shadow-2xs transition-all hover:border-primary hover:shadow-md"
         >
           <div>
             <h3 class="font-display text-small font-bold uppercase tracking-wider text-ink">
@@ -438,7 +439,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { Centre, SousFamilleFormation } from '@learnup/types'
+import type { Centre } from '@learnup/types'
 import { mapCourse, useCatalog } from '~/composables/useCatalog'
 import type { CenterResult } from '~/types/center-result'
 import IconSparkle from '~/components/icons/IconSparkle.vue'
@@ -472,16 +473,16 @@ const finalSearch = ref('')
 function onHeroSearch(value?: string) {
   const q = (value ?? heroSearch.value).trim()
   navigateTo({
-    path: '/centres/demande-de-formation',
-    query: q ? { q, sujet: 'conseiller' } : { sujet: 'conseiller' }
+    path: '/parler-a-un-conseiller',
+    query: q ? { q } : {}
   })
 }
 
 function onFinalSearch(value?: string) {
   const q = (value ?? finalSearch.value).trim()
   navigateTo({
-    path: '/centres/demande-de-formation',
-    query: q ? { q, sujet: 'conseiller' } : { sujet: 'conseiller' }
+    path: '/parler-a-un-conseiller',
+    query: q ? { q } : {}
   })
 }
 
@@ -499,21 +500,21 @@ const segments = [
     title: 'TPE / PME',
     body: 'Des solutions souples et adaptées.',
     cta: 'Comment nous travaillons',
-    to: '/entreprises/tpe-pme'
+    to: '#multisites'
   },
   {
     icon: IconBuilding,
     title: 'ETI',
     body: 'Un accompagnement personnalisé.',
     cta: 'Comment nous travaillons',
-    to: '/entreprises/eti'
+    to: '#multisites'
   },
   {
     icon: IconUsers,
     title: 'Grands comptes',
     body: 'Une gestion centralisée multi-sites.',
     cta: 'Comment nous travaillons',
-    to: '/entreprises/grands-comptes'
+    to: '#multisites'
   },
   {
     icon: IconHardHat,
@@ -569,12 +570,25 @@ const fallbackFormations = [
   }
 ]
 
-const { data: catalogue } = await useCatalog({ limit: 4, sort: 'updatedAt', order: 'desc' })
+const REGULATORY_FAMILIES = [
+  'caces-conduite-engins',
+  'habilitation-electrique',
+  'secourisme',
+  'hauteur',
+  'amiante',
+  'securite-prevention'
+]
+
+const { data: catalogue } = await useCatalog({ limit: 12, sort: 'updatedAt', order: 'desc' })
 
 const formations = computed(() => {
   const items = catalogue.value?.items ?? []
-  if (items.length) {
-    return items.slice(0, 4).map((c) => {
+  const regulatoryItems = items.filter(
+    (c) => !c.familySlug || REGULATORY_FAMILIES.some((f) => c.familySlug?.includes(f))
+  )
+  const listToUse = regulatoryItems.length >= 2 ? regulatoryItems : items
+  if (listToUse.length) {
+    return listToUse.slice(0, 4).map((c) => {
       const mapped = mapCourse(c)
       return {
         title: mapped.title,
@@ -653,12 +667,12 @@ const furtherLinks = [
   {
     title: "Le réseau d'entreprises clientes",
     body: 'Secteurs, typologies, références.',
-    to: '/entreprises/references'
+    to: '#confiance'
   },
   {
     title: 'Les partenaires du réseau',
     body: 'Centres et organismes du réseau.',
-    to: '/a-propos/reseau'
+    to: '/rejoindre-le-reseau'
   }
 ]
 
@@ -678,7 +692,7 @@ const centresData = await useDirectusList<Centre>('centres', 'entreprises-map-ce
   ],
   filter: { status: { _eq: 'published' } },
   sort: ['-id'],
-  limit: -1
+  limit: 100
 })
 
 const mapCenters = computed<CenterResult[]>(() =>

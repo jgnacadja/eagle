@@ -34,7 +34,12 @@
           <NavigationMenuItem value="entreprise">
             <NuxtLink
               to="/entreprise"
-              class="mx-sm inline-flex h-9 items-center justify-center rounded-none border-b-2 border-transparent px-0 py-2 text-body font-semibold text-primary transition-colors hover:text-accent-text router-link-active:border-accent"
+              :class="
+                cn(
+                  navigationMenuTriggerStyle({ variant: 'header' }),
+                  '[&.router-link-active]:border-accent'
+                )
+              "
             >
               Entreprise
             </NuxtLink>
@@ -100,12 +105,14 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { cn } from '@/lib/utils'
 import {
   NavigationMenu,
   NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuList,
-  NavigationMenuTrigger
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle
 } from '~/components/ui/navigation-menu'
 import { useMegaMenu, type MegaMenuKey } from '~/composables/useMegaMenu'
 import { useMenuPreload } from '~/composables/useMenuData'

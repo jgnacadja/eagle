@@ -25,6 +25,8 @@ vi.stubGlobal('useState', (key: string, init?: () => unknown) => {
 })
 const hookOnce = vi.fn()
 vi.stubGlobal('useNuxtApp', () => ({ hooks: { hookOnce } }))
+let demoStatesEnabled = true
+vi.stubGlobal('useRuntimeConfig', () => ({ public: { assistantDemoStates: demoStatesEnabled } }))
 
 function mountPage() {
   return mount(AssistantPage)
@@ -39,7 +41,90 @@ describe('pages/recherche-assistee', () => {
     hookOnce.mockReset()
     states.clear()
     route.query = {}
+    demoStatesEnabled = true
     window.history.replaceState({ back: null }, '')
+  })
+
+  it('un exemple cliqué pré-remplit le champ sans soumettre', async () => {
+    const wrapper = mountPage()
+
+    const example = wrapper.findAll('button').find((b) => b.text() === 'Former des salariés au SST')
+    await example!.trigger('click')
+
+    expect((wrapper.find('input#assistant-search').element as HTMLInputElement).value).toBe(
+      'Former des salariés au SST'
+    )
+    expect(navigateMock).not.toHaveBeenCalled()
+  })
+
+  describe('états statiques de démo (?state=)', () => {
+    it('rend la conversation demandée et navigue entre états sans entrée d’historique', async () => {
+      route.query = { state: 'recommendation' }
+      const wrapper = mountPage()
+
+      expect(wrapper.find('h1').exists()).toBe(false)
+      expect(wrapper.text()).toContain('Nous vous recommandons')
+
+      const compare = wrapper
+        .findAll('button')
+        .find((b) => b.text() === 'Comparer ces trois formations')
+      await compare!.trigger('click')
+
+      expect(navigateMock).toHaveBeenCalledWith(
+        { path: '/recherche-assistee', query: { state: 'comparison' } },
+        { replace: true }
+      )
+    })
+
+    it('rend la comparaison et le moteur indisponible', async () => {
+      route.query = { state: 'comparison' }
+      const comparison = mountPage()
+      expect(comparison.find('caption').text()).toBe('Comparaison des formations recommandées')
+      await comparison
+        .findAll('button')
+        .find((b) => b.text().includes('Retour aux recommandations'))!
+        .trigger('click')
+      expect(navigateMock).toHaveBeenLastCalledWith(
+        { path: '/recherche-assistee', query: { state: 'recommendation' } },
+        { replace: true }
+      )
+
+      route.query = { state: 'unavailable' }
+      const unavailable = mountPage()
+      expect(unavailable.find('[role="alert"]').text()).toContain('momentanément indisponible')
+      await unavailable
+        .findAll('button')
+        .find((b) => b.text().includes('Réessayer'))!
+        .trigger('click')
+      expect(navigateMock).toHaveBeenLastCalledWith(
+        { path: '/recherche-assistee', query: { state: 'analyzing' } },
+        { replace: true }
+      )
+    })
+
+    it('« Reformuler mon besoin » ramène à l’état initial', async () => {
+      route.query = { state: 'no-result' }
+      const wrapper = mountPage()
+
+      await wrapper
+        .findAll('button')
+        .find((b) => b.text().includes('Reformuler'))!
+        .trigger('click')
+
+      expect(navigateMock).toHaveBeenLastCalledWith(
+        { path: '/recherche-assistee', query: {} },
+        { replace: true }
+      )
+    })
+
+    it('ignore un état inconnu et reste sur l’état initial hors mode démo', () => {
+      route.query = { state: 'inconnu' }
+      expect(mountPage().find('h1').exists()).toBe(true)
+
+      demoStatesEnabled = false
+      route.query = { state: 'recommendation' }
+      expect(mountPage().find('h1').exists()).toBe(true)
+    })
   })
 
   it('à la sortie, programme le retour du focus vers le déclencheur d’origine', () => {

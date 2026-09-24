@@ -269,6 +269,6 @@ describe('EntreprisePage', () => {
 
     expect(wrapper.find('a[href="#multisites"]').exists()).toBe(true)
     expect(wrapper.find('a[href="#confiance"]').exists()).toBe(true)
-    expect(wrapper.find('a[href="/rejoindre-le-reseau"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/entreprise-reseau"]').exists()).toBe(true)
   })
 })

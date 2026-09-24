@@ -22,11 +22,29 @@ function slugs(result: { candidates: Array<{ course: { slug: string } }> }): str
 
 describe('analyzeQuery', () => {
   it('stems typed terms, drops noise and adds weighted domain expansions', () => {
-    const terms = analyzeQuery('Nous cherchons une formation pour nos managers sur les conflits')
+    const terms = analyzeQuery(
+      'Nous cherchons une formation pour nos 12 managers sur les conflits avant septembre 2026'
+    )
 
     expect(terms.filter((t) => t.typed).map((t) => t.term)).toEqual(['manager', 'conflit'])
-    expect(terms.find((t) => t.term === 'management')).toMatchObject({ weight: 0.6, typed: false })
+    expect(terms.find((t) => t.term === 'management')).toMatchObject({
+      weight: 0.6,
+      typed: false,
+      source: 'manager'
+    })
     expect(terms.find((t) => t.term === 'mediation')).toMatchObject({ typed: false })
+  })
+
+  it('covers a typed verb through its noun expansion', async () => {
+    const service = makeService()
+
+    const result = await service.search({ text: 'gérer les conflits' })
+
+    expect(result.candidates[0]).toMatchObject({
+      course: { slug: 'gestion-des-conflits-en-equipe' },
+      coverage: 1,
+      confident: true
+    })
   })
 })
 
@@ -39,9 +57,8 @@ describe('RetrievalService', () => {
     })
 
     expect(slugs(result)[0]).toBe('gestion-des-conflits-en-equipe')
-    // Mots vides (« ont », « leur ») et bruit (« besoin », « équipe ») retirés,
-    // termes racinisés de façon cohérente avec l'index (« mieux » → « mieu »).
-    expect(result.terms).toEqual(['manager', 'mieu', 'gerer', 'conflit'])
+    // Mots vides (« ont », « leur ») et bruit (« besoin », « mieux », « équipe ») retirés.
+    expect(result.terms).toEqual(['manager', 'gerer', 'conflit'])
     const best = result.candidates[0]!
     expect(best.score).toBe(1 * 0.6 + best.semanticScore * 0.4)
     expect(best.matchedTerms).toContain('conflit')

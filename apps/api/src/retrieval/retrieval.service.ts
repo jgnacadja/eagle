@@ -23,23 +23,29 @@ const SEMANTIC_WEIGHT = 0.4
 const CONFIDENT_COVERAGE = 0.6
 const CONFIDENT_SEMANTIC = 0.6
 
-interface QueryTerm {
+export interface QueryTerm {
   term: string
   weight: number
   /** Terme saisi (compte dans la couverture) ou expansion de synonyme. */
   typed: boolean
+  /** Terme saisi dont ce terme est l'expansion — couvre le terme saisi s'il matche. */
+  source: string
 }
+
+// Nombres seuls (effectifs, années) : jamais discriminants dans le référentiel.
+const NUMERIC = /^\d+$/
 
 export function analyzeQuery(text: string): QueryTerm[] {
   const seen = new Map<string, QueryTerm>()
   for (const token of tokenize(text)) {
-    if (QUERY_NOISE.has(token)) continue
+    if (QUERY_NOISE.has(token) || NUMERIC.test(token)) continue
     const term = stemToken(token)
-    seen.set(term, { term, weight: 1, typed: true })
+    seen.set(term, { term, weight: 1, typed: true, source: term })
     for (const synonym of QUERY_SYNONYMS[token] ?? []) {
       const expanded = stemToken(synonym)
-      if (!seen.has(expanded))
-        seen.set(expanded, { term: expanded, weight: SYNONYM_WEIGHT, typed: false })
+      if (!seen.has(expanded)) {
+        seen.set(expanded, { term: expanded, weight: SYNONYM_WEIGHT, typed: false, source: term })
+      }
     }
   }
   return [...seen.values()]
@@ -73,16 +79,21 @@ function bm25(
   return { score, matched }
 }
 
+// Part des termes saisis retrouvés (pondérée idf) — un terme saisi est
+// couvert si lui-même ou l'une de ses expansions métier matche.
 function coverageOf(index: RetrievalIndex, terms: QueryTerm[], matched: string[]): number {
   const typed = terms.filter((term) => term.typed)
   if (typed.length === 0) return 0
   const matchedSet = new Set(matched)
+  const coveredSources = new Set(
+    terms.filter((term) => matchedSet.has(term.term)).map((term) => term.source)
+  )
   let total = 0
   let covered = 0
   for (const { term } of typed) {
     const weight = idf(index, term)
     total += weight
-    if (matchedSet.has(term)) covered += weight
+    if (coveredSources.has(term)) covered += weight
   }
   return total > 0 ? covered / total : 0
 }

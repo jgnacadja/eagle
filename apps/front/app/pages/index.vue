@@ -59,36 +59,18 @@
             </p>
           </div>
 
-          <!-- Search bar -->
-          <form class="mx-auto mt-6 w-full max-w-prose" @submit.prevent="onHeroSearch">
-            <div
-              class="flex h-14 md:h-16 items-center gap-3 rounded-full border-2 border-primary/75 bg-paper pl-4 md:pl-6 pr-2 shadow-sm transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"
-            >
-              <IconSparkle :size="22" class="shrink-0 text-accent" />
-              <label for="hero-search-input" class="sr-only"
-                >Décrivez votre besoin de formation</label
-              >
-              <input
-                id="hero-search-input"
-                v-model="heroSearch"
-                type="text"
-                class="h-auto flex-1 border-0 bg-transparent px-0 text-small md:text-body text-ink placeholder:text-ink-subtle focus:outline-none"
-                placeholder="Ex. : Je dois former 8 salariés au CACES près de Lyon avant septembre."
-              />
-              <button
-                type="submit"
-                aria-label="Lancer la recherche"
-                class="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-full bg-primary text-paper transition-colors hover:bg-primary-dark"
-              >
-                <IconSearch :size="18" class="text-paper" />
-              </button>
-            </div>
-            <p
-              class="mt-3 text-xs md:text-small text-ink-muted whitespace-normal md:whitespace-nowrap"
-            >
-              Vous pouvez écrire comme vous le feriez à un conseiller.
-            </p>
-          </form>
+          <!-- Search bar — entrée du moteur IA (composant partagé Home /
+               page moteur / catalogue) : navigation client-side vers la
+               vue pleine page avec la requête saisie. -->
+          <AssistantSearchBar
+            v-model="heroSearch"
+            class="mx-auto mt-6 w-full max-w-prose"
+            input-id="hero-search-input"
+            size="hero"
+            placeholder="Ex. : Je dois former 8 salariés au CACES près de Lyon avant septembre."
+            hint="Vous pouvez écrire comme vous le feriez à un conseiller."
+            @submit="onHeroSearch"
+          />
 
           <!-- 3 Value propositions -->
           <div
@@ -676,31 +658,17 @@
           Un besoin de formation ? Décrivez-nous votre situation.
         </h2>
 
-        <form class="mx-auto mt-lg w-full max-w-prose" @submit.prevent="onCtaSearch">
-          <div
-            class="flex h-14 md:h-16 items-center gap-3 rounded-full bg-paper pl-4 md:pl-6 pr-2 shadow-lg transition-colors focus-within:ring-2 focus-within:ring-primary/20"
-          >
-            <IconSparkle :size="22" class="shrink-0 text-accent" />
-            <label for="cta-search-input" class="sr-only"> Décrivez votre situation </label>
-            <input
-              id="cta-search-input"
-              v-model="ctaSearch"
-              type="text"
-              class="h-auto flex-1 border-0 bg-transparent px-0 text-small md:text-body text-ink placeholder:text-ink-subtle focus:outline-none"
-              placeholder="Ex. : Nous devons renouveler 12 habilitations sur deux sites avant décembre."
-            />
-            <button
-              type="submit"
-              aria-label="Lancer la recherche"
-              class="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-full bg-primary text-paper transition-colors hover:bg-primary-dark"
-            >
-              <IconSearch :size="18" class="text-paper" />
-            </button>
-          </div>
-          <p class="mt-3 text-center text-xs md:text-small text-ink-inverse-muted">
-            Vous pouvez écrire comme vous le feriez à un conseiller.
-          </p>
-        </form>
+        <AssistantSearchBar
+          v-model="ctaSearch"
+          class="mx-auto mt-lg w-full max-w-prose text-center"
+          input-id="cta-search-input"
+          size="hero"
+          tone="inverse"
+          pill-class="border-paper shadow-lg"
+          placeholder="Ex. : Nous devons renouveler 12 habilitations sur deux sites avant décembre."
+          hint="Vous pouvez écrire comme vous le feriez à un conseiller."
+          @submit="onHeroSearch"
+        />
 
         <div class="mt-lg flex justify-center">
           <Button as-child variant="outline-inverse" size="pill-lg">
@@ -717,6 +685,7 @@
 <script setup lang="ts">
 import { computed, ref, resolveComponent } from 'vue'
 import type { Article, Centre } from '@learnup/types'
+import { useAssistantNavigation } from '~/composables/useAssistantNavigation'
 import { mapCourse, upcomingSessions, useCatalog } from '~/composables/useCatalog'
 import { availabilityStatus, useCentreSessionDates } from '~/composables/useCentres'
 import { useGeolocation } from '~/composables/useGeolocation'
@@ -773,18 +742,15 @@ useHead({
 })
 
 const heroSearch = ref('')
+const assistant = useAssistantNavigation()
 
-function onHeroSearch() {
-  const q = heroSearch.value.trim()
-  navigateTo({ path: '/formations', query: q ? { q } : {} })
+// Le besoin exprimé dans le hero ouvre le moteur IA (vue pleine page) avec
+// la requête transmise — sans rechargement ni perte de la saisie.
+function onHeroSearch(query: string): Promise<void> {
+  return assistant.open({ query })
 }
 
 const ctaSearch = ref('')
-
-function onCtaSearch() {
-  const q = ctaSearch.value.trim()
-  navigateTo({ path: '/formations', query: q ? { q } : {} })
-}
 
 const mapSearch = ref('')
 

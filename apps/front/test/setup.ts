@@ -27,6 +27,12 @@ config.global.components.GeoNearMe = GeoNearMe
 import ClientLogoWall from '~/components/Brand/ClientLogoWall.vue'
 config.global.components.ClientLogoWall = ClientLogoWall
 
+// Moteur IA : champ d'entrée partagé (Home, page moteur) et coquille.
+import AssistantSearchBar from '~/components/Assistant/AssistantSearchBar.vue'
+import AssistantShell from '~/components/Assistant/AssistantShell.vue'
+config.global.components.AssistantSearchBar = AssistantSearchBar
+config.global.components.AssistantShell = AssistantShell
+
 config.global.stubs = {
   ...config.global.stubs,
   NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },

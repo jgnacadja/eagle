@@ -329,6 +329,11 @@ describe('pages/formations/index', () => {
 
     expect(wrapper.findAll('.formation-card')).toHaveLength(0)
     expect(wrapper.text()).toContain('Aucune formation ne correspond exactement')
+    // Entrée « aucun résultat » du moteur IA : la recherche est transmise
+    // (le stub NuxtLink laisse `to` passer en attribut).
+    expect(wrapper.find('a[to="/recherche-assistee?q=zzzzzz"]').text()).toBe(
+      'Être guidé dans mon choix'
+    )
   })
 
   it('« Réinitialiser les filtres » restaure le catalogue complet', async () => {

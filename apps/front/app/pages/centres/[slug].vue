@@ -37,7 +37,7 @@
                  droite sur les deux lignes (row-span-2). -->
             <figure
               v-if="imageSrc"
-              class="relative aspect-3/4 overflow-hidden rounded-md bg-surface-alt shadow-lg lg:col-span-2 lg:row-span-2"
+              class="relative mx-auto aspect-3/4 w-full max-w-callout overflow-hidden rounded-md bg-surface-alt shadow-lg lg:col-span-2 lg:row-span-2"
             >
               <img
                 :src="imageSrc"
@@ -83,11 +83,10 @@
 
       <!-- Contenu principal -->
       <div class="mx-auto px-gutter-mobile md:px-gutter py-section">
-        <!-- Grille 2 colonnes : la colonne principale (sessions incluses)
-             s'étale sur les deux lignes à gauche ; la carte « Qualité »
-             occupe la 2e ligne de la colonne latérale — donc après les
-             prochaines sessions, comme le veut la maquette. Sur mobile,
-             l'ordre DOM donne : infos + carte, contenu, puis qualité. -->
+        <!-- Grille 2 colonnes : contenu principal à gauche, barre
+             latérale empilée (infos → carte → qualité) à droite. Sur
+             mobile, `contents` aplatit les sections des deux colonnes
+             dans l'ordre maquette via les classes order-*. -->
         <div
           class="grid grid-cols-1 items-start gap-2xl lg:grid-cols-[minmax(0,1fr)_var(--spacing-callout)]"
         >
@@ -687,7 +686,10 @@ const qualiopiValidUntilLabel = computed(() => {
   return new Intl.DateTimeFormat('fr-FR', {
     day: 'numeric',
     month: 'long',
-    year: 'numeric'
+    year: 'numeric',
+    // Fuseau épinglé comme formatDateFr : sans ça un timestamp proche de
+    // minuit peut rendre un jour différent entre SSR (UTC) et client.
+    timeZone: 'Europe/Paris'
   }).format(date)
 })
 
@@ -702,7 +704,8 @@ const managerCaption = computed(() => {
     return `Franchisé depuis ${new Intl.DateTimeFormat('fr-FR', {
       day: 'numeric',
       month: 'long',
-      year: 'numeric'
+      year: 'numeric',
+      timeZone: 'Europe/Paris'
     }).format(date)}`
   }
   return centre.value?.contact_role ?? null

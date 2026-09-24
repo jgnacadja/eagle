@@ -38,6 +38,7 @@ import IconRefresh from '~/components/icons/IconRefresh.vue'
 import IconSearch from '~/components/icons/IconSearch.vue'
 import IconSearchMinus from '~/components/icons/IconSearchMinus.vue'
 import IconShare from '~/components/icons/IconShare.vue'
+import IconSmartphone from '~/components/icons/IconSmartphone.vue'
 import IconSparkle from '~/components/icons/IconSparkle.vue'
 import IconTimetable from '~/components/icons/IconTimetable.vue'
 import IconUser from '~/components/icons/IconUser.vue'
@@ -82,6 +83,7 @@ const icons = {
   IconSearch,
   IconSearchMinus,
   IconShare,
+  IconSmartphone,
   IconSparkle,
   IconTimetable,
   IconUser,

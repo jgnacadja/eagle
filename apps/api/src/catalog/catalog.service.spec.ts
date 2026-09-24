@@ -166,6 +166,23 @@ describe('CatalogService', () => {
     )
   })
 
+  it('matches accented searches against the normalized text', async () => {
+    cache.get.mockResolvedValue(null)
+
+    const result = await service.list({ search: 'Sécurité', page: 1, limit: 20 } as ListCoursesDto)
+
+    expect(result.items.map((item) => item.slug)).toEqual(['securite'])
+  })
+
+  it('exposes the published courses with their location text for the retrieval index', async () => {
+    cache.get.mockResolvedValue(null)
+
+    const entries = await service.retrievalEntries()
+
+    expect(entries.map((entry) => entry.course.slug)).toEqual(['pilotage-de-projet', 'securite'])
+    expect(entries[0]).toMatchObject({ locationText: '' })
+  })
+
   it('does not record a miss when results exist or without search text', async () => {
     cache.get.mockResolvedValue(null)
 

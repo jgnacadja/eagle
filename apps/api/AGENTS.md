@@ -71,6 +71,14 @@ Lire d'abord `AGENTS.md` à la racine.
 - Endpoints admin (clé `x-api-key`) : `GET /admin/search-misses` (liste paginée), `GET /admin/search-misses/aggregate` (regroupement par requête normalisée), `GET /admin/search-misses/export` (CSV UTF-8 BOM, séparateur `;`), `POST /admin/search-misses/purge`.
 - La collection n'est jamais lisible publiquement ; elle est hors du flow Directus d'invalidation de cache.
 
+## Retrieval catalogue — moteur IA (`src/retrieval`)
+
+- Couche de recherche sur les **formations publiées uniquement** (`CatalogService.retrievalEntries()`, mêmes rows que le catalogue public) qui alimente le grounding IA (BACKEND-B) et le fallback déterministe (BACKEND-C). Contrat interne : `RetrievalService.search({ text, limit, family, modalities, location })` → `RetrievalResult` (candidats triés avec `score` fusionné, `lexicalScore` BM25, `semanticScore` cosinus, `matchedTerms`, `coverage`, `confident`). Les seuils métier (« aucun résultat », « hors catalogue ») restent la décision du consommateur.
+- `CatalogIndexService` : index en mémoire (termes pondérés par champ — intitulé ×3, classification / certification ×2 —, vecteur par formation). Reconstruit à la demande quand le cache catalogue est invalidé (`CacheService.onCatalogInvalidated`, déclenché par la sync Digiforma et les purges Directus), après 15 min, ou via `POST /admin/retrieval/reindex`. Un catalogue vide n'est jamais figé.
+- Embeddings : port `EmbeddingsProvider` (`EMBEDDINGS_PROVIDER` token). `HashingEmbeddingsProvider` = repli local sans clé (n-grammes hachés, similarité lexicale approchée, tolérant aux fautes) ; `HttpEmbeddingsProvider` = API au format OpenAI (`EMBEDDINGS_API_URL/KEY/MODEL`, fournisseur à confirmer). Si le provider distant échoue à l'indexation, repli local et `degraded: true` dans le statut.
+- Expansions métier de la requête (`retrieval.synonyms.ts` : secourisme → sst, chariot → caces…) et bruit ignoré (« formation », « salariés »…). Texte partagé : `common/utils/text.util.ts` (normalisation, tokens, mots vides, racinisation légère) — aussi utilisé par la recherche du catalogue.
+- Endpoints admin (clé `x-api-key`) : `GET /admin/retrieval/status`, `POST /admin/retrieval/reindex`, `GET /admin/retrieval/search?q=&limit=&family=&modalities=&location=` (jeu de requêtes de pertinence).
+
 ## Pas de TDD explicite
 
 Les tests ne sont pas forcément écrits avant le code, mais chaque fonctionnalité livrée est couverte. Préférer écrire le test en même temps que l'implémentation.

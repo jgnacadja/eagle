@@ -33,6 +33,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private isReady = false
   private initPromise?: Promise<void>
   private connectionErrorLogged = false
+  private readonly catalogListeners = new Set<() => void>()
 
   constructor(config: ConfigService) {
     const url = config.get<string>('REDIS_URL')
@@ -112,8 +113,26 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /** Version courante des clés catalogue — bump à chaque invalidation complète. */
+  get version(): number {
+    return this.currentVersion
+  }
+
+  /**
+   * Abonne un consommateur aux invalidations catalogue (sync Digiforma,
+   * purges déclenchées par Directus) — index en mémoire à reconstruire, etc.
+   * Retourne la fonction de désabonnement.
+   */
+  onCatalogInvalidated(listener: () => void): () => void {
+    this.catalogListeners.add(listener)
+    return () => this.catalogListeners.delete(listener)
+  }
+
   async invalidateCatalog(): Promise<void> {
-    if (!this.client || !this.isReady) return
+    if (!this.client || !this.isReady) {
+      this.notifyCatalogInvalidated()
+      return
+    }
 
     try {
       const newVersion = await this.client.incr(this.versionKey)
@@ -123,6 +142,8 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       this.logger.log(`Catalog cache invalidated, new version v${this.currentVersion}`)
     } catch (error) {
       this.logger.warn({ error }, 'Failed to invalidate catalog cache')
+    } finally {
+      this.notifyCatalogInvalidated()
     }
   }
 
@@ -131,6 +152,17 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   async invalidatePatterns(patterns: string[]): Promise<void> {
     for (const pattern of patterns) {
       await this.del(pattern)
+    }
+    this.notifyCatalogInvalidated()
+  }
+
+  private notifyCatalogInvalidated(): void {
+    for (const listener of this.catalogListeners) {
+      try {
+        listener()
+      } catch (error) {
+        this.logger.warn({ error }, 'Catalog invalidation listener failed')
+      }
     }
   }
 

@@ -30,14 +30,30 @@
                   {{ tag }}
                 </Badge>
               </ul>
+
+              <div class="mt-lg flex flex-wrap items-center gap-md">
+                <Button as-child variant="accent" size="pill" class="w-full sm:w-auto">
+                  <NuxtLink to="#formations">Trouver une formation dans ce centre</NuxtLink>
+                </Button>
+                <Button as-child variant="outline" size="pill" class="w-full sm:w-auto">
+                  <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
+                </Button>
+                <NuxtLink
+                  v-if="centre.phone"
+                  :to="`tel:${centre.phone.replace(/\s/g, '')}`"
+                  class="inline-flex items-center gap-2 font-medium text-ink"
+                >
+                  <IconPhone :size="16" class="text-primary" />
+                  {{ centre.phone }}
+                </NuxtLink>
+              </div>
             </div>
 
-            <!-- La figure précède les boutons dans le DOM : sur mobile elle
-                 s'affiche avant les CTA ; sur desktop elle occupe la colonne
-                 droite sur les deux lignes (row-span-2). -->
+            <!-- Portrait du responsable : colonne droite sur desktop ; sur
+                 mobile il suit le bloc texte (titre, tags, CTA). -->
             <figure
               v-if="imageSrc"
-              class="relative mx-auto aspect-3/4 w-full max-w-callout overflow-hidden rounded-md bg-surface-alt shadow-lg lg:col-span-2 lg:row-span-2"
+              class="relative mx-auto aspect-3/4 w-full max-w-4/5 overflow-hidden rounded-md bg-surface-alt shadow-lg lg:col-span-2 lg:max-w-3/5"
             >
               <img
                 :src="imageSrc"
@@ -60,23 +76,6 @@
                 <IconBadgeCheck :size="22" class="shrink-0 text-accent-text" />
               </figcaption>
             </figure>
-
-            <div class="flex flex-wrap items-center gap-md lg:col-span-3">
-              <Button as-child variant="accent" size="pill" class="w-full sm:w-auto">
-                <NuxtLink to="#formations">Trouver une formation dans ce centre</NuxtLink>
-              </Button>
-              <Button as-child variant="outline" size="pill" class="w-full sm:w-auto">
-                <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
-              </Button>
-              <NuxtLink
-                v-if="centre.phone"
-                :to="`tel:${centre.phone.replace(/\s/g, '')}`"
-                class="inline-flex items-center gap-2 font-medium text-ink"
-              >
-                <IconPhone :size="16" class="text-primary" />
-                {{ centre.phone }}
-              </NuxtLink>
-            </div>
           </div>
         </div>
       </section>

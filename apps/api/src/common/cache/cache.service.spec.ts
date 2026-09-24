@@ -102,10 +102,30 @@ describe('CacheService', () => {
 
   it('invalidates the catalogue and bumps the version', async () => {
     await service.set('courses', { id: 1 })
+    const before = service.version
     await service.invalidateCatalog()
 
     const value = await service.get('courses')
     expect(value).toBeNull()
+    expect(service.version).toBe(before + 1)
+  })
+
+  it('notifies catalogue listeners on full and targeted invalidations until unsubscribed', async () => {
+    const listener = vi.fn()
+    const failing = vi.fn(() => {
+      throw new Error('listener boom')
+    })
+    const unsubscribe = service.onCatalogInvalidated(listener)
+    service.onCatalogInvalidated(failing)
+
+    await service.invalidateCatalog()
+    await service.invalidatePatterns(['courses:*'])
+    expect(listener).toHaveBeenCalledTimes(2)
+    expect(failing).toHaveBeenCalledTimes(2)
+
+    unsubscribe()
+    await service.invalidateCatalog()
+    expect(listener).toHaveBeenCalledTimes(2)
   })
 
   it('returns null for non-JSON cached values', async () => {
@@ -170,7 +190,10 @@ describe('CacheService', () => {
 
     await expect(disabled.get('courses')).resolves.toBeNull()
     await expect(disabled.set('courses', { id: 1 })).resolves.toBeUndefined()
+    const listener = vi.fn()
+    disabled.onCatalogInvalidated(listener)
     await expect(disabled.invalidateCatalog()).resolves.toBeUndefined()
+    expect(listener).toHaveBeenCalledOnce()
     await expect(disabled.getSyncRun()).resolves.toBeNull()
     expect(disabled.key('courses')).toBe('catalog:v0:courses')
     await expect(disabled.onModuleDestroy()).resolves.toBeUndefined()

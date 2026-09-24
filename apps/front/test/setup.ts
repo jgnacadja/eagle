@@ -31,6 +31,12 @@ config.global.components.ClientLogoWall = ClientLogoWall
 import ConsentField from '~/components/ConsentField.vue'
 config.global.components.ConsentField = ConsentField
 
+// Recherche assistée : champ d'entrée et coquille de la page moteur.
+import AssistantSearchBar from '~/components/Assistant/SearchBar.vue'
+import AssistantShell from '~/components/Assistant/Shell.vue'
+config.global.components.AssistantSearchBar = AssistantSearchBar
+config.global.components.AssistantShell = AssistantShell
+
 config.global.stubs = {
   ...config.global.stubs,
   NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },

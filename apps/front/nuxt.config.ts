@@ -38,10 +38,10 @@ export default defineNuxtConfig({
   // production, pas une URL de preview.
   site: { url: siteUrl },
   sitemap: {
-    // Pages noindex (formulaires) hors sitemap ; les routes dynamiques
-    // (fiches, familles, centres, articles, pages légales) sont fournies
-    // par le endpoint ci-dessous, les pages statiques auto-découvertes.
-    exclude: ['/parler-a-votre-conseiller', '/centres/demande-de-formation'],
+    // Pages noindex (formulaires, moteur IA) hors sitemap ; les routes
+    // dynamiques (fiches, familles, centres, articles, pages légales) sont
+    // fournies par le endpoint ci-dessous, les pages statiques auto-découvertes.
+    exclude: ['/parler-a-votre-conseiller', '/centres/demande-de-formation', '/recherche-assistee'],
     sources: ['/api/__sitemap__/urls']
   },
   robots: {
@@ -97,6 +97,11 @@ export default defineNuxtConfig({
     '/centres/**': { isr: { expiration: 600, passQuery: true } },
     '/actualites': { isr: { expiration: 600, passQuery: true } },
     '/actualites/**': { isr: { expiration: 600, passQuery: true } },
+    // Moteur IA (vue de discussion pleine page) : contenu dynamique et
+    // paramétré (?q=), sans valeur SEO — rendu à la demande, noindex/follow
+    // (meta + en-tête), exclu du sitemap (`sitemap.exclude`). La Home garde
+    // le champ d'entrée et son indexation.
+    '/recherche-assistee': { isr: false, headers: { 'X-Robots-Tag': 'noindex, follow' } },
     '/rejoindre-le-reseau': { prerender: true },
     '/referencer-mon-organisme': { prerender: true },
     '/entreprise-reseau': { prerender: true },

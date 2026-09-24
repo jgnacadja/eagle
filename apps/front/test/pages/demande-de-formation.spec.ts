@@ -533,6 +533,44 @@ describe('pages/centres/demande-de-formation', () => {
     expect(wrapper.find('form').attributes('style')).toContain('display: none')
   })
 
+  it('confirmation : reprend formation et session, renvoie à la fiche', async () => {
+    routeStub.query = {
+      centre: 'creteil',
+      famille: 'sante',
+      formation: 'sst-initial',
+      session: 'sess-1'
+    }
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.text().includes('Votre demande est transmise'))
+
+    expect(wrapper.text()).toContain('SST — Sauveteur secouriste du travail')
+    expect(wrapper.text()).toContain('session du 12 octobre 2026')
+    expect(wrapper.text()).toContain('à Créteil')
+    expect(wrapper.find('a[href="/formations/sante/sst-initial"]').text()).toContain(
+      'Retour à la formation'
+    )
+    expect(wrapper.find('a[href="/formations"]').text()).toContain('Parcourir le catalogue')
+  })
+
+  it('confirmation intra : mentionne la formation et le lieu saisi', async () => {
+    routeStub.query = { famille: 'sante', formation: 'sst-initial', intra: '1' }
+    const wrapper = await mountPage()
+    await wrapper.find('#lieu').setValue('Lyon 69003')
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.text().includes('Votre demande est transmise'))
+
+    expect(wrapper.text()).toContain('SST — Sauveteur secouriste du travail')
+    expect(wrapper.text()).toContain('dans votre entreprise à Lyon 69003')
+    expect(wrapper.find('a[href="/formations/sante/sst-initial"]').text()).toContain(
+      'Retour à la formation'
+    )
+  })
+
   it('garde le formulaire et le brouillon si l’envoi échoue', async () => {
     leadSubmitMock.mockResolvedValue(false)
     window.sessionStorage.setItem('demande-formation-draft', '{"salaries":5}')

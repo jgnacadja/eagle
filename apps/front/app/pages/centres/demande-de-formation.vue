@@ -62,16 +62,24 @@
                 Votre demande est transmise
               </h2>
               <p class="mt-sm max-w-prose text-body text-ink-muted">
-                Un conseiller LEARN&nbsp;UP&nbsp;ACADEMY prend en charge votre demande et vous
-                recontacte sous 24&nbsp;h ouvrées.
+                <template v-if="formationName">
+                  Un conseiller LEARN&nbsp;UP&nbsp;ACADEMY vous recontacte sous 24&nbsp;h ouvrées au
+                  sujet de la formation
+                  <strong class="font-semibold text-ink">{{ formationName }}</strong
+                  >{{ confirmationSuffix }}
+                </template>
+                <template v-else>
+                  Un conseiller LEARN&nbsp;UP&nbsp;ACADEMY prend en charge votre demande et vous
+                  recontacte sous 24&nbsp;h ouvrées.
+                </template>
               </p>
             </div>
             <div class="flex flex-wrap justify-center gap-md">
               <Button as-child variant="dark" size="pill-lg">
-                <NuxtLink to="/">Retour à l'accueil</NuxtLink>
+                <NuxtLink :to="confirmationBackTo">{{ confirmationBackLabel }}</NuxtLink>
               </Button>
               <Button as-child variant="outline" size="pill-lg">
-                <NuxtLink to="/formations">Explorer le catalogue</NuxtLink>
+                <NuxtLink to="/formations">Parcourir le catalogue</NuxtLink>
               </Button>
             </div>
           </Card>
@@ -847,6 +855,42 @@ onMounted(() => {
 
 const { submit: submitLead, sending, error: submitError } = useLeadSubmit()
 const submitted = ref(false)
+
+// Confirmation : le message reprend le contexte — « , session du 12 octobre
+// 2026 à Créteil. » ou « , dans votre entreprise à Lyon. » (« . » seul si la
+// formation est transmise sans session ni lieu).
+const confirmationSuffix = computed(() => {
+  if (sessionSlug.value) {
+    const start = session.value?.startDate
+    const when = start
+      ? `session du ${new Intl.DateTimeFormat('fr-FR', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+          timeZone: 'UTC'
+        }).format(new Date(`${start}T00:00:00Z`))}`
+      : 'session programmée'
+    const city = session.value?.location?.city ?? centre.value?.city
+    return `, ${when}${city ? ` à ${city}` : ''}.`
+  }
+  if (isIntra.value) {
+    const place = typeof lieu.value === 'string' ? lieu.value.trim() : ''
+    return `, dans votre entreprise${place ? ` à ${place}` : ''}.`
+  }
+  return '.'
+})
+
+// Sortie de la confirmation : retour à la fiche formation quand elle est
+// connue, sinon au centre, sinon à l'accueil.
+const confirmationBackTo = computed(
+  () =>
+    formationPath.value ?? (demandeCentreSlug.value ? `/centres/${demandeCentreSlug.value}` : '/')
+)
+const confirmationBackLabel = computed(() => {
+  if (formationPath.value) return 'Retour à la formation'
+  if (demandeCentreSlug.value) return 'Retour au centre'
+  return "Retour à l'accueil"
+})
 
 // `v` = valeurs parsées zod (siret normalisé, salaries coercé) — pas le brut.
 const onSubmit = handleSubmit(async (v) => {

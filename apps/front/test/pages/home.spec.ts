@@ -196,7 +196,7 @@ describe('pages/index', () => {
     expect(wrapper.text()).toContain('Les formations réglementaires adaptées à vos métiers')
     expect(wrapper.text()).toContain('Trouvez le centre de formation le plus proche de chez vous')
     expect(wrapper.text()).toContain('Simplifiez la gestion de vos formations')
-    expect(wrapper.text()).toContain("Ce qu'en disent les entreprises")
+    expect(wrapper.text()).toContain('Les clients parlent de nous')
     expect(wrapper.text()).toContain('Actualités')
   })
 

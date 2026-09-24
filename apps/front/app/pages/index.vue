@@ -315,18 +315,21 @@
 
         <div class="mt-lg flex flex-col gap-md sm:flex-row">
           <div class="flex flex-wrap gap-sm">
-            <NuxtLink
+            <Badge
               v-for="tag in formationTags"
               :key="tag"
-              :to="`/formations?q=${encodeURIComponent(tag)}`"
-              class="rounded-full border border-rule bg-paper p-3 text-meta font-medium text-ink transition-colors hover:border-primary hover:text-primary"
+              as-child
+              variant="outline"
+              class="font-medium transition-colors hover:border-primary hover:text-primary"
             >
-              {{ tag }}
-            </NuxtLink>
+              <NuxtLink :to="`/formations?q=${encodeURIComponent(tag)}`">
+                {{ tag }}
+              </NuxtLink>
+            </Badge>
           </div>
         </div>
         <div class="flex items-center justify-center mt-xl">
-          <Button as-child size="pill-lg" class="w-full sm:w-auto">
+          <Button as-child size="pill-lg" class="lg:inline-flex gap-xs">
             <NuxtLink to="/formations">
               Voir tout le catalogue <span class="link-arrow">→</span>
             </NuxtLink>
@@ -346,17 +349,9 @@
           </h2>
           <p class="mt-sm max-w-prose font-sans text-sm text-ink-muted">
             <span class="font-bold text-primary">+400 centres partenaires</span>
-            dans
-            <span class="font-bold text-primary">96 départements</span>
             — en centre, sur votre site ou en intra-entreprise.
           </p>
         </div>
-        <NuxtLink
-          to="/centres"
-          class="hidden whitespace-nowrap text-body font-bold text-primary transition-colors hover:text-accent-text md:block"
-        >
-          Explorer la carte des centres <span class="link-arrow">→</span>
-        </NuxtLink>
       </div>
 
       <div class="mt-xl grid gap-grid lg:grid-cols-3">
@@ -545,7 +540,7 @@
       </div>
 
       <div class="mt-xl flex justify-center">
-        <Button as-child variant="outline" size="pill-lg" class="w-full sm:w-auto">
+        <Button as-child variant="outline" size="pill-lg" class="lg:inline-flex gap-xs">
           <NuxtLink to="/formations">
             Voir toutes les sessions <span class="link-arrow">→</span>
           </NuxtLink>
@@ -627,7 +622,7 @@
           </p>
 
           <div class="shrink-0">
-            <Button as-child variant="outline" size="pill-lg" class="w-full sm:w-auto">
+            <Button as-child variant="outline" size="pill-lg" class="lg:inline-flex gap-xs">
               <NuxtLink to="/formations">
                 Voir tous les avis <span class="link-arrow">→</span>
               </NuxtLink>
@@ -689,7 +684,7 @@
       </div>
 
       <div class="mt-xl flex justify-center">
-        <Button as-child variant="outline" size="pill-lg">
+        <Button as-child variant="outline" size="pill-lg" class="lg:inline-flex gap-xs">
           <NuxtLink to="/actualites">
             Toutes les actualités <span class="link-arrow">→</span>
           </NuxtLink>

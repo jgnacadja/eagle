@@ -98,11 +98,13 @@ describe('pages/entreprise-reseau.vue', () => {
     expect(wrapper.text()).toContain('Le suivi des échéances réglementaires')
   })
 
-  it('propose les CTA catalogue et conseiller', async () => {
+  it('propose les CTA catalogue et « Être guidé dans mon choix » (moteur IA)', async () => {
     const wrapper = await mountReseau()
     const hrefs = wrapper.findAll('a').map((link) => link.attributes('href'))
 
     expect(hrefs).toContain('/formations')
-    expect(hrefs).toContain('/parler-a-votre-conseiller')
+    expect(wrapper.find('#assistant-trigger-entreprise-reseau').text()).toContain(
+      'Être guidé dans mon choix'
+    )
   })
 })

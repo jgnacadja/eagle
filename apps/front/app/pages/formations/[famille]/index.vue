@@ -305,9 +305,12 @@
           title="Quelle catégorie pour vos équipes ?"
           text="Décrivez vos engins et votre site : LEARN UP identifie les recommandations et catégories applicables."
         >
-          <Button as-child variant="accent" size="pill-sm" class="w-full sm:w-auto">
-            <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
-          </Button>
+          <AssistantTrigger
+            id="assistant-trigger-famille-cta"
+            variant="accent"
+            size="pill-sm"
+            class="w-full sm:w-auto"
+          />
           <Button as-child variant="outline-inverse" size="pill-sm" class="w-full sm:w-auto">
             <NuxtLink :to="`/centres/demande-de-formation?famille=${famille}`"
               >Faire une demande</NuxtLink
@@ -335,7 +338,7 @@
       title="Cette famille de formations n'est pas disponible."
       primary-to="/formations"
       primary-label="Voir le catalogue"
-      secondary-to="#"
+      :secondary-to="assistantHref"
       secondary-label="Être guidé dans mon choix"
       search-placeholder="Intitulé, compétence ou certification"
       search-label="Rechercher une formation"
@@ -364,8 +367,12 @@ import {
 import { useDirectusClient } from '~/composables/useDirectus'
 import { MODALITY_LABELS, MODALITY_OPTIONS } from '~/utils/catalog-filters'
 import { directusAssetUrl } from '~/utils/directusAsset'
+import { assistantEntryHref } from '~/utils/assistant-route'
 import { revealStagger } from '~/utils/reveal'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
+
+// Sortie « Être guidé dans mon choix » de l'état introuvable — ouvre le moteur IA.
+const assistantHref = assistantEntryHref()
 
 definePageMeta({
   layout: 'with-breadcrumb'

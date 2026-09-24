@@ -199,6 +199,18 @@ describe('MegaMenuFormations', () => {
     await wrapper.find('a[href="/formations"]').trigger('click')
     expect(wrapper.findComponent(MegaMenuFormations).emitted('close')).toBeTruthy()
   })
+
+  it('« Être guidé dans mon choix » ouvre le moteur IA et ferme le menu', async () => {
+    navigateMock.mockReset()
+    const wrapper = await mountMenu(MegaMenuFormations)
+
+    await wrapper.find('#assistant-trigger-megamenu').trigger('click')
+
+    expect(navigateMock).toHaveBeenCalledWith({ path: '/recherche-assistee' })
+    expect(wrapper.findComponent(MegaMenuFormations).emitted('close')).toBeTruthy()
+    // Mock partagé par les autres menus : on le rend vierge.
+    navigateMock.mockReset()
+  })
 })
 
 describe('MegaMenuCentres', () => {

@@ -154,7 +154,9 @@ const counts = [
 ]
 
 const routerReplace = vi.fn()
+const navigateMock = vi.fn()
 const useContentSeoMock = vi.fn()
+vi.stubGlobal('navigateTo', navigateMock)
 let routeQuery: Record<string, string> = {}
 
 vi.stubGlobal('ref', ref)
@@ -329,11 +331,14 @@ describe('pages/formations/index', () => {
 
     expect(wrapper.findAll('.formation-card')).toHaveLength(0)
     expect(wrapper.text()).toContain('Aucune formation ne correspond exactement')
-    // Entrée « aucun résultat » du moteur IA : la recherche est transmise
-    // (le stub NuxtLink laisse `to` passer en attribut).
-    expect(wrapper.find('a[to="/recherche-assistee?q=zzzzzz"]').text()).toBe(
-      'Être guidé dans mon choix'
-    )
+    // Entrée « aucun résultat » du moteur IA : la recherche en cours est transmise.
+    const trigger = wrapper.find('#assistant-trigger-catalogue-empty')
+    expect(trigger.text()).toBe('Être guidé dans mon choix')
+    await trigger.trigger('click')
+    expect(navigateMock).toHaveBeenCalledWith({
+      path: '/recherche-assistee',
+      query: { q: 'zzzzzz' }
+    })
   })
 
   it('« Réinitialiser les filtres » restaure le catalogue complet', async () => {

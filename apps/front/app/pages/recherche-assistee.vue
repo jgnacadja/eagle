@@ -58,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { onBeforeUnmount, ref, watch } from 'vue'
 import { useAssistantNavigation } from '~/composables/useAssistantNavigation'
 import { assistantRoute, readAssistantQuery } from '~/utils/assistant-route'
 
@@ -103,4 +103,8 @@ async function startNewSearch(): Promise<void> {
   sessionKey.value += 1
   await navigation.reset()
 }
+
+// Sortie par « Fermer » ou par le bouton précédent : le focus revient sur
+// l'élément qui a ouvert le moteur (accessibilité).
+onBeforeUnmount(() => navigation.restoreFocus())
 </script>

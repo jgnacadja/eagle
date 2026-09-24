@@ -80,9 +80,13 @@
 
       <Card variant="dark" class="mt-md px-md py-lg">
         <p class="text-body font-semibold">Vous ne savez pas quelle formation choisir ?</p>
-        <Button as-child variant="paper" size="pill-sm" class="mt-sm w-full">
-          <NuxtLink to="/etre-guide" @click="$emit('close')">Être guidé dans mon choix</NuxtLink>
-        </Button>
+        <AssistantTrigger
+          id="assistant-trigger-megamenu"
+          variant="paper"
+          size="pill-sm"
+          class="mt-sm w-full"
+          @open="$emit('close')"
+        />
       </Card>
     </div>
   </div>

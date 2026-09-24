@@ -452,9 +452,12 @@
             title="Vous ne savez pas quelle formation choisir ?"
             text="Décrivez votre besoin : LEARN UP identifie la formation, la catégorie et le format adaptés à votre situation."
           >
-            <Button as-child variant="paper" size="control" class="w-full sm:w-auto">
-              <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
-            </Button>
+            <AssistantTrigger
+              id="assistant-trigger-formation-cta"
+              variant="paper"
+              size="control"
+              class="w-full sm:w-auto"
+            />
             <Button as-child variant="outline-inverse" size="control" class="w-full sm:w-auto">
               <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
             </Button>
@@ -525,7 +528,7 @@
       title="Cette formation n'est pas disponible."
       primary-to="/formations"
       primary-label="Voir le catalogue"
-      secondary-to="#"
+      :secondary-to="assistantHref"
       secondary-label="Être guidé dans mon choix"
       search-placeholder="Intitulé, compétence ou certification"
       search-label="Rechercher une formation"
@@ -561,7 +564,11 @@ import { directusAssetUrl } from '~/utils/directusAsset'
 import { htmlToText, sanitizeHtml } from '~/utils/sanitizeHtml'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
+import { assistantEntryHref } from '~/utils/assistant-route'
 import { revealStagger } from '~/utils/reveal'
+
+// Sortie « Être guidé dans mon choix » de l'état indisponible — ouvre le moteur IA.
+const assistantHref = assistantEntryHref()
 import { availabilityStatus } from '~/composables/useCentres'
 
 interface ProgrammeModule {

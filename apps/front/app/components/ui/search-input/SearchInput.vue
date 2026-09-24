@@ -1,13 +1,16 @@
 <template>
   <div>
     <div
-      :class="[
-        'relative flex h-control items-center gap-sm rounded-full border bg-paper pl-md pr-sm shadow-sm transition-colors',
-        isLoading ? 'border-outline-soft bg-surface-soft' : '',
-        hasError ? 'border-danger' : 'border-outline',
-        !isLoading && !hasError ? 'focus-within:ring-2 focus-within:ring-outline' : '',
-        $attrs.class as string
-      ]"
+      :class="
+        cn(
+          'relative flex h-control items-center gap-sm rounded-full border bg-paper pl-md pr-sm shadow-sm transition-colors',
+          sizeClasses.pill,
+          isLoading ? 'border-outline-soft bg-surface-soft' : '',
+          hasError ? 'border-danger' : sizeClasses.border,
+          !isLoading && !hasError ? sizeClasses.focus : '',
+          $attrs.class as string
+        )
+      "
     >
       <slot name="icon" />
       <label :for="inputId" class="sr-only">{{ srLabel }}</label>
@@ -25,7 +28,12 @@
         :disabled="isLoading"
         :aria-invalid="hasError ? 'true' : undefined"
         :aria-describedby="hasError ? errorId : undefined"
-        class="h-auto flex-1 border-0 bg-transparent px-0 text-small text-ink shadow-none placeholder:text-ink-placeholder focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-70"
+        :class="
+          cn(
+            'h-auto flex-1 border-0 bg-transparent px-0 text-small text-ink shadow-none placeholder:text-ink-placeholder focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-70',
+            sizeClasses.input
+          )
+        "
         @update:model-value="onInput"
         @keydown="onKeydown"
         @focus="open"
@@ -46,7 +54,7 @@
         size="icon-sm"
         :aria-label="isLoading ? loadingLabel : buttonLabel"
         :disabled="isLoading"
-        class="shrink-0 disabled:cursor-not-allowed"
+        :class="cn('shrink-0 disabled:cursor-not-allowed', sizeClasses.button)"
         @click="submit"
       >
         <span
@@ -54,7 +62,7 @@
           class="block h-4 w-4 animate-spin rounded-full border-2 border-paper/40 border-t-paper"
           aria-hidden="true"
         />
-        <IconSearch v-else :size="16" />
+        <IconSearch v-else :size="sizeClasses.iconSize" />
       </Button>
 
       <SuggestList
@@ -81,8 +89,41 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { cn } from '@/lib/utils'
 import SuggestList from '~/components/ui/search-input/SuggestList.vue'
 import { useSuggestDropdown } from '~/composables/useSuggestDropdown'
+import type { SearchInputSize } from '~/components/ui/search-input'
+
+interface SizeClasses {
+  pill: string
+  border: string
+  focus: string
+  input: string
+  button: string
+  iconSize: number
+}
+
+// Une seule anatomie déclinée en deux tailles (§3) : `default` (44px —
+// catalogue, header) et `hero` (48px, bordure marine épaisse — Home et page
+// moteur, composant validé 9a).
+const SIZE_CLASSES: Record<SearchInputSize, SizeClasses> = {
+  default: {
+    pill: '',
+    border: 'border-outline',
+    focus: 'focus-within:ring-2 focus-within:ring-outline',
+    input: '',
+    button: '',
+    iconSize: 16
+  },
+  hero: {
+    pill: 'h-14 gap-md border-2 pl-md md:h-16 md:pl-lg',
+    border: 'border-primary/75',
+    focus: 'focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20',
+    input: 'md:text-body',
+    button: 'md:h-12 md:w-12',
+    iconSize: 18
+  }
+}
 
 const props = withDefaults(
   defineProps<{
@@ -96,6 +137,7 @@ const props = withDefaults(
     type?: string
     loading?: boolean
     errorMessage?: string
+    size?: SearchInputSize
     /** Libellés d'autocomplétion (liste stylée) — ex. ville, CP, département. */
     suggestions?: string[]
   }>(),
@@ -108,6 +150,7 @@ const props = withDefaults(
     type: 'text',
     loading: false,
     errorMessage: '',
+    size: 'default',
     suggestions: undefined
   }
 )
@@ -119,6 +162,8 @@ const emit = defineEmits<{
   submit: [value: string]
   /** Chaque frappe — alimente l'autocomplétion. `modelValue` reste réservé à la soumission. */
   input: [value: string]
+  /** Clic sur « effacer » — émis avant `update:modelValue('')` et `submit('')`. */
+  clear: []
 }>()
 
 const draft = ref(props.modelValue ?? '')
@@ -127,6 +172,7 @@ const listId = `${props.inputId}-suggestions`
 
 const isLoading = computed(() => props.loading)
 const hasError = computed(() => !!props.errorMessage)
+const sizeClasses = computed(() => SIZE_CLASSES[props.size])
 
 const suggestionList = computed(() => props.suggestions ?? [])
 const {
@@ -183,6 +229,7 @@ function clear() {
   if (isLoading.value) return
   draft.value = ''
   close()
+  emit('clear')
   emit('update:modelValue', '')
   emit('submit', '')
 }

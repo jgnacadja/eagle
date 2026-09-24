@@ -128,8 +128,20 @@ describe('SearchInput', () => {
     expect(clearButton.exists()).toBe(true)
     await clearButton.trigger('click')
 
+    expect(wrapper.emitted('clear')).toHaveLength(1)
     expect(wrapper.emitted('update:modelValue')).toEqual([['']])
     expect(wrapper.emitted('submit')).toEqual([['']])
+  })
+
+  it('décline la pilule en taille hero (48px, bordure marine) sans perdre l’anneau de focus', () => {
+    const wrapper = mountInput({ size: 'hero' })
+    const pill = wrapper.find('.rounded-full')
+
+    expect(pill.classes()).toContain('md:h-16')
+    expect(pill.classes()).toContain('border-2')
+    expect(pill.classes()).toContain('border-primary/75')
+    expect(pill.classes()).not.toContain('h-control')
+    expect(pill.classes()).toContain('focus-within:ring-primary/20')
   })
 
   it('se resynchronise quand modelValue change de l’extérieur', async () => {

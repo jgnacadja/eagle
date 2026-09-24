@@ -19,6 +19,7 @@ import { Readable } from 'node:stream'
  */
 const ALLOWED_ITEM_COLLECTIONS = new Set([
   'articles',
+  'avis',
   'centres',
   'familles_formation',
   'sous_familles_formation',

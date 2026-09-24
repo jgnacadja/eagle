@@ -912,14 +912,16 @@ fields:
     meta:
       collection: articles
       conditions: null
-      display: null
-      display_options: null
+      display: related-values
+      display_options:
+        template: '{{name}}'
       field: centre
       group: null
       hidden: false
       interface: select-dropdown-m2o
       note: null
-      options: null
+      options:
+        template: '{{name}}'
       readonly: false
       required: false
       searchable: true
@@ -954,14 +956,16 @@ fields:
     meta:
       collection: articles
       conditions: null
-      display: null
-      display_options: null
+      display: related-values
+      display_options:
+        template: '{{title}}'
       field: related_formation
       group: null
       hidden: false
       interface: select-dropdown-m2o
       note: Formation mise en avant dans l’article (carte « Formation liée »)
-      options: null
+      options:
+        template: '{{title}}'
       readonly: false
       required: false
       searchable: true
@@ -1381,14 +1385,16 @@ fields:
     meta:
       collection: avis
       conditions: null
-      display: null
-      display_options: null
+      display: related-values
+      display_options:
+        template: '{{name}}'
       field: centre
       group: null
       hidden: false
       interface: select-dropdown-m2o
       note: Vide = avis marque, affiché sur toutes les fiches centres
-      options: null
+      options:
+        template: '{{name}}'
       readonly: false
       required: false
       searchable: true
@@ -5061,14 +5067,16 @@ fields:
     meta:
       collection: formations
       conditions: null
-      display: null
-      display_options: null
+      display: related-values
+      display_options:
+        template: '{{name}}'
       field: famille
       group: null
       hidden: false
       interface: select-dropdown-m2o
       note: Affectation éditoriale — seul champ modifiable
-      options: null
+      options:
+        template: '{{name}}'
       readonly: false
       required: false
       searchable: true
@@ -5103,14 +5111,16 @@ fields:
     meta:
       collection: formations
       conditions: null
-      display: null
-      display_options: null
+      display: related-values
+      display_options:
+        template: '{{name}}'
       field: sous_famille
       group: null
       hidden: false
       interface: select-dropdown-m2o
       note: Affectation éditoriale — proposée par la sync, jamais réécrite
-      options: null
+      options:
+        template: '{{name}}'
       readonly: false
       required: false
       searchable: true
@@ -5364,14 +5374,16 @@ fields:
     meta:
       collection: page_blocks
       conditions: null
-      display: null
-      display_options: null
+      display: related-values
+      display_options:
+        template: '{{title}}'
       field: page
       group: null
       hidden: false
       interface: select-dropdown-m2o
       note: null
-      options: null
+      options:
+        template: '{{title}}'
       readonly: false
       required: true
       searchable: true
@@ -6681,14 +6693,16 @@ fields:
     meta:
       collection: sous_familles_formation
       conditions: null
-      display: null
-      display_options: null
+      display: related-values
+      display_options:
+        template: '{{name}}'
       field: famille
       group: null
       hidden: false
       interface: select-dropdown-m2o
       note: Famille parente
-      options: null
+      options:
+        template: '{{name}}'
       readonly: false
       required: true
       searchable: true

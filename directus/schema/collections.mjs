@@ -10,6 +10,17 @@
 // libellé (affichée quelle que soit la langue).
 const fr = (translation) => ({ translations: [{ language: 'fr-FR', translation }] })
 
+// Meta des relations M2O : sans `options.template` (valeur choisie dans le
+// dropdown) ni `display: 'related-values'` (rendu en liste), l'admin
+// n'affiche que l'id brut de l'item lié.
+const m2o = (template, meta = {}) => ({
+  interface: 'select-dropdown-m2o',
+  options: { template },
+  display: 'related-values',
+  display_options: { template },
+  ...meta
+})
+
 const seoFields = () => [
   {
     field: 'seo_title',
@@ -1175,28 +1186,26 @@ export const relations = [
     collection: 'articles',
     field: 'centre',
     related_collection: 'centres',
-    meta: { interface: 'select-dropdown-m2o', ...fr('Centre') }
+    meta: m2o('{{name}}', { ...fr('Centre') })
   },
   {
     collection: 'avis',
     field: 'centre',
     related_collection: 'centres',
-    meta: {
-      interface: 'select-dropdown-m2o',
+    meta: m2o('{{name}}', {
       note: 'Vide = avis marque, affiché sur toutes les fiches centres',
       ...fr('Centre')
-    }
+    })
   },
   {
     collection: 'articles',
     field: 'related_formation',
     related_collection: 'formations',
-    meta: {
-      interface: 'select-dropdown-m2o',
+    meta: m2o('{{title}}', {
       width: 'half',
       note: 'Formation mise en avant dans l’article (carte « Formation liée »)',
       ...fr('Formation liée')
-    }
+    })
   },
   {
     collection: 'articles',
@@ -1252,7 +1261,7 @@ export const relations = [
     collection: 'page_blocks',
     field: 'page',
     related_collection: 'pages',
-    meta: { interface: 'select-dropdown-m2o', required: true, ...fr('Page') }
+    meta: m2o('{{title}}', { required: true, ...fr('Page') })
   },
   {
     collection: 'page_blocks',
@@ -1270,31 +1279,28 @@ export const relations = [
     collection: 'formations',
     field: 'famille',
     related_collection: 'familles_formation',
-    meta: {
-      interface: 'select-dropdown-m2o',
+    meta: m2o('{{name}}', {
       note: 'Affectation éditoriale — seul champ modifiable',
       ...fr('Famille')
-    }
+    })
   },
   {
     collection: 'formations',
     field: 'sous_famille',
     related_collection: 'sous_familles_formation',
-    meta: {
-      interface: 'select-dropdown-m2o',
+    meta: m2o('{{name}}', {
       note: 'Affectation éditoriale — proposée par la sync, jamais réécrite',
       ...fr('Sous-famille')
-    }
+    })
   },
   {
     collection: 'sous_familles_formation',
     field: 'famille',
     related_collection: 'familles_formation',
-    meta: {
-      interface: 'select-dropdown-m2o',
+    meta: m2o('{{name}}', {
       required: true,
       note: 'Famille parente',
       ...fr('Famille')
-    }
+    })
   }
 ]

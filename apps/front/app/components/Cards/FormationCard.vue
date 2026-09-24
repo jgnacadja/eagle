@@ -14,6 +14,12 @@
     </div>
     <div class="mt-md">
       <h3 class="font-sans text-h4 text-ink">{{ title }}</h3>
+      <p
+        v-if="body"
+        class="font-sans text-sm md:text-body text-ink-muted line-clamp-2 hidden md:block"
+      >
+        {{ body }}
+      </p>
       <NuxtLink
         v-if="to"
         :to="to"
@@ -30,6 +36,7 @@ defineProps<{
   title: string
   imageTop: string
   imageBottom: string
+  body?: string
   image?: string | null
   to?: string | null
 }>()

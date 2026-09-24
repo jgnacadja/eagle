@@ -27,9 +27,24 @@ vi.mock('~/composables/useCatalog', () => ({
   useCatalog: vi.fn(async () => ({
     data: ref({
       items: [
-        { slug: 'formation-1', title: 'Formation 1', familySlug: 'management' },
-        { slug: 'formation-2', title: 'Formation 2', familySlug: 'sante' },
-        { slug: 'formation-3', title: 'Formation 3', familySlug: 'finance' },
+        {
+          slug: 'formation-1',
+          title: 'Formation 1',
+          familySlug: 'management',
+          sessions: [{ startDate: '2026-10-15', seatsRemaining: 5 }]
+        },
+        {
+          slug: 'formation-2',
+          title: 'Formation 2',
+          familySlug: 'sante',
+          sessions: [{ startDate: '2026-10-20', seatsRemaining: 2 }]
+        },
+        {
+          slug: 'formation-3',
+          title: 'Formation 3',
+          familySlug: 'finance',
+          sessions: [{ startDate: '2026-10-25', seatsRemaining: 0 }]
+        },
         { slug: 'formation-4', title: 'Formation 4', familySlug: 'informatique' }
       ],
       total: 15,
@@ -42,7 +57,7 @@ vi.mock('~/composables/useCatalog', () => ({
   }))
 }))
 
-const directusCentres = ref([
+const initialCentres = [
   {
     slug: 'creteil',
     name: 'Centre de Créteil',
@@ -73,9 +88,11 @@ const directusCentres = ref([
     latitude: 50.6292,
     longitude: 3.0573
   }
-])
+]
 
-const directusArticles = ref([
+const directusCentres = ref([...initialCentres])
+
+const initialArticles = [
   {
     id: 1,
     status: 'published',
@@ -106,7 +123,9 @@ const directusArticles = ref([
     publish_at: '2026-01-03T00:00:00.000Z',
     cover_image: 'cover-3'
   }
-])
+]
+
+const directusArticles = ref([...initialArticles])
 
 vi.stubGlobal(
   'useDirectusList',
@@ -136,7 +155,6 @@ const stubs = {
     template:
       '<div class="center-card">{{ name }} <span class="centre-distance">{{ distance }}</span><a class="centre-cta" :href="to" /></div>'
   },
-  ConfierCard: { props: ['title'], template: '<div class="confier-card">{{ title }}</div>' },
   StatItem: {
     props: ['value', 'label'],
     template: '<div class="stat">{{ value }} {{ label }}</div>'
@@ -145,7 +163,7 @@ const stubs = {
   ArticleCard: { props: ['title'], template: '<div class="article">{{ title }}</div>' },
   IconSparkle: true,
   IconSearch: true,
-  ProcessSteps: true
+  IconCheck: true
 }
 
 const Host = defineComponent({
@@ -169,6 +187,8 @@ describe('pages/index', () => {
     geo.permission.value = null
     geoFetchMock.mockReset().mockResolvedValue([])
     navigateMock.mockReset()
+    directusArticles.value = [...initialArticles]
+    directusCentres.value = [...initialCentres]
   })
 
   it('affiche le hero et les sections principales', async () => {
@@ -176,11 +196,10 @@ describe('pages/index', () => {
 
     expect(wrapper.text()).toContain('orchestrés')
     expect(wrapper.text()).toContain('Construisons ensemble le réseau Learn Up Academy')
-    expect(wrapper.text()).toContain('Comment ça marche')
-    expect(wrapper.text()).toContain('Nos formations')
-    expect(wrapper.text()).toContain('Le réseau Learn Up Academy')
-    expect(wrapper.text()).toContain('Confier mes formations')
-    expect(wrapper.text()).toContain("Ce qu'en disent les entreprises")
+    expect(wrapper.text()).toContain('Les formations réglementaires adaptées à vos métiers')
+    expect(wrapper.text()).toContain('Trouvez le centre de formation le plus proche de chez vous')
+    expect(wrapper.text()).toContain('Simplifiez la gestion de vos formations')
+    expect(wrapper.text()).toContain('Les clients parlent de nous')
     expect(wrapper.text()).toContain('Actualités')
   })
 
@@ -191,10 +210,51 @@ describe('pages/index', () => {
     expect(wrapper.findAll('.formation-card')).toHaveLength(4)
     // La fixture contient 3 centres : l'affichage est plafonné à 2.
     expect(wrapper.findAll('.center-card')).toHaveLength(2)
-    expect(wrapper.findAll('.confier-card')).toHaveLength(9)
     expect(wrapper.findAll('.stat')).toHaveLength(4)
     expect(wrapper.findAll('.testimonial')).toHaveLength(3)
     expect(wrapper.findAll('.article')).toHaveLength(3)
+  })
+
+  it('affiche la section Entreprises avec ses bénéfices et CTAs', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Simplifiez la gestion de vos formations')
+    expect(wrapper.text()).toContain('Interlocuteur unique')
+    expect(wrapper.text()).toContain('Gestion multi-sites')
+    expect(wrapper.text()).toContain('Suivi centralisé')
+    expect(wrapper.text()).toContain('Découvrir nos solutions entreprises')
+  })
+
+  it('affiche la section Prochaines sessions avec ses cartes et le CTA catalogue', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Les prochaines sessions près de chez vous')
+    expect(wrapper.text()).toContain(
+      'Personnalisées selon votre localisation ou votre dernière recherche.'
+    )
+    expect(wrapper.text()).toContain('Formation 1')
+    expect(wrapper.text()).toContain('Formation 2')
+    expect(wrapper.text()).toContain('Formation 3')
+    expect(wrapper.text()).toContain('Voir toutes les sessions')
+  })
+
+  it('affiche la section Pourquoi Learn Up Academy avec ses 6 bénéfices', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Pourquoi Learn Up Academy ?')
+    expect(wrapper.text()).toContain('Conseil personnalisé')
+    expect(wrapper.text()).toContain('Interlocuteur unique')
+    expect(wrapper.text()).toContain('Proximité')
+    expect(wrapper.text()).toContain('Réactivité')
+    expect(wrapper.text()).toContain('Couverture nationale')
+    expect(wrapper.text()).toContain('Centralisation')
+  })
+
+  it('affiche la section Actualités et conseils avec ses articles', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Actualités et conseils')
+    expect(wrapper.text()).toContain('Toutes les actualités')
   })
 
   it('pointe les CTA vers la page de demande et le catalogue', async () => {
@@ -209,6 +269,7 @@ describe('pages/index', () => {
     expect(hrefs).toContain('/parler-a-votre-conseiller')
     expect(hrefs).toContain('/formations')
     expect(hrefs).toContain('/centres')
+    expect(hrefs).toContain('/actualites')
   })
 
   it('le badge « Près de moi » déclenche la géolocalisation et affiche les distances réelles', async () => {
@@ -329,5 +390,55 @@ describe('pages/index', () => {
     expect(headMock).toHaveBeenCalledWith(expect.objectContaining({ script: expect.any(Array) }))
     const ldJson = headMock.mock.calls[0]![0].script[0].innerHTML
     expect(JSON.parse(ldJson)['@graph']).toHaveLength(2)
+  })
+
+  it('masque la section Prochaines sessions quand aucune session n’est disponible', async () => {
+    const { useCatalog } = await import('~/composables/useCatalog')
+    vi.mocked(useCatalog).mockResolvedValueOnce({
+      data: ref({
+        items: [
+          {
+            slug: 'formation-1',
+            title: 'Formation 1',
+            familySlug: 'management',
+            sessions: []
+          }
+        ],
+        total: 1,
+        page: 1,
+        pages: 1
+      }),
+      pending: ref(false),
+      error: ref(null),
+      refresh: vi.fn()
+    })
+
+    const wrapper = await mountPage()
+    expect(wrapper.find('#sessions').exists()).toBe(false)
+  })
+
+  it('masque la section Actualités quand aucun article n’est publié', async () => {
+    directusArticles.value = []
+    const wrapper = await mountPage()
+    expect(wrapper.find('#actualites').exists()).toBe(false)
+  })
+
+  it('affiche un message utilisateur lorsque la carte des centres est indisponible', async () => {
+    directusCentres.value = []
+    const wrapper = await mountPage()
+    expect(wrapper.text()).toContain('La carte des centres est temporairement indisponible.')
+    expect(wrapper.text()).not.toContain('outil SIG')
+  })
+
+  it('ne contient pas de mentions ou annotations provisoires de développement', async () => {
+    const wrapper = await mountPage()
+    const text = wrapper.text()
+    expect(text).not.toContain('Ouvre le formulaire')
+    expect(text).not.toContain('à confirmer avant mise en ligne')
+    expect(text).not.toContain('pas un outil SIG')
+    expect(text).not.toContain("Sous réserve d'autorisation")
+    expect(text).not.toContain('Photo à fournir')
+    expect(text).not.toContain("Affichage d'exemple")
+    expect(text).not.toContain('Logo Qualiopi à confirmer')
   })
 })

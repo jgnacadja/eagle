@@ -558,6 +558,7 @@ import {
   type FormationItem
 } from '~/composables/useCatalog'
 import { directusAssetUrl } from '~/utils/directusAsset'
+import { buildCourseJsonLd } from '~/utils/jsonLd'
 import { htmlToText, sanitizeHtml } from '~/utils/sanitizeHtml'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
@@ -695,31 +696,22 @@ useContentSeo(
     const isFound = pageState.value === 'found'
     const stateLabel = isFound ? null : stateLabels[pageState.value]
     return stateLabel ?? course.value?.title ?? 'Formation — LEARN UP ACADEMY'
+  },
+  {
+    // JSON-LD schema.org/Course — uniquement sur une fiche trouvée ;
+    // buildCourseJsonLd renvoie null si le titre manque (doc invalide).
+    jsonLd: () => {
+      if (pageState.value !== 'found' || !course.value) return null
+      return buildCourseJsonLd({
+        course: course.value,
+        familyName: familyName.value,
+        url: `${config.public.siteUrl}/formations/${famille}/${slug}`,
+        siteUrl: config.public.siteUrl,
+        imageUrl: imageSrc.value
+      })
+    }
   }
 )
-
-useHead({
-  script: computed(() => {
-    if (!course.value || pageState.value !== 'found') return []
-    return [
-      {
-        type: 'application/ld+json',
-        innerHTML: JSON.stringify({
-          '@context': 'https://schema.org',
-          '@type': 'Course',
-          name: course.value.title,
-          description: htmlToText(course.value.description),
-          provider: {
-            '@type': 'Organization',
-            name: 'LEARN UP ACADEMY',
-            url: config.public.siteUrl
-          },
-          url: `${config.public.siteUrl}/formations/${famille}/${slug}`
-        })
-      }
-    ]
-  })
-})
 
 function retry() {
   if (route.query.error === '1') {

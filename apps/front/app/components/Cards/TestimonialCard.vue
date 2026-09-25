@@ -11,7 +11,7 @@
         {{ quote }}
       </blockquote>
     </div>
-    <figcaption class="mt-md text-xs text-ink-muted">{{ author }}</figcaption>
+    <figcaption class="mt-md text-xs text-ink-muted font-bold">{{ author }}</figcaption>
   </figure>
 </template>
 

@@ -8,54 +8,62 @@
       >
         <div class="mx-auto px-gutter-mobile md:px-gutter py-control-sm">
           <div class="grid items-start gap-2xl lg:grid-cols-5">
-            <div class="lg:col-span-3">
-              <p class="text-overline text-accent-text uppercase">
-                Réseau Learn Up Academy<template v-if="centre.department">
-                  · {{ centre.department }}</template
+            <div class="contents lg:block lg:col-span-3">
+              <div class="order-1 lg:order-0">
+                <p class="text-overline text-accent-text uppercase">
+                  Réseau Learn Up Academy<template v-if="centre.department">
+                    · {{ centre.department }}</template
+                  >
+                </p>
+                <h1
+                  id="hero-title"
+                  class="mt-sm font-display text-h2 font-extrabold text-ink lg:text-h1"
                 >
-              </p>
-              <h1
-                id="hero-title"
-                class="mt-sm font-display text-h2 font-extrabold text-ink lg:text-h1"
-              >
-                {{ centre.name }}
-              </h1>
-              <p class="mt-sm flex items-center gap-sm text-body text-ink-body">
-                <IconMapPin :size="16" class="shrink-0 text-primary" />
-                {{ heroAddress }}
-              </p>
+                  {{ centre.name }}
+                </h1>
+                <p class="mt-sm flex items-center gap-sm text-body text-ink-body">
+                  <IconMapPin :size="16" class="shrink-0 text-primary" />
+                  {{ heroAddress }}
+                </p>
 
-              <ul v-if="specialties.length" class="mt-md flex flex-wrap gap-sm">
-                <Badge v-for="tag in specialties" :key="tag" as="li" variant="chip">
-                  {{ tag }}
-                </Badge>
-              </ul>
+                <ul v-if="specialties.length" class="mt-md flex flex-wrap gap-sm">
+                  <Badge v-for="tag in specialties" :key="tag" as="li" variant="chip">
+                    {{ tag }}
+                  </Badge>
+                </ul>
+              </div>
 
-              <div class="mt-lg flex flex-wrap items-center gap-md">
+              <div class="order-3 flex w-full flex-wrap items-center gap-md lg:order-0 lg:mt-lg">
                 <Button as-child variant="accent" size="pill" class="w-full sm:w-auto">
                   <NuxtLink to="#formations">Trouver une formation dans ce centre</NuxtLink>
                 </Button>
-                <div class="flex w-full flex-wrap items-center gap-md sm:w-auto sm:contents">
-                  <Button as-child variant="outline" size="pill">
-                    <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
+                <div class="flex w-full gap-sm sm:w-auto sm:contents">
+                  <Button
+                    as-child
+                    variant="outline"
+                    size="pill"
+                    class="flex-1 justify-center text-center max-sm:px-sm max-sm:text-badge sm:flex-initial"
+                  >
+                    <NuxtLink to="/parler-a-votre-conseiller">
+                      <span class="sm:hidden">Parler à un conseiller</span>
+                      <span class="hidden sm:inline">Parler à votre conseiller</span>
+                    </NuxtLink>
                   </Button>
                   <NuxtLink
                     v-if="centre.phone"
                     :to="`tel:${centre.phone.replace(/\s/g, '')}`"
-                    class="inline-flex items-center gap-2 font-medium text-ink"
+                    class="inline-flex flex-1 items-center justify-center gap-sm rounded-full border border-outline bg-paper px-sm py-sm text-badge font-semibold text-ink sm:flex-initial sm:justify-start sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:text-body sm:font-medium sm:hover:border-transparent"
                   >
-                    <IconPhone :size="16" class="text-primary" />
-                    {{ centre.phone }}
+                    <IconPhone :size="16" class="shrink-0 text-primary" />
+                    <span>{{ centre.phone }}</span>
                   </NuxtLink>
                 </div>
               </div>
             </div>
 
-            <!-- Portrait du responsable : colonne droite sur desktop ; sur
-                 mobile il suit le bloc texte (titre, tags, CTA). -->
             <figure
               v-if="imageSrc"
-              class="relative mx-auto aspect-3/4 w-full max-w-4/5 overflow-hidden rounded-md bg-surface-alt shadow-lg lg:col-span-2 lg:max-w-3/5"
+              class="order-2 relative mx-auto aspect-3/4 w-full max-w-callout overflow-hidden rounded-md bg-surface-alt shadow-lg lg:order-0 lg:col-span-2"
             >
               <img
                 :src="imageSrc"

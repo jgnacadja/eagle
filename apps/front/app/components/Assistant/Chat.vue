@@ -12,15 +12,15 @@
     </Button>
 
     <!-- Panneau conversationnel : plein ecran, mobile comme desktop —
-         couvre aussi le header du site (opaque, au-dessus du z-50 du header) -->
+         modal (showModal) : focus trap, Échap natif, fond inerte. -->
     <Transition name="assistant-panel">
       <dialog
         v-if="isOpen"
-        open
-        aria-modal="false"
+        ref="panelEl"
+        aria-modal="true"
         aria-label="Recherche assistée"
         class="fixed inset-0 z-50 m-0 flex h-full max-h-none w-full max-w-none flex-col overflow-hidden bg-paper p-0"
-        @keydown.esc="close"
+        @cancel.prevent="close"
       >
         <AssistantConversation
           class="h-full"
@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import { useAssistant, type AssistantEntry } from '~/composables/useAssistant'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import AssistantConversation from '~/components/Assistant/Conversation.vue'
@@ -85,11 +85,34 @@ function greet() {
   append({ ...GREETING })
 }
 
-// Ouverture : message d'entrée éventuel envoyé directement, sinon accueil.
-// `immediate` couvre le cas où open() a été appelé avant le mount du widget.
+const panelEl = ref<HTMLDialogElement>()
+let previousFocus: Element | null = null
+
+// Ouverture : le <dialog> devient modal (focus trap + Échap natif) ; à la
+// fermeture le focus revient sur l'élément déclencheur.
 watch(
   isOpen,
   (open) => {
+    if (typeof document === 'undefined') return // SSR
+    if (open) {
+      previousFocus = document.activeElement
+      nextTick(() => {
+        if (panelEl.value && !panelEl.value.open) panelEl.value.showModal?.()
+      })
+    } else {
+      nextTick(() => (previousFocus as HTMLElement | null)?.focus?.())
+    }
+  },
+  { immediate: true }
+)
+
+// Ouverture : message d'entrée éventuel envoyé directement, sinon accueil.
+// `pendingMessage` est aussi écouté : un open({ message }) pendant que le
+// panneau est déjà ouvert envoie le message dans la conversation en cours.
+// `immediate` couvre le cas où open() a été appelé avant le mount du widget.
+watch(
+  [isOpen, pendingMessage],
+  ([open]) => {
     if (!open) return
     const message = pendingMessage.value
     if (message) {
@@ -97,7 +120,9 @@ watch(
       send(message)
       return
     }
-    if (entries.value.length === 0) greet()
+    // Pas de message en file : accueil, sauf si un envoi est déjà en cours
+    // (send() est asynchrone — le tour user n'est pas encore dans entries).
+    if (entries.value.length === 0 && !pending.value) greet()
   },
   { immediate: true }
 )

@@ -190,6 +190,6 @@ const seatsBadge = computed(() => {
 })
 
 const sessionsTo = computed(() =>
-  props.recommendation.url ? `${props.recommendation.url}#sessions` : null
+  props.recommendation.url ? `${props.recommendation.url}#sessionsList` : null
 )
 </script>

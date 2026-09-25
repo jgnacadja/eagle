@@ -66,8 +66,8 @@ Lire d'abord `AGENTS.md` à la racine.
 ## Recherche assistée (IA)
 
 - `POST /assistant/message` (`AssistantModule`) : tour de conversation. DTO `AssistantRequestDto` (message, historique ≤ 20, contexte d'entrée).
-- Le modèle est appelé via Vercel AI SDK (`generateObject`, gateway `AI_GATEWAY_API_KEY`, modèle `ASSISTANT_MODEL`, défaut `anthropic/claude-haiku-4.5`). Sans clé ou en cas d'erreur provider : `503` → état « indisponible » côté front.
-- Le LLM ne décide que des `slug` + justifications (Zod) : titres, attributs et disponibilités sont **re-résolus** depuis `CatalogService.allCourses()` — jamais repris de la sortie LLM (anti-hallucination).
+- Le modèle est appelé via le SDK `openai` (`AssistantModelClient`, endpoint compatible OpenAI — OpenRouter par défaut : `ASSISTANT_BASE_URL`, `ASSISTANT_API_KEY`, modèle `ASSISTANT_MODEL`, défaut gratuit dev `nvidia/nemotron-3-super-120b-a12b:free`, prod `anthropic/claude-haiku-4.5`). Sans clé ou en cas d'erreur provider : `503` → état « indisponible » côté front.
+- Le LLM répond en JSON, re-validé Zod, et ne décide que des `slug` + justifications : titres, attributs et disponibilités sont **re-résolus** depuis `CatalogService.allCourses()` — jamais repris de la sortie LLM (anti-hallucination).
 - Throttler dédié : 20 req/min/IP sur `/assistant/*`, hors quota public.
 
 ## Pas de TDD explicite

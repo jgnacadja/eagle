@@ -68,6 +68,20 @@ describe('AssistantChat', () => {
     expect(body.context).toEqual({ source: 'centre', location: 'Créteil' })
   })
 
+  it('sends a message queued while the panel is already open', async () => {
+    const launcher = useAssistantLauncher()
+    launcher.open()
+    const wrapper = mountChat()
+    await vi.waitFor(() => expect(wrapper.find('dialog').exists()).toBe(true))
+
+    launcher.open({ context: { source: 'home' }, message: 'un autre besoin' })
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled())
+
+    const body = fetchMock.mock.calls.at(-1)?.[1]?.body
+    expect(body.message).toBe('un autre besoin')
+    expect(wrapper.find('dialog').exists()).toBe(true)
+  })
+
   it('closes the panel on close event', async () => {
     const launcher = useAssistantLauncher()
     launcher.open()

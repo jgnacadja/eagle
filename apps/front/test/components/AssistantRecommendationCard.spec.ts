@@ -105,7 +105,7 @@ describe('AssistantRecommendationCard', () => {
     const wrapper = mountCard()
     const hrefs = wrapper.findAll('a').map((a) => a.attributes('href'))
     expect(hrefs).toContain('/formations/secours/sst')
-    expect(hrefs).toContain('/formations/secours/sst#sessions')
+    expect(hrefs).toContain('/formations/secours/sst#sessionsList')
     expect(hrefs).toContain('/centres/demande-de-formation?formation=sst')
   })
 })

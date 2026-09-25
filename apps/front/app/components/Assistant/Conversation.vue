@@ -71,6 +71,7 @@
                       @submit.prevent="submitEdit(entry)"
                     >
                       <Input
+                        :id="editInputId"
                         v-model="editDraft"
                         type="text"
                         aria-label="Modifier votre message"
@@ -476,6 +477,7 @@ const emit = defineEmits<{
 }>()
 
 const inputId = useId()
+const editInputId = useId()
 const draft = ref('')
 const editingId = ref<string>()
 const editDraft = ref('')
@@ -487,6 +489,8 @@ onMounted(async () => {
   const element = document.getElementById(inputId)
   textarea.value = element instanceof HTMLTextAreaElement ? element : null
   triggerResize()
+  // Le panneau est modal : le focus entre dans la conversation dès l'ouverture.
+  element?.focus()
 })
 
 onBeforeUnmount(() => {
@@ -528,12 +532,17 @@ function provenanceNote(entry: AssistantEntry): string {
     : 'Recommandations issues des formations publiées du catalogue LEARN UP.'
 }
 
+// Le besoin agrégé part en query param : tronqué pour garder une URL
+// raisonnable après une longue conversation (le fil complet reste visible
+// dans le panneau).
+const NEED_PARAM_MAX = 500
+
 function demandeTo(rec: AssistantRecommendation): string {
   const params = new URLSearchParams()
   if (rec.familySlug) params.set('famille', rec.familySlug)
   params.set('formation', rec.slug)
   if (rec.availability?.sessionId) params.set('session', rec.availability.sessionId)
-  if (props.needSummary) params.set('besoin', props.needSummary)
+  if (props.needSummary) params.set('besoin', props.needSummary.slice(0, NEED_PARAM_MAX))
   if (props.headcount) params.set('salaries', String(props.headcount))
   if (props.location) params.set('lieu', props.location)
   return `/centres/demande-de-formation?${params.toString()}`

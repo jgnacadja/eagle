@@ -1,6 +1,4 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import { generateText, Output } from 'ai'
 import { z } from 'zod'
 import type {
   AssistantAvailability,
@@ -9,6 +7,7 @@ import type {
   AssistantRequest
 } from '@learnup/types'
 import { CatalogService, type CatalogRow } from '../catalog/catalog.service'
+import { AssistantModelClient } from './assistant.client'
 
 /**
  * Décision structurée attendue du modèle : jamais de données factuelles
@@ -37,8 +36,6 @@ const decisionSchema = z.object({
 
 type AssistantDecision = z.infer<typeof decisionSchema>
 
-const DEFAULT_MODEL = 'anthropic/claude-haiku-4.5'
-
 const SYSTEM_PROMPT = `Tu es l'assistant d'orientation du catalogue de formations professionnelles LEARN UP ACADEMY (formations réglementaires : SST, CACES, habilitations électriques, incendie, gestes et postures, management…).
 
 MISSION
@@ -55,6 +52,18 @@ RÈGLES STRICTES
 - "contextChips" : les facettes du besoin agrégées depuis la conversation (ex : « SST », « 8 salariés », « Créteil », « présentiel », « avant septembre »). 2 à 5 chips courtes, vides si rien d'exploitable.
 - "slots" : extraction structurée du besoin agrégé — "headcount" (nombre de personnes), "location" (ville/territoire), "modality", "deadline". Omets les champs non exprimés.
 - Agrège l'historique : ne repose jamais une question déjà répondue.
+
+FORMAT DE RÉPONSE — JSON strict, rien d'autre : aucun texte avant ou après, pas de balises markdown.
+{
+  "kind": "clarify" | "recommend" | "no_results" | "out_of_catalog",
+  "text": "string",
+  "question": "string, optionnel (clarify)",
+  "suggestions": ["string"],
+  "recommendations": [{ "slug": "string", "justification": "string" }],
+  "contextChips": ["string"],
+  "slots": { "headcount": 0, "location": "string", "modality": "string", "deadline": "string" }
+}
+Les champs optionnels peuvent être omis. 3 recommandations maximum, 6 suggestions et chips maximum.
 
 La liste des formations disponibles (slug | titre | famille | durée | modalités | certification | villes des sessions) :`
 
@@ -97,7 +106,7 @@ function locationTokens(location: string | undefined): string[] {
     location
       .toLowerCase()
       .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
+      .replace(/[\u0300-\u036f]/g, '')
       .match(/[a-z0-9]+/g) ?? []
   )
 }
@@ -111,7 +120,7 @@ function sessionMatchesLocation(row: CatalogRow, sessionIndex: number, tokens: s
     .join(' ')
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
   return tokens.some((token) => haystack.includes(token))
 }
 
@@ -150,17 +159,28 @@ function buildAvailability(
   }
 }
 
+/**
+ * La sortie du modèle est du texte : on extrait le premier bloc JSON et on
+ * le re-valide contre le schéma (le prompt exige du JSON seul, mais les
+ * modèles ajoutent parfois du texte parasite ou des fences markdown).
+ */
+function parseDecision(raw: string): AssistantDecision {
+  const start = raw.indexOf('{')
+  const end = raw.lastIndexOf('}')
+  if (start === -1 || end <= start) throw new Error('assistant model returned no JSON')
+  const parsed = decisionSchema.safeParse(JSON.parse(raw.slice(start, end + 1)))
+  if (!parsed.success) throw new Error('assistant model returned an invalid decision')
+  return parsed.data
+}
+
 @Injectable()
 export class AssistantService {
   private readonly logger = new Logger(AssistantService.name)
-  private readonly model: string
 
   constructor(
-    private readonly config: ConfigService,
-    private readonly catalog: CatalogService
-  ) {
-    this.model = this.config.get<string>('ASSISTANT_MODEL') ?? DEFAULT_MODEL
-  }
+    private readonly catalog: CatalogService,
+    private readonly model: AssistantModelClient
+  ) {}
 
   async reply(request: AssistantRequest): Promise<AssistantReply> {
     const rows = await this.catalog.allCourses()
@@ -201,25 +221,31 @@ export class AssistantService {
         ].join('\n')
       : request.message
 
-    // Messages natifs : l'API Anthropic exige un premier tour `user`. Un
-    // historique ouvert par des entrées assistant (accueil local, client
-    // externe) est tronqué jusqu'au premier `user` ; sans aucun `user`,
-    // l'historique est ignoré et la requête courante ouvre la conversation.
+    // Messages natifs : les APIs chat exigent un premier tour `user` et une
+    // alternance stricte user/assistant. Un historique ouvert par des entrées
+    // assistant (accueil local, client externe) est tronqué jusqu'au premier
+    // `user` ; sans aucun `user`, l'historique est ignoré et la requête
+    // courante ouvre la conversation. Les tours consécutifs de même rôle sont
+    // fusionnés — un envoi échoué laisse un tour `user` orphelin côté client,
+    // qui rendrait sinon toute requête suivante invalide.
     const history = request.history ?? []
     const firstUserIndex = history.findIndex((m) => m.role === 'user')
-    const normalizedHistory = firstUserIndex === -1 ? [] : history.slice(firstUserIndex)
+    const normalizedHistory: { role: 'user' | 'assistant'; content: string }[] = []
+    for (const m of firstUserIndex === -1 ? [] : history.slice(firstUserIndex)) {
+      const last = normalizedHistory.at(-1)
+      if (last?.role === m.role) last.content += `\n${m.content}`
+      else normalizedHistory.push({ role: m.role, content: m.content })
+    }
+    // Le message courant est toujours `user` : un tour `user` terminal dans
+    // l'historique (précédent envoi resté sans réponse) l'absorbe pour
+    // préserver l'alternance au lieu de produire deux tours `user` d'affilée.
+    const lastTurn = normalizedHistory.at(-1)
+    if (lastTurn?.role === 'user') lastTurn.content += `\n\n${userContent}`
+    else normalizedHistory.push({ role: 'user', content: userContent })
 
     try {
-      const { output } = await generateText({
-        model: this.model,
-        output: Output.object({ schema: decisionSchema }),
-        instructions,
-        messages: [
-          ...normalizedHistory.map((m) => ({ role: m.role, content: m.content })),
-          { role: 'user' as const, content: userContent }
-        ]
-      })
-      return output
+      const raw = await this.model.complete(instructions, normalizedHistory)
+      return parseDecision(raw)
     } catch (error) {
       this.logger.warn({ error }, 'assistant model call failed')
       throw new ServiceUnavailableException('assistant unavailable')
@@ -267,7 +293,9 @@ export class AssistantService {
         certification: course.certification,
         rank: index === 0 ? 'primary' : 'alternative',
         justification: item.justification,
-        availability: buildAvailability(row, request.context?.location),
+        // Le lieu extrait de la conversation (slot) prime sur le lieu du
+        // contexte d'entrée : l'utilisateur peut avoir précisé autre chose.
+        availability: buildAvailability(row, decision.slots?.location ?? request.context?.location),
         url: course.familySlug ? `/formations/${course.familySlug}/${course.slug}` : null
       })
     }

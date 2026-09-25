@@ -1,4 +1,5 @@
 import js from '@eslint/js'
+import { defineConfig } from 'eslint/config'
 import tseslint from 'typescript-eslint'
 import vue from 'eslint-plugin-vue'
 import prettier from 'eslint-config-prettier'
@@ -48,7 +49,11 @@ const nuxtGlobals = {
   useRoute: 'readonly',
   useRouter: 'readonly',
   useHead: 'readonly',
+  useSeoMeta: 'readonly',
+  useRequestURL: 'readonly',
   useState: 'readonly',
+  useRequestEvent: 'readonly',
+  setResponseStatus: 'readonly',
   createError: 'readonly',
   clearError: 'readonly',
   showError: 'readonly',
@@ -58,8 +63,25 @@ const nuxtGlobals = {
   useContentSeo: 'readonly',
   useDirectusItemBySlug: 'readonly',
   useDirectusList: 'readonly',
+  useCentres: 'readonly',
+  useCentresTotal: 'readonly',
+  useCentreDepartments: 'readonly',
+  useLeadSubmit: 'readonly',
   sanitizeHtml: 'readonly',
-  logServerError: 'readonly'
+  logServerError: 'readonly',
+  logClientError: 'readonly',
+  internalSsrHeaders: 'readonly'
+}
+
+// Auto-imports Nitro (apps/front/server/) — injectés par unimport au build,
+// pas d'import explicite dans les handlers.
+const nitroGlobals = {
+  defineEventHandler: 'readonly',
+  defineCachedEventHandler: 'readonly',
+  defineSitemapEventHandler: 'readonly',
+  getHeader: 'readonly',
+  readBody: 'readonly',
+  useStorage: 'readonly'
 }
 
 const browserGlobals = {
@@ -81,14 +103,16 @@ const vueGlobals = {
   onBeforeMount: 'readonly',
   onBeforeUnmount: 'readonly',
   onUpdated: 'readonly',
+  onScopeDispose: 'readonly',
   defineComponent: 'readonly',
   defineProps: 'readonly',
   defineEmits: 'readonly',
+  useId: 'readonly',
   defineExpose: 'readonly',
   withDefaults: 'readonly'
 }
 
-export default tseslint.config(
+export default defineConfig(
   {
     ignores: [
       '**/dist/**',
@@ -97,7 +121,8 @@ export default tseslint.config(
       '**/node_modules/**',
       '**/coverage/**',
       '**/playwright-report/**',
-      '**/test-results/**'
+      '**/test-results/**',
+      'apps/api/prisma/generated/**'
     ]
   },
   js.configs.recommended,
@@ -145,6 +170,12 @@ export default tseslint.config(
     }
   },
   {
+    files: ['apps/front/server/**/*.ts'],
+    languageOptions: {
+      globals: nitroGlobals
+    }
+  },
+  {
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module'
@@ -157,7 +188,12 @@ export default tseslint.config(
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }
       ],
-      'vue/multi-word-component-names': 'off'
+      'vue/multi-word-component-names': 'off',
+      // v-html autorisé uniquement après sanitizeHtml() (convention AGENTS,
+      // règle de revue bloquante) — la règle eslint ne voit pas le sanitiser.
+      'vue/no-v-html': 'off',
+      // Convention maison : template en tête de SFC (autofix `eslint --fix`).
+      'vue/block-order': ['error', { order: ['template', 'script', 'style'] }]
     }
   },
   {

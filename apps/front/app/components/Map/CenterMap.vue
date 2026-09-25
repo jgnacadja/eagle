@@ -1,0 +1,500 @@
+<template>
+  <div
+    class="relative isolate flex flex-col overflow-hidden bg-surface-alt"
+    :class="[
+      mode === 'single' ? 'h-64 rounded-md border border-rule bg-paper' : 'h-full min-h-full',
+      { 'items-center justify-center': !hasVisibleCenters }
+    ]"
+  >
+    <p
+      v-if="mode === 'network' && hasVisibleCenters"
+      class="pointer-events-none absolute left-md top-md z-10 rounded-xs bg-paper/90 px-md py-xs text-meta text-ink-subtle"
+    >
+      Carte des centres — <span>{{ caption }}</span>
+    </p>
+
+    <div class="absolute right-md top-md z-20 flex flex-col gap-sm">
+      <Button
+        type="button"
+        variant="outline"
+        size="icon-box"
+        aria-label="Zoomer"
+        class="shadow-sm"
+        @click="mapInstance?.zoomIn()"
+      >
+        <IconPlus :size="16" />
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon-box"
+        aria-label="Dézoomer"
+        class="shadow-sm"
+        @click="mapInstance?.zoomOut()"
+      >
+        <IconMinus :size="16" />
+      </Button>
+    </div>
+
+    <div v-if="hasVisibleCenters" ref="mapEl" class="relative z-0 w-full flex-1" />
+
+    <p v-else class="px-gutter text-center text-small text-ink-muted">
+      Aucun centre à afficher sur la carte pour ce département.
+    </p>
+
+    <div
+      v-if="mode === 'single' && hasVisibleCenters"
+      class="flex items-center justify-between gap-md border-t border-dashed border-rule bg-paper px-md py-md text-small"
+    >
+      <span class="min-w-0 max-w-9/12 text-ink-body">{{ centers[0]?.address }}</span>
+      <a
+        v-if="centers[0]?.lat != null && centers[0]?.lng != null"
+        :href="directionsUrl"
+        target="_blank"
+        rel="noopener"
+        class="whitespace-nowrap font-semibold text-primary transition-colors hover:text-accent-text"
+      >
+        Ouvrir l'itinéraire <span class="link-arrow">→</span>
+      </a>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+/// <reference types="leaflet.markercluster" />
+import { ref, shallowRef, computed, watch, onMounted, onBeforeUnmount, createApp } from 'vue'
+import { Button } from '@/components/ui/button'
+import IconPlus from '@/components/icons/IconPlus.vue'
+import IconMinus from '@/components/icons/IconMinus.vue'
+import CenterMapPopup from '@/components/Map/CenterMapPopup.vue'
+import franceOutline from '~/assets/geo-france-outline.json'
+import type { CenterResult } from '~/types/center-result'
+import type * as Leaflet from 'leaflet'
+
+const props = withDefaults(
+  defineProps<{
+    centers: CenterResult[]
+    activeId: string | null
+    caption: string
+    mode?: 'network' | 'single'
+    minZoom?: number
+    popup?: boolean
+    userPosition?: { lat: number; lng: number } | null
+    /** Vue forcée (ville/zoom) — prioritaire sur le fit des marqueurs. */
+    focusCenter?: { lat: number; lng: number } | null
+    /** Zoom appliqué avec `focusCenter` (10 = commune et proche couronne). */
+    focusZoom?: number
+  }>(),
+  {
+    mode: 'network',
+    minZoom: 5,
+    popup: true,
+    userPosition: null,
+    focusCenter: null,
+    focusZoom: 10
+  }
+)
+
+const emit = defineEmits<{
+  select: [id: string]
+}>()
+
+const mapEl = ref<HTMLElement | null>(null)
+const mapInstance = shallowRef<Leaflet.Map | null>(null)
+const markers = new Map<string, Leaflet.Marker>()
+const userMarker = shallowRef<Leaflet.Marker | null>(null)
+let clusterGroup: Leaflet.MarkerClusterGroup | null = null
+let Leaf: typeof import('leaflet') | null = null
+let popupApp: ReturnType<typeof createApp> | null = null
+let popupMarker: Leaflet.Marker | null = null
+let pendingReveal: (() => void) | null = null
+// Dernier focus appliqué : un changement de `centers`/`userPosition` ne doit
+// pas re-cadrer la carte si l'utilisateur l'a déjà déplacée.
+let lastFocus: { lat: number; lng: number } | null = null
+
+const hasVisibleCenters = computed(() => props.centers.some((c) => c.lat != null && c.lng != null))
+
+// France métropolitaine + Corse, au plus juste : le réseau est national,
+// l'utilisateur ne doit ni sortir du territoire ni voir les pays voisins
+// (le tileLayer ne charge pas de tuiles hors de ces limites).
+const FRANCE_MAX_BOUNDS: [[number, number], [number, number]] = [
+  [41.3, -5.2],
+  [51.2, 9.7]
+]
+
+const WORLD_RING: [number, number][] = [
+  [-90, -180],
+  [-90, 180],
+  [90, 180],
+  [90, -180]
+]
+
+// Import statique (pas de fetch) : le contour doit être disponible dès
+// l'init de la carte, sinon le monde entier apparaît brièvement au premier
+// drag avant que le masque n'arrive.
+const FRANCE_OUTLINE = franceOutline as [number, number][][]
+
+const directionsUrl = computed(() => {
+  const center = props.centers[0]
+  if (!center || center.lat == null || center.lng == null) return ''
+  return `https://www.google.com/maps/dir/?api=1&destination=${center.lat},${center.lng}`
+})
+
+function cssColor(varName: string, fallback: string): string {
+  if (typeof window === 'undefined') return fallback
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || fallback
+}
+
+function pinIcon(L: typeof import('leaflet'), selected: boolean): Leaflet.DivIcon {
+  const size = selected ? 38 : 30
+  const color = selected
+    ? cssColor('--color-accent', '#F5A623')
+    : cssColor('--color-primary', '#16305A')
+  return L.divIcon({
+    html: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 22s7-7.58 7-13A7 7 0 1 0 5 9c0 5.42 7 13 7 13Z" fill="${color}"/>
+      <circle cx="12" cy="9" r="2.6" fill="white"/>
+    </svg>`,
+    className: 'center-map-pin',
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size],
+    popupAnchor: [0, -size]
+  })
+}
+
+function userPinIcon(L: typeof import('leaflet')): Leaflet.DivIcon {
+  const color = cssColor('--color-primary', '#16305A')
+  const pulse = cssColor('--color-accent', '#F5A623')
+  return L.divIcon({
+    html: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="11" fill="${color}" fill-opacity="0.2"/>
+      <circle cx="12" cy="12" r="9" fill="${pulse}" fill-opacity="0.25"/>
+      <circle cx="12" cy="12" r="5" fill="${color}"/>
+      <circle cx="12" cy="12" r="2.5" fill="white"/>
+    </svg>`,
+    className: 'center-map-user-pin',
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
+  })
+}
+
+async function ensureLeaflet(): Promise<typeof import('leaflet')> {
+  if (Leaf) return Leaf
+  // Leaflet doit être évalué avant markercluster : le plugin lit le global
+  // `L` posé par leaflet à l'exécution (window.L = exports).
+  const mod = await import('leaflet')
+  await import('leaflet/dist/leaflet.css')
+  if (props.mode === 'network') {
+    const markerClusterMod = await import('leaflet.markercluster')
+    await Promise.all([
+      import('leaflet.markercluster/dist/MarkerCluster.css'),
+      import('leaflet.markercluster/dist/MarkerCluster.Default.css')
+    ])
+    if (mod && !mod.markerClusterGroup) {
+      const clusterModule = markerClusterMod as {
+        MarkerClusterGroup?: typeof Leaflet.MarkerClusterGroup
+        default?: { MarkerClusterGroup?: typeof Leaflet.MarkerClusterGroup }
+      }
+      const MarkerClusterGroup =
+        clusterModule.MarkerClusterGroup ?? clusterModule.default?.MarkerClusterGroup
+      if (MarkerClusterGroup) {
+        mod.MarkerClusterGroup = MarkerClusterGroup
+        mod.markerClusterGroup = function (options?: Leaflet.MarkerClusterGroupOptions) {
+          return new MarkerClusterGroup(options)
+        }
+      }
+    }
+  }
+  Leaf = mod
+  return Leaf
+}
+
+function locationLabel(center: CenterResult): string {
+  const parts = center.address.split('·')
+  const second = parts[1]
+  return parts.length > 1 && second
+    ? second.trim()
+    : (center.address.split(',').pop()?.trim() ?? '')
+}
+
+function closePopup() {
+  if (pendingReveal && mapInstance.value) {
+    mapInstance.value.off('moveend', pendingReveal)
+  }
+  pendingReveal = null
+  popupMarker?.closePopup()
+  popupMarker?.unbindPopup()
+  popupMarker = null
+  popupApp?.unmount()
+  popupApp = null
+}
+
+function openPopup(center: CenterResult, marker: Leaflet.Marker) {
+  closePopup()
+  const host = document.createElement('div')
+  popupApp = createApp(CenterMapPopup, {
+    id: center.id,
+    name: center.name,
+    locationLabel: locationLabel(center),
+    tagsShort: center.tagsShort,
+    onClose: () => emit('select', '')
+  })
+  popupApp.mount(host)
+  popupMarker = marker
+  marker
+    .bindPopup(host, {
+      closeButton: false,
+      className: 'center-map-popup',
+      minWidth: 280,
+      autoPan: true,
+      autoPanPaddingTopLeft: [16, 56],
+      autoPanPaddingBottomRight: [16, 16]
+    })
+    .openPopup()
+}
+
+function buildMarkers(L: typeof import('leaflet')) {
+  if (props.mode === 'network' && clusterGroup) {
+    clusterGroup.clearLayers()
+  } else if (mapInstance.value && props.mode === 'single') {
+    mapInstance.value.eachLayer((layer) => {
+      if (layer instanceof L.Marker) layer.remove()
+    })
+  }
+  markers.clear()
+
+  if (userMarker.value) {
+    userMarker.value.remove()
+    userMarker.value = null
+  }
+
+  props.centers.forEach((c) => {
+    if (c.lat == null || c.lng == null) return
+    const marker = L.marker([c.lat, c.lng], { icon: pinIcon(L, c.id === props.activeId) })
+    marker.on('click', () => emit('select', c.id))
+    markers.set(c.id, marker)
+    if (props.mode === 'network' && clusterGroup) {
+      clusterGroup.addLayer(marker)
+    } else if (mapInstance.value) {
+      marker.addTo(mapInstance.value)
+    }
+  })
+
+  const up = props.userPosition
+  if (up && Number.isFinite(up.lat) && Number.isFinite(up.lng) && mapInstance.value) {
+    const marker = L.marker([up.lat, up.lng], {
+      icon: userPinIcon(L),
+      zIndexOffset: 1000
+    })
+    marker.addTo(mapInstance.value)
+    userMarker.value = marker
+  }
+}
+
+function fitToMarkers(L: typeof import('leaflet')) {
+  if (props.focusCenter) {
+    // Zoom communal-départemental : la ville et sa proche couronne.
+    if (props.focusCenter !== lastFocus) {
+      mapInstance.value?.setView([props.focusCenter.lat, props.focusCenter.lng], props.focusZoom)
+      lastFocus = props.focusCenter
+    }
+    return
+  }
+  lastFocus = null
+  const coords = props.centers
+    .filter((c) => c.lat != null && c.lng != null)
+    .map((c) => [c.lat, c.lng] as [number, number])
+
+  if (
+    props.userPosition &&
+    Number.isFinite(props.userPosition.lat) &&
+    Number.isFinite(props.userPosition.lng)
+  ) {
+    coords.push([props.userPosition.lat, props.userPosition.lng])
+  }
+
+  const first = coords[0]
+  if (!first || !mapInstance.value) return
+  if (coords.length === 1) {
+    mapInstance.value.setView(first, props.mode === 'single' ? 15 : 13)
+  } else {
+    mapInstance.value.fitBounds(L.latLngBounds(coords), { padding: [40, 40] })
+  }
+}
+
+function syncActive(L: typeof import('leaflet'), id: string | null) {
+  markers.forEach((m, markerId) => m.setIcon(pinIcon(L, markerId === id)))
+  clusterGroup?.refreshClusters()
+
+  // `popup: false` (mobile) : le marqueur actif est seulement surligné —
+  // la fiche s'affiche dans la carte épinglée en bas d'écran, pas dans
+  // une popup Leaflet.
+  if (!id || props.mode === 'single' || !props.popup) {
+    closePopup()
+    return
+  }
+
+  const center = props.centers.find((c) => c.id === id)
+  const marker = markers.get(id)
+  if (!center || !marker || !mapInstance.value) return
+
+  const reveal = () => {
+    const map = mapInstance.value
+    if (!map) return
+    // Un seul pan explicite : le marqueur se positionne sous le centre de la
+    // carte, laissant la place à la popup au-dessus. La popup n'est ouverte
+    // qu'une fois le déplacement terminé pour éviter que l'autoPan de Leaflet
+    // n'annule l'animation en cours (le marqueur finissait en bas de carte).
+    const zoom = map.getZoom()
+    const size = map.getSize()
+    const offsetY = Math.min(Math.round(size.y * 0.2), 140)
+    const target = map.unproject(map.project(marker.getLatLng(), zoom).subtract([0, offsetY]), zoom)
+    if (map.project(map.getCenter(), zoom).distanceTo(map.project(target, zoom)) < 1) {
+      openPopup(center, marker)
+      return
+    }
+    pendingReveal = () => {
+      pendingReveal = null
+      openPopup(center, marker)
+    }
+    map.once('moveend', pendingReveal)
+    map.panTo(target)
+  }
+
+  if (props.mode === 'network' && clusterGroup) {
+    clusterGroup.zoomToShowLayer(marker, reveal)
+  } else {
+    reveal()
+  }
+}
+
+onMounted(async () => {
+  if (!mapEl.value || !props.centers.length) return
+  const L = await ensureLeaflet()
+  mapInstance.value = L.map(mapEl.value, {
+    zoomControl: false,
+    minZoom: props.minZoom,
+    maxBounds: L.latLngBounds(FRANCE_MAX_BOUNDS),
+    maxBoundsViscosity: 1.0,
+    // Le renderer SVG ne couvre que le viewport + padding et n'est redessiné
+    // qu'au moveend : pendant un drag, la bande révélée n'a plus de masque et
+    // les pays voisins apparaissent un instant. padding 1 = 3× le viewport.
+    renderer: L.svg({ padding: 1 })
+  })
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 19,
+    bounds: L.latLngBounds(FRANCE_MAX_BOUNDS)
+  }).addTo(mapInstance.value)
+
+  // Masque opaque hors de France : à petit zoom les tuiles OSM couvrent des
+  // pays entiers, `bounds` ne suffit pas — on couvre le reste du monde de la
+  // couleur de fond, avec un trou à la forme réelle du territoire. Appliqué
+  // de façon synchrone à l'init (import statique) pour ne jamais laisser
+  // apparaître les pays voisins. Le polygone va dans l'overlayPane
+  // (z < markerPane) : les pins et clusters restent visibles au-dessus.
+  L.polygon([WORLD_RING, ...FRANCE_OUTLINE], {
+    stroke: false,
+    fillColor: cssColor('--color-surface-alt', '#edf2fa'),
+    fillOpacity: 1,
+    interactive: false,
+    noClip: true
+  }).addTo(mapInstance.value)
+
+  if (props.mode === 'network') {
+    clusterGroup = L.markerClusterGroup({
+      maxClusterRadius: 50,
+      iconCreateFunction: (cluster) =>
+        L.divIcon({
+          html: `<div class="center-map-cluster" style="background:${cssColor('--color-primary', '#16305A')}">${cluster.getChildCount()}</div>`,
+          className: '',
+          iconSize: [36, 36]
+        })
+    })
+    mapInstance.value.addLayer(clusterGroup)
+  }
+
+  buildMarkers(L)
+  fitToMarkers(L)
+  if (props.activeId) syncActive(L, props.activeId)
+
+  mapInstance.value?.on?.('dragstart', closePopup)
+  mapInstance.value?.on?.('zoomstart', closePopup)
+})
+
+watch(
+  () => props.activeId,
+  async (id) => {
+    const L = await ensureLeaflet()
+    syncActive(L, id)
+  }
+)
+
+watch(
+  () => props.centers,
+  async () => {
+    if (!mapInstance.value) return
+    const L = await ensureLeaflet()
+    buildMarkers(L)
+    fitToMarkers(L)
+  }
+)
+
+watch(
+  () => props.userPosition,
+  async () => {
+    if (!mapInstance.value) return
+    const L = await ensureLeaflet()
+    buildMarkers(L)
+    fitToMarkers(L)
+  }
+)
+
+watch([() => props.focusCenter, () => props.focusZoom], async () => {
+  if (!mapInstance.value) return
+  const L = await ensureLeaflet()
+  // Force le re-cadrage : le watcher réagit aussi à `focusZoom` seul.
+  lastFocus = null
+  fitToMarkers(L)
+})
+
+onBeforeUnmount(() => {
+  closePopup()
+  mapInstance.value?.remove()
+})
+</script>
+
+<style>
+.center-map-pin {
+  background: transparent;
+  border: 0;
+}
+.center-map-cluster {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+.center-map-popup .leaflet-popup-content-wrapper {
+  padding: 0;
+  border-radius: 12px;
+}
+.center-map-popup .leaflet-popup-content {
+  margin: 0;
+}
+/* Leaflet force `color` sur les liens (.leaflet-container a) et sur le
+   contenu de popup (#333) : on restaure la couleur du bouton
+   (text-primary-foreground). */
+.leaflet-container .center-map-popup a {
+  color: inherit;
+}
+.leaflet-container .center-map-popup a.text-primary-foreground {
+  color: var(--color-primary-foreground);
+}
+</style>

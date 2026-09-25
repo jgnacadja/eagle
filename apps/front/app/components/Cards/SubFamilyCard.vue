@@ -1,6 +1,7 @@
 <template>
   <Card
-    class="flex h-full flex-col gap-md border-rule bg-surface p-lg shadow-none transition hover:border-primary/40 hover:shadow-md"
+    variant="panel"
+    class="flex h-full flex-col gap-md p-lg transition hover:border-primary/40 hover:shadow-md"
   >
     <div>
       <h3 class="font-semibold text-ink">{{ name }}</h3>
@@ -8,7 +9,8 @@
     </div>
     <Button
       variant="link"
-      class="mt-auto h-auto self-start p-0 text-small font-bold"
+      size="inline"
+      class="mt-auto gap-xs self-start font-bold"
       @click="$emit('select')"
     >
       {{ actionLabel }} <span class="link-arrow">→</span>

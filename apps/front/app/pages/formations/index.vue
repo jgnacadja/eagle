@@ -2,7 +2,7 @@
   <div class="flex flex-1 flex-col">
     <!-- Hero / recherche -->
     <section class="border-b border-rule bg-linear-to-b from-paper to-surface">
-      <div class="mx-auto max-w-container px-gutter-mobile py-2xl md:px-gutter">
+      <div class="mx-auto px-gutter-mobile py-2xl md:px-gutter">
         <p class="text-overline text-accent-text">Catalogue de formations</p>
         <h1
           class="mt-sm max-w-prose font-display text-h2 font-extrabold leading-tight text-ink lg:text-h1"
@@ -38,7 +38,8 @@
         <div class="mt-lg flex items-center gap-md lg:hidden">
           <Button
             type="button"
-            class="h-control gap-sm rounded-full bg-primary px-md text-small font-semibold text-paper hover:bg-primary-dark"
+            size="pill-sm"
+            class="gap-sm"
             aria-haspopup="dialog"
             aria-controls="mobile-filter-panel"
             :aria-expanded="isFilterPanelOpen"
@@ -54,10 +55,7 @@
             </span>
           </Button>
           <Select v-model="sortBy" aria-label="Trier par">
-            <SelectTrigger
-              aria-label="Trier par"
-              class="h-control w-auto gap-sm rounded-full border-outline bg-paper px-md text-small font-semibold text-ink-body shadow-none"
-            >
+            <SelectTrigger aria-label="Trier par" variant="pill">
               <span class="truncate">{{ sortLabel }}</span>
             </SelectTrigger>
             <SelectContent>
@@ -74,30 +72,59 @@
         </div>
 
         <!-- Raccourcis familles -->
-        <ul class="mt-2xl hidden grid-cols-1 gap-md sm:grid sm:grid-cols-2 lg:grid-cols-4">
+        <div v-if="showAllFamilies" class="mt-2xl hidden items-center justify-between sm:flex">
+          <h2 class="font-sans text-h4 font-bold text-ink">Toutes les familles</h2>
+          <Button
+            type="button"
+            variant="link"
+            size="inline"
+            class="font-semibold underline"
+            @click="showAllFamilies = false"
+          >
+            Réduire
+          </Button>
+        </div>
+
+        <ul
+          data-testid="family-shortcuts"
+          class="hidden grid-cols-1 gap-md sm:grid"
+          :class="[
+            showAllFamilies
+              ? 'mt-lg sm:grid-cols-3 lg:grid-cols-4'
+              : 'mt-2xl sm:grid-cols-2 lg:grid-cols-4'
+          ]"
+        >
           <li
             v-for="(shortcut, i) in familyShortcuts"
             :key="shortcut.slug"
             v-reveal="revealStagger(i)"
-            class="rounded-md border border-rule bg-paper p-lg transition hover:border-primary/40 hover:shadow-md"
+            class="rounded-md border border-rule bg-paper p-lg transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-md"
           >
             <p class="font-semibold text-ink">{{ shortcut.label }}</p>
             <p class="mt-xs text-small text-ink-muted">{{ shortcut.caption }}</p>
+
             <NuxtLink
+              v-if="shortcut.to"
               :to="shortcut.to"
               class="mt-md inline-block text-small font-semibold text-primary transition-colors hover:text-accent-text"
             >
               {{ shortcut.linkLabel }} <span class="link-arrow">→</span>
             </NuxtLink>
+            <button
+              v-else
+              type="button"
+              class="mt-md inline-block text-small font-semibold text-primary transition-colors hover:text-accent-text"
+              @click="showAllFamilies = true"
+            >
+              {{ shortcut.linkLabel }} <span class="link-arrow">→</span>
+            </button>
           </li>
         </ul>
       </div>
     </section>
 
     <!-- Filtres + résultats -->
-    <section
-      class="mx-auto w-full max-w-container px-gutter-mobile max-md:pt-0 py-section md:px-gutter"
-    >
+    <section class="mx-auto w-full px-gutter-mobile max-md:pt-0 py-section md:px-gutter">
       <div class="grid grid-cols-1 gap-2xl lg:grid-cols-[260px_1fr]">
         <!-- Sidebar filtres desktop -->
         <aside aria-label="Filtres du catalogue" class="hidden lg:block">
@@ -119,6 +146,8 @@
             :duration-options="durationOptions"
             location-input-id="loc-desktop"
             @update:location="location = $event ?? ''"
+            @update:cpf="cpf = $event ?? false"
+            @update:certifying="certifying = $event ?? false"
           />
           <!-- C3 — porte de sortie « Être guidé » visible pendant le filtrage -->
           <AssistantGuidedCard class="mt-xl" @open="openAssistant" />
@@ -148,29 +177,30 @@
                 </button>
               </span>
             </div>
-            <button
+            <Button
               type="button"
-              class="mt-sm text-small font-semibold text-primary transition-colors hover:text-accent-text"
+              variant="link"
+              size="inline"
+              class="mt-sm font-semibold underline"
               @click="resetFilters"
             >
               Réinitialiser
-            </button>
+            </Button>
           </div>
 
-          <div class="mt-lg flex flex-wrap items-center justify-between gap-md">
+          <div
+            class="flex flex-wrap items-center justify-between gap-md"
+            :class="{ 'mt-lg': activeFilters.length }"
+          >
             <h2 v-if="resultCount > 0" class="font-sans text-h4 font-bold text-ink">
               {{ resultCount }}
               {{ resultCount > 1 ? 'formations' : 'formation' }}
               <template v-if="hasActiveCriteria">correspondent</template>
             </h2>
             <div class="ml-auto hidden items-center gap-sm lg:flex">
-              <Label for="sort-desktop" class="text-small font-normal text-ink-body">
-                Trier par
-              </Label>
+              <Label for="sort-desktop" variant="body"> Trier par </Label>
               <Select id="sort-desktop" v-model="sortBy">
-                <SelectTrigger
-                  class="h-auto w-auto gap-sm rounded-full border-outline bg-paper px-md py-sm text-small text-ink-body shadow-none"
-                >
+                <SelectTrigger variant="pill-auto">
                   <span class="truncate">{{ sortLabel }}</span>
                 </SelectTrigger>
                 <SelectContent>
@@ -222,30 +252,15 @@
               réponse adaptée vous sera proposée.
             </p>
             <div class="mt-lg flex flex-wrap justify-center gap-md">
-              <Button
-                class="h-control rounded-full bg-primary px-lg text-small font-semibold text-paper hover:bg-primary-dark"
-                @click="openAssistant"
-              >
-                Être guidé dans mon choix
-              </Button>
-              <Button
-                as-child
-                variant="outline"
-                class="h-control rounded-full border-outline px-lg text-small font-semibold text-ink-body hover:bg-surface hover:text-accent-text"
-              >
-                <NuxtLink to="/centres/demande-de-formation?sujet=conseiller"
-                  >Parler à un conseiller</NuxtLink
-                >
+              <Button size="pill-sm" @click="openAssistant">Être guidé dans mon choix</Button>
+              <Button as-child variant="outline" size="pill-sm">
+                <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
               </Button>
             </div>
             <div class="mt-lg flex gap-lg text-small font-semibold">
-              <button
-                type="button"
-                class="text-primary transition-colors hover:text-accent-text"
-                @click="resetFilters"
-              >
+              <Button type="button" variant="link" size="inline" @click="resetFilters">
                 Réinitialiser les filtres
-              </button>
+              </Button>
               <NuxtLink
                 to="/formations"
                 class="text-primary transition-colors hover:text-accent-text"
@@ -301,10 +316,11 @@
             aria-label="Pagination du catalogue"
           >
             <PaginationContent v-slot="{ items }" class="gap-sm">
-              <PaginationPrevious
-                class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-subtle hover:bg-surface"
-              />
-              <template v-for="item in items" :key="item.value">
+              <PaginationPrevious variant="icon-outline" size="icon-sm" />
+              <template
+                v-for="(item, i) in items"
+                :key="item.type === 'page' ? item.value : `ellipsis-${i}`"
+              >
                 <PaginationItem
                   v-if="item.type === 'page'"
                   :value="item.value"
@@ -317,21 +333,21 @@
                   class="h-control-sm w-control-sm text-ink-subtle"
                 />
               </template>
-              <PaginationNext
-                class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-body hover:bg-surface hover:text-accent-text"
-              />
+              <PaginationNext variant="icon-outline" size="icon-sm" />
             </PaginationContent>
           </Pagination>
 
           <!-- Pagination mobile -->
-          <button
+          <Button
             v-if="hasMoreMobile"
             type="button"
-            class="mx-auto mt-lg block rounded-full border border-outline px-lg py-sm text-small font-semibold text-ink-body hover:bg-surface hover:text-accent-text lg:hidden"
+            variant="outline"
+            size="pill-sm"
+            class="mx-auto mt-lg block lg:hidden"
             @click="loadMore"
           >
             Afficher plus de résultats
-          </button>
+          </Button>
 
           <!-- Porte de sortie « Être guidé » — mobile (la sidebar est masquée) -->
           <AssistantGuidedCard class="mt-2xl lg:hidden" @open="openAssistant" />
@@ -344,20 +360,11 @@
         title="Vous ne savez pas quelle formation choisir ?"
         text="Décrivez votre besoin : LEARN UP identifie la formation, le format et le lieu adaptés à votre situation."
       >
-        <Button
-          class="h-control w-full rounded-full bg-accent px-lg text-small font-semibold text-ink transition hover:bg-accent-text hover:text-paper sm:w-auto"
-          @click="openAssistant"
-        >
+        <Button variant="accent" size="pill-sm" class="w-full sm:w-auto" @click="openAssistant">
           Être guidé dans mon choix
         </Button>
-        <Button
-          as-child
-          variant="outline"
-          class="h-control w-full rounded-full border-outline-inverse bg-transparent px-lg text-small font-semibold text-ink-inverse transition hover:bg-transparent hover:text-ink-inverse sm:w-auto"
-        >
-          <NuxtLink to="/centres/demande-de-formation?sujet=conseiller"
-            >Parler à un conseiller</NuxtLink
-          >
+        <Button as-child variant="outline-inverse" size="pill-sm" class="w-full sm:w-auto">
+          <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
         </Button>
       </CtaBanner>
     </section>
@@ -404,28 +411,22 @@
           :duration-options="durationOptions"
           location-input-id="loc-mobile"
           @update:location="location = $event ?? ''"
+          @update:cpf="cpf = $event ?? false"
+          @update:certifying="certifying = $event ?? false"
         />
       </div>
 
       <!-- Barre d'action fixe -->
       <div class="shrink-0 border-t border-rule bg-paper p-md">
-        <div class="mx-auto flex w-full max-w-container gap-md">
-          <button
-            type="button"
-            class="rounded-full border border-outline px-lg py-sm text-small font-semibold text-ink-body hover:bg-surface hover:text-accent-text"
-            @click="resetFilters"
-          >
+        <div class="mx-auto flex w-full gap-md">
+          <Button type="button" variant="outline" size="pill-sm" @click="resetFilters">
             Tout effacer
-          </button>
-          <button
-            type="button"
-            class="h-control flex-1 rounded-full bg-primary px-lg text-small font-semibold text-paper hover:bg-primary-dark"
-            @click="closeFilterPanel"
-          >
+          </Button>
+          <Button type="button" size="pill-sm" class="flex-1" @click="closeFilterPanel">
             {{
               resultCount > 0 ? `Afficher ${resultCount} formation(s)` : 'Afficher les résultats'
             }}
-          </button>
+          </Button>
         </div>
       </div>
     </dialog>
@@ -571,7 +572,7 @@ function parseUrl() {
   assignList(selectedDurations, parseListParam(route.query.duree))
   cpf.value = route.query.cpf === 'true'
   certifying.value = route.query.certifiant === 'true'
-  sortBy.value = parseSortParam(route.query.tri, searchQuery.value)
+  sortBy.value = parseSortParam(route.query.tri, !!searchQuery.value)
   currentPage.value = parsePageParam(route.query.page)
 }
 
@@ -664,7 +665,7 @@ const { data: directusFamilies } = await useAsyncData<FamilleFormation[]>(
   'catalog-families',
   async () => {
     try {
-      return await directus.request(
+      return await directus.request<FamilleFormation[]>(
         readItems('familles_formation', {
           fields: ['slug', 'name'],
           filter: { status: { _eq: 'published' } },
@@ -777,14 +778,44 @@ const certifyingFilterVisible = computed(
   () => !facets.value || facets.value.certifying > 0 || certifying.value
 )
 
-const familyShortcuts = computed(() => {
-  const top = familyOptions.value.slice(0, 3).map((family) => ({
-    slug: family.key,
-    label: family.label,
-    caption: `${family.count} formation${family.count > 1 ? 's' : ''}`,
-    linkLabel: 'Voir la famille',
-    to: `/formations/${family.key}`
-  }))
+const showAllFamilies = ref(false)
+
+const familyShortcuts = computed<
+  { slug: string; label: string; caption: string; linkLabel: string; to: string | null }[]
+>(() => {
+  const publishedSlugs = new Set((directusFamilies.value ?? []).map((f) => f.slug))
+
+  if (showAllFamilies.value) {
+    const globalCounts = new Map<string, number>(
+      (familyCounts.value ?? []).map((f) => [f.slug, f.count])
+    )
+
+    return Array.from(publishedSlugs)
+      .map((slug) => {
+        const count = globalCounts.get(slug) ?? 0
+        const label = familyNames.value.get(slug) ?? slug
+        return { slug, label, count }
+      })
+      .sort((a, b) => b.count - a.count)
+      .map(({ slug, label, count }) => ({
+        slug,
+        label,
+        caption: `${count} formation${count > 1 ? 's' : ''}`,
+        linkLabel: 'Voir la famille',
+        to: `/formations/${slug}`
+      }))
+  }
+
+  const top = familyOptions.value.slice(0, 3).map((family) => {
+    const count = family.count ?? 0
+    return {
+      slug: family.key,
+      label: family.label,
+      caption: `${count} formation${count > 1 ? 's' : ''}`,
+      linkLabel: 'Voir la famille',
+      to: publishedSlugs.has(family.key) ? `/formations/${family.key}` : null
+    }
+  })
 
   return [
     ...top,
@@ -793,7 +824,7 @@ const familyShortcuts = computed(() => {
       label: 'Toutes les familles',
       caption: 'Management, bureautique, qualité…',
       linkLabel: 'Parcourir',
-      to: '/formations'
+      to: null
     }
   ]
 })
@@ -909,7 +940,9 @@ watch(
     // c'est la page elle-même qui vient de changer (pagination, « Afficher
     // plus ») ou si la mise à jour vient de l'URL (parseUrl restaure page
     // et filtres ensemble).
-    const filtersChanged = newValues.slice(0, 8).some((value, i) => value !== oldValues[i])
+    const filtersChanged = newValues
+      .slice(0, 8)
+      .some((value: unknown, i: number) => value !== oldValues[i])
     const pageChanged = newValues[8] !== oldValues[8]
     if (filtersChanged && !pageChanged && currentPage.value !== 1) {
       currentPage.value = 1

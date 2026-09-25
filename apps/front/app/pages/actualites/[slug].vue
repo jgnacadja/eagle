@@ -1,7 +1,7 @@
 <template>
   <div class="bg-paper-warm flex flex-1 flex-col">
     <template v-if="pageState === 'found'">
-      <div class="mx-auto w-full max-w-container px-gutter-mobile py-2xl md:px-gutter">
+      <div class="mx-auto w-full px-gutter-mobile py-2xl md:px-gutter">
         <div class="lg:grid lg:grid-cols-12 lg:gap-2xl">
           <article class="lg:col-span-8">
             <header class="max-w-prose">
@@ -44,24 +44,24 @@
                 </div>
               </div>
               <div class="flex items-center gap-md text-ink-subtle">
+                <ShareMenu
+                  :url="shareUrl"
+                  :title="article?.title"
+                  :text="article?.excerpt ?? undefined"
+                />
                 <Button
                   type="button"
-                  variant="ghost"
-                  aria-label="Partager l'article"
-                  class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 hover:bg-surface hover:text-ink"
-                  @click="onShare"
-                >
-                  <IconShare :size="18" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  aria-label="Copier le lien de l'article"
-                  class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 hover:bg-surface hover:text-ink"
+                  variant="icon-outline"
+                  size="icon-sm"
+                  :aria-label="linkCopied ? 'Lien copié' : 'Copier le lien de l\'article'"
                   @click="onCopyLink"
                 >
-                  <IconLink :size="18" />
+                  <IconCheck v-if="linkCopied" :size="18" class="text-success" />
+                  <IconLink v-else :size="18" />
                 </Button>
+                <output class="sr-only" aria-live="polite">{{
+                  linkCopied ? 'Lien copié dans le presse-papiers' : ''
+                }}</output>
               </div>
             </div>
 
@@ -80,15 +80,16 @@
               />
             </figure>
 
-            <div class="mt-2xl max-w-prose space-y-xl text-body text-ink-body">
+            <div class="mt-2xl space-y-xl text-body text-ink-body">
               <div class="post__content" v-html="sanitizedArticle.html"></div>
 
               <CenterFormationCard
                 v-if="relatedFormationCard"
+                v-reveal
                 class="lg:hidden"
                 eyebrow="Formation liée"
                 variant="button"
-                :sub-family="relatedFormationCard.subFamily"
+                :sub-family="relatedFormationCard.family"
                 :title="relatedFormationCard.title"
                 :meta="relatedFormationCard.meta"
                 :status="relatedFormationCard.status"
@@ -147,27 +148,25 @@
 
               <CenterFormationCard
                 v-if="relatedFormationCard"
+                v-reveal
                 eyebrow="Formation liée"
                 variant="button"
-                :sub-family="relatedFormationCard.subFamily"
+                :sub-family="relatedFormationCard.family"
                 :title="relatedFormationCard.title"
                 :meta="relatedFormationCard.meta"
                 :status="relatedFormationCard.status"
                 :to="relatedFormationCard.to ?? undefined"
               />
 
-              <Card class="bg-primary-dark p-lg text-paper">
+              <Card variant="dark" class="p-lg">
                 <h3 class="text-small font-bold">Un doute sur vos échéances ?</h3>
                 <p class="mt-sm text-meta leading-relaxed text-ink-inverse-muted">
                   Transmettez vos dates de délivrance : un conseiller planifie les recyclages en
                   série avec vos équipes.
                 </p>
-                <NuxtLink
-                  to="/centres/demande-de-formation"
-                  class="mt-lg flex h-control items-center justify-center rounded-full bg-paper px-lg text-small font-semibold text-ink hover:bg-paper/90 hover:text-accent-text"
-                >
-                  Parler à un conseiller
-                </NuxtLink>
+                <Button as-child variant="paper" size="pill" class="mt-lg w-full">
+                  <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
+                </Button>
               </Card>
             </div>
           </aside>
@@ -175,7 +174,7 @@
       </div>
 
       <section aria-labelledby="lire-ensuite-heading" class="bg-paper">
-        <div class="mx-auto w-full max-w-container px-gutter-mobile py-2xl md:px-gutter">
+        <div class="mx-auto w-full px-gutter-mobile py-2xl md:px-gutter">
           <div class="flex items-center justify-between">
             <h2 id="lire-ensuite-heading" class="font-display text-h3 font-extrabold text-ink">
               À lire ensuite
@@ -248,10 +247,11 @@
 <script setup lang="ts">
 import { readItems } from '@directus/sdk'
 import type { Article, Course } from '@learnup/types'
-import { mapCourse, type FormationItem } from '~/composables/useCatalog'
+import { buildMeta, mapCourse, type FormationItem } from '~/composables/useCatalog'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { articleAssetUrl, articleReadingTime, formatArticleDate } from '~/utils/article'
 import { sanitizeHtmlWithHeadings } from '~/utils/sanitizeHtml'
+import { copyTextToClipboard } from '~/utils/clipboard'
 
 definePageMeta({
   layout: 'with-breadcrumb',
@@ -286,7 +286,10 @@ const {
             'author_name',
             'author_image',
             'region',
-            'related_formation_slug',
+            'related_formation.slug',
+            'related_formation.status',
+            'related_formation.famille.slug',
+            'related_formation.famille.name',
             'publish_at',
             'centre',
             'cover_image',
@@ -319,18 +322,14 @@ const article = computed(() => {
 // C6 — le thème de l'article est transmis au panneau comme contexte éditorial.
 const assistant = useAssistantLauncher()
 function openAssistant() {
+  const formation = article.value?.related_formation
   assistant.open({
     context: {
       source: 'editorial',
       theme: article.value?.category ?? article.value?.title ?? undefined,
-      formationSlug: article.value?.related_formation_slug ?? undefined
+      formationSlug: typeof formation === 'object' && formation ? formation.slug : undefined
     }
   })
-}
-
-interface RelatedFormationFamily {
-  slug: string
-  famille: { slug: string; name: string | null } | null
 }
 
 interface RelatedFormation {
@@ -338,31 +337,27 @@ interface RelatedFormation {
   familyName: string | null
 }
 
+// La relation M2O `related_formation` est résolue directement dans la
+// requête article (slug + famille) — reste l'appel API pour la carte.
 const { data: relatedFormation } = await useAsyncData<RelatedFormation | null>(
   `article-related-formation-${slug}`,
   async () => {
-    const formationSlug = article.value?.related_formation_slug
-    if (!formationSlug) return null
+    const formation = article.value?.related_formation
+    if (!formation || typeof formation !== 'object' || formation.status !== 'published') {
+      return null
+    }
+    const famille =
+      formation.famille && typeof formation.famille === 'object' ? formation.famille : null
+    if (!famille?.slug) return null
 
     try {
-      const familyResult = await directus.request<RelatedFormationFamily[]>(
-        readItems('formations', {
-          fields: ['slug', 'famille.slug', 'famille.name'],
-          filter: { slug: { _eq: formationSlug }, status: { _eq: 'published' } },
-          limit: 1
-        })
-      )
-      const formation = familyResult[0]
-      const familySlug = formation?.famille?.slug
-      if (!familySlug) return null
-
       const course = await $fetch<Course>(
-        `${import.meta.server ? config.apiBase : config.public.apiBase}/courses/${encodeURIComponent(familySlug)}/${encodeURIComponent(formation.slug)}`
+        `${import.meta.server ? config.apiBase : config.public.apiBase}/courses/${encodeURIComponent(famille.slug)}/${encodeURIComponent(formation.slug)}`
       )
-      return { course, familyName: formation.famille?.name ?? null }
+      return { course, familyName: famille.name ?? null }
     } catch (error) {
       if (import.meta.server) {
-        logServerError(`[actualites/slug] related formation ${formationSlug} load failed:`, error)
+        logServerError(`[actualites/slug] related formation ${formation.slug} load failed:`, error)
       }
       return null
     }
@@ -377,7 +372,12 @@ const relatedFormationCard = computed<FormationItem | null>(() => {
   const related = relatedFormation.value
   if (!related) return null
 
-  return mapCourse(related.course, related.familyName ?? undefined)
+  // Méta courte (durée + modalités), sans certification — comme les
+  // cartes « formations similaires » de la fiche formation.
+  return {
+    ...mapCourse(related.course, related.familyName ?? undefined),
+    meta: buildMeta(related.course, false)
+  }
 })
 
 const readingTime = computed(() => {
@@ -503,18 +503,25 @@ function assetUrl(id: string | null): string | undefined {
   return articleAssetUrl(id, config.public.apiBase) ?? undefined
 }
 
-function onShare() {
+const linkCopied = ref(false)
+let linkCopiedTimer: ReturnType<typeof setTimeout> | undefined
+
+// Lien de partage « propre » : origine + chemin, sans query (?from=,
+// ?category=, ?error=1) ni ancre du sommaire. Vide en SSR — les actions
+// partager/copier ne sont utilisables que côté client.
+const shareUrl = computed(() =>
+  typeof window === 'undefined' ? '' : `${window.location.origin}${route.path}`
+)
+
+async function onCopyLink() {
   if (typeof window === 'undefined') return
-  if (navigator.share) {
-    navigator.share({ title: article.value?.title, url: window.location.href }).catch(() => {})
-  } else {
-    onCopyLink()
-  }
+  if (!(await copyTextToClipboard(shareUrl.value))) return
+  linkCopied.value = true
+  clearTimeout(linkCopiedTimer)
+  linkCopiedTimer = setTimeout(() => {
+    linkCopied.value = false
+  }, 2000)
 }
 
-function onCopyLink() {
-  if (typeof window !== 'undefined') {
-    navigator.clipboard?.writeText(window.location.href)
-  }
-}
+onScopeDispose(() => clearTimeout(linkCopiedTimer))
 </script>

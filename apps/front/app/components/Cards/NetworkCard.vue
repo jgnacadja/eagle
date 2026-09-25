@@ -1,25 +1,39 @@
 <template>
-  <article
-    class="rounded-md border border-transparent bg-surface p-lg transition hover:border-primary/40 hover:shadow-md"
+  <NuxtLink
+    :to="to"
+    class="group flex items-center justify-between gap-md rounded-2xl border border-rule bg-paper p-md transition-all duration-200 hover:border-primary/40 hover:shadow-sm sm:p-lg"
   >
-    <h3 class="font-display text-h3 font-extrabold uppercase text-ink">{{ title }}</h3>
-    <p class="mt-xs text-meta font-bold text-accent-text">{{ subtitle }}</p>
-    <p class="mt-md max-w-callout text-sm text-ink-muted">{{ body }}</p>
-    <NuxtLink
-      :to="to"
-      class="mt-md inline-block text-small font-bold text-primary transition-colors hover:text-accent-text"
+    <div class="min-w-0 flex-1">
+      <h3 class="font-display text-sm font-extrabold uppercase text-ink md:text-body">
+        {{ title }}
+      </h3>
+      <p v-if="subtitle" class="mt-1 text-xs text-ink-muted">
+        {{ subtitle }}
+      </p>
+      <p v-if="body" class="mt-xs text-xs text-ink-muted">
+        {{ body }}
+      </p>
+      <span v-if="cta" class="sr-only">{{ cta }}</span>
+    </div>
+
+    <div
+      class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-primary/20 text-primary transition-colors group-hover:border-primary group-hover:bg-primary group-hover:text-ink-inverse sm:h-9 sm:w-9"
+      aria-hidden="true"
     >
-      {{ cta }} <span class="link-arrow">→</span>
-    </NuxtLink>
-  </article>
+      <span class="link-arrow text-sm">→</span>
+    </div>
+  </NuxtLink>
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  title: string
-  subtitle: string
-  body: string
-  cta: string
-  to: string
-}>()
+withDefaults(
+  defineProps<{
+    title: string
+    subtitle?: string
+    body?: string
+    cta?: string
+    to: string
+  }>(),
+  { subtitle: '', body: '', cta: '' }
+)
 </script>

@@ -15,11 +15,12 @@ function normalizeSearch(text: string | null | undefined): string {
 
 /**
  * Forme de comparaison d'une valeur de département : casse et accents via
- * `normalizeSearch`, plus espaces et tirets ignorés — « Val de Marne »
- * (tag libre) et « Val-de-Marne » (géocodé BAN) doivent se rejoindre.
+ * `normalizeSearch`, plus espaces, apostrophes et tirets ignorés —
+ * « Val de Marne » (tag libre), « Val-de-Marne » (géocodé BAN) et
+ * « Côtes-d'Armor » doivent se rejoindre.
  */
 function normalizeDepartment(text: string | null | undefined): string {
-  return normalizeSearch(text).replace(/[\s-]+/g, '')
+  return normalizeSearch(text).replace(/[\s'’-]+/g, '')
 }
 
 /**
@@ -51,12 +52,16 @@ function matchesCentre(centre: DirectusCentre, query: ListCentresDto): boolean {
 
   const search = normalizeSearch(query.search)
   if (search) {
+    // `centreDepartmentValues` couvre nom géocodé, codes et noms des
+    // départements couverts : « rhone » et « 69 » matchent, comme le
+    // filtre `department`.
     const haystack = [
       centre.name,
       centre.city,
       centre.postal_code,
       centre.address,
       centre.region,
+      ...centreDepartmentValues(centre),
       ...(centre.specialties ?? [])
     ]
       .map(normalizeSearch)

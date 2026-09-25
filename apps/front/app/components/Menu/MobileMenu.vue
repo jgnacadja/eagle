@@ -5,7 +5,7 @@
         v-if="open"
         id="mobile-menu"
         ref="dialogEl"
-        class="fixed inset-0 z-50 m-0 flex h-dvh w-screen max-w-none flex-col border-0 bg-paper p-0 md:hidden"
+        class="fixed inset-0 z-50 m-0 flex h-dvh w-screen max-w-none max-h-none flex-col border-0 bg-paper p-0 md:hidden"
         aria-label="Menu principal"
         aria-modal="true"
         @cancel.prevent="closeMenu"
@@ -23,7 +23,7 @@
             ref="closeBtn"
             type="button"
             aria-label="Fermer le menu"
-            class="flex h-touch w-touch items-center justify-center rounded-md bg-ink text-paper"
+            class="flex h-touch w-touch items-center justify-center rounded-md border border-rule text-ink"
             @click="closeMenu"
           >
             <svg
@@ -41,31 +41,70 @@
         <nav class="flex-1 overflow-y-auto px-gutter-mobile" aria-label="Menu de navigation">
           <Accordion type="multiple" class="divide-y divide-rule">
             <!-- FORMATIONS -->
-            <AccordionItem value="formations" class="border-b-0">
-              <AccordionTrigger
-                class="py-md text-h3 text-ink transition-colors hover:text-accent-text hover:no-underline"
-                >Formations</AccordionTrigger
-              >
+            <AccordionItem value="formations" variant="menu">
+              <AccordionTrigger variant="menu">Formations</AccordionTrigger>
               <AccordionContent>
-                <Accordion type="multiple" class="pb-sm pl-2">
-                  <div v-for="famille in familles ?? []" :key="famille.slug">
+                <Accordion type="multiple" class="pb-sm">
+                  <template v-for="famille in familles ?? []" :key="famille.slug">
+                    <AccordionItem
+                      v-if="sousFamillesFor(famille.slug).length"
+                      :value="famille.slug"
+                      variant="submenu"
+                    >
+                      <AccordionTrigger variant="submenu">
+                        <span class="flex w-full items-center justify-between pr-2">
+                          <span>{{ famille.label }}</span>
+                          <span class="text-small text-ink-muted">{{ famille.count }}</span>
+                        </span>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <ul class="px-6">
+                          <li
+                            v-for="sousFamille in sousFamillesFor(famille.slug)"
+                            :key="sousFamille.slug"
+                          >
+                            <NuxtLink
+                              :to="{
+                                path: `/formations/${famille.slug}`,
+                                query: { subFamily: sousFamille.slug }
+                              }"
+                              class="flex items-center justify-between py-2 text-body text-primary transition-colors hover:text-accent-text"
+                              @click="closeMenu"
+                            >
+                              <span>{{ sousFamille.label }}</span>
+                              <span class="text-small text-ink-muted">{{ sousFamille.count }}</span>
+                            </NuxtLink>
+                          </li>
+                          <li>
+                            <NuxtLink
+                              :to="`/formations/${famille.slug}`"
+                              class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
+                              @click="closeMenu"
+                            >
+                              Voir la famille <span class="link-arrow">→</span>
+                            </NuxtLink>
+                          </li>
+                        </ul>
+                      </AccordionContent>
+                    </AccordionItem>
                     <NuxtLink
+                      v-else
                       :to="`/formations/${famille.slug}`"
-                      class="flex items-center justify-between py-2 text-body text-primary transition-colors hover:text-accent-text"
+                      class="flex items-center justify-between px-3 py-2 text-body text-primary transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
                       <span>{{ famille.label }}</span>
                       <span class="text-small text-ink-muted">{{ famille.count }}</span>
                     </NuxtLink>
-                  </div>
+                  </template>
 
                   <div>
                     <NuxtLink
                       to="/formations"
-                      class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
+                      class="block px-3 py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
-                      Tout le catalogue +
+                      Tout le catalogue <span class="link-arrow">→</span>
                     </NuxtLink>
                   </div>
                 </Accordion>
@@ -73,30 +112,18 @@
             </AccordionItem>
 
             <!-- CENTRES -->
-            <AccordionItem value="centres" class="border-b-0">
-              <AccordionTrigger
-                class="py-md text-h3 text-ink transition-colors hover:text-accent-text hover:no-underline"
-                >Centres</AccordionTrigger
-              >
+            <AccordionItem value="centres" variant="menu">
+              <AccordionTrigger variant="menu">Trouver un Centre</AccordionTrigger>
               <AccordionContent>
-                <Accordion type="multiple" class="pb-sm pl-2">
+                <Accordion type="multiple" class="pb-sm">
                   <div>
                     <NuxtLink
-                      to="/centres"
-                      class="flex items-center gap-2 py-2 text-body text-primary transition-colors hover:text-accent-text"
+                      :to="{ path: '/centres', query: { geo: '1' } }"
+                      class="flex items-center gap-2 px-3 py-2 text-body text-primary transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
-                      <svg
-                        class="h-4 w-4 text-accent"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M12 21s7-6.5 7-11a7 7 0 1 0-14 0c0 4.5 7 11 7 11z" />
-                        <circle cx="12" cy="10" r="2.5" />
-                      </svg>
-                      Autour de moi
+                      <IconLocate :size="16" class="text-accent" />
+                      Près de moi
                     </NuxtLink>
                   </div>
 
@@ -104,18 +131,16 @@
                     <AccordionItem
                       v-if="centresForRegion(region.label).length"
                       :value="region.slug"
-                      class="border-b-0"
+                      variant="submenu"
                     >
-                      <AccordionTrigger
-                        class="py-2 text-body text-primary transition-colors hover:text-accent-text hover:no-underline"
-                      >
+                      <AccordionTrigger variant="submenu">
                         <span class="flex w-full items-center justify-between pr-2">
                           <span>{{ region.label }}</span>
                           <span class="text-small text-ink-muted">{{ region.count }}</span>
                         </span>
                       </AccordionTrigger>
                       <AccordionContent>
-                        <ul class="pl-2">
+                        <ul class="px-6">
                           <li
                             v-for="centre in centresForRegion(region.label).slice(0, 3)"
                             :key="centre.slug"
@@ -126,7 +151,7 @@
                               @click="closeMenu"
                             >
                               <span>{{ centre.name }}</span>
-                              <span class="text-small text-ink-muted">
+                              <span class="hidden md:block text-small text-ink-muted">
                                 {{ centre.department ?? centre.city }}
                               </span>
                             </NuxtLink>
@@ -137,7 +162,8 @@
                               class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                               @click="closeMenu"
                             >
-                              Tous les centres {{ region.label }} +
+                              Tous les centres {{ region.label }}
+                              <span class="link-arrow">→</span>
                             </NuxtLink>
                           </li>
                         </ul>
@@ -146,7 +172,7 @@
                     <NuxtLink
                       v-else
                       :to="{ path: '/centres', query: { region: region.label } }"
-                      class="flex items-center justify-between py-2 text-body text-primary transition-colors hover:text-accent-text"
+                      class="flex items-center justify-between px-3 py-2 text-body text-primary transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
                       <span>{{ region.label }}</span>
@@ -157,36 +183,44 @@
                   <div>
                     <NuxtLink
                       to="/centres"
-                      class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
+                      class="block px-3 py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
-                      Voir la carte de région +
+                      Voir la carte de région <span class="link-arrow">→</span>
                     </NuxtLink>
                   </div>
                 </Accordion>
               </AccordionContent>
             </AccordionItem>
 
+            <!-- ENTREPRISE -->
+            <NuxtLink
+              to="/entreprise"
+              class="flex w-full items-center py-md text-h3 text-ink transition-all hover:text-accent-text"
+              @click="closeMenu"
+            >
+              Entreprise
+            </NuxtLink>
+
             <!-- À PROPOS -->
-            <AccordionItem value="apropos" class="border-b-0">
-              <AccordionTrigger
-                class="py-md text-h3 text-ink transition-colors hover:text-accent-text hover:no-underline"
-                >À propos</AccordionTrigger
-              >
+            <AccordionItem value="apropos" variant="menu">
+              <AccordionTrigger variant="menu">À propos</AccordionTrigger>
               <AccordionContent>
-                <ul class="pb-sm pl-2">
+                <ul class="pb-sm px-3">
                   <li v-for="lien in aproposLiens" :key="lien.slug">
                     <NuxtLink
-                      :to="`/a-propos/${lien.slug}`"
+                      :to="`/${lien.slug}`"
                       class="block py-2 text-body text-primary transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
                       {{ lien.label }}
                     </NuxtLink>
                   </li>
+                </ul>
+                <ul class="rounded-md bg-surface p-3">
                   <li v-for="lien in legalLiens" :key="lien.slug">
                     <NuxtLink
-                      :to="`/legal/${lien.slug}`"
+                      :to="`/${lien.slug}`"
                       class="block py-2 text-body text-primary transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
@@ -198,13 +232,10 @@
             </AccordionItem>
 
             <!-- ACTUALITÉS -->
-            <AccordionItem value="actualites" class="border-b-0">
-              <AccordionTrigger
-                class="py-md text-h3 text-ink transition-colors hover:text-accent-text hover:no-underline"
-                >Actualités</AccordionTrigger
-              >
+            <AccordionItem value="actualites" variant="menu">
+              <AccordionTrigger variant="menu">Actualités</AccordionTrigger>
               <AccordionContent>
-                <ul class="pb-sm pl-2">
+                <ul class="pb-sm px-6">
                   <li v-for="rubrique in actualitesRubriques" :key="rubrique.slug">
                     <NuxtLink
                       to="/actualites"
@@ -215,8 +246,8 @@
                     </NuxtLink>
                   </li>
                 </ul>
-                <p class="pb-1 pl-2 text-small font-semibold text-ink-muted">Par région</p>
-                <ul class="pb-sm pl-2">
+                <ul class="rounded-md bg-surface p-3">
+                  <p class="pb-1 text-small font-bold text-ink-muted uppercase">Par région</p>
                   <li v-for="region in actualitesRegions.slice(0, 2)" :key="region.slug">
                     <NuxtLink
                       to="/actualites"
@@ -232,49 +263,28 @@
                       class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
-                      Toutes les régions +
+                      Toutes les régions <span class="link-arrow">→</span>
                     </NuxtLink>
                   </li>
                 </ul>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
+        </nav>
 
+        <div
+          class="sticky bottom-0 flex flex-col gap-sm border-t border-rule px-gutter-mobile py-md"
+        >
           <NuxtLink
             to="/rejoindre-le-reseau"
-            class="mt-lg inline-block text-body font-semibold text-ink transition-colors hover:text-accent-text"
+            class="inline-block text-body font-semibold text-ink transition-colors hover:text-accent-text underline"
             @click="closeMenu"
           >
             Rejoindre le réseau
           </NuxtLink>
-        </nav>
-
-        <div
-          class="sticky bottom-0 flex flex-col gap-sm border-t border-rule bg-surface px-gutter-mobile py-lg"
-        >
-          <Button
-            class="rounded-full bg-accent px-lg py-md text-small font-semibold text-ink hover:bg-accent-text hover:text-paper"
-            @click="openAssistant"
-          >
+          <Button variant="accent" size="pill" class="w-full" @click="openAssistant">
             Être guidé dans mon choix
           </Button>
-          <NuxtLink
-            to="/confier-ma-formation"
-            class="rounded-full bg-accent px-lg py-md text-center text-small font-semibold text-ink hover:bg-accent-text hover:text-paper"
-            @click="closeMenu"
-          >
-            Confier ma formation
-          </NuxtLink>
-          <NuxtLink
-            to="/contact"
-            class="rounded-full border border-rule bg-paper px-lg py-md text-center text-small font-semibold text-ink hover:bg-paper hover:text-accent-text"
-            @click="closeMenu"
-          >
-            Parler à un conseiller
-          </NuxtLink>
-          <p class="mt-xs text-center text-small text-ink-muted">
-            01 84 60 00 00 <span class="mx-1">·</span> contact@learnup.fr
-          </p>
         </div>
       </dialog>
     </Transition>
@@ -289,8 +299,15 @@ import {
   AccordionItem,
   AccordionTrigger
 } from '~/components/ui/accordion'
-import { aproposLiens, legalLiens } from '~/data/navigation'
-import { useMenuActualites, useMenuCentres, useMenuFamilles } from '~/composables/useMenuData'
+import IconLocate from '~/components/icons/IconLocate.vue'
+import { aproposLiens } from '~/data/navigation'
+import {
+  useMenuActualites,
+  useMenuCentres,
+  useMenuFamilles,
+  useMenuLegalPages,
+  useMenuSousFamillesParFamille
+} from '~/composables/useMenuData'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 
 const open = defineModel<boolean>('open', { default: false })
@@ -299,11 +316,17 @@ const closeBtn = ref<HTMLButtonElement>()
 let previousFocus: Element | null = null
 
 const familles = useMenuFamilles()
+const sousFamillesParFamille = useMenuSousFamillesParFamille()
 const { regions, centresParRegion } = useMenuCentres()
 const { rubriques: actualitesRubriques, regions: actualitesRegions } = useMenuActualites()
+const legalLiens = useMenuLegalPages()
 
 function centresForRegion(label: string) {
   return centresParRegion.value.get(label) ?? []
+}
+
+function sousFamillesFor(familleSlug: string) {
+  return sousFamillesParFamille.value[familleSlug] ?? []
 }
 
 function closeMenu() {

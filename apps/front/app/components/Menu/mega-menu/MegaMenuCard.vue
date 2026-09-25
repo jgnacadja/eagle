@@ -4,6 +4,7 @@
     class="group block h-full rounded-md bg-surface px-md py-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
     @click="$emit('select')"
   >
+    <span v-if="$slots.eyebrow" class="mb-1 block"><slot name="eyebrow" /></span>
     <span
       class="block text-body font-semibold text-ink transition-colors group-hover:text-accent-text"
       >{{ title }}</span

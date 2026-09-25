@@ -7,9 +7,9 @@
     <Button
       type="button"
       variant="ghost"
-      size="icon"
+      size="icon-sm"
       aria-label="Fermer"
-      class="absolute right-sm top-sm h-control-sm w-control-sm text-ink-subtle transition hover:bg-surface hover:text-ink"
+      class="absolute right-sm top-sm text-ink-subtle"
       @click.stop="handleClose"
     >
       <IconClose :size="16" />
@@ -17,10 +17,7 @@
     <h4 class="pr-6 font-sans text-h4 text-ink">{{ name }}</h4>
     <p class="mt-xs text-meta text-ink-subtle">{{ locationLabel }}</p>
     <p class="mt-sm text-small font-medium text-ink-body">{{ tagsShort }}</p>
-    <Button
-      as-child
-      class="mt-md h-control rounded-full bg-primary px-md text-small font-bold text-paper hover:bg-primary-dark"
-    >
+    <Button as-child size="pill-sm" class="mt-md font-bold">
       <a :href="`/centres/${id}`">Voir le centre</a>
     </Button>
   </div>

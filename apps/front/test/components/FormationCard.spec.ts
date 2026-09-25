@@ -37,6 +37,9 @@ describe('FormationCard', () => {
       global: { stubs }
     })
 
+    expect(wrapper.classes()).toContain('transition-[border-color,box-shadow]')
+    expect(wrapper.classes()).not.toContain('transition')
+
     const img = wrapper.find('img')
     expect(img.exists()).toBe(true)
     expect(img.attributes('src')).toBe('https://example.test/sst.jpg')
@@ -50,5 +53,24 @@ describe('FormationCard', () => {
     })
 
     expect(wrapper.text()).not.toContain('Voir le détail')
+  })
+
+  it('renders body when provided and omits it when absent', () => {
+    const withBody = mount(FormationCard, {
+      props: {
+        title: 'SST',
+        imageTop: '',
+        imageBottom: '',
+        body: 'Formation aux premiers secours'
+      },
+      global: { stubs }
+    })
+    expect(withBody.text()).toContain('Formation aux premiers secours')
+
+    const withoutBody = mount(FormationCard, {
+      props: { title: 'SST', imageTop: '', imageBottom: '' },
+      global: { stubs }
+    })
+    expect(withoutBody.find('p').exists()).toBe(false)
   })
 })

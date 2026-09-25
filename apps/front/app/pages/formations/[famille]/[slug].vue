@@ -6,7 +6,7 @@
         class="border-b border-rule bg-linear-to-b from-paper to-surface"
         aria-labelledby="formation-title"
       >
-        <div class="mx-auto max-w-container px-gutter-mobile py-2xl md:px-gutter">
+        <div class="mx-auto px-gutter-mobile md:px-gutter py-control-sm">
           <div class="grid items-start gap-2xl lg:grid-cols-5">
             <div class="lg:col-span-3">
               <p class="text-overline text-accent-text">
@@ -19,9 +19,11 @@
               >
                 {{ course.title }}
               </h1>
-              <p v-if="course.description" class="mt-md max-w-prose text-body text-ink-body">
-                {{ course.description }}
-              </p>
+              <div
+                v-if="course.description"
+                class="mt-md max-w-prose text-body text-ink-body"
+                v-html="sanitizeHtml(course.description)"
+              />
 
               <ul class="mt-md flex flex-wrap gap-sm">
                 <Badge v-if="durationTag" as="li" variant="chip">{{ durationTag }}</Badge>
@@ -34,28 +36,21 @@
               </ul>
 
               <!-- CTA desktop -->
-              <div class="mt-2xl hidden flex-wrap items-center gap-md lg:flex">
-                <Button
-                  as-child
-                  class="h-control rounded-full bg-accent px-md py-sm text-button font-semibold text-ink transition hover:bg-accent-text hover:text-paper"
-                >
+              <div class="mt-control-sm hidden flex-wrap items-center gap-md lg:flex">
+                <Button as-child variant="accent" size="pill">
                   <NuxtLink :to="demandeTo">{{
                     hasSessions ? 'Demander cette formation' : 'Demander une session'
                   }}</NuxtLink>
                 </Button>
-                <Button
-                  v-if="hasSessions"
-                  as-child
-                  variant="outline"
-                  class="h-control rounded-full border-outline bg-paper px-md py-sm text-button font-semibold text-ink transition hover:border-primary hover:bg-paper hover:text-accent-text"
-                >
+                <Button v-if="hasSessions" as-child variant="outline" size="pill">
                   <NuxtLink href="#sessionsList"> Voir les sessions </NuxtLink>
                 </Button>
                 <Button
                   v-if="course.generatedProgramUrl"
                   as-child
                   variant="link"
-                  class="h-auto gap-sm p-0 text-small font-medium text-ink-muted transition-colors hover:text-accent-text"
+                  size="inline"
+                  class="gap-sm text-ink-muted"
                 >
                   <NuxtLink
                     :to="course.generatedProgramUrl"
@@ -70,38 +65,29 @@
             </div>
 
             <figure
+              v-if="imageSrc"
               class="relative aspect-video overflow-hidden rounded-md bg-surface-alt shadow-lg lg:col-span-2 lg:aspect-4/3"
             >
-              <img
-                v-if="imageSrc"
-                :src="imageSrc"
-                :alt="course.title"
-                class="h-full w-full object-cover"
-              />
-              <figcaption
-                v-else
-                class="flex h-full items-center justify-center text-center text-small text-ink-muted"
-              >
-                {{ course.title }}
-              </figcaption>
+              <img :src="imageSrc" :alt="course.title" class="h-full w-full object-cover" />
             </figure>
           </div>
         </div>
       </section>
 
       <!-- Contenu principal -->
-      <div class="mx-auto max-w-container px-gutter-mobile py-section md:px-gutter">
+      <div class="mx-auto px-gutter-mobile py-section md:px-gutter">
         <div class="flex flex-col gap-2xl lg:flex-row">
           <!-- Colonne principale -->
-          <div class="min-w-0 flex-1 space-y-2xl">
+          <div class="min-w-0 flex-1 space-y-2xl md:px-16">
             <!-- À propos -->
             <section v-if="course.description" aria-labelledby="apropos-title">
               <h2 id="apropos-title" class="font-display text-h2 font-extrabold text-ink">
                 À propos de cette formation
               </h2>
-              <div class="mt-md space-y-md text-body text-ink-body">
-                <p>{{ course.description }}</p>
-              </div>
+              <div
+                class="mt-md space-y-md text-body text-ink-body"
+                v-html="sanitizeHtml(course.description)"
+              />
             </section>
 
             <!-- Objectifs -->
@@ -110,7 +96,12 @@
                 Objectifs pédagogiques
               </h2>
               <ul class="mt-md space-y-sm">
-                <li v-for="(objectif, idx) in objectives" :key="idx" class="flex gap-sm">
+                <li
+                  v-for="(objectif, idx) in objectives"
+                  :key="idx"
+                  v-reveal="revealStagger(idx)"
+                  class="flex gap-sm items-center"
+                >
                   <IconCheck :size="20" class="mt-xs shrink-0 text-success" />
                   <span class="text-body text-ink-body" v-html="sanitizeHtml(objectif)" />
                 </li>
@@ -120,7 +111,7 @@
             <!-- Public & prérequis -->
             <section v-if="course.targets || course.prerequisites" aria-label="Public et prérequis">
               <div class="grid gap-md sm:grid-cols-2">
-                <Card v-if="course.targets?.length" class="bg-surface">
+                <Card v-if="course.targets?.length" v-reveal variant="surface">
                   <CardHeader class="p-lg pb-0">
                     <h3 class="font-sans text-h4 font-semibold text-ink">Public concerné</h3>
                   </CardHeader>
@@ -130,7 +121,7 @@
                     </ul>
                   </CardContent>
                 </Card>
-                <Card class="bg-surface">
+                <Card v-reveal variant="surface">
                   <CardHeader class="p-lg pb-0">
                     <h3 class="font-sans text-h4 font-semibold text-ink">Prérequis</h3>
                   </CardHeader>
@@ -164,7 +155,7 @@
                   :disabled="!module.content && !module.goals.length"
                   class="rounded-md border bg-paper px-lg"
                 >
-                  <AccordionTrigger class="gap-md py-lg text-left">
+                  <AccordionTrigger class="gap-md py-lg text-left [&[data-disabled]>svg]:hidden">
                     <span
                       class="flex h-xl w-xl shrink-0 items-center justify-center rounded-full text-small font-semibold text-ink-inverse"
                       :class="module.evaluation ? 'bg-success' : 'bg-primary-dark'"
@@ -185,7 +176,6 @@
                     </span>
                     <template #icon>
                       <IconChevronDown
-                        v-if="module.content || module.goals.length"
                         :size="16"
                         class="shrink-0 text-ink-muted transition-transform duration-200"
                       />
@@ -216,7 +206,7 @@
               aria-label="Modalités pédagogiques et évaluation"
             >
               <div class="grid gap-md sm:grid-cols-2">
-                <Card v-if="pedagogyItems.length">
+                <Card v-if="pedagogyItems.length" v-reveal>
                   <CardHeader class="p-lg pb-0">
                     <h3 class="font-sans text-h4 font-semibold text-ink">Modalités pédagogiques</h3>
                   </CardHeader>
@@ -239,7 +229,7 @@
                     </div>
                   </CardContent>
                 </Card>
-                <Card v-if="evaluationItems.length">
+                <Card v-if="evaluationItems.length" v-reveal>
                   <CardHeader class="p-lg pb-0">
                     <h3 class="font-sans text-h4 font-semibold text-ink">Évaluation</h3>
                   </CardHeader>
@@ -269,12 +259,13 @@
                 <h2 id="sessions-title" class="font-display text-h2 font-extrabold text-ink">
                   Prochaines sessions
                 </h2>
-                <p class="text-small text-ink-subtle">
-                  Sessions inter-entreprises publiées — disponibilités actualisées en continu.
-                </p>
               </div>
-              <ul v-if="sessionsList.length" class="mt-md space-y-md">
-                <li v-for="session in sessionsList" :key="session.key">
+              <ul v-if="sessionsList.length" id="formation-sessions-list" class="mt-md space-y-md">
+                <li
+                  v-for="(session, i) in visibleSessions"
+                  :key="session.key"
+                  v-reveal="revealStagger(i)"
+                >
                   <SessionCard
                     :day="session.day"
                     :month="session.month"
@@ -300,27 +291,25 @@
                     </p>
                   </div>
                   <div class="flex flex-wrap items-center justify-center gap-md">
-                    <Button
-                      as-child
-                      class="h-control rounded-full bg-primary-dark px-md py-sm text-button font-semibold text-ink-inverse transition hover:bg-primary"
-                    >
+                    <Button as-child variant="dark" size="pill">
                       <NuxtLink :to="demandeTo">Demander une session</NuxtLink>
-                    </Button>
-                    <Button
-                      as-child
-                      variant="outline"
-                      class="h-control rounded-full border-outline bg-paper px-md py-sm text-button font-semibold text-ink transition hover:border-primary hover:bg-paper hover:text-accent-text"
-                    >
-                      <NuxtLink :to="demandeTo">Être informé des prochaines dates</NuxtLink>
                     </Button>
                   </div>
                 </CardContent>
               </Card>
-              <div v-if="sessionsList.length" class="mt-1">
-                <NuxtLink href="#" class="text-ink-muted font-bold text-h4"
-                  >Voir toutes les sessions de cette formation
-                  <span class="link-arrow">→</span></NuxtLink
+              <div v-if="sessionsList.length > INITIAL_SESSIONS_COUNT" class="mt-3">
+                <button
+                  type="button"
+                  class="text-ink-muted font-bold text-h4 hover:text-ink transition-colors"
+                  :aria-expanded="isAllSessionsVisible"
+                  aria-controls="formation-sessions-list"
+                  @click="toggleSessions"
                 >
+                  <template v-if="!isAllSessionsVisible">
+                    Voir plus <span class="link-arrow">→</span>
+                  </template>
+                  <template v-else> Voir moins <span class="link-arrow">↑</span> </template>
+                </button>
               </div>
             </section>
 
@@ -336,7 +325,7 @@
                 </p>
               </div>
               <ul class="mt-md grid gap-md sm:grid-cols-2 xl:grid-cols-3">
-                <li v-for="lieu in lieux" :key="lieu.key">
+                <li v-for="(lieu, i) in lieux" :key="lieu.key" v-reveal="revealStagger(i % 3)">
                   <CenterCard
                     :name="lieu.name"
                     :distance="lieu.department"
@@ -357,7 +346,7 @@
           >
             <!-- L'essentiel -->
             <section id="demande" aria-labelledby="essentiel-title">
-              <Card class="bg-surface">
+              <Card v-reveal variant="surface">
                 <CardHeader class="p-lg pb-0">
                   <h2 id="essentiel-title" class="font-sans text-h4 font-semibold text-ink">
                     L'essentiel
@@ -375,18 +364,11 @@
                     </div>
                   </dl>
                   <div class="mt-lg space-y-sm">
-                    <Button
-                      as-child
-                      class="h-control w-full rounded-full bg-primary-dark px-md py-sm text-button font-semibold text-ink-inverse transition hover:bg-primary"
-                    >
+                    <Button as-child variant="dark" size="pill" class="w-full">
                       <NuxtLink :to="demandeTo">Demander cette formation</NuxtLink>
                     </Button>
-                    <Button
-                      as-child
-                      variant="outline"
-                      class="h-control w-full rounded-full border-outline bg-paper px-md py-sm text-button font-semibold text-ink transition hover:border-primary hover:bg-paper hover:text-accent-text"
-                    >
-                      <NuxtLink :to="advisorTo">Parler à un conseiller</NuxtLink>
+                    <Button as-child variant="outline" size="pill" class="w-full">
+                      <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
                     </Button>
                   </div>
                   <p class="mt-sm text-meta leading-relaxed text-ink-subtle">
@@ -418,7 +400,7 @@
 
             <!-- Certification -->
             <section v-if="course.certification" aria-labelledby="certification-title">
-              <Card>
+              <Card v-reveal>
                 <CardHeader class="p-lg pb-0">
                   <h2 id="certification-title" class="font-sans text-h4 font-semibold text-ink">
                     Certification
@@ -443,8 +425,15 @@
               </Card>
             </section>
 
-            <!-- Formation en intra -->
-            <Card class="bg-primary-dark p-lg" aria-labelledby="intra-title">
+            <!-- Formation en intra : affichée uniquement si la modalité est
+                 proposée sur la fiche (RG-CAT-04 — pas d'option fantôme). -->
+            <Card
+              v-if="hasIntra"
+              v-reveal
+              variant="dark"
+              class="p-lg"
+              aria-labelledby="intra-title"
+            >
               <h2 id="intra-title" class="font-sans text-h4 font-semibold text-ink-inverse">
                 Formation en intra
               </h2>
@@ -452,11 +441,10 @@
                 Cette formation peut être organisée dans votre entreprise, sur vos équipements. Le
                 formulaire conserve la formation et le besoin — le centre n'est pas imposé.
               </p>
-              <Button
-                as-child
-                class="mt-md h-control w-full rounded-full bg-paper px-md py-sm text-button font-semibold text-ink transition hover:bg-surface hover:text-accent-text"
-              >
-                <NuxtLink :to="demandeTo">Organiser cette formation dans mon entreprise</NuxtLink>
+              <Button as-child variant="paper" size="pill" class="mt-md w-full">
+                <NuxtLink :to="demandeIntraTo">
+                  Organiser cette formation dans mon entreprise
+                </NuxtLink>
               </Button>
             </Card>
 
@@ -465,7 +453,8 @@
               v-if="course.generatedProgramUrl"
               as-child
               variant="outline"
-              class="h-control w-full gap-sm rounded-md border-rule bg-paper px-md py-sm text-small font-medium text-ink transition hover:border-outline hover:bg-paper hover:text-accent-text"
+              size="control"
+              class="w-full gap-sm"
             >
               <NuxtLink :to="course.generatedProgramUrl" target="_blank" rel="noopener noreferrer">
                 <IconDownload :size="16" />
@@ -478,21 +467,15 @@
         <!-- Bandeau CTA + formations similaires : pleine largeur -->
         <div class="mt-2xl space-y-2xl">
           <CtaBanner
+            v-reveal
             title="Vous ne savez pas quelle formation choisir ?"
             text="Décrivez votre besoin : LEARN UP identifie la formation, la catégorie et le format adaptés à votre situation."
           >
-            <Button
-              class="h-control w-full rounded-md bg-paper px-md py-sm text-button font-semibold text-ink transition hover:bg-surface hover:text-accent-text sm:w-auto"
-              @click="openAssistant"
-            >
+            <Button variant="paper" size="control" class="w-full sm:w-auto" @click="openAssistant">
               Être guidé dans mon choix
             </Button>
-            <Button
-              as-child
-              variant="outline"
-              class="h-control w-full rounded-md border-outline-inverse bg-transparent px-md py-sm text-button font-semibold text-ink-inverse transition hover:bg-transparent hover:text-ink-inverse sm:w-auto"
-            >
-              <NuxtLink :to="advisorTo">Parler à un conseiller</NuxtLink>
+            <Button as-child variant="outline-inverse" size="control" class="w-full sm:w-auto">
+              <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
             </Button>
           </CtaBanner>
 
@@ -501,11 +484,7 @@
               <h2 id="similaires-title" class="font-display text-h2 font-extrabold text-ink">
                 Formations similaires
               </h2>
-              <Button
-                as-child
-                variant="link"
-                class="h-auto p-0 text-small font-bold text-primary transition-colors hover:text-accent-text"
-              >
+              <Button as-child variant="link" size="inline" class="font-bold">
                 <NuxtLink :to="`/formations/${famille}`"
                   >Voir la famille {{ familyName }} <span class="link-arrow">→</span></NuxtLink
                 >
@@ -513,12 +492,16 @@
             </div>
             <div class="mt-md grid gap-md sm:grid-cols-3">
               <CenterFormationCard
-                v-for="similaire in similaires"
+                v-for="(similaire, i) in similaires"
                 :key="similaire.slug"
+                v-reveal="revealStagger(i)"
+                variant="similar"
+                :family="similaire.family"
                 :sub-family="similaire.subFamily"
                 :title="similaire.title"
                 :meta="similaire.meta"
                 :to="similaire.to ?? undefined"
+                class="h-full"
               />
             </div>
           </section>
@@ -535,10 +518,7 @@
             <p v-if="priceLabel" class="font-semibold text-ink">{{ priceLabel }}</p>
             <p class="text-small text-ink-muted">Demander un devis ou une session</p>
           </div>
-          <Button
-            as-child
-            class="h-control shrink-0 rounded-full bg-accent px-md py-sm text-button font-semibold text-ink transition hover:bg-accent-text hover:text-paper"
-          >
+          <Button as-child variant="accent" size="pill" class="shrink-0">
             <NuxtLink :to="demandeTo">Demander cette formation</NuxtLink>
           </Button>
         </div>
@@ -589,6 +569,7 @@ import IconBook from '~/components/icons/IconBook.vue'
 import IconBuilding from '~/components/icons/IconBuilding.vue'
 import IconFactory from '~/components/icons/IconFactory.vue'
 import {
+  buildMeta,
   buildSessionBadge,
   mapCourse,
   upcomingSessions,
@@ -596,9 +577,10 @@ import {
   type FormationItem
 } from '~/composables/useCatalog'
 import { directusAssetUrl } from '~/utils/directusAsset'
-import { sanitizeHtml } from '~/utils/sanitizeHtml'
+import { htmlToText, sanitizeHtml } from '~/utils/sanitizeHtml'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
+import { revealStagger } from '~/utils/reveal'
 import { availabilityStatus } from '~/composables/useCentres'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 
@@ -611,6 +593,10 @@ interface ProgrammeModule {
   evaluation?: boolean
   goals: string[]
 }
+
+definePageMeta({
+  layout: 'with-breadcrumb'
+})
 
 const route = useRoute()
 const famille = route.params.famille as string
@@ -719,7 +705,7 @@ useContentSeo(
         ? (course.value?.seoTitle ?? course.value?.title ?? 'Formation — LEARN UP ACADEMY')
         : title,
       seo_description: isFound
-        ? (course.value?.seoDescription ?? course.value?.description)
+        ? (course.value?.seoDescription ?? htmlToText(course.value?.description))
         : undefined,
       seo_canonical: isFound ? course.value?.seoCanonical : undefined,
       seo_noindex: !isFound
@@ -742,7 +728,7 @@ useHead({
           '@context': 'https://schema.org',
           '@type': 'Course',
           name: course.value.title,
-          description: course.value.description ?? '',
+          description: htmlToText(course.value.description),
           provider: {
             '@type': 'Organization',
             name: 'LEARN UP ACADEMY',
@@ -891,12 +877,6 @@ interface ProgrammeBlock {
 
 // La ligne sous le titre est un sous-titre (texte court) ; la description
 // peut être du HTML riche (Directus) affiché dans le contenu déplié.
-function stripHtml(html?: string): string {
-  return (html ?? '')
-    .replace(/<[^<>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
 
 function toProgrammeModule(block: ProgrammeBlock): ProgrammeModule | null {
   if (typeof block.name !== 'string' || !block.name) return null
@@ -906,8 +886,10 @@ function toProgrammeModule(block: ProgrammeBlock): ProgrammeModule | null {
   else if (block.durationInDays) durationParts.push(`${block.durationInDays} jours`)
 
   const typeKey = typeof block.type === 'string' ? block.type.toLowerCase() : ''
-  const subtitle = block.subtitle?.trim() || stripHtml(block.description)
-  const descriptionText = stripHtml(block.description)
+  const hasRichDescription =
+    typeof block.description === 'string' && /<[a-z][^>]*>/i.test(block.description)
+  const subtitle = block.subtitle?.trim() || htmlToText(block.description)
+  const descriptionText = htmlToText(block.description)
   // Digiforma duplique parfois la description dans les goals — on ne
   // répète ni le sous-titre ni la description dans le contenu déplié.
   const goals = (block.goals ?? [])
@@ -917,9 +899,9 @@ function toProgrammeModule(block: ProgrammeBlock): ProgrammeModule | null {
         typeof text === 'string' && text.length > 0 && text !== subtitle && text !== descriptionText
     )
 
-  // Sans sous-titre explicite, la description sert déjà de ligne résumée —
-  // on ne la répète pas dans le contenu déplié.
-  const content = block.subtitle ? block.description : undefined
+  // Sans sous-titre explicite ni HTML riche, la description sert déjà de
+  // ligne résumée — on ne la répète pas dans le contenu déplié.
+  const content = block.subtitle || hasRichDescription ? block.description : undefined
 
   return {
     title: block.name,
@@ -963,14 +945,32 @@ function pedagogyIcon(title: string) {
 
 // Params encodés : famille/slug/id de session peuvent contenir des
 // caractères spéciaux — ne jamais les interpoler bruts dans la query.
-const demandeTo = `/centres/demande-de-formation?famille=${encodeURIComponent(famille)}&formation=${encodeURIComponent(slug)}`
+// Le centre ancre l'encart « Votre demande concerne » (RG06) : celui de la
+// session cliquée, sinon le centre principal de la formation (centerSlug).
+function demandeUrl(session?: CourseSession): string {
+  const params = new URLSearchParams({ famille, formation: slug })
+  const centre = session?.location?.centreSlug ?? course.value?.centerSlug ?? null
+  if (centre) params.set('centre', centre)
+  if (session?.id) params.set('session', session.id)
+  return `/centres/demande-de-formation?${params.toString()}`
+}
+const demandeTo = computed(() => demandeUrl())
+
+// La carte intra n'est proposée que si la formation déclare la modalité.
+const hasIntra = computed(() => (course.value?.modalities ?? []).includes('intra'))
+
+// Variante intra : aucun centre imposé — le lieu de la session est saisi
+// par le client dans le formulaire (« sans centre imposé »).
+const demandeIntraTo = computed(() => {
+  const params = new URLSearchParams({ famille, formation: slug, intra: '1' })
+  return `/centres/demande-de-formation?${params.toString()}`
+})
 
 // C4 — la fiche d'origine est transmise au panneau : il cherche une alternative.
 const assistant = useAssistantLauncher()
 function openAssistant() {
   assistant.open({ context: { source: 'formation', formationSlug: slug } })
 }
-const advisorTo = '/centres/demande-de-formation?sujet=conseiller'
 
 // Titre de session par modalité (label déjà traduit via MODALITY_LABELS).
 const SESSION_TITLES: Record<string, string> = {
@@ -1001,6 +1001,11 @@ function sessionTitle(s: CourseSession, modality: string): string {
   return place ? `${base} — ${place}${department}` : base
 }
 
+const INITIAL_SESSIONS_COUNT = 2
+const SESSIONS_STEP = 4
+
+const visibleSessionsCount = ref(INITIAL_SESSIONS_COUNT)
+
 const sessionsList = computed(() => {
   const raw = (course.value ? upcomingSessions(course.value) : [])
     .slice()
@@ -1028,10 +1033,22 @@ const sessionsList = computed(() => {
       places,
       type: sessionSeatType(places),
       ctaLabel: places === 0 ? "Être informé d'une place" : "S'inscrire",
-      to: s.id ? `${demandeTo}&session=${encodeURIComponent(s.id)}` : demandeTo
+      to: demandeUrl(s)
     }
   })
 })
+
+const isAllSessionsVisible = computed(() => visibleSessionsCount.value >= sessionsList.value.length)
+
+const visibleSessions = computed(() => sessionsList.value.slice(0, visibleSessionsCount.value))
+
+function toggleSessions() {
+  if (isAllSessionsVisible.value) {
+    visibleSessionsCount.value = INITIAL_SESSIONS_COUNT
+  } else {
+    visibleSessionsCount.value += SESSIONS_STEP
+  }
+}
 
 const hasSessions = computed(() => sessionsList.value.length > 0)
 
@@ -1113,10 +1130,15 @@ const similarQuery = computed(() => ({
 
 const similarCatalog = await useCatalog(similarQuery)
 
+// Cartes similaires : méta courte (durée + modalités), sans certification
+// ni certificateur — la maquette n'affiche que l'essentiel.
 const similaires = computed<FormationItem[]>(
   () =>
     similarCatalog.data.value?.items
-      .map((course) => mapCourse(course, familyName.value))
+      .map((course) => ({
+        ...mapCourse(course, familyName.value),
+        meta: buildMeta(course, false)
+      }))
       .filter((f) => f.slug !== slug) ?? []
 )
 

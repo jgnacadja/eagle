@@ -378,6 +378,26 @@ describe('pages/formations/[famille]/[slug]', () => {
     expect(wrapper.text()).toContain('Télécharger le programme détaillé')
   })
 
+  it('rend la description WYSIWYG en HTML sans balises littérales', async () => {
+    const richCourse: Course = {
+      ...course,
+      description: '<p>Initiez-vous au march&eacute; du <strong>cloud</strong>.</p>'
+    }
+    vi.stubGlobal('useAsyncData', async (key: string) => {
+      if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+        return { data: ref(richCourse), pending: ref(false), error: ref(null), refresh: vi.fn() }
+      }
+      return defaultUseAsyncData(key)
+    })
+
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('marché du cloud.')
+    expect(wrapper.text()).not.toContain('&eacute;')
+    expect(wrapper.html()).not.toContain('&lt;p&gt;')
+    expect(wrapper.html()).toContain('<strong>cloud</strong>')
+  })
+
   it('restaure les sections sessions, lieux et modalités/évaluation', async () => {
     const wrapper = await mountPage()
 
@@ -393,6 +413,27 @@ describe('pages/formations/[famille]/[slug]', () => {
     expect(wrapper.text()).toContain('Inter, en centre.')
     expect(wrapper.text()).toContain('Évaluation')
     expect(wrapper.text()).toContain('Épreuve pratique de conduite')
+  })
+
+  it('affiche la carte intra uniquement quand la modalité est proposée', async () => {
+    const wrapper = await mountPage()
+    expect(wrapper.text()).not.toContain('Formation en intra')
+
+    const intraCourse: Course = { ...course, modalities: ['inter', 'intra'] }
+    vi.stubGlobal('useAsyncData', async (key: string) => {
+      if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+        return { data: ref(intraCourse), pending: ref(false), error: ref(null), refresh: vi.fn() }
+      }
+      return defaultUseAsyncData(key)
+    })
+
+    const intraWrapper = await mountPage()
+    expect(intraWrapper.text()).toContain('Formation en intra')
+    const intraLink = intraWrapper.find('a[href*="intra=1"]')
+    expect(intraLink.exists()).toBe(true)
+    expect(intraLink.attributes('href')).toContain(
+      'famille=caces-conduite-engins&formation=caces-r489-chariots-elevateurs'
+    )
   })
 
   it('sert le visuel Directus via le proxy avant imageUrl', async () => {
@@ -448,6 +489,66 @@ describe('pages/formations/[famille]/[slug]', () => {
     expect(wrapper.findAll('.session-card')).toHaveLength(0)
     expect(wrapper.text()).toContain('Demander une session')
     expect(wrapper.text()).not.toContain('Voir les sessions')
+  })
+
+  it('gère le déploiement progressif (2 -> 6 -> tout) et le repli avec aria-expanded', async () => {
+    const multiSessionCourse: Course = {
+      ...course,
+      sessions: Array.from({ length: 8 }, (_, i) => ({
+        id: `sess-${i + 1}`,
+        startDate: `2026-${String(10 + Math.floor(i / 3)).padStart(2, '0')}-${String(10 + (i % 20)).padStart(2, '0')}`,
+        endDate: `2026-${String(10 + Math.floor(i / 3)).padStart(2, '0')}-${String(11 + (i % 20)).padStart(2, '0')}`,
+        modality: 'presentiel',
+        seatsRemaining: 5,
+        location: {
+          name: 'Centre Créteil',
+          city: 'Créteil',
+          postalCode: '94000',
+          department: '94',
+          region: 'IDF',
+          centreSlug: 'creteil'
+        }
+      }))
+    }
+    vi.stubGlobal('useAsyncData', async (key: string) => {
+      if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+        return {
+          data: ref(multiSessionCourse),
+          pending: ref(false),
+          error: ref(null),
+          refresh: vi.fn()
+        }
+      }
+      return defaultUseAsyncData(key)
+    })
+
+    const wrapper = await mountPage()
+
+    // 1. Initial : 2 sessions affichées, bouton Voir plus, aria-expanded false
+    expect(wrapper.findAll('.session-card')).toHaveLength(2)
+    const button = wrapper.find('button.text-h4')
+    expect(button.exists()).toBe(true)
+    expect(button.text()).toContain('Voir plus')
+    expect(button.attributes('aria-expanded')).toBe('false')
+    expect(button.attributes('aria-controls')).toBe('formation-sessions-list')
+
+    // 2. Premier clic : déploie jusqu'à 6 sessions, bouton toujours Voir plus
+    await button.trigger('click')
+    expect(wrapper.findAll('.session-card')).toHaveLength(6)
+    expect(button.text()).toContain('Voir plus')
+    expect(button.attributes('aria-expanded')).toBe('false')
+
+    // 3. Deuxième clic : déploie les 8 sessions, bouton bascule sur Voir moins
+    await button.trigger('click')
+    expect(wrapper.findAll('.session-card')).toHaveLength(8)
+    expect(button.text()).toContain('Voir moins')
+    expect(button.attributes('aria-expanded')).toBe('true')
+
+    // 4. Troisième clic : replie à 2 sessions
+    await button.trigger('click')
+    expect(wrapper.findAll('.session-card')).toHaveLength(2)
+    expect(button.text()).toContain('Voir plus')
+    expect(button.attributes('aria-expanded')).toBe('false')
   })
 
   it('définit le SEO et le JSON-LD Course', async () => {

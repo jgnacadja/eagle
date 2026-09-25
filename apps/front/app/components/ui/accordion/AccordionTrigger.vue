@@ -2,12 +2,7 @@
   <AccordionHeader class="flex">
     <AccordionTrigger
       v-bind="delegatedProps"
-      :class="
-        cn(
-          'flex flex-1 items-center justify-between py-4 text-sm font-medium transition-all hover:text-accent-text [&[data-state=open]>svg]:rotate-180',
-          props.class
-        )
-      "
+      :class="cn(accordionTriggerVariants({ variant }), props.class)"
     >
       <slot />
       <slot name="icon">
@@ -26,8 +21,17 @@ import type { HTMLAttributes } from 'vue'
 import { reactiveOmit } from '@vueuse/core'
 import { AccordionHeader, AccordionTrigger } from 'reka-ui'
 import { cn } from '@/lib/utils'
+import { accordionTriggerVariants, type AccordionTriggerVariants } from '.'
 
-const props = defineProps<AccordionTriggerProps & { class?: HTMLAttributes['class'] }>()
+const props = withDefaults(
+  defineProps<
+    AccordionTriggerProps & {
+      variant?: AccordionTriggerVariants['variant']
+      class?: HTMLAttributes['class']
+    }
+  >(),
+  { variant: 'default', class: undefined }
+)
 
-const delegatedProps = reactiveOmit(props, 'class')
+const delegatedProps = reactiveOmit(props, 'class', 'variant')
 </script>

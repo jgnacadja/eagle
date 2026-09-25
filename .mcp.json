@@ -59,6 +59,14 @@
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-filesystem", "${workspaceFolder}"]
     },
+    "hubspot": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@hubspot/mcp-server"],
+      "env": {
+        "PRIVATE_APP_ACCESS_TOKEN": "${env:HUBSPOT_PRIVATE_APP_TOKEN}"
+      }
+    },
     "fetch": {
       "type": "stdio",
       "command": "uvx",

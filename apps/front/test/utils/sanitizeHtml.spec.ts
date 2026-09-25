@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sanitizeHtml, sanitizeHtmlWithHeadings } from '~/utils/sanitizeHtml'
+import { htmlToText, sanitizeHtml, sanitizeHtmlWithHeadings } from '~/utils/sanitizeHtml'
 
 describe('sanitizeHtml', () => {
   it('supprime les balises et attributs dangereux', () => {
@@ -30,6 +30,25 @@ describe('sanitizeHtml', () => {
 
     expect(clean).toContain('target="_blank" rel="noopener noreferrer"')
     expect(clean).toContain('<a href="https://exemple.fr">autre</a>')
+  })
+})
+
+describe('htmlToText', () => {
+  it('retire les balises et décode les entités HTML', () => {
+    expect(htmlToText('<p>Initiez-vous au march&eacute; du cloud.</p>')).toBe(
+      'Initiez-vous au marché du cloud.'
+    )
+  })
+
+  it('supporte les entités numériques et null/undefined', () => {
+    expect(htmlToText('<p>R&amp;D &#8212; l&apos;essentiel</p>')).toBe("R&D — l'essentiel")
+    expect(htmlToText(null)).toBe('')
+    expect(htmlToText(undefined)).toBe('')
+    expect(htmlToText('')).toBe('')
+  })
+
+  it('fusionne les espaces laissés par les balises supprimées', () => {
+    expect(htmlToText('<p>Un</p><p>deux</p>')).toBe('Un deux')
   })
 })
 

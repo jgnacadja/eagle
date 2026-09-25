@@ -35,6 +35,24 @@ describe('CenterFormationCard', () => {
     expect(wrapper.text()).toContain('Sessions ce mois-ci')
   })
 
+  it('shows the family in the overline for the similar variant', () => {
+    const wrapper = mount(CenterFormationCard, {
+      props: {
+        subFamily: 'Chariots élévateurs',
+        family: "CACES & conduite d'engins",
+        variant: 'similar' as const,
+        title: 'CACES R485 — gerbeurs',
+        meta: '1 à 2 jours · Inter / intra',
+        to: '/formations/caces-conduite-engins/caces-r485'
+      },
+      global: { stubs }
+    })
+
+    expect(wrapper.text()).toContain("CACES & conduite d'engins")
+    expect(wrapper.text()).not.toContain('Chariots élévateurs')
+    expect(wrapper.text()).toContain('Consulter')
+  })
+
   it('shows the warning marker for a warning status', () => {
     const wrapper = mount(CenterFormationCard, {
       props: {

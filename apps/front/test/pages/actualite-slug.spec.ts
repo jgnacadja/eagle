@@ -1,6 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { computed, defineComponent, h, ref, Suspense, watchEffect } from 'vue'
+import { computed, defineComponent, h, onScopeDispose, ref, Suspense, watchEffect } from 'vue'
 import type { Article, Course } from '@learnup/types'
 import LoadError from '~/components/ErrorState/LoadError.vue'
 import NotFound from '~/components/ErrorState/NotFound.vue'
@@ -33,7 +33,11 @@ const articleFixture: Article = {
   author_name: 'Équipe réglementation LEARN UP ACADEMY',
   author_image: null,
   region: null,
-  related_formation_slug: 'caces-r489-chariots-elevateurs',
+  related_formation: {
+    slug: 'caces-r489-chariots-elevateurs',
+    status: 'published',
+    famille: { slug: 'caces-conduite-engins', name: "CACES & conduite d'engins" }
+  },
   publish_at: '2026-09-02T00:00:00.000Z',
   centre: null,
   cover_image: null,
@@ -56,10 +60,13 @@ const relatedCourse = {
   certifierName: null,
   category: null,
   familySlug: 'caces-conduite-engins',
+  subFamilySlug: 'chariots-elevateurs',
+  subFamilyName: 'Chariots élévateurs',
   centerSlug: null,
   centerSlugs: [],
   modalities: [],
   sessions: null,
+  image: null,
   imageUrl: null,
   generatedProgramUrl: null,
   status: 'published',
@@ -69,7 +76,9 @@ const relatedCourse = {
   blocks: null,
   targets: null,
   prerequisites: null,
+  pedagogy: null,
   evaluation: null,
+  validity: null,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z'
 } satisfies Course
@@ -81,6 +90,7 @@ type DirectusCommand = () => { path: string }
 vi.stubGlobal('computed', computed)
 vi.stubGlobal('ref', ref)
 vi.stubGlobal('watchEffect', watchEffect)
+vi.stubGlobal('onScopeDispose', onScopeDispose)
 vi.stubGlobal('definePageMeta', vi.fn())
 vi.stubGlobal('useRoute', () => routeMock)
 vi.stubGlobal('useAsyncData', async (key: string, handler: () => Promise<unknown>) => {
@@ -111,22 +121,29 @@ vi.stubGlobal('useDirectusList', () =>
 )
 vi.stubGlobal('$fetch', fetchMock)
 
+const ShareMenuStub = {
+  name: 'ShareMenu',
+  props: ['url', 'title', 'text'],
+  template: '<button type="button" aria-label="Partager l\'article" />'
+}
+
 const stubs = {
   NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
   NuxtImg: { props: ['src', 'alt'], template: '<img :src="src" :alt="alt" />' },
   Button: { template: '<button><slot /></button>' },
   Card: { template: '<div><slot /></div>' },
   CenterFormationCard: {
-    props: ['title', 'to'],
-    template: '<div><a v-if="to" :href="to">{{ title }}</a></div>'
+    props: ['title', 'to', 'subFamily'],
+    template: '<div>{{ subFamily }}<a v-if="to" :href="to">{{ title }}</a></div>'
   },
   SearchInput: {
     props: ['modelValue'],
     emits: ['update:modelValue', 'submit'],
     template: '<button class="search-stub" @click="$emit(\'submit\', \'caces\')" />'
   },
-  IconShare: true,
+  ShareMenu: ShareMenuStub,
   IconLink: true,
+  IconCheck: true,
   IconFileOff: true,
   IconRefresh: true,
   IconSparkle: true
@@ -159,9 +176,6 @@ describe('pages/actualites/[slug]', () => {
       if (path === '/items/articles') {
         return routeMock.params.slug === 'inconnu' ? [] : [articleFixture]
       }
-      if (path === '/items/formations') {
-        return [{ slug: relatedCourse.slug, famille: { slug: relatedCourse.familySlug } }]
-      }
       return []
     })
     fetchMock.mockResolvedValue(relatedCourse)
@@ -171,6 +185,8 @@ describe('pages/actualites/[slug]', () => {
       path: '/actualites/recyclage-caces-echeances-2027',
       meta: {}
     }
+    Object.defineProperty(window.navigator, 'share', { value: undefined, configurable: true })
+    Object.defineProperty(window.navigator, 'clipboard', { value: undefined, configurable: true })
   })
 
   it('affiche l’en-tête de l’article : catégorie, date, titre, chapô', async () => {
@@ -193,6 +209,38 @@ describe('pages/actualites/[slug]', () => {
     expect(labels).toContain("Copier le lien de l'article")
   })
 
+  it('copie l’URL propre de l’article (sans query ni ancre) dans le presse-papiers', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(window.navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true
+    })
+    routeMock.query = { from: '/formations', category: 'SST' }
+    const wrapper = await mountPage()
+    const buttonByLabel = (label: string) =>
+      wrapper.findAll('button').find((b) => b.attributes('aria-label') === label)!
+
+    await buttonByLabel("Copier le lien de l'article").trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith(
+      `${window.location.origin}/actualites/recyclage-caces-echeances-2027`
+    )
+    expect(buttonByLabel('Lien copié').exists()).toBe(true)
+  })
+
+  it('passe l’URL propre de l’article au menu de partage', async () => {
+    routeMock.query = { from: '/formations', category: 'SST' }
+    const wrapper = await mountPage()
+
+    const share = wrapper.findComponent(ShareMenuStub)
+    expect(share.exists()).toBe(true)
+    expect(share.props('url')).toBe(
+      `${window.location.origin}/actualites/recyclage-caces-echeances-2027`
+    )
+    expect(share.props('title')).toBe('Recyclage CACES : échéance en 2027')
+  })
+
   it('affiche les sections du corps et l’encart À retenir', async () => {
     const wrapper = await mountPage()
 
@@ -207,6 +255,7 @@ describe('pages/actualites/[slug]', () => {
 
     expect(wrapper.text()).toContain('CACES R489')
     expect(wrapper.text()).toContain('Autorisation de conduite')
+    expect(wrapper.text()).toContain("CACES & conduite d'engins")
     expect(wrapper.text()).toContain('Recyclage CACES R489 — toutes catégories')
     const link = wrapper.find(
       'a[href="/formations/caces-conduite-engins/caces-r489-chariots-elevateurs"]'
@@ -214,12 +263,12 @@ describe('pages/actualites/[slug]', () => {
     expect(link.exists()).toBe(true)
   })
 
-  it('affiche le CTA conseiller vers la demande de formation', async () => {
+  it('affiche le CTA conseiller vers le formulaire dédié', async () => {
     const wrapper = await mountPage()
 
-    const link = wrapper.find('a[href="/centres/demande-de-formation"]')
+    const link = wrapper.find('a[href="/parler-a-votre-conseiller"]')
     expect(link.exists()).toBe(true)
-    expect(link.text()).toContain('Parler à un conseiller')
+    expect(link.text()).toContain('Parler à votre conseiller')
   })
 
   it('affiche la table des matières et les articles liés', async () => {

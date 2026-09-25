@@ -1,6 +1,6 @@
 <template>
   <article
-    class="rounded-md border border-rule bg-paper p-md transition hover:border-primary/40 hover:shadow-md"
+    class="rounded-md border border-rule bg-paper p-md transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-md"
   >
     <div v-if="image" class="relative aspect-video overflow-hidden rounded-sm">
       <img :src="image" :alt="title" class="h-full w-full object-cover" loading="lazy" />
@@ -14,6 +14,12 @@
     </div>
     <div class="mt-md">
       <h3 class="font-sans text-h4 text-ink">{{ title }}</h3>
+      <p
+        v-if="body"
+        class="font-sans text-sm md:text-body text-ink-muted line-clamp-2 hidden md:block"
+      >
+        {{ body }}
+      </p>
       <NuxtLink
         v-if="to"
         :to="to"
@@ -30,6 +36,7 @@ defineProps<{
   title: string
   imageTop: string
   imageBottom: string
+  body?: string
   image?: string | null
   to?: string | null
 }>()

@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-1 flex-col bg-paper">
     <header class="border-b border-rule bg-linear-to-b from-paper to-surface">
-      <div class="mx-auto w-full max-w-container px-gutter-mobile pt-2xl md:px-gutter">
+      <div class="mx-auto w-full px-gutter-mobile pt-2xl md:px-gutter">
         <h1 class="font-display text-h1 font-extrabold text-ink">
           {{ page.title }}
         </h1>
@@ -9,7 +9,7 @@
 
         <nav aria-label="Pages légales" class="mt-2xl hidden border-b border-rule pb-0 md:block">
           <ul class="-mb-px flex items-center gap-md">
-            <li v-for="tab in tabbedPages" :key="tab.slug">
+            <li v-for="tab in tabs" :key="tab.slug">
               <NuxtLink
                 :to="`/${tab.slug}`"
                 :aria-current="tab.slug === currentSlug ? 'page' : undefined"
@@ -30,26 +30,18 @@
       </div>
     </header>
 
-    <div class="mx-auto w-full max-w-container px-gutter-mobile pb-xl md:px-gutter">
+    <div class="mx-auto w-full px-gutter-mobile pb-xl md:px-gutter">
       <!-- Mobile page selector -->
       <div class="mt-2xl md:hidden">
         <Label id="legal-page-select-label" for="legal-page-select" class="sr-only"
           >Sélecteur de page légale</Label
         >
         <Select id="legal-page-select" v-model="selectedPage">
-          <SelectTrigger
-            aria-labelledby="legal-page-select-label"
-            class="h-control w-full rounded-lg border border-rule bg-surface px-lg text-small font-medium text-ink shadow-sm focus:ring-2 focus:ring-accent"
-          >
+          <SelectTrigger aria-labelledby="legal-page-select-label" variant="surface">
             <span class="truncate">{{ currentLabel }}</span>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem
-              v-for="tab in tabbedPages"
-              :key="tab.slug"
-              :value="tab.slug"
-              class="text-small"
-            >
+            <SelectItem v-for="tab in tabs" :key="tab.slug" :value="tab.slug" class="text-small">
               {{ tab.label }}
             </SelectItem>
           </SelectContent>
@@ -61,11 +53,7 @@
         <aside class="mb-2xl md:mb-0" @click.capture="onSummaryClick">
           <Accordion type="single" collapsible class="md:hidden">
             <AccordionItem value="summary" class="border-0">
-              <AccordionTrigger
-                class="w-full rounded-lg border border-rule bg-surface px-lg py-md text-xs font-semibold uppercase tracking-wide text-ink"
-              >
-                Sommaire
-              </AccordionTrigger>
+              <AccordionTrigger variant="panel"> Sommaire </AccordionTrigger>
               <AccordionContent class="p-0">
                 <LegalSummary
                   :sections="page.sections"
@@ -83,11 +71,12 @@
         </aside>
 
         <!-- Article -->
-        <article class="max-w-180 space-y-2xl">
+        <article class="space-y-2xl">
           <section
             v-for="section in page.sections"
             :id="section.id"
             :key="section.id"
+            v-reveal
             class="scroll-mt-24"
           >
             <h2 class="font-display text-h3 font-extrabold text-ink">
@@ -114,11 +103,7 @@
             class="flex flex-col gap-lg border-t border-rule pt-2xl sm:flex-row sm:items-center sm:justify-between"
           >
             <p class="text-small text-ink-muted">Une question sur ces informations ?</p>
-            <Button
-              as-child
-              variant="outline"
-              class="h-control w-full rounded-full border-outline px-xl text-small font-semibold transition hover:text-accent-text sm:w-auto"
-            >
+            <Button as-child variant="outline" size="pill-sm" class="w-full px-xl sm:w-auto">
               <a :href="page.cta.to">
                 {{ page.cta.label }}
               </a>
@@ -143,20 +128,19 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { cn } from '@/lib/utils'
-import { tabbedLegalPages, type LegalPage } from '~/data/legal'
+import type { LegalPage, LegalPageTab } from '~/types/legal'
 
 const props = defineProps<{
   page: LegalPage
+  tabs: LegalPageTab[]
 }>()
 
 const route = useRoute()
-const currentSlug = computed(() => (route.params.legal as string) || props.page.slug)
-
-const tabbedPages = tabbedLegalPages
+const currentSlug = computed(() => (route.params.slug as string) || props.page.slug)
 
 const selectedPage = ref(currentSlug.value)
 const currentLabel = computed(
-  () => tabbedPages.find((p) => p.slug === currentSlug.value)?.label ?? props.page.label
+  () => props.tabs.find((p) => p.slug === currentSlug.value)?.label ?? props.page.label
 )
 
 watch(selectedPage, (newSlug) => {

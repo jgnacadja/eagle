@@ -162,6 +162,45 @@ describe('CentresService', () => {
     expect(result.map((c) => c.slug)).toEqual(['creteil'])
   })
 
+  it('matches search on department name and covered codes', async () => {
+    cache.get.mockResolvedValue(null)
+    directus.fetchAllCentres.mockResolvedValue([
+      centre({ slug: 'lyon', department: 'Rhône', departments_covered: ['69'], region: null }),
+      centre({
+        slug: 'paris',
+        city: 'Paris',
+        postal_code: '75012',
+        department: 'Paris',
+        departments_covered: ['75', '92'],
+        region: null
+      })
+    ])
+
+    expect((await service.list({ search: 'rhone' } as ListCentresDto)).map((c) => c.slug)).toEqual([
+      'lyon'
+    ])
+    expect(
+      (await service.list({ search: 'hauts-de-seine' } as ListCentresDto)).map((c) => c.slug)
+    ).toEqual(['paris'])
+  })
+
+  it('matches search on a covered department code', async () => {
+    cache.get.mockResolvedValue(null)
+    directus.fetchAllCentres.mockResolvedValue([
+      centre({
+        slug: 'bourg',
+        city: 'Bourg-en-Bresse',
+        postal_code: '01000',
+        department: 'Ain',
+        departments_covered: ['39']
+      })
+    ])
+
+    const result = await service.list({ search: '39' } as ListCentresDto)
+
+    expect(result.map((c) => c.slug)).toEqual(['bourg'])
+  })
+
   it('matches search on specialties (JSON field impossible à filtrer côté Directus)', async () => {
     cache.get.mockResolvedValue(null)
 

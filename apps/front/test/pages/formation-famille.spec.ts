@@ -17,7 +17,11 @@ const family: FamilleFormation = {
   seo_title: 'CACES & conduite d’engins — LEARN UP ACADEMY',
   seo_description: 'Formations CACES.',
   seo_canonical: null,
-  subnav_title: "Parcourir par type d'engin"
+  subnav_title: "Parcourir par type d'engin",
+  audience_text:
+    "Tout salarié amené à conduire un engin de la famille concernée : caristes, conducteurs d'engins de chantier, opérateurs nacelle, grutiers.",
+  validity_text:
+    'Les CACES® de cette famille sont valables 5 ans (10 ans pour le R482). Le renouvellement passe par une formation de recyclage et de nouveaux tests.'
 }
 
 const sousFamilles: SousFamilleFormation[] = [
@@ -29,7 +33,10 @@ const sousFamilles: SousFamilleFormation[] = [
     caption: 'R489 · R485',
     famille: 1
   },
-  { id: 2, status: 'published', slug: 'grues', name: 'Grues & levage', caption: null, famille: 1 }
+  { id: 2, status: 'published', slug: 'grues', name: 'Grues & levage', caption: null, famille: 1 },
+  // Sous-famille sans formation publiée — ne doit pas produire de carte
+  // « 0 formation ».
+  { id: 3, status: 'published', slug: 'nacelles', name: 'Nacelles', caption: null, famille: 1 }
 ]
 
 const courses: CourseListItem[] = [
@@ -267,13 +274,25 @@ describe('pages/formations/[famille]', () => {
     expect(wrapper.text()).toContain('CACES R490 — grues de chargement')
   })
 
+  it('affiche les cartes informations public concerné et validité', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Qui est concerné ?')
+    expect(wrapper.text()).toContain('Validité et renouvellement')
+    expect(wrapper.text()).toContain('Tout salarié amené à conduire un engin')
+    expect(wrapper.text()).toContain('valables 5 ans')
+  })
+
   it('affiche la section sous-familles et filtre la liste via les cartes', async () => {
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain("Parcourir par type d'engin")
+    expect(wrapper.findAll('.subfamily-card')).toHaveLength(2)
     expect(wrapper.text()).toContain('Chariots & gerbeurs')
     expect(wrapper.text()).toContain('R489 · R485')
     expect(wrapper.text()).toContain('Grues & levage')
+    expect(wrapper.text()).not.toContain('Nacelles')
+    expect(wrapper.text()).not.toContain('0 formation')
     expect(wrapper.findAll('.formation-card')).toHaveLength(2)
 
     const buttons = wrapper

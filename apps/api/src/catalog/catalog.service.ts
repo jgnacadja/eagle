@@ -17,7 +17,12 @@ import {
   type DirectusFormation,
   type FamilyApplyResult
 } from '../directus/directus.catalog.service'
-import { CourseSortField, CourseSortOrder, type ListCoursesDto } from './catalog.dto'
+import {
+  CourseAvailability,
+  CourseSortField,
+  CourseSortOrder,
+  type ListCoursesDto
+} from './catalog.dto'
 
 function toNumber(value: unknown): number | null {
   if (value == null) return null
@@ -547,7 +552,33 @@ function matchesSearchQuery(row: CatalogRow, search: string | undefined): boolea
 }
 
 type FacetDimension =
-  'family' | 'subFamily' | 'modalities' | 'durations' | 'location' | 'cpf' | 'certifying'
+  | 'family'
+  | 'subFamily'
+  | 'modalities'
+  | 'durations'
+  | 'location'
+  | 'cpf'
+  | 'certifying'
+  | 'availability'
+
+// Disponibilité dérivée des sessions — mêmes bornes que `buildSessionBadge`
+// côté front : session qui démarre dans le mois courant (UTC), session à
+// venir plus tard, ou aucune session à venir (« sur demande »).
+function courseAvailability(course: CourseListItem): CourseAvailability {
+  const today = new Date()
+  today.setUTCHours(0, 0, 0, 0)
+  const upcoming = (course.sessions ?? []).filter(
+    (s) => s.startDate && new Date(`${s.startDate}T00:00:00Z`) >= today
+  )
+  if (!upcoming.length) return CourseAvailability.onDemand
+
+  const now = new Date()
+  const thisMonth = upcoming.some((s) => {
+    const d = new Date(`${s.startDate}T00:00:00Z`)
+    return d.getUTCFullYear() === now.getUTCFullYear() && d.getUTCMonth() === now.getUTCMonth()
+  })
+  return thisMonth ? CourseAvailability.thisMonth : CourseAvailability.scheduled
+}
 
 function matchesCourse(row: CatalogRow, query: ListCoursesDto, except?: FacetDimension): boolean {
   const checks: { dim: FacetDimension | null; ok: boolean }[] = [
@@ -561,6 +592,10 @@ function matchesCourse(row: CatalogRow, query: ListCoursesDto, except?: FacetDim
     { dim: null, ok: matchesCenter(row.course, query.center) },
     { dim: 'modalities', ok: matchesModalities(row.course, query.modalities) },
     { dim: 'location', ok: matchesLocation(row, query.location) },
+    {
+      dim: 'availability',
+      ok: !query.availability || courseAvailability(row.course) === query.availability
+    },
     { dim: null, ok: matchesSearchQuery(row, query.search) }
   ]
   return checks.every((check) => check.dim === except || check.ok)
@@ -654,7 +689,10 @@ export class CatalogService {
   async list(query: ListCoursesDto): Promise<CoursePage> {
     const cacheKey = `courses:list:${JSON.stringify(query)}`
     const cached = await this.cache.get<CoursePage>(cacheKey)
-    if (cached) {
+    // Une page vide en cache peut être un résidu dégradé (écrit avant la
+    // garde anti-vide) : ignorée — le recalcul reste bon marché sur des
+    // rows déjà cachées.
+    if (cached?.items.length) {
       return cached
     }
 
@@ -674,9 +712,10 @@ export class CatalogService {
       facets: computeCatalogFacets(rows, query)
     }
 
-    // Un dataset vide signifie une source dégradée (Directus indisponible ou
-    // sync incomplète) : ne pas figer « 0 résultat » en cache pendant 1 h.
-    if (rows.length > 0) {
+    // Un résultat vide n'est jamais caché : dataset dégradé (Directus
+    // indisponible ou sync incomplète) ou page filtrée sans correspondance —
+    // dans les deux cas rien à figer pendant le TTL.
+    if (result.items.length > 0) {
       await this.cache.set(cacheKey, result)
     }
     return result
@@ -709,7 +748,7 @@ export class CatalogService {
   async families(): Promise<FamilyWithCount[]> {
     const cacheKey = 'courses:families'
     const cached = await this.cache.get<FamilyWithCount[]>(cacheKey)
-    if (cached) {
+    if (cached?.length) {
       return cached
     }
 
@@ -726,7 +765,7 @@ export class CatalogService {
       .map(([slug, count]) => ({ slug, count }))
       .sort((a, b) => a.slug.localeCompare(b.slug))
 
-    if (rows.length > 0) {
+    if (result.length > 0) {
       await this.cache.set(cacheKey, result)
     }
     return result
@@ -785,7 +824,9 @@ export class CatalogService {
 
   private async getCatalogRows(): Promise<CatalogRow[]> {
     const cached = await this.cache.get<CatalogRow[]>(ROWS_CACHE_KEY)
-    if (isCatalogRowsCache(cached)) {
+    // [] est un CatalogRow[] valide mais jamais servi : une entrée vide peut
+    // être un résidu d'un catalogue dégradé écrit avant la garde anti-vide.
+    if (isCatalogRowsCache(cached) && cached.length > 0) {
       return cached
     }
 
@@ -808,12 +849,17 @@ export class CatalogService {
    */
   private async getCentresBySlug(): Promise<Map<string, DirectusCentre>> {
     const cached = await this.cache.get<DirectusCentre[]>('centres:all')
-    if (cached) {
+    if (cached?.length) {
       return new Map(cached.map((c) => [c.slug, c]))
     }
     try {
       const centres = await this.catalog.fetchAllCentres()
-      await this.cache.set('centres:all', centres)
+      // Même règle que le catalogue : un référentiel centres vide (Directus
+      // indisponible) n'est ni servi ni figé — sinon les sessions perdent
+      // leur géocodage centre pendant tout le TTL.
+      if (centres.length > 0) {
+        await this.cache.set('centres:all', centres)
+      }
       return new Map(centres.map((c) => [c.slug, c]))
     } catch (error) {
       this.logger.warn({ error }, 'Centres fetch failed — session locations will be used as-is')

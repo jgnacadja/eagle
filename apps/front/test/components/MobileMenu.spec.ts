@@ -11,6 +11,13 @@ vi.mock('~/composables/useMenuData', async () => {
         { slug: 'management', label: 'Management', count: 12 },
         { slug: 'securite-prevention', label: 'Sécurité & prévention', count: 32 }
       ]),
+    useMenuSousFamillesParFamille: () =>
+      ref({
+        'securite-prevention': [
+          { slug: 'secourisme', label: 'Secourisme', count: 5 },
+          { slug: 'incendie', label: 'Incendie', count: 3 }
+        ]
+      }),
     useMenuCentres: () => ({
       regions: ref([{ slug: 'ile-de-france', label: 'Île-de-France', count: 2 }]),
       centresParRegion: ref(
@@ -35,7 +42,12 @@ vi.mock('~/composables/useMenuData', async () => {
       regions: ref([{ slug: 'ile-de-france', label: 'Île-de-France', count: 2 }]),
       actualitesParRegion: ref({})
     }),
-    useMenuFormationsALaUne: () => ref([])
+    useMenuFormationsALaUne: () => ref([]),
+    useMenuLegalPages: () =>
+      ref([
+        { slug: 'mentions-legales', label: 'Mentions légales', showInTabs: true },
+        { slug: 'confidentialite', label: 'Politique de confidentialité', showInTabs: true }
+      ])
   }
 })
 
@@ -82,12 +94,14 @@ describe('MobileMenu', () => {
     wrapper.unmount()
   })
 
-  it('affiche le dialog et les 4 rubriques quand open est true', async () => {
+  it('affiche le dialog et les rubriques quand open est true', async () => {
     const wrapper = await mountMenu(true)
 
     expect(wrapper.find('#mobile-menu').exists()).toBe(true)
     expect(wrapper.text()).toContain('Formations')
-    expect(wrapper.text()).toContain('Centres')
+    expect(wrapper.text()).toContain('Trouver un Centre')
+    expect(wrapper.text()).toContain('Entreprise')
+    expect(wrapper.find('a[href="/entreprise"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('À propos')
     expect(wrapper.text()).toContain('Actualités')
     expect(wrapper.text()).toContain('Rejoindre le réseau')
@@ -123,10 +137,29 @@ describe('MobileMenu', () => {
     wrapper.unmount()
   })
 
+  it('affiche les sous-familles dépliables et le lien Voir la famille', async () => {
+    const wrapper = await mountMenu(true)
+
+    // Famille avec sous-familles : accordéon + encart ; sans : lien direct.
+    expect(wrapper.text()).toContain('Secourisme')
+    expect(wrapper.text()).toContain('Incendie')
+    expect(wrapper.text()).toContain('Voir la famille')
+    expect(wrapper.find('a[href="/formations/management"]').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
   it('ferme le menu au clic sur un lien de navigation', async () => {
     const wrapper = await mountMenu(true)
 
     await wrapper.find('a[href="/formations"]').trigger('click')
+    expect(wrapper.emitted('update:open')).toEqual([[false]])
+    wrapper.unmount()
+  })
+
+  it('ferme le menu au clic sur le lien Entreprise', async () => {
+    const wrapper = await mountMenu(true)
+
+    await wrapper.find('a[href="/entreprise"]').trigger('click')
     expect(wrapper.emitted('update:open')).toEqual([[false]])
     wrapper.unmount()
   })

@@ -1,8 +1,8 @@
 <template>
-  <div class="grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter">
+  <div class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter">
     <!-- RÉGIONS -->
     <div>
-      <h3 class="text-small font-semibold text-ink-muted">Régions</h3>
+      <h3 class="text-small font-semibold text-ink-muted uppercase">Régions</h3>
       <ul class="mt-sm space-y-1">
         <li v-for="region in regions" :key="region.slug">
           <button
@@ -39,7 +39,11 @@
       </h3>
       <Transition name="menu-panel" mode="out-in">
         <ul :key="selectedRegion" class="mt-sm grid grid-cols-2 gap-sm">
-          <li v-for="centre in centresAffiches" :key="centre.slug">
+          <li
+            v-for="centre in centresAffiches"
+            :key="centre.slug"
+            :class="{ 'col-span-2': centresAffiches.length === 1 }"
+          >
             <MegaMenuCard
               :to="`/centres/${centre.slug}`"
               :title="centre.name"
@@ -62,7 +66,7 @@
 
     <!-- TROUVER UN CENTRE + CTA -->
     <div>
-      <h3 class="text-small font-semibold text-ink-muted">Trouver un centre</h3>
+      <h3 class="text-small font-semibold text-ink-muted uppercase">Trouver un centre</h3>
       <form class="mt-sm flex flex-col gap-sm" @submit.prevent="onSearchSubmit">
         <Label for="mega-menu-centre-search" class="sr-only">Ville ou code postal</Label>
         <Input
@@ -73,16 +77,16 @@
         />
       </form>
 
-      <div class="mt-md rounded-lg bg-ink px-md py-md text-paper">
-        <p class="text-body font-semibold">Besoin d’une formation sur votre site ?</p>
-        <NuxtLink
-          to="/formation-intra"
-          class="w-full text-center mt-sm inline-block rounded-full bg-paper px-lg py-2 text-small font-semibold text-ink hover:bg-surface hover:text-accent-text"
-          @click="$emit('close')"
-        >
-          Organiser une formation intra
-        </NuxtLink>
-      </div>
+      <Card variant="dark" class="mt-md px-md py-lg">
+        <p class="whitespace-nowrap text-small font-semibold">
+          Besoin d’une formation sur votre site ?
+        </p>
+        <Button as-child variant="paper" size="pill-sm" class="mt-sm w-full">
+          <NuxtLink to="/centres/demande-de-formation" @click="$emit('close')">
+            Organiser une formation intra
+          </NuxtLink>
+        </Button>
+      </Card>
     </div>
   </div>
 </template>

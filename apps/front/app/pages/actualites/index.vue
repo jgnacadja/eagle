@@ -1,8 +1,8 @@
 <template>
   <div class="flex flex-1 flex-col">
     <!-- Bandeau d'intro : titre, filtre région, catégories -->
-    <section class="bg-primary-dark text-paper">
-      <div class="mx-auto max-w-container px-gutter-mobile py-lg md:py-2xl md:px-gutter">
+    <section class="flex flex-col justify-center bg-primary-dark text-paper min-h-72">
+      <div class="mx-auto w-full px-gutter-mobile py-lg md:py-2xl md:px-gutter">
         <p class="text-overline text-accent font-extrabold">ACTUALITÉS DU RÉSEAU</p>
 
         <div class="mt-md flex flex-col gap-lg lg:flex-row lg:items-end lg:justify-between">
@@ -12,17 +12,14 @@
 
           <Label for="region-select" class="relative block">
             <span class="sr-only">Filtrer par région</span>
-            <Select v-model="selectedRegion">
-              <SelectTrigger
-                id="region-select"
-                class="h-control w-full rounded-full border border-outline-inverse bg-transparent px-lg text-small text-paper focus:ring-paper lg:w-56 font-semibold"
-              >
+            <Select v-model="regionModel">
+              <SelectTrigger id="region-select" variant="inverse" class="lg:w-56">
                 <span class="flex min-w-0 items-center gap-sm">
                   <IconMapPin :size="20" class="shrink-0" />
                   <span class="truncate">{{ selectedRegionLabel }}</span>
                 </span>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent align="end">
                 <SelectItem
                   v-for="region in regionOptions"
                   :key="region.value"
@@ -43,19 +40,19 @@
         >
           <ul class="flex gap-sm whitespace-nowrap">
             <li v-for="category in categoryOptions" :key="category">
-              <button
+              <Button
                 type="button"
-                class="rounded-full border px-lg py-3 text-meta font-semibold capitalize"
-                :class="
-                  category === selectedCategory
-                    ? 'border-paper bg-paper font-semibold text-ink'
-                    : 'border-outline-inverse bg-transparent font-medium text-ink-inverse-muted hover:border-outline-inverse hover:text-paper'
-                "
+                :variant="category === selectedCategory ? 'paper' : 'outline-inverse'"
+                size="chip"
+                :class="[
+                  'px-lg py-3 text-meta capitalize',
+                  category === selectedCategory ? 'font-semibold' : 'font-medium'
+                ]"
                 :aria-current="category === selectedCategory ? 'true' : undefined"
-                @click="selectedCategory = category"
+                @click="setCategory(category)"
               >
                 {{ category }}
-              </button>
+              </Button>
             </li>
           </ul>
         </nav>
@@ -63,7 +60,7 @@
     </section>
 
     <div class="bg-paper-warm">
-      <div class="mx-auto w-full max-w-container px-gutter-mobile py-2xl md:px-gutter">
+      <div class="mx-auto w-full px-gutter-mobile py-2xl md:px-gutter">
         <div v-if="articlesPending" aria-label="Chargement des actualités">
           <output class="sr-only">Chargement des actualités</output>
           <div class="grid grid-cols-1 gap-lg lg:grid-cols-3" aria-hidden="true">
@@ -98,7 +95,7 @@
 
             <Card
               v-reveal
-              class="mt-md overflow-hidden transition hover:border-primary/40 hover:shadow-md lg:flex"
+              class="mt-md overflow-hidden transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-md lg:flex"
             >
               <div
                 class="flex aspect-16/10 items-center justify-center border-b border-dashed border-outline bg-surface-alt text-center text-small text-ink-muted lg:aspect-auto lg:w-2/5 lg:border-b-0 lg:border-r"
@@ -111,7 +108,7 @@
                 />
                 <span v-else>Visuel article à fournir</span>
               </div>
-              <div class="flex flex-1 flex-col justify-center gap-md bg-paper p-lg lg:p-xl">
+              <div class="flex flex-1 flex-col gap-md bg-paper p-lg 2xl:mt-lg">
                 <p class="text-overline text-accent-text">
                   <span class="font-bold uppercase">{{ featuredArticle.category }}</span>
                   <span class="font-medium text-ink-subtle">
@@ -127,7 +124,7 @@
                     {{ featuredArticle.title }}
                   </NuxtLink>
                 </h3>
-                <p class="text-small text-ink-body lg:text-body">
+                <p class="hidden md:block text-small text-ink-body lg:text-body">
                   {{ featuredArticle.excerpt }}
                 </p>
                 <NuxtLink
@@ -142,16 +139,15 @@
 
           <!-- Grille d'articles -->
           <section aria-label="Dernières actualités" class="mt-4 md:mt-2xl">
-            <p v-if="filteredArticles.length === 0" class="text-body text-ink-muted">
-              Aucun article dans cette catégorie pour le moment.
+            <p v-if="articles.length === 0" class="text-body text-ink-muted">
+              Aucun article ne correspond à ces filtres pour le moment.
             </p>
 
             <ul v-else class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <li
-                v-for="(article, index) in filteredArticles"
+                v-for="(article, index) in articles"
                 :key="article.slug"
                 v-reveal="revealStagger(index % 3)"
-                :class="articleClass(index)"
               >
                 <ArticleCard
                   :category="article.category ?? 'Actualité'"
@@ -164,20 +160,6 @@
                 />
               </li>
             </ul>
-
-            <!-- Afficher plus — mobile -->
-            <div
-              v-if="mobileVisibleCount < filteredArticles.length"
-              class="flex justify-center lg:hidden my-3.5"
-            >
-              <Button
-                type="button"
-                class="h-control rounded-full border border-outline bg-transparent px-xl text-small font-semibold text-ink hover:bg-paper hover:text-accent-text"
-                @click="mobileVisibleCount = filteredArticles.length"
-              >
-                Afficher plus d'articles
-              </Button>
-            </div>
 
             <!-- Bandeau newsletter -->
             <section
@@ -202,42 +184,73 @@
                   >
                 </p>
               </div>
-              <form
-                class="flex flex-col gap-md sm:flex-row lg:mt-0 lg:w-auto lg:shrink-0"
-                @submit.prevent="onSubscribe"
-              >
-                <Label for="newsletter-email" class="sr-only">Adresse e-mail professionnelle</Label>
-                <Input
-                  id="newsletter-email"
-                  v-model="newsletterEmail"
-                  type="email"
-                  required
-                  placeholder="votre@email-professionnel.fr"
-                  class="h-control w-full rounded-full border-outline bg-paper px-lg text-small placeholder:text-ink-placeholder sm:w-72"
-                />
-                <Button
-                  type="submit"
-                  class="h-control shrink-0 self-start rounded-full bg-accent px-xl text-small font-semibold text-ink hover:bg-accent-text hover:text-paper"
+              <div class="flex flex-col gap-sm lg:mt-0 lg:shrink-0">
+                <p
+                  v-if="newsletterDone"
+                  class="flex items-center gap-sm text-small font-semibold text-success"
                 >
-                  S'abonner
-                </Button>
-              </form>
+                  Inscription confirmée — merci&nbsp;!
+                </p>
+                <form
+                  v-show="!newsletterDone"
+                  novalidate
+                  class="flex flex-col gap-md sm:flex-row lg:w-auto"
+                  @submit.prevent="onSubscribe"
+                >
+                  <div class="flex flex-col gap-xs">
+                    <Label for="newsletter-email" class="sr-only"
+                      >Adresse e-mail professionnelle</Label
+                    >
+                    <Input
+                      id="newsletter-email"
+                      v-model="newsletterEmail"
+                      type="email"
+                      placeholder="votre@email-professionnel.fr"
+                      variant="field-lg"
+                      class="sm:w-72"
+                      :disabled="newsletterSending"
+                      :aria-invalid="showEmailError || undefined"
+                    />
+                    <p v-if="showEmailError" class="text-small font-semibold text-danger">
+                      {{ newsletterFieldError }}
+                    </p>
+                  </div>
+                  <Button
+                    type="submit"
+                    variant="accent"
+                    size="pill-sm"
+                    class="w-full shrink-0 px-xl sm:w-auto"
+                    :disabled="newsletterSending"
+                  >
+                    <span
+                      v-if="newsletterSending"
+                      class="mr-sm block h-md w-md animate-spin rounded-full border-2 border-ink/25 border-t-ink"
+                      aria-hidden="true"
+                    />
+                    {{ newsletterSending ? 'Envoi en cours…' : "S'abonner" }}
+                  </Button>
+                </form>
+                <p
+                  v-if="!newsletterDone && newsletterError"
+                  class="text-small font-semibold text-danger"
+                >
+                  {{ newsletterError }}
+                </p>
+              </div>
             </section>
 
-            <!-- Pagination desktop -->
+            <!-- Pagination -->
             <Pagination
-              v-if="filteredArticles.length > perPage"
-              v-model:page="currentPage"
-              :total="filteredArticles.length"
+              v-if="totalItems > perPage"
+              v-model:page="pageModel"
+              :total="totalItems"
               :items-per-page="perPage"
               :sibling-count="1"
-              class="mt-2xl hidden items-center justify-center lg:flex"
+              class="mt-2xl flex items-center justify-center"
               aria-label="Pagination des actualités"
             >
               <PaginationContent v-slot="{ items }" class="gap-sm">
-                <PaginationPrevious
-                  class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-subtle hover:bg-surface"
-                />
+                <PaginationPrevious variant="icon-outline" size="icon-sm" />
                 <template
                   v-for="(item, index) in items"
                   :key="item.type === 'page' ? `page-${item.value}` : `ellipsis-${index}`"
@@ -246,7 +259,7 @@
                     v-if="item.type === 'page'"
                     :value="item.value"
                     :is-active="item.value === currentPage"
-                    class="rounded-full border border-primary/25 p-0 hover:bg-surface"
+                    variant="icon-outline"
                   >
                     {{ item.value }}
                   </PaginationItem>
@@ -255,9 +268,7 @@
                     class="h-control-sm w-control-sm text-ink-subtle"
                   />
                 </template>
-                <PaginationNext
-                  class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-body hover:bg-surface"
-                />
+                <PaginationNext variant="icon-outline" size="icon-sm" />
               </PaginationContent>
             </Pagination>
           </section>
@@ -268,13 +279,17 @@
 </template>
 
 <script setup lang="ts">
-import { readItems } from '@directus/sdk'
+import { aggregate, readItems } from '@directus/sdk'
+import { toTypedSchema } from '@vee-validate/zod'
 import type { Article } from '@learnup/types'
+import { useForm } from 'vee-validate'
+import { z } from 'zod'
 import { articleAssetUrl, articleReadingTime, formatArticleDate } from '~/utils/article'
 import { formatRegionLabel } from '~/utils/region'
 import { revealStagger } from '~/utils/reveal'
 
 const config = useRuntimeConfig()
+const route = useRoute()
 
 function assetUrl(id: string | null): string | undefined {
   return articleAssetUrl(id, config.public.apiBase) ?? undefined
@@ -290,20 +305,79 @@ useContentSeo(
 )
 
 const CATEGORY_ALL = 'Tout'
-
 const REGION_ALL = 'all'
+const perPage = 6
 const directus = useDirectusClient()
 
-const {
-  data: articles,
-  pending: articlesPending,
-  error: articlesError,
-  refresh: refreshArticles
-} = await useAsyncData<Article[]>(
-  'actualites-list',
+// Filtres portés par l'URL : partageables, rendus côté serveur et cachés
+// par variante grâce à l'ISR `passQuery`.
+const selectedCategory = computed(() =>
+  typeof route.query.category === 'string' && route.query.category
+    ? route.query.category
+    : CATEGORY_ALL
+)
+const selectedRegion = computed(() =>
+  typeof route.query.region === 'string' && route.query.region ? route.query.region : REGION_ALL
+)
+const currentPage = computed(() => {
+  const page = Number(route.query.page)
+  return Number.isInteger(page) && page > 0 ? page : 1
+})
+
+function filtersQuery(patch: { category?: string; region?: string; page?: number }) {
+  const category = patch.category ?? selectedCategory.value
+  const region = patch.region ?? selectedRegion.value
+  const page = patch.page ?? 1
+  const query: Record<string, string> = {}
+  if (category !== CATEGORY_ALL) query.category = category
+  if (region !== REGION_ALL) query.region = region
+  if (page > 1) query.page = String(page)
+  return query
+}
+
+function setCategory(category: string) {
+  if (category !== selectedCategory.value) {
+    navigateTo({ path: '/actualites', query: filtersQuery({ category }) })
+  }
+}
+
+const regionModel = computed<string>({
+  get: () => selectedRegion.value,
+  set: (region) => {
+    if (region !== selectedRegion.value) {
+      navigateTo({ path: '/actualites', query: filtersQuery({ region }) })
+    }
+  }
+})
+
+const pageModel = computed<number>({
+  get: () => currentPage.value,
+  set: (page) => {
+    if (page !== currentPage.value) {
+      navigateTo({ path: '/actualites', query: filtersQuery({ page }) })
+    }
+  }
+})
+
+// Le payload SSR n'est resservi que pendant l'hydratation — ensuite tout
+// remount repart sur des données fraîches.
+function hydrationCache<T>(
+  key: string,
+  nuxtApp: ReturnType<typeof useNuxtApp>,
+  ctx: { cause: string }
+): T | undefined {
+  return ctx.cause === 'initial' && nuxtApp.isHydrating
+    ? ((nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as T | undefined)
+    : undefined
+}
+
+// À la une : dernier article publié, indépendant des filtres. Seul fetch
+// qui charge `content` — il ne sert qu'au temps de lecture de la carte.
+const { data: featuredArticle } = await useAsyncData<Article | null>(
+  'actualites-featured',
   async () => {
     try {
-      return await directus.request<Article[]>(
+      const items = await directus.request<Article[]>(
         readItems('articles', {
           fields: [
             'id',
@@ -312,32 +386,59 @@ const {
             'title',
             'excerpt',
             'category',
-            'region',
             'publish_at',
             'cover_image',
             'content'
           ],
           filter: { status: { _eq: 'published' } },
-          sort: ['-publish_at']
+          sort: ['-publish_at'],
+          limit: 1
+        })
+      )
+      return items[0] ?? null
+    } catch (error) {
+      if (import.meta.server) {
+        logServerError('[actualites] featured fetch failed:', error)
+      }
+      return null
+    }
+  },
+  { getCachedData: hydrationCache<Article | null> }
+)
+
+interface ArticleFacet {
+  category: string | null
+  region: string | null
+  count: string | null
+}
+
+// Options de filtres : une seule agrégation donne les catégories et les
+// régions réellement utilisées, sans charger tous les articles.
+const { data: facets } = await useAsyncData<ArticleFacet[]>(
+  'actualites-facets',
+  async () => {
+    try {
+      return await directus.request<ArticleFacet[]>(
+        aggregate('articles', {
+          aggregate: { count: '*' },
+          groupBy: ['category', 'region'],
+          query: { filter: { status: { _eq: 'published' } } }
         })
       )
     } catch (error) {
       if (import.meta.server) {
-        logServerError('[actualites] articles fetch failed:', error)
+        logServerError('[actualites] facets fetch failed:', error)
       }
-      throw error
+      return []
     }
   },
-  {
-    getCachedData: (key, nuxtApp) =>
-      (nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as Article[] | undefined
-  }
+  { getCachedData: hydrationCache<ArticleFacet[]> }
 )
 
 const categoryOptions = computed(() => {
   const categories = new Set(
-    (articles.value ?? [])
-      .map((article) => article.category)
+    (facets.value ?? [])
+      .map((facet) => facet.category)
       .filter((category): category is string => Boolean(category?.trim()))
   )
 
@@ -346,8 +447,8 @@ const categoryOptions = computed(() => {
 
 const regionOptions = computed(() => {
   const regions = new Set(
-    (articles.value ?? [])
-      .map((article) => article.region)
+    (facets.value ?? [])
+      .map((facet) => facet.region)
       .filter((region): region is string => Boolean(region?.trim()))
   )
 
@@ -357,56 +458,125 @@ const regionOptions = computed(() => {
   ]
 })
 
-const featuredArticle = computed<Article | null>(
-  () => (articles.value ?? []).find((a) => a.status === 'published') ?? null
-)
-
-const readingTime = computed(() => {
-  return articleReadingTime(featuredArticle.value?.content)
-})
-
-const selectedCategory = ref(CATEGORY_ALL)
-const selectedRegion = ref(REGION_ALL)
-const currentPage = ref(1)
-const perPage = 6
-const mobileVisibleCount = ref(3)
-
 const selectedRegionLabel = computed(() => {
   return (
     regionOptions.value.find((r) => r.value === selectedRegion.value)?.label ?? 'Toutes les régions'
   )
 })
 
-const filteredArticles = computed(() =>
-  (articles.value ?? []).filter(
-    (a) =>
-      a.status === 'published' &&
-      a.slug !== featuredArticle.value?.slug &&
-      (selectedCategory.value === CATEGORY_ALL || a.category === selectedCategory.value) &&
-      (selectedRegion.value === REGION_ALL || a.region === selectedRegion.value)
-  )
+const articlesFilter = computed(() => ({
+  _and: [
+    { status: { _eq: 'published' } },
+    ...(featuredArticle.value ? [{ slug: { _neq: featuredArticle.value.slug } }] : []),
+    ...(selectedCategory.value === CATEGORY_ALL
+      ? []
+      : [{ category: { _eq: selectedCategory.value } }]),
+    ...(selectedRegion.value === REGION_ALL ? [] : [{ region: { _eq: selectedRegion.value } }])
+  ]
+}))
+
+interface ArticleList {
+  items: Article[]
+  total: number
+}
+
+// Liste paginée côté serveur : la clé dépend des filtres et de la page,
+// chaque variante est requêtée (et cachée) séparément.
+const {
+  data: listData,
+  pending: articlesPending,
+  error: articlesError,
+  refresh: refreshArticles
+} = await useAsyncData<ArticleList>(
+  () =>
+    `actualites-list:${JSON.stringify({
+      category: selectedCategory.value,
+      region: selectedRegion.value,
+      page: currentPage.value,
+      featured: featuredArticle.value?.slug ?? ''
+    })}`,
+  async () => {
+    const filter = articlesFilter.value
+    try {
+      const [items, countRows] = await Promise.all([
+        directus.request<Article[]>(
+          readItems('articles', {
+            fields: [
+              'id',
+              'status',
+              'slug',
+              'title',
+              'excerpt',
+              'category',
+              'region',
+              'publish_at',
+              'cover_image'
+            ],
+            filter,
+            sort: ['-publish_at'],
+            limit: perPage,
+            page: currentPage.value
+          })
+        ),
+        directus.request<{ count: string | null }[]>(
+          aggregate('articles', { aggregate: { count: '*' }, query: { filter } })
+        )
+      ])
+      return { items, total: Number(countRows[0]?.count ?? 0) }
+    } catch (error) {
+      if (import.meta.server) {
+        logServerError('[actualites] articles fetch failed:', error)
+      }
+      throw error
+    }
+  },
+  { getCachedData: hydrationCache<ArticleList> }
 )
 
-const pageStart = computed(() => (currentPage.value - 1) * perPage)
-const pageEnd = computed(() => pageStart.value + perPage)
+const articles = computed(() => listData.value?.items ?? [])
+const totalItems = computed(() => listData.value?.total ?? 0)
 
-function articleClass(index: number): string {
-  const visibleMobile = index < mobileVisibleCount.value
-  const visibleDesktop = index >= pageStart.value && index < pageEnd.value
-  if (visibleMobile && visibleDesktop) return ''
-  if (visibleDesktop) return 'hidden lg:block'
-  if (visibleMobile) return 'block lg:hidden'
-  return 'hidden'
-}
-
-watch([selectedCategory, selectedRegion], () => {
-  currentPage.value = 1
-  mobileVisibleCount.value = 3
+const readingTime = computed(() => {
+  return articleReadingTime(featuredArticle.value?.content)
 })
 
-const newsletterEmail = ref('')
-function onSubscribe() {
-  // Branchement API à venir — la maquette se contente de l'envoi simulé.
-  newsletterEmail.value = ''
-}
+const newsletterDone = ref(false)
+const { submit: submitLead, sending: newsletterSending, error: newsletterError } = useLeadSubmit()
+
+const {
+  handleSubmit,
+  errors: newsletterErrors,
+  submitCount: newsletterSubmitCount,
+  defineField
+} = useForm({
+  validationSchema: toTypedSchema(
+    z.object({
+      email: z
+        .string({ error: 'Indiquez votre e-mail professionnel.' })
+        .trim()
+        .min(1, 'Indiquez votre e-mail professionnel.')
+        .pipe(z.email('Format d’e-mail invalide.'))
+    })
+  )
+})
+
+const [newsletterEmail] = defineField('email')
+
+// Erreur masquée jusqu'à la 1re tentative d'envoi, puis en direct.
+const newsletterFieldError = computed(() => newsletterErrors.value.email)
+const showEmailError = computed(
+  () => newsletterSubmitCount.value > 0 && !!newsletterErrors.value.email
+)
+
+const onSubscribe = handleSubmit(async (values) => {
+  const ok = await submitLead('newsletter', {
+    email: values.email,
+    pageUri: window.location.href,
+    pageName: 'Actualités'
+  })
+  if (ok) {
+    newsletterDone.value = true
+    newsletterEmail.value = ''
+  }
+})
 </script>

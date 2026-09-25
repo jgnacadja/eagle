@@ -233,7 +233,7 @@ describe('useMenuData', () => {
   })
 
   describe('useMenuFormationsALaUne', () => {
-    it('mappe les formations vers des liens famille/slug et appelle /courses avec limit=6', async () => {
+    it('mappe les formations vers des liens famille/slug et appelle /courses avec limit=4', async () => {
       fetchMock.mockResolvedValue({
         items: [
           { slug: 'sst-initial', title: 'SST', familySlug: 'sante' },
@@ -253,7 +253,7 @@ describe('useMenuData', () => {
       ])
       expect(fetchMock).toHaveBeenCalledWith(
         'http://api.test/courses',
-        expect.objectContaining({ query: expect.objectContaining({ limit: 6 }) })
+        expect.objectContaining({ query: expect.objectContaining({ limit: 4 }) })
       )
     })
 

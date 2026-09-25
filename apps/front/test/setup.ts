@@ -20,12 +20,26 @@ const uiComponents = import.meta.glob('~/components/ui/**/*.vue', {
 registerByName(icons)
 registerByName(uiComponents)
 
+// Enregistré explicitement : les autres composants Map/ sont stubbés par spec.
+import GeoNearMe from '~/components/Map/GeoNearMe.vue'
+config.global.components.GeoNearMe = GeoNearMe
+
+import ClientLogoWall from '~/components/Brand/ClientLogoWall.vue'
+config.global.components.ClientLogoWall = ClientLogoWall
+
 config.global.stubs = {
   ...config.global.stubs,
-  NuxtLink: { template: '<a :href="to"><slot /></a>' },
+  NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
   CenterMap: {
     props: ['centers', 'activeId', 'caption', 'mode'],
-    template: '<div class="center-map" />'
+    // Le pied « adresse + itinéraire » du mode single fait partie du
+    // contrat du composant : le stub le reproduit pour les assertions.
+    template: `<div class="center-map">
+      <template v-if="mode === 'single' && centers.length">
+        <span>{{ centers[0].address }}</span>
+        <a v-if="centers[0].lat != null">Ouvrir l'itinéraire →</a>
+      </template>
+    </div>`
   },
   CenterFormationCard: {
     props: ['title', 'subFamily'],
@@ -54,15 +68,18 @@ config.global.directives = {
 }
 
 // happy-dom n'expose pas IntersectionObserver (requis par motion-v/inView).
+const noop = () => undefined
 class IntersectionObserverStub {
-  observe() {
-    // no-op : stub de test
-  }
-  unobserve() {
-    // no-op : stub de test
-  }
-  disconnect() {
-    // no-op : stub de test
-  }
+  observe = noop
+  unobserve = noop
+  disconnect = noop
 }
 vi.stubGlobal('IntersectionObserver', IntersectionObserverStub)
+
+// Pointer capture absent de happy-dom : requis par reka-ui (SelectTrigger
+// appelle hasPointerCapture au pointerdown).
+if (typeof Element !== 'undefined') {
+  Element.prototype.hasPointerCapture ??= () => false
+  Element.prototype.setPointerCapture ??= noop
+  Element.prototype.releasePointerCapture ??= noop
+}

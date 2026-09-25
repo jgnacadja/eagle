@@ -64,6 +64,11 @@ async function ensureCollections(token) {
   for (const def of collections) {
     if (await collectionExists(token, def.collection)) {
       log(`↷  collection ${def.collection} déjà présente`)
+      // Convergent aussi sur le meta de collection (note, traductions
+      // de nom) — sinon un renommage déclaré ici resterait invisible.
+      await api(token, 'PATCH', `/collections/${def.collection}`, {
+        meta: { note: def.note ?? null, translations: def.translations ?? null }
+      })
       // Collection existante : créer les champs déclarés mais absents —
       // le fichier collections.mjs reste la source de vérité du schéma.
       for (const field of def.fields) {
@@ -89,7 +94,7 @@ async function ensureCollections(token) {
     await api(token, 'POST', '/collections', {
       collection: def.collection,
       icon: def.icon,
-      meta: { note: def.note },
+      meta: { note: def.note, translations: def.translations ?? null },
       schema: {},
       fields: def.fields
     })
@@ -107,6 +112,14 @@ async function relationExists(token, collection, field) {
 async function ensureRelations(token) {
   for (const rel of relations) {
     if (await relationExists(token, rel.collection, rel.field)) {
+      // Le meta du champ relation (note, traductions…) reste convergent —
+      // sinon les réglages déclarés ici ne s'appliqueraient jamais sur une
+      // relation déjà créée.
+      if (rel.meta) {
+        await api(token, 'PATCH', `/fields/${rel.collection}/${rel.field}`, {
+          meta: { readonly: false, hidden: false, ...rel.meta }
+        })
+      }
       log(`↷  relation ${rel.collection}.${rel.field} déjà présente`)
       continue
     }

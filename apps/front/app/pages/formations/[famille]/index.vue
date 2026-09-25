@@ -3,7 +3,7 @@
     <template v-if="pageState === 'found'">
       <!-- Hero / intro famille -->
       <section class="border-b border-rule bg-linear-to-b from-paper to-surface">
-        <div class="mx-auto max-w-container px-gutter-mobile py-section md:px-gutter">
+        <div class="mx-auto px-gutter-mobile md:px-gutter py-control-sm">
           <div class="grid grid-cols-1 items-start gap-2xl lg:grid-cols-5">
             <div class="lg:col-span-3">
               <p class="text-overline text-accent-text">Famille de formations</p>
@@ -58,7 +58,7 @@
       <!-- Sous-familles : navigation éditoriale + filtre rapide -->
       <section
         v-if="subFamilyCards.length"
-        class="mx-auto w-full max-w-container px-gutter-mobile py-section md:px-gutter"
+        class="mx-auto w-full px-gutter-mobile py-section md:px-gutter"
         aria-labelledby="sous-familles-title"
       >
         <h2 id="sous-familles-title" class="font-sans text-h4 font-bold text-ink">
@@ -66,7 +66,11 @@
         </h2>
 
         <ul class="mt-lg grid grid-cols-1 gap-md sm:grid-cols-2 lg:grid-cols-4">
-          <li v-for="subFamily in subFamilyCards" :key="subFamily.slug">
+          <li
+            v-for="(subFamily, i) in subFamilyCards"
+            :key="subFamily.slug"
+            v-reveal="revealStagger(i)"
+          >
             <SubFamilyCard
               :name="subFamily.name"
               :caption="subFamily.caption"
@@ -80,7 +84,7 @@
       <!-- Liste des formations -->
       <section
         id="liste-formations"
-        class="mx-auto w-full max-w-container scroll-mt-lg px-gutter-mobile py-section md:px-gutter"
+        class="mx-auto w-full scroll-mt-lg px-gutter-mobile pb-section md:px-gutter"
         aria-labelledby="liste-title"
       >
         <div class="flex flex-col gap-md md:flex-row md:items-center md:justify-between">
@@ -90,15 +94,8 @@
           </h2>
 
           <div class="flex flex-wrap gap-sm md:ml-auto">
-            <Select
-              v-if="subFamilyOptions.length > 1"
-              v-model="selectedSubFamily"
-              aria-label="Filtrer par sous-famille"
-            >
-              <SelectTrigger
-                aria-label="Sous-famille"
-                class="h-control w-auto gap-sm rounded-full border-outline bg-paper px-md text-small font-semibold text-ink-body shadow-none"
-              >
+            <Select v-model="selectedSubFamily" aria-label="Filtrer par sous-famille">
+              <SelectTrigger variant="pill" aria-label="Sous-famille">
                 <span class="truncate">{{ subFamilyFilterLabel }}</span>
               </SelectTrigger>
               <SelectContent>
@@ -118,10 +115,7 @@
               v-model="selectedModality"
               aria-label="Filtrer par modalité"
             >
-              <SelectTrigger
-                aria-label="Modalité"
-                class="h-control w-auto gap-sm rounded-full border-outline bg-paper px-md text-small font-semibold text-ink-body shadow-none"
-              >
+              <SelectTrigger variant="pill" aria-label="Modalité">
                 <span class="truncate">{{ modalityFilterLabel }}</span>
               </SelectTrigger>
               <SelectContent>
@@ -141,15 +135,28 @@
               v-model="selectedLocation"
               aria-label="Filtrer par localisation"
             >
-              <SelectTrigger
-                aria-label="Localisation"
-                class="h-control w-auto gap-sm rounded-full border-outline bg-paper px-md text-small font-semibold text-ink-body shadow-none"
-              >
+              <SelectTrigger variant="pill" aria-label="Localisation">
                 <span class="truncate">{{ locationFilterLabel }}</span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem
                   v-for="option in locationOptions"
+                  :key="option.value"
+                  :value="option.value"
+                  class="text-small"
+                >
+                  {{ option.label }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select v-model="selectedAvailability" aria-label="Filtrer par disponibilité">
+              <SelectTrigger variant="pill" aria-label="Disponibilité">
+                <span class="truncate">{{ availabilityFilterLabel }}</span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem
+                  v-for="option in availabilityOptions"
                   :key="option.value"
                   :value="option.value"
                   class="text-small"
@@ -179,7 +186,8 @@
           </p>
           <Button
             variant="link"
-            class="mt-lg h-auto p-0 text-small font-semibold"
+            size="inline"
+            class="mt-lg text-small font-semibold"
             @click="resetPage"
           >
             Réinitialiser
@@ -204,7 +212,11 @@
           v-else-if="!catalog.pending.value"
           class="mt-lg grid grid-cols-1 gap-md md:grid-cols-2 lg:grid-cols-3"
         >
-          <li v-for="formation in formations" :key="formation.slug">
+          <li
+            v-for="(formation, i) in formations"
+            :key="formation.slug"
+            v-reveal="revealStagger(i % 3)"
+          >
             <CenterFormationCard
               :sub-family="formation.subFamily"
               :title="formation.title"
@@ -242,9 +254,7 @@
           aria-label="Pagination du catalogue"
         >
           <PaginationContent v-slot="{ items }" class="gap-sm">
-            <PaginationPrevious
-              class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-subtle hover:bg-surface"
-            />
+            <PaginationPrevious variant="icon-outline" size="icon-sm" />
             <template
               v-for="(item, index) in items"
               :key="item.type === 'page' ? item.value : `ellipsis-${index}`"
@@ -261,30 +271,47 @@
                 class="h-control-sm w-control-sm text-ink-subtle"
               />
             </template>
-            <PaginationNext
-              class="h-control-sm w-control-sm rounded-full border border-primary/25 p-0 text-ink-body hover:bg-surface"
-            />
+            <PaginationNext variant="icon-outline" size="icon-sm" />
           </PaginationContent>
         </Pagination>
       </section>
 
+      <!-- Informations famille -->
+      <section
+        v-if="familleData?.audience_text || familleData?.validity_text"
+        class="mx-auto w-full px-gutter-mobile pb-section md:px-gutter"
+      >
+        <ul class="grid grid-cols-1 gap-md md:grid-cols-2">
+          <li v-if="familleData?.audience_text" v-reveal>
+            <Card variant="panel" class="h-full p-lg">
+              <h3 class="font-sans text-h5 font-bold text-ink">Qui est concerné ?</h3>
+              <p class="mt-sm whitespace-pre-line text-body text-ink-body">
+                {{ familleData.audience_text }}
+              </p>
+            </Card>
+          </li>
+          <li v-if="familleData?.validity_text" v-reveal>
+            <Card variant="panel" class="h-full p-lg">
+              <h3 class="font-sans text-h5 font-bold text-ink">Validité et renouvellement</h3>
+              <p class="mt-sm whitespace-pre-line text-body text-ink-body">
+                {{ familleData.validity_text }}
+              </p>
+            </Card>
+          </li>
+        </ul>
+      </section>
+
       <!-- Bandeau CTA -->
-      <section class="mx-auto w-full max-w-container px-gutter-mobile pb-section md:px-gutter">
+      <section class="mx-auto w-full px-gutter-mobile pb-section md:px-gutter">
         <CtaBanner
+          v-reveal
           title="Quelle catégorie pour vos équipes ?"
           text="Décrivez vos engins et votre site : LEARN UP identifie les recommandations et catégories applicables."
         >
-          <Button
-            class="h-control w-full rounded-full bg-accent px-lg text-small font-semibold text-ink transition hover:bg-accent-text hover:text-paper sm:w-auto"
-            @click="openAssistant"
-          >
+          <Button variant="accent" size="pill-sm" class="w-full sm:w-auto" @click="openAssistant">
             Être guidé dans mon choix
           </Button>
-          <Button
-            as-child
-            variant="outline"
-            class="h-control w-full rounded-full border-outline-inverse bg-transparent px-lg text-small font-semibold text-ink-inverse transition hover:bg-transparent hover:text-ink-inverse sm:w-auto"
-          >
+          <Button as-child variant="outline-inverse" size="pill-sm" class="w-full sm:w-auto">
             <NuxtLink :to="`/centres/demande-de-formation?famille=${famille}`"
               >Faire une demande</NuxtLink
             >
@@ -341,6 +368,7 @@ import { useDirectusClient } from '~/composables/useDirectus'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { MODALITY_LABELS, MODALITY_OPTIONS } from '~/utils/catalog-filters'
 import { directusAssetUrl } from '~/utils/directusAsset'
+import { revealStagger } from '~/utils/reveal'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
 
 definePageMeta({
@@ -481,9 +509,23 @@ const currentPage = ref(1)
 // Filtres inline au-dessus de la liste — sous-famille, modalité et
 // localisation sont appliqués côté API (params `subFamily`, `modalities`
 // et `location`).
-const selectedSubFamily = ref('all')
+// Le filtre peut être pré-sélectionné via l'URL (`?subFamily=`) — utilisé
+// par les liens sous-familles du menu mobile.
+const selectedSubFamily = ref(
+  typeof route.query.subFamily === 'string' ? route.query.subFamily : 'all'
+)
 const selectedModality = ref('all')
 const selectedLocation = ref('all')
+const selectedAvailability = ref<CatalogQuery['availability'] | 'all'>('all')
+
+// La disponibilité est appliquée côté API (param `availability`) sur les
+// sessions : session ce mois-ci, session à venir, ou sur demande.
+const availabilityOptions = [
+  { value: 'all', label: 'Disponibilité' },
+  { value: 'success', label: 'Sessions ce mois-ci' },
+  { value: 'warning', label: 'Prochaine session' },
+  { value: 'neutral', label: 'Sur demande' }
+]
 
 // Options dérivées des facettes de la réponse /courses : chaque dimension
 // est comptée sur le résultat courant en ignorant son propre filtre — une
@@ -512,14 +554,16 @@ const locationOptions = computed(() => {
   ]
 })
 
+// Une sous-famille sans formation dans le résultat courant n'est pas
+// proposée — sauf si déjà sélectionnée, pour ne pas faire disparaître
+// le filtre actif (même facettage que modalité/localisation).
 const subFamilyOptions = computed(() => {
   const counts = catalogFacets.value?.subFamilies
-  const visible = (sousFamilles.value ?? []).filter(
-    (s) => !counts || (counts[s.slug] ?? 0) > 0 || s.slug === selectedSubFamily.value
-  )
   return [
     { value: 'all', label: 'Sous-famille' },
-    ...visible.map((s) => ({ value: s.slug, label: s.name }))
+    ...(sousFamilles.value ?? [])
+      .filter((s) => !counts || (counts[s.slug] ?? 0) > 0 || s.slug === selectedSubFamily.value)
+      .map((s) => ({ value: s.slug, label: s.name }))
   ]
 })
 
@@ -539,16 +583,10 @@ const subFamilyCounts = computed(
 // par ex.) — repli générique si le champ n'est pas renseigné.
 const subnavTitle = computed(() => familleData.value?.subnav_title ?? 'Parcourir par sous-famille')
 
+// Une sous-famille sans formation publiée n'affiche pas de carte
+// (« 0 formation ») — la section se masque si aucune n'est peuplée.
 const subFamilyCards = computed(() =>
-  (sousFamilles.value ?? []).map((s) => {
-    const count = subFamilyCounts.value.get(s.slug) ?? 0
-    const countLabel = `${count} formation${count > 1 ? 's' : ''}`
-    return {
-      slug: s.slug,
-      name: s.name,
-      caption: s.caption ? `${s.caption} — ${countLabel}` : countLabel
-    }
-  })
+  (sousFamilles.value ?? []).filter((s) => (subFamilyCounts.value.get(s.slug) ?? 0) > 0)
 )
 
 function selectSubFamily(slug: string) {
@@ -566,6 +604,11 @@ const locationFilterLabel = computed(
   () =>
     locationOptions.value.find((o) => o.value === selectedLocation.value)?.label ?? 'Localisation'
 )
+const availabilityFilterLabel = computed(
+  () =>
+    availabilityOptions.find((o) => o.value === selectedAvailability.value)?.label ??
+    'Disponibilité'
+)
 
 const catalogQuery = computed<CatalogQuery>(() => ({
   family: famille,
@@ -575,7 +618,8 @@ const catalogQuery = computed<CatalogQuery>(() => ({
   sort: 'updatedAt',
   order: 'desc',
   modalities: selectedModality.value !== 'all' ? [selectedModality.value] : undefined,
-  location: selectedLocation.value !== 'all' ? selectedLocation.value : undefined
+  location: selectedLocation.value !== 'all' ? selectedLocation.value : undefined,
+  availability: selectedAvailability.value !== 'all' ? selectedAvailability.value : undefined
 }))
 
 // Requête « facettes » : badges du hero et options de localisation doivent
@@ -641,10 +685,12 @@ function resetPage() {
     currentPage.value !== 1 ||
     selectedSubFamily.value !== 'all' ||
     selectedModality.value !== 'all' ||
-    selectedLocation.value !== 'all'
+    selectedLocation.value !== 'all' ||
+    selectedAvailability.value !== 'all'
   selectedSubFamily.value = 'all'
   selectedModality.value = 'all'
   selectedLocation.value = 'all'
+  selectedAvailability.value = 'all'
   currentPage.value = 1
   if (!queryWillChange) catalog.refresh()
 }

@@ -2,9 +2,9 @@ import { Controller, Get, Post, Query, UseGuards } from '@nestjs/common'
 import { ApiOkResponse, ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger'
 import type { CentreListItem } from '@learnup/types'
 import { AdminApiKeyGuard } from '../common/guards/admin-api-key.guard'
-import { ListCentresDto } from './centres.dto'
+import { ListCentresDto, ReverseGeocodeDto } from './centres.dto'
 import { CentresService } from './centres.service'
-import { GeocodingService } from './geocoding.service'
+import { GeocodingService, type ReverseGeocodedLocation } from './geocoding.service'
 
 @ApiTags('Centres')
 @Controller()
@@ -26,6 +26,13 @@ export class CentresController {
   @ApiOkResponse({ description: 'Sorted list of departments' })
   async departments(): Promise<string[]> {
     return this.centresService.departments()
+  }
+
+  @Get('centres/reverse')
+  @ApiOperation({ summary: 'Reverse geocode GPS coordinates to city/department (BAN)' })
+  @ApiOkResponse({ description: 'Resolved location, null fields when unresolved' })
+  async reverse(@Query() query: ReverseGeocodeDto): Promise<ReverseGeocodedLocation> {
+    return this.geocoding.reverseGeocode(query.lat, query.lng)
   }
 
   @Get('centres/count')

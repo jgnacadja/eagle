@@ -1,6 +1,6 @@
 <template>
   <article
-    class="rounded-md border border-rule bg-paper p-md shadow-sm transition hover:border-primary/40 hover:shadow-md"
+    class="flex flex-col rounded-md border border-rule bg-paper p-md shadow-sm transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-md"
   >
     <div class="flex items-start justify-between gap-sm">
       <NuxtLink v-if="titleTo" :to="titleTo" class="group">
@@ -11,7 +11,7 @@
         </h3>
       </NuxtLink>
       <h3 v-else class="font-sans text-h4 font-semibold text-ink">{{ name }}</h3>
-      <span class="shrink-0 text-meta text-ink-subtle">{{ distance }}</span>
+      <span class="hidden md:block shrink-0 text-meta text-ink-subtle">{{ distance }}</span>
     </div>
     <p class="mt-xs text-small text-ink-muted">{{ formations }}</p>
     <div v-if="status || tags.length" class="mt-md flex flex-wrap gap-sm">
@@ -22,7 +22,8 @@
           aria-hidden="true"
         />
         <span v-else-if="status.type === 'warning'" aria-hidden="true">▲</span>
-        {{ status.label }}
+        <span class="hidden md:inline">{{ status.label }}</span>
+        <span class="md:hidden">{{ status.labelShort ?? status.label }}</span>
       </Badge>
       <Badge v-for="tag in tags" :key="tag" :variant="tagVariant(tag)">
         <span
@@ -36,7 +37,7 @@
     <NuxtLink
       v-if="to"
       :to="to"
-      class="mt-md block text-small font-bold text-primary transition-colors hover:text-accent-text"
+      class="mt-auto pt-md block text-small font-bold text-primary transition-colors hover:text-accent-text"
     >
       Voir le centre <span class="link-arrow">→</span>
     </NuxtLink>
@@ -50,7 +51,7 @@ withDefaults(
     distance: string
     formations: string
     tags?: string[]
-    status?: { type: 'success' | 'warning' | 'neutral'; label: string }
+    status?: { type: 'success' | 'warning' | 'neutral'; label: string; labelShort?: string }
     to?: string | null
     titleTo?: string | null
   }>(),

@@ -1,10 +1,12 @@
-import { flushPromises, mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { DOMWrapper, flushPromises, mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, nextTick, reactive, ref, Suspense, toValue } from 'vue'
 import type { CentresQuery } from '~/composables/useCentres'
+import { useGeolocation } from '~/composables/useGeolocation'
 import CentresPage from '~/pages/centres/index.vue'
 
 const seoMock = vi.fn()
+const navigateToMock = vi.fn()
 
 const directusCentres = [
   {
@@ -18,7 +20,9 @@ const directusCentres = [
     department: 'Val-de-Marne',
     region: 'Île-de-France',
     specialties: ['CACES', 'SST'],
-    departments_covered: ['94', '93']
+    departments_covered: ['94', '93'],
+    latitude: 48.7909,
+    longitude: 2.4534
   },
   {
     id: 2,
@@ -31,7 +35,9 @@ const directusCentres = [
     department: 'Val-de-Marne',
     region: 'Île-de-France',
     specialties: ['CACES'],
-    departments_covered: ['94']
+    departments_covered: ['94'],
+    latitude: 48.7938,
+    longitude: 2.3899
   },
   {
     id: 3,
@@ -44,7 +50,9 @@ const directusCentres = [
     department: 'Rhône',
     region: 'Auvergne-Rhône-Alpes',
     specialties: ['Informatique'],
-    departments_covered: ['69']
+    departments_covered: ['69'],
+    latitude: 45.764,
+    longitude: 4.8357
   }
 ]
 
@@ -90,6 +98,12 @@ const routeStub = reactive({ query: {} as Record<string, string> })
 vi.stubGlobal('definePageMeta', vi.fn())
 vi.stubGlobal('useContentSeo', seoMock)
 vi.stubGlobal('useRoute', () => routeStub)
+vi.stubGlobal('navigateTo', navigateToMock)
+vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
+// Reverse geocoding (GET /centres/reverse) : silencieux par défaut — les
+// tests de pré-remplissage le surchargent avec une réponse de département.
+const reverseFetchMock = vi.fn().mockResolvedValue({ city: null, department: null })
+vi.stubGlobal('$fetch', reverseFetchMock)
 vi.stubGlobal('useCentres', (query: Parameters<typeof toValue>[0]) => ({
   data: computed(() => filterFixture(toValue(query) as CentresQuery)),
   pending: ref(false),
@@ -141,13 +155,14 @@ const stubs = {
     props: ['modelValue'],
     emits: ['update:modelValue', 'submit'],
     template:
-      '<input class="city-search" :value="modelValue" @keydown.enter="$emit(\'submit\', $event.target.value)" />'
+      '<span><input class="city-search" :value="modelValue" @keydown.enter="$emit(\'submit\', $event.target.value)" /><slot name="action" /></span>'
   },
   Button: { template: '<button><slot /></button>' },
   CenterMap: {
-    props: ['centers', 'activeId', 'caption', 'minZoom', 'mode', 'popup'],
+    props: ['centers', 'activeId', 'caption', 'minZoom', 'mode', 'popup', 'focusCenter'],
     emits: ['select'],
-    template: '<div class="center-map" :data-active-id="activeId" :data-popup="String(popup)" />'
+    template:
+      '<div class="center-map" :data-active-id="activeId" :data-popup="String(popup)" :data-focus="focusCenter ? `${focusCenter.lat},${focusCenter.lng}` : \'\'" />'
   },
   CenterResultCard: {
     props: ['center', 'active'],
@@ -157,6 +172,8 @@ const stubs = {
   }
 }
 
+const mountedWrappers: ReturnType<typeof mount>[] = []
+
 async function mountPage() {
   const Host = defineComponent({
     render() {
@@ -164,8 +181,29 @@ async function mountPage() {
     }
   })
   const wrapper = mount(Host, { global: { stubs } })
+  mountedWrappers.push(wrapper)
   await flushPromises()
   return wrapper
+}
+
+// Le Dialog reka-ui est téléporté dans document.body : hors de l'arbre du
+// wrapper — on interroge le document directement.
+function findDialogButton(text: string) {
+  const el = [...document.body.querySelectorAll('button')].find((b) =>
+    b.textContent?.includes(text)
+  )
+  return el ? new DOMWrapper(el) : undefined
+}
+
+// Parcours explicite « Près de moi » : clic badge → dialog de
+// consentement maison → « Autoriser la géolocalisation » → demande navigateur.
+async function activateGeo(wrapper: Awaited<ReturnType<typeof mountPage>>) {
+  await wrapper.find('button[aria-label="Activer la géolocalisation"]').trigger('click')
+  await nextTick()
+  const confirm = findDialogButton('Autoriser la géolocalisation')
+  expect(confirm, 'le dialog de consentement doit être ouvert').toBeTruthy()
+  await confirm!.trigger('click')
+  await flushPromises()
 }
 
 describe('pages/centres/index', () => {
@@ -173,6 +211,19 @@ describe('pages/centres/index', () => {
     vi.clearAllMocks()
     centresFixture.value = directusCentres
     routeStub.query = {}
+    // État géo partagé au niveau module : reset entre tests. `navigator`
+    // sans `permissions` : happy-dom résoudrait `granted`, ce qui court-
+    // circuite le dialog de consentement (permission déjà accordée).
+    vi.stubGlobal('navigator', {})
+    const geo = useGeolocation()
+    geo.clear()
+    geo.permission.value = null
+  })
+
+  // Les pages des tests précédents resteraient montées : leurs watchers sur
+  // la route partagée (routeStub) redéclencheraient la géolocalisation.
+  afterEach(() => {
+    while (mountedWrappers.length) mountedWrappers.pop()!.unmount()
   })
 
   it('affiche les centres issus de Directus', async () => {
@@ -181,8 +232,8 @@ describe('pages/centres/index', () => {
     expect(wrapper.text()).toContain('Réseau de centres')
     expect(wrapper.findAll('.center-card')).toHaveLength(3)
     expect(wrapper.text()).toContain('3 centres')
-    // Le premier centre est actif par défaut (watch immediate).
-    expect(wrapper.find('.center-card').attributes('data-active')).toBe('true')
+    // Aucun centre actif par défaut : la sélection reste un geste explicite.
+    expect(wrapper.find('.center-card').attributes('data-active')).toBe('false')
   })
 
   it('limite la liste au panneau desktop sans bloquer le scroll de la page', async () => {
@@ -342,6 +393,27 @@ describe('pages/centres/index', () => {
     expect(cards[0]!.text()).toContain('Lyon')
   })
 
+  it('pré-remplit le filtre département depuis ?dept= (autocomplétion accueil)', async () => {
+    routeStub.query = { dept: 'Rhône' }
+    const wrapper = await mountPage()
+
+    // Le Select territoire est pré-rempli, pas le champ de recherche.
+    expect((wrapper.find('.dept-select').element as HTMLSelectElement).value).toBe('Rhône')
+    expect((wrapper.find('.city-search').element as HTMLInputElement).value).toBe('')
+    expect(wrapper.findAll('.center-card')).toHaveLength(1)
+    expect(wrapper.text()).toContain('Centre de Lyon')
+  })
+
+  it('combine recherche ?q= et département ?dept= (ville choisie à l’accueil)', async () => {
+    routeStub.query = { q: 'lyon', dept: 'Rhône' }
+    const wrapper = await mountPage()
+
+    expect((wrapper.find('.city-search').element as HTMLInputElement).value).toBe('lyon')
+    expect((wrapper.find('.dept-select').element as HTMLSelectElement).value).toBe('Rhône')
+    expect(wrapper.findAll('.center-card')).toHaveLength(1)
+    expect(wrapper.text()).toContain('Centre de Lyon')
+  })
+
   it('applique une recherche arrivée via ?q= après le montage', async () => {
     const wrapper = await mountPage()
     expect(wrapper.findAll('.center-card')).toHaveLength(3)
@@ -396,14 +468,13 @@ describe('pages/centres/index', () => {
     const mapToggle = wrapper.findAll('button').find((b) => b.text().includes('Voir la carte'))
     await mapToggle!.trigger('click')
 
-    // Sans sélection explicite : pas de carte épinglée, la carte mobile ne
-    // reçoit pas le centre auto-sélectionné (pas de popup au chargement).
+    // Sans sélection explicite : pas de carte épinglée, aucun centre actif
+    // sur les cartes (pas de popup au chargement).
     expect(wrapper.findAll('.center-card')).toHaveLength(3)
     let maps = wrapper.findAll('.center-map')
     expect(maps[0]!.attributes('data-active-id')).toBeUndefined()
     expect(maps[0]!.attributes('data-popup')).toBe('false')
-    // La carte desktop garde le premier centre actif.
-    expect(maps[1]!.attributes('data-active-id')).toBe('creteil')
+    expect(maps[1]!.attributes('data-active-id')).toBeUndefined()
 
     // Après un clic explicite : carte épinglée + centre actif sur la carte.
     await wrapper.findAll('.center-card')[1]!.trigger('click')
@@ -417,6 +488,20 @@ describe('pages/centres/index', () => {
     expect(pinnedCard.classes()).toContain('mb-sm')
     expect(pinnedCard.classes()).not.toContain('fixed')
     expect(pinnedCard.attributes('style')).toBeUndefined()
+  })
+
+  it('cadre tout le réseau par défaut et le groupe dense d’un département', async () => {
+    const wrapper = await mountPage()
+
+    let maps = wrapper.findAll('.center-map')
+    // Sans filtre : pas de focus forcé — fitBounds cadre tout le réseau.
+    expect(maps[0]!.attributes('data-focus')).toBe('')
+
+    await wrapper.find('.dept-select').setValue('Val-de-Marne')
+    // Département choisi : centroïde du groupe Créteil+Vitry ≈ 48.79, 2.42.
+    maps = wrapper.findAll('.center-map')
+    const expected = `${(48.7909 + 48.7938) / 2},${(2.4534 + 2.3899) / 2}`
+    expect(maps[0]!.attributes('data-focus')).toBe(expected)
   })
 
   it('affiche l’état vide quand aucun centre ne correspond', async () => {
@@ -439,7 +524,9 @@ describe('pages/centres/index', () => {
     expect(wrapper.text()).toContain("d'un département voisin")
     expect(wrapper.text()).toContain('Choisir un autre département')
     expect(wrapper.text()).toContain("Aucun centre voisin n'est injecté automatiquement")
-    expect(wrapper.text()).toMatch(/0\s+centre\s+en\s+Ain/)
+    // Pas de compteur « 0 centre en Ain » : il ne s'affiche qu'avec au
+    // moins un résultat — l'état vide suffit.
+    expect(wrapper.text()).not.toContain('centre en Ain')
 
     // « Choisir un autre département » ré-élargit le périmètre.
     const reset = wrapper
@@ -449,17 +536,33 @@ describe('pages/centres/index', () => {
     expect(wrapper.findAll('.center-card')).toHaveLength(3)
   })
 
+  it('navigue vers la fiche au clic sur une carte en mode liste mobile', async () => {
+    const originalMatchMedia = window.matchMedia
+    window.matchMedia = (() => ({ matches: false }) as MediaQueryList) as typeof window.matchMedia
+
+    try {
+      const wrapper = await mountPage()
+      await wrapper.findAll('.center-card')[1]!.trigger('click')
+
+      expect(navigateToMock).toHaveBeenCalledWith('/centres/vitry')
+      // Pas de sélection : la popup sticky est réservée au mode carte.
+      expect(wrapper.find('.center-card.sticky').exists()).toBe(false)
+    } finally {
+      window.matchMedia = originalMatchMedia
+    }
+  })
+
   it('un clic sur une carte active/désactive le centre', async () => {
     const wrapper = await mountPage()
 
     const first = wrapper.find('.center-card')
-    expect(first.attributes('data-active')).toBe('true')
-
-    await first.trigger('click')
     expect(first.attributes('data-active')).toBe('false')
 
     await first.trigger('click')
     expect(first.attributes('data-active')).toBe('true')
+
+    await first.trigger('click')
+    expect(first.attributes('data-active')).toBe('false')
   })
 
   it('définit le SEO de la page réseau', async () => {
@@ -469,5 +572,247 @@ describe('pages/centres/index', () => {
       expect.objectContaining({ seo_title: 'Réseau de centres — LEARN UP ACADEMY' }),
       'Réseau de centres — LEARN UP ACADEMY'
     )
+  })
+
+  it('ne demande pas la géolocalisation au montage — le badge « Près de moi » trie par distance', async () => {
+    interface MockPosition {
+      coords: {
+        latitude: number
+        longitude: number
+        altitude: null
+        accuracy: number
+        altitudeAccuracy: null
+        heading: null
+        speed: null
+      }
+      timestamp: number
+    }
+
+    const getCurrentPosition = vi.fn((success: (position: MockPosition) => void) => {
+      success({
+        coords: {
+          latitude: 48.8589,
+          longitude: 2.347,
+          altitude: null,
+          accuracy: 10,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null
+        },
+        timestamp: Date.now()
+      })
+    })
+
+    const originalNavigator = globalThis.navigator
+    vi.stubGlobal('navigator', {
+      geolocation: { getCurrentPosition }
+    })
+
+    try {
+      const wrapper = await mountPage()
+
+      // Jamais de demande automatique : uniquement via le badge + consentement.
+      expect(getCurrentPosition).not.toHaveBeenCalled()
+      await activateGeo(wrapper)
+      expect(getCurrentPosition).toHaveBeenCalledOnce()
+
+      const cards = wrapper.findAll('.center-card').map((w) => w.text())
+      expect(cards[0]).toContain('Vitry-sur-Seine')
+      expect(cards[1]).toContain('Créteil')
+      expect(cards[2]).toContain('Lyon')
+    } finally {
+      vi.stubGlobal('navigator', originalNavigator)
+    }
+  })
+
+  it('conserve l’ordre relatif des centres sans coordonnées pendant le tri', async () => {
+    const getCurrentPosition = vi.fn(
+      (success: (position: { coords: { latitude: number; longitude: number } }) => void) => {
+        success({ coords: { latitude: 48.8589, longitude: 2.347 } })
+      }
+    )
+
+    const originalNavigator = globalThis.navigator
+    vi.stubGlobal('navigator', {
+      geolocation: { getCurrentPosition }
+    })
+
+    // Deux centres non géolocalisés encadrent un centre géolocalisé : le
+    // comparateur doit renvoyer 0 entre eux, sans les réordonner.
+    centresFixture.value = [
+      { ...directusCentres[0]!, slug: 'sans-geo-a', name: 'Centre Alpha' },
+      { ...directusCentres[1]!, slug: 'avec-geo', name: 'Centre Beta' },
+      { ...directusCentres[2]!, slug: 'sans-geo-b', name: 'Centre Gamma' }
+    ].map((c, i) =>
+      i === 1 ? c : { ...c, latitude: null, longitude: null }
+    ) as typeof directusCentres
+
+    try {
+      const wrapper = await mountPage()
+      await activateGeo(wrapper)
+
+      const cards = wrapper.findAll('.center-card').map((w) => w.text())
+      expect(cards[0]).toContain('Beta')
+      expect(cards[1]).toContain('Alpha')
+      expect(cards[2]).toContain('Gamma')
+    } finally {
+      vi.stubGlobal('navigator', originalNavigator)
+    }
+  })
+
+  it('?geo=1 ouvre le dialog de consentement puis déclenche la demande', async () => {
+    const getCurrentPosition = vi.fn()
+    const originalNavigator = globalThis.navigator
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
+
+    try {
+      await mountPage()
+      expect(getCurrentPosition).not.toHaveBeenCalled()
+
+      // « Près de moi » (menu mobile) navigue vers /centres?geo=1 — le
+      // changement de query rouvre le dialog sans remonter la page.
+      routeStub.query = { geo: '1' }
+      await flushPromises()
+
+      const confirm = findDialogButton('Autoriser la géolocalisation')
+      expect(confirm, 'le dialog de consentement doit être ouvert').toBeTruthy()
+      await confirm!.trigger('click')
+      await flushPromises()
+      expect(getCurrentPosition).toHaveBeenCalledOnce()
+    } finally {
+      vi.stubGlobal('navigator', originalNavigator)
+    }
+  })
+
+  it('?geo=1 au chargement ouvre directement le dialog de consentement', async () => {
+    const getCurrentPosition = vi.fn()
+    const originalNavigator = globalThis.navigator
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
+    routeStub.query = { geo: '1' }
+
+    try {
+      await mountPage()
+      await nextTick()
+      expect(document.body.textContent).toContain('Voir les centres autour de vous')
+      expect(getCurrentPosition).not.toHaveBeenCalled()
+    } finally {
+      vi.stubGlobal('navigator', originalNavigator)
+    }
+  })
+
+  it('un second clic sur le badge désactive la géolocalisation', async () => {
+    const getCurrentPosition = vi.fn(
+      (success: (position: { coords: { latitude: number; longitude: number } }) => void) => {
+        success({ coords: { latitude: 45.764, longitude: 4.8357 } }) // Lyon
+      }
+    )
+    const originalNavigator = globalThis.navigator
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
+    reverseFetchMock.mockResolvedValue({ city: 'Lyon', department: 'Rhône' })
+
+    try {
+      const wrapper = await mountPage()
+      await activateGeo(wrapper)
+
+      let select = wrapper.find('.dept-select').element as HTMLSelectElement
+      expect(select.value).toBe('Rhône')
+      expect(wrapper.findAll('.center-card')).toHaveLength(1)
+
+      // Toggle off : position oubliée, tri distance retiré, filtre
+      // auto-rempli réinitialisé.
+      await wrapper.find('button[aria-label="Désactiver la géolocalisation"]').trigger('click')
+      await flushPromises()
+
+      select = wrapper.find('.dept-select').element as HTMLSelectElement
+      expect(select.value).toBe('all')
+      expect(wrapper.findAll('.center-card')).toHaveLength(3)
+    } finally {
+      vi.stubGlobal('navigator', originalNavigator)
+      reverseFetchMock.mockResolvedValue({ city: null, department: null })
+    }
+  })
+
+  it('pré-remplit le filtre département depuis la position géocodée', async () => {
+    const getCurrentPosition = vi.fn(
+      (success: (position: { coords: { latitude: number; longitude: number } }) => void) => {
+        success({ coords: { latitude: 45.764, longitude: 4.8357 } }) // Lyon
+      }
+    )
+    const originalNavigator = globalThis.navigator
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
+    reverseFetchMock.mockResolvedValue({ city: 'Lyon', department: 'Rhône' })
+
+    try {
+      const wrapper = await mountPage()
+      await activateGeo(wrapper)
+      await flushPromises()
+
+      expect(reverseFetchMock).toHaveBeenCalledWith('http://api.test/centres/reverse', {
+        query: { lat: 45.764, lng: 4.8357 }
+      })
+      const select = wrapper.find('.dept-select').element as HTMLSelectElement
+      expect(select.value).toBe('Rhône')
+      expect(wrapper.findAll('.center-card')).toHaveLength(1)
+      expect(wrapper.text()).toContain('Centre de Lyon')
+    } finally {
+      vi.stubGlobal('navigator', originalNavigator)
+      reverseFetchMock.mockResolvedValue({ city: null, department: null })
+    }
+  })
+
+  it('normalise la valeur détectée sur la graphie canonique de la liste', async () => {
+    const getCurrentPosition = vi.fn(
+      (success: (position: { coords: { latitude: number; longitude: number } }) => void) => {
+        success({ coords: { latitude: 48.7909, longitude: 2.4534 } }) // Créteil
+      }
+    )
+    const originalNavigator = globalThis.navigator
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
+    // Variante tag libre : « Val de Marne » doit sélectionner « Val-de-Marne ».
+    reverseFetchMock.mockResolvedValue({ city: 'Créteil', department: 'val de marne' })
+
+    try {
+      const wrapper = await mountPage()
+      await activateGeo(wrapper)
+      await flushPromises()
+
+      const select = wrapper.find('.dept-select').element as HTMLSelectElement
+      expect(select.value).toBe('Val-de-Marne')
+      expect(wrapper.findAll('.center-card')).toHaveLength(2)
+    } finally {
+      vi.stubGlobal('navigator', originalNavigator)
+      reverseFetchMock.mockResolvedValue({ city: null, department: null })
+    }
+  })
+
+  it('n’écrase pas un département choisi manuellement', async () => {
+    const getCurrentPosition = vi.fn(
+      (success: (position: { coords: { latitude: number; longitude: number } }) => void) => {
+        success({ coords: { latitude: 45.764, longitude: 4.8357 } })
+      }
+    )
+    const originalNavigator = globalThis.navigator
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
+    reverseFetchMock.mockResolvedValue({ city: 'Lyon', department: 'Rhône' })
+
+    try {
+      const wrapper = await mountPage()
+
+      await wrapper.find('button[aria-label="Activer la géolocalisation"]').trigger('click')
+      await nextTick()
+      const confirm = findDialogButton('Autoriser la géolocalisation')
+      await confirm!.trigger('click')
+
+      // L'utilisateur choisit son périmètre avant la réponse du reverse.
+      await wrapper.find('.dept-select').setValue('Val-de-Marne')
+      await flushPromises()
+
+      const select = wrapper.find('.dept-select').element as HTMLSelectElement
+      expect(select.value).toBe('Val-de-Marne')
+      expect(wrapper.findAll('.center-card')).toHaveLength(2)
+    } finally {
+      vi.stubGlobal('navigator', originalNavigator)
+      reverseFetchMock.mockResolvedValue({ city: null, department: null })
+    }
   })
 })

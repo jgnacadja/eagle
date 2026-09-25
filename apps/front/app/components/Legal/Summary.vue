@@ -43,7 +43,7 @@
 import type { HTMLAttributes } from 'vue'
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { cn } from '@/lib/utils'
-import type { LegalPageSection } from '~/data/legal'
+import type { LegalPageSection } from '~/types/legal'
 
 interface Props {
   sections: LegalPageSection[]

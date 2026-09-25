@@ -32,7 +32,7 @@ services:
       start_period: 5s
 
   minio:
-    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -51,7 +51,7 @@ services:
       start_period: 10s
 
   minio-init:
-    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z
     restart: 'no'
     depends_on:
       minio:
@@ -169,6 +169,12 @@ services:
       DIRECTUS_INTERNAL_URL: http://directus:8055
       DIRECTUS_TOKEN: ${DIRECTUS_TOKEN}
       INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
+      HUBSPOT_PORTAL_ID: ${HUBSPOT_PORTAL_ID}
+      HUBSPOT_FORM_NEWSLETTER: ${HUBSPOT_FORM_NEWSLETTER}
+      HUBSPOT_FORM_DEMANDE: ${HUBSPOT_FORM_DEMANDE}
+      HUBSPOT_FORM_CANDIDATURE: ${HUBSPOT_FORM_CANDIDATURE}
+      HUBSPOT_FORM_CONSEILLER: ${HUBSPOT_FORM_CONSEILLER}
+      HUBSPOT_FORMS_BASE_URL: ${HUBSPOT_FORMS_BASE_URL:-https://api.hsforms.com}
     depends_on:
       directus:
         condition: service_healthy

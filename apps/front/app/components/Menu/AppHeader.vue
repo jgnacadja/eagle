@@ -18,44 +18,42 @@
       >
         <NavigationMenuList class="gap-1">
           <NavigationMenuItem value="formations">
-            <NavigationMenuTrigger
-              class="border-b-2 border-transparent text-body rounded-none px-0 mx-sm font-semibold text-primary transition-colors hover:text-accent-text data-[state=open]:border-accent"
-            >
-              Formations
-            </NavigationMenuTrigger>
+            <NavigationMenuTrigger variant="header"> Formations </NavigationMenuTrigger>
             <NavigationMenuContent>
               <MegaMenuFormations @close="close" />
             </NavigationMenuContent>
           </NavigationMenuItem>
 
           <NavigationMenuItem value="centres">
-            <NavigationMenuTrigger
-              class="border-b-2 border-transparent text-body rounded-none px-0 mx-sm font-semibold text-primary transition-colors hover:text-accent-text data-[state=open]:border-accent"
-            >
-              Centres
-            </NavigationMenuTrigger>
+            <NavigationMenuTrigger variant="header"> Trouver un Centre </NavigationMenuTrigger>
             <NavigationMenuContent>
               <MegaMenuCentres @close="close" />
             </NavigationMenuContent>
           </NavigationMenuItem>
 
-          <NavigationMenuItem value="apropos">
-            <NavigationMenuTrigger
-              class="border-b-2 border-transparent text-body rounded-none px-0 mx-sm font-semibold text-primary transition-colors hover:text-accent-text data-[state=open]:border-accent"
+          <NavigationMenuItem value="entreprise">
+            <NuxtLink
+              to="/entreprise"
+              :class="
+                cn(
+                  navigationMenuTriggerStyle({ variant: 'header' }),
+                  '[&.router-link-active]:border-accent'
+                )
+              "
             >
-              À propos
-            </NavigationMenuTrigger>
+              Entreprise
+            </NuxtLink>
+          </NavigationMenuItem>
+
+          <NavigationMenuItem value="apropos">
+            <NavigationMenuTrigger variant="header"> À propos </NavigationMenuTrigger>
             <NavigationMenuContent>
               <MegaMenuAPropos @close="close" />
             </NavigationMenuContent>
           </NavigationMenuItem>
 
           <NavigationMenuItem value="actualites">
-            <NavigationMenuTrigger
-              class="border-b-2 border-transparent text-body rounded-none px-0 mx-sm font-semibold text-primary transition-colors hover:text-accent-text data-[state=open]:border-accent"
-            >
-              Actualités
-            </NavigationMenuTrigger>
+            <NavigationMenuTrigger variant="header"> Actualités </NavigationMenuTrigger>
             <NavigationMenuContent>
               <MegaMenuActualites @close="close" />
             </NavigationMenuContent>
@@ -64,12 +62,11 @@
       </NavigationMenu>
 
       <div class="ml-auto flex items-center gap-sm">
-        <NuxtLink
-          to="/rejoindre-le-reseau"
-          class="hidden text-body font-bold text-primary transition-colors hover:text-accent-text md:inline"
-        >
-          Rejoindre le réseau
-        </NuxtLink>
+        <Button as-child variant="outline" size="pill-sm" class="lg:inline-flex gap-xs">
+          <NuxtLink to="/rejoindre-le-reseau">
+            Rejoindre le réseau <span class="link-arrow">→</span>
+          </NuxtLink>
+        </Button>
 
         <button
           type="button"
@@ -93,19 +90,31 @@
     </div>
   </header>
 
+  <Transition name="menu-overlay">
+    <div
+      v-if="openMenu"
+      class="fixed inset-0 z-40 hidden bg-ink/40 md:block"
+      aria-hidden="true"
+      @click="close"
+    />
+  </Transition>
+
   <MobileMenu v-model:open="isMobileOpen" />
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { cn } from '@/lib/utils'
 import {
   NavigationMenu,
   NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuList,
-  NavigationMenuTrigger
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle
 } from '~/components/ui/navigation-menu'
 import { useMegaMenu, type MegaMenuKey } from '~/composables/useMegaMenu'
+import { useMenuPreload } from '~/composables/useMenuData'
 import MegaMenuFormations from '~/components/Menu/mega-menu/MegaMenuFormations.vue'
 import MegaMenuCentres from '~/components/Menu/mega-menu/MegaMenuCentres.vue'
 import MegaMenuAPropos from '~/components/Menu/mega-menu/MegaMenuAPropos.vue'
@@ -113,6 +122,7 @@ import MegaMenuActualites from '~/components/Menu/mega-menu/MegaMenuActualites.v
 import MobileMenu from '~/components/Menu/MobileMenu.vue'
 
 const { openMenu, rootEl, close } = useMegaMenu()
+useMenuPreload()
 const isMobileOpen = ref(false)
 
 // reka-ui gère l'ouverture des triggers (clic/survol) : on synchronise

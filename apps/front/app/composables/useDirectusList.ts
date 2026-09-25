@@ -1,4 +1,5 @@
 import { readItems } from '@directus/sdk'
+import type { MultiWatchSources } from 'vue'
 
 // Le payload SSR n'est servi que pendant l'hydratation : un mount ultérieur
 // (navigation client) repart sur des données fraîches plutôt que de servir
@@ -18,18 +19,26 @@ function getCachedData<T>(
  * le rôle Public (voir ST-12) apparaisse dans les logs serveur au lieu de se
  * traduire silencieusement par une section vide.
  */
+// `query` peut être un getter : il est réévalué à chaque fetch et peut
+// renvoyer `null` pour sauter l'appel (contexte pas encore résolu). À
+// combiner avec `options.watch` quand la requête dépend d'une source
+// réactive — sans ça une navigation client vers la même route figerait le
+// premier jeu de paramètres.
 export function useDirectusList<T>(
   collection: string,
   cacheKey: string,
-  query?: Record<string, unknown>
+  query?: Record<string, unknown> | (() => Record<string, unknown> | null),
+  options?: { watch?: MultiWatchSources }
 ) {
   const directus = useDirectusClient()
 
   const { data } = useAsyncData(
     cacheKey,
     async () => {
+      const resolvedQuery = typeof query === 'function' ? query() : query
+      if (resolvedQuery === null) return []
       try {
-        return await directus.request<T[]>(readItems(collection, query))
+        return await directus.request<T[]>(readItems(collection, resolvedQuery))
       } catch (error) {
         if (import.meta.server) {
           logServerError(`[useDirectusList] ${collection} (${cacheKey}) :`, error)
@@ -38,7 +47,8 @@ export function useDirectusList<T>(
       }
     },
     {
-      getCachedData: (key, nuxtApp, ctx) => getCachedData<T[]>(key, nuxtApp, ctx)
+      getCachedData: (key, nuxtApp, ctx) => getCachedData<T[]>(key, nuxtApp, ctx),
+      watch: options?.watch
     }
   )
 

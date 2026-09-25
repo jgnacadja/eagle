@@ -1,7 +1,7 @@
 <template>
   <PaginationPrev
     data-slot="pagination-previous"
-    :class="cn(buttonVariants({ variant: 'ghost', size }), props.class)"
+    :class="cn(buttonVariants({ variant, size }), props.class)"
     v-bind="forwarded"
   >
     <slot>
@@ -23,16 +23,18 @@ import IconChevronLeft from '@/components/icons/IconChevronLeft.vue'
 const props = withDefaults(
   defineProps<
     PaginationPrevProps & {
+      variant?: ButtonVariants['variant']
       size?: ButtonVariants['size']
       class?: HTMLAttributes['class']
     }
   >(),
   {
+    variant: 'ghost',
     size: 'default',
     class: undefined
   }
 )
 
-const delegatedProps = reactiveOmit(props, 'class', 'size')
+const delegatedProps = reactiveOmit(props, 'class', 'variant', 'size')
 const forwarded = useForwardProps(delegatedProps)
 </script>

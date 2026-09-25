@@ -2,33 +2,41 @@
   <div class="flex flex-1 flex-col">
     <!-- Top surface section: heading and description -->
     <section class="shrink-0 bg-surface-soft">
-      <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter pb-lg pt-section">
+      <div class="mx-auto px-gutter-mobile md:px-gutter pb-lg pt-section">
         <p class="text-overline text-accent-text">LE RÉSEAU LEARN UP</p>
         <h1 class="mt-sm font-display text-h2 font-extrabold text-ink lg:text-h1">
           Réseau de centres
         </h1>
         <p class="mt-sm max-w-prose text-body text-ink-body">
-          {{ centresCount }} centre{{ centresCount > 1 ? 's' : '' }}
-          {{ centresCount > 1 ? 'couvrent' : 'couvre' }}
-          {{ departmentsCount }} département{{ departmentsCount > 1 ? 's' : '' }}. La sélection d'un
-          département affiche les centres de ce territoire.
+          <!-- Fetch non bloquant en navigation client : pendant le
+               chargement on affiche un placeholder plutôt que
+               « 0 centre couvre 0 département », qui flasherait avant
+               l'arrivée des compteurs. -->
+          <span
+            v-if="heroPending"
+            class="inline-block h-xs w-48 animate-pulse rounded-full bg-surface align-middle"
+            aria-hidden="true"
+          />
+          <template v-else>
+            {{ centresCount }} centre{{ centresCount > 1 ? 's' : '' }}
+            {{ centresCount > 1 ? 'couvrent' : 'couvre' }}
+            {{ departmentsCount }} département{{ departmentsCount > 1 ? 's' : '' }}.
+          </template>
+          La sélection d'un département affiche les centres de ce territoire.
         </p>
       </div>
     </section>
 
     <!-- Barre de recherche/filtres : épinglée en haut sur desktop -->
     <section class="shrink-0 bg-surface-soft lg:sticky lg:top-0 lg:z-30">
-      <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter pb-lg">
+      <div class="mx-auto px-gutter-mobile md:px-gutter pb-lg">
         <div class="flex flex-col gap-md">
           <div class="flex flex-col gap-md sm:flex-row sm:items-center sm:justify-between">
             <div class="flex flex-col gap-md sm:flex-row sm:items-center">
               <Label for="dept-select" class="relative block">
                 <span class="sr-only">Sélectionner un département</span>
-                <Select v-model="selectedDept">
-                  <SelectTrigger
-                    id="dept-select"
-                    class="h-control w-full rounded-full border border-outline bg-paper px-lg text-small font-medium text-ink focus:ring-outline sm:w-64"
-                  >
+                <Select v-model="selectedDept" @update:model-value="deptUserTouched = true">
+                  <SelectTrigger id="dept-select" variant="field-lg" class="sm:w-64">
                     <span class="truncate">{{ selectedDeptLabel }}</span>
                   </SelectTrigger>
                   <SelectContent>
@@ -51,16 +59,19 @@
                 sr-label="Rechercher par ville ou code postal"
                 placeholder="Ville ou code postal"
                 :loading="centresPending"
-                class="w-full sm:w-72"
+                class="w-full sm:w-96"
                 @submit="onSearch"
-              />
+              >
+                <template #action>
+                  <GeoNearMe ref="geoNearMe" />
+                </template>
+              </SearchInput>
             </div>
 
             <div class="flex items-center justify-between gap-sm">
-              <p
-                v-if="filteredCenters.length || selectedDept !== 'all'"
-                class="text-small text-ink"
-              >
+              <!-- Compteur masqué sans résultat : « 0 centre en X » n'a
+                   pas de sens — l'état vide en dessous porte le message. -->
+              <p v-if="filteredCenters.length" class="text-small text-ink">
                 <span class="font-extrabold">{{ filteredCenters.length }}</span>
                 {{ ' ' }}
                 <span class="font-extrabold">{{
@@ -71,19 +82,15 @@
                   <span class="font-extrabold">{{ selectedDept }}</span>
                 </template>
                 <template v-else-if="appliedSearch.trim()">
-                  pour « {{ appliedSearch.trim() }} »
+                  pour « {{ appliedSearch.trim() }} » et environs
                 </template>
                 <template v-else> au total</template>
               </p>
               <Button
                 type="button"
                 :variant="isMobileMapOpen ? 'default' : 'outline'"
-                :class="[
-                  'flex items-center gap-sm',
-                  isMobileMapOpen
-                    ? 'h-control shrink-0 rounded-full bg-primary px-md text-small font-semibold text-paper transition hover:bg-primary-dark lg:hidden'
-                    : 'h-control shrink-0 rounded-full border border-outline bg-paper px-md text-small font-semibold text-ink transition hover:bg-surface hover:text-accent-text lg:hidden'
-                ]"
+                size="pill-sm"
+                class="shrink-0 gap-sm lg:hidden"
                 @click="isMobileMapOpen ? closeMobileMap() : openMobileMap()"
               >
                 <IconList v-if="isMobileMapOpen" :size="16" />
@@ -101,12 +108,22 @@
       <!-- Mobile: map replaces list when open -->
       <div v-if="isMobileMapOpen" class="relative flex h-[60vh] flex-col justify-end lg:hidden">
         <div class="absolute inset-0 overflow-hidden">
+          <!-- Pendant le chargement initial : placeholder — sinon le
+               « Aucun centre à afficher » interne de CenterMap flasherait
+               avant l'arrivée des données. -->
+          <div
+            v-if="centresPending && !filteredCenters.length"
+            class="h-full animate-pulse bg-surface"
+            aria-hidden="true"
+          />
           <CenterMap
+            v-else
             :centers="filteredCenters"
             :active-id="hasUserSelection ? activeCenterId : null"
             :caption="selectedDeptLabel"
-            :min-zoom="8"
             :popup="false"
+            :user-position="userPosition"
+            :focus-center="mapFocus"
             @select="selectCenter"
           />
         </div>
@@ -124,7 +141,7 @@
 
       <!-- Desktop grid + mobile list -->
       <div
-        class="grid lg:h-[calc(80vh-5rem)] lg:grid-cols-[2fr_3fr] lg:grid-rows-1 lg:overflow-hidden"
+        class="grid lg:mx-auto lg:h-[calc(80vh-5rem)] lg:w-full lg:grid-cols-[2fr_3fr] lg:grid-rows-1 lg:overflow-hidden lg:px-gutter"
         :class="{ 'hidden lg:grid': isMobileMapOpen }"
       >
         <!-- List -->
@@ -132,7 +149,7 @@
           v-if="filteredCenters.length"
           ref="listEl"
           data-testid="centres-scroll-list"
-          class="flex flex-col gap-md px-gutter-mobile py-lg md:pl-gutter lg:h-full lg:min-h-0 lg:overflow-y-auto lg:pl-[max(48px,calc((100vw-var(--layout-container-max))/2+48px))] lg:pr-md"
+          class="thin-scrollbar flex flex-col gap-md px-gutter-mobile py-lg md:pl-gutter lg:h-full lg:min-h-0 lg:overflow-y-auto lg:pl-0 lg:pr-lg"
         >
           <CenterResultCard
             v-for="(center, i) in visibleCenters"
@@ -141,7 +158,7 @@
             v-reveal="revealStagger(i % 3)"
             :center="center"
             :active="activeCenterId === center.id"
-            @select="selectCenter(center.id)"
+            @select="onListCardSelect(center.id)"
           />
           <div
             v-if="isLoadingMore"
@@ -180,10 +197,37 @@
           </p>
         </div>
 
+        <!-- Chargement initial : skeletons tant que la première réponse
+             n'est pas arrivée — sinon l'état vide flasherait avant que la
+             liste et la carte ne s'affichent (fetch non bloquant en
+             navigation client). La grille 2 colonnes est conservée pour
+             éviter tout saut de layout à l'arrivée des données. -->
+        <div
+          v-else-if="centresPending"
+          class="flex flex-col gap-md px-gutter-mobile py-lg md:pl-gutter lg:h-full lg:min-h-0 lg:overflow-hidden lg:pl-0 lg:pr-lg"
+          aria-busy="true"
+        >
+          <output class="sr-only">Chargement des centres</output>
+          <div
+            v-for="i in 3"
+            :key="i"
+            class="flex animate-pulse flex-col gap-sm rounded-md border border-rule p-md"
+            aria-hidden="true"
+          >
+            <div class="flex justify-between gap-sm">
+              <div class="h-xs w-2xl rounded-full bg-surface" />
+              <div class="h-xs w-lg rounded-full bg-surface" />
+            </div>
+            <div class="h-xs w-3/4 rounded-full bg-surface" />
+            <div class="h-xs w-1/2 rounded-full bg-surface" />
+            <div class="ml-auto h-control w-2xl rounded-full bg-surface" />
+          </div>
+        </div>
+
         <!-- Empty state -->
         <div
           v-else
-          class="flex h-full min-h-0 flex-col justify-center px-gutter-mobile py-lg md:pl-gutter lg:col-span-2 lg:pl-[max(48px,calc((100vw-var(--layout-container-max))/2+48px))] lg:pr-[max(48px,calc((100vw-var(--layout-container-max))/2+48px))]"
+          class="flex h-full min-h-0 flex-col justify-center px-gutter-mobile py-lg md:pl-gutter lg:col-span-2 lg:px-0"
         >
           <div class="rounded-md border border-dashed border-rule bg-paper p-xl text-center">
             <h2 class="font-sans text-h4 text-ink">
@@ -198,17 +242,10 @@
               intra sur site, ou dans un centre d'un département voisin selon le besoin.
             </p>
             <div class="mt-xl flex flex-wrap items-center justify-center gap-md">
-              <Button
-                as-child
-                class="h-control rounded-full bg-primary px-md text-small font-bold text-paper hover:bg-primary-dark"
-              >
+              <Button as-child size="pill-sm" class="font-bold">
                 <NuxtLink to="/centres/demande-de-formation">Demander une formation</NuxtLink>
               </Button>
-              <Button
-                variant="outline"
-                class="h-control rounded-full border border-outline bg-paper px-md text-small font-bold text-primary transition hover:bg-surface hover:text-accent-text"
-                @click="resetFilters"
-              >
+              <Button variant="outline" size="pill-sm" class="font-bold" @click="resetFilters">
                 {{
                   isDepartmentScope ? 'Choisir un autre département' : 'Réinitialiser les filtres'
                 }}
@@ -228,9 +265,13 @@
             :centers="filteredCenters"
             :active-id="activeCenterId"
             :caption="selectedDeptLabel"
-            :min-zoom="8"
+            :user-position="userPosition"
+            :focus-center="mapFocus"
             @select="selectCenter"
           />
+        </div>
+        <div v-else-if="centresPending" class="hidden lg:block lg:h-full lg:min-h-0">
+          <div class="h-full animate-pulse rounded-md bg-surface" aria-hidden="true" />
         </div>
       </div>
     </section>
@@ -239,6 +280,8 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { DESKTOP_QUERY, useGeolocation, useReverseGeocode } from '~/composables/useGeolocation'
+import { densestClusterCenter, distanceKm, normalizeDepartment } from '~/utils/geo'
 import type { CentresQuery } from '~/composables/useCentres'
 import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
@@ -271,11 +314,23 @@ function searchFromQuery(q: unknown, region: unknown): string {
 const appliedSearch = ref(searchFromQuery(route.query.q, route.query.region))
 const searchQuery = ref(appliedSearch.value)
 const activeCenterId = ref<string | null>(null)
-// Sélection explicite (clic sur une carte ou un marqueur) — distincte de
-// l'auto-sélection du premier centre : sur mobile, la carte n'ouvre la
-// popup d'un centre que si l'utilisateur l'a choisi, jamais d'office.
+// Sélection explicite (clic sur une carte ou un marqueur) : sur mobile, la
+// carte n'ouvre la popup d'un centre que si l'utilisateur l'a choisi.
 const hasUserSelection = ref(false)
 const isMobileMapOpen = ref(false)
+
+// Destructuration : `position` devient un binding top-level, donc auto-déplié
+// dans le template (un Ref imbriqué dans un objet ne l'est pas — CenterMap
+// recevrait le Ref lui-même et non { lat, lng }).
+// La géolocalisation n'est jamais automatique : elle part d'un geste
+// explicite — badge « Près de moi » de la barre de recherche (dialog de
+// consentement maison puis popup native) ou lien `?geo=1` du menu mobile.
+const { position: userPosition } = useGeolocation()
+const geoNearMe = ref<{ activate: () => void } | null>(null)
+
+// Reverse geocoding : la position GPS est convertie en département côté
+// API (BAN) pour pré-remplir le filtre — sans rechargement de page.
+const { department: geoDepartment } = useReverseGeocode(userPosition)
 
 const centresFilters = computed<CentresQuery>(() => ({
   department: selectedDept.value === 'all' ? undefined : selectedDept.value,
@@ -300,10 +355,63 @@ if (import.meta.server) {
 }
 
 const { data: centres, pending: centresPending } = centresResult
-const { data: centresTotal } = centresTotalResult
-const { data: departments } = departmentsResult
+const { data: centresTotal, pending: centresTotalPending } = centresTotalResult
+const { data: departments, pending: departmentsPending } = departmentsResult
+const heroPending = computed(() => centresTotalPending.value || departmentsPending.value)
 const centresCount = computed(() => centresTotal.value ?? 0)
 const departmentsCount = computed(() => departments.value?.length ?? 0)
+
+// La page déjà affichée ne remonte pas : seul le changement de query
+// rouvre le parcours de consentement (mobile : « Près de moi » du menu).
+watch(
+  () => route.query.geo,
+  (value) => {
+    if (value === '1') geoNearMe.value?.activate()
+  }
+)
+
+// Le filtre département se remplit dès que le département est détecté.
+// Jamais après un choix explicite : `deptUserTouched` (sélection dans le
+// select ou reset des filtres) désactive l'auto-remplissage pour le reste
+// du montage — sinon une liste `departments` rafraîchie réécrirait un
+// « Tous les départements » choisi à la main. Tant qu'il n'y a pas eu de
+// geste, on n'écrit que sur 'all' ou sur la valeur posée par
+// l'auto-remplissage — dont on corrige alors la graphie quand la liste
+// canonique arrive (« Val-de-Marne » géocodé vs tag libre « Val de Marne »).
+// `departments` dans les sources du watch couvre le cas où la liste
+// arrive après la position.
+const deptUserTouched = ref(false)
+
+// `?dept=` (département choisi dans l'autocomplétion de l'accueil)
+// pré-remplit le filtre territoire — choix explicite : `deptUserTouched`
+// empêche l'auto-remplissage géoloc de l'écraser. La valeur brute tient
+// le temps que la liste `departments` arrive, puis est ramenée à la
+// graphie canonique (même normalisation que la géoloc).
+watch(
+  [departments, () => route.query.dept],
+  ([list, queryDept]) => {
+    if (typeof queryDept !== 'string' || !queryDept) return
+    const wanted = normalizeDepartment(queryDept)
+    selectedDept.value = list?.find((d) => normalizeDepartment(d) === wanted) ?? queryDept
+    deptUserTouched.value = true
+  },
+  { immediate: true }
+)
+
+watch([geoDepartment, departments], ([dept, list]) => {
+  if (!dept) {
+    // Géoloc désactivée (ou reverse en échec) : le filtre ne revient à
+    // 'all' que si la valeur affichée vient de l'auto-remplissage —
+    // `deptUserTouched` garantit qu'un choix manuel est conservé.
+    if (!deptUserTouched.value) selectedDept.value = 'all'
+    return
+  }
+  if (deptUserTouched.value) return
+  const detected = normalizeDepartment(dept)
+  const current = selectedDept.value
+  if (current !== 'all' && normalizeDepartment(current) !== detected) return
+  selectedDept.value = list?.find((d) => normalizeDepartment(d) === detected) ?? dept
+})
 
 const LIST_CHUNK_SIZE = 12
 const visibleCount = ref(LIST_CHUNK_SIZE)
@@ -313,12 +421,19 @@ const isLoadingMore = ref(false)
 const hasListOverflowed = ref(false)
 let loadMoreObserver: IntersectionObserver | null = null
 
-const filteredCenters = computed<CenterResult[]>(() =>
-  (centres.value ?? []).map((centre) => {
+const filteredCenters = computed<CenterResult[]>(() => {
+  const userPos = userPosition.value
+  const mapped = (centres.value ?? []).map((centre) => {
     const location = [centre.address, centre.postal_code, centre.city, centre.department]
       .filter(Boolean)
       .join(', ')
     const tags = (centre.specialties ?? []).join(' · ')
+
+    const distance =
+      userPos && centre.latitude != null && centre.longitude != null
+        ? distanceKm(userPos, { lat: centre.latitude, lng: centre.longitude })
+        : undefined
+
     return {
       id: centre.slug,
       name: centre.name,
@@ -328,14 +443,40 @@ const filteredCenters = computed<CenterResult[]>(() =>
       tagsShort: tags,
       status: availabilityStatus(centreSessionDates.value.get(centre.slug) ?? []),
       lat: centre.latitude ?? undefined,
-      lng: centre.longitude ?? undefined
+      lng: centre.longitude ?? undefined,
+      distanceKm: distance
     }
   })
-)
+
+  if (userPos) {
+    mapped.sort((a, b) => {
+      if (a.distanceKm == null && b.distanceKm == null) return 0
+      if (a.distanceKm == null) return 1
+      if (b.distanceKm == null) return -1
+      return a.distanceKm - b.distanceKm
+    })
+  }
+
+  return mapped
+})
 
 const selectedDeptLabel = computed(() =>
   selectedDept.value === 'all' ? 'Tous les départements' : selectedDept.value
 )
+
+// Vue de la carte : département choisi → centroïde du groupe le plus dense
+// de ses centres (les centres « couvrant » un département peuvent être
+// implantés chez les voisins, un fit global cadrerait trop large) ;
+// « Tous les départements » — à l'arrivée comme après un reset — →
+// `fitBounds` cadre tout le réseau, comme sur l'accueil (la position de
+// l'utilisateur entre dans les bounds quand il est géolocalisé).
+const mapFocus = computed(() => {
+  if (selectedDept.value === 'all') return null
+  const points = filteredCenters.value.flatMap((c) =>
+    c.lat != null && c.lng != null ? [{ lat: c.lat, lng: c.lng }] : []
+  )
+  return densestClusterCenter(points)
+})
 
 // « Département sans centre » (RG01) : le périmètre reste strict — l'état
 // vide territorial ne s'affiche que pour un filtre département seul ; une
@@ -395,8 +536,10 @@ watch(
       visibleCount.value = LIST_CHUNK_SIZE
       isLoadingMore.value = false
       hasUserSelection.value = false
-      if (!activeCenterId.value || !list.some((c) => c.id === activeCenterId.value)) {
-        activeCenterId.value = list[0]?.id ?? null
+      // Pas d'auto-sélection du premier centre : la carte s'ouvre neutre —
+      // on ne fait que nettoyer une sélection sortie du filtre courant.
+      if (activeCenterId.value && !list.some((c) => c.id === activeCenterId.value)) {
+        activeCenterId.value = null
       }
     }
     nextTick(measureListOverflow)
@@ -418,6 +561,10 @@ onMounted(() => {
   if (sentinelEl.value) loadMoreObserver.observe(sentinelEl.value)
   window.addEventListener('resize', onResize)
   nextTick(onResize)
+  // Arrivée directe sur /centres?geo=1 (« Près de moi » du menu) : le
+  // dialog de consentement s'ouvre une fois le badge monté — le watch sur
+  // la query, non immédiat, ne couvre que les changements ultérieurs.
+  if (route.query.geo === '1') geoNearMe.value?.activate()
 })
 
 watch(sentinelEl, (el, prev) => {
@@ -431,6 +578,20 @@ onBeforeUnmount(() => {
   loadMoreObserver = null
   window.removeEventListener('resize', onResize)
 })
+
+// Mobile (liste plein écran) : le clic sur une carte ouvre la fiche,
+// comme « Voir le centre » — la sélection/popup sticky n'existe qu'en
+// mode carte (mobile) et sur desktop où liste et carte sont visibles.
+function onListCardSelect(id: string) {
+  // Même garde que useAutoGeolocation : matchMedia absent → desktop.
+  const isDesktop =
+    typeof window.matchMedia !== 'function' || window.matchMedia(DESKTOP_QUERY).matches
+  if (!isDesktop) {
+    void navigateTo(`/centres/${id}`)
+    return
+  }
+  selectCenter(id)
+}
 
 function selectCenter(id: string) {
   if (!id) {
@@ -455,6 +616,7 @@ function onSearch(value: string) {
 }
 
 function resetFilters() {
+  deptUserTouched.value = true
   selectedDept.value = 'all'
   searchQuery.value = ''
   appliedSearch.value = ''

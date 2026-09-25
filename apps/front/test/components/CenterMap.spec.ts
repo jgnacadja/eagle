@@ -97,9 +97,14 @@ interface CenterMapProps {
   caption: string
   mode?: 'network' | 'single'
   minZoom?: number
+  userPosition?: { lat: number; lng: number } | null
+  focusCenter?: { lat: number; lng: number } | null
+  focusZoom?: number
 }
 
 function mountWithStubs(props: CenterMapProps) {
+  vi.mocked(Leaflet.marker).mockClear()
+  vi.mocked(Leaflet.map).mockClear()
   vi.mocked(Leaflet.markerClusterGroup).mockClear()
 
   return mount(CenterMap, {
@@ -227,5 +232,110 @@ describe('CenterMap', () => {
       unbindPopup: ReturnType<typeof vi.fn>
     }[]
     expect(markerInstances.some((m) => m.unbindPopup.mock.calls.length > 0)).toBe(true)
+  })
+
+  it('renders a user position marker and includes it in bounds', async () => {
+    mountWithStubs({
+      centers,
+      activeId: null,
+      caption: 'Tous les départements',
+      userPosition: { lat: 48.8566, lng: 2.3522 }
+    })
+    await flushPromises()
+
+    const map = vi.mocked(Leaflet.map).mock.results[0]?.value as unknown as {
+      fitBounds: ReturnType<typeof vi.fn>
+    }
+    expect(Leaflet.marker).toHaveBeenCalledWith(
+      [48.8566, 2.3522],
+      expect.objectContaining({ zIndexOffset: 1000 })
+    )
+    expect(map?.fitBounds).toHaveBeenCalled()
+  })
+
+  it('centers on focusCenter instead of fitting markers', async () => {
+    mountWithStubs({
+      centers,
+      activeId: null,
+      caption: 'Tous les départements',
+      focusCenter: { lat: 48.8566, lng: 2.3522 }
+    })
+    await flushPromises()
+
+    const map = vi.mocked(Leaflet.map).mock.results[0]?.value as unknown as {
+      setView: ReturnType<typeof vi.fn>
+      fitBounds: ReturnType<typeof vi.fn>
+    }
+    expect(map.setView).toHaveBeenCalledWith([48.8566, 2.3522], 10)
+    expect(map.fitBounds).not.toHaveBeenCalled()
+  })
+
+  it('applies a custom focusZoom with focusCenter', async () => {
+    mountWithStubs({
+      centers,
+      activeId: null,
+      caption: 'Tous les départements',
+      focusCenter: { lat: 48.8566, lng: 2.3522 },
+      focusZoom: 13
+    })
+    await flushPromises()
+
+    const map = vi.mocked(Leaflet.map).mock.results[0]?.value as unknown as {
+      setView: ReturnType<typeof vi.fn>
+    }
+    expect(map.setView).toHaveBeenCalledWith([48.8566, 2.3522], 13)
+  })
+
+  it('does not re-center on the focus when userPosition resolves', async () => {
+    const focusCenter = { lat: 48.8566, lng: 2.3522 }
+    const wrapper = mountWithStubs({
+      centers,
+      activeId: null,
+      caption: 'Tous les départements',
+      focusCenter
+    })
+    await flushPromises()
+
+    const map = vi.mocked(Leaflet.map).mock.results[0]?.value as unknown as {
+      setView: ReturnType<typeof vi.fn>
+    }
+    map.setView.mockClear()
+
+    await wrapper.setProps({ userPosition: { lat: 48.9, lng: 2.4 } })
+    await flushPromises()
+
+    expect(map.setView).not.toHaveBeenCalled()
+  })
+
+  it('re-centers when focusCenter changes', async () => {
+    const wrapper = mountWithStubs({
+      centers,
+      activeId: null,
+      caption: 'Tous les départements',
+      focusCenter: { lat: 48.8566, lng: 2.3522 }
+    })
+    await flushPromises()
+
+    const map = vi.mocked(Leaflet.map).mock.results[0]?.value as unknown as {
+      setView: ReturnType<typeof vi.fn>
+    }
+    map.setView.mockClear()
+
+    await wrapper.setProps({ focusCenter: { lat: 45.764, lng: 4.8357 } })
+    await flushPromises()
+
+    expect(map.setView).toHaveBeenCalledWith([45.764, 4.8357], 10)
+  })
+
+  it('skips the user marker when userPosition is null', async () => {
+    mountWithStubs({
+      centers,
+      activeId: null,
+      caption: 'Tous les départements',
+      userPosition: null
+    })
+    await flushPromises()
+
+    expect(Leaflet.marker).toHaveBeenCalledTimes(centers.length)
   })
 })

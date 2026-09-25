@@ -22,8 +22,10 @@ const CONTENT_COLLECTIONS = [
   'familles_formation',
   'sous_familles_formation',
   'articles',
+  'avis',
   'pages',
   'page_blocks',
+  'pages_legales',
   'stats',
   'formations'
 ]
@@ -42,17 +44,19 @@ export function permissionsFor(roleName) {
 
     case 'editeur':
       return [
-        ...['articles', 'page_blocks', 'sous_familles_formation'].flatMap((c) =>
+        ...['articles', 'avis', 'page_blocks', 'sous_familles_formation'].flatMap((c) =>
           grants(c, ['create', 'read', 'update'])
         ),
-        ...['centres', 'familles_formation', 'pages', 'stats'].flatMap((c) => grants(c, ['read'])),
+        ...['centres', 'familles_formation', 'pages', 'pages_legales', 'stats'].flatMap((c) =>
+          grants(c, ['read'])
+        ),
         ...grants('directus_files', ['create', 'read']),
         { collection: 'formations', action: 'read' },
         {
           collection: 'formations',
           action: 'update',
           // Tous les champs contenu + éditoriaux ; hors techniques
-          // (digiforma_id, sessions, raw, timestamps) et status
+          // (digiforma_id, raw, timestamps) et status
           // (publication réservée au modérateur).
           fields: [
             'sort',
@@ -70,6 +74,7 @@ export function permissionsFor(roleName) {
             'modalities',
             'center_slug',
             'center_slugs',
+            'sessions',
             'locations_text',
             'blocks',
             'generated_program_url',
@@ -88,12 +93,13 @@ export function permissionsFor(roleName) {
 
     case 'moderateur':
       return [
-        ...['articles', 'page_blocks'].flatMap((c) => grants(c, ['read', 'update'])),
+        ...['articles', 'avis', 'page_blocks'].flatMap((c) => grants(c, ['read', 'update'])),
         ...[
           'centres',
           'familles_formation',
           'sous_familles_formation',
           'pages',
+          'pages_legales',
           'stats',
           'directus_files'
         ].flatMap((c) => grants(c, ['read'])),
@@ -120,7 +126,9 @@ const PUBLIC_STATUS_FILTERED = [
   'familles_formation',
   'sous_familles_formation',
   'articles',
+  'avis',
   'pages',
+  'pages_legales',
   'formations'
 ]
 const PUBLIC_UNRESTRICTED = ['page_blocks', 'stats', 'directus_files']

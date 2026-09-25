@@ -32,11 +32,81 @@ describe('SearchInput', () => {
     expect(wrapper.emitted('update:modelValue')).toBeUndefined()
   })
 
+  it('émet input à chaque frappe sans toucher modelValue (autocomplétion)', async () => {
+    const wrapper = mountInput()
+
+    await wrapper.find('.search-input').setValue('ly')
+    await wrapper.find('.search-input').setValue('lyo')
+
+    expect(wrapper.emitted('input')).toEqual([['ly'], ['lyo']])
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+  })
+
+  it('ouvre la liste de suggestions à la frappe (combobox)', async () => {
+    const wrapper = mountInput({ suggestions: ['Lyon (69)', 'Rhône (69)'] })
+    const input = wrapper.find('.search-input')
+
+    await input.setValue('ly')
+
+    expect(wrapper.find('ul#test-search-suggestions').exists()).toBe(true)
+    expect(wrapper.findAll('li button').map((o) => o.text())).toEqual(['Lyon (69)', 'Rhône (69)'])
+    expect(input.attributes('role')).toBe('combobox')
+    expect(input.attributes('aria-expanded')).toBe('true')
+    // Pas d'attribut `list` natif : l'indicateur ▼ du navigateur ne s'affiche pas.
+    expect(input.attributes('list')).toBeUndefined()
+  })
+
+  it('choisit une suggestion au clic : remplit le champ et soumet', async () => {
+    const wrapper = mountInput({ suggestions: ['Lyon (69)', 'Rhône (69)'] })
+    const input = wrapper.find('.search-input')
+
+    await input.setValue('ly')
+    await wrapper.findAll('li button')[1]!.trigger('click')
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['Rhône (69)'])
+    expect(wrapper.emitted('submit')).toEqual([['Rhône (69)']])
+    expect(wrapper.find('ul#test-search-suggestions').exists()).toBe(false)
+  })
+
+  it('navigue au clavier : flèches puis Entrée choisissent la suggestion', async () => {
+    const wrapper = mountInput({ suggestions: ['Lyon (69)', 'Rhône (69)'] })
+    const input = wrapper.find('.search-input')
+
+    await input.setValue('ly')
+    await input.trigger('keydown', { key: 'ArrowDown' })
+    await input.trigger('keydown', { key: 'ArrowDown' })
+    await input.trigger('keydown', { key: 'Enter' })
+
+    expect(wrapper.emitted('submit')).toEqual([['Rhône (69)']])
+  })
+
+  it('Échap ferme la liste, Entrée soumet alors le texte brut', async () => {
+    const wrapper = mountInput({ suggestions: ['Lyon (69)'] })
+    const input = wrapper.find('.search-input')
+
+    await input.setValue('lyo')
+    await input.trigger('keydown', { key: 'Escape' })
+    expect(wrapper.find('ul#test-search-suggestions').exists()).toBe(false)
+
+    await input.trigger('keydown', { key: 'Enter' })
+    expect(wrapper.emitted('submit')).toEqual([['lyo']])
+  })
+
+  it('ne rend pas de listbox sans suggestions', async () => {
+    const wrapper = mountInput()
+    const input = wrapper.find('.search-input')
+
+    await input.setValue('ly')
+
+    expect(wrapper.find('ul#test-search-suggestions').exists()).toBe(false)
+    expect(input.attributes('role')).toBeUndefined()
+  })
+
   it('émet update:modelValue et submit à la touche Entrée', async () => {
     const wrapper = mountInput()
 
     await wrapper.find('.search-input').setValue('caces')
-    await wrapper.find('.search-input').trigger('keydown.enter')
+    await wrapper.find('.search-input').trigger('keydown', { key: 'Enter' })
 
     expect(wrapper.emitted('update:modelValue')).toEqual([['caces']])
     expect(wrapper.emitted('submit')).toEqual([['caces']])
@@ -104,7 +174,7 @@ describe('SearchInput', () => {
     it('n’émet rien si submit est déclenché pendant le chargement', async () => {
       const wrapper = mountInput({ modelValue: 'sst', loading: true })
 
-      await wrapper.find('.search-input').trigger('keydown.enter')
+      await wrapper.find('.search-input').trigger('keydown', { key: 'Enter' })
 
       expect(wrapper.emitted('submit')).toBeUndefined()
     })

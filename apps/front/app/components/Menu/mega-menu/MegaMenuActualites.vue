@@ -1,5 +1,5 @@
 <template>
-  <div class="grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter">
+  <div class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter">
     <!-- RUBRIQUES -->
     <div class="border-r border-rule pr-lg">
       <h3 class="text-small font-semibold text-ink-muted uppercase">Rubriques</h3>
@@ -26,7 +26,7 @@
     <div class="border-r border-rule pr-lg">
       <h3 class="text-small font-semibold text-ink-muted uppercase">Par région</h3>
       <ul class="mt-sm space-y-1">
-        <li v-for="region in regions" :key="region.slug">
+        <li v-for="region in displayedRegions" :key="region.slug">
           <button
             type="button"
             class="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-body transition-colors hover:text-accent-text"
@@ -36,7 +36,6 @@
                 : 'font-medium text-primary'
             "
             :aria-current="region.slug === selectedRegion ? 'true' : undefined"
-            @mouseenter="selectedRegion = region.slug"
             @focus="selectedRegion = region.slug"
             @click="selectedRegion = region.slug"
           >
@@ -44,6 +43,14 @@
             <span v-if="region.slug === selectedRegion" class="text-accent">›</span>
           </button>
         </li>
+
+        <li
+          v-if="!pending && !displayedRegions.length"
+          class="px-2 py-1.5 text-small text-ink-muted"
+        >
+          Aucune région disponible.
+        </li>
+
         <li>
           <NuxtLink
             to="/actualites"
@@ -59,27 +66,34 @@
     <!-- DERNIÈRES PUBLICATIONS DE LA RÉGION -->
     <div class="col-span-2">
       <h3 class="text-small font-semibold text-ink-muted uppercase">
-        {{ selectedRegionLabel }} — dernières publications
+        {{
+          selectedRegionLabel
+            ? `${selectedRegionLabel} — dernières publications`
+            : 'Dernières publications'
+        }}
       </h3>
+
       <Transition name="menu-panel" mode="out-in">
-        <ul :key="selectedRegion" class="mt-sm space-y-xs">
-          <li v-for="actu in actusAffichees" :key="actu.slug">
-            <NuxtLink
+        <ul :key="`${selectedRubrique}-${selectedRegion}`" class="mt-sm grid gap-sm">
+          <li v-for="actu in featuredNews" :key="actu.slug">
+            <MegaMenuCard
               :to="`/actualites/${actu.slug}`"
-              class="group block rounded-md bg-surface px-md py-sm transition-colors hover:bg-surface-alt"
-              @click="$emit('close')"
+              :title="actu.title"
+              @select="$emit('close')"
             >
-              <p class="flex items-center gap-sm text-overline">
-                <span class="font-bold uppercase text-accent-text">{{ actu.tag }}</span>
-                <span class="font-medium text-ink-subtle">{{ actu.date }}</span>
-              </p>
-              <span
-                class="text-small font-semibold text-ink transition-colors group-hover:text-accent-text"
-                >{{ actu.title }}</span
-              >
-            </NuxtLink>
+              <template #eyebrow>
+                <span class="flex items-center gap-sm text-overline">
+                  <span class="font-bold uppercase text-accent-text">
+                    {{ actu.tag }}
+                  </span>
+                  <span class="font-medium text-ink-subtle">
+                    {{ actu.date }}
+                  </span>
+                </span>
+              </template>
+            </MegaMenuCard>
           </li>
-          <li v-if="!actusAffichees.length" class="px-2 py-1.5 text-small text-ink-muted">
+          <li v-if="!pending && !featuredNews.length" class="px-2 py-1.5 text-small text-ink-muted">
             {{ emptyMessage }}
           </li>
           <li>
@@ -88,7 +102,8 @@
               class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
               @click="$emit('close')"
             >
-              Toutes les actualités {{ selectedRegionLabel }} <span class="link-arrow">→</span>
+              Toutes les actualités {{ selectedRegionLabel }}
+              <span class="link-arrow">→</span>
             </NuxtLink>
           </li>
         </ul>
@@ -100,36 +115,71 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useMenuActualites } from '~/composables/useMenuData'
+import MegaMenuCard from '~/components/Menu/mega-menu/MegaMenuCard.vue'
 
-defineEmits<{ close: [] }>()
+defineEmits<{
+  close: []
+}>()
 
-const { rubriques, regions, actualitesParRegion } = useMenuActualites()
+const { pending, rubriques, regions, actualitesParRegion } = useMenuActualites()
 
 const selectedRubrique = ref(rubriques.value[0]?.slug ?? '')
 watch(rubriques, (list) => {
-  if (!selectedRubrique.value && list.length) selectedRubrique.value = list[0]!.slug
+  if (!selectedRubrique.value && list.length) {
+    selectedRubrique.value = list[0]!.slug
+  }
+})
+const allNews = computed(() => selectedRubrique.value === 'toute-actualite')
+const displayedRegions = computed(() => {
+  if (allNews.value) {
+    return regions.value
+  }
+
+  return regions.value.filter((region) => {
+    const actualites = actualitesParRegion.value[region.slug] ?? []
+
+    return actualites.some((actu) => actu.categorySlug === selectedRubrique.value)
+  })
 })
 
-// Défaut : première région qui a réellement des actus
 const selectedRegion = ref(regions.value[0]?.slug ?? '')
 watch(regions, (list) => {
-  if (!selectedRegion.value && list.length) selectedRegion.value = list[0]!.slug
+  if (!selectedRegion.value && list.length) {
+    selectedRegion.value = list[0]!.slug
+  }
 })
-const selectedRegionLabel = computed(
-  () => regions.value.find((r) => r.slug === selectedRegion.value)?.label ?? ''
+
+watch(
+  displayedRegions,
+  (list) => {
+    const selectedRegionExists = list.some((region) => region.slug === selectedRegion.value)
+
+    if (!selectedRegionExists) {
+      selectedRegion.value = list[0]?.slug ?? ''
+    }
+  },
+  {
+    immediate: true
+  }
 )
-const isTouteActualite = computed(() => selectedRubrique.value === rubriques.value[0]?.slug)
-const actusAffichees = computed(() => {
+const selectedRegionLabel = computed(
+  () => displayedRegions.value.find((region) => region.slug === selectedRegion.value)?.label ?? ''
+)
+const featuredNews = computed(() => {
   const actualites = actualitesParRegion.value[selectedRegion.value] ?? []
-  if (isTouteActualite.value) return actualites.slice(0, 3)
+  if (allNews.value) {
+    return actualites.slice(0, 3)
+  }
 
   return actualites.filter((actu) => actu.categorySlug === selectedRubrique.value).slice(0, 3)
 })
-const emptyMessage = computed(() =>
-  isTouteActualite.value
-    ? 'Aucune publication récente pour cette région.'
-    : 'Aucune publication récente pour cette rubrique dans cette région.'
-)
+const emptyMessage = computed(() => {
+  if (allNews.value) return 'Aucune publication récente pour cette région.'
+
+  return selectedRegion.value
+    ? 'Aucune publication récente pour cette rubrique dans cette région.'
+    : 'Aucune publication récente pour cette rubrique.'
+})
 
 function selectRubrique(slug: string) {
   selectedRubrique.value = slug

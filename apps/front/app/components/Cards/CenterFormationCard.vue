@@ -1,19 +1,21 @@
 <template>
-  <Card class="relative flex flex-col transition hover:border-primary/40 hover:shadow-md">
+  <Card
+    class="relative flex h-full flex-col transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-md"
+  >
     <CardHeader class="space-y-sm p-md pb-0">
       <p v-if="eyebrow" class="mb-md text-overline text-ink-subtle font-bold">{{ eyebrow }}</p>
-      <p class="text-overline text-accent-text uppercase">{{ subFamily }}</p>
+      <p v-if="overline" class="text-overline text-accent-text uppercase">{{ overline }}</p>
       <CardTitle class="font-sans text-h4 font-extrabold leading-tight tracking-normal text-ink">
         {{ title }}
       </CardTitle>
     </CardHeader>
     <CardContent class="flex-1 px-md py-sm">
-      <p v-if="description" class="flex-1 text-small text-ink-body font-bold">
+      <p v-if="description" class="flex-1 text-small text-ink-body">
         {{ description }}
       </p>
-      <CardDescription class="font-bold">{{ meta }}</CardDescription>
+      <CardDescription>{{ meta }}</CardDescription>
     </CardContent>
-    <CardFooter class="flex flex-col items-start px-md pb-md pt-sm">
+    <CardFooter class="mt-auto flex flex-col items-start px-md pb-md pt-sm">
       <Badge v-if="status" :variant="status.type" class="w-fit flex justify-center items-center">
         <span
           v-if="status.type !== 'warning'"
@@ -21,12 +23,14 @@
           aria-hidden="true"
         />
         <span v-else aria-hidden="true">▲</span>
-        {{ status.label }}
+        <span class="hidden md:inline">{{ status.label }}</span>
+        <span class="md:hidden">{{ status.labelShort ?? status.label }}</span>
       </Badge>
       <Button
         v-if="to && variant === 'button'"
         as-child
-        class="mt-md h-control w-full rounded-full px-lg text-small font-bold hover:bg-primary-dark"
+        size="pill-sm"
+        class="mt-md w-full px-lg font-bold"
       >
         <NuxtLink :to="to" class="after:absolute after:inset-0">Voir la formation</NuxtLink>
       </Button>
@@ -34,7 +38,9 @@
         v-else-if="to"
         as-child
         variant="link"
-        class="mt-md h-auto gap-xs self-end p-0 text-small font-bold text-primary transition-colors hover:text-accent-text"
+        size="inline"
+        class="gap-xs font-bold"
+        :class="variant === 'similar' ? 'mt-0 self-start' : 'mt-md self-end'"
       >
         <NuxtLink :to="to" class="after:absolute after:inset-0"
           >Consulter <span class="link-arrow">→</span></NuxtLink
@@ -45,24 +51,32 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(
+import { computed } from 'vue'
+
+const props = withDefaults(
   defineProps<{
-    /** Sous-famille affichée en surtitre — jamais la famille. */
+    /** Sous-famille affichée en surtitre — sauf variante `similar` (famille). */
     subFamily: string | null
     title: string
     description?: string
     meta: string
-    status?: { type: 'success' | 'warning' | 'neutral'; label: string }
+    status?: { type: 'success' | 'warning' | 'neutral'; label: string; labelShort?: string }
     to?: string
     eyebrow?: string
-    variant?: 'default' | 'button'
+    /** `similar` : carte « formations similaires » — surtitre = famille. */
+    variant?: 'default' | 'button' | 'similar'
+    /** Famille affichée en surtitre pour la variante `similar`. */
+    family?: string
   }>(),
   {
     to: undefined,
     description: '',
     status: undefined,
     eyebrow: '',
-    variant: 'default'
+    variant: 'default',
+    family: ''
   }
 )
+
+const overline = computed(() => (props.variant === 'similar' ? props.family : props.subFamily))
 </script>

@@ -5,11 +5,18 @@
     :in-view-options="{ once: true, margin: '0px 0px -10% 0px' }"
     :transition="{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }"
   >
-    <p ref="numberEl" class="font-display text-h2 md:text-h1 font-extrabold text-ink">
+    <p
+      ref="numberEl"
+      class="font-display font-extrabold text-ink"
+      :class="size === 'sm' ? 'text-h2' : 'text-3xl md:text-h1'"
+    >
       {{ displayed
       }}<span v-if="unit" class="text-h4 align-baseline text-ink-muted">{{ unit }}</span>
     </p>
-    <p class="mt-xs text-small md:text-body font-medium text-ink-muted">
+    <p
+      class="mt-xs font-medium text-ink-muted"
+      :class="size === 'sm' ? 'text-meta' : 'text-small md:text-body'"
+    >
       {{ label }}
     </p>
   </Motion>
@@ -26,11 +33,16 @@ import {
   useReducedMotion
 } from 'motion-v'
 
-const props = defineProps<{
-  value: string
-  unit?: string
-  label: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    value: string
+    unit?: string
+    label: string
+    /** `lg` : bandeau stats (accueil). `sm` : chiffres clés inline (organisme). */
+    size?: 'lg' | 'sm'
+  }>(),
+  { unit: undefined, size: 'lg' }
+)
 
 const numberEl = ref<HTMLElement>()
 const displayed = ref(props.value)
@@ -40,7 +52,7 @@ const reduced = useReducedMotion()
 const parsed = computed(() => {
   const match = props.value.match(/^(\D*)([\d\s]*(?:[.,]\d+)?)/)
   if (!match?.[2]) return null
-  const decimals = match[2].match(/[.,](\d+)$/)?.[1].length ?? 0
+  const decimals = match[2].match(/[.,](\d+)$/)?.[1]?.length ?? 0
   const target = Number(match[2].replace(/\s/g, '').replace(',', '.'))
   if (!Number.isFinite(target)) return null
   const format = new Intl.NumberFormat('fr-FR', {

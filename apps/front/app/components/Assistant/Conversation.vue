@@ -493,7 +493,7 @@ onBeforeUnmount(() => {
   textarea.value = null
 })
 
-const advisorTo = '/centres/demande-de-formation?sujet=conseiller'
+const advisorTo = '/parler-a-votre-conseiller'
 const demandeBaseTo = '/centres/demande-de-formation'
 
 function entryId(entry: AssistantEntry, index: number): string {

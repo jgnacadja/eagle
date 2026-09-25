@@ -6,7 +6,7 @@
         class="border-b border-rule bg-linear-to-b from-paper to-surface"
         aria-labelledby="hero-title"
       >
-        <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter py-2xl">
+        <div class="mx-auto px-gutter-mobile md:px-gutter py-control-sm">
           <div class="grid items-start gap-2xl lg:grid-cols-5">
             <div class="lg:col-span-3">
               <p class="text-overline text-accent-text uppercase">
@@ -31,92 +31,134 @@
                 </Badge>
               </ul>
 
-              <div class="mt-2xl flex flex-wrap items-center gap-md">
-                <Button
-                  as-child
-                  class="h-control w-full rounded-full bg-accent px-md py-sm text-button font-semibold text-ink transition hover:bg-accent-text hover:text-paper sm:w-auto"
-                >
+              <div class="mt-lg flex flex-wrap items-center gap-md">
+                <Button as-child variant="accent" size="pill" class="w-full sm:w-auto">
                   <NuxtLink to="#formations">Trouver une formation dans ce centre</NuxtLink>
                 </Button>
-                <Button
-                  as-child
-                  variant="outline"
-                  class="h-control w-full rounded-full border-outline bg-paper px-md py-sm text-button font-medium text-ink transition hover:border-primary hover:bg-paper hover:text-accent-text sm:w-auto"
-                >
-                  <NuxtLink to="#">Parler à un conseiller</NuxtLink>
-                </Button>
-                <NuxtLink
-                  v-if="centre.phone"
-                  :to="`tel:${centre.phone.replace(/\s/g, '')}`"
-                  class="hidden items-center gap-2 font-medium text-ink sm:inline-flex"
-                >
-                  <IconPhone :size="16" class="text-primary" />
-                  {{ centre.phone }}
-                </NuxtLink>
+                <div class="flex w-full flex-wrap items-center gap-md sm:w-auto sm:contents">
+                  <Button as-child variant="outline" size="pill">
+                    <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
+                  </Button>
+                  <NuxtLink
+                    v-if="centre.phone"
+                    :to="`tel:${centre.phone.replace(/\s/g, '')}`"
+                    class="inline-flex items-center gap-2 font-medium text-ink"
+                  >
+                    <IconPhone :size="16" class="text-primary" />
+                    {{ centre.phone }}
+                  </NuxtLink>
+                </div>
               </div>
             </div>
+
+            <!-- Portrait du responsable : colonne droite sur desktop ; sur
+                 mobile il suit le bloc texte (titre, tags, CTA). -->
+            <figure
+              v-if="imageSrc"
+              class="relative mx-auto aspect-3/4 w-full max-w-4/5 overflow-hidden rounded-md bg-surface-alt shadow-lg lg:col-span-2 lg:max-w-3/5"
+            >
+              <img
+                :src="imageSrc"
+                :alt="centre.contact_name ?? centre.name"
+                class="h-full w-full object-cover"
+              />
+              <span class="absolute inset-0 bg-ink/15" aria-hidden="true" />
+              <!-- Le visuel du hero est le portrait du responsable : nom +
+                   badge vérifié + ancienneté en franchise incrustés en bas. -->
+              <figcaption
+                v-if="centre.contact_name"
+                class="absolute inset-x-md bottom-md flex items-center justify-between gap-md rounded-md bg-paper px-md py-sm shadow-md"
+              >
+                <div class="min-w-0">
+                  <p class="truncate text-body font-bold text-ink">{{ centre.contact_name }}</p>
+                  <p v-if="managerCaption" class="mt-xs text-small text-ink-muted">
+                    {{ managerCaption }}
+                  </p>
+                </div>
+                <IconBadgeCheck :size="22" class="shrink-0 text-accent-text" />
+              </figcaption>
+            </figure>
           </div>
         </div>
       </section>
 
       <!-- Contenu principal -->
-      <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter py-section">
-        <div class="flex flex-col gap-2xl lg:flex-row">
-          <!-- Barre latérale -->
+      <div class="mx-auto px-gutter-mobile md:px-gutter py-section">
+        <!-- Grille 2 colonnes : contenu principal à gauche, barre
+             latérale empilée (infos → carte → qualité) à droite. Sur
+             mobile, `contents` aplatit les sections des deux colonnes
+             dans l'ordre maquette via les classes order-*. -->
+        <div
+          class="grid grid-cols-1 items-start gap-2xl lg:grid-cols-[minmax(0,1fr)_var(--spacing-callout)]"
+        >
+          <!-- Barre latérale : `contents` sur mobile pour que ses
+               sections s'ordonnent dans la grille parente (infos →
+               carte → contenu → qualité) ; redevient une vraie
+               colonne flex sur desktop pour que la qualité reste
+               collée sous la carte (maquette). -->
           <aside
-            class="order-1 flex w-full shrink-0 flex-col gap-2xl lg:order-2 lg:w-callout"
+            class="contents w-full lg:col-start-2 lg:row-start-1 lg:flex lg:flex-col lg:gap-lg"
             aria-label="Informations complémentaires"
           >
             <!-- Informations pratiques -->
-            <section aria-labelledby="infos-title">
-              <Card class="h-fit bg-surface">
+            <section aria-labelledby="infos-title" class="order-1 lg:order-0">
+              <Card v-reveal variant="surface" class="h-fit">
                 <CardHeader class="p-lg pb-0">
-                  <h2 id="infos-title" class="font-sans text-h4 font-semibold text-ink">
+                  <h2 id="infos-title" class="font-sans text-h4 font-bold text-ink">
                     Informations pratiques
                   </h2>
                 </CardHeader>
                 <CardContent class="p-lg pt-md">
                   <ul class="space-y-md text-small">
                     <li class="flex gap-sm">
-                      <IconMapPin :size="17" class="mt-xs shrink-0 text-primary" />
+                      <IconMapPin :size="20" class="shrink-0 text-primary" />
                       <span class="text-ink-body">
-                        {{ centre.address }}<br />{{ centre.postal_code }} {{ centre.city
+                        {{ streetAddress }}<br />{{ centre.postal_code }} {{ centre.city
                         }}<template v-if="centre.department"> · {{ centre.department }}</template
                         ><template v-if="centre.region"> · {{ centre.region }}</template>
                       </span>
                     </li>
                     <li v-if="centre.phone" class="flex gap-sm">
-                      <IconPhone :size="17" class="mt-xs shrink-0 text-primary" />
+                      <IconPhone :size="20" class="shrink-0 text-primary" />
                       <NuxtLink
                         :to="`tel:${centre.phone.replace(/\s/g, '')}`"
-                        class="font-medium text-ink transition-colors hover:text-accent-text"
+                        class="font-semibold text-ink transition-colors hover:text-accent-text"
                       >
                         {{ centre.phone }}
                       </NuxtLink>
                     </li>
-                    <li v-if="centre.email" class="flex gap-sm">
-                      <IconMail :size="17" class="mt-xs shrink-0 text-primary" />
+                    <li v-if="centre.mobile" class="flex gap-sm">
+                      <IconSmartphone :size="20" class="shrink-0 text-primary" />
                       <NuxtLink
-                        :to="`mailto:${centre.email}`"
+                        :to="`tel:${centre.mobile.replace(/\s/g, '')}`"
+                        class="font-semibold text-ink transition-colors hover:text-accent-text"
+                      >
+                        {{ centre.mobile }}
+                      </NuxtLink>
+                    </li>
+                    <li v-if="contactEmail" class="flex gap-sm">
+                      <IconMail :size="20" class="shrink-0 text-primary" />
+                      <NuxtLink
+                        :to="`mailto:${contactEmail}`"
                         class="text-ink transition-colors hover:text-accent-text"
                       >
-                        {{ centre.email }}
+                        {{ contactEmail }}
                       </NuxtLink>
                     </li>
                     <li v-if="centre.opening_hours" class="flex gap-sm">
-                      <IconClock :size="17" class="mt-xs shrink-0 text-primary" />
+                      <IconClock :size="20" class="shrink-0 text-primary" />
                       <span class="text-ink-body">{{ centre.opening_hours }}</span>
                     </li>
                     <li v-if="centre.transport" class="flex gap-sm">
-                      <IconTimetable :size="17" class="mt-xs shrink-0 text-primary" />
+                      <IconTimetable :size="20" class="shrink-0 text-primary" />
                       <span class="text-ink-body">{{ centre.transport }}</span>
                     </li>
                     <li v-if="centre.parking" class="flex gap-sm">
-                      <IconParking :size="17" class="mt-xs shrink-0 text-primary" />
+                      <IconParking :size="20" class="shrink-0 text-primary" />
                       <span class="text-ink-body">{{ centre.parking }}</span>
                     </li>
                     <li v-if="centre.pmr_accessible" class="flex gap-sm">
-                      <IconAccessibility :size="17" class="mt-xs shrink-0 text-primary" />
+                      <IconAccessibility :size="20" class="shrink-0 text-primary" />
                       <span class="text-ink-body">Locaux accessibles PMR</span>
                     </li>
                   </ul>
@@ -124,20 +166,38 @@
               </Card>
             </section>
 
-            <!-- Carte d'accès -->
+            <!-- Carte d'accès : mode « single » du CenterMap — pin unique
+                 centré, carte bordée et pied adresse/itinéraire intégrés. -->
             <section
               v-if="centre.latitude != null && centre.longitude != null"
               aria-labelledby="carte-title"
+              class="order-2 lg:order-0"
             >
               <h2 id="carte-title" class="sr-only">Carte d'accès</h2>
-              <CenterMap mode="single" :centers="singleCenter" :active-id="null" caption="" />
+              <CenterMap
+                mode="single"
+                :centers="singleMapCenters"
+                :active-id="activeMapCenterId"
+                :caption="mapCaption"
+                :popup="false"
+                :user-position="userPosition"
+                :focus-center="mapFocus"
+                :focus-zoom="13"
+                @select="onMapSelect"
+              />
             </section>
 
-            <!-- Qualité -->
-            <section v-if="centre.qualiopi_certified" aria-labelledby="qualite-title">
-              <Card class="h-fit bg-paper">
+            <!-- Qualité : 3e carte de la barre latérale — collée
+                 sous la carte sur desktop ; `order-5` la place après
+                 les prochaines sessions sur mobile (maquette). -->
+            <section
+              v-if="centre.qualiopi_certified"
+              class="order-5 lg:order-0"
+              aria-labelledby="qualite-title"
+            >
+              <Card v-reveal variant="paper" class="h-fit">
                 <CardHeader class="p-lg pb-0">
-                  <h2 id="qualite-title" class="font-sans text-h4 font-semibold text-ink">
+                  <h2 id="qualite-title" class="font-sans text-h4 font-bold text-ink">
                     Qualité et certifications
                   </h2>
                 </CardHeader>
@@ -152,9 +212,14 @@
                     <div class="text-small">
                       <p class="font-semibold text-ink">Certification Qualiopi</p>
                       <p class="text-ink-body">
-                        Actions de formation<template v-if="centre.qualiopi_certificate_number">
+                        Actions de formation<template v-if="centre.qualiopi_certifier">
+                          · certificateur {{ centre.qualiopi_certifier }}</template
+                        ><template v-else-if="centre.qualiopi_certificate_number">
                           · réf. {{ centre.qualiopi_certificate_number }}</template
-                        >.
+                        >
+                      </p>
+                      <p v-if="qualiopiValidUntilLabel" class="text-ink-body">
+                        Certification · valide jusqu'au {{ qualiopiValidUntilLabel }}.
                       </p>
                     </div>
                   </div>
@@ -162,9 +227,11 @@
                     v-if="centre.qualiopi_certificate"
                     as-child
                     variant="outline"
-                    class="mt-md h-control w-full rounded-full border-outline bg-paper px-md py-sm text-small font-semibold text-ink transition hover:border-primary hover:text-accent-text"
+                    size="pill-sm"
+                    class="mt-md w-full"
                   >
                     <a :href="qualiopiCertificateUrl" target="_blank" rel="noopener">
+                      <IconDownload :size="14" class="mr-xs" aria-hidden="true" />
                       Télécharger le certificat Qualiopi
                     </a>
                   </Button>
@@ -173,10 +240,21 @@
             </section>
           </aside>
 
-          <!-- Colonne principale -->
-          <div class="order-2 flex flex-1 flex-col gap-2xl lg:order-1">
+          <!-- Colonne principale : `contents` sur mobile pour ordonner
+               ses sections avec celles de la barre latérale (formations
+               et sessions avant « Le centre », maquette mobile) ;
+               redevient une colonne flex sur desktop. `md:px-16` est
+               reporté sur chaque section puisque contents ne génère
+               pas de boîte. -->
+          <div
+            class="order-2 contents min-w-0 flex-col gap-2xl lg:order-0 lg:col-start-1 lg:row-start-1 lg:flex"
+          >
             <!-- Le centre -->
-            <section v-if="centre.description" aria-labelledby="le-centre-title">
+            <section
+              v-if="centre.description"
+              aria-labelledby="le-centre-title"
+              class="order-6 md:px-16 lg:order-0 lg:px-0"
+            >
               <h2 id="le-centre-title" class="font-display text-h2 font-extrabold text-ink">
                 Le centre
               </h2>
@@ -215,7 +293,11 @@
             </Card>
 
             <!-- Formations disponibles -->
-            <section id="formations" aria-labelledby="formations-title">
+            <section
+              id="formations"
+              aria-labelledby="formations-title"
+              class="order-3 md:px-16 lg:order-0 lg:px-0"
+            >
               <div class="flex flex-wrap items-baseline justify-between gap-sm">
                 <h2 id="formations-title" class="font-display text-h2 font-extrabold text-ink">
                   Les formations disponibles dans ce centre
@@ -223,13 +305,18 @@
                 <span v-if="centreCatalog.data.value" class="text-small text-ink-muted">
                   {{ centreCatalog.data.value.total }} formation{{
                     centreCatalog.data.value.total > 1 ? 's' : ''
-                  }}
+                  }}<template v-if="formationsFamiliesCount">
+                    · {{ formationsFamiliesCount }} famille{{
+                      formationsFamiliesCount > 1 ? 's' : ''
+                    }}</template
+                  >
                 </span>
               </div>
               <div v-if="formations.length" class="mt-md grid gap-grid sm:grid-cols-2">
                 <CenterFormationCard
-                  v-for="formation in formations"
+                  v-for="(formation, i) in formations"
                   :key="formation.slug"
+                  v-reveal="revealStagger(i)"
                   :sub-family="formation.subFamily"
                   :title="formation.title"
                   :description="formation.description"
@@ -246,22 +333,32 @@
                 v-if="(centreCatalog.data.value?.total ?? 0) > formations.length"
                 as-child
                 variant="link"
-                class="mt-md h-auto p-0 text-small font-bold text-primary transition-colors hover:text-accent-text"
+                size="inline"
+                class="mt-md font-bold"
               >
                 <NuxtLink :to="`/formations?lieu=${centre.city ?? ''}`"
-                  >Voir toutes les formations du centre <span class="link-arrow">→</span></NuxtLink
+                  >Voir les {{ centreCatalog.data.value?.total }} formations du centre
+                  <span class="link-arrow">→</span></NuxtLink
                 >
               </Button>
             </section>
 
             <!-- Prochaines sessions dans ce centre -->
-            <section v-if="sessions.length" aria-labelledby="sessions-title">
+            <section
+              v-if="sessions.length"
+              aria-labelledby="sessions-title"
+              class="order-4 md:px-16 lg:order-0 lg:px-0"
+            >
               <h2 id="sessions-title" class="font-display text-h2 font-extrabold text-ink">
                 Prochaines sessions
               </h2>
               <p class="mt-sm text-small text-ink-muted">Disponibilités actualisées en continu.</p>
-              <ul class="mt-md space-y-md">
-                <li v-for="session in sessions" :key="session.key">
+              <ul id="centre-sessions-list" class="mt-md space-y-md">
+                <li
+                  v-for="(session, i) in visibleSessions"
+                  :key="session.key"
+                  v-reveal="revealStagger(i)"
+                >
                   <SessionCard
                     :day="session.day"
                     :month="session.month"
@@ -274,73 +371,138 @@
                   />
                 </li>
               </ul>
+              <div v-if="sessions.length > INITIAL_SESSIONS_COUNT" class="mt-md">
+                <Button
+                  type="button"
+                  variant="link"
+                  size="inline"
+                  class="font-bold"
+                  :aria-expanded="isAllSessionsVisible"
+                  aria-controls="centre-sessions-list"
+                  @click="toggleSessions"
+                >
+                  <template v-if="!isAllSessionsVisible">
+                    Voir plus <span class="link-arrow">→</span>
+                  </template>
+                  <template v-else> Voir moins <span class="link-arrow">↑</span> </template>
+                </Button>
+              </div>
+            </section>
+
+            <!-- Avis — collection Directus `avis`, section masquée si vide -->
+            <section
+              v-if="centreAvis.length"
+              aria-labelledby="avis-title"
+              class="order-7 md:px-16 lg:order-0 lg:px-0"
+            >
+              <h2 id="avis-title" class="font-display text-h2 font-extrabold text-ink">Avis</h2>
+              <p class="mt-xs flex flex-wrap items-baseline gap-x-sm">
+                <span class="font-display text-h3 font-extrabold text-ink"
+                  >4,7<span class="font-sans text-body font-medium text-ink-muted">/5</span></span
+                >
+                <span class="text-small font-semibold text-accent" aria-hidden="true">★★★★★</span>
+                <span class="text-small text-ink-muted"
+                  >214 avis Google — marque LEARN UP ACADEMY</span
+                >
+              </p>
+              <p class="mt-sm text-small text-ink-muted">
+                Ces avis portent sur la marque LEARN UP ACADEMY, toutes implantations confondues.
+              </p>
+              <div class="mt-md grid gap-grid sm:grid-cols-2">
+                <TestimonialCard
+                  v-for="(avis, i) in centreAvis"
+                  :key="avis.slug"
+                  v-reveal="revealStagger(i)"
+                  :stars="avis.stars"
+                  :quote="avis.quote"
+                  :author="avis.author"
+                />
+              </div>
+            </section>
+
+            <!-- Actualités liées au centre (relation M2O `articles.centre`) -->
+            <section
+              v-if="centreArticles.length"
+              aria-labelledby="actus-title"
+              class="order-8 md:px-16 lg:order-0 lg:px-0"
+            >
+              <div class="flex flex-wrap items-baseline justify-between gap-sm">
+                <h2 id="actus-title" class="font-display text-h2 font-extrabold text-ink">
+                  Actualités de votre centre
+                </h2>
+                <Button as-child variant="link" size="inline" class="hidden font-bold sm:inline">
+                  <NuxtLink to="/actualites"
+                    >Toutes les actualités <span class="link-arrow">→</span></NuxtLink
+                  >
+                </Button>
+              </div>
+              <div class="mt-md grid gap-grid sm:grid-cols-2">
+                <ArticleCard
+                  v-for="(article, i) in centreArticles"
+                  :key="article.slug"
+                  v-reveal="revealStagger(i)"
+                  :category="article.category ?? 'Actualité'"
+                  :title="article.title"
+                  :date="formatArticleDate(article.publish_at)"
+                  :excerpt="article.excerpt ?? ''"
+                  :image-url="directusAssetUrl(article.cover_image) ?? undefined"
+                  :to="`/actualites/${article.slug}`"
+                  class="h-full"
+                />
+              </div>
+              <Button as-child variant="link" size="inline" class="mt-md font-bold sm:hidden">
+                <NuxtLink to="/actualites"
+                  >Toutes les actualités <span class="link-arrow">→</span></NuxtLink
+                >
+              </Button>
             </section>
           </div>
         </div>
 
-        <!-- Bandeau CTA -->
+        <!-- Bandeau CTA — avant la liste des autres centres -->
         <CtaBanner
+          v-reveal
           class="mt-2xl"
-          title="Un besoin de formation sur ce territoire ?"
+          title="Besoin de formation ?"
           text="La demande transmet automatiquement le centre, la ville et la formation concernée — sans ressaisie."
         >
-          <Button
-            as-child
-            class="h-control w-full rounded-full bg-paper px-lg py-sm text-center text-button font-bold text-ink transition hover:bg-surface hover:text-accent-text sm:w-auto"
-          >
+          <Button as-child variant="paper" size="pill-lg" class="w-full sm:w-auto">
             <NuxtLink :to="`/centres/demande-de-formation?centre=${slug}`"
               >Demander une formation</NuxtLink
             >
           </Button>
-          <Button
-            as-child
-            variant="outline"
-            class="h-control w-full rounded-full border-outline-inverse bg-transparent px-lg py-sm text-center text-button font-medium text-ink-inverse transition hover:border-ink-inverse hover:bg-ink-inverse/10 sm:w-auto"
-          >
-            <NuxtLink to="/centres/demande-de-formation?sujet=conseiller"
-              >Parler à un conseiller</NuxtLink
-            >
+          <Button as-child variant="outline-inverse" size="pill-lg" class="w-full sm:w-auto">
+            <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
           </Button>
         </CtaBanner>
 
-        <!-- Autres centres de la région -->
+        <!-- Autres centres de la région — dernière section avant le footer -->
         <section v-if="nearbyCenters.length" class="mt-2xl" aria-labelledby="autres-title">
           <div class="flex flex-wrap items-baseline justify-between gap-sm">
             <h2 id="autres-title" class="font-display text-h2 font-extrabold text-ink">
               Autres centres<template v-if="centre.region"> en {{ centre.region }}</template>
             </h2>
-            <Button
-              as-child
-              variant="link"
-              class="hidden h-auto p-0 text-small font-bold text-primary transition-colors hover:text-accent-text sm:inline"
-            >
+            <Button as-child variant="link" size="inline" class="hidden font-bold sm:inline">
               <NuxtLink to="/centres"
                 >Voir le réseau de centres <span class="link-arrow">→</span></NuxtLink
               >
             </Button>
           </div>
           <div class="mt-md grid gap-grid sm:grid-cols-3">
-            <NuxtLink
-              v-for="nearby in nearbyCenters"
+            <CenterCard
+              v-for="(nearby, i) in nearbyCenters"
               :key="nearby.slug"
+              v-reveal="revealStagger(i)"
+              :name="nearby.name"
+              :distance="nearby.distance"
+              :formations="nearby.specialties"
+              :tags="[]"
               :to="`/centres/${nearby.slug}`"
-              class="block"
-            >
-              <CenterCard
-                :name="nearby.name"
-                :distance="nearby.city ?? ''"
-                :formations="nearby.specialties"
-                :tags="[]"
-                :title-to="null"
-                class="h-full transition hover:shadow-md"
-              />
-            </NuxtLink>
+              :title-to="`/centres/${nearby.slug}`"
+              class="h-full transition hover:shadow-md"
+            />
           </div>
-          <Button
-            as-child
-            variant="link"
-            class="mt-md h-auto p-0 text-small font-bold text-primary transition-colors hover:text-accent-text sm:hidden"
-          >
+          <Button as-child variant="link" size="inline" class="mt-md font-bold sm:hidden">
             <NuxtLink to="/centres"
               >Voir le réseau de centres <span class="link-arrow">→</span></NuxtLink
             >
@@ -383,7 +545,14 @@
 
 <script setup lang="ts">
 import { readItems } from '@directus/sdk'
-import type { Centre, CourseListItem, CourseSession, FamilleFormation } from '@learnup/types'
+import type {
+  Article,
+  Avis,
+  Centre,
+  CourseListItem,
+  CourseSession,
+  FamilleFormation
+} from '@learnup/types'
 import {
   mapCourse,
   upcomingSessions,
@@ -391,12 +560,21 @@ import {
   type FormationItem
 } from '~/composables/useCatalog'
 import { availabilityStatus } from '~/composables/useCentres'
+import { useGeolocation } from '~/composables/useGeolocation'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
 import { directusAssetUrl } from '~/utils/directusAsset'
+import { departmentCodeFromPostalCode, distanceKm, formatDistance } from '~/utils/geo'
+import { formatArticleDate } from '~/utils/article'
+import { formatMonthYearFr } from '~/utils/date'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
+import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
+
+definePageMeta({
+  layout: 'with-breadcrumb'
+})
 
 const route = useRoute()
 const slug = route.params.slug as string
@@ -459,32 +637,123 @@ if (requestEvent) {
 }
 
 const heroAddress = computed(() =>
-  [centre.value?.address, centre.value?.postal_code, centre.value?.city, centre.value?.region]
+  [streetAddress.value, centre.value?.postal_code, centre.value?.city, centre.value?.region]
     .filter(Boolean)
     .join(', ')
 )
 
-const singleCenter = computed<CenterResult[]>(() => {
-  if (!centre.value || centre.value.latitude == null || centre.value.longitude == null) return []
+// Adresse de contact du centre : règle réseau « contact{dept}@learnup-academy.com »
+// dérivée du code postal (94 → contact94@…). Repli sur le champ `email`
+// Directus quand le code postal est absent ou invalide.
+const contactEmail = computed(() => {
+  const code = departmentCodeFromPostalCode(centre.value?.postal_code)
+  return code ? `contact${code}@learnup-academy.com` : (centre.value?.email ?? null)
+})
+
+const { position: userPosition } = useGeolocation()
+
+// Mode « single » : un seul pin — le centre affiché. L'`activeId`
+// surligne le marqueur (même convention `id` = slug que l'explorateur).
+const activeMapCenterId = ref<string | null>(slug)
+
+const singleMapCenters = computed<CenterResult[]>(() => {
+  const c = centre.value
+  if (!c) return []
   return [
     {
-      id: String(centre.value.id),
-      name: centre.value.name,
-      cp: centre.value.postal_code ?? '',
-      address: heroAddress.value,
+      id: c.slug,
+      name: c.name,
+      cp: c.postal_code ?? '',
+      address: mapAddress.value,
       tags: '',
       tagsShort: '',
-      lat: centre.value.latitude,
-      lng: centre.value.longitude
+      lat: c.latitude ?? undefined,
+      lng: c.longitude ?? undefined
     }
   ]
 })
+
+const mapCaption = computed(() => centre.value?.region ?? 'Réseau national')
+
+// Vue centrée sur le centre (contrairement à l'explorateur qui cadre le
+// département) : la mini-carte de la fiche doit pointer l'adresse.
+const mapFocus = computed(() =>
+  centre.value?.latitude != null && centre.value?.longitude != null
+    ? { lat: centre.value.latitude, lng: centre.value.longitude }
+    : null
+)
+
+// Localité « cp ville » et rue seule : le champ `address` peut déjà
+// contenir la localité (anciennes données) — on la retire pour recomposer
+// proprement les affichages sans doublon.
+const addressLocality = computed(() =>
+  [centre.value?.postal_code, centre.value?.city].filter(Boolean).join(' ')
+)
+
+const streetAddress = computed(() => {
+  const address = centre.value?.address ?? ''
+  const locality = addressLocality.value
+  if (locality && address.endsWith(locality)) {
+    return address.slice(0, -locality.length).replace(/,\s*$/, '')
+  }
+  return address
+})
+
+// Adresse courte du pied de carte : rue + « code postal ville » (sans
+// département/région — contrairement à `heroAddress`).
+const mapAddress = computed(() =>
+  [streetAddress.value, addressLocality.value].filter(Boolean).join(', ')
+)
+
+function onMapSelect(id: string) {
+  // Mini-carte sans popup : le pin d'un autre centre mène à sa fiche.
+  if (id && id !== slug) {
+    navigateTo(`/centres/${id}`)
+    return
+  }
+  activeMapCenterId.value = id || null
+}
 
 const specialties = computed(() => centre.value?.specialties ?? [])
 
 const qualiopiCertificateUrl = computed(
   () => directusAssetUrl(centre.value?.qualiopi_certificate) ?? ''
 )
+
+// « valide jusqu'au 14 mars 2027 » — date de fin de validité Qualiopi
+// éditée dans Directus, formatée en français.
+const qualiopiValidUntilLabel = computed(() => {
+  const raw = centre.value?.qualiopi_valid_until
+  if (!raw) return null
+  const date = new Date(raw)
+  if (Number.isNaN(date.getTime())) return null
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    // Fuseau épinglé comme formatDateFr : sans ça un timestamp proche de
+    // minuit peut rendre un jour différent entre SSR (UTC) et client.
+    timeZone: 'Europe/Paris'
+  }).format(date)
+})
+
+const imageSrc = computed(() => directusAssetUrl(centre.value?.image))
+
+// « Franchisé depuis 19 mai 2017 » sous le nom du responsable — repli
+// sur le rôle du contact quand la date de franchise n'est pas renseignée.
+const managerCaption = computed(() => {
+  const raw = centre.value?.franchise_since
+  const date = raw ? new Date(raw) : null
+  if (date && !Number.isNaN(date.getTime())) {
+    return `Franchisé depuis ${new Intl.DateTimeFormat('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'Europe/Paris'
+    }).format(date)}`
+  }
+  return centre.value?.contact_role ?? null
+})
 
 // Breadcrumb adapté à l'état affiché. route.meta est partagé entre toutes
 // les routes /centres/:slug : on réassigne la valeur à chaque changement
@@ -582,6 +851,12 @@ const formations = computed<FormationItem[]>(
     })) ?? []
 )
 
+// « N formations · X familles » — les facettes famille du catalogue sont
+// déjà calculées sur le résultat filtré par centre.
+const formationsFamiliesCount = computed(
+  () => Object.keys(centreCatalog.data.value?.facets?.families ?? {}).length
+)
+
 interface CentreSession {
   key: string
   day: string
@@ -632,6 +907,11 @@ function toCentreSession(
   }
 }
 
+const INITIAL_SESSIONS_COUNT = 2
+const SESSIONS_STEP = 4
+
+const visibleSessionsCount = ref(INITIAL_SESSIONS_COUNT)
+
 const sessions = computed<CentreSession[]>(() =>
   (centreCatalog.data.value?.items ?? [])
     .flatMap((course) =>
@@ -639,12 +919,34 @@ const sessions = computed<CentreSession[]>(() =>
     )
     .filter((s): s is CentreSession & { startDate: string } => s !== null)
     .sort((a, b) => a.startDate.localeCompare(b.startDate))
-    .slice(0, 4)
 )
+
+const isAllSessionsVisible = computed(() => visibleSessionsCount.value >= sessions.value.length)
+
+const visibleSessions = computed(() => sessions.value.slice(0, visibleSessionsCount.value))
+
+function toggleSessions() {
+  if (isAllSessionsVisible.value) {
+    visibleSessionsCount.value = INITIAL_SESSIONS_COUNT
+  } else {
+    visibleSessionsCount.value += SESSIONS_STEP
+  }
+}
 
 // Autres centres de la même région, chargés depuis Directus.
 const allCentres = await useDirectusList<Centre>('centres', 'centres-siblings', {
-  fields: ['slug', 'name', 'city', 'region', 'specialties'],
+  fields: [
+    'slug',
+    'name',
+    'city',
+    'region',
+    'specialties',
+    'address',
+    'postal_code',
+    'department',
+    'latitude',
+    'longitude'
+  ],
   filter: { status: { _eq: 'published' } },
   limit: -1
 })
@@ -656,10 +958,66 @@ const nearbyCenters = computed(() =>
     .map((c) => ({
       slug: c.slug,
       name: c.name,
-      city: c.city,
+      distance: nearbyDistance(c),
       specialties: (c.specialties ?? []).join(' · ')
     }))
 )
+
+// « à 9,0 km » à vol d'oiseau depuis la position de l'utilisateur — même
+// règle que les cartes de /centres et de l'accueil ; repli sur la ville
+// quand la géolocalisation ou les coordonnées manquent.
+function nearbyDistance(c: Centre): string {
+  const pos = userPosition.value
+  if (!pos || c.latitude == null || c.longitude == null) return c.city ?? ''
+  return `à ${formatDistance(distanceKm(pos, { lat: c.latitude, lng: c.longitude }))}`
+}
+
+// Avis — collection Directus `avis` : items rattachés au centre (M2O) ou
+// avis marque (`centre` vide, affichés sur toutes les fiches). La section
+// se masque quand aucun avis publié n'est retourné.
+const centreAvisData = await useDirectusList<Avis>('avis', `centre-${slug}-avis`, () =>
+  centre.value
+    ? {
+        fields: ['slug', 'author', 'quote', 'stars', 'published_at', 'centre'],
+        filter: {
+          status: { _eq: 'published' },
+          _or: [{ centre: { _eq: centre.value.id } }, { centre: { _null: true } }]
+        },
+        sort: ['sort', '-published_at'],
+        limit: 4
+      }
+    : null
+)
+
+const centreAvis = computed(() =>
+  (centreAvisData.value ?? []).map((avis) => {
+    const stars = Math.min(5, Math.max(0, avis.stars ?? 0))
+    const date = formatMonthYearFr(avis.published_at)
+    return {
+      slug: avis.slug,
+      stars: '★'.repeat(stars) + '☆'.repeat(5 - stars),
+      quote: avis.quote,
+      author: date ? `${avis.author} · ${date}` : avis.author
+    }
+  })
+)
+
+// Actualités rattachées au centre via la relation M2O `articles.centre` —
+// la section se masque si aucune n'est publiée.
+const centreArticlesData = await useDirectusList<Article>(
+  'articles',
+  `centre-${slug}-articles`,
+  () =>
+    centre.value
+      ? {
+          fields: ['slug', 'title', 'excerpt', 'category', 'publish_at', 'cover_image'],
+          filter: { centre: { _eq: centre.value.id }, status: { _eq: 'published' } },
+          sort: ['-publish_at'],
+          limit: 3
+        }
+      : null
+)
+const centreArticles = computed(() => centreArticlesData.value ?? [])
 
 function retry() {
   if (route.query.error === '1') {

@@ -1,6 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { computed, defineComponent, h, ref, Suspense, watch } from 'vue'
+import { computed, defineComponent, h, isRef, reactive, ref, Suspense, toValue, watch } from 'vue'
 import ActualitesPage from '~/pages/actualites/index.vue'
 
 const seoMock = vi.fn()
@@ -76,8 +76,61 @@ const articles = [
     region: null,
     publish_at: '2026-08-28T00:00:00.000Z',
     cover_image: null
+  },
+  {
+    id: 7,
+    status: 'published',
+    slug: 'qualiopi-renouvellement',
+    title: 'Renouvellement Qualiopi',
+    excerpt: 'Audit de renouvellement.',
+    content: null,
+    category: 'Vie du réseau',
+    region: 'bretagne',
+    publish_at: '2026-08-27T00:00:00.000Z',
+    cover_image: null
+  },
+  {
+    id: 8,
+    status: 'published',
+    slug: 'session-travaux-hauteur',
+    title: 'Nouvelle session travaux en hauteur',
+    excerpt: 'Une session supplémentaire.',
+    content: null,
+    category: 'Nouvelles formations',
+    region: null,
+    publish_at: '2026-08-26T00:00:00.000Z',
+    cover_image: null
   }
 ]
+
+interface MockCommand {
+  path: string
+  params?: {
+    aggregate?: Record<string, unknown>
+    groupBy?: string[]
+    limit?: number
+    filter?: {
+      _and?: Array<Record<string, Record<string, string>>>
+    }
+  }
+}
+
+type Article = (typeof articles)[number]
+type ArticleFilter = NonNullable<NonNullable<MockCommand['params']>['filter']>
+
+function applyFilter(items: Article[], filter: ArticleFilter | undefined): Article[] {
+  return items.filter((item) =>
+    (filter?._and ?? []).every((condition) => {
+      if (condition.status) return item.status === condition.status._eq
+      if (condition.slug) return item.slug !== condition.slug._neq
+      if (condition.category) return item.category === condition.category._eq
+      if (condition.region) return item.region === condition.region._eq
+      return true
+    })
+  )
+}
+
+const route = reactive({ path: '/actualites', query: {} as Record<string, string> })
 
 vi.stubGlobal('ref', ref)
 vi.stubGlobal('computed', computed)
@@ -85,13 +138,51 @@ vi.stubGlobal('watch', watch)
 vi.stubGlobal('definePageMeta', vi.fn())
 vi.stubGlobal('useContentSeo', seoMock)
 vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
-vi.stubGlobal('useDirectusClient', () => ({ request: vi.fn(async () => articles) }))
-vi.stubGlobal('useAsyncData', async (_key: string, handler: () => Promise<unknown>) => ({
-  data: ref(await handler()),
-  pending: ref(false),
-  error: ref(null),
-  refresh: vi.fn()
+vi.stubGlobal('useRoute', () => route)
+vi.stubGlobal(
+  'navigateTo',
+  vi.fn(async (to: { query?: Record<string, string> }) => {
+    if (to.query) route.query = to.query
+  })
+)
+vi.stubGlobal('useDirectusClient', () => ({
+  request: vi.fn(async (command: () => MockCommand) => {
+    const { params } = command()
+    if (params?.aggregate) {
+      if (params.groupBy) {
+        return articles.map((article) => ({
+          category: article.category,
+          region: article.region,
+          count: '1'
+        }))
+      }
+      return [{ count: String(applyFilter(articles, params.filter).length) }]
+    }
+    if (params?.limit === 1) return [articles[0]]
+    return applyFilter(articles, params?.filter)
+  })
 }))
+// Stub du composable de soumission : le mock contrôle le résultat de l'appel API.
+const leadSubmitMock = vi.fn<(endpoint: string, payload: unknown) => Promise<boolean>>()
+const leadError = ref<string | null>(null)
+vi.stubGlobal('useLeadSubmit', () => ({
+  submit: leadSubmitMock,
+  sending: ref(false),
+  error: leadError
+}))
+
+vi.stubGlobal('useAsyncData', async (key: unknown, handler: () => Promise<unknown>) => {
+  const data = ref(await handler())
+  if (typeof key === 'function' || isRef(key)) {
+    watch(
+      () => toValue(key as Parameters<typeof toValue>[0]),
+      async () => {
+        data.value = await handler()
+      }
+    )
+  }
+  return { data, pending: ref(false), error: ref(null), refresh: vi.fn() }
+})
 
 const stubs = {
   NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
@@ -139,7 +230,10 @@ async function mountPage() {
 
 describe('pages/actualites/index', () => {
   beforeEach(() => {
+    route.query = {}
     vi.clearAllMocks()
+    leadSubmitMock.mockReset().mockResolvedValue(true)
+    leadError.value = null
   })
 
   it('affiche le bandeau d’intro avec le titre et les filtres', async () => {
@@ -179,29 +273,25 @@ describe('pages/actualites/index', () => {
     expect(wrapper.text()).toContain('Portes ouvertes')
   })
 
-  it('filtre les articles par catégorie', async () => {
+  it('filtre les articles par catégorie via la query', async () => {
     const wrapper = await mountPage()
 
     const buttons = wrapper.findAll('nav[aria-label] button')
     const reglementation = buttons.find((b) => b.text() === 'Réglementation & obligations')
     await reglementation!.trigger('click')
+    await flushPromises()
 
+    expect(route.query.category).toBe('Réglementation & obligations')
     expect(wrapper.text()).toContain('Habilitations électriques')
     expect(wrapper.text()).toContain('AIPR')
     expect(wrapper.text()).not.toContain('Nouveau plateau technique nacelles PEMP')
   })
 
-  it('charge tous les articles au clic sur "Afficher plus"', async () => {
+  it('affiche la pagination quand le total dépasse la page', async () => {
     const wrapper = await mountPage()
 
-    const button = wrapper.findAll('button').find((b) => b.text() === "Afficher plus d'articles")
-    expect(button).toBeTruthy()
-
-    await button!.trigger('click')
-
-    expect(wrapper.findAll('button').some((b) => b.text() === "Afficher plus d'articles")).toBe(
-      false
-    )
+    // 7 articles hors à-la-une > perPage (6) : la pagination est visible.
+    expect(wrapper.find('nav[aria-label="Pagination des actualités"]').exists()).toBe(true)
   })
 
   it('affiche le bandeau newsletter avec le formulaire', async () => {
@@ -210,6 +300,49 @@ describe('pages/actualites/index', () => {
     expect(wrapper.text()).toContain('Recevez les échéances réglementaires')
     expect(wrapper.find('input[type="email"]').exists()).toBe(true)
     expect(wrapper.text()).toContain("S'abonner")
+  })
+
+  it('poste l’inscription newsletter au module leads puis confirme', async () => {
+    const wrapper = await mountPage()
+
+    await wrapper.find('input[type="email"]').setValue('abonne@site.fr')
+    await wrapper.find('section[aria-labelledby="newsletter-heading"] form').trigger('submit')
+    // vee-validate valide en async : attendre que handleSubmit appelle l'API.
+    await vi.waitFor(() => expect(leadSubmitMock).toHaveBeenCalledTimes(1))
+
+    expect(leadSubmitMock).toHaveBeenCalledWith(
+      'newsletter',
+      expect.objectContaining({ email: 'abonne@site.fr' })
+    )
+    expect(wrapper.text()).toContain('Inscription confirmée')
+    // v-show : le formulaire reste monté mais masqué après confirmation.
+    expect(wrapper.find('form').attributes('style')).toContain('display: none')
+  })
+
+  it('bloque la soumission et affiche l’erreur si l’e-mail est invalide', async () => {
+    const wrapper = await mountPage()
+
+    await wrapper.find('input[type="email"]').setValue('pas-un-email')
+    await wrapper.find('section[aria-labelledby="newsletter-heading"] form').trigger('submit')
+    // Attendre que la validation rejette et affiche l'erreur.
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Format d’e-mail invalide'))
+
+    expect(leadSubmitMock).not.toHaveBeenCalled()
+  })
+
+  it('affiche l’erreur et garde le formulaire si l’inscription échoue', async () => {
+    leadSubmitMock.mockResolvedValue(false)
+    leadError.value = 'L’envoi a échoué — réessayez dans un instant.'
+    const wrapper = await mountPage()
+
+    await wrapper.find('input[type="email"]').setValue('abonne@site.fr')
+    await wrapper.find('section[aria-labelledby="newsletter-heading"] form').trigger('submit')
+    await vi.waitFor(() => expect(leadSubmitMock).toHaveBeenCalledTimes(1))
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('envoi a échoué')
+    expect(wrapper.text()).not.toContain('Inscription confirmée')
+    expect(wrapper.find('input[type="email"]').exists()).toBe(true)
   })
 
   it('applique le SEO de la page', async () => {

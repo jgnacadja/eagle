@@ -14,6 +14,10 @@ describe('CentresController', () => {
     departments: ReturnType<typeof vi.fn>
     count: ReturnType<typeof vi.fn>
   }
+  let geocoding: {
+    syncMissing: ReturnType<typeof vi.fn>
+    reverseGeocode: ReturnType<typeof vi.fn>
+  }
 
   beforeEach(async () => {
     service = {
@@ -21,15 +25,16 @@ describe('CentresController', () => {
       departments: vi.fn(),
       count: vi.fn()
     }
+    geocoding = {
+      syncMissing: vi.fn().mockResolvedValue({ geocoded: 0, failed: 0 }),
+      reverseGeocode: vi.fn()
+    }
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CentresController],
       providers: [
         { provide: CentresService, useValue: service },
-        {
-          provide: GeocodingService,
-          useValue: { syncMissing: vi.fn().mockResolvedValue({ geocoded: 0, failed: 0 }) }
-        }
+        { provide: GeocodingService, useValue: geocoding }
       ]
     })
       .overrideGuard(AdminApiKeyGuard)
@@ -82,6 +87,30 @@ describe('CentresController', () => {
       .expect((res) => {
         expect(res.body).toEqual(['Paris', 'Rhône'])
       })
+  })
+
+  it('GET /centres/reverse returns the resolved location', async () => {
+    geocoding.reverseGeocode.mockResolvedValue({
+      city: 'Créteil',
+      postcode: '94000',
+      department: 'Val-de-Marne',
+      region: 'Île-de-France'
+    })
+
+    await request(app.getHttpServer())
+      .get('/centres/reverse?lat=48.79&lng=2.45')
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.department).toBe('Val-de-Marne')
+      })
+
+    expect(geocoding.reverseGeocode).toHaveBeenCalledWith(48.79, 2.45)
+  })
+
+  it('GET /centres/reverse rejects invalid coordinates', async () => {
+    await request(app.getHttpServer()).get('/centres/reverse?lat=abc&lng=2.45').expect(400)
+    await request(app.getHttpServer()).get('/centres/reverse?lat=48.79').expect(400)
+    await request(app.getHttpServer()).get('/centres/reverse?lat=200&lng=2.45').expect(400)
   })
 
   it('GET /centres/count returns the total', async () => {

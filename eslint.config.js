@@ -49,6 +49,8 @@ const nuxtGlobals = {
   useRoute: 'readonly',
   useRouter: 'readonly',
   useHead: 'readonly',
+  useSeoMeta: 'readonly',
+  useRequestURL: 'readonly',
   useState: 'readonly',
   useRequestEvent: 'readonly',
   setResponseStatus: 'readonly',
@@ -64,8 +66,10 @@ const nuxtGlobals = {
   useCentres: 'readonly',
   useCentresTotal: 'readonly',
   useCentreDepartments: 'readonly',
+  useLeadSubmit: 'readonly',
   sanitizeHtml: 'readonly',
   logServerError: 'readonly',
+  logClientError: 'readonly',
   internalSsrHeaders: 'readonly'
 }
 
@@ -97,6 +101,7 @@ const vueGlobals = {
   onBeforeMount: 'readonly',
   onBeforeUnmount: 'readonly',
   onUpdated: 'readonly',
+  onScopeDispose: 'readonly',
   defineComponent: 'readonly',
   defineProps: 'readonly',
   defineEmits: 'readonly',
@@ -184,7 +189,9 @@ export default defineConfig(
       'vue/multi-word-component-names': 'off',
       // v-html autorisé uniquement après sanitizeHtml() (convention AGENTS,
       // règle de revue bloquante) — la règle eslint ne voit pas le sanitiser.
-      'vue/no-v-html': 'off'
+      'vue/no-v-html': 'off',
+      // Convention maison : template en tête de SFC (autofix `eslint --fix`).
+      'vue/block-order': ['error', { order: ['template', 'script', 'style'] }]
     }
   },
   {

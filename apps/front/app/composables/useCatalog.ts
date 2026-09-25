@@ -1,8 +1,13 @@
 import type { CourseListItem, CoursePage, CourseSession } from '@learnup/types'
 import { toValue, type MaybeRefOrGetter } from 'vue'
 import { directusAssetUrl } from '~/utils/directusAsset'
+import { htmlToText } from '~/utils/sanitizeHtml'
 import { placesLabel } from '~/utils/placesLabel'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
+
+// Sémantique partagée avec `availabilityStatus` (useCentres) et
+// `sessionSeatType` (placesLabel) : warning = tension, neutral = sur demande.
+export type AvailabilityType = 'success' | 'warning' | 'neutral'
 
 export interface CatalogQuery {
   search?: string
@@ -18,6 +23,7 @@ export interface CatalogQuery {
   modalities?: string[]
   location?: string
   center?: string
+  availability?: AvailabilityType
 }
 
 export interface FormationItem {
@@ -31,7 +37,7 @@ export interface FormationItem {
   days: number
   duration: 'courte' | 'moyenne' | 'longue'
   certifications: string[]
-  status?: { type: 'success' | 'warning' | 'neutral'; label: string }
+  status?: { type: AvailabilityType; label: string; labelShort?: string }
   image: string | null
   to: string | null
 }
@@ -50,13 +56,13 @@ export function buildDuration(course: CourseListItem): 'courte' | 'moyenne' | 'l
   return 'longue'
 }
 
-export function buildMeta(course: CourseListItem): string {
+export function buildMeta(course: CourseListItem, withCertification = true): string {
   const parts: string[] = []
   if (course.durationDays) parts.push(`${course.durationDays} jours`)
   const modalities = (course.modalities ?? []).map((m) => MODALITY_LABELS[m] ?? m).join(' / ')
   if (modalities) parts.push(modalities)
-  if (course.certification) parts.push(course.certification)
-  if (course.certifierName && course.certifierName !== course.certification) {
+  if (withCertification && course.certification) parts.push(course.certification)
+  if (withCertification && course.certifierName && course.certifierName !== course.certification) {
     parts.push(course.certifierName)
   }
   return parts.join(' · ')
@@ -117,7 +123,7 @@ export function buildSessionBadge(course: CourseListItem): string | null {
 // quand aucune session n'est publiée (formation organisable).
 export function buildStatus(
   course: CourseListItem
-): { type: 'success' | 'warning' | 'neutral'; label: string } | undefined {
+): { type: AvailabilityType; label: string; labelShort?: string } | undefined {
   const upcoming = upcomingSessions(course).sort((a, b) =>
     (a.startDate ?? '').localeCompare(b.startDate ?? '')
   )[0]
@@ -125,7 +131,7 @@ export function buildStatus(
 
   const seats = upcoming.seatsRemaining
   if (seats != null && seats <= 3) {
-    return { type: 'warning', label: placesLabel(seats) }
+    return { type: 'warning', label: placesLabel(seats), labelShort: placesLabel(seats, false) }
   }
 
   const date = new Date(`${upcoming.startDate}T00:00:00Z`)
@@ -139,7 +145,11 @@ export function buildStatus(
     month: '2-digit',
     timeZone: 'UTC'
   }).format(date)
-  return { type: 'success', label: `Prochaine session le ${short}` }
+  return {
+    type: 'success',
+    label: `Prochaine session le ${short}`,
+    labelShort: `Session le ${short}`
+  }
 }
 
 export function mapCourse(course: CourseListItem, familyName?: string): FormationItem {
@@ -152,7 +162,8 @@ export function mapCourse(course: CourseListItem, familyName?: string): Formatio
     familyKey,
     subFamily: course.subFamilyName ?? null,
     title: course.title,
-    description: course.description ?? '',
+    // Champ WYSIWYG Directus : les cartes affichent un extrait en texte brut.
+    description: htmlToText(course.description),
     meta: buildMeta(course),
     days: course.durationDays ?? 0,
     duration: buildDuration(course),
@@ -220,6 +231,7 @@ function buildApiQuery(query: CatalogQuery): Record<string, unknown> {
   if (query.modalities?.length) params.modalities = query.modalities.join(',')
   if (query.location?.trim()) params.location = query.location.trim()
   if (query.center) params.center = query.center
+  if (query.availability) params.availability = query.availability
   if (query.sort) params.sort = query.sort
   if (query.order) params.order = query.order
 

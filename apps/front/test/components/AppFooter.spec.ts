@@ -1,5 +1,18 @@
 import { mount } from '@vue/test-utils'
+import { vi } from 'vitest'
 import AppFooter from '~/components/Menu/AppFooter.vue'
+
+vi.mock('~/composables/useMenuData', async () => {
+  const { ref } = await import('vue')
+  return {
+    useMenuFamilles: () => ref([]),
+    useMenuLegalPages: () =>
+      ref([
+        { slug: 'mentions-legales', label: 'Mentions légales', showInTabs: true },
+        { slug: 'confidentialite', label: 'Politique de confidentialité', showInTabs: true }
+      ])
+  }
+})
 
 describe('AppFooter', () => {
   it('renders the brand name and the current year', () => {

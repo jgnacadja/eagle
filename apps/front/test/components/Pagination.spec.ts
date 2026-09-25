@@ -92,7 +92,7 @@ describe('Pagination', () => {
     const firstItem = items.at(0)
     expect(firstItem).toBeDefined()
     expect(firstItem!.classes()).toContain('bg-primary')
-    expect(firstItem!.classes()).toContain('text-paper')
+    expect(firstItem!.classes()).toContain('text-primary-foreground')
   })
 
   it('disables first and previous buttons on the first page', () => {

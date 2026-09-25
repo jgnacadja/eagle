@@ -22,6 +22,10 @@ export default defineNuxtConfig({
     head: {
       htmlAttrs: { lang: 'fr' },
       link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32x32.png' },
+        { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon-16x16.png' },
+        { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' },
         // Figtree (charte §03) — l'URL vit dans @learnup/ui avec les autres tokens.
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
@@ -84,7 +88,15 @@ export default defineNuxtConfig({
     '/centres': { isr: { expiration: 600, passQuery: true } },
     '/centres/**': { isr: { expiration: 600, passQuery: true } },
     '/actualites': { isr: { expiration: 600, passQuery: true } },
-    '/actualites/**': { isr: { expiration: 600, passQuery: true } }
+    '/actualites/**': { isr: { expiration: 600, passQuery: true } },
+    '/rejoindre-le-reseau': { prerender: true },
+    '/referencer-mon-organisme': { prerender: true },
+    '/entreprise-reseau': { prerender: true },
+    // Pages légales et tout slug racine ([slug]) — impossible à cibler par
+    // préfixe. Une page fraîchement publiée apparaît grâce à la purge complète
+    // déclenchée par le flow Directus (pages_legales non mappée côté front).
+    '/**': { isr: { expiration: 600 } },
+    '/api/**': { isr: false }
   },
   runtimeConfig: {
     apiBase,

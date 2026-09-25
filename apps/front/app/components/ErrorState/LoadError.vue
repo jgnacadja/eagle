@@ -19,19 +19,11 @@
     <div
       class="mt-2xl flex flex-col items-stretch justify-center gap-md sm:flex-row sm:items-center"
     >
-      <Button
-        type="button"
-        class="h-control gap-sm rounded-full bg-primary-dark px-lg text-button font-semibold text-ink-inverse transition hover:bg-primary"
-        @click="emit('retry')"
-      >
+      <Button type="button" variant="dark" size="pill" class="gap-sm px-lg" @click="emit('retry')">
         <IconRefresh :size="16" />
         {{ retryLabel }}
       </Button>
-      <Button
-        as-child
-        variant="outline"
-        class="h-control rounded-full border-outline px-lg text-button font-semibold text-ink transition hover:border-primary hover:text-accent-text"
-      >
+      <Button as-child variant="outline" size="pill" class="px-lg">
         <NuxtLink :to="linkTo">{{ linkLabel }}</NuxtLink>
       </Button>
     </div>

@@ -11,7 +11,7 @@ export const centres = [
     slug: 'creteil',
     name: 'Centre LEARN UP de Créteil',
     status: 'published',
-    address: '14 rue des Refuzniks, 94000 Créteil',
+    address: '14 rue des Refuzniks',
     city: 'Créteil',
     postal_code: '94000',
     department: 'Val-de-Marne',
@@ -26,10 +26,17 @@ export const centres = [
     parking: 'Parking visiteurs sur place',
     pmr_accessible: true,
     phone: '01 84 20 45 30',
-    email: 'creteil@learnupacademy.fr',
+    mobile: '06 12 20 45 30',
+    email: 'contact94@learnup-academy.com',
+    contact_name: 'Karim Bensaïd',
+    franchise_since: '2017-05-19',
+    imageUrl:
+      'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800&h=1000&fit=crop&q=80',
     departments_covered: ['94', '93', '77'],
     qualiopi_certified: true,
-    qualiopi_certificate_number: 'QUAL-2026-CRETEIL'
+    qualiopi_certificate_number: 'QUAL-2026-CRETEIL',
+    qualiopi_certifier: 'AFNOR',
+    qualiopi_valid_until: '2027-03-14T00:00:00Z'
   },
   {
     slug: 'paris',
@@ -50,10 +57,17 @@ export const centres = [
     parking: 'Parking public à 200 m',
     pmr_accessible: true,
     phone: '01 84 20 45 31',
-    email: 'paris@learnupacademy.fr',
+    mobile: '06 12 20 45 31',
+    email: 'contact75@learnup-academy.com',
+    contact_name: 'Claire Fontaine',
+    franchise_since: '2015-09-01',
+    imageUrl:
+      'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&h=1000&fit=crop&q=80',
     departments_covered: ['75', '92', '93', '94'],
     qualiopi_certified: true,
-    qualiopi_certificate_number: 'QUAL-2026-PARIS'
+    qualiopi_certificate_number: 'QUAL-2026-PARIS',
+    qualiopi_certifier: 'AFNOR',
+    qualiopi_valid_until: '2027-03-14T00:00:00Z'
   },
   {
     slug: 'lyon',
@@ -74,10 +88,17 @@ export const centres = [
     parking: 'Parking Lafayette souterrain',
     pmr_accessible: true,
     phone: '04 78 20 45 32',
-    email: 'lyon@learnupacademy.fr',
+    mobile: '06 12 20 45 32',
+    email: 'contact69@learnup-academy.com',
+    contact_name: 'Marc Dubois',
+    franchise_since: '2019-03-11',
+    imageUrl:
+      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=800&h=1000&fit=crop&q=80',
     departments_covered: ['69', '01', '42', '38'],
     qualiopi_certified: true,
-    qualiopi_certificate_number: 'QUAL-2026-LYON'
+    qualiopi_certificate_number: 'QUAL-2026-LYON',
+    qualiopi_certifier: 'AFNOR',
+    qualiopi_valid_until: '2027-03-14T00:00:00Z'
   },
   {
     slug: 'marseille',
@@ -98,10 +119,17 @@ export const centres = [
     parking: 'Parking Euroméditerranée',
     pmr_accessible: false,
     phone: '04 91 20 45 33',
-    email: 'marseille@learnupacademy.fr',
+    mobile: '06 12 20 45 33',
+    email: 'contact13@learnup-academy.com',
+    contact_name: 'Sofia Martinez',
+    franchise_since: '2021-01-18',
+    imageUrl:
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&h=1000&fit=crop&q=80',
     departments_covered: ['13', '84', '83'],
     qualiopi_certified: true,
-    qualiopi_certificate_number: 'QUAL-2026-MARSEILLE'
+    qualiopi_certificate_number: 'QUAL-2026-MARSEILLE',
+    qualiopi_certifier: 'AFNOR',
+    qualiopi_valid_until: '2027-03-14T00:00:00Z'
   },
   {
     slug: 'lille',
@@ -122,10 +150,17 @@ export const centres = [
     parking: 'Parking Nouveau Siècle',
     pmr_accessible: true,
     phone: '03 20 20 45 34',
-    email: 'lille@learnupacademy.fr',
+    mobile: '06 12 20 45 34',
+    email: 'contact59@learnup-academy.com',
+    contact_name: 'Julien Lefèvre',
+    franchise_since: '2018-06-04',
+    imageUrl:
+      'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=800&h=1000&fit=crop&q=80',
     departments_covered: ['59', '62', '02'],
     qualiopi_certified: true,
-    qualiopi_certificate_number: 'QUAL-2026-LILLE'
+    qualiopi_certificate_number: 'QUAL-2026-LILLE',
+    qualiopi_certifier: 'AFNOR',
+    qualiopi_valid_until: '2027-03-14T00:00:00Z'
   },
   {
     slug: 'bordeaux',
@@ -146,10 +181,17 @@ export const centres = [
     parking: 'Parking Bourse-Jean Jaurès',
     pmr_accessible: true,
     phone: '05 56 20 45 35',
-    email: 'bordeaux@learnupacademy.fr',
+    mobile: '06 12 20 45 35',
+    email: 'contact33@learnup-academy.com',
+    contact_name: 'Nadia Berger',
+    franchise_since: '2020-10-12',
+    imageUrl:
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=1000&fit=crop&q=80',
     departments_covered: ['33', '24', '47'],
     qualiopi_certified: true,
-    qualiopi_certificate_number: 'QUAL-2026-BORDEAUX'
+    qualiopi_certificate_number: 'QUAL-2026-BORDEAUX',
+    qualiopi_certifier: 'AFNOR',
+    qualiopi_valid_until: '2027-03-14T00:00:00Z'
   },
   {
     slug: 'nantes',
@@ -170,10 +212,17 @@ export const centres = [
     parking: 'Parking Commerce',
     pmr_accessible: true,
     phone: '02 40 20 45 36',
-    email: 'nantes@learnupacademy.fr',
+    mobile: '06 12 20 45 36',
+    email: 'contact44@learnup-academy.com',
+    contact_name: 'Antoine Morel',
+    franchise_since: '2016-02-22',
+    imageUrl:
+      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&h=1000&fit=crop&q=80',
     departments_covered: ['44', '49', '85'],
     qualiopi_certified: true,
-    qualiopi_certificate_number: 'QUAL-2026-NANTES'
+    qualiopi_certificate_number: 'QUAL-2026-NANTES',
+    qualiopi_certifier: 'AFNOR',
+    qualiopi_valid_until: '2027-03-14T00:00:00Z'
   },
   {
     slug: 'toulouse',
@@ -193,10 +242,17 @@ export const centres = [
     parking: 'Parking Capitole',
     pmr_accessible: false,
     phone: '05 61 20 45 37',
-    email: 'toulouse@learnupacademy.fr',
+    mobile: '06 12 20 45 37',
+    email: 'contact31@learnup-academy.com',
+    contact_name: 'Élise Garnier',
+    franchise_since: '2022-04-25',
+    imageUrl:
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=1000&fit=crop&q=80',
     departments_covered: ['31', '81', '82'],
     qualiopi_certified: true,
-    qualiopi_certificate_number: 'QUAL-2026-TOULOUSE'
+    qualiopi_certificate_number: 'QUAL-2026-TOULOUSE',
+    qualiopi_certifier: 'AFNOR',
+    qualiopi_valid_until: '2027-03-14T00:00:00Z'
   }
 ]
 
@@ -255,6 +311,10 @@ export const famillesFormation = [
     name: "CACES & conduite d'engins",
     intro:
       '<p>Conduite d’engins de chantier et de manutention : CACES R482, R483, R484, R485, R486, R489.</p>',
+    audience_text:
+      "Tout salarié amené à conduire un engin de la famille concernée : caristes, conducteurs d'engins de chantier, opérateurs nacelle, grutiers. L'employeur délivre une autorisation de conduite sur la base du CACES®, de l'aptitude médicale et de la connaissance des lieux.",
+    validity_text:
+      'Les CACES® de cette famille sont valables 5 ans (10 ans pour le R482). Le renouvellement passe par une formation de recyclage et de nouveaux tests. Les sessions de recyclage sont identifiées comme telles dans la liste ci-dessus.',
     imageUrl:
       'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=800&h=600&fit=crop&q=80',
     status: 'published'
@@ -707,7 +767,7 @@ export const articles = [
     author_imageUrl:
       'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=600&q=80',
     region: 'Île-de-France',
-    related_formation_slug: 'sst-securite-travail',
+    relatedFormationSlug: 'sst-sauveteur-secouriste-du-travail',
     publish_at: '2026-09-01T09:00:00+00:00',
     centre: 1,
     cover_imageUrl:
@@ -730,7 +790,7 @@ export const articles = [
     author_imageUrl:
       'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=600&q=80',
     region: 'Paris',
-    related_formation_slug: 'management',
+    relatedFormationSlug: 'gestion-du-stress-et-prevention-rps',
     publish_at: '2026-09-05T09:00:00+00:00',
     centre: 2,
     cover_imageUrl:
@@ -753,7 +813,7 @@ export const articles = [
     author_imageUrl:
       'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80',
     region: 'Lyon',
-    related_formation_slug: 'informatique-digital',
+    relatedFormationSlug: 'caces-r489-conduite-de-chariots-elevateurs',
     publish_at: '2026-09-10T09:00:00+00:00',
     centre: 3,
     cover_imageUrl:
@@ -762,5 +822,235 @@ export const articles = [
     seo_description:
       'Comment faire de la transformation digitale un levier pédagogique, opérationnel et durable.',
     seo_canonical: 'https://learnup.fr/actualites/digitalisation-competences-ia'
+  }
+]
+
+// Pages légales — contenu démo repris de l'ancien data/legal.ts du front.
+// `show_in_tabs: false` sur cookies : la page existe mais n'apparaît pas
+// dans la navigation par onglets des autres pages légales.
+export const pagesLegales = [
+  {
+    slug: 'mentions-legales',
+    label: 'Mentions légales',
+    title: 'Mentions légales',
+    status: 'published',
+    sort: 1,
+    show_in_tabs: true,
+    sections: [
+      {
+        id: 'editeur',
+        title: '1. Éditeur du site',
+        paragraphs: [
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor. Cras elementum ultrices diam. Maecenas ligula massa, varius a, semper congue, euismod non, mi.',
+          'Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat. Duis semper. Duis arcu massa, scelerisque vitae, consequat in, pretium a, enim. Pellentesque congue.'
+        ]
+      },
+      {
+        id: 'hebergement',
+        title: '2. Hébergement',
+        paragraphs: [
+          'Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim. Pellentesque sed dui ut augue blandit sodales. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.'
+        ]
+      },
+      {
+        id: 'propriete',
+        title: '3. Propriété intellectuelle',
+        paragraphs: [
+          'Aliquam nibh. Mauris ac mauris sed pede pellentesque fermentum. Maecenas adipiscing ante non diam sodales hendrerit. Ut velit mauris, egestas sed, gravida nec, ornare ut, mi. Aenean ut orci vel massa suscipit pulvinar. Nulla sollicitudin.'
+        ],
+        bullets: [
+          'Fusce varius, ligula non tempus aliquam, nunc turpis ullamcorper nibh ;',
+          'in tempus sapien eu quam vestibulum ante ipsum primis ;',
+          'curabitur vulputate vestibulum lorem sed pede.'
+        ]
+      },
+      {
+        id: 'responsabilite',
+        title: '4. Responsabilité',
+        paragraphs: [
+          'Morbi in sem quis dui placerat ornare. Pellentesque odio nisi, euismod in, pharetra a, ultricies in, diam. Sed arcu. Cras consequat. Praesent dapibus, neque id cursus faucibus, tortor neque egestas augue, eu vulputate magna eros eu erat.'
+        ]
+      },
+      {
+        id: 'contact',
+        title: '5. Contact',
+        paragraphs: [
+          'Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus. Phasellus ultrices nulla quis nibh. Quisque a lectus.'
+        ]
+      }
+    ],
+    cta_label: 'Contacter LEARN UP ACADEMY',
+    cta_to: 'mailto:contact@learnup.fr',
+    seo_title: 'Mentions légales',
+    seo_description:
+      'Mentions légales du site LEARN UP ACADEMY : éditeur, hébergement, propriété intellectuelle et responsabilité.'
+  },
+  {
+    slug: 'confidentialite',
+    label: 'Confidentialité',
+    title: 'Politique de confidentialité',
+    status: 'published',
+    sort: 2,
+    show_in_tabs: true,
+    sections: [
+      {
+        id: 'collecte',
+        title: '1. Collecte des données',
+        paragraphs: [
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor.',
+          'Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat.'
+        ]
+      },
+      {
+        id: 'utilisation',
+        title: '2. Utilisation des données',
+        paragraphs: [
+          'Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim.'
+        ],
+        bullets: [
+          'Gestion des demandes de renseignements ;',
+          'Envoi de communications et de newsletters ;',
+          'Amélioration des services et de l’expérience utilisateur.'
+        ]
+      },
+      {
+        id: 'droits',
+        title: '3. Vos droits',
+        paragraphs: [
+          'Morbi in sem quis dui placerat ornare. Pellentesque odio nisi, euismod in, pharetra a, ultricies in, diam. Sed arcu. Cras consequat.'
+        ]
+      }
+    ],
+    cta_label: 'Contacter LEARN UP ACADEMY',
+    cta_to: 'mailto:contact@learnup.fr',
+    seo_title: 'Politique de confidentialité',
+    seo_description:
+      'Politique de confidentialité de LEARN UP ACADEMY : collecte, utilisation et protection des données personnelles.'
+  },
+  {
+    slug: 'conditions-generales',
+    label: 'Conditions générales',
+    title: 'Conditions générales',
+    status: 'published',
+    sort: 3,
+    show_in_tabs: true,
+    sections: [
+      {
+        id: 'objet',
+        title: '1. Objet',
+        paragraphs: [
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor.',
+          'Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat.'
+        ]
+      },
+      {
+        id: 'acces',
+        title: '2. Accès au site',
+        paragraphs: [
+          'Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim.'
+        ]
+      },
+      {
+        id: 'responsabilites',
+        title: '3. Responsabilités',
+        paragraphs: [
+          'Morbi in sem quis dui placerat ornare. Pellentesque odio nisi, euismod in, pharetra a, ultricies in, diam. Sed arcu. Cras consequat.'
+        ]
+      }
+    ],
+    cta_label: 'Contacter LEARN UP ACADEMY',
+    cta_to: 'mailto:contact@learnup.fr',
+    seo_title: 'Conditions générales',
+    seo_description: 'Conditions générales d’utilisation du site LEARN UP ACADEMY.'
+  },
+  {
+    slug: 'accessibilite',
+    label: 'Accessibilité',
+    title: 'Accessibilité — RGAA',
+    status: 'published',
+    sort: 4,
+    show_in_tabs: true,
+    sections: [
+      {
+        id: 'engagement',
+        title: '1. Engagement',
+        paragraphs: [
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor.'
+        ]
+      },
+      {
+        id: 'etat',
+        title: '2. État de conformité',
+        paragraphs: [
+          'Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim.'
+        ]
+      },
+      {
+        id: 'contact',
+        title: '3. Contact et amélioration',
+        paragraphs: [
+          'Morbi in sem quis dui placerat ornare. Pellentesque odio nisi, euismod in, pharetra a, ultricies in, diam. Sed arcu. Cras consequat.'
+        ]
+      }
+    ],
+    cta_label: 'Contacter LEARN UP ACADEMY',
+    cta_to: 'mailto:contact@learnup.fr',
+    seo_title: 'Accessibilité — RGAA',
+    seo_description:
+      'Déclaration d’accessibilité de LEARN UP ACADEMY, engagements RGAA et contact alternatif.'
+  },
+  {
+    slug: 'cookies',
+    label: 'Gestion des cookies',
+    title: 'Gestion des cookies',
+    status: 'published',
+    sort: 5,
+    show_in_tabs: false,
+    sections: [
+      {
+        id: 'cookies',
+        title: '1. Cookies utilisés',
+        paragraphs: [
+          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor.',
+          'Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat.'
+        ]
+      },
+      {
+        id: 'gestion',
+        title: '2. Gestion des préférences',
+        paragraphs: [
+          'Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim.'
+        ]
+      }
+    ],
+    cta_label: 'Contacter LEARN UP ACADEMY',
+    cta_to: 'mailto:contact@learnup.fr',
+    seo_title: 'Gestion des cookies',
+    seo_description: 'Politique de gestion des cookies du site LEARN UP ACADEMY.'
+  }
+]
+
+// Avis affichés dans la section « Avis » des fiches centres. `centreSlug`
+// absent = avis marque (toutes implantations confondues, comme l'en-tête).
+export const avis = [
+  {
+    slug: 'avis-caces-logistique',
+    status: 'published',
+    sort: 1,
+    author: 'Responsable logistique',
+    published_at: '2026-06-15T09:00:00+00:00',
+    stars: 5,
+    quote:
+      '« Organisation de la session CACES en moins de deux semaines pour nos 6 caristes. Convocations et attestations transmises dans les délais. »'
+  },
+  {
+    slug: 'avis-habilitation-qhse',
+    status: 'published',
+    sort: 2,
+    author: 'Chargée QHSE',
+    published_at: '2026-04-20T09:00:00+00:00',
+    stars: 4,
+    quote:
+      '« Recyclages d’habilitation planifiés sur deux sites. Suivi des échéances par l’équipe LEARN UP. »'
   }
 ]

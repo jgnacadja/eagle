@@ -26,6 +26,7 @@ const CONTENT_COLLECTIONS = [
   'articles',
   'pages',
   'page_blocks',
+  'pages_legales',
   'stats'
 ]
 

@@ -77,6 +77,15 @@ vi.mock('~/composables/useMenuData', async () => {
         ])
       )
     }),
+    useMenuLegalPages: () =>
+      ref([
+        { slug: 'mentions-legales', label: 'Mentions légales', showInTabs: true },
+        {
+          slug: 'confidentialite',
+          label: 'Politique de confidentialité',
+          showInTabs: true
+        }
+      ]),
     useMenuActualites: () => ({
       rubriques: ref([
         { slug: 'toute-actualite', label: 'Toute l’actualité du réseau' },
@@ -157,7 +166,7 @@ describe('MegaMenuFormations', () => {
 
     expect(wrapper.text()).toContain('Familles')
     expect(wrapper.text()).toContain('Sécurité & prévention')
-    expect(wrapper.text()).toContain('À la une')
+    expect(wrapper.text()).toContain('Les plus consultés')
     expect(wrapper.text()).toContain('CACES R489 — chariots élévateurs')
   })
 
@@ -241,8 +250,8 @@ describe('MegaMenuAPropos', () => {
 
     expect(wrapper.text()).toContain('Qui sommes-nous')
     expect(wrapper.text()).toContain('Mentions légales')
-    expect(wrapper.find('a[href="/a-propos/contact"]').exists()).toBe(true)
-    expect(wrapper.find('a[href="/legal/confidentialite"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/contact"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/confidentialite"]').exists()).toBe(true)
   })
 })
 
@@ -291,9 +300,9 @@ describe('MegaMenuActualites', () => {
 
     await rubrique.trigger('click')
 
-    expect(wrapper.text()).toContain(
-      'Aucune publication récente pour cette rubrique dans cette région.'
-    )
-    expect(wrapper.text()).not.toContain('Aucune publication récente pour cette région.')
+    // 'Presse' n'a d'actus dans aucune région → pas de région sélectionnée
+    expect(wrapper.text()).toContain('Aucune publication récente pour cette rubrique.')
+    expect(wrapper.text()).not.toContain('dans cette région')
+    expect(wrapper.text()).toContain('Aucune région disponible.')
   })
 })

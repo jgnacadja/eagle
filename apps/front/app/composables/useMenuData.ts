@@ -162,7 +162,7 @@ function useMenuFamillesData() {
             readItems('familles_formation', {
               fields: ['slug', 'name'],
               filter: { status: { _eq: 'published' } },
-              limit: -1
+              limit: 100
             })
           )
           .catch((error: unknown) => {
@@ -177,7 +177,7 @@ function useMenuFamillesData() {
               fields: ['slug', 'name', 'famille.slug'],
               filter: { status: { _eq: 'published' } },
               sort: ['sort', 'name'],
-              limit: -1
+              limit: 100
             })
           )
           .catch((error: unknown) => {
@@ -298,7 +298,7 @@ export function useMenuCentres() {
   const centres = useDirectusList<Centre>('centres', 'menu-centres', {
     fields: ['slug', 'name', 'city', 'department', 'region'],
     filter: { status: { _eq: 'published' } },
-    limit: -1,
+    limit: 100,
     sort: ['sort', 'name']
   })
 
@@ -492,7 +492,7 @@ export function useMenuLegalPages() {
       fields: ['slug', 'label', 'show_in_tabs'],
       filter: { status: { _eq: 'published' } },
       sort: ['sort'],
-      limit: -1
+      limit: 100
     }
   )
 

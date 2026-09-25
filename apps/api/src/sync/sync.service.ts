@@ -22,7 +22,7 @@ export class SyncService {
     private readonly scheduler: SchedulerRegistry,
     private readonly catalog: DirectusCatalogService,
     private readonly geocoding: GeocodingService
-  ) {}
+  ) { }
 
   onModuleInit(): void {
     const expression = this.config.get<string>('SYNC_CRON') ?? '0 * * * *'
@@ -83,7 +83,7 @@ export class SyncService {
 
       // Les localisations de session viennent des centres : on (re)géocode
       // celles dont l'adresse a changé avant d'invalider le cache.
-      await this.geocoding.syncMissing()
+      await this.geocoding.syncMissing({ force: true })
       await this.cache.invalidateCatalog()
 
       run.status = 'success'

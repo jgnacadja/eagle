@@ -72,13 +72,24 @@ const COLLECTION_FIELDS: Record<string, string[]> = {
   articles: ['slug', 'publish_at'],
   pages_legales: ['slug', 'updated_at']
 }
+// Le proxy /directus borne `limit` à 100 (limit=-1 refusé) — on pagine
+// jusqu'à épuisement, avec un plafond très au-dessus des volumes réels.
+const DIRECTUS_PAGE_SIZE = 100
+const DIRECTUS_MAX_PAGES = 20
 async function fetchSlugs(api: ApiFetch, collection: string): Promise<DirectusRow[]> {
-  const res = (await api(`/directus/items/${collection}`, {
-    'filter[status][_eq]': 'published',
-    'fields[]': COLLECTION_FIELDS[collection] ?? ['slug'],
-    limit: -1
-  }).catch(() => null)) as DirectusList | null
-  return res?.data ?? []
+  const rows: DirectusRow[] = []
+  for (let page = 1; page <= DIRECTUS_MAX_PAGES; page++) {
+    const res = (await api(`/directus/items/${collection}`, {
+      'filter[status][_eq]': 'published',
+      'fields[]': COLLECTION_FIELDS[collection] ?? ['slug'],
+      limit: DIRECTUS_PAGE_SIZE,
+      page
+    }).catch(() => null)) as DirectusList | null
+    const batch = res?.data ?? []
+    rows.push(...batch)
+    if (batch.length < DIRECTUS_PAGE_SIZE) break
+  }
+  return rows
 }
 
 export default defineCachedEventHandler(

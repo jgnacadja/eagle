@@ -51,7 +51,7 @@ describe('DirectusProxyController', () => {
     expect(res.status).toBe(200)
     expect(res.body).toEqual({ data: [{ slug: 'centre-creteil' }] })
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://directus:8055/items/centres?fields[]=slug',
+      'http://directus:8055/items/centres?fields%5B%5D=slug',
       expect.objectContaining({
         method: 'GET',
         headers: expect.not.objectContaining({ Authorization: expect.anything() })
@@ -75,12 +75,63 @@ describe('DirectusProxyController', () => {
   it('autorise la collection des articles', async () => {
     fetchMock.mockResolvedValueOnce(upstreamJson({ data: [{ slug: 'actualite-test' }] }))
 
-    const res = await request(app.getHttpServer()).get('/directus/items/articles?limit=-1')
+    const res = await request(app.getHttpServer()).get('/directus/items/articles?limit=50')
 
     expect(res.status).toBe(200)
     expect(res.body).toEqual({ data: [{ slug: 'actualite-test' }] })
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://directus:8055/items/articles?limit=-1',
+      'http://directus:8055/items/articles?limit=50',
+      expect.objectContaining({ method: 'GET' })
+    )
+  })
+
+  it('refuse limit=-1 et les limites non positives', async () => {
+    const res = await request(app.getHttpServer()).get('/directus/items/centres?limit=-1')
+
+    expect(res.status).toBe(400)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('plafonne limit au-delà de 100', async () => {
+    fetchMock.mockResolvedValueOnce(upstreamJson({ data: [] }))
+
+    const res = await request(app.getHttpServer()).get('/directus/items/centres?limit=500')
+
+    expect(res.status).toBe(200)
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://directus:8055/items/centres?limit=100',
+      expect.objectContaining({ method: 'GET' })
+    )
+  })
+
+  it('refuse les paramètres hors liste blanche (deep, search, meta…)', async () => {
+    const res = await request(app.getHttpServer()).get(
+      '/directus/items/formations?deep[sessions][_limit]=-1'
+    )
+
+    expect(res.status).toBe(400)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('refuse les expansions wildcard de fields', async () => {
+    const res = await request(app.getHttpServer()).get(
+      '/directus/items/formations?fields[]=*.*.*'
+    )
+
+    expect(res.status).toBe(400)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('relaye filter/sort/page/fields imbriqués (query SDK standard)', async () => {
+    fetchMock.mockResolvedValueOnce(upstreamJson({ data: [] }))
+
+    const res = await request(app.getHttpServer()).get(
+      '/directus/items/formations?filter[status][_eq]=published&sort=-updated_at&page=2&fields[]=famille.slug&limit=20'
+    )
+
+    expect(res.status).toBe(200)
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://directus:8055/items/formations?filter%5Bstatus%5D%5B_eq%5D=published&sort=-updated_at&page=2&fields%5B%5D=famille.slug&limit=20',
       expect.objectContaining({ method: 'GET' })
     )
   })

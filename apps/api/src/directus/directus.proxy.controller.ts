@@ -1,6 +1,7 @@
 import {
   All,
   BadGatewayException,
+  BadRequestException,
   Controller,
   Logger,
   MethodNotAllowedException,
@@ -27,6 +28,50 @@ const ALLOWED_ITEM_COLLECTIONS = new Set([
   'pages_legales'
 ])
 const UPSTREAM_TIMEOUT_MS = 10_000
+
+// Liste blanche des paramètres relayés à Directus : le rôle Public filtre
+// les champs lus, mais pas la forme de la requête — `deep`, `search`,
+// `meta` ou des expansions `fields=*.*.*` produiraient des requêtes SQL
+// coûteuses et des réponses non bornées (sessions/blocks JSON). Le front
+// n'émet que ceux-ci via le SDK (`aggregate`/`groupBy` servent aux facettes
+// d'/actualites — réponse bornée par construction).
+const ALLOWED_QUERY_PARAMS = new Set([
+  'fields',
+  'filter',
+  'sort',
+  'limit',
+  'offset',
+  'page',
+  'aggregate',
+  'groupBy'
+])
+const MAX_LIMIT = 100
+
+// `limit` est plafonnée : `limit=-1` (et toute valeur non positive ou non
+// entière) est refusée, au-delà du plafond on clampe — un appelant ne doit
+// jamais obtenir une collection entière en une seule requête.
+function sanitizeQueryParams(searchParams: URLSearchParams): URLSearchParams {
+  const sanitized = new URLSearchParams()
+  for (const [name, value] of searchParams) {
+    const base = name.split('[')[0]!
+    if (!ALLOWED_QUERY_PARAMS.has(base)) {
+      throw new BadRequestException(`Paramètre Directus non autorisé : ${base}`)
+    }
+    if (base === 'limit') {
+      const limit = Number(value)
+      if (!Number.isInteger(limit) || limit <= 0) {
+        throw new BadRequestException('limit doit être un entier strictement positif')
+      }
+      sanitized.append(name, String(Math.min(limit, MAX_LIMIT)))
+      continue
+    }
+    if (base === 'fields' && value.includes('*')) {
+      throw new BadRequestException("L'expansion wildcard (*) de fields est interdite")
+    }
+    sanitized.append(name, value)
+  }
+  return sanitized
+}
 
 function isAllowedPath(pathname: string): boolean {
   const segments = pathname.split('/').filter(Boolean)
@@ -93,7 +138,7 @@ export class DirectusProxyController {
     const upstreamUrl = new URL(this.baseUrl)
     const basePath = upstreamUrl.pathname.replace(/\/$/, '')
     upstreamUrl.pathname = `${basePath}${incoming.pathname}`
-    upstreamUrl.search = incoming.search
+    upstreamUrl.search = sanitizeQueryParams(incoming.searchParams).toString()
 
     let upstream: globalThis.Response
     try {

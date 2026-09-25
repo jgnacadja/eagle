@@ -495,7 +495,7 @@ const sousFamilles = await useDirectusList<SousFamilleFormation>(
     fields: ['id', 'slug', 'name', 'caption'],
     filter: { status: { _eq: 'published' }, famille: { slug: { _eq: famille } } },
     sort: ['sort', 'name'],
-    limit: -1
+    limit: 100
   }
 )
 

@@ -652,7 +652,7 @@ const { data: directusFamilies } = await useAsyncData<FamilleFormation[]>(
         readItems('familles_formation', {
           fields: ['slug', 'name'],
           filter: { status: { _eq: 'published' } },
-          limit: -1
+          limit: 100
         })
       )
     } catch (error) {

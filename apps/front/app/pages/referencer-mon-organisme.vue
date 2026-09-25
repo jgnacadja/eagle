@@ -203,7 +203,7 @@ const centresData = await useDirectusList<Centre>('centres', 'organisme-map-cent
   ],
   filter: { status: { _eq: 'published' } },
   sort: ['-id'],
-  limit: -1
+  limit: 100
 })
 
 const { position: userPosition } = useGeolocation()

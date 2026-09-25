@@ -57,14 +57,26 @@ function parseBanContext(context: string | undefined): {
  * mémorise l'adresse traitée pour re-géocoder uniquement en cas de
  * changement.
  */
+// Borne le déclenchement de syncMissing() depuis le endpoint public de
+// lecture : sans garde, N requêtes concurrentes sur un miss `centres:all`
+// lanceraient N relectures Directus complètes et des appels BAN en double —
+// et une adresse ingéocodable (toujours « stale ») serait retentée à chaque
+// miss. Dédup de la promesse en cours + cooldown entre les runs ;
+// `{ force: true }` (sync, endpoint admin) court-circuite le cooldown.
+const SYNC_MISSING_COOLDOWN_MS = 60_000
+
+type SyncMissingResult = { geocoded: number; failed: number }
+
 @Injectable()
 export class GeocodingService {
   private readonly logger = new Logger(GeocodingService.name)
+  private inflight?: Promise<SyncMissingResult>
+  private lastRunAt = 0
 
   constructor(
     private readonly directus: DirectusCatalogService,
     private readonly cache: CacheService
-  ) {}
+  ) { }
 
   async geocodeAddress(address: string): Promise<GeocodedAddress | null> {
     const url = new URL(BAN_SEARCH_URL)
@@ -142,8 +154,23 @@ export class GeocodingService {
    * Géocode les centres dont l'adresse diffère de `geocoded_address` et
    * persiste les champs dérivés dans Directus. Appelé en fin de sync et à
    * la volée quand les centres relus depuis Directus sont périmés.
+   * Les appels concurrents partagent la même promesse ; les appels
+   * rapprochés (< cooldown) sont ignorés sauf `force`.
    */
-  async syncMissing(): Promise<{ geocoded: number; failed: number }> {
+  async syncMissing(options?: { force?: boolean }): Promise<SyncMissingResult> {
+    if (this.inflight) return this.inflight
+    if (!options?.force && Date.now() - this.lastRunAt < SYNC_MISSING_COOLDOWN_MS) {
+      return { geocoded: 0, failed: 0 }
+    }
+
+    this.inflight = this.doSyncMissing().finally(() => {
+      this.inflight = undefined
+      this.lastRunAt = Date.now()
+    })
+    return this.inflight
+  }
+
+  private async doSyncMissing(): Promise<SyncMissingResult> {
     let centres
     try {
       centres = await this.directus.fetchCentresForGeocoding()

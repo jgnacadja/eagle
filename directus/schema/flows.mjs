@@ -30,85 +30,121 @@ const CONTENT_COLLECTIONS = [
   'stats'
 ]
 
-export const flows = [
-  {
-    name: 'Invalidate site cache',
-    icon: 'bolt',
-    trigger: 'event',
-    accountability: 'all',
-    status: 'active',
-    options: {
-      type: 'action',
-      scope: ['items.create', 'items.update', 'items.delete'],
-      collections: CONTENT_COLLECTIONS
-    },
-    operations: [
-      {
-        name: 'Purge API (Redis)',
-        key: 'purge-api',
-        type: 'request',
-        position_x: 20,
-        position_y: 20,
-        options: {
-          method: 'POST',
-          url: `${API_INTERNAL_URL}/admin/cache/invalidate`,
-          headers: [{ header: 'x-api-key', value: process.env.ADMIN_API_KEY ?? '' }],
-          body: '{"collection":"{{$trigger.collection}}"}'
-        }
-      },
-      {
-        name: 'Purge front (ISR)',
-        key: 'purge-front',
-        type: 'request',
-        position_x: 40,
-        position_y: 20,
-        options: {
-          method: 'POST',
-          url: `${FRONT_INTERNAL_URL}/api/cache/invalidate`,
-          headers: [{ header: 'x-cache-secret', value: process.env.NUXT_CACHE_PURGE_SECRET ?? '' }],
-          body: '{"collection":"{{$trigger.collection}}"}'
-        }
+// La sync Digiforma écrit via le compte de service DIRECTUS_TOKEN — un
+// PATCH par formation à chaque run horaire. Sans garde, chaque run
+// déclencherait N appels /admin/cache/invalidate (2 SCAN du keyspace
+// chacun) + N purges ISR, alors que la sync purge elle-même le catalogue
+// en fin de run. L'opération `condition` en tête de chaîne arrête le flow
+// pour ces écritures (chemin `reject` non câblé = arrêt propre).
+function syncGuard(syncUserId) {
+  if (!syncUserId) return []
+  return [
+    {
+      name: 'Écriture hors sync ?',
+      key: 'not-sync-writer',
+      type: 'condition',
+      position_x: 20,
+      position_y: 20,
+      options: {
+        filter: { $accountability: { user: { _neq: syncUserId } } }
       }
-    ]
-  },
-  {
-    name: 'Invalidate formation page',
-    icon: 'target',
-    trigger: 'event',
-    accountability: 'all',
-    status: 'active',
-    options: {
-      type: 'action',
-      scope: ['items.create', 'items.update'],
-      collections: ['formations']
-    },
-    operations: [
-      {
-        name: 'Relire la formation',
-        key: 'read-formation',
-        type: 'item-read',
-        position_x: 20,
-        position_y: 20,
-        options: {
-          collection: 'formations',
-          key: '{{$trigger.keys[0]}}',
-          permissions: '$full',
-          query: { fields: 'slug' }
-        }
+    }
+  ]
+}
+
+/**
+ * @param {{ syncUserId?: string | null }} [options]
+ *   `syncUserId` : id du compte porteur de DIRECTUS_TOKEN (résolu via
+ *   /users/me dans build.mjs). Sans lui, les flows purgent aussi les
+ *   écritures de la sync — comportement dégradé, pas de garde ajoutée.
+ */
+export function buildFlows({ syncUserId } = {}) {
+  return [
+    {
+      name: 'Invalidate site cache',
+      icon: 'bolt',
+      trigger: 'event',
+      accountability: 'all',
+      status: 'active',
+      options: {
+        type: 'action',
+        scope: ['items.create', 'items.update', 'items.delete'],
+        collections: CONTENT_COLLECTIONS
       },
-      {
-        name: 'Purge fiche front (ISR)',
-        key: 'purge-formation-page',
-        type: 'request',
-        position_x: 40,
-        position_y: 20,
-        options: {
-          method: 'POST',
-          url: `${FRONT_INTERNAL_URL}/api/cache/invalidate`,
-          headers: [{ header: 'x-cache-secret', value: process.env.NUXT_CACHE_PURGE_SECRET ?? '' }],
-          body: '{"match":"{{$last.slug}}"}'
+      operations: [
+        ...syncGuard(syncUserId),
+        {
+          name: 'Purge API (Redis)',
+          key: 'purge-api',
+          type: 'request',
+          position_x: 40,
+          position_y: 20,
+          options: {
+            method: 'POST',
+            url: `${API_INTERNAL_URL}/admin/cache/invalidate`,
+            headers: [{ header: 'x-api-key', value: process.env.ADMIN_API_KEY ?? '' }],
+            body: '{"collection":"{{$trigger.collection}}"}'
+          }
+        },
+        {
+          name: 'Purge front (ISR)',
+          key: 'purge-front',
+          type: 'request',
+          position_x: 60,
+          position_y: 20,
+          options: {
+            method: 'POST',
+            url: `${FRONT_INTERNAL_URL}/api/cache/invalidate`,
+            headers: [
+              { header: 'x-cache-secret', value: process.env.NUXT_CACHE_PURGE_SECRET ?? '' }
+            ],
+            body: '{"collection":"{{$trigger.collection}}"}'
+          }
         }
-      }
-    ]
-  }
-]
+      ]
+    },
+    {
+      name: 'Invalidate formation page',
+      icon: 'target',
+      trigger: 'event',
+      accountability: 'all',
+      status: 'active',
+      options: {
+        type: 'action',
+        scope: ['items.create', 'items.update'],
+        collections: ['formations']
+      },
+      operations: [
+        ...syncGuard(syncUserId),
+        {
+          name: 'Relire la formation',
+          key: 'read-formation',
+          type: 'item-read',
+          position_x: 40,
+          position_y: 20,
+          options: {
+            collection: 'formations',
+            key: '{{$trigger.keys[0]}}',
+            permissions: '$full',
+            query: { fields: 'slug' }
+          }
+        },
+        {
+          name: 'Purge fiche front (ISR)',
+          key: 'purge-formation-page',
+          type: 'request',
+          position_x: 60,
+          position_y: 20,
+          options: {
+            method: 'POST',
+            url: `${FRONT_INTERNAL_URL}/api/cache/invalidate`,
+            headers: [
+              { header: 'x-cache-secret', value: process.env.NUXT_CACHE_PURGE_SECRET ?? '' }
+            ],
+            body: '{"match":"{{$last.slug}}"}'
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -19,8 +19,12 @@ ACADEMY).
   `items.create/update/delete` des collections de contenu, appelle
   `POST {API_INTERNAL_URL}/admin/cache/invalidate` (purge catalogue Redis)
   puis `POST {FRONT_INTERNAL_URL}/api/cache/invalidate` (purge ISR Nuxt).
+  Une opération `condition` en tête de chaîne ignore les écritures du compte
+  de service `DIRECTUS_TOKEN` (la sync purge le catalogue elle-même) —
+  l'id est résolu via `/users/me` au build.
   URLs et secrets lus depuis `.env` (`API_INTERNAL_URL`, `FRONT_INTERNAL_URL`,
-  `ADMIN_API_KEY`, `NUXT_CACHE_PURGE_SECRET`) — jamais dans le schéma.
+  `ADMIN_API_KEY`, `NUXT_CACHE_PURGE_SECRET`, `DIRECTUS_TOKEN`) — jamais dans
+  le schéma.
   En dev, Directus tourne dans Docker alors qu'API/front tournent sur l'hôte :
   `host.docker.internal` est le bon hôte (services `api:`/`front:` en
   full-compose).

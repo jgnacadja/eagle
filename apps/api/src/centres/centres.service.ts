@@ -82,7 +82,7 @@ export class CentresService {
     private readonly cache: CacheService,
     private readonly directus: DirectusCatalogService,
     private readonly geocoding: GeocodingService
-  ) {}
+  ) { }
 
   async list(query: ListCentresDto): Promise<CentreListItem[]> {
     // Clé déterministe : JSON.stringify(query) dépend de l'ordre des
@@ -155,7 +155,9 @@ export class CentresService {
       await this.cache.set(ALL_CENTRES_CACHE_KEY, rows)
       // Fire-and-forget : géocode en arrière-plan les centres dont l'adresse
       // a changé — la lecture courante garde les données actuelles, la
-      // prochaine (cache invalidé par syncMissing) est à jour.
+      // prochaine (cache invalidé par syncMissing) est à jour. Déclenché
+      // depuis un endpoint public sur chaque miss : syncMissing déduplique
+      // les runs concurrents et applique un cooldown.
       void this.geocoding.syncMissing()
       return rows
     } catch (error) {

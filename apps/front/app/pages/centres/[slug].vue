@@ -917,7 +917,7 @@ const allCentres = await useDirectusList<Centre>('centres', 'centres-siblings', 
     'longitude'
   ],
   filter: { status: { _eq: 'published' } },
-  limit: -1
+  limit: 100
 })
 
 const nearbyCenters = computed(() =>

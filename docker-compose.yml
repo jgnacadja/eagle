@@ -95,6 +95,11 @@ services:
       STORAGE_S3_FORCE_PATH_STYLE: 'true'
       CORS_ENABLED: 'true'
       CORS_ORIGIN: ${CORS_ORIGIN}
+      # Garde-fou contre les requêtes non bornées (le proxy /directus de
+      # l'API borne déjà les lectures publiques à 100). MAX reste au-dessus
+      # des volumes internes — la sync lit les collections avec limit=-1.
+      QUERY_LIMIT_DEFAULT: '100'
+      QUERY_LIMIT_MAX: '1000'
       PUBLIC_URL: ${DIRECTUS_PUBLIC_URL:-http://localhost:8055}
     ports:
       - '8055:8055'
@@ -128,6 +133,9 @@ services:
       FRONT_INTERNAL_URL: http://front:3000
       ADMIN_API_KEY: ${ADMIN_API_KEY}
       NUXT_CACHE_PURGE_SECRET: ${NUXT_CACHE_PURGE_SECRET:-}
+      # Sert à résoudre l'id du compte de sync (/users/me) pour que les flows
+      # d'invalidation ignorent ses écritures de masse (voir flows.mjs).
+      DIRECTUS_TOKEN: ${DIRECTUS_TOKEN}
     volumes:
       - ./directus:/opt/directus:ro
     entrypoint:

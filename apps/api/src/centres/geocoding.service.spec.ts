@@ -152,6 +152,47 @@ describe('GeocodingService', () => {
     expect(result).toEqual({ geocoded: 0, failed: 1 })
   })
 
+  it('déduplique les appels concurrents sur la promesse en cours', async () => {
+    const deps = await build([
+      {
+        id: 1,
+        slug: 'lyon',
+        name: 'Centre de Lyon',
+        status: 'published',
+        address: 'Lyon',
+        geocoded_address: null
+      }
+    ])
+    let resolveBan!: (value: unknown) => void
+    fetchMock.mockReturnValue(new Promise((resolve) => (resolveBan = resolve)))
+
+    const p1 = service.syncMissing()
+    const p2 = service.syncMissing()
+    resolveBan({ ok: true, json: () => Promise.resolve({ features: [] }) })
+    await Promise.all([p1, p2])
+
+    expect(deps.fetchCentresForGeocoding).toHaveBeenCalledOnce()
+  })
+
+  it('applique un cooldown : un second run rapproché est ignoré', async () => {
+    const deps = await build([])
+    await service.syncMissing()
+
+    const result = await service.syncMissing()
+
+    expect(result).toEqual({ geocoded: 0, failed: 0 })
+    expect(deps.fetchCentresForGeocoding).toHaveBeenCalledOnce()
+  })
+
+  it('force outrepasse le cooldown (sync, endpoint admin)', async () => {
+    const deps = await build([])
+    await service.syncMissing()
+
+    await service.syncMissing({ force: true })
+
+    expect(deps.fetchCentresForGeocoding).toHaveBeenCalledTimes(2)
+  })
+
   describe('reverseGeocode', () => {
     const reverseResponse = {
       features: [

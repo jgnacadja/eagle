@@ -1009,7 +1009,7 @@ const derniersCentresData = await useDirectusList<Centre>('centres', 'home-centr
   ],
   filter: { status: { _eq: 'published' } },
   sort: ['-id'],
-  limit: -1
+  limit: 100
 })
 
 // Position partagée : activée via le badge « Près de moi » (ici ou sur

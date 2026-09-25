@@ -10,7 +10,7 @@
 // officiel.
 
 import { collections, relations } from './collections.mjs'
-import { flows } from './flows.mjs'
+import { buildFlows } from './flows.mjs'
 import { permissionsFor, publicPermissions, roles } from './roles.mjs'
 import { log, logError } from '../logger.mjs'
 
@@ -283,6 +283,22 @@ async function ensurePublicPermissions(token) {
 // `resolve` sur chaque opération — l'ordre du tableau `operations` définit
 // la chaîne. Convergent : les opérations existantes (match par `key`) sont
 // patchées — URLs et secrets d'env restent la source de vérité.
+// Id du compte de service porteur de DIRECTUS_TOKEN (écritures de la sync
+// Digiforma) — résolu via /users/me. Les flows l'excluent en première
+// opération : ses PATCH horaires par formation généreraient sinon une
+// rafale de purges redondantes, la sync purgeant déjà le catalogue en fin
+// de run. Token absent/invalide → flows construits sans la garde.
+async function fetchSyncUserId() {
+  const syncToken = process.env.DIRECTUS_TOKEN
+  if (!syncToken) return null
+  const res = await fetch(`${DIRECTUS_URL}/users/me?fields=id`, {
+    headers: { Authorization: `Bearer ${syncToken}` }
+  })
+  if (!res.ok) return null
+  const { data } = await res.json()
+  return data?.id ?? null
+}
+
 async function ensureFlowOperations(token, flowId, operations) {
   const { data: existing } = await api(
     token,
@@ -317,11 +333,11 @@ async function ensureFlowOperations(token, flowId, operations) {
   }
 }
 
-async function ensureFlows(token) {
+async function ensureFlows(token, syncUserId) {
   const { data: existing } = await api(token, 'GET', '/flows?limit=-1')
   const byName = new Map(existing.map((f) => [f.name, f]))
 
-  for (const flowDef of flows) {
+  for (const flowDef of buildFlows({ syncUserId })) {
     const { operations, ...flowPayload } = flowDef
     const known = byName.get(flowDef.name)
     if (known) {
@@ -347,7 +363,12 @@ async function main() {
   await ensureAccess(token, roleIds, policyIds)
   await ensurePermissions(token, policyIds)
   await ensurePublicPermissions(token)
-  await ensureFlows(token)
+
+  const syncUserId = await fetchSyncUserId()
+  if (!syncUserId) {
+    log('⚠  DIRECTUS_TOKEN absent/invalide — flows construits sans exclusion du compte de sync')
+  }
+  await ensureFlows(token, syncUserId)
 
   log('Schéma v1 prêt.')
 }

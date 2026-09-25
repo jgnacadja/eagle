@@ -18,9 +18,9 @@ Lire d'abord `AGENTS.md` à la racine.
   - lecture publique : 100 requêtes/min par IP (tracker `req.ip` — `trust proxy` est activé dans `configureApp` pour que l'IP cliente traverse le proxy/Vercel)
   - proxy `/directus/*` : 600 requêtes/min par IP (assets images inclus)
   - leads `/leads/*` : 10 requêtes/min par IP — le endpoint relaie vers HubSpot, un quota large pousserait du spam dans le CRM
-  - admin `/admin/*` : 10 requêtes/min par clé API — sauf `POST /admin/cache/invalidate` (`@SkipThrottle`) : les écritures Directus en masse déclenchent une rafale d'invalidations qu'aucun 429 ne doit dropper
+  - admin `/admin/*` : 10 requêtes/min — bucket par clé API **valide** (HMAC-SHA256 rapide), par IP pour les clés absentes/invalides (borne l'énumération et le coût du hash) — sauf `POST /admin/cache/invalidate` (`@SkipThrottle`) : les écritures Directus en masse déclenchent une rafale d'invalidations qu'aucun 429 ne doit dropper
   - `/health` et les fetches SSR (`x-internal-ssr` = `INTERNAL_API_TOKEN`) sont exclus du quota public — sans ça l'IP du serveur Nuxt mutualiserait tous les visiteurs dans un seul bucket.
-- Si le stockage Redis tombe, le throttling est désactivé (fail-open, `FailSafeThrottlerStorage`) et les 429 sont loggés par `HttpExceptionFilter`.
+- Si le stockage Redis tombe, le throttling bascule sur le stockage mémoire du throttler (par process) pendant 30 s puis retente Redis (`FailSafeThrottlerStorage`) ; les 429 sont loggés par `HttpExceptionFilter`.
 - Routes admin : protégées par `ADMIN_API_KEY` (header `x-api-key`). Guard dédié.
 
 ## Tests

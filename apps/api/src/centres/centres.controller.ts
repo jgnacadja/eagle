@@ -12,7 +12,7 @@ export class CentresController {
   constructor(
     private readonly centresService: CentresService,
     private readonly geocoding: GeocodingService
-  ) {}
+  ) { }
 
   @Get('centres')
   @ApiOperation({ summary: 'List of published centres' })
@@ -48,6 +48,6 @@ export class CentresController {
   @ApiSecurity('x-api-key')
   @ApiOperation({ summary: 'Geocode centres whose address changed (BAN)' })
   async geocode(): Promise<{ geocoded: number; failed: number }> {
-    return this.geocoding.syncMissing()
+    return this.geocoding.syncMissing({ force: true })
   }
 }

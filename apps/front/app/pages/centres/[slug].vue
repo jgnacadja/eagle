@@ -624,7 +624,7 @@ const assistant = useAssistantLauncher()
 const assistantSearch = ref('')
 function openAssistant(message?: string) {
   assistant.open({
-    context: { source: 'centre', centerSlug: slug, location: centre.value?.city },
+    context: { source: 'centre', centerSlug: slug, location: centre.value?.city ?? undefined },
     message: message?.trim() || undefined
   })
 }

@@ -71,7 +71,7 @@
         </aside>
 
         <!-- Article -->
-        <article class="space-y-2xl">
+        <article class="space-y-2xl px-xl">
           <section
             v-for="section in page.sections"
             :id="section.id"

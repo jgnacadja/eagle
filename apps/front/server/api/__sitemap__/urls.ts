@@ -63,10 +63,19 @@ async function fetchAllCourses(api: ApiFetch): Promise<CourseRow[]> {
 // Les collections passent par le proxy /directus (rôle Public, lecture
 // seule) avec un filtre `published` explicite — le proxy restreint déjà
 // au rôle Public, la ceinture en plus des bretelles.
+// `fields[]` doit rester dans l'allowlist Public (roles.mjs) : un seul
+// champ non exposé fait échouer la requête entière en 403, et le catch
+// dégraderait la collection à []. familles_formation n'expose aucune
+// date, articles expose publish_at, pages_legales expose updated_at.
+const COLLECTION_FIELDS: Record<string, string[]> = {
+  familles_formation: ['slug'],
+  articles: ['slug', 'publish_at'],
+  pages_legales: ['slug', 'updated_at']
+}
 async function fetchSlugs(api: ApiFetch, collection: string): Promise<DirectusRow[]> {
   const res = (await api(`/directus/items/${collection}`, {
     'filter[status][_eq]': 'published',
-    'fields[]': ['slug', 'publish_at', 'updated_at'],
+    'fields[]': COLLECTION_FIELDS[collection] ?? ['slug'],
     limit: -1
   }).catch(() => null)) as DirectusList | null
   return res?.data ?? []
@@ -96,24 +105,30 @@ export default defineCachedEventHandler(
       urls.set(loc, lastmod ? { loc, lastmod } : { loc })
     }
 
+    // Les slugs en base ne sont pas tous normalisés (saisie éditoriale :
+    // espaces, &, ®, accents) — encodage segment par segment : la loc
+    // reste une URL valide et le routeur la décode vers le slug exact
+    // attendu par le filtre `slug _eq` (slugifier ici produirait des 404).
+    const seg = (slug: string) => encodeURIComponent(slug)
+
     for (const famille of familles) {
-      if (famille.slug) push(`/formations/${famille.slug}`)
+      if (famille.slug) push(`/formations/${seg(famille.slug)}`)
     }
     // Sans famille pas de route fiche (mapCourse renvoie `to: null`) :
     // une formation orpheline ne doit jamais apparaître dans le sitemap.
     for (const course of formations) {
       if (course.slug && course.familySlug) {
-        push(`/formations/${course.familySlug}/${course.slug}`)
+        push(`/formations/${seg(course.familySlug)}/${seg(course.slug)}`)
       }
     }
     for (const centre of centres as CentreRow[]) {
-      if (centre.slug) push(`/centres/${centre.slug}`)
+      if (centre.slug) push(`/centres/${seg(centre.slug)}`)
     }
     for (const article of articles) {
-      if (article.slug) push(`/actualites/${article.slug}`, article.publish_at)
+      if (article.slug) push(`/actualites/${seg(article.slug)}`, article.publish_at)
     }
     for (const pageLegale of legales) {
-      if (pageLegale.slug) push(`/${pageLegale.slug}`, pageLegale.updated_at)
+      if (pageLegale.slug) push(`/${seg(pageLegale.slug)}`, pageLegale.updated_at)
     }
 
     return [...urls.values()]

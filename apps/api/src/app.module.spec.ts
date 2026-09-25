@@ -1,4 +1,3 @@
-import { createHmac } from 'node:crypto'
 import { adminThrottlerTracker, FailSafeThrottlerStorage } from './app.module'
 
 const PASS_THROUGH = {
@@ -72,10 +71,10 @@ describe('adminThrottlerTracker', () => {
     headers
   })
 
-  it('tracks a valid API key on its own bucket via a fast hash', () => {
+  it('tracks a valid API key on its own bucket', () => {
     const trackerKey = tracker(request({ 'x-api-key': adminApiKey }))
 
-    expect(trackerKey).toBe(createHmac('sha256', adminApiKey).update(adminApiKey).digest('hex'))
+    expect(trackerKey).toBe('admin')
     expect(trackerKey).not.toBe(adminApiKey)
   })
 
@@ -89,8 +88,6 @@ describe('adminThrottlerTracker', () => {
   })
 
   it('uses the first value of a repeated x-api-key header', () => {
-    expect(tracker(request({ 'x-api-key': [adminApiKey, 'other'] }))).toBe(
-      createHmac('sha256', adminApiKey).update(adminApiKey).digest('hex')
-    )
+    expect(tracker(request({ 'x-api-key': [adminApiKey, 'other'] }))).toBe('admin')
   })
 })

@@ -9,7 +9,7 @@ import {
 } from '@nestjs/throttler'
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis'
 import Redis, { RedisOptions } from 'ioredis'
-import { createHmac, timingSafeEqual } from 'node:crypto'
+import { timingSafeEqual } from 'node:crypto'
 import { HealthController } from './health/health.controller'
 import { DigiformaModule } from './digiforma/digiforma.module'
 import { SyncModule } from './sync/sync.module'
@@ -83,7 +83,7 @@ export class FailSafeThrottlerStorage implements ThrottlerStorage {
   private readonly fallback = new ThrottlerStorageService()
   private disabledUntil = 0
 
-  constructor(private readonly inner: ThrottlerStorage) { }
+  constructor(private readonly inner: ThrottlerStorage) {}
 
   async increment(
     ...args: Parameters<ThrottlerStorage['increment']>
@@ -125,17 +125,17 @@ function isAdminApiKey(raw: string, adminApiKey: string): boolean {
   return provided.length === expected.length && timingSafeEqual(provided, expected)
 }
 
-// Tracker admin : une clé valide a son propre bucket (HMAC rapide — la clé
-// n'est pas stockée en clair dans Redis) ; une clé absente ou invalide
-// partage le bucket IP (10/min). Avant, un scryptSync par requête offrait
-// un DoS CPU à tout appelant non authentifié, et chaque clé aléatoire
-// ouvrait un bucket neuf — la limite ne s'appliquait jamais.
+// Tracker admin : une clé valide partage le bucket « admin » (10/min,
+// indépendant de l'IP — une seule clé existe, ADMIN_API_KEY) ; une clé
+// absente ou invalide partage le bucket IP. Avant, un scryptSync par
+// requête offrait un DoS CPU à tout appelant non authentifié, et chaque
+// clé aléatoire ouvrait un bucket neuf — la limite ne s'appliquait jamais.
 export function adminThrottlerTracker(adminApiKey: string) {
   return (req: TrackerRequest): string => {
     const key = req.headers?.['x-api-key']
     const raw = Array.isArray(key) ? key[0] : key
     return typeof raw === 'string' && raw.length > 0 && isAdminApiKey(raw, adminApiKey)
-      ? createHmac('sha256', adminApiKey).update(raw).digest('hex')
+      ? 'admin'
       : ipTracker(req)
   }
 }
@@ -148,9 +148,7 @@ function createRedisThrottlerStorage(url: string): ThrottlerStorage {
   throttlerRedis.on('error', () => {
     // silencieux : le wrapper FailSafeThrottlerStorage dégrade proprement
   })
-  throttlerStorage = new FailSafeThrottlerStorage(
-    new ThrottlerStorageRedisService(throttlerRedis)
-  )
+  throttlerStorage = new FailSafeThrottlerStorage(new ThrottlerStorageRedisService(throttlerRedis))
   return throttlerStorage
 }
 

@@ -1,0 +1,77 @@
+{
+  "folders": [
+    {
+      "name": "eagle",
+      "path": "."
+    },
+    {
+      "name": "api",
+      "path": "apps/api"
+    },
+    {
+      "name": "front",
+      "path": "apps/front"
+    },
+    {
+      "name": "types",
+      "path": "packages/types"
+    },
+    {
+      "name": "ui",
+      "path": "packages/ui"
+    },
+    {
+      "name": "directus",
+      "path": "directus"
+    }
+  ],
+  "settings": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.rulers": [
+      100
+    ],
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "eslint.workingDirectories": [
+      {
+        "pattern": "./"
+      }
+    ],
+    "eslint.useFlatConfig": true,
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/.nuxt": true,
+      "**/.output": true,
+      "**/dist": true,
+      "**/coverage": true,
+      "**/playwright-report": true,
+      "**/test-results": true,
+      "**/.turbo": true,
+      "**/.pnpm-store": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/.nuxt": true,
+      "**/.output": true,
+      "**/dist": true,
+      "**/coverage": true,
+      "**/pnpm-lock.yaml": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode",
+      "vue.volar",
+      "antfu.vite",
+      "bradlc.vscode-tailwindcss",
+      "Prisma.prisma",
+      "sonarsource.sonarlint-vscodeplus",
+      "ms-playwright.playwright",
+      "ms-vscode.vscode-typescript-next"
+    ]
+  }
+}

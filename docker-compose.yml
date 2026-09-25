@@ -32,7 +32,7 @@ services:
       start_period: 5s
 
   minio:
-    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -51,7 +51,7 @@ services:
       start_period: 10s
 
   minio-init:
-    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    image: quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z
     restart: 'no'
     depends_on:
       minio:
@@ -95,7 +95,12 @@ services:
       STORAGE_S3_FORCE_PATH_STYLE: 'true'
       CORS_ENABLED: 'true'
       CORS_ORIGIN: ${CORS_ORIGIN}
-      PUBLIC_URL: http://localhost:8055
+      # Garde-fou contre les requêtes non bornées (le proxy /directus de
+      # l'API borne déjà les lectures publiques à 100). MAX reste au-dessus
+      # des volumes internes — la sync lit les collections avec limit=-1.
+      QUERY_LIMIT_DEFAULT: '100'
+      QUERY_LIMIT_MAX: '1000'
+      PUBLIC_URL: ${DIRECTUS_PUBLIC_URL:-http://localhost:8055}
     ports:
       - '8055:8055'
     depends_on:
@@ -112,15 +117,79 @@ services:
       retries: 10
       start_period: 30s
 
+  directus-init:
+    image: directus/directus:11
+    restart: 'no'
+    depends_on:
+      directus:
+        condition: service_healthy
+    environment:
+      DIRECTUS_URL: http://directus:8055
+      DIRECTUS_ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL}
+      DIRECTUS_ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD}
+      # Lus par flows.mjs au build : en full-compose les webhooks de purge
+      # ciblent les services internes, pas host.docker.internal.
+      API_INTERNAL_URL: http://api:3001
+      FRONT_INTERNAL_URL: http://front:3000
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+      NUXT_CACHE_PURGE_SECRET: ${NUXT_CACHE_PURGE_SECRET:-}
+      # Sert à résoudre l'id du compte de sync (/users/me) pour que les flows
+      # d'invalidation ignorent ses écritures de masse (voir flows.mjs).
+      DIRECTUS_TOKEN: ${DIRECTUS_TOKEN}
+    volumes:
+      - ./directus:/opt/directus:ro
+    entrypoint:
+      - node
+      - /opt/directus/schema/build.mjs
+
+  directus-seed:
+    image: directus/directus:11
+    profiles:
+      - seed
+    restart: 'no'
+    depends_on:
+      directus-init:
+        condition: service_completed_successfully
+    environment:
+      DIRECTUS_URL: http://directus:8055
+      DIRECTUS_ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL}
+      DIRECTUS_ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD}
+    volumes:
+      - ./directus:/opt/directus:ro
+    entrypoint:
+      - node
+      - /opt/directus/seed/seed.mjs
+
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
     restart: unless-stopped
     environment:
-      NODE_ENV: production
+      NODE_ENV: ${NODE_ENV:-development}
       API_PORT: 3001
       CORS_ORIGIN: ${CORS_ORIGIN}
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+      DIGIFORMA_API_URL: ${DIGIFORMA_API_URL}
+      DIGIFORMA_API_KEY: ${DIGIFORMA_API_KEY}
+      SYNC_CRON: ${SYNC_CRON}
+      REDIS_URL: redis://redis:6379
+      DIRECTUS_INTERNAL_URL: http://directus:8055
+      DIRECTUS_TOKEN: ${DIRECTUS_TOKEN}
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
+      HUBSPOT_PORTAL_ID: ${HUBSPOT_PORTAL_ID}
+      HUBSPOT_FORM_NEWSLETTER: ${HUBSPOT_FORM_NEWSLETTER}
+      HUBSPOT_FORM_DEMANDE: ${HUBSPOT_FORM_DEMANDE}
+      HUBSPOT_FORM_CANDIDATURE: ${HUBSPOT_FORM_CANDIDATURE}
+      HUBSPOT_FORM_CONSEILLER: ${HUBSPOT_FORM_CONSEILLER}
+      HUBSPOT_FORMS_BASE_URL: ${HUBSPOT_FORMS_BASE_URL:-https://api.hsforms.com}
+    depends_on:
+      directus:
+        condition: service_healthy
+      directus-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
     ports:
       - '3001:3001'
 
@@ -133,8 +202,8 @@ services:
       NODE_ENV: production
       NUXT_API_BASE: http://api:3001
       NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE}
-      NUXT_DIRECTUS_URL: http://directus:8055
-      NUXT_PUBLIC_DIRECTUS_URL: ${NUXT_PUBLIC_DIRECTUS_URL}
+      NUXT_INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
+      NUXT_CACHE_PURGE_SECRET: ${NUXT_CACHE_PURGE_SECRET:-}
     ports:
       - '3000:3000'
     depends_on:

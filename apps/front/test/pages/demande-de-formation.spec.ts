@@ -1,0 +1,621 @@
+import { flushPromises, mount } from '@vue/test-utils'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  computed,
+  defineComponent,
+  h,
+  nextTick,
+  onMounted,
+  reactive,
+  ref,
+  Suspense,
+  watchEffect
+} from 'vue'
+import DemandePage from '~/pages/centres/demande-de-formation.vue'
+
+const seoMock = vi.fn()
+const fetchMock = vi.fn()
+
+vi.stubGlobal('reactive', reactive)
+vi.stubGlobal('ref', ref)
+vi.stubGlobal('computed', computed)
+vi.stubGlobal('watchEffect', watchEffect)
+vi.stubGlobal('onMounted', onMounted)
+vi.stubGlobal('definePageMeta', vi.fn())
+vi.stubGlobal('useContentSeo', seoMock)
+vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
+vi.stubGlobal('logServerError', vi.fn())
+vi.stubGlobal('$fetch', fetchMock)
+vi.stubGlobal('useAsyncData', async (_key: string, handler: () => Promise<unknown>) => ({
+  data: ref(await handler())
+}))
+
+const centreCreteil = {
+  slug: 'creteil',
+  name: 'Centre LEARN UP de Créteil',
+  city: 'Créteil',
+  department: 'Val-de-Marne',
+  postal_code: '94000'
+}
+
+// Le mock résout le slug depuis la query (objet ou getter) : un mauvais
+// slug remonterait [] et ferait échouer les tests de contexte.
+vi.stubGlobal(
+  'useDirectusList',
+  vi.fn(async (_collection: string, _key: string, query?: unknown) => {
+    const q = typeof query === 'function' ? (query as () => unknown)() : query
+    const slug = (q as { filter?: { slug?: { _eq?: string } } } | null)?.filter?.slug?._eq
+    return ref(slug === centreCreteil.slug ? [centreCreteil] : [])
+  })
+)
+
+// Stub du composable de soumission : le mock contrôle le résultat de l'appel API.
+const leadSubmitMock = vi.fn<(endpoint: string, payload: unknown) => Promise<boolean>>()
+vi.stubGlobal('useLeadSubmit', () => ({
+  submit: leadSubmitMock,
+  sending: ref(false),
+  error: ref(null)
+}))
+
+const routeStub = {
+  query: {} as Record<string, string>,
+  meta: {} as { breadcrumb?: unknown }
+}
+vi.stubGlobal('useRoute', () => routeStub)
+
+const navigateMock = vi.fn()
+vi.stubGlobal('navigateTo', navigateMock)
+
+const courseSst = {
+  slug: 'sst-initial',
+  title: 'SST — Sauveteur secouriste du travail',
+  durationDays: 2,
+  certification: 'Certificat SST',
+  certifierName: 'INRS',
+  sessions: [
+    {
+      id: 'sess-1',
+      startDate: '2026-10-12',
+      endDate: '2026-10-13',
+      modality: 'presentiel',
+      seatsRemaining: 5,
+      location: {
+        name: 'Centre de Créteil',
+        city: 'Créteil',
+        postalCode: '94000',
+        department: 'Val-de-Marne',
+        region: 'Île-de-France',
+        centreSlug: 'creteil'
+      }
+    }
+  ]
+}
+
+const stubs = {
+  NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
+  Button: { template: '<button><slot /></button>' },
+  Card: { template: '<div><slot /></div>' },
+  Input: {
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+    template:
+      '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />'
+  },
+  Textarea: {
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+    template:
+      '<textarea :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />'
+  },
+  Label: { template: '<label><slot /></label>' },
+  Select: { template: '<div><slot /></div>' },
+  SelectTrigger: { template: '<button type="button"><slot /></button>' },
+  SelectContent: { template: '<div><slot /></div>' },
+  SelectItem: { props: ['value'], template: '<span><slot /></span>' },
+  SelectValue: { props: ['placeholder'], template: '<span>{{ placeholder }}</span>' },
+  Checkbox: {
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+    template:
+      '<button type="button" role="checkbox" :aria-checked="String(!!modelValue)" @click="$emit(\'update:modelValue\', !modelValue)" />'
+  },
+  IconCheck: true,
+  IconMapPin: true,
+  IconBook: true,
+  IconCalendar: true,
+  IconSparkle: true
+}
+
+const Host = defineComponent({
+  setup: () => () => h(Suspense, () => h(DemandePage))
+})
+
+async function mountPage() {
+  const wrapper = mount(Host, { global: { stubs } })
+  await flushPromises()
+  return wrapper
+}
+
+// La validation zod/vee-validate est asynchrone : on polle le DOM jusqu'à la condition.
+async function waitUntil(ok: () => boolean) {
+  for (let i = 0; i < 50 && !ok(); i++) {
+    await new Promise((resolve) => setTimeout(resolve, 5))
+    await flushPromises()
+  }
+}
+
+// Remplit tous les champs obligatoires avec des valeurs valides.
+async function fillValidForm(wrapper: Awaited<ReturnType<typeof mountPage>>) {
+  await wrapper.find('#raison-sociale').setValue('Entreprise ACME')
+  await wrapper.find('#siret').setValue('12345678901234')
+  await wrapper.find('#nom').setValue('Jean Dupont')
+  await wrapper.find('#fonction').setValue('Responsable RH')
+  await wrapper.find('#email').setValue('jean@acme.fr')
+  await wrapper.find('#telephone').setValue('0612345678')
+  const checkbox = wrapper.find('[role="checkbox"]')
+  if (checkbox.attributes('aria-checked') !== 'true') {
+    await checkbox.trigger('click')
+  }
+}
+
+describe('pages/centres/demande-de-formation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    routeStub.query = {}
+    routeStub.meta = {}
+    window.sessionStorage.clear()
+    fetchMock.mockImplementation(async () => courseSst)
+    leadSubmitMock.mockReset().mockResolvedValue(true)
+  })
+
+  it('affiche le titre, le stepper et les trois sections du formulaire', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Demande de formation')
+    expect(wrapper.text()).toContain('Votre besoin')
+    expect(wrapper.text()).toContain('Votre entreprise')
+    expect(wrapper.text()).toContain('Vos coordonnées')
+    expect(wrapper.find('ol[aria-label="Progression"]').exists()).toBe(true)
+  })
+
+  it('affiche les champs du formulaire avec leurs labels', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Salariés à former')
+    expect(wrapper.text()).toContain('Échéance souhaitée')
+    expect(wrapper.text()).toContain('Précisions')
+    expect(wrapper.text()).toContain('Raison sociale')
+    expect(wrapper.text()).toContain('SIRET')
+    expect(wrapper.text()).toContain('Nom et prénom')
+    expect(wrapper.text()).toContain('Fonction')
+    expect(wrapper.text()).toContain('E-mail professionnel')
+    expect(wrapper.text()).toContain('Téléphone')
+    expect(wrapper.text()).toContain('Politique de confidentialité')
+  })
+
+  it('affiche le sujet transmis par les CTA réseau', async () => {
+    routeStub.query = { sujet: 'franchise' }
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Ouvrir un centre LEARN UP ACADEMY')
+    expect(wrapper.text()).not.toContain('Votre projet de formation')
+  })
+
+  it('retombe sur le contexte générique pour un sujet inconnu', async () => {
+    routeStub.query = { sujet: 'autre-chose' }
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Votre projet de formation')
+  })
+
+  it('redirige l’ancien sujet « conseiller » vers le formulaire dédié', async () => {
+    routeStub.query = { sujet: 'conseiller' }
+    await mountPage()
+
+    expect(navigateMock).toHaveBeenCalledWith('/parler-a-votre-conseiller')
+  })
+
+  it('affiche le contexte générique sans paramètres (RG04)', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Votre demande concerne')
+    expect(wrapper.text()).toContain('Votre projet de formation')
+    expect(wrapper.text()).not.toContain('SST — Sauveteur')
+    expect(wrapper.text()).not.toContain('Session du')
+  })
+
+  it('résout le nom du centre depuis Directus', async () => {
+    routeStub.query = { centre: 'creteil' }
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Centre LEARN UP de Créteil')
+    expect(wrapper.text()).toContain('Créteil · Val-de-Marne (94)')
+    expect(routeStub.meta.breadcrumb).toEqual([
+      { label: 'Accueil', to: '/' },
+      { label: 'Centres', to: '/centres' },
+      { label: 'Centre LEARN UP de Créteil', to: '/centres/creteil' },
+      { label: 'Demande de formation' }
+    ])
+  })
+
+  it('résout la formation depuis l’API quand famille + formation sont transmis', async () => {
+    routeStub.query = { famille: 'sante', formation: 'sst-initial' }
+    const wrapper = await mountPage()
+
+    expect(fetchMock).toHaveBeenCalledWith('http://api.test/courses/sante/sst-initial')
+    expect(wrapper.text()).toContain('SST — Sauveteur secouriste du travail')
+    expect(wrapper.text()).toContain('2 jours · Certificat SST · INRS')
+    // RG04 : pas de ligne générique quand un contexte est transmis.
+    expect(wrapper.text()).not.toContain('Votre projet de formation')
+    expect(wrapper.text()).not.toContain('session du')
+  })
+
+  it('ancre l’encart sur le centre quand centre + formation sont transmis', async () => {
+    routeStub.query = {
+      centre: 'creteil',
+      famille: 'sante',
+      formation: 'sst-initial'
+    }
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Centre LEARN UP de Créteil')
+    expect(wrapper.text()).toContain('SST — Sauveteur secouriste du travail')
+  })
+
+  it('affiche le bloc session agrégé quand centre + formation + session sont transmis', async () => {
+    routeStub.query = {
+      centre: 'creteil',
+      famille: 'sante',
+      formation: 'sst-initial',
+      session: 'sess-1'
+    }
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Centre LEARN UP de Créteil')
+    expect(wrapper.text()).toContain(
+      'SST — Sauveteur secouriste du travail · Présentiel · session du 12 oct. 2026 · 5 places'
+    )
+  })
+
+  it('variante intra : titre dédié, carte formation sans centre et champ lieu', async () => {
+    fetchMock.mockImplementation(async () => ({ ...courseSst, centerSlug: 'creteil' }))
+    routeStub.query = { famille: 'sante', formation: 'sst-initial', intra: '1' }
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Organiser cette formation dans mon entreprise')
+    expect(wrapper.text()).toContain('Formation sur votre site, sur vos équipements')
+    expect(wrapper.text()).toContain('SST — Sauveteur secouriste du travail')
+    expect(wrapper.text()).toContain(
+      'Formation intra · sur votre site · devis selon effectif et catégories'
+    )
+    expect(wrapper.text()).toContain('Intra — sans centre imposé')
+    // Intra : le centre principal de la formation n'ancre pas la demande.
+    expect(wrapper.text()).not.toContain('Centre LEARN UP de Créteil')
+    expect(wrapper.find('#lieu').exists()).toBe(true)
+  })
+
+  it('exige le lieu de la formation en intra et le poste avec la demande', async () => {
+    routeStub.query = { famille: 'sante', formation: 'sst-initial', intra: '1' }
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.find('#lieu-error').exists())
+    expect(wrapper.text()).toContain('Indiquez le lieu de la formation')
+    expect(leadSubmitMock).not.toHaveBeenCalled()
+
+    await wrapper.find('#lieu').setValue('Lyon 69003')
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+    expect(leadSubmitMock).toHaveBeenCalledWith(
+      'demande',
+      expect.objectContaining({ lieu: 'Lyon 69003' })
+    )
+  })
+
+  it('n’affiche pas le champ lieu hors intra', async () => {
+    routeStub.query = { famille: 'sante', formation: 'sst-initial' }
+    const wrapper = await mountPage()
+
+    expect(wrapper.find('#lieu').exists()).toBe(false)
+  })
+
+  it('déduit le centre principal de la formation quand ?centre= est absent', async () => {
+    fetchMock.mockImplementation(async () => ({
+      ...courseSst,
+      centerSlug: 'creteil',
+      centerSlugs: ['creteil', 'paris']
+    }))
+    routeStub.query = { famille: 'sante', formation: 'sst-initial' }
+    const wrapper = await mountPage()
+
+    // centerSlug = 'creteil' → l'encart s'ancre sur le centre (RG06).
+    expect(wrapper.text()).toContain('Centre LEARN UP de Créteil')
+    expect(wrapper.text()).toContain('SST — Sauveteur secouriste du travail')
+  })
+
+  it('déduit le centre de la session quand ?centre= est absent (RG06)', async () => {
+    routeStub.query = {
+      famille: 'sante',
+      formation: 'sst-initial',
+      session: 'sess-1'
+    }
+    const wrapper = await mountPage()
+
+    // location.centreSlug = 'creteil' → résolution Directus du centre.
+    expect(wrapper.text()).toContain('Centre LEARN UP de Créteil')
+    expect(wrapper.text()).toContain('session du 12 oct. 2026')
+  })
+
+  it('affiche un libellé générique pour une formation introuvable dans l’API', async () => {
+    fetchMock.mockImplementation(async () => null)
+    routeStub.query = { famille: 'sante', formation: 'formation-inconnue' }
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Formation du catalogue')
+  })
+
+  it("le lien Modifier renvoie au point d'origine selon le niveau transmis", async () => {
+    routeStub.query = { centre: 'creteil' }
+    let wrapper = await mountPage()
+    expect(wrapper.find('aside a').attributes('href')).toBe('/centres/creteil')
+
+    routeStub.query = {
+      centre: 'creteil',
+      formation: 'sst-initial',
+      famille: 'sante'
+    }
+    wrapper = await mountPage()
+    expect(wrapper.find('aside a').attributes('href')).toBe('/formations/sante/sst-initial')
+
+    routeStub.query = {
+      centre: 'creteil',
+      formation: 'sst-initial',
+      session: 'sess-1',
+      famille: 'sante'
+    }
+    wrapper = await mountPage()
+    expect(wrapper.find('aside a').attributes('href')).toBe(
+      '/formations/sante/sst-initial#sessions'
+    )
+  })
+
+  it('sauvegarde la saisie au clic sur Modifier et la restaure au retour', async () => {
+    const wrapper = await mountPage()
+    await wrapper.find('form input').setValue('12')
+
+    await wrapper.find('aside a').trigger('click')
+    expect(window.sessionStorage.getItem('demande-formation-draft')).toContain('"salaries":"12"')
+
+    const wrapper2 = await mountPage()
+    await nextTick()
+    expect((wrapper2.find('form input').element as HTMLInputElement).value).toBe('12')
+  })
+
+  it("efface le brouillon à l'envoi du formulaire", async () => {
+    window.sessionStorage.setItem('demande-formation-draft', '{"salaries":5,"consentement":true}')
+    const wrapper = await mountPage()
+    await nextTick()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => window.sessionStorage.getItem('demande-formation-draft') === null)
+    expect(window.sessionStorage.getItem('demande-formation-draft')).toBeNull()
+  })
+
+  it("affiche les erreurs sur les champs obligatoires à l'envoi", async () => {
+    const wrapper = await mountPage()
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.find('[aria-invalid="true"]').exists())
+
+    expect(wrapper.text()).toContain('Indiquez votre nom et prénom')
+    expect(wrapper.text()).toContain('Indiquez votre e-mail professionnel')
+    expect(wrapper.text()).toContain('Indiquez le SIRET de votre entreprise')
+    expect(wrapper.text()).toContain('Consentement requis')
+    expect(wrapper.find('#nom').attributes('aria-invalid')).toBe('true')
+    // Le brouillon n'est pas effacé tant que l'envoi n'a pas eu lieu.
+    expect(window.sessionStorage.getItem('demande-formation-draft')).toBeNull()
+  })
+
+  it('signale un SIRET incomplet sans bloquer les champs valides', async () => {
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+    await wrapper.find('#siret').setValue('123')
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.find('#siret-error').exists())
+
+    expect(wrapper.text()).toContain('SIRET invalide — 14 chiffres attendus')
+    expect(wrapper.text()).not.toContain('Indiquez votre nom et prénom')
+  })
+
+  it('accepte un SIRET espacé et le normalise avant envoi', async () => {
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+    await wrapper.find('#siret').setValue('1234 5678 9012 34')
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+    expect(leadSubmitMock).toHaveBeenCalledWith(
+      'demande',
+      expect.objectContaining({ siret: '12345678901234' })
+    )
+  })
+
+  it('poste le téléphone professionnel quand il est renseigné', async () => {
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+    await wrapper.find('#telephone-pro').setValue('0142556677')
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+    expect(leadSubmitMock).toHaveBeenCalledWith(
+      'demande',
+      expect.objectContaining({ telephonePro: '0142556677' })
+    )
+  })
+
+  it('signale un téléphone professionnel incomplet sans le rendre obligatoire', async () => {
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+    await wrapper.find('#telephone-pro').setValue('0142')
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.find('#telephone-pro-error').exists())
+
+    expect(wrapper.text()).toContain('Numéro incomplet')
+    expect(leadSubmitMock).not.toHaveBeenCalled()
+  })
+
+  it('signale un e-mail invalide', async () => {
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+    await wrapper.find('#email').setValue('pas-un-email')
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.find('#email-error').exists())
+
+    expect(wrapper.text()).toContain('Format d’e-mail invalide')
+  })
+
+  it("bloque l'envoi tant que le consentement n'est pas donné", async () => {
+    window.sessionStorage.setItem('demande-formation-draft', '{"salaries":5}')
+    const wrapper = await mountPage()
+
+    await wrapper.find('form').trigger('submit.prevent')
+    expect(window.sessionStorage.getItem('demande-formation-draft')).not.toBeNull()
+  })
+
+  it('prend la première valeur quand un query param est répété', async () => {
+    routeStub.query = { centre: ['creteil', 'autre'] as unknown as string }
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Centre LEARN UP de Créteil')
+    expect(wrapper.find('aside a').attributes('href')).toBe('/centres/creteil')
+  })
+
+  it('affiche un breadcrumb générique sans contexte', async () => {
+    await mountPage()
+
+    expect(routeStub.meta.breadcrumb).toEqual([
+      { label: 'Accueil', to: '/' },
+      { label: 'Centres', to: '/centres' },
+      { label: 'Demande de formation' }
+    ])
+  })
+
+  it('applique le SEO de la page', async () => {
+    await mountPage()
+
+    expect(seoMock).toHaveBeenCalledWith(
+      expect.objectContaining({ seo_title: 'Demande de formation | LEARN UP ACADEMY' }),
+      'Demande de formation'
+    )
+  })
+
+  it('poste la demande au module leads avec le contexte résolu', async () => {
+    routeStub.query = {
+      centre: 'creteil',
+      famille: 'sante',
+      formation: 'sst-initial',
+      session: 'sess-1'
+    }
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+    expect(leadSubmitMock).toHaveBeenCalledWith(
+      'demande',
+      expect.objectContaining({
+        nom: 'Jean Dupont',
+        email: 'jean@acme.fr',
+        telephone: '0612345678',
+        raisonSociale: 'Entreprise ACME',
+        siret: '12345678901234',
+        fonction: 'Responsable RH',
+        salaries: 8,
+        centre: 'Centre LEARN UP de Créteil',
+        formation: 'SST — Sauveteur secouriste du travail',
+        session: 'Session du 12 octobre 2026',
+        consentement: true
+      })
+    )
+  })
+
+  it('affiche le panneau de confirmation après un envoi réussi', async () => {
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.text().includes('Votre demande est transmise'))
+
+    expect(wrapper.text()).toContain('Votre demande est transmise')
+    // v-show : le formulaire reste monté mais masqué après confirmation.
+    expect(wrapper.find('form').attributes('style')).toContain('display: none')
+  })
+
+  it('confirmation : reprend formation et session, renvoie à la fiche', async () => {
+    routeStub.query = {
+      centre: 'creteil',
+      famille: 'sante',
+      formation: 'sst-initial',
+      session: 'sess-1'
+    }
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.text().includes('Votre demande est transmise'))
+
+    expect(wrapper.text()).toContain('SST — Sauveteur secouriste du travail')
+    expect(wrapper.text()).toContain('session du 12 octobre 2026')
+    expect(wrapper.text()).toContain('à Créteil')
+    expect(wrapper.find('a[href="/formations/sante/sst-initial"]').text()).toContain(
+      'Retour à la formation'
+    )
+    expect(wrapper.find('a[href="/formations"]').text()).toContain('Parcourir le catalogue')
+  })
+
+  it('confirmation intra : mentionne la formation et le lieu saisi', async () => {
+    routeStub.query = { famille: 'sante', formation: 'sst-initial', intra: '1' }
+    const wrapper = await mountPage()
+    await wrapper.find('#lieu').setValue('Lyon 69003')
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.text().includes('Votre demande est transmise'))
+
+    expect(wrapper.text()).toContain('SST — Sauveteur secouriste du travail')
+    expect(wrapper.text()).toContain('dans votre entreprise à Lyon 69003')
+    expect(wrapper.find('a[href="/formations/sante/sst-initial"]').text()).toContain(
+      'Retour à la formation'
+    )
+  })
+
+  it('garde le formulaire et le brouillon si l’envoi échoue', async () => {
+    leadSubmitMock.mockResolvedValue(false)
+    window.sessionStorage.setItem('demande-formation-draft', '{"salaries":5}')
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+    expect(wrapper.find('form').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('Votre demande est transmise')
+    expect(window.sessionStorage.getItem('demande-formation-draft')).not.toBeNull()
+  })
+
+  it('le formulaire se soumet sans recharger la page', async () => {
+    const wrapper = await mountPage()
+
+    await wrapper.find('form').trigger('submit.prevent')
+    // Formulaire vide : la validation bloque avant tout appel réseau.
+    expect(wrapper.find('form').exists()).toBe(true)
+  })
+})

@@ -13,31 +13,33 @@
 
     <!-- Panneau conversationnel : plein ecran, mobile comme desktop —
          couvre aussi le header du site (opaque, au-dessus du z-50 du header) -->
-    <dialog
-      v-else
-      open
-      aria-modal="false"
-      aria-label="Recherche assistée"
-      class="fixed inset-0 z-50 m-0 flex h-full max-h-none w-full max-w-none flex-col overflow-hidden bg-paper p-0"
-      @keydown.esc="close"
-    >
-      <AssistantConversation
-        class="h-full"
-        :entries="entries"
-        :pending="pending"
-        :unavailable="unavailable"
-        :context-chips="contextChips"
-        :need-summary="needSummary"
-        :headcount="slots.headcount"
-        :location="slots.location"
-        @send="send"
-        @edit="editAndSend"
-        @stop="stop"
-        @retry="retry"
-        @reset="onReset"
-        @close="close"
-      />
-    </dialog>
+    <Transition name="assistant-panel">
+      <dialog
+        v-if="isOpen"
+        open
+        aria-modal="false"
+        aria-label="Recherche assistée"
+        class="fixed inset-0 z-50 m-0 flex h-full max-h-none w-full max-w-none flex-col overflow-hidden bg-paper p-0"
+        @keydown.esc="close"
+      >
+        <AssistantConversation
+          class="h-full"
+          :entries="entries"
+          :pending="pending"
+          :unavailable="unavailable"
+          :context-chips="contextChips"
+          :need-summary="needSummary"
+          :headcount="slots.headcount"
+          :location="slots.location"
+          @send="send"
+          @edit="editAndSend"
+          @stop="stop"
+          @retry="retry"
+          @reset="onReset"
+          @close="close"
+        />
+      </dialog>
+    </Transition>
   </div>
 </template>
 

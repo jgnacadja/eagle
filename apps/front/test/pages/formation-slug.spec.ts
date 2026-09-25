@@ -581,6 +581,29 @@ describe('pages/formations/[famille]/[slug]', () => {
     })
   })
 
+  it('aligne le JSON-LD url sur la canonical éditoriale si présente', async () => {
+    const canonicalCourse: Course = {
+      ...course,
+      seoCanonical: 'https://learnup.test/formations/custom-canonical'
+    }
+    vi.stubGlobal('useAsyncData', async (key: string) => {
+      if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+        return {
+          data: ref(canonicalCourse),
+          pending: ref(false),
+          error: ref(null),
+          refresh: vi.fn()
+        }
+      }
+      return defaultUseAsyncData(key)
+    })
+    await mountPage()
+
+    const [, , options] = seoArgs()
+    const jsonLd = (options as { jsonLd?: () => Record<string, unknown> | null }).jsonLd?.()
+    expect(jsonLd?.url).toBe('https://learnup.test/formations/custom-canonical')
+  })
+
   it('n’émet pas de JSON-LD sur une fiche introuvable', async () => {
     routeMock.params.slug = 'inconnu'
     routeMock.path = '/formations/caces-conduite-engins/inconnu'

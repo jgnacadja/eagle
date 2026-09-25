@@ -14,7 +14,7 @@ export function buildCourseJsonLd(input: {
   familyName?: string | null
   /** URL canonique de la fiche (absolue). */
   url: string
-  /** URL du site — provider `sameAs`/`url`. */
+  /** URL du site — provider `url`. */
   siteUrl: string
   /** Visuel déjà résolu en absolu (asset Directus ou URL Digiforma). */
   imageUrl?: string | null
@@ -36,8 +36,7 @@ export function buildCourseJsonLd(input: {
     provider: {
       '@type': 'Organization',
       name: 'LEARN UP ACADEMY',
-      url: siteUrl,
-      sameAs: siteUrl
+      url: siteUrl
     },
     ...(familyName ? { about: { '@type': 'Thing', name: familyName } } : {}),
     ...(imageUrl ? { image: [imageUrl] } : {}),
@@ -52,7 +51,7 @@ export function buildCourseJsonLd(input: {
       : {}),
     ...(course.price
       ? {
-          offers: { '@type': 'Offer', price: course.price, priceCurrency: 'EUR', category: 'Paid' }
+          offers: { '@type': 'Offer', price: course.price, priceCurrency: 'EUR' }
         }
       : {}),
     ...(course.certification

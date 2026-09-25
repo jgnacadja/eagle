@@ -675,6 +675,13 @@ watchEffect(() => {
     : defaultBreadcrumb.value
 })
 
+// Visuel : le fichier éditorial Directus prime sur l'URL synchronisée
+// depuis Digiforma (fallback quand aucun fichier n'a pu être importé).
+const imageSrc = computed(() => {
+  if (!course.value) return null
+  return directusAssetUrl(course.value.image, config.public.apiBase) ?? course.value.imageUrl
+})
+
 useContentSeo(
   () => {
     const isFound = pageState.value === 'found'
@@ -705,7 +712,8 @@ useContentSeo(
       return buildCourseJsonLd({
         course: course.value,
         familyName: familyName.value,
-        url: `${config.public.siteUrl}/formations/${famille}/${slug}`,
+        // Aligné sur la canonical : un surchargement éditorial doit primer.
+        url: course.value.seoCanonical ?? `${config.public.siteUrl}/formations/${famille}/${slug}`,
         siteUrl: config.public.siteUrl,
         imageUrl: imageSrc.value
       })
@@ -897,13 +905,6 @@ const programme = computed<ProgrammeModule[]>(() => {
 
 const pedagogyItems = computed(() => course.value?.pedagogy ?? [])
 const evaluationItems = computed(() => course.value?.evaluation ?? [])
-
-// Visuel : le fichier éditorial Directus prime sur l'URL synchronisée
-// depuis Digiforma (fallback quand aucun fichier n'a pu être importé).
-const imageSrc = computed(() => {
-  if (!course.value) return null
-  return directusAssetUrl(course.value.image, config.public.apiBase) ?? course.value.imageUrl
-})
 
 // Pictogramme par mot-clé : la donnée éditoriale ne porte pas d'icône.
 function pedagogyIcon(title: string) {

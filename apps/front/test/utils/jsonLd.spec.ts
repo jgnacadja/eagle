@@ -63,8 +63,7 @@ describe('buildCourseJsonLd', () => {
       provider: {
         '@type': 'Organization',
         name: 'LEARN UP ACADEMY',
-        url: ctx.siteUrl,
-        sameAs: ctx.siteUrl
+        url: ctx.siteUrl
       },
       about: { '@type': 'Thing', name: "CACES & conduite d'engins" },
       image: ['https://api.test/assets/img.png'],
@@ -73,7 +72,7 @@ describe('buildCourseJsonLd', () => {
         courseMode: ['onsite', 'online'],
         courseWorkload: 'PT21H'
       },
-      offers: { '@type': 'Offer', price: 1500, priceCurrency: 'EUR', category: 'Paid' },
+      offers: { '@type': 'Offer', price: 1500, priceCurrency: 'EUR' },
       educationalCredentialAwarded: {
         '@type': 'EducationalOccupationalCredential',
         name: 'Certification CACES',

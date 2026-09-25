@@ -1,3 +1,20 @@
+<template>
+  <div
+    ref="item"
+    data-slot="message-scroller-item"
+    :data-message-id="messageId"
+    :data-scroll-anchor="scrollAnchor ? 'true' : 'false'"
+    :class="
+      cn(
+        'min-w-0 shrink-0 [contain-intrinsic-size:auto_10rem] [content-visibility:auto]',
+        props.class
+      )
+    "
+  >
+    <slot />
+  </div>
+</template>
+
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue'
 import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
@@ -39,20 +56,3 @@ onBeforeUnmount(() => {
   if (props.messageId && itemEl.value) register(props.messageId, null, itemEl.value)
 })
 </script>
-
-<template>
-  <div
-    ref="item"
-    data-slot="message-scroller-item"
-    :data-message-id="messageId"
-    :data-scroll-anchor="scrollAnchor ? 'true' : 'false'"
-    :class="
-      cn(
-        'min-w-0 shrink-0 [contain-intrinsic-size:auto_10rem] [content-visibility:auto]',
-        props.class
-      )
-    "
-  >
-    <slot />
-  </div>
-</template>

@@ -1,15 +1,3 @@
-<script setup lang="ts">
-import type { HTMLAttributes } from 'vue'
-import { cn } from '@/lib/utils'
-import { useMessageScrollerContext } from './useMessageScroller'
-
-const props = defineProps<{
-  class?: HTMLAttributes['class']
-}>()
-
-const { autoscrolling, scrollableAttr } = useMessageScrollerContext()
-</script>
-
 <template>
   <div
     data-slot="message-scroller"
@@ -25,3 +13,15 @@ const { autoscrolling, scrollableAttr } = useMessageScrollerContext()
     <slot />
   </div>
 </template>
+
+<script setup lang="ts">
+import type { HTMLAttributes } from 'vue'
+import { cn } from '@/lib/utils'
+import { useMessageScrollerContext } from './useMessageScroller'
+
+const props = defineProps<{
+  class?: HTMLAttributes['class']
+}>()
+
+const { autoscrolling, scrollableAttr } = useMessageScrollerContext()
+</script>

@@ -1,3 +1,25 @@
+<template>
+  <section
+    ref="viewport"
+    data-slot="message-scroller-viewport"
+    aria-label="Messages"
+    :data-scrollable="scrollableAttr"
+    :data-autoscrolling="autoscrolling ? '' : undefined"
+    :class="
+      cn(
+        'size-full min-h-0 min-w-0 overflow-y-auto overscroll-contain contain-content outline-none scrollbar-gutter-stable',
+        props.class
+      )
+    "
+    @scroll="syncAfterScroll()"
+    @wheel="userScrollIntent()"
+    @touchmove="userScrollIntent()"
+    @keydown="onKeyDown"
+  >
+    <slot />
+  </section>
+</template>
+
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue'
 import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
@@ -54,25 +76,3 @@ onBeforeUnmount(() => {
   setViewportElement(null)
 })
 </script>
-
-<template>
-  <section
-    ref="viewport"
-    data-slot="message-scroller-viewport"
-    aria-label="Messages"
-    :data-scrollable="scrollableAttr"
-    :data-autoscrolling="autoscrolling ? '' : undefined"
-    :class="
-      cn(
-        'size-full min-h-0 min-w-0 overflow-y-auto overscroll-contain contain-content outline-none scrollbar-gutter-stable',
-        props.class
-      )
-    "
-    @scroll="syncAfterScroll()"
-    @wheel="userScrollIntent()"
-    @touchmove="userScrollIntent()"
-    @keydown="onKeyDown"
-  >
-    <slot />
-  </section>
-</template>

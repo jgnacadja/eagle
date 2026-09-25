@@ -1,3 +1,16 @@
+<template>
+  <Primitive
+    data-slot="bubble"
+    :data-variant="variant"
+    :data-align="align"
+    :as="as"
+    :as-child="asChild"
+    :class="cn(bubbleVariants({ variant }), props.class)"
+  >
+    <slot />
+  </Primitive>
+</template>
+
 <script lang="ts" setup>
 import type { PrimitiveProps } from 'reka-ui'
 import type { HTMLAttributes } from 'vue'
@@ -19,16 +32,3 @@ const props = withDefaults(defineProps<Props>(), {
   class: undefined
 })
 </script>
-
-<template>
-  <Primitive
-    data-slot="bubble"
-    :data-variant="variant"
-    :data-align="align"
-    :as="as"
-    :as-child="asChild"
-    :class="cn(bubbleVariants({ variant }), props.class)"
-  >
-    <slot />
-  </Primitive>
-</template>

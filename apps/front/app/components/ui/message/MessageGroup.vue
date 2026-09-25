@@ -1,3 +1,14 @@
+<template>
+  <Primitive
+    data-slot="message-group"
+    :as="as"
+    :as-child="asChild"
+    :class="cn('gap-sm flex min-w-0 flex-col', props.class)"
+  >
+    <slot />
+  </Primitive>
+</template>
+
 <script lang="ts" setup>
 import type { PrimitiveProps } from 'reka-ui'
 import type { HTMLAttributes } from 'vue'
@@ -12,14 +23,3 @@ const props = withDefaults(defineProps<Props>(), {
   class: undefined
 })
 </script>
-
-<template>
-  <Primitive
-    data-slot="message-group"
-    :as="as"
-    :as-child="asChild"
-    :class="cn('gap-sm flex min-w-0 flex-col', props.class)"
-  >
-    <slot />
-  </Primitive>
-</template>

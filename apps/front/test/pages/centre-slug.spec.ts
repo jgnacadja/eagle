@@ -172,7 +172,7 @@ const centreAvisFixture = [
   {
     slug: 'avis-qhse',
     author: 'Chargée QHSE',
-    quote: '« Suivi des échéances impeccable, équipe très réactive. »',
+    quote: 'Suivi des échéances impeccable, équipe très réactive.',
     stars: 4,
     published_at: '2026-04-20T09:00:00+00:00',
     centre: null

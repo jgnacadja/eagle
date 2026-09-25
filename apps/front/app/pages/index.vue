@@ -556,7 +556,7 @@
     <!-- ═══════════════════════════════════════════════════
          7 & 8. CE QU'EN DISENT LES ENTREPRISES (STATS & TÉMOIGNAGES)
     ════════════════════════════════════════════════════ -->
-    <section class="border-b border-rule bg-paper py-section">
+    <section v-if="testimonials.length" class="border-b border-rule bg-paper py-section">
       <div class="mx-auto px-gutter-mobile md:px-gutter">
         <h2 class="font-display text-xl md:text-h2 font-extrabold text-ink">
           Les clients parlent de nous
@@ -716,7 +716,7 @@
 
 <script setup lang="ts">
 import { computed, ref, resolveComponent } from 'vue'
-import type { Article, Centre } from '@learnup/types'
+import type { Article, Avis, Centre } from '@learnup/types'
 import { mapCourse, upcomingSessions, useCatalog } from '~/composables/useCatalog'
 import { availabilityStatus, useCentreSessionDates } from '~/composables/useCentres'
 import { useGeolocation } from '~/composables/useGeolocation'
@@ -724,6 +724,7 @@ import { useGeoSuggest } from '~/composables/useGeoSuggest'
 import { distanceKm, formatDistance } from '~/utils/geo'
 import { revealStagger } from '~/utils/reveal'
 import { articleAssetUrl, formatArticleDate } from '~/utils/article'
+import { mapAvis } from '~/utils/avis'
 import { placesLabel, sessionSeatType } from '~/utils/placesLabel'
 import type { CenterResult } from '~/types/center-result'
 import { homeLogos } from '~/data/companies'
@@ -886,24 +887,17 @@ const stats = [
   { value: '4,7', unit: '/5', label: 'satisfaction stagiaires' }
 ]
 
-const testimonials = [
-  {
-    stars: '★★★★★',
-    quote:
-      '« Douze habilitations à renouveler sur trois sites, une seule interlocutrice, tout était planifié en une semaine. »',
-    author: 'Responsable QHSE — logistique, 240 salariés'
+const homeAvisData = await useDirectusList<Avis>('avis', 'home-avis', {
+  fields: ['slug', 'author', 'quote', 'stars', 'published_at'],
+  filter: {
+    status: { _eq: 'published' },
+    centre: { _null: true }
   },
-  {
-    stars: '★★★★★',
-    quote: '« Je ne savais pas quel CACES demander. La description libre a suffi. »',
-    author: "Directeur d'agence — intérim"
-  },
-  {
-    stars: '★★★★☆',
-    quote: '« Plan déployé sur nos quatre dépôts sans une seule relance de notre part. »',
-    author: 'Responsable formation — BTP'
-  }
-]
+  sort: ['sort', '-published_at'],
+  limit: 3
+})
+
+const testimonials = computed(() => (homeAvisData.value ?? []).map(mapAvis))
 
 // ── Catalogue (API) ─────────────────────────────────────────────────────────
 

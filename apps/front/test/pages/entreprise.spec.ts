@@ -52,7 +52,19 @@ vi.mock('~/composables/useCatalog', () => ({
   }))
 }))
 
-vi.stubGlobal('useDirectusList', () => {
+vi.stubGlobal('useDirectusList', (collection: string) => {
+  if (collection === 'avis') {
+    return ref([
+      {
+        slug: 'avis-1',
+        author: 'Responsable QHSE — logistique',
+        quote:
+          'Douze habilitations à renouveler sur trois sites, tout était planifié en une semaine.',
+        stars: 5,
+        published_at: '2024-03-01'
+      }
+    ])
+  }
   return ref([
     {
       slug: 'centre-lyon',
@@ -184,6 +196,7 @@ describe('EntreprisePage', () => {
     expect(wrapper.text()).toContain('Ils nous font confiance')
     expect(wrapper.find('img[alt="Logo Capgemini"]').exists()).toBe(true)
     expect(wrapper.find('img[alt="Logo Amazon"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('«')
     expect(wrapper.text()).toContain('Douze habilitations à renouveler')
     expect(wrapper.text()).toContain('Avis réels et références publiées')
   })

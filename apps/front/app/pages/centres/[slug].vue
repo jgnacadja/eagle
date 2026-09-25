@@ -537,7 +537,7 @@ import { sanitizeHtml } from '~/utils/sanitizeHtml'
 import { directusAssetUrl } from '~/utils/directusAsset'
 import { departmentCodeFromPostalCode, distanceKm, formatDistance } from '~/utils/geo'
 import { formatArticleDate } from '~/utils/article'
-import { formatMonthYearFr } from '~/utils/date'
+import { mapAvis } from '~/utils/avis'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
 import { revealStagger } from '~/utils/reveal'
@@ -946,18 +946,7 @@ const centreAvisData = await useDirectusList<Avis>('avis', `centre-${slug}-avis`
     : null
 )
 
-const centreAvis = computed(() =>
-  (centreAvisData.value ?? []).map((avis) => {
-    const stars = Math.min(5, Math.max(0, avis.stars ?? 0))
-    const date = formatMonthYearFr(avis.published_at)
-    return {
-      slug: avis.slug,
-      stars: '★'.repeat(stars) + '☆'.repeat(5 - stars),
-      quote: avis.quote,
-      author: date ? `${avis.author} · ${date}` : avis.author
-    }
-  })
-)
+const centreAvis = computed(() => (centreAvisData.value ?? []).map(mapAvis))
 
 // Actualités rattachées au centre via la relation M2O `articles.centre` —
 // la section se masque si aucune n'est publiée.

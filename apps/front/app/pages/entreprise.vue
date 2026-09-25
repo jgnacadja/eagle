@@ -322,7 +322,7 @@
       <!-- Logos avec scroll horizontal sur mobile -->
       <ClientLogoWall />
 
-      <div class="mt-lg grid gap-grid md:grid-cols-2">
+      <div v-if="testimonials.length" class="mt-lg grid gap-grid md:grid-cols-2">
         <TestimonialCard
           v-for="(testimonial, i) in testimonials"
           :key="testimonial.author"
@@ -409,10 +409,11 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { Centre } from '@learnup/types'
+import type { Avis, Centre } from '@learnup/types'
 import { mapCourse, useCatalog } from '~/composables/useCatalog'
 import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
+import { mapAvis } from '~/utils/avis'
 import IconSparkle from '~/components/icons/IconSparkle.vue'
 import IconUser from '~/components/icons/IconUser.vue'
 import IconFileText from '~/components/icons/IconFileText.vue'
@@ -592,20 +593,17 @@ const howItWorksSteps = [
   }
 ]
 
-const testimonials = [
-  {
-    stars: '★★★★★',
-    quote:
-      '« Nous avons centralisé les formations réglementaires de nos agences : un vrai gain de temps et une grande réactivité. »',
-    author: 'Responsable formation — groupe national, BTP'
+const avisData = await useDirectusList<Avis>('avis', 'entreprise-avis', {
+  fields: ['slug', 'author', 'quote', 'stars', 'published_at'],
+  filter: {
+    status: { _eq: 'published' },
+    centre: { _null: true }
   },
-  {
-    stars: '★★★★★',
-    quote:
-      '« Douze habilitations à renouveler sur trois sites, une seule interlocutrice, tout était planifié en une semaine. »',
-    author: 'Responsable QHSE — logistique, 240 salariés'
-  }
-]
+  sort: ['sort', '-published_at'],
+  limit: 6
+})
+
+const testimonials = computed(() => (avisData.value ?? []).map(mapAvis))
 
 const furtherLinks = [
   {

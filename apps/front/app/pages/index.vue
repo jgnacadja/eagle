@@ -793,9 +793,12 @@ function onHeroSearch() {
 
 const ctaSearch = ref('')
 
+// C1 — même point d'entrée que le hero : le besoin saisi ouvre le panneau de
+// recherche assistée (pas de redirection vers le catalogue).
 function onCtaSearch() {
   const q = ctaSearch.value.trim()
-  navigateTo({ path: '/formations', query: q ? { q } : {} })
+  assistant.open({ context: { source: 'home' }, message: q || undefined })
+  ctaSearch.value = ''
 }
 
 const mapSearch = ref('')

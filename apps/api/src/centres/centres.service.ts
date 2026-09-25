@@ -82,7 +82,7 @@ export class CentresService {
     private readonly cache: CacheService,
     private readonly directus: DirectusCatalogService,
     private readonly geocoding: GeocodingService
-  ) { }
+  ) {}
 
   async list(query: ListCentresDto): Promise<CentreListItem[]> {
     // Clé déterministe : JSON.stringify(query) dépend de l'ordre des

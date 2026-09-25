@@ -76,7 +76,7 @@ export class GeocodingService {
   constructor(
     private readonly directus: DirectusCatalogService,
     private readonly cache: CacheService
-  ) { }
+  ) {}
 
   async geocodeAddress(address: string): Promise<GeocodedAddress | null> {
     const url = new URL(BAN_SEARCH_URL)

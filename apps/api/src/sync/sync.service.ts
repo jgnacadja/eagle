@@ -22,7 +22,7 @@ export class SyncService {
     private readonly scheduler: SchedulerRegistry,
     private readonly catalog: DirectusCatalogService,
     private readonly geocoding: GeocodingService
-  ) { }
+  ) {}
 
   onModuleInit(): void {
     const expression = this.config.get<string>('SYNC_CRON') ?? '0 * * * *'

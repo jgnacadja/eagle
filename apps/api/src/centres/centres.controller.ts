@@ -12,7 +12,7 @@ export class CentresController {
   constructor(
     private readonly centresService: CentresService,
     private readonly geocoding: GeocodingService
-  ) { }
+  ) {}
 
   @Get('centres')
   @ApiOperation({ summary: 'List of published centres' })

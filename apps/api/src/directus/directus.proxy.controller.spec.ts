@@ -114,9 +114,7 @@ describe('DirectusProxyController', () => {
   })
 
   it('refuse les expansions wildcard de fields', async () => {
-    const res = await request(app.getHttpServer()).get(
-      '/directus/items/formations?fields[]=*.*.*'
-    )
+    const res = await request(app.getHttpServer()).get('/directus/items/formations?fields[]=*.*.*')
 
     expect(res.status).toBe(400)
     expect(fetchMock).not.toHaveBeenCalled()

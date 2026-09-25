@@ -98,6 +98,8 @@
   --spacing-touch: var(--layout-touch-target);
   --spacing-control: var(--layout-control-height);
   --spacing-control-sm: var(--layout-control-height-sm);
+  --spacing-logo-height: var(--layout-logo-height);
+  --spacing-logo-width: var(--layout-logo-width);
   --spacing-container: var(--layout-container-max);
   --spacing-prose: var(--layout-prose-max);
   --spacing-grid: var(--layout-grid-gap);
@@ -507,7 +509,6 @@
     transition: none;
   }
 }
-
 
 .hide-scrollbar {
   -ms-overflow-style: none;

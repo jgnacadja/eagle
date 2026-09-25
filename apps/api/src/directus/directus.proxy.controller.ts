@@ -47,18 +47,21 @@ function isAllowedPath(pathname: string): boolean {
 
 /**
  * Proxy générique vers Directus : le front ne connaît pas Directus, toutes
- * ses requêtes passent par l'API qui injecte le token serveur. Aucun
- * endpoint par collection : la route catch-all transfère méthode, chemin et
- * query tels quels (le SDK Directus côté front reste utilisable tel quel).
+ * ses requêtes passent par l'API. Aucun endpoint par collection : la route
+ * catch-all transfère méthode, chemin et query tels quels (le SDK Directus
+ * côté front reste utilisable tel quel).
+ *
+ * Les requêtes sont relayées SANS token : elles tombent sous le rôle Public
+ * de Directus (lecture seule, status `published`, champs restreints — voir
+ * directus/schema/roles.mjs). Injecter le token de service exposerait les
+ * brouillons et les champs internes (formations.raw, contacts internes…).
  */
 @Controller('directus')
 export class DirectusProxyController {
   private readonly logger = new Logger(DirectusProxyController.name)
   private readonly baseUrl: string
-  private readonly token: string
 
   constructor(config: ConfigService) {
-    this.token = config.get<string>('DIRECTUS_TOKEN') ?? ''
     this.baseUrl = config.get<string>('DIRECTUS_INTERNAL_URL') ?? ''
   }
 
@@ -67,7 +70,7 @@ export class DirectusProxyController {
     if (req.method !== 'GET') {
       throw new MethodNotAllowedException('Lecture seule : GET uniquement')
     }
-    if (!this.baseUrl || !this.token) {
+    if (!this.baseUrl) {
       throw new ServiceUnavailableException('Directus proxy non configuré')
     }
 
@@ -97,7 +100,6 @@ export class DirectusProxyController {
       upstream = await fetch(upstreamUrl.toString(), {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${this.token}`,
           Accept: req.headers.accept ?? '*/*'
         },
         signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS)

@@ -34,5 +34,9 @@ export const layout = {
   /** Hauteur des boutons (48–52 px) et du bouton icône. */
   controlHeight: '48px',
   /** Hauteur des petites pastilles (étapes numérotées, 36 px). */
-  controlHeightSm: '36px'
+  controlHeightSm: '36px',
+  /** Hauteur du logo marque (variante blanche, footer). */
+  logoHeight: '58px',
+  /** Largeur du logo marque (variante blanche, footer). */
+  logoWidth: '70px'
 } as const

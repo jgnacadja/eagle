@@ -6,8 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { DirectusProxyController } from './directus.proxy.controller'
 
 const configValues: Record<string, string> = {
-  DIRECTUS_INTERNAL_URL: 'http://directus:8055',
-  DIRECTUS_TOKEN: 'proxy-token'
+  DIRECTUS_INTERNAL_URL: 'http://directus:8055'
 }
 
 const fetchMock = vi.fn()
@@ -44,7 +43,7 @@ describe('DirectusProxyController', () => {
     vi.unstubAllGlobals()
   })
 
-  it('transfère GET /items/* avec le token serveur et la query', async () => {
+  it('transfère GET /items/* sans token (rôle Public Directus) et avec la query', async () => {
     fetchMock.mockResolvedValueOnce(upstreamJson({ data: [{ slug: 'centre-creteil' }] }))
 
     const res = await request(app.getHttpServer()).get('/directus/items/centres?fields[]=slug')
@@ -55,7 +54,7 @@ describe('DirectusProxyController', () => {
       'http://directus:8055/items/centres?fields[]=slug',
       expect.objectContaining({
         method: 'GET',
-        headers: expect.objectContaining({ Authorization: 'Bearer proxy-token' })
+        headers: expect.not.objectContaining({ Authorization: expect.anything() })
       })
     )
   })

@@ -24,5 +24,6 @@ const props = defineProps<{
   titleId?: string
 }>()
 
-const resolvedTitleId = computed(() => props.titleId ?? useId())
+const generatedTitleId = useId()
+const resolvedTitleId = computed(() => props.titleId ?? generatedTitleId)
 </script>

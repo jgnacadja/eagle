@@ -133,12 +133,146 @@ const PUBLIC_STATUS_FILTERED = [
 ]
 const PUBLIC_UNRESTRICTED = ['page_blocks', 'stats', 'directus_files']
 
-/** @returns {Array<{collection: string, action: string, permissions?: object}>} */
+// Champs exposés publiquement (allowlist) — le proxy `/directus` de l'API
+// relaie les requêtes sans token, tout champ interne non listé ici est
+// interdit de lecture. Nouveaux champs : ajout explicite requis (deny by
+// default), sinon un champ interne ajouté au schéma fuiterait aussitôt.
+// Exclus notamment : centres.geocoded_address / digiforma_url (technique),
+// formations.digiforma_id / raw / created_at / updated_at (miroir Digiforma).
+const PUBLIC_FIELDS = {
+  centres: [
+    'id',
+    'status',
+    'sort',
+    'slug',
+    'name',
+    'address',
+    'city',
+    'postal_code',
+    'department',
+    'region',
+    'latitude',
+    'longitude',
+    'description',
+    'specialties',
+    'opening_hours',
+    'transport',
+    'parking',
+    'pmr_accessible',
+    'phone',
+    'mobile',
+    'email',
+    'contact_name',
+    'contact_role',
+    'franchise_since',
+    'departments_covered',
+    'qualiopi_certified',
+    'qualiopi_certificate_number',
+    'qualiopi_certifier',
+    'qualiopi_valid_until',
+    'qualiopi_certificate',
+    'image',
+    'seo_title',
+    'seo_description',
+    'seo_canonical'
+  ],
+  familles_formation: [
+    'id',
+    'status',
+    'sort',
+    'slug',
+    'name',
+    'intro',
+    'icon',
+    'image',
+    'subnav_title',
+    'audience_text',
+    'validity_text',
+    'seo_title',
+    'seo_description',
+    'seo_canonical'
+  ],
+  sous_familles_formation: ['id', 'status', 'sort', 'slug', 'name', 'caption', 'famille'],
+  articles: [
+    'id',
+    'status',
+    'sort',
+    'slug',
+    'title',
+    'excerpt',
+    'content',
+    'category',
+    'author_name',
+    'author_image',
+    'region',
+    'related_formation',
+    'publish_at',
+    'centre',
+    'cover_image',
+    'seo_title',
+    'seo_description',
+    'seo_canonical'
+  ],
+  avis: ['id', 'status', 'sort', 'slug', 'author', 'published_at', 'stars', 'quote', 'centre'],
+  pages: ['id', 'status', 'slug', 'title', 'seo_title', 'seo_description', 'seo_canonical'],
+  pages_legales: [
+    'id',
+    'status',
+    'sort',
+    'slug',
+    'label',
+    'title',
+    'show_in_tabs',
+    'sections',
+    'cta_label',
+    'cta_to',
+    'created_at',
+    'updated_at',
+    'seo_title',
+    'seo_description',
+    'seo_canonical'
+  ],
+  formations: [
+    'id',
+    'status',
+    'sort',
+    'slug',
+    'title',
+    'description',
+    'duration_days',
+    'duration_hours',
+    'price',
+    'cpf',
+    'cpf_code',
+    'certification',
+    'certifier_name',
+    'category_name',
+    'modalities',
+    'center_slug',
+    'center_slugs',
+    'sessions',
+    'locations_text',
+    'blocks',
+    'generated_program_url',
+    'pedagogy',
+    'evaluation',
+    'validity',
+    'image',
+    'famille',
+    'sous_famille',
+    'seo_title',
+    'seo_description',
+    'seo_canonical'
+  ]
+}
+
+/** @returns {Array<{collection: string, action: string, permissions?: object, fields?: string[]}>} */
 export function publicPermissions() {
   return [
     ...PUBLIC_STATUS_FILTERED.map((collection) => ({
       collection,
       action: 'read',
+      fields: PUBLIC_FIELDS[collection] ?? ['*'],
       permissions: { status: { _eq: 'published' } }
     })),
     ...PUBLIC_UNRESTRICTED.map((collection) => ({ collection, action: 'read', permissions: {} }))

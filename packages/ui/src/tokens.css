@@ -133,6 +133,8 @@
   --layout-touch-target: 44px;
   --layout-control-height: 48px;
   --layout-control-height-sm: 36px;
+  --layout-logo-height: 58px;
+  --layout-logo-width: 70px;
 
   /* Rayons */
   --radius-xs: 8px;

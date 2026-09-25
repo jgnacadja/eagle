@@ -62,6 +62,14 @@ export class DemandeLeadDto extends LeadContextDto {
   @MaxLength(30)
   telephone!: string
 
+  @ApiPropertyOptional({ description: 'Professional phone — at least 10 digits' })
+  @IsOptional()
+  @Matches(/^\D*(?:\d\D*){10,}$/, {
+    message: 'Incomplete phone number — at least 10 digits expected.'
+  })
+  @MaxLength(30)
+  telephonePro?: string
+
   @ApiProperty({ description: 'Company name' })
   @IsString()
   @IsNotEmpty()

@@ -140,6 +140,16 @@ describe('LeadsService', () => {
     )
   })
 
+  it('demande : verse le téléphone pro dans learnup_precisions', async () => {
+    const service = new LeadsService(mockConfig())
+
+    await service.submitDemande({ ...demande, telephonePro: '0142556677' })
+
+    expect(fieldNames(lastCall().body).learnup_precisions).toBe(
+      'Téléphone professionnel : 0142556677\nEn intra.'
+    )
+  })
+
   it('demande : ignore les champs vides pour ne pas écraser le CRM', async () => {
     const service = new LeadsService(mockConfig())
 

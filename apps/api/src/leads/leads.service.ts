@@ -120,9 +120,14 @@ export class LeadsService {
       case 'demande': {
         const p = payload as DemandeLeadPayload
         const { firstname, lastname } = splitName(p.nom)
-        // Pas de propriété HubSpot dédiée au lieu intra : il est préfixé aux
-        // précisions pour rester lisible dans le CRM sans migrer le formulaire.
-        const precisions = [p.lieu ? `Lieu de la formation : ${p.lieu}` : '', p.precisions]
+        // Pas de propriété HubSpot dédiée au lieu intra ni au téléphone pro :
+        // ils sont préfixés aux précisions pour rester lisibles dans le CRM
+        // sans migrer le formulaire.
+        const precisions = [
+          p.lieu ? `Lieu de la formation : ${p.lieu}` : '',
+          p.telephonePro ? `Téléphone professionnel : ${p.telephonePro}` : '',
+          p.precisions
+        ]
           .filter(Boolean)
           .join('\n')
         return fields([

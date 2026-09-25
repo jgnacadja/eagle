@@ -317,7 +317,9 @@
                     </p>
                   </div>
                   <div>
-                    <Label for="telephone-pro" class="mb-xs block"> Téléphone Professionnel </Label>
+                    <Label for="telephone-pro" class="mb-xs block">
+                      Téléphone professionnel (optionnel)
+                    </Label>
                     <Input
                       id="telephone-pro"
                       v-model="telephonePro"

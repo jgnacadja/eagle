@@ -444,6 +444,32 @@ describe('pages/centres/demande-de-formation', () => {
     )
   })
 
+  it('poste le téléphone professionnel quand il est renseigné', async () => {
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+    await wrapper.find('#telephone-pro').setValue('0142556677')
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+    expect(leadSubmitMock).toHaveBeenCalledWith(
+      'demande',
+      expect.objectContaining({ telephonePro: '0142556677' })
+    )
+  })
+
+  it('signale un téléphone professionnel incomplet sans le rendre obligatoire', async () => {
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+    await wrapper.find('#telephone-pro').setValue('0142')
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.find('#telephone-pro-error').exists())
+
+    expect(wrapper.text()).toContain('Numéro incomplet')
+    expect(leadSubmitMock).not.toHaveBeenCalled()
+  })
+
   it('signale un e-mail invalide', async () => {
     const wrapper = await mountPage()
     await fillValidForm(wrapper)

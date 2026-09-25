@@ -198,7 +198,9 @@ vi.stubGlobal('computed', computed)
 vi.stubGlobal('watch', watch)
 vi.stubGlobal('watchEffect', watchEffect)
 vi.stubGlobal('definePageMeta', vi.fn())
-vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
+vi.stubGlobal('useRuntimeConfig', () => ({
+  public: { apiBase: 'http://api.test', siteUrl: 'https://learnup.test' }
+}))
 vi.stubGlobal('useRoute', () => routeMock)
 vi.stubGlobal('useRouter', () => ({ replace: vi.fn() }))
 vi.stubGlobal('useContentSeo', useContentSeoMock)
@@ -336,9 +338,9 @@ const stubs = {
 }
 
 function seoArgs() {
-  const [source, fallback] = useContentSeoMock.mock.calls[0]!
+  const [source, fallback, options] = useContentSeoMock.mock.calls[0]!
   const resolve = (v: unknown) => (typeof v === 'function' ? (v as () => unknown)() : v)
-  return [resolve(source), resolve(fallback)] as const
+  return [resolve(source), resolve(fallback), options] as const
 }
 
 async function mountPage() {
@@ -554,7 +556,7 @@ describe('pages/formations/[famille]/[slug]', () => {
   it('définit le SEO et le JSON-LD Course', async () => {
     await mountPage()
 
-    const [source, fallback] = seoArgs()
+    const [source, fallback, options] = seoArgs()
     expect(source).toEqual(
       expect.objectContaining({
         seo_title: 'CACES R489 — chariots élévateurs'
@@ -562,12 +564,53 @@ describe('pages/formations/[famille]/[slug]', () => {
     )
     expect(fallback).toBe('CACES R489 — chariots élévateurs')
 
-    const headArgs = headMock.mock.calls[0]![0]
-    const scripts = headArgs.script.value ?? headArgs.script
-    const ldJson = scripts[0].innerHTML
-    const parsed = JSON.parse(ldJson)
-    expect(parsed['@type']).toBe('Course')
-    expect(parsed.name).toBe(course.title)
+    // Le document est construit par l'option jsonLd de useContentSeo (le
+    // composable sérialise/injecte — couvert par useContentSeo.spec.ts).
+    const jsonLd = (options as { jsonLd?: () => Record<string, unknown> | null }).jsonLd?.()
+    expect(jsonLd).toMatchObject({
+      '@context': 'https://schema.org',
+      '@type': 'Course',
+      name: 'CACES R489 — chariots élévateurs',
+      description: 'Formation CACES R489.',
+      inLanguage: 'fr',
+      url: 'https://learnup.test/formations/caces-conduite-engins/caces-r489-chariots-elevateurs',
+      provider: { '@type': 'Organization', name: 'LEARN UP ACADEMY' },
+      about: { '@type': 'Thing', name: "CACES & conduite d'engins" },
+      hasCourseInstance: { '@type': 'CourseInstance', courseWorkload: 'PT21H' },
+      offers: { '@type': 'Offer', price: 1500, priceCurrency: 'EUR' }
+    })
+  })
+
+  it('aligne le JSON-LD url sur la canonical éditoriale si présente', async () => {
+    const canonicalCourse: Course = {
+      ...course,
+      seoCanonical: 'https://learnup.test/formations/custom-canonical'
+    }
+    vi.stubGlobal('useAsyncData', async (key: string) => {
+      if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+        return {
+          data: ref(canonicalCourse),
+          pending: ref(false),
+          error: ref(null),
+          refresh: vi.fn()
+        }
+      }
+      return defaultUseAsyncData(key)
+    })
+    await mountPage()
+
+    const [, , options] = seoArgs()
+    const jsonLd = (options as { jsonLd?: () => Record<string, unknown> | null }).jsonLd?.()
+    expect(jsonLd?.url).toBe('https://learnup.test/formations/custom-canonical')
+  })
+
+  it('n’émet pas de JSON-LD sur une fiche introuvable', async () => {
+    routeMock.params.slug = 'inconnu'
+    routeMock.path = '/formations/caces-conduite-engins/inconnu'
+    await mountPage()
+
+    const [, , options] = seoArgs()
+    expect((options as { jsonLd?: () => Record<string, unknown> | null }).jsonLd?.()).toBeNull()
   })
 
   it('affiche l’état indisponible et adapte breadcrumb/SEO pour un slug inconnu', async () => {

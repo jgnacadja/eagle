@@ -558,6 +558,7 @@ import {
   type FormationItem
 } from '~/composables/useCatalog'
 import { directusAssetUrl } from '~/utils/directusAsset'
+import { buildCourseJsonLd } from '~/utils/jsonLd'
 import { htmlToText, sanitizeHtml } from '~/utils/sanitizeHtml'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
@@ -674,6 +675,13 @@ watchEffect(() => {
     : defaultBreadcrumb.value
 })
 
+// Visuel : le fichier éditorial Directus prime sur l'URL synchronisée
+// depuis Digiforma (fallback quand aucun fichier n'a pu être importé).
+const imageSrc = computed(() => {
+  if (!course.value) return null
+  return directusAssetUrl(course.value.image, config.public.apiBase) ?? course.value.imageUrl
+})
+
 useContentSeo(
   () => {
     const isFound = pageState.value === 'found'
@@ -695,31 +703,23 @@ useContentSeo(
     const isFound = pageState.value === 'found'
     const stateLabel = isFound ? null : stateLabels[pageState.value]
     return stateLabel ?? course.value?.title ?? 'Formation — LEARN UP ACADEMY'
+  },
+  {
+    // JSON-LD schema.org/Course — uniquement sur une fiche trouvée ;
+    // buildCourseJsonLd renvoie null si le titre manque (doc invalide).
+    jsonLd: () => {
+      if (pageState.value !== 'found' || !course.value) return null
+      return buildCourseJsonLd({
+        course: course.value,
+        familyName: familyName.value,
+        // Aligné sur la canonical : un surchargement éditorial doit primer.
+        url: course.value.seoCanonical ?? `${config.public.siteUrl}/formations/${famille}/${slug}`,
+        siteUrl: config.public.siteUrl,
+        imageUrl: imageSrc.value
+      })
+    }
   }
 )
-
-useHead({
-  script: computed(() => {
-    if (!course.value || pageState.value !== 'found') return []
-    return [
-      {
-        type: 'application/ld+json',
-        innerHTML: JSON.stringify({
-          '@context': 'https://schema.org',
-          '@type': 'Course',
-          name: course.value.title,
-          description: htmlToText(course.value.description),
-          provider: {
-            '@type': 'Organization',
-            name: 'LEARN UP ACADEMY',
-            url: config.public.siteUrl
-          },
-          url: `${config.public.siteUrl}/formations/${famille}/${slug}`
-        })
-      }
-    ]
-  })
-})
 
 function retry() {
   if (route.query.error === '1') {
@@ -905,13 +905,6 @@ const programme = computed<ProgrammeModule[]>(() => {
 
 const pedagogyItems = computed(() => course.value?.pedagogy ?? [])
 const evaluationItems = computed(() => course.value?.evaluation ?? [])
-
-// Visuel : le fichier éditorial Directus prime sur l'URL synchronisée
-// depuis Digiforma (fallback quand aucun fichier n'a pu être importé).
-const imageSrc = computed(() => {
-  if (!course.value) return null
-  return directusAssetUrl(course.value.image, config.public.apiBase) ?? course.value.imageUrl
-})
 
 // Pictogramme par mot-clé : la donnée éditoriale ne porte pas d'icône.
 function pedagogyIcon(title: string) {

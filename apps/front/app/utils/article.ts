@@ -16,7 +16,7 @@ export function articleReadingTime(content: string | null | undefined): number {
 
 export function stripHtmlTags(content: string): string {
   return content
-    .replace(/<[^>]*>/g, ' ')
+    .replace(/<[^<>]*>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 }

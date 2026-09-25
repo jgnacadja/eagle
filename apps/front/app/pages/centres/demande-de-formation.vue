@@ -898,20 +898,23 @@ const submitted = ref(false)
 const confirmationSuffix = computed(() => {
   if (sessionSlug.value) {
     const start = session.value?.startDate
-    const when = start
-      ? `session du ${new Intl.DateTimeFormat('fr-FR', {
+    const startLabel = start
+      ? new Intl.DateTimeFormat('fr-FR', {
           day: 'numeric',
           month: 'long',
           year: 'numeric',
           timeZone: 'UTC'
-        }).format(new Date(`${start}T00:00:00Z`))}`
-      : 'session programmée'
+        }).format(new Date(`${start}T00:00:00Z`))
+      : null
+    const when = startLabel ? `session du ${startLabel}` : 'session programmée'
     const city = session.value?.location?.city ?? centre.value?.city
-    return `, ${when}${city ? ` à ${city}` : ''}.`
+    const citySuffix = city ? ` à ${city}` : ''
+    return `, ${when}${citySuffix}.`
   }
   if (isIntra.value) {
     const place = typeof lieu.value === 'string' ? lieu.value.trim() : ''
-    return `, dans votre entreprise${place ? ` à ${place}` : ''}.`
+    const placeSuffix = place ? ` à ${place}` : ''
+    return `, dans votre entreprise${placeSuffix}.`
   }
   return '.'
 })

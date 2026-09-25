@@ -2,7 +2,7 @@ import type { CustomOrigin } from '@nestjs/common/interfaces/external/cors-optio
 
 export function toOriginMatcher(entry: string): RegExp | string {
   if (!entry.includes('*')) return entry
-  const escaped = entry.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\*/g, '[^.]*')
+  const escaped = entry.replaceAll(/[.+?^${}()|[\]\\]/g, String.raw`\$&`).replaceAll('*', '[^.]*')
   return new RegExp(`^${escaped}$`)
 }
 

@@ -227,7 +227,7 @@
                       v-model="siret"
                       type="text"
                       inputmode="numeric"
-                      placeholder="14 chiffres"
+                      placeholder="xxx xxx xxx xxxxx"
                       variant="field"
                       class="aria-invalid:border-danger"
                       :aria-invalid="showError('siret') || undefined"
@@ -314,6 +314,31 @@
                       class="mt-xs text-small font-semibold text-danger"
                     >
                       {{ errors.email }}
+                    </p>
+                  </div>
+                  <div>
+                    <Label for="telephone-pro" class="mb-xs block">
+                      Téléphone professionnel (optionnel)
+                    </Label>
+                    <Input
+                      id="telephone-pro"
+                      v-model="telephonePro"
+                      type="tel"
+                      autocomplete="tel"
+                      placeholder="06 -- -- -- --"
+                      variant="field"
+                      class="aria-invalid:border-danger"
+                      :aria-invalid="showError('telephonePro') || undefined"
+                      :aria-describedby="
+                        showError('telephonePro') ? 'telephone-pro-error' : undefined
+                      "
+                    />
+                    <p
+                      v-if="showError('telephonePro')"
+                      id="telephone-pro-error"
+                      class="mt-xs text-small font-semibold text-danger"
+                    >
+                      {{ errors.telephonePro }}
                     </p>
                   </div>
                   <div>
@@ -762,6 +787,14 @@ const { handleSubmit, errors, submitCount, defineField, setValues, values } = us
             (value) => value.replace(/\D/g, '').length >= 10,
             'Numéro incomplet — 10 chiffres attendus.'
           ),
+        telephonePro: z
+          .string()
+          .trim()
+          .refine(
+            (value) => !value || value.replace(/\D/g, '').length >= 10,
+            'Numéro incomplet — 10 chiffres attendus.'
+          )
+          .optional(),
         consentement: z
           .boolean({ error: 'Consentement requis pour envoyer la demande.' })
           .refine((value) => value, 'Consentement requis pour envoyer la demande.')
@@ -797,6 +830,7 @@ const [nom] = defineField('nom')
 const [fonction] = defineField('fonction')
 const [email] = defineField('email')
 const [telephone] = defineField('telephone')
+const [telephonePro] = defineField('telephonePro')
 const [consentement] = defineField('consentement')
 
 type DemandeField =
@@ -809,6 +843,7 @@ type DemandeField =
   | 'fonction'
   | 'email'
   | 'telephone'
+  | 'telephonePro'
   | 'consentement'
 
 // Erreurs masquées jusqu'à la 1re tentative d'envoi, puis en direct.
@@ -828,6 +863,7 @@ const DRAFT_FIELDS = new Set<string>([
   'fonction',
   'email',
   'telephone',
+  'telephonePro',
   'consentement'
 ])
 
@@ -898,6 +934,7 @@ const onSubmit = handleSubmit(async (v) => {
     nom: v.nom,
     email: v.email,
     telephone: v.telephone,
+    telephonePro: v.telephonePro || undefined,
     raisonSociale: v.raisonSociale,
     siret: v.siret,
     fonction: v.fonction,

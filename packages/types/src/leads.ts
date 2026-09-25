@@ -28,6 +28,7 @@ export interface DemandeLeadPayload extends LeadPageContext {
   nom: string
   email: string
   telephone: string
+  telephonePro?: string
   raisonSociale: string
   siret: string
   fonction: string

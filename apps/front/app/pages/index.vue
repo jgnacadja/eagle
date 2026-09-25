@@ -45,7 +45,7 @@
           <!-- Subtitle -->
           <p class="mt-3 md:mt-4 font-sans text-body md:text-lead font-bold text-ink">
             La bonne formation. Au bon endroit. Au bon moment.
-            <span class="text-accent">Partout en France.</span>
+            <span class="text-accent-text">Partout en France.</span>
           </p>
 
           <!-- Prompt -->

@@ -735,43 +735,49 @@ function assetUrl(id: string | null): string | null {
   return articleAssetUrl(id, config.public.apiBase)
 }
 
+const siteUrl = config.public.siteUrl
+
 useContentSeo(
   {
     seo_title: 'LEARN UP ACADEMY — Plateforme de conseil en formation professionnelle',
     seo_description:
       'Trouvez et organisez la formation réglementaire adaptée à vos équipes. +400 centres partenaires, CACES, habilitations électriques, secours, incendie.'
   },
-  'LEARN UP ACADEMY'
-)
-
-useHead({
-  script: [
-    {
-      type: 'application/ld+json',
-      innerHTML: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@graph': [
-          {
-            '@type': 'WebSite',
-            name: 'LEARN UP ACADEMY',
-            url: 'https://learnup.fr',
-            potentialAction: {
-              '@type': 'SearchAction',
-              target: 'https://learnup.fr/formations?search={search_term_string}',
-              'query-input': 'required name=search_term_string'
-            }
-          },
-          {
-            '@type': 'Organization',
-            name: 'LEARN UP ACADEMY',
-            url: 'https://learnup.fr',
-            description: 'Plateforme de conseil en formation professionnelle réglementaire.'
+  'LEARN UP ACADEMY',
+  {
+    // Données structurées site-wide. `sameAs` omis : aucune URL de profil
+    // officiel n'est versionnée — à ajouter quand elles seront confirmées.
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'WebSite',
+          name: 'LEARN UP ACADEMY',
+          url: siteUrl,
+          potentialAction: {
+            '@type': 'SearchAction',
+            // Le catalogue filtre sur ?q= (searchQuery) — pas ?search=.
+            target: `${siteUrl}/formations?q={search_term_string}`,
+            'query-input': 'required name=search_term_string'
           }
-        ]
-      })
+        },
+        {
+          '@type': 'Organization',
+          name: 'LEARN UP ACADEMY',
+          url: siteUrl,
+          description: 'Plateforme de conseil en formation professionnelle réglementaire.',
+          logo: `${siteUrl}/images/learn-up-academy.svg`,
+          contactPoint: {
+            '@type': 'ContactPoint',
+            contactType: 'customer service',
+            email: 'contact@learnup.fr',
+            availableLanguage: 'French'
+          }
+        }
+      ]
     }
-  ]
-})
+  }
+)
 
 const heroSearch = ref('')
 

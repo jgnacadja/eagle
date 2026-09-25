@@ -1,6 +1,8 @@
 import { DOMWrapper, mount } from '@vue/test-utils'
 import { defineComponent, h, nextTick, ref, Suspense } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { NuxtError } from '#app'
+import type { CourseListItem, CoursePage } from '@learnup/types'
 import { useGeolocation } from '~/composables/useGeolocation'
 import HomePage from '~/pages/index.vue'
 
@@ -13,7 +15,9 @@ vi.stubGlobal('useContentSeo', seoMock)
 vi.stubGlobal('useHead', headMock)
 vi.stubGlobal('navigateTo', navigateMock)
 vi.stubGlobal('$fetch', geoFetchMock)
-vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
+vi.stubGlobal('useRuntimeConfig', () => ({
+  public: { apiBase: 'http://api.test', siteUrl: 'https://learnup.test' }
+}))
 
 vi.mock('~/composables/useCatalog', () => ({
   upcomingSessions: (c: { sessions?: unknown[] }) => c.sessions ?? [],
@@ -432,31 +436,78 @@ describe('pages/index', () => {
       expect.objectContaining({
         seo_title: 'LEARN UP ACADEMY — Plateforme de conseil en formation professionnelle'
       }),
-      'LEARN UP ACADEMY'
+      'LEARN UP ACADEMY',
+      expect.objectContaining({ jsonLd: expect.anything() })
     )
-    expect(headMock).toHaveBeenCalledWith(expect.objectContaining({ script: expect.any(Array) }))
-    const ldJson = headMock.mock.calls[0]![0].script[0].innerHTML
-    expect(JSON.parse(ldJson)['@graph']).toHaveLength(2)
+    // Le JSON-LD passe par l'option jsonLd de useContentSeo (sérialisation
+    // couverte par useContentSeo.spec.ts).
+    const options = seoMock.mock.calls[0]![2] as { jsonLd?: Record<string, unknown> }
+    const graph = options.jsonLd?.['@graph'] as Record<string, unknown>[]
+    expect(graph).toHaveLength(2)
+    expect(graph[0]).toMatchObject({
+      '@type': 'WebSite',
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: 'https://learnup.test/formations?q={search_term_string}'
+      }
+    })
+    expect(graph[1]).toMatchObject({
+      '@type': 'Organization',
+      url: 'https://learnup.test',
+      logo: 'https://learnup.test/images/learn-up-academy.svg',
+      contactPoint: { '@type': 'ContactPoint', email: 'contact@learnup.fr' }
+    })
   })
 
   it('masque la section Prochaines sessions quand aucune session n’est disponible', async () => {
     const { useCatalog } = await import('~/composables/useCatalog')
     vi.mocked(useCatalog).mockResolvedValueOnce({
-      data: ref({
+      data: ref<CoursePage | undefined>({
         items: [
           {
+            id: 1,
             slug: 'formation-1',
             title: 'Formation 1',
+            description: null,
+            durationDays: null,
+            durationHours: null,
+            price: null,
+            cpf: null,
+            cpfCode: null,
+            certification: null,
+            certifierName: null,
+            category: null,
             familySlug: 'management',
-            sessions: []
-          }
+            subFamilySlug: null,
+            subFamilyName: null,
+            centerSlug: null,
+            centerSlugs: [],
+            modalities: [],
+            sessions: [],
+            image: null,
+            imageUrl: null,
+            generatedProgramUrl: null,
+            status: 'published',
+            seoTitle: null,
+            seoDescription: null,
+            seoCanonical: null
+          } satisfies CourseListItem
         ],
         total: 1,
         page: 1,
-        pages: 1
+        pageSize: 9,
+        facets: {
+          families: {},
+          subFamilies: {},
+          modalities: {},
+          durations: {},
+          locations: {},
+          cpf: 0,
+          certifying: 0
+        }
       }),
       pending: ref(false),
-      error: ref(null),
+      error: ref<NuxtError<unknown> | undefined>(undefined),
       refresh: vi.fn()
     })
 

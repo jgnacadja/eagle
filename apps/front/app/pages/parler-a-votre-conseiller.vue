@@ -167,7 +167,7 @@
                   v-model="siret"
                   type="text"
                   inputmode="numeric"
-                  placeholder="14 chiffres"
+                  placeholder="xxx xxx xxx xxxxx"
                   variant="field"
                   class="aria-invalid:border-danger"
                   :aria-invalid="showError('siret') || undefined"

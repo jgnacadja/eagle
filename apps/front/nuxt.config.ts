@@ -33,7 +33,23 @@ export default defineNuxtConfig({
       ]
     }
   },
-  modules: ['shadcn-nuxt', '@nuxt/image', 'motion-v/nuxt'],
+  modules: ['shadcn-nuxt', '@nuxt/image', 'motion-v/nuxt', '@nuxtjs/sitemap', '@nuxtjs/robots'],
+  // URL canonique du site — consommée par @nuxtjs/sitemap (loc absolus) et
+  // @nuxtjs/robots (directive Sitemap). Doit être l'origine publique en
+  // production, pas une URL de preview.
+  site: { url: siteUrl },
+  sitemap: {
+    // Pages noindex (formulaires) hors sitemap ; les routes dynamiques
+    // (fiches, familles, centres, articles, pages légales) sont fournies
+    // par le endpoint ci-dessous, les pages statiques auto-découvertes.
+    exclude: ['/parler-a-votre-conseiller', '/centres/demande-de-formation'],
+    sources: ['/api/__sitemap__/urls']
+  },
+  robots: {
+    // Hors environnement indexable (dev, previews Vercel), le module
+    // publie « Disallow: / » tout seul — on ne masque que l'interne.
+    disallow: ['/api']
+  },
   motionV: {
     directives: true,
     presets: {

@@ -77,6 +77,8 @@ const nuxtGlobals = {
 // pas d'import explicite dans les handlers.
 const nitroGlobals = {
   defineEventHandler: 'readonly',
+  defineCachedEventHandler: 'readonly',
+  defineSitemapEventHandler: 'readonly',
   getHeader: 'readonly',
   readBody: 'readonly',
   useStorage: 'readonly'

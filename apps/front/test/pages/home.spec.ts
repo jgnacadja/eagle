@@ -92,6 +92,44 @@ const initialCentres = [
 
 const directusCentres = ref([...initialCentres])
 
+const initialAvis = [
+  {
+    id: 1,
+    status: 'published',
+    sort: null,
+    slug: 'avis-logistique',
+    author: 'Responsable QHSE',
+    published_at: '2024-03-01T00:00:00.000Z',
+    stars: 5,
+    quote: 'Douze habilitations planifiées en une semaine.',
+    centre: null
+  },
+  {
+    id: 2,
+    status: 'published',
+    sort: null,
+    slug: 'avis-btp',
+    author: 'DRH groupe BTP',
+    published_at: '2024-06-15T00:00:00.000Z',
+    stars: 4,
+    quote: 'Réactivité exemplaire, interlocuteur unique sur 8 sites.',
+    centre: null
+  },
+  {
+    id: 3,
+    status: 'published',
+    sort: null,
+    slug: 'avis-industrie',
+    author: 'Directrice formation',
+    published_at: '2024-09-10T00:00:00.000Z',
+    stars: 5,
+    quote: 'Toutes nos habilitations CACES renouvelées sans interruption de production.',
+    centre: null
+  }
+]
+
+const directusAvis = ref([...initialAvis])
+
 const initialArticles = [
   {
     id: 1,
@@ -129,9 +167,11 @@ const directusArticles = ref([...initialArticles])
 
 vi.stubGlobal(
   'useDirectusList',
-  vi.fn(async (_collection: string, _cacheKey: string) =>
-    _collection === 'articles' ? directusArticles : directusCentres
-  )
+  vi.fn(async (_collection: string) => {
+    if (_collection === 'articles') return directusArticles
+    if (_collection === 'avis') return directusAvis
+    return directusCentres
+  })
 )
 
 const stubs = {
@@ -188,6 +228,7 @@ describe('pages/index', () => {
     geoFetchMock.mockReset().mockResolvedValue([])
     navigateMock.mockReset()
     directusArticles.value = [...initialArticles]
+    directusAvis.value = [...initialAvis]
     directusCentres.value = [...initialCentres]
   })
 
@@ -211,7 +252,13 @@ describe('pages/index', () => {
     // La fixture contient 3 centres : l'affichage est plafonné à 2.
     expect(wrapper.findAll('.center-card')).toHaveLength(2)
     expect(wrapper.findAll('.stat')).toHaveLength(4)
-    expect(wrapper.findAll('.testimonial')).toHaveLength(3)
+    // 3 avis dans la fixture → 3 TestimonialCard rendues.
+    const testimonials = wrapper.findAll('.testimonial')
+    expect(testimonials).toHaveLength(3)
+    // Vérification du contenu : mapAvis formate correctement author + quote.
+    expect(testimonials[0]!.text()).toContain('Responsable QHSE')
+    expect(testimonials[1]!.text()).toContain('DRH groupe BTP')
+    expect(testimonials[2]!.text()).toContain('Directrice formation')
     expect(wrapper.findAll('.article')).toHaveLength(3)
   })
 
@@ -421,6 +468,16 @@ describe('pages/index', () => {
     directusArticles.value = []
     const wrapper = await mountPage()
     expect(wrapper.find('#actualites').exists()).toBe(false)
+  })
+
+  it("masque la section t\u00e9moignages quand aucun avis n'est retourn\u00e9", async () => {
+    directusAvis.value = []
+    const wrapper = await mountPage()
+    // Aucune TestimonialCard et le bandeau \u00ab Les clients parlent de nous \u00bb
+    // ne doivent pas appara\u00eetre.
+    expect(wrapper.findAll('.testimonial')).toHaveLength(0)
+    expect(wrapper.text()).not.toContain('Les clients parlent de nous')
+    expect(wrapper.text()).not.toContain('Voir tous les avis')
   })
 
   it('affiche un message utilisateur lorsque la carte des centres est indisponible', async () => {

@@ -196,6 +196,7 @@ describe('EntreprisePage', () => {
     expect(wrapper.text()).toContain('Ils nous font confiance')
     expect(wrapper.find('img[alt="Logo Capgemini"]').exists()).toBe(true)
     expect(wrapper.find('img[alt="Logo Amazon"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('«')
     expect(wrapper.text()).toContain('Douze habilitations à renouveler')
     expect(wrapper.text()).toContain('Avis réels et références publiées')
   })

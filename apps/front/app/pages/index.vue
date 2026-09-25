@@ -556,7 +556,7 @@
     <!-- ═══════════════════════════════════════════════════
          7 & 8. CE QU'EN DISENT LES ENTREPRISES (STATS & TÉMOIGNAGES)
     ════════════════════════════════════════════════════ -->
-    <section class="border-b border-rule bg-paper py-section">
+    <section v-if="testimonials.length" class="border-b border-rule bg-paper py-section">
       <div class="mx-auto px-gutter-mobile md:px-gutter">
         <h2 class="font-display text-xl md:text-h2 font-extrabold text-ink">
           Les clients parlent de nous
@@ -724,7 +724,7 @@ import { useGeoSuggest } from '~/composables/useGeoSuggest'
 import { distanceKm, formatDistance } from '~/utils/geo'
 import { revealStagger } from '~/utils/reveal'
 import { articleAssetUrl, formatArticleDate } from '~/utils/article'
-import { formatMonthYearFr } from '~/utils/date'
+import { mapAvis } from '~/utils/avis'
 import { placesLabel, sessionSeatType } from '~/utils/placesLabel'
 import type { CenterResult } from '~/types/center-result'
 import { homeLogos } from '~/data/companies'
@@ -897,18 +897,7 @@ const homeAvisData = await useDirectusList<Avis>('avis', 'home-avis', {
   limit: 3
 })
 
-const testimonials = computed(() =>
-  (homeAvisData.value ?? []).map((avis) => {
-    const stars = Math.min(5, Math.max(0, avis.stars ?? 0))
-    const date = formatMonthYearFr(avis.published_at)
-    return {
-      slug: avis.slug,
-      stars: '★'.repeat(stars) + '☆'.repeat(5 - stars),
-      quote: avis.quote,
-      author: date ? `${avis.author} · ${date}` : avis.author
-    }
-  })
-)
+const testimonials = computed(() => (homeAvisData.value ?? []).map(mapAvis))
 
 // ── Catalogue (API) ─────────────────────────────────────────────────────────
 

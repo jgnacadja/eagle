@@ -413,7 +413,7 @@ import type { Avis, Centre } from '@learnup/types'
 import { mapCourse, useCatalog } from '~/composables/useCatalog'
 import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
-import { formatMonthYearFr } from '~/utils/date'
+import { mapAvis } from '~/utils/avis'
 import IconSparkle from '~/components/icons/IconSparkle.vue'
 import IconUser from '~/components/icons/IconUser.vue'
 import IconFileText from '~/components/icons/IconFileText.vue'
@@ -603,18 +603,7 @@ const avisData = await useDirectusList<Avis>('avis', 'entreprise-avis', {
   limit: 6
 })
 
-const testimonials = computed(() =>
-  (avisData.value ?? []).map((avis) => {
-    const stars = Math.min(5, Math.max(0, avis.stars ?? 0))
-    const date = formatMonthYearFr(avis.published_at)
-    return {
-      slug: avis.slug,
-      stars: '★'.repeat(stars) + '☆'.repeat(5 - stars),
-      quote: avis.quote,
-      author: date ? `${avis.author} · ${date}` : avis.author
-    }
-  })
-)
+const testimonials = computed(() => (avisData.value ?? []).map(mapAvis))
 
 const furtherLinks = [
   {

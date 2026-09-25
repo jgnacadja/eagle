@@ -91,13 +91,13 @@
       </section>
 
       <!-- Contenu principal -->
-      <div class="mx-auto px-gutter-mobile md:px-gutter py-section">
+      <div class="mx-auto flex flex-col px-gutter-mobile md:px-gutter py-section lg:block">
         <!-- Grille 2 colonnes : contenu principal à gauche, barre
              latérale empilée (infos → carte → qualité) à droite. Sur
              mobile, `contents` aplatit les sections des deux colonnes
              dans l'ordre maquette via les classes order-*. -->
         <div
-          class="grid grid-cols-1 items-start gap-2xl lg:grid-cols-[minmax(0,1fr)_var(--spacing-callout)]"
+          class="order-1 grid grid-cols-1 items-start gap-2xl lg:order-0 lg:grid-cols-[minmax(0,1fr)_var(--spacing-callout)]"
         >
           <!-- Barre latérale : `contents` sur mobile pour que ses
                sections s'ordonnent dans la grille parente (infos →
@@ -439,10 +439,10 @@
           </div>
         </div>
 
-        <!-- Bandeau CTA — avant la liste des autres centres -->
+        <!-- Bandeau CTA — sur mobile en dernière position (order-3), sur desktop avant les autres centres (lg:order-0 / lg:block) -->
         <CtaBanner
           v-reveal
-          class="mt-2xl"
+          class="order-3 mt-2xl lg:order-0"
           title="Besoin de formation ?"
           text="La demande transmet automatiquement le centre, la ville et la formation concernée — sans ressaisie."
         >
@@ -456,8 +456,12 @@
           </Button>
         </CtaBanner>
 
-        <!-- Autres centres de la région — dernière section avant le footer -->
-        <section v-if="nearbyCenters.length" class="mt-2xl" aria-labelledby="autres-title">
+        <!-- Autres centres de la région — sur mobile avant le bandeau CTA (order-2), sur desktop dernière section (lg:order-0 / lg:block) -->
+        <section
+          v-if="nearbyCenters.length"
+          class="order-2 mt-2xl lg:order-0"
+          aria-labelledby="autres-title"
+        >
           <div class="flex flex-wrap items-baseline justify-between gap-sm">
             <h2 id="autres-title" class="font-display text-h2 font-extrabold text-ink">
               Autres centres<template v-if="centre.region"> en {{ centre.region }}</template>

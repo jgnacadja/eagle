@@ -39,14 +39,14 @@
                   <Button as-child variant="outline" size="pill">
                     <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
                   </Button>
-                  <NuxtLink
+                  <a
                     v-if="centre.phone"
-                    :to="`tel:${centre.phone.replace(/\s/g, '')}`"
+                    :href="`tel:${centre.phone.replace(/\s/g, '')}`"
                     class="inline-flex items-center gap-2 font-medium text-ink"
                   >
                     <IconPhone :size="16" class="text-primary" />
                     {{ centre.phone }}
-                  </NuxtLink>
+                  </a>
                 </div>
               </div>
             </div>
@@ -120,30 +120,30 @@
                     </li>
                     <li v-if="centre.phone" class="flex gap-sm">
                       <IconPhone :size="20" class="shrink-0 text-primary" />
-                      <NuxtLink
-                        :to="`tel:${centre.phone.replace(/\s/g, '')}`"
+                      <a
+                        :href="`tel:${centre.phone.replace(/\s/g, '')}`"
                         class="font-semibold text-ink transition-colors hover:text-accent-text"
                       >
                         {{ centre.phone }}
-                      </NuxtLink>
+                      </a>
                     </li>
                     <li v-if="centre.mobile" class="flex gap-sm">
                       <IconSmartphone :size="20" class="shrink-0 text-primary" />
-                      <NuxtLink
-                        :to="`tel:${centre.mobile.replace(/\s/g, '')}`"
+                      <a
+                        :href="`tel:${centre.mobile.replace(/\s/g, '')}`"
                         class="font-semibold text-ink transition-colors hover:text-accent-text"
                       >
                         {{ centre.mobile }}
-                      </NuxtLink>
+                      </a>
                     </li>
                     <li v-if="contactEmail" class="flex gap-sm">
                       <IconMail :size="20" class="shrink-0 text-primary" />
-                      <NuxtLink
-                        :to="`mailto:${contactEmail}`"
+                      <a
+                        :href="`mailto:${contactEmail}`"
                         class="text-ink transition-colors hover:text-accent-text"
                       >
                         {{ contactEmail }}
-                      </NuxtLink>
+                      </a>
                     </li>
                     <li v-if="centre.opening_hours" class="flex gap-sm">
                       <IconClock :size="20" class="shrink-0 text-primary" />

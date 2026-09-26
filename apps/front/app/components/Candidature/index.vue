@@ -67,8 +67,8 @@ async function onSubmit(payload: CandidaturePayload) {
     pageName: 'Candidater pour rejoindre le réseau'
   })
   if (!ok) return
-  const lieu = payload.ville ? ` — ${payload.ville}` : ''
-  projet.value = `${VOIE_LABELS[payload.voie]}${lieu}`
+  // ville est requise par le schéma (min 1) : toujours renseignée ici.
+  projet.value = `${VOIE_LABELS[payload.voie]} — ${payload.ville}`
   submitted.value = true
 }
 </script>

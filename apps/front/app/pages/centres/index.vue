@@ -350,6 +350,7 @@ const centreSessionDates = await useCentreSessionDates()
 // SSR : on attend le fetch pour embarquer les données dans le payload.
 // En navigation client (ex. redirection /centres?q=… depuis l'accueil) la
 // page monte immédiatement et `pending` affiche le chargement dans le champ.
+/* v8 ignore next 3 */
 if (import.meta.server) {
   await Promise.all([centresResult, centresTotalResult, departmentsResult])
 }
@@ -568,9 +569,11 @@ onMounted(() => {
 })
 
 watch(sentinelEl, (el, prev) => {
-  if (!loadMoreObserver) return
-  if (prev) loadMoreObserver.unobserve(prev)
-  if (el) loadMoreObserver.observe(el)
+  // L'observateur n'existe qu'après onMounted — le watch ne peut se
+  // déclencher qu'ensuite (changement de la sentinelle pendant la vie du
+  // composant).
+  if (prev) loadMoreObserver!.unobserve(prev)
+  if (el) loadMoreObserver!.observe(el)
 })
 
 onBeforeUnmount(() => {

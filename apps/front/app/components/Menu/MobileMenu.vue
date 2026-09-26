@@ -339,6 +339,7 @@ function onKeydown(event: KeyboardEvent): void {
 watch(
   open,
   (value) => {
+    /* v8 ignore next -- SSR guard, document always exists in tests */
     if (typeof document === 'undefined') return // SSR
     document.body.classList.toggle('overflow-hidden', value)
     if (value) {

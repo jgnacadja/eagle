@@ -144,4 +144,42 @@ describe('DigiformaClient', () => {
 
     await expect(client.fetchAllPrograms()).rejects.toThrow('Digiforma GraphQL errors')
   })
+  it('stops paginating when the API returns the same first id again', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(mockResponse(fullPage()))
+      .mockResolvedValueOnce(mockResponse(fullPage()))
+
+    const programs = await client.fetchAllPrograms()
+
+    expect(programs).toHaveLength(100)
+    expect(fetch).toHaveBeenCalledTimes(2)
+  })
+
+  it('handles a response without data', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({})
+    })
+
+    const programs = await client.fetchAllPrograms()
+
+    expect(programs).toEqual([])
+  })
+  it('ignores an empty GraphQL errors array', async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ errors: [], data: { programs: [sampleProgram] } })
+    })
+
+    const programs = await client.fetchAllPrograms()
+
+    expect(programs).toHaveLength(1)
+  })
+  it('throws on a non-ok HTTP response', async () => {
+    vi.mocked(fetch).mockResolvedValue({ ok: false, status: 503 } as Response)
+
+    await expect(client.fetchAllPrograms()).rejects.toThrow('Digiforma HTTP 503')
+  })
 })

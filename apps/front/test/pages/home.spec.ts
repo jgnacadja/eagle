@@ -184,7 +184,7 @@ const stubs = {
     props: ['modelValue', 'suggestions'],
     emits: ['update:modelValue', 'submit', 'input'],
     template:
-      '<span><input v-bind="$attrs" :value="modelValue" @input="$emit(\'input\', $event.target.value)" @keydown.enter="$emit(\'submit\', $event.target.value)" /><datalist v-if="suggestions"><option v-for="s in suggestions" :key="s" :value="s" /></datalist><slot name="action" /></span>'
+      '<span><input v-bind="$attrs" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value); $emit(\'input\', $event.target.value)" @keydown.enter="$emit(\'submit\', $event.target.value)" /><datalist v-if="suggestions"><option v-for="s in suggestions" :key="s" :value="s" /></datalist><slot name="action" /></span>'
   },
   NetworkCard: {
     props: ['title', 'to'],
@@ -548,5 +548,240 @@ describe('pages/index', () => {
     expect(text).not.toContain('Photo à fournir')
     expect(text).not.toContain("Affichage d'exemple")
     expect(text).not.toContain('Logo Qualiopi à confirmer')
+  })
+
+  it('envoie la recherche hero en query q vers /formations', async () => {
+    const wrapper = await mountPage()
+
+    await wrapper.find('#hero-search-input').setValue('caces lyon')
+    await wrapper.findAll('form')[0]!.trigger('submit')
+
+    expect(navigateMock).toHaveBeenCalledWith({
+      path: '/formations',
+      query: { q: 'caces lyon' }
+    })
+  })
+
+  it('envoie la recherche CTA en query q vers /formations', async () => {
+    const wrapper = await mountPage()
+
+    await wrapper.find('#cta-search-input').setValue('recyclage')
+    await wrapper.findAll('form').at(-1)!.trigger('submit')
+
+    expect(navigateMock).toHaveBeenCalledWith({
+      path: '/formations',
+      query: { q: 'recyclage' }
+    })
+  })
+
+  it('part sans query quand la recherche hero est vide', async () => {
+    const wrapper = await mountPage()
+
+    await wrapper.findAll('form')[0]!.trigger('submit')
+
+    expect(navigateMock).toHaveBeenCalledWith({ path: '/formations', query: {} })
+  })
+
+  it('part sans query quand la recherche CTA est vide', async () => {
+    const wrapper = await mountPage()
+
+    await wrapper.findAll('form').at(-1)!.trigger('submit')
+
+    expect(navigateMock).toHaveBeenCalledWith({ path: '/formations', query: {} })
+  })
+
+  it('part sans query quand la recherche carte est vide', async () => {
+    const wrapper = await mountPage()
+
+    const input = wrapper.find('input[input-id="map-search"]')
+    await input.trigger('keydown.enter')
+
+    expect(navigateMock).toHaveBeenCalledWith({ path: '/centres', query: {} })
+  })
+
+  it('retombe sur les listes vides quand les données Directus sont null', async () => {
+    directusAvis.value = null
+    directusCentres.value = null
+    directusArticles.value = null
+
+    const wrapper = await mountPage()
+
+    expect(wrapper.findAll('.testimonial')).toHaveLength(0)
+    expect(wrapper.find('#actualites').exists()).toBe(false)
+    expect(wrapper.text()).toContain('La carte des centres est temporairement indisponible.')
+  })
+
+  it('retombe sur les listes vides quand le catalogue renvoie null', async () => {
+    const { useCatalog } = await import('~/composables/useCatalog')
+    vi.mocked(useCatalog).mockResolvedValueOnce({
+      data: ref<CoursePage | undefined>(undefined),
+      pending: ref(false),
+      error: ref<NuxtError<unknown> | undefined>(undefined),
+      refresh: vi.fn()
+    })
+
+    const wrapper = await mountPage()
+
+    expect(wrapper.findAll('.formation-card')).toHaveLength(0)
+    expect(wrapper.find('#sessions').exists()).toBe(false)
+  })
+
+  it('gère les sessions sans places ni cible et déduplique les formations', async () => {
+    const { useCatalog } = await import('~/composables/useCatalog')
+    const baseCourse = {
+      id: 1,
+      description: null,
+      durationDays: null,
+      durationHours: null,
+      price: null,
+      cpf: null,
+      cpfCode: null,
+      certification: null,
+      certifierName: null,
+      category: null,
+      subFamilySlug: null,
+      subFamilyName: null,
+      centerSlug: null,
+      centerSlugs: [],
+      modalities: [],
+      image: null,
+      imageUrl: null,
+      generatedProgramUrl: null,
+      status: 'published',
+      seoTitle: null,
+      seoDescription: null,
+      seoCanonical: null
+    }
+    vi.mocked(useCatalog).mockResolvedValueOnce({
+      data: ref<CoursePage | undefined>({
+        items: [
+          {
+            ...baseCourse,
+            slug: 'f-multi',
+            title: 'F multi',
+            familySlug: 'fam',
+            sessions: [
+              { startDate: '2026-11-01', seatsRemaining: null },
+              { startDate: '2026-11-02', seatsRemaining: 1 }
+            ]
+          } satisfies CourseListItem,
+          {
+            ...baseCourse,
+            slug: 'f-noto',
+            title: 'F sans famille',
+            familySlug: null,
+            sessions: [{ startDate: '2026-11-03', seatsRemaining: 5 }]
+          } satisfies CourseListItem
+        ],
+        total: 2,
+        page: 1,
+        pageSize: 9,
+        facets: {
+          families: {},
+          subFamilies: {},
+          modalities: {},
+          durations: {},
+          locations: {},
+          cpf: 0,
+          certifying: 0
+        }
+      }),
+      pending: ref(false),
+      error: ref<NuxtError<unknown> | undefined>(undefined),
+      refresh: vi.fn()
+    })
+
+    const wrapper = await mountPage()
+
+    expect(wrapper.find('#sessions').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Places disponibles')
+  })
+
+  it('retombe sur les replis pour un centre sans coordonnées ni spécialités', async () => {
+    directusCentres.value = [
+      {
+        slug: 'centre-x',
+        name: 'Centre X',
+        city: null,
+        department: null,
+        region: null,
+        specialties: null,
+        latitude: null,
+        longitude: null,
+        address: null,
+        postal_code: null
+      }
+    ]
+
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Centre X')
+  })
+
+  it('retombe sur la distance infinie pour un centre géolocalisé sans coordonnées', async () => {
+    const getCurrentPosition = vi.fn(
+      (success: (pos: { coords: { latitude: number; longitude: number } }) => void) => {
+        success({ coords: { latitude: 48.7909, longitude: 2.4534 } })
+      }
+    )
+    const originalNavigator = globalThis.navigator
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
+    directusCentres.value = [
+      {
+        slug: 'centre-x',
+        name: 'Centre X',
+        city: 'Paris',
+        department: '75',
+        region: null,
+        specialties: ['CACES'],
+        latitude: null,
+        longitude: null,
+        address: null,
+        postal_code: null
+      },
+      {
+        slug: 'centre-y',
+        name: 'Centre Y',
+        city: 'Lyon',
+        department: '69',
+        region: null,
+        specialties: ['CACES'],
+        latitude: 45.764,
+        longitude: null,
+        address: null,
+        postal_code: null
+      }
+    ]
+
+    try {
+      const wrapper = await mountPage()
+      await wrapper.find('button[aria-label="Activer la géolocalisation"]').trigger('click')
+      await nextTick()
+      const confirmEl = [...document.body.querySelectorAll('button')].find((b) =>
+        b.textContent?.includes('Autoriser la géolocalisation')
+      )
+      await new DOMWrapper(confirmEl!).trigger('click')
+      await nextTick()
+
+      expect(getCurrentPosition).toHaveBeenCalled()
+      expect(wrapper.find('.centre-distance').exists()).toBe(true)
+    } finally {
+      vi.stubGlobal('navigator', originalNavigator)
+    }
+  })
+
+  it('retombe sur les replis pour un article sans champs éditoriaux', async () => {
+    directusArticles.value = [
+      {
+        ...initialArticles[0]!,
+        category: null,
+        excerpt: null,
+        cover_image: null
+      }
+    ]
+
+    const wrapper = await mountPage()
+
+    expect(wrapper.find('.article').exists()).toBe(true)
   })
 })

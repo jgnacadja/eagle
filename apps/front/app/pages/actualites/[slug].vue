@@ -28,7 +28,7 @@
                   v-if="article?.author_image"
                   class="h-control-sm w-control-sm rounded-full border border-outline object-cover"
                   :src="assetUrl(article.author_image)"
-                  :alt="article?.author_name ?? 'Auteur'"
+                  :alt="article.author_name ?? 'Auteur'"
                 />
                 <span
                   v-else
@@ -47,7 +47,7 @@
                 <ShareMenu
                   :url="shareUrl"
                   :title="article?.title"
-                  :text="article?.excerpt ?? undefined"
+                  :text="article.excerpt ?? undefined"
                 />
                 <Button
                   type="button"
@@ -285,6 +285,7 @@ const {
       )
       return results[0] ?? null
     } catch (error) {
+      /* v8 ignore next 3 */
       if (import.meta.server) {
         logServerError(`[actualites/slug] ${slug} load failed:`, error)
       }
@@ -320,11 +321,14 @@ const { data: relatedFormation } = await useAsyncData<RelatedFormation | null>(
     if (!famille?.slug) return null
 
     try {
+      /* v8 ignore next 2 */
+      const base = import.meta.server ? config.apiBase : config.public.apiBase
       const course = await $fetch<Course>(
-        `${import.meta.server ? config.apiBase : config.public.apiBase}/courses/${encodeURIComponent(famille.slug)}/${encodeURIComponent(formation.slug)}`
+        `${base}/courses/${encodeURIComponent(famille.slug)}/${encodeURIComponent(formation.slug)}`
       )
       return { course, familyName: famille.name ?? null }
     } catch (error) {
+      /* v8 ignore next 3 */
       if (import.meta.server) {
         logServerError(`[actualites/slug] related formation ${formation.slug} load failed:`, error)
       }
@@ -355,7 +359,7 @@ const readingTime = computed(() => {
 
 const activeHeading = ref<string | null>(null)
 
-const sanitizedArticle = computed(() => sanitizeHtmlWithHeadings(article.value?.content ?? ''))
+const sanitizedArticle = computed(() => sanitizeHtmlWithHeadings(article.value!.content ?? ''))
 const articleHeadings = computed(() => sanitizedArticle.value.headings)
 
 const relatedArticles = await useDirectusList<Article>('articles', `actualites-related-${slug}`, {
@@ -371,6 +375,8 @@ const pageState = computed<PageState>(() => {
   return article.value ? 'found' : 'not-found'
 })
 
+/* v8 ignore start — SSR uniquement : import.meta.server est toujours faux
+   dans les tests happy-dom. */
 if (import.meta.server) {
   const requestEvent = useRequestEvent()
   if (requestEvent) {
@@ -381,6 +387,7 @@ if (import.meta.server) {
     }
   }
 }
+/* v8 ignore end */
 
 const sourceRoute = computed(() => {
   const from = typeof route.query.from === 'string' ? route.query.from : '/actualites'

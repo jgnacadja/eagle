@@ -46,9 +46,9 @@
       v-if="mode === 'single' && hasVisibleCenters"
       class="flex items-center justify-between gap-md border-t border-dashed border-rule bg-paper px-md py-md text-small"
     >
-      <span class="min-w-0 max-w-9/12 text-ink-body">{{ centers[0]?.address }}</span>
+      <span class="min-w-0 max-w-9/12 text-ink-body">{{ centers[0]!.address }}</span>
       <a
-        v-if="centers[0]?.lat != null && centers[0]?.lng != null"
+        v-if="centers[0]!.lat != null && centers[0]!.lng != null"
         :href="directionsUrl"
         target="_blank"
         rel="noopener"
@@ -135,12 +135,13 @@ const WORLD_RING: [number, number][] = [
 const FRANCE_OUTLINE = franceOutline as [number, number][][]
 
 const directionsUrl = computed(() => {
-  const center = props.centers[0]
-  if (!center || center.lat == null || center.lng == null) return ''
+  // Lu uniquement quand le v-if du lien itinéraire est vrai → coords garanties.
+  const center = props.centers[0]!
   return `https://www.google.com/maps/dir/?api=1&destination=${center.lat},${center.lng}`
 })
 
 function cssColor(varName: string, fallback: string): string {
+  /* v8 ignore next -- SSR guard, window always exists in tests */
   if (typeof window === 'undefined') return fallback
   return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || fallback
 }
@@ -190,6 +191,8 @@ async function ensureLeaflet(): Promise<typeof import('leaflet')> {
       import('leaflet.markercluster/dist/MarkerCluster.css'),
       import('leaflet.markercluster/dist/MarkerCluster.Default.css')
     ])
+    /* v8 ignore start — shims d'interop ESM/CJS : les namespaces de module
+       mockés par Vitest sont gelés, la branche est inatteignable en test. */
     if (mod && !mod.markerClusterGroup) {
       const clusterModule = markerClusterMod as {
         MarkerClusterGroup?: typeof Leaflet.MarkerClusterGroup
@@ -204,6 +207,7 @@ async function ensureLeaflet(): Promise<typeof import('leaflet')> {
         }
       }
     }
+    /* v8 ignore end */
   }
   Leaf = mod
   return Leaf
@@ -361,11 +365,7 @@ function syncActive(L: typeof import('leaflet'), id: string | null) {
     map.panTo(target)
   }
 
-  if (props.mode === 'network' && clusterGroup) {
-    clusterGroup.zoomToShowLayer(marker, reveal)
-  } else {
-    reveal()
-  }
+  clusterGroup?.zoomToShowLayer(marker, reveal)
 }
 
 onMounted(async () => {

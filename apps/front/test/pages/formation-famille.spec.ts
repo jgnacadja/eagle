@@ -58,7 +58,7 @@ const courses: CourseListItem[] = [
     subFamilyName: 'Chariots & gerbeurs',
     centerSlug: null,
     centerSlugs: [],
-    modalities: [],
+    modalities: ['presentiel'],
     sessions: null,
     image: null,
     imageUrl: null,
@@ -86,7 +86,7 @@ const courses: CourseListItem[] = [
     subFamilyName: 'Grues & levage',
     centerSlug: null,
     centerSlugs: [],
-    modalities: [],
+    modalities: ['presentiel'],
     sessions: null,
     image: null,
     imageUrl: null,
@@ -109,6 +109,18 @@ let routeMock: RouteMock
 const navigateToMock = vi.fn()
 const setResponseStatusMock = vi.fn()
 const useContentSeoMock = vi.fn()
+const directusRequest = vi.fn()
+const requestEvent = { name: 'event' }
+
+const catalogState = vi.hoisted(() => ({
+  pending: false,
+  error: null as Error | null,
+  empty: false,
+  total: null as number | null,
+  locations: {} as Record<string, number>,
+  dataNull: false,
+  toNull: false
+}))
 
 vi.stubGlobal('ref', ref)
 vi.stubGlobal('computed', computed)
@@ -119,7 +131,7 @@ vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' 
 vi.stubGlobal('useRoute', () => routeMock)
 vi.stubGlobal('useRouter', () => ({ replace: vi.fn() }))
 vi.stubGlobal('useContentSeo', useContentSeoMock)
-vi.stubGlobal('useRequestEvent', () => undefined)
+vi.stubGlobal('useRequestEvent', () => requestEvent)
 vi.stubGlobal('setResponseStatus', setResponseStatusMock)
 vi.stubGlobal('navigateTo', navigateToMock)
 vi.stubGlobal('logServerError', vi.fn())
@@ -137,15 +149,20 @@ const catalogMocks = vi.hoisted(() => {
       days: course.durationDays ?? 0,
       duration: 'moyenne',
       certifications: [],
-      to: course.familySlug ? `/formations/${course.familySlug}/${course.slug}` : null
+      to: catalogState.toNull
+        ? null
+        : course.familySlug
+          ? `/formations/${course.familySlug}/${course.slug}`
+          : null
     }
   }
 
   return {
     useCatalog: vi.fn((query) => {
       const data = computed(() => {
+        if (catalogState.dataNull) return null
         const q = 'value' in query ? query.value : query
-        let items = [...courses]
+        let items = catalogState.empty ? [] : [...courses]
         if (q.family && typeof q.family === 'string') {
           items = items.filter((c) => c.familySlug === q.family)
         }
@@ -161,9 +178,12 @@ const catalogMocks = vi.hoisted(() => {
         if (q.subFamily && typeof q.subFamily === 'string') {
           items = items.filter((c) => c.subFamilySlug === q.subFamily)
         }
+        if (Array.isArray(q.modalities) && q.modalities.length) {
+          items = items.filter((c) => (c.modalities ?? []).some((m) => q.modalities!.includes(m)))
+        }
         return {
           items,
-          total: items.length,
+          total: catalogState.total ?? items.length,
           page: q.page ?? 1,
           pageSize: q.limit ?? 9,
           facets: {
@@ -171,13 +191,18 @@ const catalogMocks = vi.hoisted(() => {
             subFamilies,
             modalities,
             durations: {},
-            locations: {},
+            locations: catalogState.locations,
             cpf: 0,
             certifying: 0
           }
         }
       })
-      return { data, pending: ref(false), error: ref(null), refresh: vi.fn() }
+      return {
+        data,
+        pending: computed(() => catalogState.pending),
+        error: computed(() => catalogState.error),
+        refresh: vi.fn()
+      }
     }),
     mapCourse
   }
@@ -193,19 +218,33 @@ vi.mock('~/composables/useCatalog', () => ({
 }))
 
 vi.mock('~/composables/useDirectus', () => ({
-  useDirectusClient: () => ({ request: vi.fn() })
+  useDirectusClient: () => ({ request: directusRequest })
 }))
 
 vi.stubGlobal('useDirectusList', async (_collection: string, key: string) =>
   ref(key.startsWith('sous-familles-') ? sousFamilles : [])
 )
 
-vi.stubGlobal('useAsyncData', async (key: string) => {
-  if (key === `famille-caces-conduite-engins`) {
-    return { data: ref(family), pending: ref(false), error: ref(null), refresh: vi.fn() }
+vi.stubGlobal(
+  'useAsyncData',
+  async (
+    key: string,
+    handler: () => Promise<unknown>,
+    options?: {
+      getCachedData?: (key: string, nuxtApp: unknown, ctx: { cause?: string }) => unknown
+    }
+  ) => {
+    const nuxtApp = { isHydrating: true, payload: { data: {} }, static: { data: {} } }
+    options?.getCachedData?.(key, nuxtApp, { cause: 'initial' })
+    options?.getCachedData?.(key, { ...nuxtApp, isHydrating: false }, { cause: 'navigation' })
+    try {
+      const data = await handler()
+      return { data: ref(data), pending: ref(false), error: ref(null), refresh: vi.fn() }
+    } catch (error) {
+      return { data: ref(null), pending: ref(false), error: ref(error), refresh: vi.fn() }
+    }
   }
-  return { data: ref(null), pending: ref(false), error: ref(null), refresh: vi.fn() }
-})
+)
 
 const stubs = {
   NuxtLink: { template: '<a><slot /></a>' },
@@ -226,8 +265,29 @@ const stubs = {
   SearchInput: {
     props: ['modelValue'],
     emits: ['update:modelValue', 'submit'],
-    template: '<button class="search-stub" @click="$emit(\'submit\', \'caces\')" />'
+    template:
+      '<button class="search-stub" @click="$emit(\'submit\', \'caces\')" />' +
+      '<button class="search-empty" @click="$emit(\'submit\', \'\')" />'
   },
+  Select: {
+    emits: ['update:modelValue'],
+    template:
+      '<button class="select-stub" @click="$emit(\'update:modelValue\', \'intra\')"><slot /></button>'
+  },
+  SelectTrigger: { template: '<span><slot /></span>' },
+  SelectContent: { template: '<span><slot /></span>' },
+  SelectItem: { props: ['value'], template: '<span><slot /></span>' },
+  Pagination: {
+    name: 'Pagination',
+    props: ['total', 'page', 'itemsPerPage'],
+    emits: ['update:page'],
+    template: '<nav><button class="page-btn" @click="$emit(\'update:page\', 2)" /><slot /></nav>'
+  },
+  PaginationContent: { template: '<span><slot :items="[]" /></span>' },
+  PaginationPrevious: true,
+  PaginationItem: true,
+  PaginationEllipsis: true,
+  PaginationNext: true,
   LoadError,
   NotFound,
   IconSearchMinus: true,
@@ -262,6 +322,22 @@ describe('pages/formations/[famille]', () => {
       path: '/formations/caces-conduite-engins',
       meta: {}
     }
+    catalogState.pending = false
+    catalogState.error = null
+    catalogState.empty = false
+    catalogState.total = null
+    catalogState.locations = {}
+    catalogState.dataNull = false
+    catalogState.toNull = false
+    family.image = null
+    family.seo_description = 'Formations CACES.'
+    family.seo_title = 'CACES & conduite d’engins — LEARN UP ACADEMY'
+    family.subnav_title = "Parcourir par type d'engin"
+    family.audience_text =
+      "Tout salarié amené à conduire un engin de la famille concernée : caristes, conducteurs d'engins de chantier, opérateurs nacelle, grutiers."
+    family.validity_text =
+      'Les CACES® de cette famille sont valables 5 ans (10 ans pour le R482). Le renouvellement passe par une formation de recyclage et de nouveaux tests.'
+    directusRequest.mockResolvedValue([family])
   })
 
   it('affiche la famille et la liste de formations', async () => {
@@ -325,12 +401,7 @@ describe('pages/formations/[famille]', () => {
   })
 
   it('affiche l’état introuvable et adapte breadcrumb/SEO pour un slug inconnu', async () => {
-    vi.stubGlobal('useAsyncData', async (key: string) => {
-      if (key === 'famille-famille-inconnue') {
-        return { data: ref(null), pending: ref(false), error: ref(null), refresh: vi.fn() }
-      }
-      return { data: ref(null), pending: ref(false), error: ref(null), refresh: vi.fn() }
-    })
+    directusRequest.mockResolvedValue([])
 
     routeMock.params.famille = 'famille-inconnue'
     routeMock.path = '/formations/famille-inconnue'
@@ -354,17 +425,7 @@ describe('pages/formations/[famille]', () => {
   })
 
   it('affiche l’état erreur quand le chargement échoue', async () => {
-    vi.stubGlobal('useAsyncData', async (key: string) => {
-      if (key === 'famille-caces-conduite-engins') {
-        return {
-          data: ref(null),
-          pending: ref(false),
-          error: ref(new Error('down')),
-          refresh: vi.fn()
-        }
-      }
-      return { data: ref(null), pending: ref(false), error: ref(null), refresh: vi.fn() }
-    })
+    directusRequest.mockRejectedValue(new Error('down'))
 
     const wrapper = await mountPage()
 
@@ -372,12 +433,7 @@ describe('pages/formations/[famille]', () => {
   })
 
   it('la recherche de l’état introuvable redirige vers /formations avec la requête', async () => {
-    vi.stubGlobal('useAsyncData', async (key: string) => {
-      if (key === 'famille-famille-inconnue') {
-        return { data: ref(null), pending: ref(false), error: ref(null), refresh: vi.fn() }
-      }
-      return { data: ref(null), pending: ref(false), error: ref(null), refresh: vi.fn() }
-    })
+    directusRequest.mockResolvedValue([])
 
     routeMock.params.famille = 'famille-inconnue'
     routeMock.path = '/formations/famille-inconnue'
@@ -389,5 +445,250 @@ describe('pages/formations/[famille]', () => {
       path: '/formations',
       query: { q: 'caces' }
     })
+  })
+
+  it('passe le statut 404 quand la famille est introuvable', async () => {
+    directusRequest.mockResolvedValue([])
+    routeMock.params.famille = 'famille-inconnue'
+    routeMock.path = '/formations/famille-inconnue'
+    await mountPage()
+
+    expect(setResponseStatusMock).toHaveBeenCalledWith(requestEvent, 404, 'Famille introuvable')
+  })
+
+  it('passe le statut 500 quand le chargement échoue', async () => {
+    directusRequest.mockRejectedValue(new Error('down'))
+    await mountPage()
+
+    expect(setResponseStatusMock).toHaveBeenCalledWith(
+      requestEvent,
+      500,
+      'Erreur de chargement de la famille'
+    )
+  })
+
+  it('retry() relance le chargement hors ?error=1', async () => {
+    directusRequest.mockRejectedValue(new Error('down'))
+    const wrapper = await mountPage()
+
+    wrapper.findComponent(LoadError).vm.$emit('retry')
+    await flushPromises()
+
+    expect(navigateToMock).not.toHaveBeenCalled()
+    expect(catalogMocks.useCatalog.mock.results[1]?.value.refresh).toBeDefined()
+  })
+
+  it('retry() nettoie la query ?error=1', async () => {
+    directusRequest.mockRejectedValue(new Error('down'))
+    routeMock.query = { error: '1', autre: 'x' }
+    const wrapper = await mountPage()
+
+    wrapper.findComponent(LoadError).vm.$emit('retry')
+    await flushPromises()
+
+    expect(navigateToMock).toHaveBeenCalledWith({
+      path: '/formations/caces-conduite-engins',
+      query: { autre: 'x' }
+    })
+  })
+
+  it('affiche le skeleton pendant le chargement du catalogue', async () => {
+    catalogState.pending = true
+    const wrapper = await mountPage()
+
+    expect(wrapper.findAll('.animate-pulse').length).toBeGreaterThan(0)
+    expect(wrapper.findAll('.formation-card')).toHaveLength(0)
+  })
+
+  it('affiche l’erreur du catalogue', async () => {
+    catalogState.error = new Error('boom')
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain("Le catalogue n'a pas pu être chargé")
+  })
+
+  it('filtre par modalité puis « Réinitialiser » restaure la liste', async () => {
+    const wrapper = await mountPage()
+
+    const selects = wrapper.findAll('.select-stub')
+    await selects[1]!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.findAll('.formation-card')).toHaveLength(0)
+    expect(wrapper.text()).toContain('Aucune formation ne correspond à ces critères')
+
+    const reset = wrapper.findAll('button').find((b) => b.text().includes('Réinitialiser'))
+    await reset!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.findAll('.formation-card')).toHaveLength(courses.length)
+  })
+
+  it('badge « Sessions ce mois-ci » prioritaire dans le hero', async () => {
+    const { buildSessionBadge } = await import('~/composables/useCatalog')
+    vi.mocked(buildSessionBadge).mockReturnValue('Sessions ce mois-ci')
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Sessions ce mois-ci')
+    vi.mocked(buildSessionBadge).mockReturnValue(null)
+  })
+
+  it('badge session secondaire « programmées » dans le hero', async () => {
+    const { buildSessionBadge } = await import('~/composables/useCatalog')
+    vi.mocked(buildSessionBadge).mockReturnValue('Sessions programmées')
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Sessions programmées')
+    vi.mocked(buildSessionBadge).mockReturnValue(null)
+  })
+
+  it('affiche l’image hero quand la famille en a une', async () => {
+    family.image = 'hero-file-id'
+    const wrapper = await mountPage()
+
+    expect(wrapper.find('figure img').exists()).toBe(true)
+  })
+
+  it('retombe sur la description SEO générique sans seo_description', async () => {
+    family.seo_description = null
+    await mountPage()
+
+    const [source] = seoArgs()
+    expect((source as { seo_description?: string }).seo_description).toContain(
+      'en centre ou sur site'
+    )
+  })
+
+  it('rend le select localisation et met à jour les filtres', async () => {
+    catalogState.locations = { creteil: 2, lyon: 1 }
+    const wrapper = await mountPage()
+
+    const selects = wrapper.findAll('.select-stub')
+    for (const select of selects) await select.trigger('click')
+    await flushPromises()
+
+    // Sous-famille + modalité + localisation + disponibilité.
+    expect(selects.length).toBeGreaterThanOrEqual(4)
+  })
+
+  it('appelle refresh sur « Réinitialiser » quand rien n’a changé', async () => {
+    catalogState.empty = true
+    const wrapper = await mountPage()
+
+    const reset = wrapper.findAll('button').find((b) => b.text().includes('Réinitialiser'))
+    await reset!.trigger('click')
+    await flushPromises()
+
+    const refreshes = catalogMocks.useCatalog.mock.results.map((r) => r.value.refresh)
+    expect(refreshes.some((r) => r.mock.calls.length > 0)).toBe(true)
+  })
+
+  it('change de page via la pagination', async () => {
+    catalogState.total = 30
+    const wrapper = await mountPage()
+
+    await wrapper.find('.page-btn').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.findComponent({ name: 'Pagination' }).props('page')).toBe(2)
+  })
+
+  it('retombe sur les valeurs par défaut quand le catalogue ne renvoie aucune donnée', async () => {
+    catalogState.dataNull = true
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Aucune formation ne correspond')
+  })
+
+  it('passe une cible indéfinie à la carte formation sans slug de famille', async () => {
+    catalogState.toNull = true
+    const wrapper = await mountPage()
+
+    expect(wrapper.findAll('.formation-card').length).toBeGreaterThan(0)
+  })
+
+  it('lit la sous-famille depuis la query de l’URL', async () => {
+    routeMock.query = { subFamily: 'grues' }
+    await mountPage()
+
+    const queries = catalogMocks.useCatalog.mock.calls.map((c) => {
+      const q = c[0] as { value?: { subFamily?: string }; subFamily?: string }
+      return 'value' in q && q.value !== undefined ? q.value.subFamily : q.subFamily
+    })
+    expect(queries).toContain('grues')
+  })
+
+  it('construit le titre SEO générique sans seo_title', async () => {
+    family.seo_title = null
+    await mountPage()
+
+    const [source] = seoArgs()
+    expect((source as { seo_title: string }).seo_title).toContain('— Formations | LEARN UP ACADEMY')
+  })
+
+  it('affiche le bloc infos avec seulement la validité', async () => {
+    family.audience_text = null
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('valables 5 ans')
+    expect(wrapper.text()).not.toContain('Tout salarié')
+  })
+
+  it('masque le bloc infos sans audience ni validité', async () => {
+    family.audience_text = null
+    family.validity_text = null
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).not.toContain('valables 5 ans')
+  })
+
+  it('retombe sur le titre de sous-navigation générique', async () => {
+    family.subnav_title = null
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Parcourir par sous-famille')
+  })
+
+  it('retombe sur le libellé brut pour une modalité inconnue', async () => {
+    courses.push({
+      ...courses[0]!,
+      slug: 'caces-x',
+      title: 'CACES X',
+      modalities: ['telepresence']
+    })
+    try {
+      const wrapper = await mountPage()
+      expect(wrapper.text()).toContain('telepresence')
+    } finally {
+      courses.pop()
+    }
+  })
+
+  it('la recherche vide redirige sans query', async () => {
+    directusRequest.mockResolvedValue([])
+    const wrapper = await mountPage()
+
+    await wrapper.find('.search-empty').trigger('click')
+    await flushPromises()
+
+    expect(navigateToMock).toHaveBeenCalledWith({ path: '/formations', query: {} })
+  })
+
+  it('réessaie le chargement du catalogue sur retry', async () => {
+    catalogState.error = new Error('down')
+    const wrapper = await mountPage()
+
+    await wrapper.findComponent(LoadError).vm.$emit('retry')
+    await flushPromises()
+
+    const refreshes = catalogMocks.useCatalog.mock.results.map((r) => r.value.refresh)
+    expect(refreshes.some((r) => r.mock.calls.length > 0)).toBe(true)
+  })
+
+  it('retombe sur une liste vide sans sous-familles', async () => {
+    vi.stubGlobal('useDirectusList', async () => ref(null))
+    const wrapper = await mountPage()
+
+    expect(wrapper.findAll('.subfamily-card').length).toBe(0)
   })
 })

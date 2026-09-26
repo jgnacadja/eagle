@@ -191,9 +191,7 @@
               <h3 class="font-display text-small font-bold text-ink sm:text-h4">
                 <span>{{ benefit.title }}</span>
               </h3>
-              <p v-if="benefit.body" class="hidden md:block mt-xs text-small text-ink-muted">
-                {{ benefit.body }}
-              </p>
+              <p class="hidden md:block mt-xs text-small text-ink-muted">{{ benefit.body }}</p>
             </div>
           </div>
         </div>

@@ -109,4 +109,16 @@ describe('components/LegalSummary', () => {
 
     expect(wrapper.classes()).toContain('my-class')
   })
+
+  it('nettoie les listeners au démontage', () => {
+    const removeSpy = vi.spyOn(window, 'removeEventListener')
+    const wrapper = mount(LegalSummary, {
+      props: { sections, activeId: 'editeur' }
+    })
+
+    wrapper.unmount()
+
+    expect(removeSpy).toHaveBeenCalledWith('resize', expect.any(Function))
+    removeSpy.mockRestore()
+  })
 })

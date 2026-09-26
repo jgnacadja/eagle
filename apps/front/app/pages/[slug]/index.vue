@@ -29,6 +29,7 @@ const { data: pageData, error: loadError } = await useAsyncData<PageLegale | nul
       )
       return results[0] ?? null
     } catch (error) {
+      /* v8 ignore next 3 */
       if (import.meta.server) {
         logServerError(`[legal] ${slug} load failed:`, error)
       }
@@ -89,8 +90,9 @@ const tabs = computed<LegalPageTab[]>(() =>
 )
 
 useContentSeo(
-  () => pageData.value ?? {},
-  () => (pageData.value ? `${pageData.value.title} — LEARN UP ACADEMY` : '')
+  // `pageData` est garanti non nul ici : le setup a déjà levé un 404 sinon.
+  () => pageData.value!,
+  () => `${pageData.value!.title} — LEARN UP ACADEMY`
 )
 
 watchEffect(() => {

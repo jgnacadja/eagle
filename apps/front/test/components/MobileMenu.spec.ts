@@ -3,14 +3,22 @@ import { describe, it, expect, afterEach, vi } from 'vitest'
 import { defineComponent, h, nextTick, Suspense } from 'vue'
 import MobileMenu from '~/components/Menu/MobileMenu.vue'
 
+const menuState = vi.hoisted(() => ({
+  familles: [
+    { slug: 'management', label: 'Management', count: 12 },
+    { slug: 'securite-prevention', label: 'Sécurité & prévention', count: 32 }
+  ] as { slug: string; label: string; count: number }[] | null,
+  regions: null as { slug: string; label: string; count: number }[] | null,
+  centres: null as Map<
+    string,
+    { slug: string; name: string; city: string; department: string | null; region: string }[]
+  > | null
+}))
+
 vi.mock('~/composables/useMenuData', async () => {
   const { ref } = await import('vue')
   return {
-    useMenuFamilles: () =>
-      ref([
-        { slug: 'management', label: 'Management', count: 12 },
-        { slug: 'securite-prevention', label: 'Sécurité & prévention', count: 32 }
-      ]),
+    useMenuFamilles: () => ref(menuState.familles),
     useMenuSousFamillesParFamille: () =>
       ref({
         'securite-prevention': [
@@ -19,22 +27,23 @@ vi.mock('~/composables/useMenuData', async () => {
         ]
       }),
     useMenuCentres: () => ({
-      regions: ref([{ slug: 'ile-de-france', label: 'Île-de-France', count: 2 }]),
+      regions: ref(menuState.regions),
       centresParRegion: ref(
-        new Map([
-          [
-            'Île-de-France',
+        menuState.centres ??
+          new Map([
             [
-              {
-                slug: 'creteil',
-                name: 'Centre de Créteil',
-                city: 'Créteil',
-                department: 'Val-de-Marne',
-                region: 'Île-de-France'
-              }
+              'Île-de-France',
+              [
+                {
+                  slug: 'creteil',
+                  name: 'Centre de Créteil',
+                  city: 'Créteil',
+                  department: 'Val-de-Marne',
+                  region: 'Île-de-France'
+                }
+              ]
             ]
-          ]
-        ])
+          ])
       )
     }),
     useMenuActualites: () => ({
@@ -84,6 +93,15 @@ async function mountMenu(open = false) {
 
 afterEach(() => {
   document.body.classList.remove('overflow-hidden')
+  menuState.familles = [
+    { slug: 'management', label: 'Management', count: 12 },
+    { slug: 'securite-prevention', label: 'Sécurité & prévention', count: 32 }
+  ]
+  menuState.regions = [
+    { slug: 'ile-de-france', label: 'Île-de-France', count: 2 },
+    { slug: 'bretagne', label: 'Bretagne', count: 7 }
+  ]
+  menuState.centres = null
 })
 
 describe('MobileMenu', () => {
@@ -161,6 +179,50 @@ describe('MobileMenu', () => {
 
     await wrapper.find('a[href="/entreprise"]').trigger('click')
     expect(wrapper.emitted('update:open')).toEqual([[false]])
+    wrapper.unmount()
+  })
+
+  it('affiche le lien région sans centres et ferme le menu au clic', async () => {
+    const wrapper = await mountMenu(true)
+
+    const link = wrapper.findAll('a').find((a) => a.text().includes('Bretagne'))
+    expect(link?.exists()).toBe(true)
+    expect(link?.text()).toContain('Bretagne')
+    expect(link?.text()).toContain('7')
+
+    await link?.trigger('click')
+    expect(wrapper.emitted('update:open')).toEqual([[false]])
+    wrapper.unmount()
+  })
+
+  it('tolère des listes de familles et régions absentes', async () => {
+    menuState.familles = null
+    menuState.regions = null
+    const wrapper = await mountMenu(true)
+
+    expect(wrapper.find('#mobile-menu').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('affiche la ville quand le centre n’a pas de département', async () => {
+    menuState.centres = new Map([
+      [
+        'Île-de-France',
+        [
+          {
+            slug: 'sans-dept',
+            name: 'Centre sans département',
+            city: 'Melun',
+            department: null,
+            region: 'Île-de-France'
+          }
+        ]
+      ]
+    ])
+    const wrapper = await mountMenu(true)
+
+    expect(wrapper.text()).toContain('Centre sans département')
+    expect(wrapper.text()).toContain('Melun')
     wrapper.unmount()
   })
 

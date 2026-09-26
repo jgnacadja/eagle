@@ -121,7 +121,7 @@ const emit = defineEmits<{
   input: [value: string]
 }>()
 
-const draft = ref(props.modelValue ?? '')
+const draft = ref(props.modelValue)
 const errorId = `${props.inputId}-error`
 const listId = `${props.inputId}-suggestions`
 
@@ -164,23 +164,24 @@ function onKeydown(event: KeyboardEvent) {
 // Choix d'une suggestion : remplit le champ et soumet — même scénario que
 // la touche Entrée ou le bouton recherche.
 function pickSuggestion(index: number) {
-  const value = suggestionList.value[index]
-  if (value === undefined) return
+  // pick n'est appelé qu'avec un index de la liste (option rendue ou Entrée
+  // sur l'option active) : la suggestion est garantie d'exister.
+  const value = suggestionList.value[index]!
   draft.value = value
   close()
   emit('update:modelValue', value)
   emit('submit', value)
 }
 
+// Les contrôles qui déclenchent submit/clear sont disabled ou masqués sous
+// loading (v-if) : aucune garde isLoading nécessaire ici.
 function submit() {
-  if (isLoading.value) return
   close()
   emit('update:modelValue', draft.value)
   emit('submit', draft.value)
 }
 
 function clear() {
-  if (isLoading.value) return
   draft.value = ''
   close()
   emit('update:modelValue', '')

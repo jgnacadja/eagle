@@ -77,4 +77,24 @@ describe('ArticleCard', () => {
     expect(img.attributes('alt')).toBe('Quel CACES® pour quel équipement ?')
     expect(wrapper.text()).not.toContain('Visuel')
   })
+
+  it('renders NuxtImg when imageUrl is provided in the default variant', () => {
+    const wrapper = mount(ArticleCard, {
+      props: {
+        category: 'Conseil',
+        title: 'Quel CACES® pour quel équipement ?',
+        date: '1 sept. 2026 · 5 min',
+        imageUrl: 'https://example.com/cover.jpg'
+      },
+      global: {
+        stubs: {
+          NuxtLink: { template: '<a><slot /></a>' },
+          NuxtImg: { template: '<img :src="$attrs.src" :alt="$attrs.alt" />' }
+        }
+      }
+    })
+
+    expect(wrapper.find('img').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('Visuel article à fournir')
+  })
 })

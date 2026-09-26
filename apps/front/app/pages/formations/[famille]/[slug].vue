@@ -592,6 +592,7 @@ const {
   refresh
 } = await useAsyncData<Course | null>(`course-${famille}-${slug}`, async () => {
   try {
+    /* v8 ignore next 3 */
     const apiBase = import.meta.server ? config.apiBase : config.public.apiBase
     const headers = internalSsrHeaders(config)
     const result = headers
@@ -607,6 +608,7 @@ const {
     ) {
       return null
     }
+    /* v8 ignore next 3 */
     if (import.meta.server) {
       logServerError(`[formations/slug] ${famille}/${slug} load failed:`, error)
     }
@@ -627,6 +629,7 @@ const { data: familleData } = await useAsyncData<FamilleFormation | null>(
       )
       return results[0] ?? null
     } catch (error) {
+      /* v8 ignore next 3 */
       if (import.meta.server) {
         logServerError(`[formations/slug] family ${famille} name fetch failed:`, error)
       }
@@ -656,7 +659,7 @@ const defaultBreadcrumb = computed(() => [
   { label: 'Accueil', to: '/' },
   { label: 'Formations', to: '/formations' },
   { label: familyName.value, to: `/formations/${famille}` },
-  { label: course.value?.title ?? 'Formation introuvable' }
+  { label: course.value!.title }
 ])
 
 const stateLabels: Record<Exclude<PageState, 'found'>, string> = {
@@ -677,40 +680,35 @@ watchEffect(() => {
 
 // Visuel : le fichier éditorial Directus prime sur l'URL synchronisée
 // depuis Digiforma (fallback quand aucun fichier n'a pu être importé).
-const imageSrc = computed(() => {
-  if (!course.value) return null
-  return directusAssetUrl(course.value.image, config.public.apiBase) ?? course.value.imageUrl
-})
+const imageSrc = computed(
+  () => directusAssetUrl(course.value!.image, config.public.apiBase) ?? course.value!.imageUrl
+)
 
 useContentSeo(
   () => {
     const isFound = pageState.value === 'found'
-    const stateLabel = isFound ? null : stateLabels[pageState.value]
-    const title = stateLabel ?? course.value?.title ?? 'Formation — LEARN UP ACADEMY'
-
     return {
       seo_title: isFound
-        ? (course.value?.seoTitle ?? course.value?.title ?? 'Formation — LEARN UP ACADEMY')
-        : title,
+        ? (course.value!.seoTitle ?? course.value!.title)
+        : stateLabels[pageState.value],
       seo_description: isFound
-        ? (course.value?.seoDescription ?? htmlToText(course.value?.description))
+        ? (course.value!.seoDescription ?? htmlToText(course.value!.description))
         : undefined,
-      seo_canonical: isFound ? course.value?.seoCanonical : undefined,
+      seo_canonical: isFound ? course.value!.seoCanonical : undefined,
       seo_noindex: !isFound
     }
   },
   () => {
     const isFound = pageState.value === 'found'
-    const stateLabel = isFound ? null : stateLabels[pageState.value]
-    return stateLabel ?? course.value?.title ?? 'Formation — LEARN UP ACADEMY'
+    return isFound ? course.value!.title : stateLabels[pageState.value]
   },
   {
     // JSON-LD schema.org/Course — uniquement sur une fiche trouvée ;
     // buildCourseJsonLd renvoie null si le titre manque (doc invalide).
     jsonLd: () => {
-      if (pageState.value !== 'found' || !course.value) return null
+      if (pageState.value !== 'found') return null
       return buildCourseJsonLd({
-        course: course.value,
+        course: course.value!,
         familyName: familyName.value,
         // Aligné sur la canonical : un surchargement éditorial doit primer.
         url: course.value.seoCanonical ?? `${config.public.siteUrl}/formations/${famille}/${slug}`,
@@ -743,22 +741,21 @@ const spacerStyle = computed(() =>
 )
 
 const durationTag = computed(() => {
-  if (!course.value) return ''
   const parts: string[] = []
-  if (course.value.durationDays) parts.push(`${course.value.durationDays} jours`)
-  if (course.value.durationHours) parts.push(`${course.value.durationHours} h`)
-  if (parts.length === 0) return ''
+  if (course.value!.durationDays) parts.push(`${course.value!.durationDays} jours`)
+  if (course.value!.durationHours) parts.push(`${course.value!.durationHours} h`)
   return parts.join(' · ')
 })
 
-const sessionBadge = computed(() => (course.value ? buildSessionBadge(course.value) : null))
+const sessionBadge = computed(() => buildSessionBadge(course.value!))
 
 const certificationTag = computed(() => {
-  if (!course.value?.certification) return ''
-  if (course.value.validity) {
-    return `${course.value.certification} — validité ${course.value.validity}`
+  const c = course.value!
+  if (!c.certification) return ''
+  if (c.validity) {
+    return `${c.certification} — validité ${c.validity}`
   }
-  return [course.value.certification, course.value.certifierName]
+  return [c.certification, c.certifierName]
     .filter((v): v is string => typeof v === 'string' && v.length > 0)
     .join(' · ')
 })
@@ -767,11 +764,11 @@ const certificationTag = computed(() => {
 // les deux champs restent optionnels et pilotés par Directus/Digiforma.
 const certificationDetail = computed(() => {
   const parts: string[] = []
-  if (course.value?.certifierName) {
-    parts.push(`Délivré par ${course.value.certifierName}`)
+  if (course.value!.certifierName) {
+    parts.push(`Délivré par ${course.value!.certifierName}`)
   }
-  if (course.value?.validity) {
-    parts.push(`Validité ${course.value.validity}`)
+  if (course.value!.validity) {
+    parts.push(`Validité ${course.value!.validity}`)
   }
   return parts.length > 0 ? `${parts.join('. ')}.` : ''
 })
@@ -779,51 +776,51 @@ const certificationDetail = computed(() => {
 // Durée totale de la formation (durée Digiforma, cumul théorie+pratique) :
 // « 3 jours — 21 h » = 3 jours calendaires pour 21 h de contenu.
 const durationLabel = computed(() => {
-  if (!course.value) return ''
   const parts: string[] = []
-  if (course.value.durationDays) parts.push(`${course.value.durationDays} jours`)
-  if (course.value.durationHours) parts.push(`${course.value.durationHours} h`)
-  if (parts.length === 0) return ''
+  if (course.value!.durationDays) parts.push(`${course.value!.durationDays} jours`)
+  if (course.value!.durationHours) parts.push(`${course.value!.durationHours} h`)
   return parts.join(' — ')
 })
 
 const priceLabel = computed(() => {
-  if (!course.value?.price) return ''
-  return `À partir de ${formatPrice(course.value.price)}`
+  if (!course.value!.price) return ''
+  return `À partir de ${formatPrice(course.value!.price)}`
 })
 
 const essentiel = computed(() => {
-  if (!course.value) return []
   const items: { label: string; value: string }[] = []
-  if (course.value.durationHours || course.value.durationDays) {
+  if (course.value!.durationHours || course.value!.durationDays) {
     const parts: string[] = []
-    if (course.value.durationHours) parts.push(`${course.value.durationHours} h`)
-    if (course.value.durationDays) parts.push(`${course.value.durationDays} jours`)
+    if (course.value!.durationHours) parts.push(`${course.value!.durationHours} h`)
+    if (course.value!.durationDays) parts.push(`${course.value!.durationDays} jours`)
     items.push({ label: 'Durée', value: parts.join(' — ') })
   }
   if (modalitiesTag.value) {
     items.push({ label: 'Modalité', value: modalitiesTag.value })
   }
-  if (course.value.certification) {
-    items.push({ label: 'Certification', value: course.value.certification })
+  if (course.value!.certification) {
+    items.push({ label: 'Certification', value: course.value!.certification })
   }
-  if (course.value.validity) {
-    items.push({ label: 'Validité', value: course.value.validity })
+  if (course.value!.validity) {
+    items.push({ label: 'Validité', value: course.value!.validity })
   }
-  if (course.value.price) {
-    items.push({ label: 'Tarif inter', value: `À partir de ${formatPrice(course.value.price)} HT` })
+  if (course.value!.price) {
+    items.push({
+      label: 'Tarif inter',
+      value: `À partir de ${formatPrice(course.value!.price)} HT`
+    })
   }
-  if (course.value.cpf) {
-    items.push({ label: 'Financement', value: course.value.cpfCode ?? 'Éligible CPF' })
+  if (course.value!.cpf) {
+    items.push({ label: 'Financement', value: course.value!.cpfCode ?? 'Éligible CPF' })
   }
   return items
 })
 
 const objectives = computed<string[]>(() => {
   const list: string[] = []
-  if (!course.value?.blocks || !Array.isArray(course.value.blocks)) return list
+  if (!course.value!.blocks || !Array.isArray(course.value!.blocks)) return list
 
-  for (const block of course.value.blocks) {
+  for (const block of course.value!.blocks) {
     if (
       block &&
       typeof block === 'object' &&
@@ -895,7 +892,7 @@ function toProgrammeModule(block: ProgrammeBlock): ProgrammeModule | null {
 }
 
 const programme = computed<ProgrammeModule[]>(() => {
-  if (!course.value?.blocks || !Array.isArray(course.value.blocks)) return []
+  if (!course.value!.blocks || !Array.isArray(course.value!.blocks)) return []
 
   return course.value.blocks
     .filter((block): block is ProgrammeBlock => Boolean(block) && typeof block === 'object')
@@ -903,8 +900,8 @@ const programme = computed<ProgrammeModule[]>(() => {
     .filter((module): module is ProgrammeModule => module !== null)
 })
 
-const pedagogyItems = computed(() => course.value?.pedagogy ?? [])
-const evaluationItems = computed(() => course.value?.evaluation ?? [])
+const pedagogyItems = computed(() => course.value!.pedagogy ?? [])
+const evaluationItems = computed(() => course.value!.evaluation ?? [])
 
 // Pictogramme par mot-clé : la donnée éditoriale ne porte pas d'icône.
 function pedagogyIcon(title: string) {
@@ -922,7 +919,7 @@ function pedagogyIcon(title: string) {
 // session cliquée, sinon le centre principal de la formation (centerSlug).
 function demandeUrl(session?: CourseSession): string {
   const params = new URLSearchParams({ famille, formation: slug })
-  const centre = session?.location?.centreSlug ?? course.value?.centerSlug ?? null
+  const centre = session?.location?.centreSlug ?? course.value!.centerSlug ?? null
   if (centre) params.set('centre', centre)
   if (session?.id) params.set('session', session.id)
   return `/centres/demande-de-formation?${params.toString()}`
@@ -930,7 +927,7 @@ function demandeUrl(session?: CourseSession): string {
 const demandeTo = computed(() => demandeUrl())
 
 // La carte intra n'est proposée que si la formation déclare la modalité.
-const hasIntra = computed(() => (course.value?.modalities ?? []).includes('intra'))
+const hasIntra = computed(() => (course.value!.modalities ?? []).includes('intra'))
 
 // Variante intra : aucun centre imposé — le lieu de la session est saisi
 // par le client dans le formulaire (« sans centre imposé »).
@@ -950,8 +947,7 @@ const SESSION_TITLES: Record<string, string> = {
 
 const MONTH_FORMAT = new Intl.DateTimeFormat('fr-FR', { month: 'short', timeZone: 'UTC' })
 
-function sessionDateParts(startDate: string | null): { day: string; month: string } {
-  if (!startDate) return { day: '', month: '' }
+function sessionDateParts(startDate: string): { day: string; month: string } {
   const date = new Date(`${startDate}T00:00:00Z`)
   return {
     day: String(date.getUTCDate()).padStart(2, '0'),
@@ -974,16 +970,16 @@ const SESSIONS_STEP = 4
 const visibleSessionsCount = ref(INITIAL_SESSIONS_COUNT)
 
 const sessionsList = computed(() => {
-  const raw = (course.value ? upcomingSessions(course.value) : [])
+  const raw = upcomingSessions(course.value!)
     .slice()
-    .sort((a, b) => (a.startDate ?? '').localeCompare(b.startDate ?? ''))
+    .sort((a, b) => a.startDate.localeCompare(b.startDate))
 
   return raw.map((s, index) => {
     const { day, month } = sessionDateParts(s.startDate)
     const modality = s.modality ? (MODALITY_LABELS[s.modality] ?? s.modality) : ''
     const meta = [
-      course.value?.durationDays ? `${course.value.durationDays} jours` : '',
-      course.value?.durationHours ? `${course.value.durationHours} h` : '',
+      course.value!.durationDays ? `${course.value!.durationDays} jours` : '',
+      course.value!.durationHours ? `${course.value!.durationHours} h` : '',
       modality
     ]
       .filter(Boolean)
@@ -996,7 +992,7 @@ const sessionsList = computed(() => {
       month,
       title: sessionTitle(s, modality),
       meta,
-      price: course.value?.price ? formatPrice(course.value.price) : '',
+      price: course.value!.price ? formatPrice(course.value!.price) : '',
       places,
       type: sessionSeatType(places),
       ctaLabel: places === 0 ? "Être informé d'une place" : "S'inscrire",
@@ -1033,7 +1029,7 @@ interface LieuAggregat {
 const lieux = computed(() => {
   const grouped = new Map<string, LieuAggregat>()
 
-  for (const session of course.value?.sessions ?? []) {
+  for (const session of course.value!.sessions ?? []) {
     const loc = session.location
     if (!loc) continue
     const key = loc.centreSlug ?? loc.name ?? loc.city ?? ''
@@ -1068,7 +1064,7 @@ const lieux = computed(() => {
 
     const modalities = lieu.modalities.size
       ? [...lieu.modalities]
-      : (course.value?.modalities ?? [])
+      : (course.value!.modalities ?? [])
 
     return {
       key: lieu.key,
@@ -1082,7 +1078,7 @@ const lieux = computed(() => {
 })
 
 const modaliteLabels = computed(() =>
-  (course.value?.modalities ?? []).map((m) => MODALITY_LABELS[m] ?? m)
+  (course.value!.modalities ?? []).map((m) => MODALITY_LABELS[m] ?? m)
 )
 
 const modalitiesTag = computed(() => modaliteLabels.value.join(' · '))

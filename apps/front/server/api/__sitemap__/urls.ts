@@ -54,8 +54,9 @@ async function fetchAllCourses(api: ApiFetch): Promise<CourseRow[]> {
       () => null
     )) as CoursesPage | null
     const items = res?.items ?? []
+    const total = res?.total ?? 0
     courses.push(...items)
-    if (items.length === 0 || courses.length >= (res?.total ?? 0)) break
+    if (items.length === 0 || courses.length >= total) break
   }
   return courses
 }
@@ -76,12 +77,15 @@ const COLLECTION_FIELDS: Record<string, string[]> = {
 // jusqu'à épuisement, avec un plafond très au-dessus des volumes réels.
 const DIRECTUS_PAGE_SIZE = 100
 const DIRECTUS_MAX_PAGES = 20
-async function fetchSlugs(api: ApiFetch, collection: string): Promise<DirectusRow[]> {
+async function fetchSlugs(
+  api: ApiFetch,
+  collection: keyof typeof COLLECTION_FIELDS
+): Promise<DirectusRow[]> {
   const rows: DirectusRow[] = []
   for (let page = 1; page <= DIRECTUS_MAX_PAGES; page++) {
     const res = (await api(`/directus/items/${collection}`, {
       'filter[status][_eq]': 'published',
-      'fields[]': COLLECTION_FIELDS[collection] ?? ['slug'],
+      'fields[]': COLLECTION_FIELDS[collection],
       limit: DIRECTUS_PAGE_SIZE,
       page
     }).catch(() => null)) as DirectusList | null

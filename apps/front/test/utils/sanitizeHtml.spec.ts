@@ -101,4 +101,13 @@ describe('sanitizeHtmlWithHeadings', () => {
     expect(headings).toEqual([{ id: 'titre-piege', label: 'Titre piégé', level: 2 }])
     expect(html).toContain('id="titre-piege"')
   })
+
+  it('expose les titres sans id avec l’id slugifié injecté', () => {
+    const { headings } = sanitizeHtmlWithHeadings('<h2>Sans id</h2><h2 id="avec-id">Avec id</h2>')
+
+    expect(headings).toEqual([
+      { id: 'sans-id', label: 'Sans id', level: 2 },
+      { id: 'avec-id', label: 'Avec id', level: 2 }
+    ])
+  })
 })

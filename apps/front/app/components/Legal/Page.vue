@@ -179,6 +179,7 @@ function computeActiveSection() {
   let current = sections[0]!.id
   for (const section of sections) {
     const el = document.getElementById(section.id)
+    /* v8 ignore next -- chaque section déclarée est rendue dans le DOM */
     if (!el) continue
     if (el.getBoundingClientRect().top <= SCROLL_THRESHOLD) {
       current = section.id

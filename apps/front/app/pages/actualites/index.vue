@@ -397,6 +397,7 @@ const { data: featuredArticle } = await useAsyncData<Article | null>(
       )
       return items[0] ?? null
     } catch (error) {
+      /* v8 ignore next 3 */
       if (import.meta.server) {
         logServerError('[actualites] featured fetch failed:', error)
       }
@@ -426,6 +427,7 @@ const { data: facets } = await useAsyncData<ArticleFacet[]>(
         })
       )
     } catch (error) {
+      /* v8 ignore next 3 */
       if (import.meta.server) {
         logServerError('[actualites] facets fetch failed:', error)
       }
@@ -524,6 +526,7 @@ const {
       ])
       return { items, total: Number(countRows[0]?.count ?? 0) }
     } catch (error) {
+      /* v8 ignore next 3 */
       if (import.meta.server) {
         logServerError('[actualites] articles fetch failed:', error)
       }

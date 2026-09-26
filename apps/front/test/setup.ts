@@ -27,6 +27,10 @@ config.global.components.GeoNearMe = GeoNearMe
 import ClientLogoWall from '~/components/Brand/ClientLogoWall.vue'
 config.global.components.ClientLogoWall = ClientLogoWall
 
+// Racine de components/ (hors glob ui/**) : partagé par les formulaires de lead.
+import ConsentField from '~/components/ConsentField.vue'
+config.global.components.ConsentField = ConsentField
+
 config.global.stubs = {
   ...config.global.stubs,
   NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },

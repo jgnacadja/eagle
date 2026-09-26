@@ -37,6 +37,8 @@ describe('catalog-filters', () => {
 
   it('returns the key itself when label is unknown', () => {
     expect(getFilterLabel('durations', 'unknown')).toBe('unknown')
+    expect(getFilterLabel('modalities', 'unknown')).toBe('unknown')
+    expect(getFilterLabel('certifications', 'unknown')).toBe('unknown')
   })
 
   it('returns location key as-is', () => {

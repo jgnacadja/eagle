@@ -55,6 +55,57 @@ describe('useCatalog helpers', () => {
     expect(buildDuration({ ...course, durationHours: 60 })).toBe('longue')
   })
 
+  it('falls back to the single-day bucket when no duration is set', () => {
+    expect(buildDuration({ ...course, durationHours: null, durationDays: null })).toBe('courte')
+    expect(mapCourse({ ...course, durationDays: null, modalities: null }).days).toBe(0)
+    expect(mapCourse({ ...course, durationDays: null, modalities: null }).meta).toBe(
+      'Certification CACES · Opérateur réglementaire'
+    )
+  })
+
+  it('trie la prochaine session quand plusieurs dates futures existent', () => {
+    const today = new Date()
+    today.setUTCHours(0, 0, 0, 0)
+    const plus30 = new Date(today)
+    plus30.setUTCDate(plus30.getUTCDate() + 30)
+    const plus60 = new Date(today)
+    plus60.setUTCDate(plus60.getUTCDate() + 60)
+    const session = (startDate: string) => ({
+      id: startDate,
+      startDate,
+      endDate: null,
+      modality: null,
+      seatsRemaining: null,
+      location: null
+    })
+
+    // La session la plus proche gagne, même déclarée en second.
+    const status = buildStatus({
+      ...course,
+      sessions: [
+        session(plus60.toISOString().slice(0, 10)),
+        session(plus30.toISOString().slice(0, 10))
+      ]
+    })
+    expect(status?.type).toBe('success')
+    expect(status?.label).toContain(plus30.getUTCDate().toString())
+  })
+
+  it('ignores les sessions sans date de début dans les badges', () => {
+    const undated = {
+      id: 'x',
+      startDate: null,
+      endDate: null,
+      modality: null,
+      seatsRemaining: null,
+      location: null
+    }
+    expect(buildStatus({ ...course, sessions: [undated] })).toEqual({
+      type: 'neutral',
+      label: 'Sur demande'
+    })
+  })
+
   it('builds meta from duration, certification and certifier', () => {
     expect(buildMeta(course)).toBe('3 jours · Certification CACES · Opérateur réglementaire')
   })
@@ -63,6 +114,13 @@ describe('useCatalog helpers', () => {
     expect(buildMeta({ ...course, modalities: ['inter', 'intra'] }, false)).toBe(
       '3 jours · Inter / Intra'
     )
+  })
+
+  it('builds meta with unknown and missing modalities', () => {
+    expect(buildMeta({ ...course, modalities: ['format-exotique'] }, false)).toBe(
+      '3 jours · format-exotique'
+    )
+    expect(buildMeta({ ...course, modalities: null }, false)).toBe('3 jours')
   })
 
   it('builds certifications from course data', () => {
@@ -204,6 +262,38 @@ describe('useCatalog helpers', () => {
     ]
     expect(buildSessionBadge({ ...course, sessions })).toBeNull()
   })
+
+  it('buildSessionBadge distingue « ce mois-ci » et « programmées »', () => {
+    const makeSession = (startDate: string) => ({
+      id: startDate,
+      startDate,
+      endDate: null,
+      modality: null,
+      seatsRemaining: null,
+      location: null
+    })
+
+    // Session du jour : toujours dans le mois courant.
+    const today = new Date()
+    const thisMonth = makeSession(today.toISOString().slice(0, 10))
+    expect(buildSessionBadge({ ...course, sessions: [thisMonth] })).toBe('Sessions ce mois-ci')
+
+    // +45 jours : forcément hors du mois courant.
+    const later = new Date(today)
+    later.setUTCDate(later.getUTCDate() + 45)
+    expect(
+      buildSessionBadge({
+        ...course,
+        sessions: [thisMonth, makeSession(later.toISOString().slice(0, 10))]
+      })
+    ).toBe('Sessions ce mois-ci')
+    expect(
+      buildSessionBadge({
+        ...course,
+        sessions: [makeSession(later.toISOString().slice(0, 10))]
+      })
+    ).toBe('Sessions programmées')
+  })
 })
 
 describe('useCatalog composable', () => {
@@ -264,6 +354,62 @@ describe('useCatalog composable', () => {
     expect(requestedQuery.durationMax).toBeUndefined()
   })
 
+  it('forwards every populated filter to the API query', async () => {
+    vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
+    vi.stubGlobal('logServerError', vi.fn())
+
+    let requestedQuery: Record<string, unknown> = {}
+    vi.stubGlobal(
+      '$fetch',
+      vi.fn().mockImplementation((_url: string, options: { query: Record<string, unknown> }) => {
+        requestedQuery = options.query
+        return { items: [], total: 0, page: 1, pageSize: 9 }
+      })
+    )
+    vi.stubGlobal('useAsyncData', async (_key: unknown, handler: () => Promise<unknown>) => ({
+      data: ref(await handler()),
+      pending: ref(false),
+      error: ref(null),
+      refresh: vi.fn()
+    }))
+
+    await useCatalog(
+      ref({
+        search: ' caces ',
+        family: 'caces-conduite-engins',
+        subFamily: 'chariots',
+        cpf: true,
+        certifying: true,
+        durations: ['courte'],
+        modalities: ['presentiel'],
+        location: ' Lyon ',
+        center: 'creteil',
+        availability: 'cette-semaine',
+        sort: 'pertinence',
+        order: 'desc',
+        page: 2,
+        limit: 12
+      })
+    )
+
+    expect(requestedQuery).toEqual({
+      search: 'caces',
+      family: 'caces-conduite-engins',
+      subFamily: 'chariots',
+      cpf: true,
+      certifying: true,
+      durations: 'courte',
+      modalities: 'presentiel',
+      location: 'Lyon',
+      center: 'creteil',
+      availability: 'cette-semaine',
+      sort: 'pertinence',
+      order: 'desc',
+      page: 2,
+      limit: 12
+    })
+  })
+
   it('serves the Nuxt payload only on initial cause, not on watch refetches', async () => {
     vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
     vi.stubGlobal('logServerError', vi.fn())
@@ -273,7 +419,10 @@ describe('useCatalog composable', () => {
     )
 
     let options:
-      | { getCachedData?: (key: string, nuxtApp: unknown, ctx: { cause: string }) => unknown }
+      | {
+          getCachedData?: (key: string, nuxtApp: unknown, ctx: { cause: string }) => unknown
+          watch?: (() => unknown)[]
+        }
       | undefined
     vi.stubGlobal(
       'useAsyncData',
@@ -306,5 +455,41 @@ describe('useCatalog composable', () => {
     ).toBeUndefined()
     expect(getCachedData?.(key, nuxtApp, { cause: 'watch' })).toBeUndefined()
     expect(getCachedData?.(key, nuxtApp, { cause: 'refresh:manual' })).toBeUndefined()
+
+    // Hors payload Nuxt, la donnée est lue dans le cache « static ».
+    const staticApp = {
+      ...nuxtApp,
+      payload: { data: {} },
+      static: { data: { [key]: cached } }
+    }
+    expect(getCachedData?.(key, staticApp, { cause: 'initial' })).toEqual(cached)
+
+    // Le watcher relit la query courante pour déclencher le refetch.
+    const query = ref({ page: 3 })
+    await useCatalog(query)
+    expect(options?.watch?.map((w) => w())).toEqual([{ page: 3 }])
+  })
+
+  it('rethrows a failed catalog fetch so useAsyncData exposes the error', async () => {
+    vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
+    vi.stubGlobal('logServerError', vi.fn())
+    vi.stubGlobal('$fetch', vi.fn().mockRejectedValue(new Error('api down')))
+
+    let capturedError = ref<Error | null>(null)
+    vi.stubGlobal('useAsyncData', async (_key: unknown, handler: () => Promise<unknown>) => {
+      const data = ref<unknown>(null)
+      const error = ref<Error | null>(null)
+      try {
+        data.value = await handler()
+      } catch (err) {
+        error.value = err as Error
+      }
+      capturedError = error
+      return { data, pending: ref(false), error, refresh: vi.fn() }
+    })
+
+    const { error } = await useCatalog(ref({}))
+    expect(error.value?.message).toBe('api down')
+    expect(capturedError.value?.message).toBe('api down')
   })
 })

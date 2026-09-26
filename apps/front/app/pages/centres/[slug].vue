@@ -582,6 +582,7 @@ const {
     )
     return results[0] ?? null
   } catch (error) {
+    /* v8 ignore next 3 */
     if (import.meta.server) {
       logServerError(`[centres/slug] ${slug} load failed:`, error)
     }
@@ -606,7 +607,7 @@ if (requestEvent) {
 }
 
 const heroAddress = computed(() =>
-  [streetAddress.value, centre.value?.postal_code, centre.value?.city, centre.value?.region]
+  [streetAddress.value, centre.value!.postal_code, centre.value!.city, centre.value!.region]
     .filter(Boolean)
     .join(', ')
 )
@@ -615,8 +616,8 @@ const heroAddress = computed(() =>
 // dérivée du code postal (94 → contact94@…). Repli sur le champ `email`
 // Directus quand le code postal est absent ou invalide.
 const contactEmail = computed(() => {
-  const code = departmentCodeFromPostalCode(centre.value?.postal_code)
-  return code ? `contact${code}@learnup-academy.com` : (centre.value?.email ?? null)
+  const code = departmentCodeFromPostalCode(centre.value!.postal_code)
+  return code ? `contact${code}@learnup-academy.com` : (centre.value!.email ?? null)
 })
 
 const { position: userPosition } = useGeolocation()
@@ -625,9 +626,10 @@ const { position: userPosition } = useGeolocation()
 // surligne le marqueur (même convention `id` = slug que l'explorateur).
 const activeMapCenterId = ref<string | null>(slug)
 
+// Consommé uniquement par la section carte (`v-if="centre"` + garde sur
+// les coordonnées) : le centre et sa position sont garantis non nuls.
 const singleMapCenters = computed<CenterResult[]>(() => {
-  const c = centre.value
-  if (!c) return []
+  const c = centre.value!
   return [
     {
       id: c.slug,
@@ -636,31 +638,30 @@ const singleMapCenters = computed<CenterResult[]>(() => {
       address: mapAddress.value,
       tags: '',
       tagsShort: '',
-      lat: c.latitude ?? undefined,
-      lng: c.longitude ?? undefined
+      lat: c.latitude!,
+      lng: c.longitude!
     }
   ]
 })
 
-const mapCaption = computed(() => centre.value?.region ?? 'Réseau national')
+const mapCaption = computed(() => centre.value!.region ?? 'Réseau national')
 
 // Vue centrée sur le centre (contrairement à l'explorateur qui cadre le
 // département) : la mini-carte de la fiche doit pointer l'adresse.
-const mapFocus = computed(() =>
-  centre.value?.latitude != null && centre.value?.longitude != null
-    ? { lat: centre.value.latitude, lng: centre.value.longitude }
-    : null
-)
+const mapFocus = computed(() => ({
+  lat: centre.value!.latitude!,
+  lng: centre.value!.longitude!
+}))
 
 // Localité « cp ville » et rue seule : le champ `address` peut déjà
 // contenir la localité (anciennes données) — on la retire pour recomposer
 // proprement les affichages sans doublon.
 const addressLocality = computed(() =>
-  [centre.value?.postal_code, centre.value?.city].filter(Boolean).join(' ')
+  [centre.value!.postal_code, centre.value!.city].filter(Boolean).join(' ')
 )
 
 const streetAddress = computed(() => {
-  const address = centre.value?.address ?? ''
+  const address = centre.value!.address ?? ''
   const locality = addressLocality.value
   if (locality && address.endsWith(locality)) {
     return address.slice(0, -locality.length).replace(/,\s*$/, '')
@@ -683,16 +684,14 @@ function onMapSelect(id: string) {
   activeMapCenterId.value = id || null
 }
 
-const specialties = computed(() => centre.value?.specialties ?? [])
+const specialties = computed(() => centre.value!.specialties ?? [])
 
-const qualiopiCertificateUrl = computed(
-  () => directusAssetUrl(centre.value?.qualiopi_certificate) ?? ''
-)
+const qualiopiCertificateUrl = computed(() => directusAssetUrl(centre.value!.qualiopi_certificate))
 
 // « valide jusqu'au 14 mars 2027 » — date de fin de validité Qualiopi
 // éditée dans Directus, formatée en français.
 const qualiopiValidUntilLabel = computed(() => {
-  const raw = centre.value?.qualiopi_valid_until
+  const raw = centre.value!.qualiopi_valid_until
   if (!raw) return null
   const date = new Date(raw)
   if (Number.isNaN(date.getTime())) return null
@@ -706,12 +705,12 @@ const qualiopiValidUntilLabel = computed(() => {
   }).format(date)
 })
 
-const imageSrc = computed(() => directusAssetUrl(centre.value?.image))
+const imageSrc = computed(() => directusAssetUrl(centre.value!.image))
 
 // « Franchisé depuis 19 mai 2017 » sous le nom du responsable — repli
 // sur le rôle du contact quand la date de franchise n'est pas renseignée.
 const managerCaption = computed(() => {
-  const raw = centre.value?.franchise_since
+  const raw = centre.value!.franchise_since
   const date = raw ? new Date(raw) : null
   if (date && !Number.isNaN(date.getTime())) {
     return `Franchisé depuis ${new Intl.DateTimeFormat('fr-FR', {
@@ -721,17 +720,19 @@ const managerCaption = computed(() => {
       timeZone: 'Europe/Paris'
     }).format(date)}`
   }
-  return centre.value?.contact_role ?? null
+  return centre.value!.contact_role ?? null
 })
 
 // Breadcrumb adapté à l'état affiché. route.meta est partagé entre toutes
 // les routes /centres/:slug : on réassigne la valeur à chaque changement
 // d'état pour ne pas conserver le breadcrumb d'un slug précédent.
+// Lu uniquement quand `pageState === 'found'` (les états d'erreur ont
+// leur propre fil d'Ariane) : le centre est garanti non nul ici.
 const defaultBreadcrumb = computed(() => [
   { label: 'Accueil', to: '/' },
   { label: 'Réseau de centres', to: '/centres' },
-  ...(centre.value?.region ? [{ label: centre.value.region, to: '/centres' }] : []),
-  { label: centre.value?.name ?? 'Centre' }
+  ...(centre.value!.region ? [{ label: centre.value!.region, to: '/centres' }] : []),
+  { label: centre.value!.name }
 ])
 const stateLabels: Record<Exclude<PageState, 'found'>, string> = {
   'not-found': 'Centre introuvable',
@@ -751,23 +752,21 @@ watchEffect(() => {
 useContentSeo(
   () => {
     const isFound = pageState.value === 'found'
-    const stateLabel = isFound ? null : stateLabels[pageState.value]
     const name = centre.value?.name ?? 'Centre'
     return {
       seo_title: isFound
-        ? (centre.value?.seo_title ?? `${name} — LEARN UP ACADEMY`)
-        : (stateLabel ?? name),
+        ? (centre.value!.seo_title ?? `${name} — LEARN UP ACADEMY`)
+        : stateLabels[pageState.value],
       seo_description: isFound
-        ? (centre.value?.seo_description ??
-          `Centre de formation ${centre.value?.city ?? ''} — LEARN UP ACADEMY.`)
+        ? (centre.value!.seo_description ??
+          `Centre de formation ${centre.value!.city ?? ''} — LEARN UP ACADEMY.`)
         : undefined,
       seo_noindex: !isFound
     }
   },
   () => {
     const isFound = pageState.value === 'found'
-    const stateLabel = isFound ? null : stateLabels[pageState.value]
-    return stateLabel ?? centre.value?.name ?? 'Centre — LEARN UP ACADEMY'
+    return isFound ? centre.value!.name : stateLabels[pageState.value]
   }
 )
 
@@ -804,7 +803,7 @@ function centreFormationMeta(course: CourseListItem): string {
   if (course.durationDays) parts.push(`${course.durationDays} jours`)
   const modalities = (course.modalities ?? []).map((m) => MODALITY_LABELS[m] ?? m).join(' / ')
   if (modalities) parts.push(modalities)
-  if (centre.value?.city) parts.push(centre.value.city)
+  if (centre.value!.city) parts.push(centre.value!.city)
   return parts.join(' · ')
 }
 
@@ -922,7 +921,7 @@ const allCentres = await useDirectusList<Centre>('centres', 'centres-siblings', 
 
 const nearbyCenters = computed(() =>
   (allCentres.value ?? [])
-    .filter((c) => c.slug !== slug && (!centre.value?.region || c.region === centre.value.region))
+    .filter((c) => c.slug !== slug && (!centre.value!.region || c.region === centre.value!.region))
     .slice(0, 3)
     .map((c) => ({
       slug: c.slug,

@@ -141,6 +141,15 @@ describe('ProcessSteps', () => {
     expect(wrapper.find('ol').exists()).toBe(true)
   })
 
+  it('masque la ligne de liaison avec une seule étape', () => {
+    const wrapper = mount(ProcessSteps, {
+      props: { steps: steps.slice(0, 1) }
+    })
+
+    expect(wrapper.findAll('li')).toHaveLength(1)
+    expect(wrapper.find('[style*="display: none"]').exists()).toBe(true)
+  })
+
   it('rend chaque étape comme un élément li', () => {
     const wrapper = mount(ProcessSteps, {
       props: {

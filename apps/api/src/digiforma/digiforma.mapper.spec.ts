@@ -154,4 +154,67 @@ describe('mapProgramToCourse', () => {
     expect(course.locations_text).toBeNull()
     expect(course.sessions).toBeNull()
   })
+  it('trims a trailing separator in slugs and blanks in descriptions', () => {
+    const course = mapProgramToCourse({
+      ...program,
+      name: 'Formation !',
+      description: '   ',
+      durationInDays: null,
+      costsInter: [{ cost: 'n/a', vat: 20, type: 'inter' }]
+    } as unknown as Program)
+
+    expect(course.slug).toBe('formation')
+    expect(course.description).toBeNull()
+    expect(course.duration_days).toBeNull()
+    expect(course.price).toBeNull()
+  })
+
+  it('does not duplicate inter modality already declared', () => {
+    const course = mapProgramToCourse({
+      ...program,
+      modalities: ['inter', 'bidon', null]
+    } as unknown as Program)
+
+    expect(course.modalities).toEqual(['inter'])
+  })
+
+  it('ignores pedagogy blocks without a name and sessions without location', () => {
+    const course = mapProgramToCourse({
+      ...program,
+      blocks: [{ type: 'pédagogie' }, { type: 'pédagogie', name: '  ' }],
+      sessions: [
+        {
+          id: 's1',
+          startDate: '2026-01-01',
+          endDate: '2026-01-02',
+          location: null
+        },
+        {
+          id: 's2',
+          startDate: '2026-01-01',
+          endDate: '2026-01-02',
+          location: { city: ' ', name: 'Centre Lyon' }
+        }
+      ]
+    } as unknown as Program)
+
+    expect(course.pedagogy).toBeNull()
+    expect(course.locations_text).toBe('Centre Lyon')
+  })
+  it('gère les champs Digiforma absents (cpf, coûts, nom de bloc)', () => {
+    const course = mapProgramToCourse({
+      ...program,
+      cpf: undefined,
+      costsInter: undefined,
+      modalities: undefined,
+      blocks: [
+        { type: 'pedagogie', name: 'Pédagogie active', description: 'Desc' },
+        { type: 'pedagogie' }
+      ]
+    } as unknown as Program)
+
+    expect(course.cpf).toBeNull()
+    expect(course.price).toBeNull()
+    expect(course.pedagogy).toEqual([{ title: 'Pédagogie active', description: 'Desc' }])
+  })
 })

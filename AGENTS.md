@@ -93,6 +93,7 @@ Les skills du repo sont dans `.agents/skills/` (format Agent Skills) :
 - `digiforma-sync`
 - `monorepo-vscode`
 - `learnup-conventions`
+- `sonarqube`
 
 Des skills publics peuvent être installés avec `npx skills add` :
 

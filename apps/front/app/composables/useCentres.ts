@@ -112,6 +112,7 @@ export function buildCentresParams(query: CentresQuery): Record<string, string> 
  */
 export function useCentres(query: MaybeRefOrGetter<CentresQuery>) {
   const config = useRuntimeConfig()
+  /* v8 ignore next -- server arm unreachable in the test environment */
   const apiBase = import.meta.server ? config.apiBase : config.public.apiBase
 
   return useAsyncData<CentreListItem[]>(
@@ -123,6 +124,7 @@ export function useCentres(query: MaybeRefOrGetter<CentresQuery>) {
           headers: internalSsrHeaders(config)
         })
       } catch (err) {
+        /* v8 ignore next 3 */
         if (import.meta.server) {
           logServerError('[useCentres] centres fetch failed:', err)
         }
@@ -151,6 +153,7 @@ export function useCentres(query: MaybeRefOrGetter<CentresQuery>) {
  */
 export function useCentresTotal() {
   const config = useRuntimeConfig()
+  /* v8 ignore next -- server arm unreachable in the test environment */
   const apiBase = import.meta.server ? config.apiBase : config.public.apiBase
 
   return useAsyncData<number>(
@@ -162,6 +165,7 @@ export function useCentresTotal() {
         })
         return count
       } catch (err) {
+        /* v8 ignore next 3 */
         if (import.meta.server) {
           logServerError('[useCentresTotal] centres fetch failed:', err)
         }
@@ -183,6 +187,7 @@ export function useCentresTotal() {
  */
 export function useCentreDepartments() {
   const config = useRuntimeConfig()
+  /* v8 ignore next -- server arm unreachable in the test environment */
   const apiBase = import.meta.server ? config.apiBase : config.public.apiBase
 
   return useAsyncData<string[]>(
@@ -196,6 +201,7 @@ export function useCentreDepartments() {
           ? $fetch<string[]>(`${apiBase}/centres/departments`, { headers })
           : $fetch<string[]>(`${apiBase}/centres/departments`))
       } catch (err) {
+        /* v8 ignore next 3 */
         if (import.meta.server) {
           logServerError('[useCentreDepartments] departments fetch failed:', err)
         }

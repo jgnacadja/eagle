@@ -134,6 +134,21 @@ describe('buildCourseJsonLd', () => {
     expect(ld.hasCourseInstance.courseMode).toEqual(['blended', 'coaching-individuel'])
   })
 
+  it('omet courseMode avec modalities null et omet workload sans durée', () => {
+    const nullModalities = buildCourseJsonLd({
+      course: { ...BASE, durationHours: null, modalities: null },
+      ...ctx
+    }) as { hasCourseInstance: Record<string, unknown> }
+    expect(nullModalities.hasCourseInstance).not.toHaveProperty('courseMode')
+    expect(nullModalities.hasCourseInstance.courseWorkload).toBeDefined()
+
+    const noWorkload = buildCourseJsonLd({
+      course: { ...BASE, durationDays: null, durationHours: null },
+      ...ctx
+    }) as { hasCourseInstance: Record<string, unknown> }
+    expect(noWorkload.hasCourseInstance).not.toHaveProperty('courseWorkload')
+  })
+
   it('courseWorkload retombe sur les jours sans heures', () => {
     const ld = buildCourseJsonLd({
       course: { ...BASE, durationHours: null, durationDays: 5, modalities: [] },

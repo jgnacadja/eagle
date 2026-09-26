@@ -41,7 +41,8 @@ export class NewsletterLeadDto extends LeadContextDto {
   email!: string
 }
 
-export class DemandeLeadDto extends LeadContextDto {
+// Identité de contact partagée par les leads avec une personne à rappeler.
+class LeadContactDto extends LeadContextDto {
   @ApiProperty({ description: 'Full name' })
   @IsString()
   @IsNotEmpty()
@@ -61,7 +62,9 @@ export class DemandeLeadDto extends LeadContextDto {
   })
   @MaxLength(30)
   telephone!: string
+}
 
+export class DemandeLeadDto extends LeadContactDto {
   @ApiPropertyOptional({ description: 'Professional phone — at least 10 digits' })
   @IsOptional()
   @Matches(/^\D*(?:\d\D*){10,}$/, {
@@ -144,30 +147,10 @@ export class DemandeLeadDto extends LeadContextDto {
   sujet?: string
 }
 
-export class CandidatureLeadDto extends LeadContextDto {
+export class CandidatureLeadDto extends LeadContactDto {
   @ApiProperty({ description: 'Application track', enum: VOIES })
   @IsIn(VOIES)
   voie!: (typeof VOIES)[number]
-
-  @ApiProperty({ description: 'Full name' })
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(200)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
-  nom!: string
-
-  @ApiProperty({ description: 'Professional email' })
-  @IsEmail()
-  @MaxLength(320)
-  email!: string
-
-  @ApiProperty({ description: 'Phone — at least 10 digits' })
-  @IsString()
-  @Matches(/^\D*(?:\d\D*){10,}$/, {
-    message: 'Incomplete phone number — at least 10 digits expected.'
-  })
-  @MaxLength(30)
-  telephone!: string
 
   @ApiProperty({ description: 'Target city or territory' })
   @IsString()
@@ -189,30 +172,10 @@ export class CandidatureLeadDto extends LeadContextDto {
   consentement!: boolean
 }
 
-export class ConseillerLeadDto extends LeadContextDto {
+export class ConseillerLeadDto extends LeadContactDto {
   @ApiProperty({ description: 'Nature of the need', enum: BESOINS })
   @IsIn(BESOINS)
   besoin!: (typeof BESOINS)[number]
-
-  @ApiProperty({ description: 'Full name' })
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(200)
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
-  nom!: string
-
-  @ApiProperty({ description: 'Email' })
-  @IsEmail()
-  @MaxLength(320)
-  email!: string
-
-  @ApiProperty({ description: 'Phone — at least 10 digits' })
-  @IsString()
-  @Matches(/^\D*(?:\d\D*){10,}$/, {
-    message: 'Incomplete phone number — at least 10 digits expected.'
-  })
-  @MaxLength(30)
-  telephone!: string
 
   @ApiPropertyOptional({ description: 'SIRET — 14 digits, spaces allowed' })
   @IsOptional()

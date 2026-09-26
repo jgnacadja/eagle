@@ -271,4 +271,48 @@ describe('CentresService', () => {
 
     expect(await service.count()).toBe(0)
   })
+  it('returns [] for departments when Directus fails', async () => {
+    cache.get.mockResolvedValue(null)
+    directus.fetchAllCentres.mockRejectedValue(new Error('network'))
+
+    expect(await service.departments()).toEqual([])
+    expect(cache.set).not.toHaveBeenCalled()
+  })
+
+  it('serves centres:all from cache without fetching Directus', async () => {
+    cache.get.mockImplementation((key: string) => {
+      if (key === 'centres:all') return Promise.resolve(centres)
+      return Promise.resolve(null)
+    })
+
+    const result = await service.list({} as ListCentresDto)
+
+    expect(result).toHaveLength(3)
+    expect(directus.fetchAllCentres).not.toHaveBeenCalled()
+  })
+
+  it('ignores nullish covered codes and specialties', async () => {
+    cache.get.mockResolvedValue(null)
+    directus.fetchAllCentres.mockResolvedValue([
+      centre({
+        slug: 'sparse',
+        city: 'Sparseville',
+        department: null,
+        departments_covered: [null, ''],
+        specialties: null,
+        region: null
+      }),
+      centre({
+        slug: 'vide',
+        department: undefined,
+        departments_covered: undefined,
+        specialties: undefined
+      })
+    ] as unknown as DirectusCentre[])
+
+    const result = await service.list({ search: 'sparseville' } as ListCentresDto)
+
+    expect(result.map((c) => c.slug)).toEqual(['sparse'])
+    expect(await service.departments()).toEqual([])
+  })
 })

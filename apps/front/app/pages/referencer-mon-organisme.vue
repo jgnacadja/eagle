@@ -140,6 +140,7 @@ import { computed, ref } from 'vue'
 import type { Centre } from '@learnup/types'
 import { useGeolocation } from '~/composables/useGeolocation'
 import type { CenterResult } from '~/types/center-result'
+import { toCenterResults } from '~/utils/centre'
 
 useContentSeo(
   {
@@ -210,22 +211,5 @@ const { position: userPosition } = useGeolocation()
 
 const candidatureOpen = ref(false)
 
-const mapCenters = computed<CenterResult[]>(() =>
-  (centresData.value ?? []).map((centre) => {
-    const location = [centre.address, centre.postal_code, centre.city, centre.department]
-      .filter(Boolean)
-      .join(', ')
-    const tags = (centre.specialties ?? []).join(' · ')
-    return {
-      id: centre.slug,
-      name: centre.name,
-      cp: centre.postal_code ?? '',
-      address: location,
-      tags,
-      tagsShort: tags,
-      lat: centre.latitude ?? undefined,
-      lng: centre.longitude ?? undefined
-    }
-  })
-)
+const mapCenters = computed<CenterResult[]>(() => toCenterResults(centresData.value))
 </script>

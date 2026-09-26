@@ -89,4 +89,56 @@ describe('CenterResultCard', () => {
 
     expect(wrapper.find('[data-testid="center-distance"]').exists()).toBe(false)
   })
+
+  it('omits the success dot for a warning status', () => {
+    const warning = {
+      ...center,
+      status: { type: 'warning' as const, label: 'Dernières places' }
+    }
+    const wrapper = mount(CenterResultCard, {
+      props: { center: warning },
+      global: {
+        stubs: {
+          NuxtLink: { template: '<a><slot /></a>' }
+        }
+      }
+    })
+
+    expect(wrapper.find('.bg-success').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Dernières places')
+  })
+
+  it('hides the tags line and the status badge when absent', () => {
+    const bare = {
+      ...center,
+      tags: '',
+      status: { type: 'neutral' as const, label: 'Centre partenaire' }
+    }
+    const wrapper = mount(CenterResultCard, {
+      props: { center: bare },
+      global: {
+        stubs: {
+          NuxtLink: { template: '<a><slot /></a>' }
+        }
+      }
+    })
+
+    expect(wrapper.text()).toContain('Centre partenaire')
+    expect(wrapper.text()).not.toContain('CACES · Habilitations électriques')
+  })
+
+  it('renders an empty placeholder when status is absent', () => {
+    const noStatus = { ...center, status: undefined }
+    const wrapper = mount(CenterResultCard, {
+      props: { center: noStatus },
+      global: {
+        stubs: {
+          NuxtLink: { template: '<a><slot /></a>' }
+        }
+      }
+    })
+
+    expect(wrapper.text()).not.toContain('Sessions cette semaine')
+    expect(wrapper.text()).toContain('Voir le centre')
+  })
 })

@@ -256,4 +256,21 @@ describe('LeadsService', () => {
       ServiceUnavailableException
     )
   })
+  it('utilise le domaine HubSpot par défaut quand non configuré', async () => {
+    const service = new LeadsService(mockConfig({ HUBSPOT_FORMS_BASE_URL: undefined }))
+
+    await service.submitNewsletter({ email: 'abonne@site.fr' })
+
+    const { url } = lastCall()
+    expect(url).toMatch(/^https:\/\/api\.hsforms\.com\//)
+  })
+
+  it('lève 503 quand le fetch rejette une valeur non-Error', async () => {
+    fetchMock.mockRejectedValue('plain failure')
+    const service = new LeadsService(mockConfig())
+
+    await expect(service.submitNewsletter({ email: 'abonne@site.fr' })).rejects.toBeInstanceOf(
+      ServiceUnavailableException
+    )
+  })
 })

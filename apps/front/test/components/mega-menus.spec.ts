@@ -1,5 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { defineComponent, h, Suspense } from 'vue'
 import MegaMenuFormations from '~/components/Menu/mega-menu/MegaMenuFormations.vue'
 import MegaMenuCentres from '~/components/Menu/mega-menu/MegaMenuCentres.vue'
@@ -9,15 +9,52 @@ import MegaMenuActualites from '~/components/Menu/mega-menu/MegaMenuActualites.v
 const navigateMock = vi.fn()
 vi.stubGlobal('navigateTo', navigateMock)
 
+interface MenuSlug {
+  slug: string
+  label: string
+}
+
+const menuState = vi.hoisted(() => ({
+  refs: {} as {
+    familles?: { value: { slug: string; label: string; count: number }[] }
+    centreRegions?: { value: { slug: string; label: string; count: number }[] }
+    actuRubriques?: { value: MenuSlug[] }
+    actuRegions?: { value: { slug: string; label: string; count: number }[] }
+  },
+  defaultFamilles: [
+    { slug: 'securite-prevention', label: 'Sécurité & prévention', count: 32 },
+    { slug: 'management', label: 'Management', count: 12 },
+    { slug: 'caces-conduite-engins', label: 'CACES & conduite d’engins', count: 58 }
+  ],
+  defaultCentreRegions: [
+    { slug: 'ile-de-france', label: 'Île-de-France', count: 2 },
+    { slug: 'occitanie', label: 'Occitanie', count: 1 }
+  ],
+  defaultActuRubriques: [
+    { slug: 'toute-actualite', label: 'Toute l’actualité du réseau' },
+    { slug: 'presse', label: 'Presse' },
+    { slug: 'reglementation', label: 'Réglementation' },
+    { slug: 'vie-du-reseau', label: 'Vie du réseau' }
+  ] as MenuSlug[],
+  defaultActuRegions: [
+    { slug: 'ile-de-france', label: 'Île-de-France', count: 3 },
+    { slug: 'occitanie', label: 'Occitanie', count: 1 }
+  ],
+  centresParRegion: new Map<string, unknown[]>() as Map<string, unknown[]>
+}))
+
+const { defaultFamilles, defaultCentreRegions, defaultActuRubriques, defaultActuRegions } =
+  menuState
+
 vi.mock('~/composables/useMenuData', async () => {
   const { ref } = await import('vue')
+  const familles = ref([...menuState.defaultFamilles])
+  const centreRegions = ref([...menuState.defaultCentreRegions])
+  const actuRubriques = ref<MenuSlug[]>([...menuState.defaultActuRubriques])
+  const actuRegions = ref([...menuState.defaultActuRegions])
+  menuState.refs = { familles, centreRegions, actuRubriques, actuRegions }
   return {
-    useMenuFamilles: () =>
-      ref([
-        { slug: 'securite-prevention', label: 'Sécurité & prévention', count: 32 },
-        { slug: 'management', label: 'Management', count: 12 },
-        { slug: 'caces-conduite-engins', label: 'CACES & conduite d’engins', count: 58 }
-      ]),
+    useMenuFamilles: () => familles,
     useMenuFormationsALaUne: () =>
       ref([
         {
@@ -44,38 +81,8 @@ vi.mock('~/composables/useMenuData', async () => {
         ]
       }),
     useMenuCentres: () => ({
-      regions: ref([
-        { slug: 'ile-de-france', label: 'Île-de-France', count: 2 },
-        { slug: 'occitanie', label: 'Occitanie', count: 1 }
-      ]),
-      centresParRegion: ref(
-        new Map([
-          [
-            'Île-de-France',
-            [
-              {
-                slug: 'creteil',
-                name: 'Centre de Créteil',
-                city: 'Créteil',
-                department: 'Val-de-Marne',
-                region: 'Île-de-France'
-              }
-            ]
-          ],
-          [
-            'Occitanie',
-            [
-              {
-                slug: 'toulouse',
-                name: 'Centre de Toulouse',
-                city: 'Toulouse',
-                department: 'Haute-Garonne',
-                region: 'Occitanie'
-              }
-            ]
-          ]
-        ])
-      )
+      regions: centreRegions,
+      centresParRegion: ref(menuState.centresParRegion)
     }),
     useMenuLegalPages: () =>
       ref([
@@ -87,16 +94,8 @@ vi.mock('~/composables/useMenuData', async () => {
         }
       ]),
     useMenuActualites: () => ({
-      rubriques: ref([
-        { slug: 'toute-actualite', label: 'Toute l’actualité du réseau' },
-        { slug: 'presse', label: 'Presse' },
-        { slug: 'reglementation', label: 'Réglementation' },
-        { slug: 'vie-du-reseau', label: 'Vie du réseau' }
-      ]),
-      regions: ref([
-        { slug: 'ile-de-france', label: 'Île-de-France', count: 3 },
-        { slug: 'occitanie', label: 'Occitanie', count: 1 }
-      ]),
+      rubriques: actuRubriques,
+      regions: actuRegions,
       actualitesParRegion: ref({
         'ile-de-france': [
           {
@@ -133,6 +132,32 @@ vi.mock('~/composables/useMenuData', async () => {
       })
     })
   }
+})
+
+beforeEach(() => {
+  menuState.refs.familles!.value = [...defaultFamilles]
+  menuState.refs.centreRegions!.value = [...defaultCentreRegions]
+  menuState.refs.actuRubriques!.value = [...defaultActuRubriques]
+  menuState.refs.actuRegions!.value = [...defaultActuRegions]
+  menuState.centresParRegion.clear()
+  menuState.centresParRegion.set('Île-de-France', [
+    {
+      slug: 'creteil',
+      name: 'Centre de Créteil',
+      city: 'Créteil',
+      department: 'Val-de-Marne',
+      region: 'Île-de-France'
+    }
+  ])
+  menuState.centresParRegion.set('Occitanie', [
+    {
+      slug: 'toulouse',
+      name: 'Centre de Toulouse',
+      city: 'Toulouse',
+      department: 'Haute-Garonne',
+      region: 'Occitanie'
+    }
+  ])
 })
 
 async function mountMenu(component: object) {
@@ -304,5 +329,162 @@ describe('MegaMenuActualites', () => {
     expect(wrapper.text()).toContain('Aucune publication récente pour cette rubrique.')
     expect(wrapper.text()).not.toContain('dans cette région')
     expect(wrapper.text()).toContain('Aucune région disponible.')
+  })
+
+  it('sélectionne une région au focus et ferme sur les liens et cartes', async () => {
+    const wrapper = mount(MegaMenuActualites, { global: { stubs } })
+
+    const region = wrapper.findAll('button').find((b) => b.text().includes('Occitanie'))!
+    await region.trigger('focus')
+    expect(wrapper.text()).toContain('Le centre de Toulouse ouvre une offre management')
+
+    // Carte article → select → close ; liens « Toutes les régions/actualités » → close.
+    await wrapper.find('a[href="/actualites/session-occitanie"]').trigger('click')
+    for (const link of wrapper.findAll('a[href="/actualites"]')) await link.trigger('click')
+
+    expect(wrapper.emitted('close')!.length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('pré-sélectionne rubrique et région quand les données arrivent tard', async () => {
+    menuState.refs.actuRubriques!.value = []
+    menuState.refs.actuRegions!.value = []
+    const wrapper = mount(MegaMenuActualites, { global: { stubs } })
+
+    menuState.refs.actuRubriques!.value = [...defaultActuRubriques]
+    menuState.refs.actuRegions!.value = [...defaultActuRegions]
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Recyclage CACES')
+  })
+
+  it('affiche le message région quand « toute l’actualité » est vide', async () => {
+    menuState.refs.actuRegions!.value = [
+      ...defaultActuRegions,
+      { slug: 'bretagne', label: 'Bretagne', count: 0 }
+    ]
+    const wrapper = mount(MegaMenuActualites, { global: { stubs } })
+
+    const bretagne = wrapper.findAll('button').find((b) => b.text().includes('Bretagne'))!
+    await bretagne.trigger('click')
+
+    expect(wrapper.text()).toContain('Aucune publication récente pour cette région.')
+  })
+})
+
+describe('sélections tardives des méga-menus', () => {
+  it('pré-sélectionne la première famille quand elle arrive tard', async () => {
+    menuState.refs.familles!.value = []
+    const wrapper = await mountMenu(MegaMenuFormations)
+
+    menuState.refs.familles!.value = [...defaultFamilles]
+    await flushPromises()
+
+    expect(wrapper.find('a[href="/formations/securite-prevention/sst-initial"]').exists()).toBe(
+      true
+    )
+  })
+
+  it('sélectionne la famille au focus', async () => {
+    const wrapper = await mountMenu(MegaMenuFormations)
+
+    const btn = wrapper.findAll('button').find((b) => b.text().includes('Management'))!
+    await btn.trigger('focus')
+
+    expect(wrapper.find('a[href="/formations/management/manager-equipe"]').exists()).toBe(true)
+  })
+
+  it('pré-sélectionne la première région quand elle arrive tard', async () => {
+    menuState.refs.centreRegions!.value = []
+    const wrapper = await mountMenu(MegaMenuCentres)
+
+    menuState.refs.centreRegions!.value = [...defaultCentreRegions]
+    await flushPromises()
+
+    expect(wrapper.find('a[href="/centres/creteil"]').exists()).toBe(true)
+  })
+
+  it('sélectionne la région au focus', async () => {
+    const wrapper = await mountMenu(MegaMenuCentres)
+
+    const btn = wrapper.findAll('button').find((b) => b.text().includes('Occitanie'))!
+    await btn.trigger('focus')
+
+    expect(wrapper.find('a[href="/centres/toulouse"]').exists()).toBe(true)
+  })
+
+  it('émet close sur les liens et la carte centre', async () => {
+    const wrapper = await mountMenu(MegaMenuCentres)
+    const menu = wrapper.findComponent(MegaMenuCentres)
+
+    await wrapper.find('a[href="/centres"]').trigger('click')
+    const tousLesCentres = wrapper.findAll('a').find((a) => a.text().includes('Tous les centres'))!
+    await tousLesCentres.trigger('click')
+    await wrapper.find('a[href="/centres/demande-de-formation"]').trigger('click')
+    await wrapper.find('a[href="/centres/creteil"]').trigger('click')
+
+    expect(menu.emitted('close')!.length).toBeGreaterThanOrEqual(4)
+  })
+
+  it('retombe sur la ville quand le centre n’a pas de département', async () => {
+    menuState.centresParRegion.set('Occitanie', [
+      { slug: 'albi', name: "Centre d'Albi", city: 'Albi', department: null, region: 'Occitanie' }
+    ])
+    const wrapper = await mountMenu(MegaMenuCentres)
+
+    const btn = wrapper.findAll('button').find((b) => b.text().includes('Occitanie'))!
+    await btn.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Albi')
+  })
+
+  it('retombe sur une liste vide quand la région n’a pas de centres', async () => {
+    menuState.refs.centreRegions!.value = [
+      ...defaultCentreRegions,
+      { slug: 'bretagne', label: 'Bretagne', count: 1 }
+    ]
+    const wrapper = await mountMenu(MegaMenuCentres)
+
+    const btn = wrapper.findAll('button').find((b) => b.text().includes('Bretagne'))!
+    await btn.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Tous les centres Bretagne')
+  })
+
+  it('monte sans régions', async () => {
+    menuState.refs.centreRegions!.value = []
+    const wrapper = await mountMenu(MegaMenuCentres)
+
+    expect(wrapper.text()).toContain('centre')
+  })
+})
+
+describe('MegaMenuFormations — interactions close', () => {
+  it('émet close sur la carte, les liens famille et le CTA', async () => {
+    const wrapper = await mountMenu(MegaMenuFormations)
+    const menu = wrapper.findComponent(MegaMenuFormations)
+
+    await wrapper.find('a[href="/formations/securite-prevention/sst-initial"]').trigger('click')
+    const familleLink = wrapper.findAll('a').find((a) => a.text().includes('Voir la famille'))!
+    await familleLink.trigger('click')
+    await wrapper.find('a[href="/formations/caces-conduite-engins/caces-r489"]').trigger('click')
+    await wrapper.find('a[href="/etre-guide"]').trigger('click')
+
+    expect(menu.emitted('close')!.length).toBeGreaterThanOrEqual(4)
+  })
+})
+
+describe('MegaMenuAPropos — interactions close', () => {
+  it('émet close sur les liens à propos et légaux', async () => {
+    const wrapper = await mountMenu(MegaMenuAPropos)
+    const menu = wrapper.findComponent(MegaMenuAPropos)
+
+    const links = wrapper.findAll('a')
+    for (const link of links) {
+      await link.trigger('click')
+    }
+
+    expect(menu.emitted('close')!.length).toBe(links.length)
   })
 })

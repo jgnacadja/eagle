@@ -89,6 +89,18 @@ describe('Article/ShareMenu', () => {
     expect(labels.join(' ')).toContain('E-mail')
   })
 
+  it('fonctionne sans titre (sujet mail réduit à l’URL)', async () => {
+    wrapper = mount(ShareMenu, {
+      props: { url: props.url },
+      attachTo: document.body
+    })
+    await wrapper.find('button').trigger('click')
+    await waitUntil(() => menuLinks().length > 0)
+
+    const mailto = menuLinks().find((a) => a.href.startsWith('mailto:'))
+    expect(mailto?.href).toContain(`body=${encodeURIComponent(props.url)}`)
+  })
+
   it('n’affiche pas « Plus d’options… » sans Web Share API', async () => {
     await openMenu()
 

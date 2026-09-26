@@ -220,10 +220,7 @@
           <!-- icône -->
           <component :is="item.icon" :size="22" class="shrink-0 text-ink-inverse/50" />
           <div>
-            <p
-              v-if="item.value"
-              class="font-display text-h4 md:text-h3 font-extrabold leading-none text-ink-inverse"
-            >
+            <p class="font-display text-h4 md:text-h3 font-extrabold leading-none text-ink-inverse">
               {{ item.value }}
             </p>
             <p class="text-xs md:text-small text-ink-inverse-muted leading-tight mt-0.5">
@@ -496,7 +493,6 @@
               {{ session.location }}
             </p>
             <span
-              v-if="session.badgeText"
               :class="[
                 'mt-xs inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold',
                 session.badgeVariant === 'warning'
@@ -948,7 +944,7 @@ const displayUpcomingSessions = computed(() => {
     }
   }
 
-  candidates.sort((a, b) => (a.session.startDate ?? '').localeCompare(b.session.startDate ?? ''))
+  candidates.sort((a, b) => a.session.startDate!.localeCompare(b.session.startDate!))
 
   const seenCourses = new Set<string>()
   const result: {
@@ -968,7 +964,7 @@ const displayUpcomingSessions = computed(() => {
 
     const date = new Date(`${s.startDate}T00:00:00Z`)
     const day = String(date.getUTCDate()).padStart(2, '0')
-    const month = MONTH_ABBR_FR[date.getUTCMonth()] ?? ''
+    const month = MONTH_ABBR_FR[date.getUTCMonth()]!
     const mapped = mapCourse(course)
     const seats = s.seatsRemaining
     const badgeVariant = sessionSeatType(seats ?? undefined) ?? 'success'

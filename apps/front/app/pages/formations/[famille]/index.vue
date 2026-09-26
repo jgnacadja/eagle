@@ -43,7 +43,7 @@
               <img
                 v-if="heroImage"
                 :src="heroImage"
-                :alt="familleData?.name ?? ''"
+                :alt="familleData!.name"
                 class="h-full w-full object-cover"
               />
               <span v-if="heroImage" class="absolute inset-0 bg-ink/15" aria-hidden="true" />
@@ -392,6 +392,7 @@ const {
       )
       return results[0] ?? null
     } catch (error) {
+      /* v8 ignore next 3 */
       if (import.meta.server) {
         logServerError(`[formations/famille] ${famille} load failed:`, error)
       }
@@ -432,7 +433,7 @@ const stateLabels: Record<Exclude<PageState, 'found'>, string> = {
 const defaultBreadcrumb = computed(() => [
   { label: 'Accueil', to: '/' },
   { label: 'Formations', to: '/formations' },
-  { label: familleData.value?.name ?? famille }
+  { label: familleData.value!.name }
 ])
 
 watchEffect(() => {
@@ -450,7 +451,7 @@ useContentSeo(
   () => {
     const isFound = pageState.value === 'found'
     const stateLabel = isFound ? null : stateLabels[pageState.value]
-    const title = stateLabel ?? familleData.value?.name ?? famille
+    const title = stateLabel ?? familleData.value!.name
 
     return {
       seo_title: isFound
@@ -458,7 +459,7 @@ useContentSeo(
         : title,
       seo_description: isFound
         ? (familleData.value?.seo_description ??
-          `Formations ${familleData.value?.name ?? famille} en centre ou sur site.`)
+          `Formations ${familleData.value!.name} en centre ou sur site.`)
         : undefined,
       seo_canonical: isFound ? familleData.value?.seo_canonical : undefined,
       seo_noindex: !isFound
@@ -467,7 +468,7 @@ useContentSeo(
   () => {
     const isFound = pageState.value === 'found'
     const stateLabel = isFound ? null : stateLabels[pageState.value]
-    return stateLabel ?? `${familleData.value?.name ?? famille} — Formations | LEARN UP ACADEMY`
+    return stateLabel ?? `${familleData.value!.name} — Formations | LEARN UP ACADEMY`
   }
 )
 
@@ -588,17 +589,17 @@ const subFamilyCards = computed(() =>
 function selectSubFamily(slug: string) {
   selectedSubFamily.value = slug
   currentPage.value = 1
+  /* v8 ignore next 4 -- client-only DOM scroll, unreachable in SSR/tests */
   if (import.meta.client) {
     document.getElementById('liste-formations')?.scrollIntoView({ behavior: 'smooth' })
   }
 }
 
 const modalityFilterLabel = computed(
-  () => modalityOptions.value.find((o) => o.value === selectedModality.value)?.label ?? 'Modalité'
+  () => modalityOptions.value.find((o) => o.value === selectedModality.value)!.label
 )
 const locationFilterLabel = computed(
-  () =>
-    locationOptions.value.find((o) => o.value === selectedLocation.value)?.label ?? 'Localisation'
+  () => locationOptions.value.find((o) => o.value === selectedLocation.value)!.label
 )
 const availabilityFilterLabel = computed(
   () =>
@@ -624,7 +625,7 @@ const facets = await useCatalog({ family: famille, page: 1, limit: 100 })
 
 const catalog = await useCatalog(catalogQuery)
 
-const familyName = computed(() => familleData.value?.name ?? famille)
+const familyName = computed(() => familleData.value!.name)
 
 const formations = computed<FormationItem[]>(
   () => catalog.data.value?.items.map((course) => mapCourse(course, familyName.value)) ?? []

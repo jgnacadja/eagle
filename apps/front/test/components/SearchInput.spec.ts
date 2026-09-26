@@ -80,6 +80,17 @@ describe('SearchInput', () => {
     expect(wrapper.emitted('submit')).toEqual([['Rhône (69)']])
   })
 
+  it('surligne une option au survol puis la choisit à l’Entrée', async () => {
+    const wrapper = mountInput({ suggestions: ['Lyon (69)', 'Rhône (69)'] })
+    const input = wrapper.find('.search-input')
+
+    await input.setValue('ly')
+    await wrapper.findAll('li button')[0]!.trigger('mouseenter')
+    await input.trigger('keydown', { key: 'Enter' })
+
+    expect(wrapper.emitted('submit')).toEqual([['Lyon (69)']])
+  })
+
   it('Échap ferme la liste, Entrée soumet alors le texte brut', async () => {
     const wrapper = mountInput({ suggestions: ['Lyon (69)'] })
     const input = wrapper.find('.search-input')
@@ -177,6 +188,15 @@ describe('SearchInput', () => {
       await wrapper.find('.search-input').trigger('keydown', { key: 'Enter' })
 
       expect(wrapper.emitted('submit')).toBeUndefined()
+    })
+
+    it('ignore le bouton effacer pendant le chargement', async () => {
+      const wrapper = mountInput({ modelValue: 'sst', loading: true })
+
+      const clearBtn = wrapper.find('button[aria-label="Effacer la recherche"]')
+      if (clearBtn.exists()) await clearBtn.trigger('click')
+
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined()
     })
   })
 

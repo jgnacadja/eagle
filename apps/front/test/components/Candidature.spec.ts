@@ -116,6 +116,27 @@ describe('components/Candidature', () => {
     expect(checkedVoieLabel()).toContain('Formateur indépendant')
   })
 
+  it('met à jour la voie quand un autre radio est choisi', async () => {
+    mountDialog()
+    expect(checkedVoieLabel()).toContain('Ouvrir un centre')
+
+    const radio = [...document.body.querySelectorAll<HTMLInputElement>('input[type="radio"]')].find(
+      (r) => r.closest('label')?.textContent?.includes('Formateur indépendant')
+    )
+    await new DOMWrapper(radio!).trigger('click')
+
+    expect(checkedVoieLabel()).toContain('Formateur indépendant')
+  })
+
+  it('re-émet update:open quand le Dialog change d’état', async () => {
+    const wrapper = mountDialog()
+
+    wrapper.findComponent({ name: 'DialogRoot' }).vm.$emit('update:open', false)
+    await flushPromises()
+
+    expect(wrapper.emitted('update:open')?.[0]).toEqual([false])
+  })
+
   it('bloque l’envoi et affiche les erreurs quand le formulaire est vide', async () => {
     mountDialog()
 
@@ -186,6 +207,25 @@ describe('components/Candidature', () => {
         consentement: true
       })
     )
+  })
+
+  it('ignore un nouvel envoi tant que sending est actif', async () => {
+    vi.useFakeTimers()
+    leadSubmitMock.mockImplementation(
+      () => new Promise<boolean>((resolve) => setTimeout(() => resolve(true), 900))
+    )
+    mountDialog()
+
+    await fillValidForm()
+    await bodyEl('form').trigger('submit')
+    await settleValidation()
+    expect(document.body.textContent).toContain('Envoi en cours…')
+
+    // Un second submit pendant l'envoi ne repart pas (garde props.sending).
+    await bodyEl('form').trigger('submit')
+    expect(leadSubmitMock).toHaveBeenCalledTimes(1)
+
+    await vi.advanceTimersByTimeAsync(1000)
   })
 
   it('affiche une erreur sans passer à la confirmation si l’envoi échoue', async () => {

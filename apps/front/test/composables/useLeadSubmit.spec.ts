@@ -123,6 +123,22 @@ describe('useLeadSubmit', () => {
     expect(error.value).toBeNull()
   })
 
+  it('refuse un double envoi tant que le premier est en cours', async () => {
+    let release!: () => void
+    fetchMock.mockImplementation(() => new Promise((resolve) => (release = () => resolve({}))))
+    const { submit, sending } = useLeadSubmit()
+
+    const first = submit('newsletter', { email: 'a@b.fr' })
+    expect(sending.value).toBe(true)
+    const second = await submit('newsletter', { email: 'a@b.fr' })
+    expect(second).toBe(false)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    release()
+    expect(await first).toBe(true)
+    expect(sending.value).toBe(false)
+  })
+
   it('config absente : retourne false sans appeler l’API', async () => {
     vi.stubGlobal('useRuntimeConfig', () => ({
       public: { apiBase: '' }

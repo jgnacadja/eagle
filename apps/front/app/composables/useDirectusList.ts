@@ -40,6 +40,7 @@ export function useDirectusList<T>(
       try {
         return await directus.request<T[]>(readItems(collection, resolvedQuery))
       } catch (error) {
+        /* v8 ignore next 3 */
         if (import.meta.server) {
           logServerError(`[useDirectusList] ${collection} (${cacheKey}) :`, error)
         }

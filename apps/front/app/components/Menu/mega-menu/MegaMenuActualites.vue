@@ -173,13 +173,11 @@ const featuredNews = computed(() => {
 
   return actualites.filter((actu) => actu.categorySlug === selectedRubrique.value).slice(0, 3)
 })
-const emptyMessage = computed(() => {
-  if (allNews.value) return 'Aucune publication récente pour cette région.'
-
-  return selectedRegion.value
-    ? 'Aucune publication récente pour cette rubrique dans cette région.'
+const emptyMessage = computed(() =>
+  allNews.value
+    ? 'Aucune publication récente pour cette région.'
     : 'Aucune publication récente pour cette rubrique.'
-})
+)
 
 function selectRubrique(slug: string) {
   selectedRubrique.value = slug

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { NotFoundException } from '@nestjs/common'
 import { DirectusProxyController } from './directus.proxy.controller'
 
 const configValues: Record<string, string> = {
@@ -193,5 +194,43 @@ describe('DirectusProxyController', () => {
     } finally {
       await unconfigured.close()
     }
+  })
+  it('rejette les chemins originUrl avec .. (unitaire, hors normalisation HTTP)', async () => {
+    const controller = new DirectusProxyController({
+      get: () => 'http://directus:8055'
+    } as ConfigService)
+    const res = { status: vi.fn(), setHeader: vi.fn(), end: vi.fn() }
+
+    for (const originalUrl of ['/directus/items/../admin', '/directus/items/%2E%2E/admin']) {
+      await expect(
+        controller.proxy({ method: 'GET', originalUrl, headers: {} } as never, res as never)
+      ).rejects.toThrow(NotFoundException)
+    }
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('termine la réponse quand le body upstream est absent', async () => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }))
+
+    const res = await request(app.getHttpServer()).get('/directus/assets/vide')
+
+    expect(res.status).toBe(204)
+  })
+  it('refuse les chemins à un seul segment', async () => {
+    const res = await request(app.getHttpServer()).get('/directus/items')
+
+    expect(res.status).toBe(404)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+  it('détruit la réponse si le flux upstream casse', async () => {
+    const failing = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('partiel'))
+        controller.error(new Error('stream broken'))
+      }
+    })
+    fetchMock.mockResolvedValueOnce(new Response(failing, { status: 200 }))
+
+    await expect(request(app.getHttpServer()).get('/directus/assets/casse')).rejects.toThrow()
   })
 })

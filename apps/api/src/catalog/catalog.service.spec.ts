@@ -522,6 +522,67 @@ describe('CatalogService', () => {
       expect(await listWithLocation('aris')).toBe(0)
     })
 
+    it('ne matche pas un token numérique de plus de 5 chiffres', async () => {
+      expect(await listWithLocation('123456')).toBe(0)
+    })
+
+    it('retombe sur la localisation de session quand le fetch des centres échoue', async () => {
+      cache.get.mockResolvedValue(null)
+      catalog.fetchAllFormations.mockResolvedValue([geoFormation])
+      catalog.fetchAllCentres.mockRejectedValue(new Error('directus down'))
+
+      const result = await service.list({ location: 'lyon', page: 1, limit: 10 } as ListCoursesDto)
+
+      expect(result.items).toHaveLength(1)
+    })
+
+    it('résout la localisation via les centres servis par le cache', async () => {
+      const centred = {
+        ...geoFormation,
+        sessions: [
+          {
+            id: 's1',
+            startDate: null,
+            endDate: null,
+            modality: 'presentiel',
+            seatsRemaining: null,
+            location: {
+              name: null,
+              city: null,
+              postalCode: null,
+              department: null,
+              region: null,
+              centreSlug: 'lyon'
+            }
+          }
+        ]
+      } as unknown as DirectusFormation
+      const cachedCentre = {
+        id: 1,
+        slug: 'lyon',
+        name: 'Centre LEARN UP de Lyon',
+        status: 'published',
+        address: '12 rue de la Part-Dieu, 69003 Lyon',
+        city: 'Lyon',
+        postal_code: '69003',
+        department: 'Rhône',
+        region: 'Auvergne-Rhône-Alpes',
+        latitude: 45.76,
+        longitude: 4.85
+      }
+      cache.get.mockImplementation((key: string) => {
+        if (key === 'formations:all') return Promise.resolve([centred])
+        if (key === 'centres:all') return Promise.resolve([cachedCentre])
+        return Promise.resolve(null)
+      })
+
+      const result = await service.list({ location: 'lyon', page: 1, limit: 10 } as ListCoursesDto)
+
+      expect(result.items).toHaveLength(1)
+      expect(catalog.fetchAllFormations).not.toHaveBeenCalled()
+      expect(catalog.fetchAllCentres).not.toHaveBeenCalled()
+    })
+
     it('résout la localisation via le centre rattaché (centreSlug)', async () => {
       cache.get.mockResolvedValue(null)
       const centred = {
@@ -814,6 +875,808 @@ describe('CatalogService', () => {
 
     expect(applyFamilyAssignments).toHaveBeenCalledWith(
       new Map([['prog-001', { famille: 'management' }]])
+    )
+  })
+})
+
+describe('list filters and field normalization', () => {
+  let service: CatalogService
+  let cache: { get: ReturnType<typeof vi.fn>; set: ReturnType<typeof vi.fn> }
+  let catalog: {
+    fetchAllFormations: ReturnType<typeof vi.fn>
+    fetchAllCentres: ReturnType<typeof vi.fn>
+  }
+
+  beforeEach(async () => {
+    const { cache: cacheMock, get, set } = mockCache()
+    const { catalog: catalogMock, fetchAllFormations, fetchAllCentres } = mockCatalog()
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CatalogService,
+        { provide: CacheService, useValue: cacheMock },
+        { provide: DirectusCatalogService, useValue: catalogMock }
+      ]
+    }).compile()
+
+    service = module.get<CatalogService>(CatalogService)
+    cache = { get, set }
+    catalog = { fetchAllFormations, fetchAllCentres }
+    cache.get.mockResolvedValue(null)
+  })
+
+  it('filters by modalities, ignoring blank entries', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      { ...baseFormation, modalities: ['e-learning'] },
+      { ...secondFormation, modalities: ['presentiel'] }
+    ])
+
+    const matching = await service.list({
+      modalities: 'e-learning, ',
+      page: 1,
+      limit: 20
+    } as ListCoursesDto)
+    expect(matching.items).toHaveLength(1)
+    expect(matching.items[0].slug).toBe('pilotage-de-projet')
+
+    const all = await service.list({ modalities: ' ,,', page: 1, limit: 20 } as ListCoursesDto)
+    expect(all.items).toHaveLength(2)
+  })
+
+  it('filters by duration buckets with day fallback', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      { ...baseFormation, slug: 'short', duration_hours: 7, duration_days: 1 },
+      { ...baseFormation, slug: 'long', duration_hours: 50, duration_days: 7 },
+      {
+        ...baseFormation,
+        slug: 'long-days',
+        duration_hours: null,
+        duration_days: 6
+      },
+      { ...baseFormation, slug: 'mid', duration_hours: 20, duration_days: 3 }
+    ] as unknown as DirectusFormation[])
+
+    const courte = await service.list({ durations: 'courte', page: 1, limit: 20 } as ListCoursesDto)
+    expect(courte.items.map((i) => i.slug)).toEqual(['short'])
+
+    const longue = await service.list({ durations: 'longue', page: 1, limit: 20 } as ListCoursesDto)
+    expect(longue.items.map((i) => i.slug)).toEqual(['long', 'long-days'])
+
+    const moyenne = await service.list({
+      durations: 'moyenne',
+      page: 1,
+      limit: 20
+    } as ListCoursesDto)
+    expect(moyenne.items.map((i) => i.slug)).toEqual(['mid'])
+
+    const unknown = await service.list({
+      durations: 'invalide',
+      page: 1,
+      limit: 20
+    } as ListCoursesDto)
+    expect(unknown.items).toHaveLength(4)
+  })
+
+  it('filters by duration range', async () => {
+    const minOnly = await service.list({ durationMin: 22, page: 1, limit: 20 } as ListCoursesDto)
+    expect(minOnly.items).toHaveLength(0)
+
+    const maxOnly = await service.list({ durationMax: 10, page: 1, limit: 20 } as ListCoursesDto)
+    expect(maxOnly.items.map((i) => i.slug)).toEqual(['securite'])
+  })
+
+  it('excludes courses without price from a max price filter', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      { ...baseFormation, price: null },
+      secondFormation
+    ] as unknown as DirectusFormation[])
+
+    const result = await service.list({ priceMax: 1000, page: 1, limit: 20 } as ListCoursesDto)
+    expect(result.items.map((i) => i.slug)).toEqual(['securite'])
+  })
+
+  it('filters by center on centerSlug or centerSlugs', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      { ...baseFormation, center_slug: 'creteil' },
+      { ...secondFormation, center_slugs: ['creteil', 'lyon'] }
+    ] as unknown as DirectusFormation[])
+
+    const creteil = await service.list({ center: 'creteil', page: 1, limit: 20 } as ListCoursesDto)
+    expect(creteil.items).toHaveLength(2)
+
+    const paris = await service.list({ center: 'paris', page: 1, limit: 20 } as ListCoursesDto)
+    expect(paris.items).toHaveLength(0)
+  })
+
+  it('filters by certifying flag', async () => {
+    const certifying = await service.list({
+      certifying: true,
+      page: 1,
+      limit: 20
+    } as ListCoursesDto)
+    expect(certifying.items.map((i) => i.slug)).toEqual(['pilotage-de-projet'])
+
+    const notCertifying = await service.list({
+      certifying: false,
+      page: 1,
+      limit: 20
+    } as ListCoursesDto)
+    expect(notCertifying.items.map((i) => i.slug)).toEqual(['securite'])
+  })
+
+  it('sorts by duration ascending and descending', async () => {
+    const asc = await service.list({
+      sort: CourseSortField.duration,
+      order: CourseSortOrder.asc,
+      page: 1,
+      limit: 20
+    } as ListCoursesDto)
+    expect(asc.items.map((i) => i.slug)).toEqual(['securite', 'pilotage-de-projet'])
+
+    const desc = await service.list({
+      sort: CourseSortField.duration,
+      order: CourseSortOrder.desc,
+      page: 1,
+      limit: 20
+    } as ListCoursesDto)
+    expect(desc.items.map((i) => i.slug)).toEqual(['pilotage-de-projet', 'securite'])
+  })
+
+  it('serves formations from cache without fetching Directus', async () => {
+    cache.get.mockImplementation((key: string) => {
+      if (key === 'formations:all') return Promise.resolve(formations)
+      return Promise.resolve(null)
+    })
+
+    const result = await service.list({ page: 1, limit: 20 } as ListCoursesDto)
+
+    expect(result.items).toHaveLength(2)
+    expect(catalog.fetchAllFormations).not.toHaveBeenCalled()
+  })
+
+  it('normalizes pedagogy strings and objects', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      {
+        ...baseFormation,
+        pedagogy: [
+          'Inter en centre',
+          { title: 'Séances en ligne', description: 5 },
+          { title: ' ' },
+          { name: 'no-title' },
+          '   ',
+          null
+        ]
+      }
+    ])
+
+    const course = await service.findBySlug('pilotage-de-projet')
+
+    expect(course?.pedagogy).toEqual([
+      { title: 'Inter en centre', description: null },
+      { title: 'Séances en ligne', description: null }
+    ])
+  })
+
+  it('falls back to pedagogy blocks when the pedagogy field is empty', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      {
+        ...baseFormation,
+        pedagogy: null,
+        blocks: [
+          { type: 'objectifs', name: 'Objectifs' },
+          { type: 'pedagogie', name: 'Ateliers pratiques', description: '4 ateliers' },
+          { type: 'pedagogie', name: ' ' },
+          { type: 'pedagogie' },
+          'not-an-object',
+          null
+        ]
+      }
+    ])
+
+    const course = await service.findBySlug('pilotage-de-projet')
+
+    expect(course?.pedagogy).toEqual([{ title: 'Ateliers pratiques', description: '4 ateliers' }])
+  })
+})
+
+describe('branch coverage: fallbacks', () => {
+  let service: CatalogService
+  let cache: { get: ReturnType<typeof vi.fn>; set: ReturnType<typeof vi.fn> }
+  let catalog: {
+    fetchAllFormations: ReturnType<typeof vi.fn>
+    fetchAllCentres: ReturnType<typeof vi.fn>
+  }
+
+  beforeEach(async () => {
+    const { cache: cacheMock, get, set } = mockCache()
+    const { catalog: catalogMock, fetchAllFormations, fetchAllCentres } = mockCatalog()
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CatalogService,
+        { provide: CacheService, useValue: cacheMock },
+        { provide: DirectusCatalogService, useValue: catalogMock }
+      ]
+    }).compile()
+
+    service = module.get<CatalogService>(CatalogService)
+    cache = { get, set }
+    catalog = { fetchAllFormations, fetchAllCentres }
+    cache.get.mockResolvedValue(null)
+  })
+
+  it('ignores invalid session entries and keeps null fields', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      {
+        ...baseFormation,
+        slug: 'sessions-mix',
+        sessions: [
+          null,
+          'junk',
+          {
+            id: 7,
+            startDate: 123,
+            endDate: null,
+            modality: 'presentiel',
+            seatsRemaining: 5,
+            location: 'pas-un-objet'
+          },
+          {
+            id: 's2',
+            startDate: '2027-01-10',
+            endDate: null,
+            modality: null,
+            seatsRemaining: null,
+            location: { name: 'Lyon', city: null }
+          }
+        ]
+      }
+    ] as unknown as DirectusFormation[])
+
+    const course = await service.findBySlug('sessions-mix')
+
+    expect(course?.sessions).toHaveLength(2)
+    expect(course?.sessions?.[0].seatsRemaining).toBe(5)
+    expect(course?.sessions?.[0].location).toBeNull()
+    expect(course?.sessions?.[1].location?.name).toBe('Lyon')
+    expect(course?.sessions?.[1].location?.city).toBeNull()
+  })
+
+  it('returns null sessions when every entry is invalid', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      { ...baseFormation, sessions: [null, 42, 'x'] },
+      { ...secondFormation, sessions: [] }
+    ] as unknown as DirectusFormation[])
+
+    const first = await service.findBySlug('pilotage-de-projet')
+    const second = await service.findBySlug('securite')
+
+    expect(first?.sessions).toBeNull()
+    expect(second?.sessions).toBeNull()
+  })
+
+  it('maps non-numeric duration and price fields to null', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      {
+        ...baseFormation,
+        duration_days: 'abc',
+        duration_hours: '14',
+        price: null
+      }
+    ] as unknown as DirectusFormation[])
+
+    const course = await service.findBySlug('pilotage-de-projet')
+
+    expect(course?.durationDays).toBeNull()
+    expect(course?.durationHours).toBe(14)
+    expect(course?.price).toBeNull()
+  })
+
+  it('serializes Date created_at and updated_at', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      {
+        ...baseFormation,
+        created_at: new Date('2026-02-01T12:00:00.000Z'),
+        updated_at: new Date('2026-02-05T08:30:00.000Z')
+      }
+    ] as unknown as DirectusFormation[])
+
+    const course = await service.findBySlug('pilotage-de-projet')
+
+    expect(course?.createdAt).toBe('2026-02-01T12:00:00.000Z')
+    expect(course?.updatedAt).toBe('2026-02-05T08:30:00.000Z')
+  })
+
+  it('falls back when extractTexts/toStringList entries are unusable', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      {
+        ...baseFormation,
+        raw: null,
+        evaluation: 'pas-un-tableau',
+        blocks: 'pas-un-tableau'
+      },
+      {
+        ...secondFormation,
+        raw: { targets: 'string', prerequisites: [{ noText: true }, { text: 5 }] },
+        evaluation: ['ok', ' ', 3, null],
+        blocks: []
+      }
+    ] as unknown as DirectusFormation[])
+
+    const first = await service.findBySlug('pilotage-de-projet')
+    const second = await service.findBySlug('securite')
+
+    expect(first?.targets).toBeNull()
+    expect(first?.blocks).toBeNull()
+    expect(first?.evaluation).toBeNull()
+    expect(second?.targets).toBeNull()
+    expect(second?.prerequisites).toBeNull()
+    expect(second?.evaluation).toEqual(['ok'])
+    expect(second?.blocks).toEqual([])
+  })
+
+  it('returns pedagogy null when no editable field nor blocks match', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      {
+        ...baseFormation,
+        pedagogy: null,
+        blocks: 'non-array'
+      }
+    ] as unknown as DirectusFormation[])
+
+    const course = await service.findBySlug('pilotage-de-projet')
+
+    expect(course?.pedagogy).toBeNull()
+  })
+
+  it('extracts imageUrl fallbacks from raw image', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      {
+        ...baseFormation,
+        raw: { image: { url: 'https://img.test/a.png' } }
+      },
+      {
+        ...secondFormation,
+        raw: { image: { url: 42 } }
+      }
+    ] as unknown as DirectusFormation[])
+
+    const first = await service.findBySlug('pilotage-de-projet')
+    const second = await service.findBySlug('securite')
+
+    expect(first?.imageUrl).toBe('https://img.test/a.png')
+    expect(second?.imageUrl).toBeNull()
+  })
+
+  it('finds a course by slug without a family filter', async () => {
+    const course = await service.findBySlug('pilotage-de-projet')
+
+    expect(course?.slug).toBe('pilotage-de-projet')
+  })
+
+  it('rejects a slug when the family mismatches', async () => {
+    const course = await service.findBySlug('pilotage-de-projet', 'securite')
+
+    expect(course).toBeNull()
+  })
+
+  it('counts repeated families and skips rows without family slug', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      baseFormation,
+      { ...baseFormation, id: 5, digiforma_id: 'prog-005', slug: 'autre', famille: null },
+      { ...baseFormation, id: 6, digiforma_id: 'prog-006', slug: 'encore' }
+    ] as unknown as DirectusFormation[])
+
+    const families = await service.families()
+
+    expect(families).toEqual([{ slug: 'management', count: 2 }])
+  })
+
+  it('matches a location by postal code prefix', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      {
+        ...baseFormation,
+        sessions: [
+          {
+            id: 's1',
+            startDate: null,
+            endDate: null,
+            modality: null,
+            seatsRemaining: null,
+            location: { postalCode: '69003' }
+          }
+        ]
+      }
+    ] as unknown as DirectusFormation[])
+
+    const result = await service.list({ location: '6900', page: 1, limit: 10 } as ListCoursesDto)
+
+    expect(result.items).toHaveLength(1)
+  })
+
+  it('does not filter when location/search tokens are all stripped', async () => {
+    const result = await service.list({
+      location: 'x',
+      search: 'le',
+      page: 1,
+      limit: 10
+    } as ListCoursesDto)
+
+    expect(result.items).toHaveLength(2)
+  })
+
+  it('buckette une durée courte via les jours seuls', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      { ...baseFormation, duration_hours: null, duration_days: 1 },
+      { ...secondFormation, duration_hours: null, duration_days: 2 }
+    ] as unknown as DirectusFormation[])
+
+    const result = await service.list({ durations: 'courte', page: 1, limit: 10 } as ListCoursesDto)
+
+    expect(result.items.map((i) => i.slug)).toEqual(['pilotage-de-projet'])
+  })
+
+  it('falls back to updatedAt when duration and price are equal', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      {
+        ...baseFormation,
+        duration_hours: 7,
+        price: 100,
+        updated_at: '2026-01-10T00:00:00.000Z'
+      },
+      {
+        ...secondFormation,
+        duration_hours: 7,
+        price: 100,
+        updated_at: '2026-01-20T00:00:00.000Z'
+      }
+    ] as unknown as DirectusFormation[])
+
+    for (const sort of [CourseSortField.duration, CourseSortField.price]) {
+      const result = await service.list({
+        sort,
+        order: CourseSortOrder.asc,
+        page: 1,
+        limit: 10
+      } as ListCoursesDto)
+      expect(result.items[0].slug).toBe('securite')
+    }
+  })
+
+  it('recomputes rows when the cache entry is malformed', async () => {
+    cache.get.mockImplementation((key: string) => {
+      if (key === 'courses:rows') return Promise.resolve([{ junk: true }])
+      return Promise.resolve(null)
+    })
+
+    const result = await service.list({ page: 1, limit: 10 } as ListCoursesDto)
+
+    expect(result.items).toHaveLength(2)
+    expect(catalog.fetchAllFormations).toHaveBeenCalled()
+  })
+
+  it('skips formations without category in applyFamilies', async () => {
+    const {
+      catalog: catalogMock,
+      applyFamilyAssignments,
+      fetchAllFormations,
+      getFamilyIdsBySlug
+    } = mockCatalog()
+    getFamilyIdsBySlug.mockResolvedValue(new Map([['management', 1]]))
+    fetchAllFormations.mockResolvedValue([
+      { ...baseFormation, category_name: null },
+      {
+        ...baseFormation,
+        id: 7,
+        digiforma_id: 'prog-007',
+        slug: 'deja-posee',
+        famille: { id: 99, slug: 'autre-famille' },
+        sous_famille: null
+      }
+    ] as unknown as DirectusFormation[])
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CatalogService,
+        { provide: CacheService, useValue: mockCache().cache },
+        { provide: DirectusCatalogService, useValue: catalogMock }
+      ]
+    }).compile()
+    const local = module.get<CatalogService>(CatalogService)
+
+    await local.applyFamilies()
+
+    expect(applyFamilyAssignments).toHaveBeenCalledWith(new Map())
+  })
+
+  it('slugifies categories with punctuation in applyFamilies', async () => {
+    const {
+      catalog: catalogMock,
+      applyFamilyAssignments,
+      fetchAllFormations,
+      getFamilyIdsBySlug
+    } = mockCatalog()
+    getFamilyIdsBySlug.mockResolvedValue(new Map([['gestion-co', 3]]))
+    fetchAllFormations.mockResolvedValue([
+      {
+        ...baseFormation,
+        category_name: '« Gestion & Co »',
+        famille: null,
+        sous_famille: null
+      }
+    ] as unknown as DirectusFormation[])
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CatalogService,
+        { provide: CacheService, useValue: mockCache().cache },
+        { provide: DirectusCatalogService, useValue: catalogMock }
+      ]
+    }).compile()
+    const local = module.get<CatalogService>(CatalogService)
+
+    await local.applyFamilies()
+
+    expect(applyFamilyAssignments).toHaveBeenCalledWith(
+      new Map([['prog-001', { famille: 'gestion-co' }]])
+    )
+  })
+})
+
+describe('branch coverage: residual arms', () => {
+  let service: CatalogService
+  let cache: { get: ReturnType<typeof vi.fn>; set: ReturnType<typeof vi.fn> }
+  let catalog: {
+    fetchAllFormations: ReturnType<typeof vi.fn>
+    fetchAllCentres: ReturnType<typeof vi.fn>
+  }
+
+  beforeEach(async () => {
+    const { cache: cacheMock, get, set } = mockCache()
+    const { catalog: catalogMock, fetchAllFormations, fetchAllCentres } = mockCatalog()
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CatalogService,
+        { provide: CacheService, useValue: cacheMock },
+        { provide: DirectusCatalogService, useValue: catalogMock }
+      ]
+    }).compile()
+
+    service = module.get<CatalogService>(CatalogService)
+    cache = { get, set }
+    catalog = { fetchAllFormations, fetchAllCentres }
+    cache.get.mockResolvedValue(null)
+  })
+
+  it('retourne null quand les listes de textes sont vides', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      {
+        ...baseFormation,
+        raw: { targets: [{ text: 'ok' }, 'x', { text: ' ' }] },
+        evaluation: [null, ' '],
+        pedagogy: [null, '  '],
+        blocks: [
+          { type: 'pedagogie', name: 'Sans description' },
+          { type: 'autre', name: 'Ignoré' }
+        ]
+      },
+      {
+        ...secondFormation,
+        pedagogy: null,
+        blocks: [{ type: 'objectifs', name: 'Objectifs' }]
+      }
+    ] as unknown as DirectusFormation[])
+
+    const first = await service.findBySlug('pilotage-de-projet')
+    const second = await service.findBySlug('securite')
+
+    expect(first?.targets).toEqual(['ok'])
+    expect(first?.evaluation).toBeNull()
+    expect(first?.pedagogy).toEqual([{ title: 'Sans description', description: null }])
+    expect(second?.pedagogy).toBeNull()
+  })
+
+  it('applique les fallbacks de listes Directus absentes', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      {
+        ...baseFormation,
+        center_slugs: undefined,
+        modalities: undefined,
+        cpf: null
+      }
+    ] as unknown as DirectusFormation[])
+
+    const course = await service.findBySlug('pilotage-de-projet')
+
+    expect(course?.centerSlugs).toEqual([])
+    expect(course?.modalities).toEqual([])
+
+    const cpf = await service.list({ cpf: true, page: 1, limit: 10 } as ListCoursesDto)
+    expect(cpf.items).toHaveLength(0)
+  })
+
+  it('retombe sur les jours et coordonnées nulls', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      {
+        ...baseFormation,
+        duration_days: null,
+        duration_hours: null,
+        sessions: [
+          {
+            id: 's1',
+            startDate: null,
+            endDate: null,
+            modality: null,
+            seatsRemaining: null,
+            location: { city: 'Lyon', postalCode: null, centreSlug: 'lyon' }
+          }
+        ]
+      }
+    ] as unknown as DirectusFormation[])
+    catalog.fetchAllCentres.mockResolvedValue([
+      {
+        id: 1,
+        slug: 'lyon',
+        name: 'Lyon',
+        status: 'published',
+        address: 'Lyon',
+        city: 'Lyon',
+        postal_code: '69003',
+        department: 'Rhône',
+        region: 'ARA',
+        latitude: null,
+        longitude: null
+      }
+    ])
+
+    const bucket = await service.list({ durations: 'courte', page: 1, limit: 10 } as ListCoursesDto)
+    expect(bucket.items).toHaveLength(1)
+
+    const geo = await service.list({
+      location: '45.76,4.85',
+      page: 1,
+      limit: 10
+    } as ListCoursesDto)
+    expect(geo.items).toHaveLength(0)
+  })
+
+  it('matche un token numérique quand postalCode est absent', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      {
+        ...baseFormation,
+        sessions: [
+          {
+            id: 's1',
+            startDate: null,
+            endDate: null,
+            modality: null,
+            seatsRemaining: null,
+            location: { city: 'Lyon', postalCode: null }
+          }
+        ]
+      }
+    ] as unknown as DirectusFormation[])
+
+    const miss = await service.list({ location: '69', page: 1, limit: 10 } as ListCoursesDto)
+    expect(miss.items).toHaveLength(0)
+  })
+
+  it('utilise les fallbacks numériques du tri', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      secondFormation,
+      { ...baseFormation, duration_hours: null, price: null },
+      {
+        ...secondFormation,
+        id: 9,
+        digiforma_id: 'prog-009',
+        slug: 'troisieme',
+        duration_hours: null,
+        price: null
+      }
+    ] as unknown as DirectusFormation[])
+
+    const byDuration = await service.list({
+      sort: CourseSortField.duration,
+      order: CourseSortOrder.desc,
+      page: 1,
+      limit: 10
+    } as ListCoursesDto)
+    expect(byDuration.items[0].slug).toBe('securite')
+
+    const byPrice = await service.list({
+      sort: CourseSortField.price,
+      order: CourseSortOrder.desc,
+      page: 1,
+      limit: 10
+    } as ListCoursesDto)
+    expect(byPrice.items[0].slug).toBe('securite')
+  })
+
+  it('sert les rows depuis le cache quand elles sont valides', async () => {
+    const cachedRow = {
+      course: {
+        id: 1,
+        slug: 'cached',
+        title: 'Cachée',
+        description: null,
+        durationDays: null,
+        durationHours: null,
+        price: null,
+        cpf: null,
+        cpfCode: null,
+        certification: null,
+        certifierName: null,
+        category: null,
+        familySlug: 'management',
+        subFamilySlug: null,
+        subFamilyName: null,
+        centerSlug: null,
+        centerSlugs: [],
+        modalities: [],
+        sessions: null,
+        image: null,
+        imageUrl: null,
+        generatedProgramUrl: null,
+        status: 'published',
+        seoTitle: null,
+        seoDescription: null,
+        seoCanonical: null
+      },
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      searchText: 'cachee',
+      locationText: '',
+      locations: []
+    }
+    cache.get.mockImplementation((key: string) => {
+      if (key === 'courses:rows') return Promise.resolve([cachedRow])
+      return Promise.resolve(null)
+    })
+
+    const result = await service.list({ page: 1, limit: 10 } as ListCoursesDto)
+
+    expect(result.items[0].slug).toBe('cached')
+    expect(catalog.fetchAllFormations).not.toHaveBeenCalled()
+  })
+
+  it('propose une sous-famille via la famille existante', async () => {
+    const {
+      catalog: catalogMock,
+      applyFamilyAssignments,
+      fetchAllFormations,
+      getFamilyIdsBySlug,
+      getSubFamilyIdsByFamilySlug
+    } = mockCatalog()
+    getFamilyIdsBySlug.mockResolvedValue(new Map())
+    getSubFamilyIdsByFamilySlug.mockResolvedValue(
+      new Map([['management', new Map([['atelier', 7]])]])
+    )
+    fetchAllFormations.mockResolvedValue([
+      { ...baseFormation, category_name: 'Atelier', sous_famille: null },
+      {
+        ...baseFormation,
+        id: 8,
+        digiforma_id: 'prog-008',
+        slug: 'sans-famille',
+        category_name: 'Atelier',
+        famille: null,
+        sous_famille: null
+      }
+    ] as unknown as DirectusFormation[])
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CatalogService,
+        { provide: CacheService, useValue: mockCache().cache },
+        { provide: DirectusCatalogService, useValue: catalogMock }
+      ]
+    }).compile()
+    const local = module.get<CatalogService>(CatalogService)
+
+    await local.applyFamilies()
+
+    expect(applyFamilyAssignments).toHaveBeenCalledWith(
+      new Map([['prog-001', { sousFamille: 'atelier' }]])
     )
   })
 })

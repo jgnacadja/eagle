@@ -28,8 +28,11 @@ const stubs = {
       },
       Benefits: { props: ['title'], template: '<section><h2>{{ title }}</h2></section>' },
       Candidature: {
+        name: 'Candidature',
         props: ['open', 'voie'],
-        template: '<div class="candidature-dialog" :data-open="String(open)" :data-voie="voie" />'
+        emits: ['update:open'],
+        template:
+          '<div class="candidature-dialog" :data-open="String(open)" :data-voie="voie"><button class="cand-close" @click="$emit(\'update:open\', false)" /></div>'
       }
     }
   }
@@ -104,5 +107,41 @@ describe('pages/referencer-mon-organisme.vue', () => {
     await cta!.trigger('click')
 
     expect(dialog().attributes('data-open')).toBe('true')
+  })
+
+  it('referme le dialog quand la candidature émet update:open', async () => {
+    const wrapper = await mountOrganisme()
+
+    const cta = wrapper.findAll('button').find((b) => b.text() === 'Déposer une candidature')
+    await cta!.trigger('click')
+    expect(wrapper.find('.candidature-dialog').attributes('data-open')).toBe('true')
+
+    await wrapper.find('.cand-close').trigger('click')
+    expect(wrapper.find('.candidature-dialog').attributes('data-open')).toBe('false')
+  })
+
+  it('affiche la carte quand des centres sont retournés', async () => {
+    vi.stubGlobal(
+      'useDirectusList',
+      vi.fn(() =>
+        Promise.resolve(
+          ref([
+            {
+              slug: 'creteil',
+              name: 'Centre de Créteil',
+              city: 'Créteil',
+              postal_code: '94000',
+              department: 'Val-de-Marne',
+              latitude: 48.79,
+              longitude: 2.45
+            }
+          ])
+        )
+      )
+    )
+    const wrapper = await mountOrganisme()
+
+    expect(wrapper.findComponent({ name: 'CenterMap' }).exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('Carte de France interactive')
   })
 })

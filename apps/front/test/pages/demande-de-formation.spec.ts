@@ -38,6 +38,9 @@ const centreCreteil = {
   postal_code: '94000'
 }
 
+// Registre mutable des centres Directus résolus par slug.
+const centresBySlug = new Map<string, typeof centreCreteil>([[centreCreteil.slug, centreCreteil]])
+
 // Le mock résout le slug depuis la query (objet ou getter) : un mauvais
 // slug remonterait [] et ferait échouer les tests de contexte.
 vi.stubGlobal(
@@ -45,16 +48,20 @@ vi.stubGlobal(
   vi.fn(async (_collection: string, _key: string, query?: unknown) => {
     const q = typeof query === 'function' ? (query as () => unknown)() : query
     const slug = (q as { filter?: { slug?: { _eq?: string } } } | null)?.filter?.slug?._eq
-    return ref(slug === centreCreteil.slug ? [centreCreteil] : [])
+    const centre = slug ? centresBySlug.get(slug) : undefined
+    return ref(centre ? [centre] : [])
   })
 )
 
 // Stub du composable de soumission : le mock contrôle le résultat de l'appel API.
 const leadSubmitMock = vi.fn<(endpoint: string, payload: unknown) => Promise<boolean>>()
+// sending/error pilotables : couvrent le spinner d'envoi et l'alerte d'échec.
+const sendingState = ref(false)
+const submitErrorState = ref<string | null>(null)
 vi.stubGlobal('useLeadSubmit', () => ({
   submit: leadSubmitMock,
-  sending: ref(false),
-  error: ref(null)
+  sending: sendingState,
+  error: submitErrorState
 }))
 
 const routeStub = {
@@ -108,7 +115,12 @@ const stubs = {
       '<textarea :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" />'
   },
   Label: { template: '<label><slot /></label>' },
-  Select: { template: '<div><slot /></div>' },
+  Select: {
+    props: ['modelValue'],
+    emits: ['update:modelValue'],
+    template:
+      '<select :value="modelValue" @change="$emit(\'update:modelValue\', $event.target.value)"><slot /></select>'
+  },
   SelectTrigger: { template: '<button type="button"><slot /></button>' },
   SelectContent: { template: '<div><slot /></div>' },
   SelectItem: { props: ['value'], template: '<span><slot /></span>' },
@@ -163,9 +175,13 @@ describe('pages/centres/demande-de-formation', () => {
     vi.clearAllMocks()
     routeStub.query = {}
     routeStub.meta = {}
+    centresBySlug.clear()
+    centresBySlug.set(centreCreteil.slug, centreCreteil)
     window.sessionStorage.clear()
     fetchMock.mockImplementation(async () => courseSst)
     leadSubmitMock.mockReset().mockResolvedValue(true)
+    sendingState.value = false
+    submitErrorState.value = null
   })
 
   it('affiche le titre, le stepper et les trois sections du formulaire', async () => {
@@ -236,6 +252,15 @@ describe('pages/centres/demande-de-formation', () => {
       { label: 'Centre LEARN UP de Créteil', to: '/centres/creteil' },
       { label: 'Demande de formation' }
     ])
+  })
+
+  it('dégrade sans encart formation quand le fetch échoue', async () => {
+    routeStub.query = { famille: 'sante', formation: 'sst-initial' }
+    fetchMock.mockRejectedValue(new Error('down'))
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Demande de formation')
+    expect(wrapper.text()).not.toContain('Votre projet de formation')
   })
 
   it('résout la formation depuis l’API quand famille + formation sont transmis', async () => {
@@ -526,6 +551,7 @@ describe('pages/centres/demande-de-formation', () => {
     const wrapper = await mountPage()
     await fillValidForm(wrapper)
 
+    await wrapper.find('#precisions').setValue('Besoin de créneaux en soirée.')
     await wrapper.find('form').trigger('submit.prevent')
     await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
 
@@ -542,6 +568,7 @@ describe('pages/centres/demande-de-formation', () => {
         centre: 'Centre LEARN UP de Créteil',
         formation: 'SST — Sauveteur secouriste du travail',
         session: 'Session du 12 octobre 2026',
+        precisions: 'Besoin de créneaux en soirée.',
         consentement: true
       })
     )
@@ -597,6 +624,76 @@ describe('pages/centres/demande-de-formation', () => {
     )
   })
 
+  it('confirmation : session sans date affiche « session programmée »', async () => {
+    fetchMock.mockImplementation(async () => ({
+      ...courseSst,
+      sessions: [{ ...courseSst.sessions[0], startDate: '' }]
+    }))
+    routeStub.query = {
+      centre: 'creteil',
+      famille: 'sante',
+      formation: 'sst-initial',
+      session: 'sess-1'
+    }
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.text().includes('Votre demande est transmise'))
+
+    expect(wrapper.text()).toContain('session programmée à Créteil')
+  })
+
+  it('confirmation sans session ni intra : le suffixe se limite au point final', async () => {
+    routeStub.query = { famille: 'sante', formation: 'sst-initial' }
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.text().includes('Votre demande est transmise'))
+
+    expect(wrapper.text()).toContain('SST — Sauveteur secouriste du travail.')
+  })
+
+  it('confirmation : session sans lieu retombe sur la ville du centre', async () => {
+    fetchMock.mockImplementation(async () => ({
+      ...courseSst,
+      sessions: [
+        { id: 'sess-1', startDate: '2026-10-12', modality: 'presentiel', seatsRemaining: 5 }
+      ]
+    }))
+    routeStub.query = {
+      centre: 'creteil',
+      famille: 'sante',
+      formation: 'sst-initial',
+      session: 'sess-1'
+    }
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.text().includes('Votre demande est transmise'))
+
+    expect(wrapper.text()).toContain('session du 12 octobre 2026 à Créteil')
+  })
+
+  it('confirmation : session sans lieu ni centre omet la ville', async () => {
+    fetchMock.mockImplementation(async () => ({
+      ...courseSst,
+      sessions: [
+        { id: 'sess-1', startDate: '2026-10-12', modality: 'presentiel', seatsRemaining: 5 }
+      ]
+    }))
+    routeStub.query = { famille: 'sante', formation: 'sst-initial', session: 'sess-1' }
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.text().includes('Votre demande est transmise'))
+
+    expect(wrapper.text()).toContain('session du 12 octobre 2026.')
+  })
+
   it('garde le formulaire et le brouillon si l’envoi échoue', async () => {
     leadSubmitMock.mockResolvedValue(false)
     window.sessionStorage.setItem('demande-formation-draft', '{"salaries":5}')
@@ -617,5 +714,150 @@ describe('pages/centres/demande-de-formation', () => {
     await wrapper.find('form').trigger('submit.prevent')
     // Formulaire vide : la validation bloque avant tout appel réseau.
     expect(wrapper.find('form').exists()).toBe(true)
+  })
+
+  it('affiche les erreurs salariés et échéance quand les champs sont vidés', async () => {
+    const wrapper = await mountPage()
+
+    // Défauts valides (8 salariés, « Septembre 2026 ») : l'erreur n'apparaît
+    // que si l'utilisateur vide explicitement les champs.
+    await wrapper.find('#salaries').setValue('')
+    await wrapper.find('select').setValue('')
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.find('#salaries-error').exists())
+
+    expect(wrapper.text()).toContain('Indiquez le nombre de salariés à former.')
+    expect(wrapper.text()).toContain('Choisissez une échéance.')
+    expect(wrapper.find('#echeance-error').exists()).toBe(true)
+  })
+
+  it('affiche le spinner « Envoi en cours… » pendant la soumission', async () => {
+    sendingState.value = true
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Envoi en cours…')
+    expect(wrapper.find('.animate-spin').exists()).toBe(true)
+  })
+
+  it('affiche l’alerte quand l’envoi échoue', async () => {
+    submitErrorState.value = 'Le serveur a rejeté la demande.'
+    const wrapper = await mountPage()
+
+    const alert = wrapper.find('[role="alert"]')
+    expect(alert.exists()).toBe(true)
+    expect(alert.text()).toContain('Le serveur a rejeté la demande.')
+  })
+
+  it('purge un brouillon corrompu au chargement', async () => {
+    window.sessionStorage.setItem('demande-formation-draft', '{json invalide')
+    const wrapper = await mountPage()
+
+    expect(wrapper.find('form').exists()).toBe(true)
+    expect(window.sessionStorage.getItem('demande-formation-draft')).toBeNull()
+  })
+
+  it('formate le méta centre pour chaque variante de code postal', async () => {
+    centresBySlug.set('fort-de-france', {
+      slug: 'fort-de-france',
+      name: 'Centre de Fort-de-France',
+      city: 'Fort-de-France',
+      department: 'Martinique',
+      postal_code: '97234'
+    })
+    centresBySlug.set('bastia', {
+      slug: 'bastia',
+      name: 'Centre de Bastia',
+      city: 'Bastia',
+      department: 'Haute-Corse',
+      postal_code: '20290'
+    })
+    centresBySlug.set('ajaccio', {
+      slug: 'ajaccio',
+      name: "Centre d'Ajaccio",
+      city: 'Ajaccio',
+      department: 'Corse-du-Sud',
+      postal_code: '20100'
+    })
+    centresBySlug.set('paris', {
+      slug: 'paris',
+      name: 'Centre de Paris',
+      city: 'Paris',
+      department: 'Paris',
+      postal_code: '75001'
+    })
+    centresBySlug.set('sans-cp', {
+      slug: 'sans-cp',
+      name: 'Centre sans code postal',
+      city: 'Lyon',
+      department: 'Rhône',
+      postal_code: null as unknown as string
+    })
+
+    const metas: Record<string, string> = {
+      'fort-de-france': 'Fort-de-France · Martinique (972)',
+      bastia: 'Bastia · Haute-Corse (2B)',
+      ajaccio: 'Ajaccio · Corse-du-Sud (2A)',
+      paris: 'Paris',
+      'sans-cp': 'Lyon · Rhône'
+    }
+    for (const [slug, meta] of Object.entries(metas)) {
+      routeStub.query = { centre: slug }
+      const wrapper = await mountPage()
+      expect(wrapper.text()).toContain(meta)
+    }
+  })
+
+  it('dégrade les libellés centre quand le slug est introuvable', async () => {
+    routeStub.query = { centre: 'inconnu' }
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Centre partenaire')
+  })
+
+  it('affiche le titre du centre comme libellé de retour sans fiche formation', async () => {
+    routeStub.query = { centre: 'creteil' }
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.text().includes('Votre demande est transmise'))
+
+    expect(wrapper.find('a[href="/centres/creteil"]').text()).toContain('Retour au centre')
+  })
+
+  it('conserve la modalité brute quand elle est inconnue du dictionnaire', async () => {
+    fetchMock.mockImplementation(async () => ({
+      ...courseSst,
+      sessions: [
+        {
+          ...courseSst.sessions[0],
+          modality: 'format-exotique',
+          seatsRemaining: null
+        }
+      ]
+    }))
+    routeStub.query = {
+      centre: 'creteil',
+      famille: 'securite-prevention',
+      formation: 'sst-initial',
+      session: 'sess-1'
+    }
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('format-exotique')
+  })
+
+  it('affiche un méta formation réduit quand durée et certification manquent', async () => {
+    fetchMock.mockImplementation(async () => ({
+      ...courseSst,
+      durationDays: null,
+      certification: null,
+      certifierName: 'INRS'
+    }))
+    routeStub.query = { famille: 'securite-prevention', formation: 'sst-initial' }
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('INRS')
   })
 })

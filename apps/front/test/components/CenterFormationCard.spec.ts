@@ -65,4 +65,56 @@ describe('CenterFormationCard', () => {
     expect(wrapper.text()).toContain('▲')
     expect(wrapper.text()).toContain('Session le 18/09')
   })
+
+  it('renders the « Voir la formation » button for the button variant', () => {
+    const wrapper = mount(CenterFormationCard, {
+      props: { ...baseProps, to: '/formations/f/caces', variant: 'button' as const },
+      global: { stubs }
+    })
+    expect(wrapper.text()).toContain('Voir la formation')
+  })
+
+  it('falls back to the full label when labelShort is absent', () => {
+    const wrapper = mount(CenterFormationCard, {
+      props: {
+        ...baseProps,
+        status: { type: 'neutral' as const, label: 'Sur demande', labelShort: 'Demande' }
+      },
+      global: { stubs }
+    })
+    expect(wrapper.text()).toContain('Demande')
+    expect(wrapper.text()).toContain('Sur demande')
+  })
+
+  it('renders eyebrow and family overline in the similar variant', () => {
+    const wrapper = mount(CenterFormationCard, {
+      props: { ...baseProps, eyebrow: 'Nouveau', variant: 'similar', family: 'Engins de chantier' },
+      global: { stubs }
+    })
+
+    expect(wrapper.text()).toContain('Nouveau')
+    expect(wrapper.text()).toContain('Engins de chantier')
+  })
+
+  it('masque l’overline sans sous-famille ni famille', () => {
+    const wrapper = mount(CenterFormationCard, {
+      props: { ...baseProps, subFamily: '' },
+      global: { stubs }
+    })
+
+    expect(wrapper.find('.text-accent-text').exists()).toBe(false)
+  })
+
+  it('renders the « Consulter » link for the default variant', () => {
+    const wrapper = mount(CenterFormationCard, {
+      props: {
+        ...baseProps,
+        to: '/formations/caces-conduite-engins/caces-r489'
+      },
+      global: { stubs }
+    })
+
+    expect(wrapper.text()).toContain('Consulter')
+    expect(wrapper.text()).not.toContain('Voir la formation')
+  })
 })

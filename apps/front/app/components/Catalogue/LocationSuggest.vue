@@ -74,8 +74,8 @@ function onInput() {
 }
 
 function pick(index: number) {
-  const suggestion = suggestions.value[index]
-  if (!suggestion) return
+  // pick n'est appelé que via les options rendues ou Entrée avec activeIndex >= 0
+  const suggestion = suggestions.value[index]!
   input.value = suggestion.label
   model.value = suggestion.location
   close()

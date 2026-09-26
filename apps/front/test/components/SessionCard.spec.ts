@@ -49,9 +49,44 @@ describe('SessionCard', () => {
     expect(wrapper.text()).toContain('2 places')
   })
 
+  it('uses the surface variant and no marker for neutral type', () => {
+    const wrapper = mount(SessionCard, {
+      props: { ...baseProps, places: 1, type: 'neutral' as const },
+      global: { stubs }
+    })
+
+    expect(wrapper.find('span[aria-hidden="true"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('1 place')
+  })
+
+  it('renders the price alone without the badge', () => {
+    const wrapper = mount(SessionCard, {
+      props: { ...baseProps, price: '490 €', priceNote: 'HT / participant' },
+      global: { stubs }
+    })
+
+    expect(wrapper.text()).toContain('490 €')
+    expect(wrapper.text()).not.toContain('place')
+  })
+
   it('omits the status block when neither price nor places are given', () => {
     const wrapper = mount(SessionCard, { props: baseProps, global: { stubs } })
 
     expect(wrapper.text()).not.toContain('place')
+  })
+
+  it('uses the default to/ctaLabel props', () => {
+    const wrapper = mount(SessionCard, { props: baseProps, global: { stubs } })
+
+    expect(wrapper.text()).toContain("S'inscrire")
+  })
+
+  it('renders the provided to/ctaLabel', () => {
+    const wrapper = mount(SessionCard, {
+      props: { ...baseProps, to: '/sessions/42', ctaLabel: 'Réserver' },
+      global: { stubs }
+    })
+
+    expect(wrapper.text()).toContain('Réserver')
   })
 })

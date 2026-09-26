@@ -12,9 +12,10 @@ let fetchImpl: (url: string, query?: Record<string, unknown>) => Promise<unknown
 
 vi.stubGlobal('defineSitemapEventHandler', (handler: unknown) => handler)
 vi.stubGlobal('defineCachedEventHandler', (handler: unknown) => handler)
+let apiToken = 'ssr-token'
 vi.stubGlobal('useRuntimeConfig', () => ({
   apiBase: 'http://api.test',
-  internalApiToken: 'ssr-token'
+  internalApiToken: apiToken
 }))
 vi.stubGlobal(
   '$fetch',
@@ -58,14 +59,24 @@ function happyFetch(url: string): Promise<unknown> {
   return Promise.reject(new Error(`unexpected url ${url}`))
 }
 
-function locs(result: Array<{ loc: string }>): string[] {
-  return result.map((u) => u.loc).sort()
+interface SitemapEntry {
+  loc: string
+  lastmod?: string | Date
+}
+
+function locs(result: Array<SitemapEntry | string>): string[] {
+  return result.map((u) => (typeof u === 'string' ? u : u.loc)).sort()
+}
+
+function findLoc(result: Array<SitemapEntry | string>, loc: string): SitemapEntry | undefined {
+  return result.find((u): u is SitemapEntry => typeof u !== 'string' && u.loc === loc)
 }
 
 describe('server/api/__sitemap__/urls', () => {
   beforeEach(() => {
     fetchCalls.length = 0
     fetchImpl = happyFetch
+    apiToken = 'ssr-token'
   })
 
   it('émet toutes les collections publiées avec leurs préfixes routiers', async () => {
@@ -82,11 +93,9 @@ describe('server/api/__sitemap__/urls', () => {
 
   it('passe lastmod quand la collection expose une date', async () => {
     const result = await handler(event)
-    expect(result.find((u) => u.loc === '/actualites/loi-iafp')?.lastmod).toBe(
-      '2026-09-01T10:00:00'
-    )
-    expect(result.find((u) => u.loc === '/mentions-legales')?.lastmod).toBe('2026-08-15T12:00:00')
-    expect(result.find((u) => u.loc === '/formations/sante')).not.toHaveProperty('lastmod')
+    expect(findLoc(result, '/actualites/loi-iafp')?.lastmod).toBe('2026-09-01T10:00:00')
+    expect(findLoc(result, '/mentions-legales')?.lastmod).toBe('2026-08-15T12:00:00')
+    expect(findLoc(result, '/formations/sante')).not.toHaveProperty('lastmod')
   })
 
   it('filtre status=published sur les collections Directus', async () => {
@@ -133,6 +142,52 @@ describe('server/api/__sitemap__/urls', () => {
     fetchImpl = () => Promise.reject(new Error('all down'))
     const result = await handler(event)
     expect(result).toEqual([])
+  })
+
+  it('arrête la pagination dès que le total est atteint', async () => {
+    fetchImpl = (url, query) => {
+      if (url.endsWith('/courses')) {
+        const page = Number(query?.page ?? 1)
+        const item = { slug: `f-${page}`, familySlug: 'sante' }
+        return Promise.resolve({ items: [item], total: 2 })
+      }
+      return happyFetch(url)
+    }
+    const result = await handler(event)
+    expect(locs(result)).toContain('/formations/sante/f-2')
+    const coursesCalls = fetchCalls.filter((c) => c.url.endsWith('/courses'))
+    expect(coursesCalls).toHaveLength(2)
+  })
+
+  it('arrête la pagination après la première page quand total est absent', async () => {
+    fetchImpl = (url) =>
+      url.endsWith('/courses')
+        ? Promise.resolve({ items: [{ slug: 'sst', familySlug: 'sante' }] })
+        : happyFetch(url)
+    const result = await handler(event)
+    expect(locs(result)).toContain('/formations/sante/sst')
+    const coursesCalls = fetchCalls.filter((c) => c.url.endsWith('/courses'))
+    expect(coursesCalls).toHaveLength(1)
+  })
+
+  it('déduplique les locs identiques au sein d’une collection', async () => {
+    const base = fetchImpl
+    fetchImpl = (url) =>
+      url.endsWith('/items/articles')
+        ? directusList([
+            { slug: 'loi-iafp', publish_at: '2026-09-01T10:00:00' },
+            { slug: 'loi-iafp', publish_at: '2026-09-01T10:00:00' }
+          ])
+        : base(url)
+    const result = await handler(event)
+    expect(locs(result).filter((l) => l === '/actualites/loi-iafp')).toHaveLength(1)
+  })
+
+  it('fonctionne sans token interne configuré', async () => {
+    apiToken = ''
+    const result = await handler(event)
+    expect(locs(result)).toContain('/centres/lyon-part-dieu')
+    expect(fetchCalls.every((c) => c.headers === undefined)).toBe(true)
   })
 
   it('déduplique un slug de page légale identique à une route statique', async () => {

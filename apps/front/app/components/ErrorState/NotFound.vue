@@ -18,8 +18,11 @@
       <Button as-child variant="accent" size="pill" class="px-lg">
         <NuxtLink :to="primaryTo">{{ primaryLabel }}</NuxtLink>
       </Button>
-      <Button as-child variant="outline" size="pill" class="px-lg">
+      <Button v-if="secondaryTo" as-child variant="outline" size="pill" class="px-lg">
         <NuxtLink :to="secondaryTo">{{ secondaryLabel }}</NuxtLink>
+      </Button>
+      <Button v-else variant="outline" size="pill" class="px-lg" @click="emit('secondary')">
+        {{ secondaryLabel }}
       </Button>
     </div>
     <form
@@ -45,11 +48,7 @@
         button-label="Rechercher"
         class="w-full"
         @submit="emit('search', $event)"
-      >
-        <template #icon>
-          <IconSparkle :size="18" class="shrink-0 text-accent" />
-        </template>
-      </SearchInput>
+      />
     </form>
   </section>
 </template>
@@ -62,7 +61,8 @@ const props = withDefaults(
     title: string
     primaryTo: string
     primaryLabel: string
-    secondaryTo: string
+    /** Lien secondaire ; sans valeur, un bouton émet `secondary`. */
+    secondaryTo?: string
     secondaryLabel: string
     /** Affiche le formulaire de recherche quand renseigné. */
     searchPlaceholder?: string
@@ -70,10 +70,15 @@ const props = withDefaults(
     searchLabel?: string
     searchInputId?: string
   }>(),
-  { searchPlaceholder: undefined, searchLabel: undefined, searchInputId: undefined }
+  {
+    secondaryTo: undefined,
+    searchPlaceholder: undefined,
+    searchLabel: undefined,
+    searchInputId: undefined
+  }
 )
 
-const emit = defineEmits<{ search: [query: string] }>()
+const emit = defineEmits<{ search: [query: string]; secondary: [] }>()
 
 const titleId = `not-found-title-${useId()}`
 const generatedInputId = useId()

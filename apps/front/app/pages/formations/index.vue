@@ -31,11 +31,7 @@
             :loading="catalog.pending.value"
             class="w-full"
             @submit="triggerSearch"
-          >
-            <template #icon>
-              <IconSparkle :size="18" class="shrink-0 text-accent" />
-            </template>
-          </SearchInput>
+          />
         </form>
 
         <!-- Barre mobile : filtrer + tri -->
@@ -153,6 +149,8 @@
             @update:cpf="cpf = $event ?? false"
             @update:certifying="certifying = $event ?? false"
           />
+          <!-- C3 — porte de sortie « Être guidé » visible pendant le filtrage -->
+          <AssistantGuidedCard class="mt-xl" @open="openAssistant" />
         </aside>
 
         <!-- Résultats -->
@@ -254,9 +252,7 @@
               réponse adaptée vous sera proposée.
             </p>
             <div class="mt-lg flex flex-wrap justify-center gap-md">
-              <Button as-child size="pill-sm">
-                <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
-              </Button>
+              <Button size="pill-sm" @click="openAssistant"> Être guidé dans mon choix </Button>
               <Button as-child variant="outline" size="pill-sm">
                 <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
               </Button>
@@ -352,6 +348,9 @@
           >
             Afficher plus de résultats
           </Button>
+
+          <!-- Porte de sortie « Être guidé » — mobile (la sidebar est masquée) -->
+          <AssistantGuidedCard class="mt-2xl lg:hidden" @open="openAssistant" />
         </div>
       </div>
 
@@ -361,8 +360,8 @@
         title="Vous ne savez pas quelle formation choisir ?"
         text="Décrivez votre besoin : LEARN UP identifie la formation, le format et le lieu adaptés à votre situation."
       >
-        <Button as-child variant="accent" size="pill-sm" class="w-full sm:w-auto">
-          <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
+        <Button variant="accent" size="pill-sm" class="w-full sm:w-auto" @click="openAssistant">
+          Être guidé dans mon choix
         </Button>
         <Button as-child variant="outline-inverse" size="pill-sm" class="w-full sm:w-auto">
           <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
@@ -450,6 +449,7 @@ import {
   MODALITY_OPTIONS
 } from '~/utils/catalog-filters'
 import { useDirectusClient } from '~/composables/useDirectus'
+import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { revealStagger } from '~/utils/reveal'
 import { readItems } from '@directus/sdk'
 
@@ -510,6 +510,23 @@ const sortOptions: SortOption[] = [
   { value: 'duree', label: 'Durée' }
 ]
 const sortLabel = computed(() => sortOptions.find((o) => o.value === sortBy.value)?.label ?? '')
+
+// C3 — porte de sortie vers le moteur : la recherche en cours est envoyée
+// comme premier message du panneau, la famille et les filtres actifs en
+// contexte (pas de ressaisie).
+const assistant = useAssistantLauncher()
+function openAssistant() {
+  const q = searchQuery.value.trim()
+  const filters = activeFilters.value.map((f) => f.label)
+  assistant.open({
+    context: {
+      source: 'catalogue',
+      familleSlug: selectedFamilies.value.length === 1 ? selectedFamilies.value[0] : undefined,
+      filters: filters.length ? filters : undefined
+    },
+    message: q || undefined
+  })
+}
 
 // Sync from URL
 function parseListParam(value: unknown): string[] {

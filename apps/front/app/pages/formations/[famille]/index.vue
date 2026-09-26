@@ -168,6 +168,9 @@
           </div>
         </div>
 
+        <!-- C3 — porte de sortie « Être guidé » sous les filtres -->
+        <AssistantGuidedCard class="mt-lg" @open="openAssistant" />
+
         <!-- État vide -->
         <div
           v-if="!catalog.pending.value && !catalog.error.value && formations.length === 0"
@@ -305,8 +308,8 @@
           title="Quelle catégorie pour vos équipes ?"
           text="Décrivez vos engins et votre site : LEARN UP identifie les recommandations et catégories applicables."
         >
-          <Button as-child variant="accent" size="pill-sm" class="w-full sm:w-auto">
-            <NuxtLink to="#">Être guidé dans mon choix</NuxtLink>
+          <Button variant="accent" size="pill-sm" class="w-full sm:w-auto" @click="openAssistant">
+            Être guidé dans mon choix
           </Button>
           <Button as-child variant="outline-inverse" size="pill-sm" class="w-full sm:w-auto">
             <NuxtLink :to="`/centres/demande-de-formation?famille=${famille}`"
@@ -335,12 +338,12 @@
       title="Cette famille de formations n'est pas disponible."
       primary-to="/formations"
       primary-label="Voir le catalogue"
-      secondary-to="#"
       secondary-label="Être guidé dans mon choix"
       search-placeholder="Intitulé, compétence ou certification"
       search-label="Rechercher une formation"
       search-input-id="famille-search"
       @search="onErrorSearch"
+      @secondary="openAssistant"
     >
       <template #icon>
         <IconFileOff :size="32" class="text-ink" />
@@ -362,6 +365,7 @@ import {
   type FormationItem
 } from '~/composables/useCatalog'
 import { useDirectusClient } from '~/composables/useDirectus'
+import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { MODALITY_LABELS, MODALITY_OPTIONS } from '~/utils/catalog-filters'
 import { directusAssetUrl } from '~/utils/directusAsset'
 import { revealStagger } from '~/utils/reveal'
@@ -656,6 +660,23 @@ const familySessionBadge = computed(() => {
   }
   return null
 })
+
+// C3 — porte de sortie « Être guidé » : famille consultée + filtres actifs
+// transmis au panneau de recherche assistée.
+const assistant = useAssistantLauncher()
+function openAssistant() {
+  const filters: string[] = []
+  if (selectedSubFamily.value !== 'all') filters.push(subFamilyFilterLabel.value)
+  if (selectedModality.value !== 'all') filters.push(modalityFilterLabel.value)
+  if (selectedLocation.value !== 'all') filters.push(locationFilterLabel.value)
+  assistant.open({
+    context: {
+      source: 'catalogue',
+      familleSlug: famille,
+      filters: filters.length ? filters : undefined
+    }
+  })
+}
 
 function resetPage() {
   // Le watch de catalogQuery relance déjà la requête quand la page ou les

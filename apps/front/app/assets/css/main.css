@@ -389,6 +389,20 @@
   transform: translateY(calc(-1 * var(--spacing-md)));
 }
 
+/* Panneau recherche assistée — monte depuis le lanceur bas-droite. */
+.assistant-panel-enter-active,
+.assistant-panel-leave-active {
+  transition:
+    opacity 250ms ease-out,
+    transform 250ms ease-out;
+}
+
+.assistant-panel-enter-from,
+.assistant-panel-leave-to {
+  opacity: 0;
+  transform: translateY(var(--spacing-md));
+}
+
 .page-enter-active,
 .page-leave-active,
 .layout-enter-active,
@@ -496,6 +510,8 @@
   .menu-overlay-leave-active,
   .mobile-menu-enter-active,
   .mobile-menu-leave-active,
+  .assistant-panel-enter-active,
+  .assistant-panel-leave-active,
   .dialog-overlay,
   .dialog-content,
   .dialog-scroll-content,

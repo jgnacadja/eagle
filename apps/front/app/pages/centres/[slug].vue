@@ -272,6 +272,34 @@
               />
             </section>
 
+            <!-- C5 — recherche assistée localisée : ville + centre transmis -->
+            <Card class="p-lg">
+              <h2 class="font-sans text-h4 font-semibold text-ink">
+                Rechercher une formation près de {{ centre.city ?? 'ce centre' }}
+              </h2>
+              <form class="mt-md" role="search" aria-label="Recherche assistée" @submit.prevent>
+                <SearchInput
+                  v-model="assistantSearch"
+                  input-id="centre-assistant-search"
+                  sr-label="Décrire votre besoin de formation"
+                  placeholder="Décrivez votre besoin…"
+                  button-label="Lancer la recherche assistée"
+                  empty-error-message="Décrivez votre besoin pour lancer la recherche."
+                  @submit="onAssistantSearch"
+                >
+                  <template #icon>
+                    <IconSparkle :size="14" class="shrink-0 text-accent" aria-hidden="true" />
+                  </template>
+                </SearchInput>
+              </form>
+              <span
+                class="mt-md inline-flex items-center gap-xs rounded-full bg-surface px-md py-xs text-meta font-medium text-ink-muted"
+              >
+                <IconMapPin :size="12" aria-hidden="true" />
+                Localisation : {{ centre.city ?? centre.name }}
+              </span>
+            </Card>
+
             <!-- Formations disponibles -->
             <section
               id="formations"
@@ -545,6 +573,7 @@ import {
 } from '~/composables/useCatalog'
 import { availabilityStatus } from '~/composables/useCentres'
 import { useGeolocation } from '~/composables/useGeolocation'
+import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
 import { directusAssetUrl } from '~/utils/directusAsset'
 import { departmentCodeFromPostalCode, distanceKm, formatDistance } from '~/utils/geo'
@@ -588,6 +617,20 @@ const {
     throw error
   }
 })
+
+// C5 — le centre et sa ville sont transmis au panneau : la localisation est
+// déjà posée, l'utilisateur n'a que son besoin à décrire.
+const assistant = useAssistantLauncher()
+const assistantSearch = ref('')
+function openAssistant(message?: string) {
+  assistant.open({
+    context: { source: 'centre', centerSlug: slug, location: centre.value?.city ?? undefined },
+    message: message?.trim() || undefined
+  })
+}
+function onAssistantSearch(query: string) {
+  openAssistant(query)
+}
 
 type PageState = 'found' | 'not-found' | 'error'
 const pageState = computed<PageState>(() => {

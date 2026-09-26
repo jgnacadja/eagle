@@ -202,5 +202,41 @@ describe('SearchInput', () => {
 
       expect(wrapper.find('.h-control').classes()).not.toContain('focus-within:ring-2')
     })
+
+    it('bloque la soumission vide quand emptyErrorMessage est fourni', async () => {
+      const wrapper = mountInput({
+        emptyErrorMessage: 'Décrivez votre besoin pour lancer la recherche.'
+      })
+
+      const buttons = wrapper.findAll('button')
+      await buttons[buttons.length - 1]!.trigger('click')
+
+      expect(wrapper.emitted('submit')).toBeUndefined()
+      expect(wrapper.find('#test-search-error').text()).toBe(
+        'Décrivez votre besoin pour lancer la recherche.'
+      )
+      expect(wrapper.find('.search-input').attributes('aria-invalid')).toBe('true')
+    })
+
+    it('efface l’erreur de champ vide à la saisie', async () => {
+      const wrapper = mountInput({ emptyErrorMessage: 'Champ requis' })
+
+      const buttons = wrapper.findAll('button')
+      await buttons[buttons.length - 1]!.trigger('click')
+      expect(wrapper.find('#test-search-error').exists()).toBe(true)
+
+      await wrapper.find('.search-input').setValue('sst')
+      expect(wrapper.find('#test-search-error').exists()).toBe(false)
+    })
+
+    it('autorise la soumission vide sans emptyErrorMessage (recherche normale)', async () => {
+      const wrapper = mountInput()
+
+      const buttons = wrapper.findAll('button')
+      await buttons[buttons.length - 1]!.trigger('click')
+
+      expect(wrapper.emitted('submit')).toEqual([['']])
+      expect(wrapper.find('#test-search-error').exists()).toBe(false)
+    })
   })
 })

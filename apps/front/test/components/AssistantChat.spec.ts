@@ -1,7 +1,12 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import AssistantChat from '~/components/Assistant/Chat.vue'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
+
+const routeMock = (globalThis as Record<string, unknown>).useRoute as () => {
+  fullPath: string
+}
 
 const fetchMock = vi.fn()
 
@@ -19,6 +24,7 @@ const conversationStub = {
     '<button class="stop" @click="$emit(\'stop\')" />' +
     '<button class="reset" @click="$emit(\'reset\')" />' +
     '<button class="close" @click="$emit(\'close\')" />' +
+    '<a class="link" href="/centres/demande-de-formation?formation=sst">Demander</a>' +
     '</div>'
 }
 
@@ -80,6 +86,31 @@ describe('AssistantChat', () => {
     const body = fetchMock.mock.calls.at(-1)?.[1]?.body
     expect(body.message).toBe('un autre besoin')
     expect(wrapper.find('dialog').exists()).toBe(true)
+  })
+
+  it('closes the panel when navigation occurs behind it', async () => {
+    const launcher = useAssistantLauncher()
+    launcher.open()
+    const wrapper = mountChat()
+    expect(wrapper.find('dialog').exists()).toBe(true)
+
+    routeMock().fullPath = '/formations/sante/sst-sauveteur-secouriste-du-travail'
+    await nextTick()
+    expect(wrapper.find('dialog').exists()).toBe(false)
+    expect(launcher.isOpen.value).toBe(false)
+    routeMock().fullPath = '/'
+  })
+
+  it('closes the panel on a panel link click even without route change', async () => {
+    const launcher = useAssistantLauncher()
+    launcher.open()
+    const wrapper = mountChat()
+    expect(wrapper.find('dialog').exists()).toBe(true)
+
+    // Même URL que la route courante : fullPath ne change pas, le clic
+    // sur le lien doit quand même fermer le panneau.
+    await wrapper.find('.conversation .link').trigger('click')
+    expect(launcher.isOpen.value).toBe(false)
   })
 
   it('closes the panel on close event', async () => {

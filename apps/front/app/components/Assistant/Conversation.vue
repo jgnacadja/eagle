@@ -62,62 +62,297 @@
               :message-id="entryId(entry, i)"
               :scroll-anchor="entry.role === 'user'"
             >
-              <Message :align="entry.role === 'user' ? 'end' : 'start'">
-                <template v-if="entry.role === 'user'">
-                  <MessageContent>
-                    <form
-                      v-if="editingId && entry.id === editingId"
-                      class="flex w-full max-w-[85%] items-center gap-xs self-end"
-                      @submit.prevent="submitEdit(entry)"
-                    >
-                      <Input
-                        :id="editInputId"
-                        v-model="editDraft"
-                        type="text"
-                        aria-label="Modifier votre message"
-                        class="h-control flex-1 rounded-lg border-rule bg-paper px-md text-small text-ink shadow-none focus-visible:ring-2 focus-visible:ring-outline-soft"
-                      />
-                      <Button
-                        type="submit"
-                        size="icon"
-                        aria-label="Envoyer la modification"
-                        class="h-control w-control shrink-0 rounded-full bg-primary text-paper hover:bg-primary-dark"
+              <Motion
+                :initial="{ opacity: 0, y: 12 }"
+                :animate="{ opacity: 1, y: 0 }"
+                :transition="{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }"
+              >
+                <Message :align="entry.role === 'user' ? 'end' : 'start'">
+                  <template v-if="entry.role === 'user'">
+                    <MessageContent>
+                      <form
+                        v-if="editingId && entry.id === editingId"
+                        class="flex w-full max-w-[85%] items-center gap-xs self-end"
+                        @submit.prevent="submitEdit(entry)"
                       >
-                        <IconCheck :size="16" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Annuler la modification"
-                        class="h-control w-control shrink-0 rounded-full text-ink-subtle hover:text-ink"
-                        @click="cancelEdit"
-                      >
-                        <IconClose :size="16" />
-                      </Button>
-                    </form>
-                    <template v-else>
-                      <Bubble align="end" variant="surface">
-                        <BubbleContent
-                          class="rounded-lg rounded-tr-sm bg-surface px-md py-sm text-small text-ink"
+                        <Input
+                          :id="editInputId"
+                          v-model="editDraft"
+                          type="text"
+                          aria-label="Modifier votre message"
+                          class="h-control flex-1 rounded-lg border-rule bg-paper px-md text-small text-ink shadow-none focus-visible:ring-2 focus-visible:ring-outline-soft"
+                        />
+                        <Button
+                          type="submit"
+                          size="icon"
+                          aria-label="Envoyer la modification"
+                          class="h-control w-control shrink-0 rounded-full bg-primary text-paper hover:bg-primary-dark"
                         >
-                          {{ entry.content }}
+                          <IconCheck :size="16" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Annuler la modification"
+                          class="h-control w-control shrink-0 rounded-full text-ink-subtle hover:text-ink"
+                          @click="cancelEdit"
+                        >
+                          <IconClose :size="16" />
+                        </Button>
+                      </form>
+                      <template v-else>
+                        <Bubble align="end" variant="surface">
+                          <BubbleContent
+                            class="rounded-lg rounded-tr-sm bg-surface px-md py-sm text-small text-ink"
+                          >
+                            {{ entry.content }}
+                          </BubbleContent>
+                        </Bubble>
+                        <MessageFooter v-if="entry.id && !pending" class="px-0">
+                          <Button
+                            variant="link"
+                            class="h-auto p-0 text-meta font-semibold text-ink-subtle hover:text-primary"
+                            @click="startEdit(entry)"
+                          >
+                            Modifier
+                          </Button>
+                        </MessageFooter>
+                      </template>
+                    </MessageContent>
+                  </template>
+
+                  <template v-else>
+                    <MessageAvatar
+                      class="mt-0 h-xl w-xl self-start bg-primary text-accent"
+                      aria-hidden="true"
+                    >
+                      <IconSparkle :size="12" />
+                    </MessageAvatar>
+                    <MessageContent class="pt-xs">
+                      <Bubble variant="ghost" class="w-full">
+                        <BubbleContent class="p-0 text-small text-ink-body">
+                          <p
+                            :class="{
+                              'font-semibold text-ink':
+                                entry.reply?.kind === 'no_results' ||
+                                entry.reply?.kind === 'out_of_catalog'
+                            }"
+                          >
+                            {{ entry.content }}
+                          </p>
+
+                          <template v-if="entry.reply?.kind === 'clarify'">
+                            <p
+                              v-if="entry.reply.question"
+                              class="mt-sm text-small font-semibold text-ink"
+                            >
+                              {{ entry.reply.question }}
+                            </p>
+                            <ul
+                              v-if="entry.reply.suggestions?.length"
+                              class="mt-md flex flex-wrap gap-sm"
+                            >
+                              <li
+                                v-for="(suggestion, si) in entry.reply.suggestions"
+                                :key="suggestion"
+                              >
+                                <Motion
+                                  :initial="{ opacity: 0, y: 8, scale: 0.96 }"
+                                  :animate="{ opacity: 1, y: 0, scale: 1 }"
+                                  :transition="{
+                                    duration: 0.25,
+                                    delay: 0.15 + si * 0.06,
+                                    ease: [0.16, 1, 0.3, 1]
+                                  }"
+                                >
+                                  <Button
+                                    variant="outline"
+                                    class="rounded-full border-rule px-md py-sm text-meta font-medium text-ink-muted hover:border-primary hover:text-primary"
+                                    @click="$emit('send', suggestion)"
+                                  >
+                                    {{ suggestion }}
+                                  </Button>
+                                </Motion>
+                              </li>
+                            </ul>
+                          </template>
+
+                          <template v-else-if="entry.reply?.kind === 'recommend'">
+                            <p class="mt-sm text-small font-semibold text-ink">
+                              Nous vous recommandons
+                            </p>
+                            <div class="mt-md space-y-md">
+                              <Motion
+                                v-for="(rec, ri) in primaryRecs(entry)"
+                                :key="rec.slug"
+                                :initial="{ opacity: 0, y: 14 }"
+                                :animate="{ opacity: 1, y: 0 }"
+                                :transition="{
+                                  duration: 0.35,
+                                  delay: 0.15 + ri * 0.08,
+                                  ease: [0.16, 1, 0.3, 1]
+                                }"
+                              >
+                                <AssistantRecommendationCard
+                                  :recommendation="rec"
+                                  :demande-to="demandeTo(rec)"
+                                  :advisor-to="advisorTo"
+                                />
+                              </Motion>
+                              <div
+                                v-if="alternativeRecs(entry).length"
+                                class="grid gap-md sm:grid-cols-2"
+                              >
+                                <Motion
+                                  v-for="(rec, ri) in alternativeRecs(entry)"
+                                  :key="rec.slug"
+                                  :initial="{ opacity: 0, y: 14 }"
+                                  :animate="{ opacity: 1, y: 0 }"
+                                  :transition="{
+                                    duration: 0.35,
+                                    delay: 0.3 + ri * 0.08,
+                                    ease: [0.16, 1, 0.3, 1]
+                                  }"
+                                >
+                                  <AssistantRecommendationCard
+                                    :recommendation="rec"
+                                    :demande-to="demandeTo(rec)"
+                                    compact
+                                  />
+                                </Motion>
+                              </div>
+                            </div>
+                            <p
+                              v-if="(entry.reply.recommendations?.length ?? 0) > 1"
+                              class="mt-md text-meta"
+                            >
+                              <Button
+                                variant="link"
+                                class="h-auto p-0 font-semibold text-primary underline underline-offset-2 hover:text-accent-text"
+                                @click="toggleCompare(i)"
+                              >
+                                Comparer ces {{ entry.reply.recommendations?.length }} formations
+                              </Button>
+                              ·
+                              <NuxtLink
+                                :to="advisorTo"
+                                class="font-semibold text-primary underline underline-offset-2 transition-colors hover:text-accent-text"
+                              >
+                                Être accompagné par un conseiller
+                              </NuxtLink>
+                            </p>
+                            <AssistantCompareTable
+                              v-if="
+                                compareOpen.has(i) && (entry.reply.recommendations?.length ?? 0) > 1
+                              "
+                              :recommendations="entry.reply.recommendations ?? []"
+                              :need-summary="needSummary"
+                              :advisor-to="advisorTo"
+                              class="mt-md"
+                            />
+                            <p class="mt-md text-meta text-ink-subtle">
+                              {{ provenanceNote(entry) }}
+                            </p>
+                          </template>
+
+                          <template v-else-if="entry.reply?.kind === 'no_results'">
+                            <ul class="mt-md grid gap-sm sm:grid-cols-2">
+                              <li>
+                                <Button
+                                  variant="outline"
+                                  class="w-full gap-sm rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary"
+                                  @click="focusInput"
+                                >
+                                  <IconRefresh
+                                    :size="14"
+                                    class="shrink-0 text-primary"
+                                    aria-hidden="true"
+                                  />
+                                  Reformuler mon besoin
+                                </Button>
+                              </li>
+                              <li>
+                                <Button
+                                  as-child
+                                  variant="outline"
+                                  class="w-full gap-sm rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary"
+                                >
+                                  <NuxtLink to="/formations">
+                                    <IconBook
+                                      :size="14"
+                                      class="shrink-0 text-primary"
+                                      aria-hidden="true"
+                                    />
+                                    Consulter le catalogue
+                                  </NuxtLink>
+                                </Button>
+                              </li>
+                              <li>
+                                <Button
+                                  as-child
+                                  variant="outline"
+                                  class="w-full gap-sm rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary"
+                                >
+                                  <NuxtLink :to="advisorTo">
+                                    <IconMessages
+                                      :size="14"
+                                      class="shrink-0 text-primary"
+                                      aria-hidden="true"
+                                    />
+                                    Parler à un conseiller
+                                  </NuxtLink>
+                                </Button>
+                              </li>
+                              <li>
+                                <Button
+                                  as-child
+                                  class="w-full gap-sm rounded-full bg-accent px-md py-sm text-meta font-semibold text-ink hover:bg-accent-text hover:text-paper"
+                                >
+                                  <NuxtLink :to="demandeBaseTo">
+                                    <IconPlus :size="14" class="shrink-0" aria-hidden="true" />
+                                    Faire une demande personnalisée
+                                  </NuxtLink>
+                                </Button>
+                              </li>
+                            </ul>
+                          </template>
+
+                          <template v-else-if="entry.reply?.kind === 'out_of_catalog'">
+                            <div class="mt-md flex flex-wrap gap-md">
+                              <Button
+                                as-child
+                                class="rounded-full bg-accent px-md py-sm text-meta font-semibold text-ink hover:bg-accent-text hover:text-paper"
+                              >
+                                <NuxtLink :to="advisorTo"
+                                  >Décrire mon besoin à un conseiller</NuxtLink
+                                >
+                              </Button>
+                              <Button
+                                as-child
+                                variant="outline"
+                                class="rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary"
+                              >
+                                <NuxtLink to="/formations">Voir le catalogue</NuxtLink>
+                              </Button>
+                            </div>
+                          </template>
                         </BubbleContent>
                       </Bubble>
-                      <MessageFooter v-if="entry.id && !pending" class="px-0">
-                        <Button
-                          variant="link"
-                          class="h-auto p-0 text-meta font-semibold text-ink-subtle hover:text-primary"
-                          @click="startEdit(entry)"
-                        >
-                          Modifier
-                        </Button>
-                      </MessageFooter>
-                    </template>
-                  </MessageContent>
-                </template>
+                    </MessageContent>
+                  </template>
+                </Message>
+              </Motion>
+            </MessageScrollerItem>
 
-                <template v-else>
+            <!-- Analyse en cours (E2) — squelette type catalogue -->
+            <MessageScrollerItem v-if="pending" message-id="assistant-pending">
+              <Motion
+                :initial="{ opacity: 0, y: 8 }"
+                :animate="{ opacity: 1, y: 0 }"
+                :transition="{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }"
+              >
+                <Message>
                   <MessageAvatar
                     class="mt-0 h-xl w-xl self-start bg-primary text-accent"
                     aria-hidden="true"
@@ -126,260 +361,78 @@
                   </MessageAvatar>
                   <MessageContent class="pt-xs">
                     <Bubble variant="ghost" class="w-full">
-                      <BubbleContent class="p-0 text-small text-ink-body">
-                        <p
-                          :class="{
-                            'font-semibold text-ink':
-                              entry.reply?.kind === 'no_results' ||
-                              entry.reply?.kind === 'out_of_catalog'
-                          }"
-                        >
-                          {{ entry.content }}
-                        </p>
-
-                        <template v-if="entry.reply?.kind === 'clarify'">
-                          <p
-                            v-if="entry.reply.question"
-                            class="mt-sm text-small font-semibold text-ink"
-                          >
-                            {{ entry.reply.question }}
+                      <BubbleContent class="p-0">
+                        <output class="block" aria-live="polite">
+                          <p class="text-small font-medium text-ink-muted">
+                            Analyse de votre besoin…
                           </p>
-                          <ul
-                            v-if="entry.reply.suggestions?.length"
-                            class="mt-md flex flex-wrap gap-sm"
-                          >
-                            <li v-for="suggestion in entry.reply.suggestions" :key="suggestion">
-                              <Button
-                                variant="outline"
-                                class="rounded-full border-rule px-md py-sm text-meta font-medium text-ink-muted hover:border-primary hover:text-primary"
-                                @click="$emit('send', suggestion)"
-                              >
-                                {{ suggestion }}
-                              </Button>
-                            </li>
-                          </ul>
-                        </template>
-
-                        <template v-else-if="entry.reply?.kind === 'recommend'">
-                          <p class="mt-sm text-small font-semibold text-ink">
-                            Nous vous recommandons
-                          </p>
-                          <div class="mt-md space-y-md">
-                            <AssistantRecommendationCard
-                              v-for="rec in primaryRecs(entry)"
-                              :key="rec.slug"
-                              :recommendation="rec"
-                              :demande-to="demandeTo(rec)"
-                              :advisor-to="advisorTo"
-                            />
-                            <div
-                              v-if="alternativeRecs(entry).length"
-                              class="grid gap-md sm:grid-cols-2"
-                            >
-                              <AssistantRecommendationCard
-                                v-for="rec in alternativeRecs(entry)"
-                                :key="rec.slug"
-                                :recommendation="rec"
-                                :demande-to="demandeTo(rec)"
-                                compact
-                              />
-                            </div>
+                          <div class="mt-md flex flex-col gap-sm" aria-hidden="true">
+                            <span class="h-xs w-full animate-pulse rounded-full bg-surface" />
+                            <span class="h-xs w-3/4 animate-pulse rounded-full bg-surface" />
+                            <span class="h-xs w-1/2 animate-pulse rounded-full bg-accent/30" />
                           </div>
-                          <p
-                            v-if="(entry.reply.recommendations?.length ?? 0) > 1"
-                            class="mt-md text-meta"
+                          <Button
+                            variant="outline"
+                            class="mt-md w-fit rounded-full border-rule px-md py-xs text-meta font-semibold text-ink hover:border-primary hover:text-primary"
+                            @click="$emit('stop')"
                           >
-                            <Button
-                              variant="link"
-                              class="h-auto p-0 font-semibold text-primary underline underline-offset-2 hover:text-accent-text"
-                              @click="toggleCompare(i)"
-                            >
-                              Comparer ces {{ entry.reply.recommendations?.length }} formations
-                            </Button>
-                            ·
-                            <NuxtLink
-                              :to="advisorTo"
-                              class="font-semibold text-primary underline underline-offset-2 transition-colors hover:text-accent-text"
-                            >
-                              Être accompagné par un conseiller
-                            </NuxtLink>
-                          </p>
-                          <AssistantCompareTable
-                            v-if="
-                              compareOpen.has(i) && (entry.reply.recommendations?.length ?? 0) > 1
-                            "
-                            :recommendations="entry.reply.recommendations ?? []"
-                            :need-summary="needSummary"
-                            :advisor-to="advisorTo"
-                            class="mt-md"
-                          />
-                          <p class="mt-md text-meta text-ink-subtle">{{ provenanceNote(entry) }}</p>
-                        </template>
-
-                        <template v-else-if="entry.reply?.kind === 'no_results'">
-                          <ul class="mt-md grid gap-sm sm:grid-cols-2">
-                            <li>
-                              <Button
-                                variant="outline"
-                                class="w-full gap-sm rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary"
-                                @click="focusInput"
-                              >
-                                <IconRefresh
-                                  :size="14"
-                                  class="shrink-0 text-primary"
-                                  aria-hidden="true"
-                                />
-                                Reformuler mon besoin
-                              </Button>
-                            </li>
-                            <li>
-                              <Button
-                                as-child
-                                variant="outline"
-                                class="w-full gap-sm rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary"
-                              >
-                                <NuxtLink to="/formations">
-                                  <IconBook
-                                    :size="14"
-                                    class="shrink-0 text-primary"
-                                    aria-hidden="true"
-                                  />
-                                  Consulter le catalogue
-                                </NuxtLink>
-                              </Button>
-                            </li>
-                            <li>
-                              <Button
-                                as-child
-                                variant="outline"
-                                class="w-full gap-sm rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary"
-                              >
-                                <NuxtLink :to="advisorTo">
-                                  <IconMessages
-                                    :size="14"
-                                    class="shrink-0 text-primary"
-                                    aria-hidden="true"
-                                  />
-                                  Parler à un conseiller
-                                </NuxtLink>
-                              </Button>
-                            </li>
-                            <li>
-                              <Button
-                                as-child
-                                class="w-full gap-sm rounded-full bg-accent px-md py-sm text-meta font-semibold text-ink hover:bg-accent-text hover:text-paper"
-                              >
-                                <NuxtLink :to="demandeBaseTo">
-                                  <IconPlus :size="14" class="shrink-0" aria-hidden="true" />
-                                  Faire une demande personnalisée
-                                </NuxtLink>
-                              </Button>
-                            </li>
-                          </ul>
-                        </template>
-
-                        <template v-else-if="entry.reply?.kind === 'out_of_catalog'">
-                          <div class="mt-md flex flex-wrap gap-md">
-                            <Button
-                              as-child
-                              class="rounded-full bg-accent px-md py-sm text-meta font-semibold text-ink hover:bg-accent-text hover:text-paper"
-                            >
-                              <NuxtLink :to="advisorTo"
-                                >Décrire mon besoin à un conseiller</NuxtLink
-                              >
-                            </Button>
-                            <Button
-                              as-child
-                              variant="outline"
-                              class="rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary"
-                            >
-                              <NuxtLink to="/formations">Voir le catalogue</NuxtLink>
-                            </Button>
-                          </div>
-                        </template>
+                            Arrêter la réponse
+                          </Button>
+                        </output>
                       </BubbleContent>
                     </Bubble>
                   </MessageContent>
-                </template>
-              </Message>
-            </MessageScrollerItem>
-
-            <!-- Analyse en cours (E2) — squelette type catalogue -->
-            <MessageScrollerItem v-if="pending" message-id="assistant-pending">
-              <Message>
-                <MessageAvatar
-                  class="mt-0 h-xl w-xl self-start bg-primary text-accent"
-                  aria-hidden="true"
-                >
-                  <IconSparkle :size="12" />
-                </MessageAvatar>
-                <MessageContent class="pt-xs">
-                  <Bubble variant="ghost" class="w-full">
-                    <BubbleContent class="p-0">
-                      <output class="block" aria-live="polite">
-                        <p class="text-small font-medium text-ink-muted">
-                          Analyse de votre besoin…
-                        </p>
-                        <div class="mt-md flex flex-col gap-sm" aria-hidden="true">
-                          <span class="h-xs w-full animate-pulse rounded-full bg-surface" />
-                          <span class="h-xs w-3/4 animate-pulse rounded-full bg-surface" />
-                          <span class="h-xs w-1/2 animate-pulse rounded-full bg-accent/30" />
-                        </div>
-                        <Button
-                          variant="outline"
-                          class="mt-md w-fit rounded-full border-rule px-md py-xs text-meta font-semibold text-ink hover:border-primary hover:text-primary"
-                          @click="$emit('stop')"
-                        >
-                          Arrêter la réponse
-                        </Button>
-                      </output>
-                    </BubbleContent>
-                  </Bubble>
-                </MessageContent>
-              </Message>
+                </Message>
+              </Motion>
             </MessageScrollerItem>
 
             <!-- Indisponible (E9) -->
             <MessageScrollerItem v-if="unavailable" message-id="assistant-unavailable">
-              <Message>
-                <MessageContent>
-                  <div
-                    class="flex flex-col items-center gap-md rounded-md border border-rule bg-surface-soft p-xl text-center"
-                  >
-                    <span
-                      class="flex h-2xl w-2xl items-center justify-center rounded-full bg-accent-soft text-accent-text"
-                      aria-hidden="true"
+              <Motion
+                :initial="{ opacity: 0, y: 8 }"
+                :animate="{ opacity: 1, y: 0 }"
+                :transition="{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }"
+              >
+                <Message>
+                  <MessageContent>
+                    <div
+                      class="flex flex-col items-center gap-md rounded-md border border-rule bg-surface-soft p-xl text-center"
                     >
-                      <IconAlertTriangle :size="20" />
-                    </span>
-                    <div>
-                      <h3 class="text-small font-bold text-ink">
-                        La recherche assistée est momentanément indisponible.
-                      </h3>
-                      <p class="mt-sm text-meta text-ink-muted">
-                        Vous pouvez réessayer dans quelques instants. Le catalogue reste accessible
-                        pour rechercher une formation.
-                      </p>
-                    </div>
-                    <div class="flex w-full flex-col gap-sm sm:flex-row">
-                      <Button
-                        class="h-control flex-1 gap-sm rounded-full bg-primary px-md text-meta font-semibold text-paper hover:bg-primary-dark"
-                        @click="$emit('retry')"
+                      <span
+                        class="flex h-2xl w-2xl items-center justify-center rounded-full bg-accent-soft text-accent-text"
+                        aria-hidden="true"
                       >
-                        <IconRefresh :size="14" aria-hidden="true" />
-                        Réessayer
-                      </Button>
-                      <Button
-                        as-child
-                        variant="outline"
-                        class="h-control flex-1 rounded-full border-rule px-md text-meta font-semibold text-ink hover:border-primary"
-                      >
-                        <NuxtLink :to="advisorTo">Parler à un conseiller</NuxtLink>
-                      </Button>
+                        <IconAlertTriangle :size="20" />
+                      </span>
+                      <div>
+                        <h3 class="text-small font-bold text-ink">
+                          La recherche assistée est momentanément indisponible.
+                        </h3>
+                        <p class="mt-sm text-meta text-ink-muted">
+                          Vous pouvez réessayer dans quelques instants. Le catalogue reste
+                          accessible pour rechercher une formation.
+                        </p>
+                      </div>
+                      <div class="flex w-full flex-col gap-sm sm:flex-row">
+                        <Button
+                          class="h-control flex-1 gap-sm rounded-full bg-primary px-md text-meta font-semibold text-paper hover:bg-primary-dark"
+                          @click="$emit('retry')"
+                        >
+                          <IconRefresh :size="14" aria-hidden="true" />
+                          Réessayer
+                        </Button>
+                        <Button
+                          as-child
+                          variant="outline"
+                          class="h-control flex-1 rounded-full border-rule px-md text-meta font-semibold text-ink hover:border-primary"
+                        >
+                          <NuxtLink :to="advisorTo">Parler à un conseiller</NuxtLink>
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </MessageContent>
-              </Message>
+                  </MessageContent>
+                </Message>
+              </Motion>
             </MessageScrollerItem>
           </MessageScrollerContent>
         </MessageScrollerViewport>
@@ -410,7 +463,7 @@
             rows="1"
             :placeholder="entries.length ? 'Ou répondez librement…' : 'Décrivez votre besoin…'"
             :disabled="pending"
-            class="h-control max-h-[calc(var(--spacing-control)*3)] min-h-control flex-1 overflow-y-auto rounded-full border border-rule bg-paper px-md py-[calc((var(--spacing-control)-1lh)/2)] text-small text-ink shadow-none placeholder:text-ink-placeholder focus-visible:ring-2 focus-visible:ring-outline-soft disabled:cursor-not-allowed disabled:opacity-80"
+            class="h-control max-h-[calc(var(--spacing-control)*3)] min-h-control flex-1 overflow-y-auto rounded-lg border border-rule bg-paper px-md py-[calc((var(--spacing-control)-1lh)/2)] text-small text-ink shadow-none transition-[height] duration-150 ease-out placeholder:text-ink-placeholder scrollbar-none focus-visible:ring-2 focus-visible:ring-outline-soft disabled:cursor-not-allowed disabled:opacity-80 motion-reduce:transition-none [&::-webkit-scrollbar]:hidden"
             @keydown.enter.exact.prevent="submit"
           />
           <InputGroupAddon align="inline-end" class="p-0">
@@ -434,6 +487,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
 import { useTextareaAutosize } from '@vueuse/core'
+import { Motion } from 'motion-v'
 import type { AssistantRecommendation } from '@learnup/types'
 import type { AssistantEntry } from '~/composables/useAssistant'
 import AssistantCompareTable from '~/components/Assistant/CompareTable.vue'

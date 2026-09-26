@@ -1,5 +1,5 @@
 import { config } from '@vue/test-utils'
-import { ref, type Component } from 'vue'
+import { reactive, ref, type Component } from 'vue'
 
 function registerByName(modules: Record<string, unknown>) {
   for (const [path, component] of Object.entries(modules)) {
@@ -58,6 +58,19 @@ vi.stubGlobal('useState', (key: string, init: () => unknown) => {
   if (!nuxtState.has(key)) nuxtState.set(key, ref(init()))
   return nuxtState.get(key)
 })
+
+// useRoute (auto-import Nuxt) : route réactive partagée — les specs peuvent
+// muter `fullPath` pour déclencher les watchers de navigation (ex : fermeture
+// du panneau AssistantChat au changement de route).
+const routeState = reactive({
+  path: '/',
+  fullPath: '/',
+  hash: '',
+  params: {} as Record<string, string>,
+  query: {} as Record<string, string>,
+  meta: {} as Record<string, unknown>
+})
+vi.stubGlobal('useRoute', () => routeState)
 
 // Directives motion-v (enregistrées par le module Nuxt, absentes ici) et
 // utilitaires de reveal utilisés dans les templates.

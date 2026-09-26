@@ -1,15 +1,23 @@
 <template>
   <div>
     <!-- Lanceur flottant -->
-    <Button
+    <Motion
       v-if="!isOpen"
-      size="icon"
-      aria-label="Ouvrir la recherche assistée"
-      class="fixed bottom-lg right-lg z-40 h-12 w-12 rounded-full bg-primary text-paper shadow-md hover:bg-primary-dark"
-      @click="open()"
+      :initial="{ opacity: 0, scale: 0.5 }"
+      :animate="{ opacity: 1, scale: 1 }"
+      :while-press="{ scale: 0.9 }"
+      :transition="{ type: 'spring', stiffness: 300, damping: 22 }"
+      class="fixed bottom-lg right-lg z-40"
     >
-      <IconSparkle :size="20" aria-hidden="true" />
-    </Button>
+      <Button
+        size="icon"
+        aria-label="Ouvrir la recherche assistée"
+        class="h-12 w-12 rounded-full bg-primary text-paper shadow-md hover:bg-primary-dark"
+        @click="open()"
+      >
+        <IconSparkle :size="20" aria-hidden="true" />
+      </Button>
+    </Motion>
 
     <!-- Panneau conversationnel : plein ecran, mobile comme desktop —
          modal (showModal) : focus trap, Échap natif, fond inerte. -->
@@ -21,6 +29,7 @@
         aria-label="Recherche assistée"
         class="fixed inset-0 z-50 m-0 flex h-full max-h-none w-full max-w-none flex-col overflow-hidden bg-paper p-0"
         @cancel.prevent="close"
+        @click="onPanelClick"
       >
         <AssistantConversation
           class="h-full"
@@ -45,6 +54,7 @@
 
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
+import { Motion } from 'motion-v'
 import { useAssistant, type AssistantEntry } from '~/composables/useAssistant'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import AssistantConversation from '~/components/Assistant/Conversation.vue'
@@ -126,6 +136,23 @@ watch(
   },
   { immediate: true }
 )
+
+// Les liens du panneau (fiche formation, demande, conseiller) naviguent
+// derrière le <dialog> modal : sans fermeture explicite, le panneau reste
+// ouvert par-dessus la page cible. Deux garde-fous : le clic sur un lien
+// (couvre la navigation vers la route courante, qui ne change pas fullPath)
+// et le watch (retour arrière, navigation programmatique).
+const route = useRoute()
+watch(
+  () => route.fullPath,
+  () => {
+    if (isOpen.value) close()
+  }
+)
+
+function onPanelClick(event: MouseEvent) {
+  if ((event.target as HTMLElement | null)?.closest?.('a')) close()
+}
 
 function onReset() {
   reset()

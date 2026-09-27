@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import { readItems } from '@directus/sdk'
-import type { PageLegale } from '@learnup/types'
+import type { PageLegale, PageLegaleSubsection } from '@learnup/types'
 import { useMenuLegalPages } from '~/composables/useMenuData'
 import type { LegalPage, LegalPageTab } from '~/types/legal'
 import { formatDateFr } from '~/utils/date'
@@ -23,6 +23,29 @@ const { data: pageData, error: loadError } = await useAsyncData<PageLegale | nul
     try {
       const results = await directus.request<PageLegale[]>(
         readItems('pages_legales', {
+          fields: [
+            'slug',
+            'label',
+            'title',
+            'show_in_tabs',
+            'cta_label',
+            'cta_to',
+            'created_at',
+            'updated_at',
+            'seo_title',
+            'seo_description',
+            'seo_canonical',
+            'sections.id',
+            'sections.sort',
+            'sections.title',
+            'sections.anchor',
+            'sections.body',
+            'sections.subsections.id',
+            'sections.subsections.sort',
+            'sections.subsections.title',
+            'sections.subsections.anchor',
+            'sections.subsections.body'
+          ],
           filter: { slug: { _eq: slug }, status: { _eq: 'published' } },
           limit: 1
         })
@@ -53,6 +76,11 @@ if (loadError.value) {
   })
 }
 
+// L'ordre `sort` pilote la numérotation affichée (1., 1.1…) — repli sur
+// l'id si le champ est absent (relaie par proxy, fields explicites).
+const bySort = <T extends { sort: number | null; id: number }>(a: T, b: T) =>
+  (a.sort ?? a.id) - (b.sort ?? b.id)
+
 const page = computed<LegalPage | null>(() => {
   const raw = pageData.value
   if (!raw) return null
@@ -61,12 +89,25 @@ const page = computed<LegalPage | null>(() => {
     label: raw.label,
     title: raw.title,
     lastUpdated: formatDateFr(raw.updated_at ?? raw.created_at),
-    sections: (raw.sections ?? []).map((section) => ({
-      id: section.id,
-      title: section.title,
-      paragraphs: section.paragraphs ?? [],
-      bullets: section.bullets ?? []
-    })),
+    sections: (raw.sections ?? [])
+      .slice()
+      .sort(bySort)
+      .map((section, index) => ({
+        id: section.anchor,
+        number: `${index + 1}`,
+        title: section.title,
+        body: section.body,
+        subsections: (section.subsections ?? [])
+          .filter((sub): sub is PageLegaleSubsection => typeof sub === 'object' && sub !== null)
+          .slice()
+          .sort(bySort)
+          .map((sub, subIndex) => ({
+            id: sub.anchor,
+            number: `${index + 1}.${subIndex + 1}`,
+            title: sub.title,
+            body: sub.body
+          }))
+      })),
     cta: {
       label: raw.cta_label ?? 'Nous contacter',
       to: raw.cta_to ?? 'mailto:contact@learnup.fr'

@@ -560,7 +560,7 @@ describe('pages/index', () => {
     // ne doivent pas appara\u00eetre.
     expect(wrapper.findAll('.testimonial')).toHaveLength(0)
     expect(wrapper.text()).not.toContain('Les clients parlent de nous')
-    expect(wrapper.text()).not.toContain('Voir tous les avis')
+    expect(wrapper.text()).not.toContain('Consulter')
   })
 
   it('affiche un message utilisateur lorsque la carte des centres est indisponible', async () => {

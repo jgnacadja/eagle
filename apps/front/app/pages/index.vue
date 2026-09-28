@@ -53,7 +53,7 @@
             class="mt-3 md:mt-4 font-sans text-body md:text-lead font-bold text-ink"
           >
             La bonne formation. Au bon endroit. Au bon moment.
-            <span class="text-accent-text">Partout en France.</span>
+            <span class="text-accent">Partout en France.</span>
           </p>
 
           <!-- Prompt -->
@@ -86,7 +86,7 @@
             <p
               class="mt-3 text-xs md:text-small text-ink-muted whitespace-normal md:whitespace-nowrap"
             >
-              Vous pouvez écrire comme vous le feriez à un conseiller.
+              Vous pouvez écrire comme vous le feriez à votre conseiller.
             </p>
           </form>
 
@@ -214,7 +214,7 @@
     ════════════════════════════════════════════════════ -->
     <div class="bg-primary-dark">
       <div
-        class="mx-auto grid grid-cols-2 gap-px md:grid-cols-4 divide-x-0 md:divide-x divide-rule-strong p-sm"
+        class="mx-auto grid grid-cols-2 gap-px md:grid-cols-3 divide-x-0 md:divide-x divide-rule-strong p-sm"
       >
         <div
           v-for="item in tickerItems"
@@ -247,13 +247,6 @@
         </p>
 
         <ClientLogoWall variant="wrap" :logos="homeLogos" />
-
-        <p class="mt-sm text-center text-meta text-ink-subtle">
-          <span class="hidden md:inline">
-            Avis réels et références publiées avec l'accord des entreprises concernées.
-          </span>
-          <span class="md:hidden">Références publiées avec accord des entreprises.</span>
-        </p>
       </div>
     </section>
 
@@ -390,16 +383,16 @@
     <!-- ═══════════════════════════════════════════════════
          4. CONFIER (section sombre)
     ════════════════════════════════════════════════════ -->
-    <section id="confier" class="bg-primary-muted py-section text-ink-inverse">
-      <div class="mx-auto px-gutter-mobile md:px-gutter">
-        <div class="grid grid-cols-1 items-center gap-xl lg:grid-cols-2 lg:gap-2xl">
+    <section id="confier" class="bg-primary-muted py-10 md:py-14 text-ink-inverse">
+      <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter">
+        <div class="grid grid-cols-1 items-center gap-lg md:grid-cols-2 md:gap-xl lg:gap-2xl">
           <!-- Colonne gauche : Contenu & CTA -->
           <div v-reveal class="flex flex-col items-start">
             <p class="text-overline font-extrabold uppercase tracking-wider text-accent">
               ENTREPRISES
             </p>
 
-            <h2 class="mt-xs font-display text-xl md:text-h2 font-extrabold text-ink-inverse">
+            <h2 class="mt-xs font-display text-h3 md:text-h2 font-extrabold text-ink-inverse">
               Simplifiez la gestion de vos formations
             </h2>
 
@@ -408,9 +401,7 @@
             </p>
 
             <!-- Checklist bénéfices -->
-            <ul
-              class="mt-lg flex flex-col gap-y-sm md:flex-row md:flex-wrap md:items-center md:gap-x-lg"
-            >
+            <ul class="mt-md flex flex-wrap items-center gap-x-md gap-y-xs sm:gap-x-lg">
               <li
                 v-for="benefit in enterpriseBenefits"
                 :key="benefit"
@@ -422,24 +413,24 @@
             </ul>
 
             <!-- Boutons d'action -->
-            <div class="mt-xl flex w-full flex-col gap-md sm:w-auto sm:flex-row sm:items-center">
-              <Button as-child variant="accent" size="pill-lg" class="w-full sm:w-auto">
+            <div class="mt-lg flex w-full flex-col gap-sm sm:w-auto sm:flex-row sm:items-center">
+              <Button as-child variant="accent" size="pill" class="w-full sm:w-auto">
                 <NuxtLink to="/centres/demande-de-formation">
                   Découvrir nos solutions entreprises <span class="link-arrow">→</span>
                 </NuxtLink>
               </Button>
-              <Button as-child variant="outline-inverse" size="pill-lg" class="w-full sm:w-auto">
+              <Button as-child variant="outline-inverse" size="pill" class="w-full sm:w-auto">
                 <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
               </Button>
             </div>
           </div>
 
           <!-- Colonne droite : Visuel formation entreprise -->
-          <div v-reveal>
+          <div v-reveal class="hidden md:flex justify-end items-center">
             <img
               src="/images/formation2.webp"
               alt="Responsable formation en entreprise"
-              class="hidden md:block aspect-16/10 w-full rounded-md object-cover shadow-sm"
+              class="h-56 sm:h-64 md:h-72 lg:h-76 w-full rounded-xl object-cover shadow-md"
               loading="lazy"
             />
           </div>
@@ -590,15 +581,9 @@
 
         <!-- Pied de section : Témoignages & CTA -->
         <div class="mt-xl flex flex-col gap-lg sm:flex-row sm:items-center sm:justify-between">
-          <p class="text-meta text-ink-subtle">
-            Avis réels et références publiées avec l'accord des entreprises concernées.
-          </p>
-
           <div class="shrink-0">
             <Button as-child variant="outline" size="pill-lg" class="lg:inline-flex gap-xs">
-              <NuxtLink to="/formations">
-                Voir tous les avis <span class="link-arrow">→</span>
-              </NuxtLink>
+              <NuxtLink to="/formations"> Consulter </NuxtLink>
             </Button>
           </div>
         </div>
@@ -694,7 +679,7 @@
             </template>
           </SearchInput>
           <p class="mt-3 text-center text-xs md:text-small text-ink-inverse-muted">
-            Vous pouvez écrire comme vous le feriez à un conseiller.
+            Vous pouvez écrire comme vous le feriez à votre conseiller.
           </p>
         </form>
 
@@ -825,12 +810,6 @@ const tickerItems = [
     icon: resolveComponent('IconMapPin'),
     value: 'Réseau national',
     label: 'des centres partout en France'
-  },
-  {
-    key: 'live',
-    icon: resolveComponent('IconRefresh'),
-    value: 'Données actualisées',
-    label: 'en continu'
   }
 ]
 

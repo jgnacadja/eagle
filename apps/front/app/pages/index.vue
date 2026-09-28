@@ -285,7 +285,7 @@
         </div>
         <div v-else class="mt-2xl rounded-xl border border-dashed border-rule p-xl text-center">
           <p class="text-small text-ink-muted">
-            Aucune formation trouvée pour le tag
+            Aucune formation trouvée pour
             <strong class="text-ink">« {{ selectedTag }} »</strong>.
           </p>
         </div>
@@ -323,15 +323,8 @@
 
         <div class="flex items-center justify-center mt-xl">
           <Button as-child size="pill-lg" class="lg:inline-flex gap-xs">
-            <NuxtLink
-              :to="selectedTag ? `/formations?q=${encodeURIComponent(selectedTag)}` : '/formations'"
-            >
-              {{
-                selectedTag
-                  ? `Voir toutes les formations « ${selectedTag} »`
-                  : 'Voir tout le catalogue'
-              }}
-              <span class="link-arrow">→</span>
+            <NuxtLink to="/formations">
+              Voir tout le catalogue <span class="link-arrow">→</span>
             </NuxtLink>
           </Button>
         </div>

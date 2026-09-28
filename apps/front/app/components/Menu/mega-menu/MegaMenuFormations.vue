@@ -80,7 +80,7 @@
         </li>
       </ul>
 
-      <Card variant="dark" class="mt-md px-md py-lg">
+      <Card variant="dark" class="mt-md px-md py-lg hidden lg:block">
         <p class="text-body font-semibold">Vous ne savez pas quelle formation choisir ?</p>
         <Button variant="paper" size="pill-sm" class="mt-sm w-full" @click="openAssistant">
           Être guidé dans mon choix

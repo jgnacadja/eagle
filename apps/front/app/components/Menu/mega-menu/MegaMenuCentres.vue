@@ -79,7 +79,7 @@
         />
       </form>
 
-      <Card variant="dark" class="mt-md px-md py-lg">
+      <Card variant="dark" class="mt-md hidden px-md py-lg lg:block">
         <p class="whitespace-nowrap text-small font-semibold">
           Besoin d’une formation sur votre site ?
         </p>

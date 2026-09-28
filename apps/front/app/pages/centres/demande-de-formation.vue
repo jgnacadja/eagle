@@ -407,7 +407,7 @@
 
         <!-- Sidebar : contexte de la demande — affichée avant le
              formulaire sur mobile (maquette 1b), à droite sur desktop. -->
-        <aside class="order-first space-y-lg sm:sticky sm:top-lg lg:order-last">
+        <aside class="order-first space-y-lg lg:sticky lg:top-lg lg:order-last">
           <Card v-reveal variant="surface" class="p-lg">
             <div class="mb-lg flex items-center justify-between">
               <h2 class="font-sans text-h4 font-bold text-ink">Votre demande concerne</h2>

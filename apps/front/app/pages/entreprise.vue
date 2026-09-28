@@ -111,7 +111,7 @@
           v-for="(benefit, i) in heroBenefits"
           :key="benefit.label"
           v-reveal="revealStagger(i)"
-          class="flex items-center gap-md lg:border-l lg:border-rule/80 lg:pl-md lg:pr-sm lg:first:border-l-0 lg:first:pl-0 md:last:col-span-2 md:last:justify-center lg:last:col-span-1 lg:last:justify-start"
+          class="flex items-center gap-md lg:border-l lg:border-rule/80 lg:pl-md lg:pr-sm lg:first:border-l-0 lg:first:pl-0 lg:last:col-span-1 lg:last:justify-start"
         >
           <component :is="benefit.icon" :size="24" class="shrink-0 text-primary" />
           <span class="text-small font-bold text-ink">{{ benefit.label }}</span>

@@ -140,7 +140,10 @@ function mountPage() {
             <li v-for="step in steps" :key="step.title">{{ step.number }} {{ step.title }} {{ step.body }}</li>
           </ol>`
         },
-        Badge: { template: '<span class="badge-mock"><slot /></span>' }
+        Badge: {
+          props: ['as'],
+          template: '<component :is="as || \'span\'" class="badge-mock"><slot /></component>'
+        }
       }
     }
   })
@@ -268,6 +271,12 @@ describe('EntreprisePage', () => {
   })
 
   it('affiche les tags de formation et permet de filtrer', async () => {
+    entrepriseState.catalogItems.push({
+      slug: 'formation-aipr-intervenant',
+      title: 'Formation AIPR Intervenant',
+      familySlug: 'securite-prevention',
+      description: 'Autorisation d’intervention à proximité des réseaux.'
+    })
     const wrapper = mountPage()
     await flushPromises()
 

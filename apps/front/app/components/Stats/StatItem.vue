@@ -7,8 +7,8 @@
   >
     <p
       ref="numberEl"
-      class="font-display font-extrabold text-ink"
-      :class="size === 'sm' ? 'text-h2' : 'text-3xl md:text-h1'"
+      class="font-display font-extrabold text-ink whitespace-nowrap"
+      :class="size === 'sm' ? 'text-h2' : 'text-3xl md:text-h1 lg:text-h2 xl:text-h1'"
     >
       {{ displayed
       }}<span v-if="unit" class="text-h4 align-baseline text-ink-muted">{{ unit }}</span>

@@ -267,7 +267,10 @@
           </div>
         </div>
 
-        <div class="mt-2xl grid gap-grid grid-cols-2 lg:grid-cols-4">
+        <div
+          v-if="dernieresFormations.length"
+          class="mt-2xl grid gap-grid grid-cols-2 lg:grid-cols-4"
+        >
           <FormationCard
             v-for="(item, i) in dernieresFormations"
             :key="item.slug"
@@ -280,26 +283,55 @@
             :to="item.to"
           />
         </div>
+        <div v-else class="mt-2xl rounded-xl border border-dashed border-rule p-xl text-center">
+          <p class="text-small text-ink-muted">
+            Aucune formation trouvée pour le tag
+            <strong class="text-ink">« {{ selectedTag }} »</strong>.
+          </p>
+        </div>
 
-        <div class="mt-lg flex flex-col gap-md sm:flex-row">
-          <div class="flex flex-wrap gap-sm">
+        <div class="mt-lg flex flex-col gap-md sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex flex-wrap items-center gap-sm">
             <Badge
               v-for="tag in formationTags"
               :key="tag"
-              as-child
-              variant="outline"
-              class="font-medium transition-colors hover:border-primary hover:text-primary"
+              as="button"
+              type="button"
+              :variant="selectedTag === tag ? 'default' : 'outline'"
+              :class="[
+                'cursor-pointer font-medium transition-colors select-none',
+                selectedTag === tag
+                  ? 'border-primary bg-primary text-ink-inverse'
+                  : 'hover:border-primary hover:text-primary'
+              ]"
+              :aria-pressed="selectedTag === tag"
+              @click="toggleTag(tag)"
             >
-              <NuxtLink :to="`/formations?q=${encodeURIComponent(tag)}`">
-                {{ tag }}
-              </NuxtLink>
+              {{ tag }}
             </Badge>
+
+            <button
+              v-if="selectedTag"
+              type="button"
+              class="text-xs text-ink-muted underline hover:text-primary cursor-pointer ml-1"
+              @click="selectedTag = null"
+            >
+              Effacer le filtre
+            </button>
           </div>
         </div>
+
         <div class="flex items-center justify-center mt-xl">
           <Button as-child size="pill-lg" class="lg:inline-flex gap-xs">
-            <NuxtLink to="/formations">
-              Voir tout le catalogue <span class="link-arrow">→</span>
+            <NuxtLink
+              :to="selectedTag ? `/formations?q=${encodeURIComponent(selectedTag)}` : '/formations'"
+            >
+              {{
+                selectedTag
+                  ? `Voir toutes les formations « ${selectedTag} »`
+                  : 'Voir tout le catalogue'
+              }}
+              <span class="link-arrow">→</span>
             </NuxtLink>
           </Button>
         </div>
@@ -556,7 +588,7 @@
 
         <!-- Bandeau Stats avec séparateurs -->
         <div
-          class="mt-xl grid grid-cols-2 gap-y-lg border-y border-rule py-lg md:grid-cols-4 md:py-xl"
+          class="mt-xl grid grid-cols-2 gap-y-lg border-y border-rule py-lg md:gap-y-xl md:py-xl lg:grid-cols-4"
         >
           <StatItem
             v-for="stat in stats"
@@ -564,7 +596,7 @@
             :value="stat.value"
             :unit="stat.unit"
             :label="stat.label"
-            class="border-r border-rule even:border-r-0 md:even:border-r last:border-r-0! odd:pr-md even:pl-md md:px-lg first:pl-0"
+            class="border-r border-rule even:border-r-0 lg:even:border-r lg:last:border-r-0! odd:pr-md even:pl-md md:odd:pr-lg md:even:pl-lg lg:px-lg lg:first:pl-0 lg:last:pr-0"
           />
         </div>
 
@@ -696,9 +728,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, resolveComponent } from 'vue'
-import type { Article, Avis, Centre } from '@learnup/types'
-import { mapCourse, upcomingSessions, useCatalog } from '~/composables/useCatalog'
+import { computed, ref, resolveComponent, watch } from 'vue'
+import type { Article, Avis, Centre, CourseListItem } from '@learnup/types'
+import {
+  mapCourse,
+  upcomingSessions,
+  useCatalog,
+  type CatalogApiResult
+} from '~/composables/useCatalog'
 import { availabilityStatus, useCentreSessionDates } from '~/composables/useCentres'
 import { useGeolocation } from '~/composables/useGeolocation'
 import { useGeoSuggest } from '~/composables/useGeoSuggest'
@@ -890,13 +927,90 @@ const testimonials = computed(() => (homeAvisData.value ?? []).map(mapAvis))
 
 // ── Catalogue (API) ─────────────────────────────────────────────────────────
 
-// On charge 20 formations pour en extraire à la fois les 4 dernières et
-// les prochaines sessions à afficher en page d'accueil.
-const { data: catalogue } = await useCatalog({ limit: 20, sort: 'updatedAt', order: 'desc' })
+// On charge jusqu'à 50 formations pour en extraire à la fois les 4 dernières
+// (ou filtrées par tag) et les prochaines sessions à afficher en page d'accueil.
+const { data: catalogue } = await useCatalog({ limit: 50, sort: 'updatedAt', order: 'desc' })
 
-const dernieresFormations = computed(() =>
-  (catalogue.value?.items ?? []).slice(0, 4).map((c) => mapCourse(c))
-)
+const formationTags = ['AIPR', 'CATEC®', 'Amiante SS4', 'PASO', 'SECUFER', 'Gestes & postures']
+const selectedTag = ref<string | null>(null)
+const apiTagResults = ref<Record<string, CourseListItem[]>>({})
+
+function toggleTag(tag: string) {
+  selectedTag.value = selectedTag.value === tag ? null : tag
+}
+
+function matchesTag(course: CourseListItem, tag: string): boolean {
+  const normalize = (str: string) =>
+    str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, ' ')
+
+  const cleanTag = normalize(tag).trim()
+  const cleanTokens = cleanTag.split(/\s+/).filter(Boolean)
+
+  const corpus = normalize(
+    [
+      course.title,
+      course.description,
+      course.category,
+      course.certification,
+      course.certifierName,
+      course.subFamilyName,
+      course.familySlug,
+      course.slug
+    ]
+      .filter((v): v is string => typeof v === 'string')
+      .join(' ')
+  )
+
+  if (corpus.includes(cleanTag)) return true
+
+  if (cleanTokens.length > 0 && cleanTokens.every((token) => corpus.includes(token))) {
+    return true
+  }
+
+  const significantTokens = cleanTokens.filter((t) => t.length >= 4)
+  if (significantTokens.length > 0 && significantTokens.some((token) => corpus.includes(token))) {
+    return true
+  }
+
+  return false
+}
+
+watch(selectedTag, async (tag) => {
+  if (!tag || !import.meta.client) return
+  const localMatches = (catalogue.value?.items ?? []).filter((c) => matchesTag(c, tag))
+  if (localMatches.length >= 4 || apiTagResults.value[tag]) return
+
+  try {
+    const apiBase = config.public.apiBase || 'http://localhost:3001'
+    const cleanSearch = tag.replace(/®/g, '').trim()
+    const res = await $fetch<CatalogApiResult>(`${apiBase}/courses`, {
+      query: { search: cleanSearch, limit: 4 }
+    })
+    if (res?.items && selectedTag.value === tag) {
+      apiTagResults.value = { ...apiTagResults.value, [tag]: res.items }
+    }
+  } catch {
+    // Dégradation gracieuse : les résultats locaux restent utilisés
+  }
+})
+
+const dernieresFormations = computed(() => {
+  const all = catalogue.value?.items ?? []
+  if (selectedTag.value) {
+    const tag = selectedTag.value
+    const fromApi = apiTagResults.value[tag]
+    if (fromApi?.length) {
+      return fromApi.slice(0, 4).map((c) => mapCourse(c))
+    }
+    const filtered = all.filter((c) => matchesTag(c, tag))
+    return filtered.slice(0, 4).map((c) => mapCourse(c))
+  }
+  return all.slice(0, 4).map((c) => mapCourse(c))
+})
 
 // ── Sessions à venir ────────────────────────────────────────────────────────
 
@@ -1082,6 +1196,4 @@ const homeArticlesData = await useDirectusList<Article>('articles', 'home-actual
 })
 
 const articles = computed(() => (homeArticlesData.value ?? []).slice(0, 3))
-
-const formationTags = ['AIPR', 'CATEC®', 'Amiante SS4', 'PASO', 'SECUFER', 'Gestes & postures']
 </script>

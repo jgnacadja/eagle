@@ -1,5 +1,7 @@
 <template>
-  <div class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter">
+  <div
+    class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-4 lg:px-gutter"
+  >
     <!-- RÉGIONS -->
     <div>
       <h3 class="text-small font-semibold text-ink-muted uppercase">Régions</h3>

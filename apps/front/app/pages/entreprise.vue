@@ -84,10 +84,10 @@
             Vous préférez échanger ? Parler à votre conseiller <span class="link-arrow">→</span>
           </NuxtLink>
 
-          <!-- Carte citation flottante (desktop : absolue haut-droite, mobile : centrée sous le lien) -->
+          <!-- Carte citation flottante (desktop : absolue haut-droite, tablette/mobile : centrée sous le lien) -->
           <div
             v-reveal-media
-            class="mx-auto mt-lg max-w-57.5 md:absolute md:-top-4 md:right-0 lg:right-4 md:mt-0"
+            class="mx-auto mt-md max-w-57.5 xl:absolute xl:-top-4 xl:right-0 xl:mt-0"
           >
             <div
               class="-rotate-2 rounded-md border border-rule/80 bg-paper p-md text-left shadow-md transition-all hover:rotate-0 hover:shadow-lg"
@@ -105,13 +105,13 @@
     <!-- Bénéfices -->
     <section class="border-y border-rule/60 bg-surface">
       <ul
-        class="mx-auto flex flex-col gap-y-md px-gutter-mobile py-xl md:grid md:grid-cols-5 md:gap-y-0 md:px-gutter md:py-xl"
+        class="mx-auto flex flex-col gap-y-md px-gutter-mobile py-lg md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-4 lg:grid-cols-5 lg:gap-0 lg:px-gutter lg:py-xl"
       >
         <li
           v-for="(benefit, i) in heroBenefits"
           :key="benefit.label"
           v-reveal="revealStagger(i)"
-          class="flex items-center gap-md md:border-l md:border-rule/80 md:pl-md md:pr-sm md:first:border-l-0 md:first:pl-0"
+          class="flex items-center gap-md lg:border-l lg:border-rule/80 lg:pl-md lg:pr-sm lg:first:border-l-0 lg:first:pl-0 md:last:col-span-2 md:last:justify-center lg:last:col-span-1 lg:last:justify-start"
         >
           <component :is="benefit.icon" :size="24" class="shrink-0 text-primary" />
           <span class="text-small font-bold text-ink">{{ benefit.label }}</span>
@@ -274,7 +274,7 @@
         Les formations réglementaires dont vos équipes ont besoin
       </h2>
 
-      <div class="mt-xl grid grid-cols-2 gap-md lg:grid-cols-4">
+      <div v-if="formations.length" class="mt-xl grid grid-cols-2 gap-md lg:grid-cols-4">
         <article
           v-for="(formation, i) in formations"
           :key="formation.title"
@@ -297,24 +297,52 @@
           </NuxtLink>
         </article>
       </div>
+      <div v-else class="mt-xl rounded-xl border border-dashed border-rule p-xl text-center">
+        <p class="text-small text-ink-muted">
+          Aucune formation trouvée pour le tag
+          <strong class="text-ink">« {{ selectedTag }} »</strong>.
+        </p>
+      </div>
 
       <div class="mt-lg flex flex-col gap-md sm:flex-row sm:items-center sm:justify-between">
-        <div class="hidden md:flex flex-wrap gap-sm">
+        <div class="flex flex-wrap items-center gap-sm">
           <Badge
             v-for="tag in formationTags"
             :key="tag"
-            as-child
-            variant="outline"
-            class="font-medium transition-colors hover:border-primary hover:text-primary"
+            as="button"
+            type="button"
+            :variant="selectedTag === tag ? 'default' : 'outline'"
+            :class="[
+              'cursor-pointer font-medium transition-colors select-none',
+              selectedTag === tag
+                ? 'border-primary bg-primary text-ink-inverse'
+                : 'hover:border-primary hover:text-primary'
+            ]"
+            :aria-pressed="selectedTag === tag"
+            @click="toggleTag(tag)"
           >
-            <NuxtLink :to="`/formations?q=${encodeURIComponent(tag)}`">
-              {{ tag }}
-            </NuxtLink>
+            {{ tag }}
           </Badge>
+
+          <button
+            v-if="selectedTag"
+            type="button"
+            class="text-xs text-ink-muted underline hover:text-primary cursor-pointer ml-1"
+            @click="selectedTag = null"
+          >
+            Effacer le filtre
+          </button>
         </div>
         <Button as-child size="pill-lg" class="gap-xs w-full sm:w-auto">
-          <NuxtLink to="/formations">
-            Voir tout le catalogue <span class="link-arrow">→</span>
+          <NuxtLink
+            :to="selectedTag ? `/formations?q=${encodeURIComponent(selectedTag)}` : '/formations'"
+          >
+            {{
+              selectedTag
+                ? `Voir toutes les formations « ${selectedTag} »`
+                : 'Voir tout le catalogue'
+            }}
+            <span class="link-arrow">→</span>
           </NuxtLink>
         </Button>
       </div>
@@ -438,9 +466,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import type { Avis, Centre } from '@learnup/types'
-import { mapCourse, useCatalog } from '~/composables/useCatalog'
+import { computed, ref, watch } from 'vue'
+import type { Avis, Centre, CourseListItem } from '@learnup/types'
+import { mapCourse, useCatalog, type CatalogApiResult } from '~/composables/useCatalog'
 import { heroStagger, revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
 import { toCenterResults } from '~/utils/centre'
@@ -582,10 +610,121 @@ const REGULATORY_FAMILIES = [
   'securite-prevention'
 ]
 
-const { data: catalogue } = await useCatalog({ limit: 12, sort: 'updatedAt', order: 'desc' })
+const { data: catalogue } = await useCatalog({ limit: 50, sort: 'updatedAt', order: 'desc' })
+
+const formationTags = ['AIPR', 'CATEC®', 'Amiante SS4', 'PASO', 'SECUFER', 'Gestes & postures']
+const selectedTag = ref<string | null>(null)
+const apiTagResults = ref<Record<string, CourseListItem[]>>({})
+
+function toggleTag(tag: string) {
+  selectedTag.value = selectedTag.value === tag ? null : tag
+}
+
+function matchesTag(
+  course: {
+    title: string
+    description?: string | null
+    category?: string | null
+    certification?: string | null
+    certifierName?: string | null
+    subFamilyName?: string | null
+    familySlug?: string | null
+    slug?: string | null
+  },
+  tag: string
+): boolean {
+  const normalize = (str: string) =>
+    str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, ' ')
+
+  const cleanTag = normalize(tag).trim()
+  const cleanTokens = cleanTag.split(/\s+/).filter(Boolean)
+
+  const corpus = normalize(
+    [
+      course.title,
+      course.description,
+      course.category,
+      course.certification,
+      course.certifierName,
+      course.subFamilyName,
+      course.familySlug,
+      course.slug
+    ]
+      .filter((v): v is string => typeof v === 'string')
+      .join(' ')
+  )
+
+  if (corpus.includes(cleanTag)) return true
+
+  if (cleanTokens.length > 0 && cleanTokens.every((token) => corpus.includes(token))) {
+    return true
+  }
+
+  const significantTokens = cleanTokens.filter((t) => t.length >= 4)
+  if (significantTokens.length > 0 && significantTokens.some((token) => corpus.includes(token))) {
+    return true
+  }
+
+  return false
+}
+
+watch(selectedTag, async (tag) => {
+  if (!tag || !import.meta.client) return
+  const localMatches = (catalogue.value?.items ?? []).filter((c) => matchesTag(c, tag))
+  if (localMatches.length >= 4 || apiTagResults.value[tag]) return
+
+  try {
+    const config = useRuntimeConfig()
+    const apiBase = config.public.apiBase || 'http://localhost:3001'
+    const cleanSearch = tag.replace(/®/g, '').trim()
+    const res = await $fetch<CatalogApiResult>(`${apiBase}/courses`, {
+      query: { search: cleanSearch, limit: 4 }
+    })
+    if (res?.items && selectedTag.value === tag) {
+      apiTagResults.value = { ...apiTagResults.value, [tag]: res.items }
+    }
+  } catch {
+    // Dégradation gracieuse : les résultats locaux restent utilisés
+  }
+})
 
 const formations = computed(() => {
   const items = catalogue.value?.items ?? []
+
+  if (selectedTag.value) {
+    const tag = selectedTag.value
+    const fromApi = apiTagResults.value[tag]
+    if (fromApi?.length) {
+      return fromApi.slice(0, 4).map((c) => {
+        const mapped = mapCourse(c)
+        return {
+          title: mapped.title,
+          body: mapped.description,
+          to: mapped.to ?? '/formations'
+        }
+      })
+    }
+    const filtered = items.filter((c) => matchesTag(c, tag))
+    if (filtered.length) {
+      return filtered.slice(0, 4).map((c) => {
+        const mapped = mapCourse(c)
+        return {
+          title: mapped.title,
+          body: mapped.description,
+          to: mapped.to ?? '/formations'
+        }
+      })
+    }
+    const fallbackMatches = fallbackFormations.filter((f) =>
+      matchesTag({ title: f.title, description: f.body, slug: f.to }, tag)
+    )
+    return fallbackMatches
+  }
+
   const regulatoryItems = items.filter((c) =>
     REGULATORY_FAMILIES.some((f) => c.familySlug?.includes(f))
   )
@@ -602,8 +741,6 @@ const formations = computed(() => {
   }
   return fallbackFormations
 })
-
-const formationTags = ['AIPR', 'CATEC®', 'Amiante SS4', 'SECUFER', 'Gestes & postures']
 
 const howItWorksSteps = [
   { number: 1, title: 'Vous exprimez votre besoin', body: 'Avec vos mots, en une phrase.' },

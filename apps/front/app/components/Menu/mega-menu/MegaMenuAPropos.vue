@@ -1,5 +1,7 @@
 <template>
-  <div class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter">
+  <div
+    class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-4 lg:px-gutter"
+  >
     <div class="col-span-3">
       <h3 class="text-small font-semibold uppercase text-ink-muted">Learn Up Academy</h3>
       <ul class="mt-md space-y-2">

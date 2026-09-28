@@ -34,7 +34,7 @@ vi.mock('~/composables/useCatalog', () => ({
       items: [
         {
           slug: 'formation-1',
-          title: 'Formation 1',
+          title: 'Formation 1 AIPR',
           familySlug: 'management',
           sessions: [{ startDate: '2026-10-15', seatsRemaining: 5 }]
         },
@@ -296,6 +296,27 @@ describe('pages/index', () => {
     expect(testimonials[1]!.text()).toContain('DRH groupe BTP')
     expect(testimonials[2]!.text()).toContain('Directrice formation')
     expect(wrapper.findAll('.article')).toHaveLength(3)
+  })
+
+  it('filtre les formations affichées lors du clic sur un tag', async () => {
+    const wrapper = await mountPage()
+
+    // 4 cartes au départ
+    expect(wrapper.findAll('.formation-card')).toHaveLength(4)
+
+    // Clic sur le tag AIPR
+    const aiprBadge = wrapper.findAll('button').find((b) => b.text().includes('AIPR'))
+    expect(aiprBadge).toBeDefined()
+    await aiprBadge!.trigger('click')
+
+    // Seule la formation correspondant à AIPR est affichée
+    const filteredCards = wrapper.findAll('.formation-card')
+    expect(filteredCards).toHaveLength(1)
+    expect(filteredCards[0]!.text()).toContain('Formation 1 AIPR')
+
+    // Nouveau clic sur le tag pour désélectionner (toggle)
+    await aiprBadge!.trigger('click')
+    expect(wrapper.findAll('.formation-card')).toHaveLength(4)
   })
 
   it('affiche la section Entreprises avec ses bénéfices et CTAs', async () => {

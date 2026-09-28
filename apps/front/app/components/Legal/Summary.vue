@@ -32,8 +32,26 @@
             )
           "
         >
-          {{ section.title }}
+          {{ section.number }}. {{ section.title }}
         </a>
+        <ul v-if="section.subsections.length" class="mt-1 space-y-1">
+          <li v-for="subsection in section.subsections" :key="subsection.id">
+            <a
+              :ref="(el) => setItemRef(el as HTMLElement | null, subsection.id)"
+              :href="`#${subsection.id}`"
+              :class="
+                cn(
+                  'block rounded-none py-1.5 pl-md pr-3 text-small transition',
+                  subsection.id === activeId
+                    ? 'bg-transparent font-medium text-primary'
+                    : 'text-ink-muted hover:bg-surface-soft hover:text-ink'
+                )
+              "
+            >
+              {{ subsection.number }} {{ subsection.title }}
+            </a>
+          </li>
+        </ul>
       </li>
     </ul>
   </div>

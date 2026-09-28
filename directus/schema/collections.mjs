@@ -610,53 +610,10 @@ export const collections = [
         },
         schema: { default_value: true }
       },
-      {
-        field: 'sections',
-        type: 'json',
-        meta: {
-          interface: 'list',
-          width: 'full',
-          note: 'Sections de la page — ancre, titre, paragraphes, puces',
-          ...fr('Sections'),
-          options: {
-            fields: [
-              {
-                field: 'id',
-                name: 'Ancre',
-                type: 'string',
-                meta: {
-                  interface: 'input',
-                  width: 'half',
-                  required: true,
-                  note: 'Ancre HTML (ex: editeur)'
-                },
-                schema: {}
-              },
-              {
-                field: 'title',
-                name: 'Titre',
-                type: 'string',
-                meta: { interface: 'input', width: 'half', required: true },
-                schema: {}
-              },
-              {
-                field: 'paragraphs',
-                name: 'Paragraphes',
-                type: 'json',
-                meta: { interface: 'tags', width: 'full' },
-                schema: {}
-              },
-              {
-                field: 'bullets',
-                name: 'Puces',
-                type: 'json',
-                meta: { interface: 'tags', width: 'full' },
-                schema: {}
-              }
-            ]
-          }
-        }
-      },
+      // `sections` (O2M alias vers pages_legales_sections) est créé par la
+      // relation déclarée plus bas — pas de champ JSON ici : l'interface
+      // `list` obligeait les éditeurs à manipuler des lignes JSON fragiles
+      // (un clic = suppression d'un paragraphe).
       {
         field: 'cta_label',
         type: 'string',
@@ -701,6 +658,85 @@ export const collections = [
           hidden: true,
           ...fr('Dernière modification')
         }
+      }
+    ]
+  },
+  {
+    collection: 'pages_legales_sections',
+    icon: 'segment',
+    note: 'Sections des pages légales — tri manuel par glisser-déposer (numérotation 1., 2.… calculée côté site).',
+    ...fr('Sections de pages légales'),
+    fields: [
+      primaryKey(),
+      sortField(),
+      {
+        field: 'title',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          required: true,
+          note: 'Sans le numéro — ajouté automatiquement d’après l’ordre',
+          ...fr('Titre')
+        }
+      },
+      {
+        field: 'anchor',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          required: true,
+          note: 'Ancre du sommaire (ex: editeur) — sans espaces, stable dans le temps',
+          ...fr('Ancre')
+        }
+      },
+      {
+        field: 'body',
+        type: 'text',
+        meta: {
+          interface: 'input-rich-text-html',
+          width: 'full',
+          note: 'Texte libre : paragraphes, listes, liens, gras…',
+          ...fr('Contenu')
+        }
+      }
+    ]
+  },
+  {
+    collection: 'pages_legales_subsections',
+    icon: 'subdirectory_arrow_right',
+    note: 'Sous-sections des pages légales — numérotation 1.1, 1.2… calculée depuis l’ordre.',
+    ...fr('Sous-sections de pages légales'),
+    fields: [
+      primaryKey(),
+      sortField(),
+      {
+        field: 'title',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          required: true,
+          note: 'Sans le numéro — ajouté automatiquement d’après l’ordre',
+          ...fr('Titre')
+        }
+      },
+      {
+        field: 'anchor',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          required: true,
+          note: 'Ancre du sommaire — sans espaces, stable dans le temps',
+          ...fr('Ancre')
+        }
+      },
+      {
+        field: 'body',
+        type: 'text',
+        meta: { interface: 'input-rich-text-html', width: 'full', ...fr('Contenu') }
       }
     ]
   },
@@ -1302,5 +1338,41 @@ export const relations = [
       note: 'Famille parente',
       ...fr('Famille')
     })
+  },
+  // Pages légales : M2O obligatoire + alias O2M `sections`/`subsections`
+  // sur le parent — l'éditeur gère le contenu en lignes triables depuis la
+  // fiche page (plus de JSON `sections`). `sort_field` active le
+  // glisser-déposer et l'ordre de lecture côté API.
+  {
+    collection: 'pages_legales_sections',
+    field: 'page',
+    related_collection: 'pages_legales',
+    meta: m2o('{{title}}', { required: true, width: 'half', ...fr('Page légale') }),
+    one_field: 'sections',
+    sort_field: 'sort',
+    one_meta: {
+      interface: 'list-o2m',
+      special: ['o2m'],
+      options: { template: '{{title}}', enableCreate: true, enableSelect: false },
+      width: 'full',
+      note: 'Ordre = numérotation 1., 2., 3.… sur le site',
+      ...fr('Sections')
+    }
+  },
+  {
+    collection: 'pages_legales_subsections',
+    field: 'section',
+    related_collection: 'pages_legales_sections',
+    meta: m2o('{{title}}', { required: true, width: 'half', ...fr('Section parente') }),
+    one_field: 'subsections',
+    sort_field: 'sort',
+    one_meta: {
+      interface: 'list-o2m',
+      special: ['o2m'],
+      options: { template: '{{title}}', enableCreate: true, enableSelect: false },
+      width: 'full',
+      note: 'Ordre = numérotation x.1, x.2… sur le site',
+      ...fr('Sous-sections')
+    }
   }
 ]

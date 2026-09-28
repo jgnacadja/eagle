@@ -1,3 +1,4 @@
+import type { Article, Centre, CourseListItem, CoursePage } from '@learnup/types'
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, ref, Suspense, watchEffect } from 'vue'
@@ -38,7 +39,7 @@ let routeMock: RouteMock
 let forceError: Error | null = null
 const requestEvent = { node: { req: {}, res: {} } }
 
-const centreCreteil = {
+const centreCreteil: Centre = {
   id: 1,
   status: 'published',
   slug: 'creteil',
@@ -65,6 +66,7 @@ const centreCreteil = {
   qualiopi_certified: true,
   qualiopi_certificate_number: 'QUAL-2026-CRETEIL',
   qualiopi_certifier: 'AFNOR',
+  qualiopi_certificate: null,
   qualiopi_valid_until: '2027-03-14T00:00:00Z',
   latitude: 48.7909,
   longitude: 2.4534,
@@ -85,7 +87,7 @@ const centreVitry = {
   longitude: 2.3928
 }
 
-const catalogueCourseFixture = {
+const catalogueCourseFixture: CourseListItem = {
   id: 1,
   slug: 'sst-initial',
   title: 'SST — Sauveteur secouriste du travail',
@@ -121,6 +123,7 @@ const catalogueCourseFixture = {
       }
     }
   ],
+  image: null,
   imageUrl: null,
   generatedProgramUrl: null,
   status: 'published',
@@ -129,7 +132,7 @@ const catalogueCourseFixture = {
   seoCanonical: null
 }
 
-const catalogueCourses = {
+const catalogueCourses: CoursePage = {
   items: [structuredClone(catalogueCourseFixture)],
   total: 12,
   page: 1,
@@ -176,7 +179,10 @@ const catalogNull = vi.hoisted(() => ({ value: false }))
 vi.mock('~/composables/useGeolocation', () => ({
   useGeolocation: () => ({ position: geoPosition })
 }))
-const articleFixtureBase = {
+const articleFixtureBase: Pick<
+  Article,
+  'slug' | 'title' | 'excerpt' | 'category' | 'publish_at' | 'cover_image'
+> = {
   slug: 'actu-creteil',
   title: 'Actualité du centre de Créteil',
   excerpt: 'Résumé de l’actualité.',
@@ -198,7 +204,7 @@ const centreAvisFixture = [
 // Mutable pour tester le masquage de la section quand la collection est vide.
 const avisFixture: typeof centreAvisFixture = []
 // Mutable pour piloter la liste des centres voisins.
-const centresFixture: (typeof centreCreteil)[] = []
+const centresFixture: Centre[] = []
 
 // Collections renvoyant `null` (donnée absente avant résolution) :
 // couvre les replis `?? []` des sections fiche.
@@ -1063,7 +1069,7 @@ describe('pages/centres/[slug]', () => {
       catalogueCourses.items.length,
       structuredClone({
         ...catalogueCourseFixture,
-        modalities: null,
+        modalities: null as unknown as string[],
         sessions: [
           { ...catalogueCourseFixture.sessions![0]!, modality: null },
           { ...catalogueCourseFixture.sessions![0]!, id: 'sess-2', modality: 'mode-x' }

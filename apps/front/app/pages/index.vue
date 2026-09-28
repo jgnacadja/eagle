@@ -68,33 +68,21 @@
           </div>
 
           <!-- Search bar -->
-          <form
-            v-hero="heroStagger(4)"
-            class="mx-auto mt-6 w-full max-w-prose"
-            @submit.prevent="onHeroSearch"
-          >
-            <div
-              class="flex h-14 md:h-16 items-center gap-3 rounded-full border-2 border-primary/75 bg-paper pl-4 md:pl-6 pr-2 shadow-sm transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"
+          <form class="mx-auto mt-6 w-full max-w-prose" @submit.prevent="onHeroSearch">
+            <label for="hero-search-input" class="sr-only"
+              >Décrivez votre besoin de formation</label
             >
-              <IconSparkle :size="22" class="shrink-0 text-accent" />
-              <label for="hero-search-input" class="sr-only"
-                >Décrivez votre besoin de formation</label
-              >
-              <input
-                id="hero-search-input"
-                v-model="heroSearch"
-                type="text"
-                class="h-auto flex-1 border-0 bg-transparent px-0 text-small md:text-body text-ink placeholder:text-ink-subtle focus:outline-none"
-                placeholder="Ex. : Je dois former 8 salariés au CACES près de Lyon avant septembre."
-              />
-              <button
-                type="submit"
-                aria-label="Lancer la recherche"
-                class="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-full bg-primary text-paper transition-colors hover:bg-primary-dark"
-              >
-                <IconSearch :size="18" class="text-paper" />
-              </button>
-            </div>
+            <SearchInput
+              v-model="heroSearch"
+              input-id="hero-search-input"
+              sr-label="Besoin d'aide pour choisir votre formation"
+              placeholder="Ex. : Je dois former 8 salariés au CACES près de Lyon avant septembre."
+              @submit="onHeroSearch"
+            >
+              <template #icon>
+                <IconSparkle :size="20" class="shrink-0 text-accent" />
+              </template>
+            </SearchInput>
             <p
               class="mt-3 text-xs md:text-small text-ink-muted whitespace-normal md:whitespace-nowrap"
             >
@@ -693,26 +681,18 @@
         </h2>
 
         <form class="mx-auto mt-lg w-full max-w-prose" @submit.prevent="onCtaSearch">
-          <div
-            class="flex h-14 md:h-16 items-center gap-3 rounded-full bg-paper pl-4 md:pl-6 pr-2 shadow-lg transition-colors focus-within:ring-2 focus-within:ring-primary/20"
+          <label for="cta-search-input" class="sr-only"> Décrivez votre situation </label>
+          <SearchInput
+            v-model="ctaSearch"
+            input-id="cta-search-input"
+            sr-label="Décrivez votre situation"
+            placeholder="Ex. : Nous devons renouveler 12 habilitations sur deux sites avant décembre."
+            @submit="onCtaSearch"
           >
-            <IconSparkle :size="22" class="shrink-0 text-accent" />
-            <label for="cta-search-input" class="sr-only"> Décrivez votre situation </label>
-            <input
-              id="cta-search-input"
-              v-model="ctaSearch"
-              type="text"
-              class="h-auto flex-1 border-0 bg-transparent px-0 text-small md:text-body text-ink placeholder:text-ink-subtle focus:outline-none"
-              placeholder="Ex. : Nous devons renouveler 12 habilitations sur deux sites avant décembre."
-            />
-            <button
-              type="submit"
-              aria-label="Lancer la recherche"
-              class="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-full bg-primary text-paper transition-colors hover:bg-primary-dark"
-            >
-              <IconSearch :size="18" class="text-paper" />
-            </button>
-          </div>
+            <template #icon>
+              <IconSparkle :size="20" class="shrink-0 text-accent" />
+            </template>
+          </SearchInput>
           <p class="mt-3 text-center text-xs md:text-small text-ink-inverse-muted">
             Vous pouvez écrire comme vous le feriez à un conseiller.
           </p>

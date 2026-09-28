@@ -159,9 +159,7 @@
               </div>
 
               <div>
-                <Label for="siret" class="mb-xs block">
-                  SIRET <span class="font-normal text-ink-subtle">(facultatif)</span>
-                </Label>
+                <Label for="siret" class="mb-xs block"> SIRET </Label>
                 <Input
                   id="siret"
                   v-model="siret"
@@ -186,10 +184,7 @@
               </div>
 
               <div>
-                <Label for="message" class="mb-xs block">
-                  Votre besoin en quelques mots
-                  <span class="font-normal text-ink-subtle">(facultatif)</span>
-                </Label>
+                <Label for="message" class="mb-xs block"> Votre besoin en quelques mots </Label>
                 <Textarea
                   id="message"
                   v-model="message"
@@ -271,8 +266,8 @@
           </Card>
 
           <p class="text-meta leading-relaxed text-ink-subtle">
-            Les informations recueillies servent uniquement au traitement de la demande — détails
-            dans la
+            Les informations recueillies servent uniquement au traitement de la demande conformément
+            a notre
             <NuxtLink
               to="/confidentialite"
               class="font-medium text-primary underline underline-offset-4 transition-colors hover:text-accent-text"

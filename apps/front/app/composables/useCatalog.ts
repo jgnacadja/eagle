@@ -212,7 +212,7 @@ export async function useCatalog(query: MaybeRefOrGetter<CatalogQuery>) {
       getCachedData: (key, nuxtApp, ctx) =>
         ctx.cause === 'initial' && nuxtApp.isHydrating
           ? ((nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as
-            CatalogApiResult | undefined)
+              CatalogApiResult | undefined)
           : undefined
     }
   )

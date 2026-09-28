@@ -73,9 +73,6 @@
             class="mx-auto mt-6 w-full max-w-prose"
             @submit.prevent="onHeroSearch"
           >
-            <label for="hero-search-input" class="sr-only"
-              >Décrivez votre besoin de formation</label
-            >
             <SearchInput
               v-model="heroSearch"
               input-id="hero-search-input"
@@ -587,7 +584,7 @@
         <div class="mt-xl flex flex-col gap-lg sm:flex-row sm:items-center sm:justify-between">
           <div class="shrink-0">
             <Button as-child variant="outline" size="pill-lg" class="lg:inline-flex gap-xs">
-              <NuxtLink to="/formations"> Consulter </NuxtLink>
+              <NuxtLink to="/formations"> Consulter <span class="link-arrow">→</span></NuxtLink>
             </Button>
           </div>
         </div>
@@ -670,7 +667,6 @@
         </h2>
 
         <form class="mx-auto mt-lg w-full max-w-prose" @submit.prevent="onCtaSearch">
-          <label for="cta-search-input" class="sr-only"> Décrivez votre situation </label>
           <SearchInput
             v-model="ctaSearch"
             input-id="cta-search-input"

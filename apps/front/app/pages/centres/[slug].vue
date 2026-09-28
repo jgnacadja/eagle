@@ -450,7 +450,7 @@
               </div>
               <div class="mt-lg">
                 <Button as-child variant="outline" size="pill" class="gap-xs">
-                  <NuxtLink to="/formations">Consulter</NuxtLink>
+                  <NuxtLink to="/formations">Consulter <span class="link-arrow">→</span></NuxtLink>
                 </Button>
               </div>
             </section>

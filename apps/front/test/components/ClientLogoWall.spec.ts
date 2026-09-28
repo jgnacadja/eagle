@@ -54,9 +54,4 @@ describe('ClientLogoWall', () => {
     expect(firstCard.classes()).toContain('h-14')
     expect(firstCard.attributes('aria-label')).toMatch(/^Logo client /)
   })
-
-  it('variante wrap : rétrocompatible avec marquee', () => {
-    const wrapper = mount(ClientLogoWall, { props: { variant: 'wrap' } })
-    expect(wrapper.find('.marquee').exists()).toBe(true)
-  })
 })

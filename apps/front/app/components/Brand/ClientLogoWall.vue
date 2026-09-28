@@ -1,9 +1,5 @@
 <template>
-  <div
-    v-if="variant === 'marquee' || variant === 'wrap'"
-    :class="styles.container"
-    :aria-label="ariaLabel"
-  >
+  <div v-if="variant === 'marquee'" :class="styles.container" :aria-label="ariaLabel">
     <!-- Masques de fondu gauche et droite -->
     <div
       class="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-linear-to-r from-paper to-transparent sm:w-20"
@@ -72,7 +68,7 @@ import { computed } from 'vue'
 import { companyLogos, type CompanyLogo } from '~/data/companies'
 import { revealStagger } from '~/utils/reveal'
 
-type Variant = 'scroll' | 'grid' | 'marquee' | 'wrap'
+type Variant = 'scroll' | 'grid' | 'marquee'
 
 const MARQUEE_STYLES = {
   container: 'relative mt-md w-full overflow-hidden',
@@ -82,7 +78,6 @@ const MARQUEE_STYLES = {
 
 const VARIANT_STYLES: Record<Variant, { container: string; card: string; img: string }> = {
   marquee: MARQUEE_STYLES,
-  wrap: MARQUEE_STYLES,
   grid: {
     container: 'mt-lg grid grid-cols-3 gap-sm sm:gap-grid md:grid-cols-6',
     card: 'flex h-16 sm:h-20 items-center justify-center rounded-sm border border-rule bg-surface p-md shadow-sm transition-all hover:border-primary/40',

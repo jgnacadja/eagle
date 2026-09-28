@@ -5,7 +5,7 @@
         'relative flex h-control items-center gap-sm rounded-full border bg-paper pl-md pr-sm shadow-sm transition-colors',
         isLoading ? 'border-outline-soft bg-surface-soft' : '',
         hasError ? 'border-danger' : 'border-outline',
-        !isLoading && !hasError ? 'focus-within:ring-2 focus-within:ring-outline' : '',
+        !isLoading && !hasError ? 'focus-within:ring-2 focus-within:ring-accent' : '',
         $attrs.class as string
       ]"
     >
@@ -69,7 +69,7 @@
 
     <!-- Erreur de saisie (§40, moteur É9) -->
     <p v-if="hasError" :id="errorId" class="mt-xs text-small font-semibold text-danger">
-      {{ errorMessage }}
+      {{ visibleError }}
     </p>
 
     <!-- Annonce accessible de l'état de chargement (aria-live) -->
@@ -98,6 +98,8 @@ const props = withDefaults(
     errorMessage?: string
     /** Libellés d'autocomplétion (liste stylée) — ex. ville, CP, département. */
     suggestions?: string[]
+    /** Message affiché (et soumission bloquée) quand le champ est vide. */
+    emptyErrorMessage?: string
   }>(),
   {
     modelValue: '',
@@ -108,7 +110,8 @@ const props = withDefaults(
     type: 'text',
     loading: false,
     errorMessage: '',
-    suggestions: undefined
+    suggestions: undefined,
+    emptyErrorMessage: ''
   }
 )
 
@@ -122,11 +125,13 @@ const emit = defineEmits<{
 }>()
 
 const draft = ref(props.modelValue ?? '')
+const localError = ref('')
 const errorId = `${props.inputId}-error`
 const listId = `${props.inputId}-suggestions`
 
 const isLoading = computed(() => props.loading)
-const hasError = computed(() => !!props.errorMessage)
+const visibleError = computed(() => props.errorMessage || localError.value)
+const hasError = computed(() => !!visibleError.value)
 
 const suggestionList = computed(() => props.suggestions ?? [])
 const {
@@ -151,6 +156,7 @@ watch(
 )
 
 function onInput(value: string | number) {
+  localError.value = ''
   draft.value = String(value)
   emit('input', draft.value)
   open()
@@ -158,7 +164,10 @@ function onInput(value: string | number) {
 
 function onKeydown(event: KeyboardEvent) {
   if (onDropdownKeydown(event)) return
-  if (event.key === 'Enter') submit()
+  if (event.key === 'Enter') {
+    event.preventDefault()
+    submit()
+  }
 }
 
 // Choix d'une suggestion : remplit le champ et soumet — même scénario que
@@ -174,6 +183,10 @@ function pickSuggestion(index: number) {
 
 function submit() {
   if (isLoading.value) return
+  if (!draft.value.trim() && props.emptyErrorMessage) {
+    localError.value = props.emptyErrorMessage
+    return
+  }
   close()
   emit('update:modelValue', draft.value)
   emit('submit', draft.value)

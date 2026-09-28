@@ -253,8 +253,9 @@ const PUBLIC_FIELDS = {
     'seo_canonical'
   ],
   // `page`/`section` : nécessaires au filtre `status` du parent et au
-  // peuplement de l'alias O2M côté page.
-  pages_legales_sections: ['id', 'sort', 'title', 'anchor', 'body', 'page'],
+  // peuplement de l'alias O2M côté page. `subsections` doit être listé ici
+  // aussi : sans ça, `sections.subsections.*` est refusé au rôle Public.
+  pages_legales_sections: ['id', 'sort', 'title', 'anchor', 'body', 'page', 'subsections'],
   pages_legales_subsections: ['id', 'sort', 'title', 'anchor', 'body', 'section'],
   formations: [
     'id',

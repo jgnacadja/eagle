@@ -469,7 +469,9 @@ describe('MegaMenuFormations — interactions close', () => {
     const familleLink = wrapper.findAll('a').find((a) => a.text().includes('Voir la famille'))!
     await familleLink.trigger('click')
     await wrapper.find('a[href="/formations/caces-conduite-engins/caces-r489"]').trigger('click')
-    await wrapper.find('a[href="/etre-guide"]').trigger('click')
+    // Le CTA « Être guidé » ouvre le panneau de recherche assistée et émet close.
+    const cta = wrapper.findAll('button').find((b) => b.text().includes('Être guidé'))!
+    await cta.trigger('click')
 
     expect(menu.emitted('close')!.length).toBeGreaterThanOrEqual(4)
   })

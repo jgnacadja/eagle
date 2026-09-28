@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NuxtError } from '#app'
 import type { CourseListItem, CoursePage } from '@learnup/types'
 import { useGeolocation } from '~/composables/useGeolocation'
+import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import HomePage from '~/pages/index.vue'
 
 const seoMock = vi.fn()
@@ -61,7 +62,22 @@ vi.mock('~/composables/useCatalog', () => ({
   }))
 }))
 
-const initialCentres = [
+// Fixtures Directus : les champs sont nullables — les tests exercent les
+// replis en passant null sur n'importe lequel.
+interface CentreFixture {
+  slug: string
+  name: string
+  city?: string | null
+  department?: string | null
+  region?: string | null
+  specialties?: string[] | null
+  latitude?: number | null
+  longitude?: number | null
+  address?: string | null
+  postal_code?: string | null
+}
+
+const initialCentres: CentreFixture[] = [
   {
     slug: 'creteil',
     name: 'Centre de Créteil',
@@ -94,7 +110,7 @@ const initialCentres = [
   }
 ]
 
-const directusCentres = ref([...initialCentres])
+const directusCentres = ref<CentreFixture[] | null>([...initialCentres])
 
 const initialAvis = [
   {
@@ -132,9 +148,20 @@ const initialAvis = [
   }
 ]
 
-const directusAvis = ref([...initialAvis])
+const directusAvis = ref<typeof initialAvis | null>([...initialAvis])
 
-const initialArticles = [
+interface ArticleFixture {
+  id: number
+  status: string
+  slug: string
+  title: string
+  excerpt: string | null
+  category: string | null
+  publish_at: string
+  cover_image: string | null
+}
+
+const initialArticles: ArticleFixture[] = [
   {
     id: 1,
     status: 'published',
@@ -167,7 +194,7 @@ const initialArticles = [
   }
 ]
 
-const directusArticles = ref([...initialArticles])
+const directusArticles = ref<ArticleFixture[] | null>([...initialArticles])
 
 vi.stubGlobal(
   'useDirectusList',
@@ -231,6 +258,11 @@ describe('pages/index', () => {
     geo.permission.value = null
     geoFetchMock.mockReset().mockResolvedValue([])
     navigateMock.mockReset()
+    // État assistant partagé via useState : reset entre tests.
+    const launcher = useAssistantLauncher()
+    launcher.isOpen.value = false
+    launcher.pendingMessage.value = null
+    launcher.context.value = {}
     directusArticles.value = [...initialArticles]
     directusAvis.value = [...initialAvis]
     directusCentres.value = [...initialCentres]
@@ -550,44 +582,50 @@ describe('pages/index', () => {
     expect(text).not.toContain('Logo Qualiopi à confirmer')
   })
 
-  it('envoie la recherche hero en query q vers /formations', async () => {
+  it('ouvre la recherche assistée avec le message du hero', async () => {
     const wrapper = await mountPage()
+    const launcher = useAssistantLauncher()
 
     await wrapper.find('#hero-search-input').setValue('caces lyon')
     await wrapper.findAll('form')[0]!.trigger('submit')
 
-    expect(navigateMock).toHaveBeenCalledWith({
-      path: '/formations',
-      query: { q: 'caces lyon' }
-    })
+    expect(launcher.isOpen.value).toBe(true)
+    expect(launcher.context.value).toEqual({ source: 'home' })
+    expect(launcher.pendingMessage.value).toBe('caces lyon')
+    expect(navigateMock).not.toHaveBeenCalled()
   })
 
-  it('envoie la recherche CTA en query q vers /formations', async () => {
+  it('ouvre la recherche assistée avec le message du CTA', async () => {
     const wrapper = await mountPage()
+    const launcher = useAssistantLauncher()
 
     await wrapper.find('#cta-search-input').setValue('recyclage')
     await wrapper.findAll('form').at(-1)!.trigger('submit')
 
-    expect(navigateMock).toHaveBeenCalledWith({
-      path: '/formations',
-      query: { q: 'recyclage' }
-    })
+    expect(launcher.isOpen.value).toBe(true)
+    expect(launcher.context.value).toEqual({ source: 'home' })
+    expect(launcher.pendingMessage.value).toBe('recyclage')
+    expect(navigateMock).not.toHaveBeenCalled()
   })
 
-  it('part sans query quand la recherche hero est vide', async () => {
+  it('ouvre la recherche assistée sans message quand le hero est vide', async () => {
     const wrapper = await mountPage()
+    const launcher = useAssistantLauncher()
 
     await wrapper.findAll('form')[0]!.trigger('submit')
 
-    expect(navigateMock).toHaveBeenCalledWith({ path: '/formations', query: {} })
+    expect(launcher.isOpen.value).toBe(true)
+    expect(launcher.pendingMessage.value).toBeNull()
   })
 
-  it('part sans query quand la recherche CTA est vide', async () => {
+  it('ouvre la recherche assistée sans message quand le CTA est vide', async () => {
     const wrapper = await mountPage()
+    const launcher = useAssistantLauncher()
 
     await wrapper.findAll('form').at(-1)!.trigger('submit')
 
-    expect(navigateMock).toHaveBeenCalledWith({ path: '/formations', query: {} })
+    expect(launcher.isOpen.value).toBe(true)
+    expect(launcher.pendingMessage.value).toBeNull()
   })
 
   it('part sans query quand la recherche carte est vide', async () => {
@@ -661,8 +699,22 @@ describe('pages/index', () => {
             title: 'F multi',
             familySlug: 'fam',
             sessions: [
-              { startDate: '2026-11-01', seatsRemaining: null },
-              { startDate: '2026-11-02', seatsRemaining: 1 }
+              {
+                id: null,
+                startDate: '2026-11-01',
+                endDate: null,
+                modality: null,
+                seatsRemaining: null,
+                location: null
+              },
+              {
+                id: null,
+                startDate: '2026-11-02',
+                endDate: null,
+                modality: null,
+                seatsRemaining: 1,
+                location: null
+              }
             ]
           } satisfies CourseListItem,
           {
@@ -670,7 +722,16 @@ describe('pages/index', () => {
             slug: 'f-noto',
             title: 'F sans famille',
             familySlug: null,
-            sessions: [{ startDate: '2026-11-03', seatsRemaining: 5 }]
+            sessions: [
+              {
+                id: null,
+                startDate: '2026-11-03',
+                endDate: null,
+                modality: null,
+                seatsRemaining: 5,
+                location: null
+              }
+            ]
           } satisfies CourseListItem
         ],
         total: 2,

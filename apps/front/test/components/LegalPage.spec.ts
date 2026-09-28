@@ -153,9 +153,11 @@ describe('components/LegalPage', () => {
     expect(firstLink.exists()).toBe(true)
   })
 
-  it('active la section du hash initial', () => {
+  it('active la section du hash initial', async () => {
     routeMock.hash = '#hebergement'
     const wrapper = mount(LegalPage, { props: { page, tabs }, global: { stubs } })
+    // activeSectionId est résolu dans onMounted : flush du rendu requis.
+    await nextTick()
 
     expect(wrapper.find('a[href="#hebergement"]').attributes('data-active')).toBe('true')
   })
@@ -263,7 +265,7 @@ describe('components/LegalPage', () => {
     Element.prototype.getBoundingClientRect = function (this: Element) {
       return {
         ...originalRect.call(this),
-        top: this.id === 'hebergement' ? 500 : 0
+        top: this.id === 'editeur' ? 0 : 500
       } as DOMRect
     }
     try {
@@ -275,7 +277,9 @@ describe('components/LegalPage', () => {
       await nextTick()
       await new Promise((resolve) => setTimeout(resolve, 0))
 
-      // « hebergement » dépasse le seuil : la boucle casse et garde « editeur ».
+      // « editeur-forme » (sous-section suivie par le scroll-spy) et
+      // « hebergement » dépassent le seuil : la boucle casse et garde
+      // « editeur ».
       expect(wrapper.find('a[href="#editeur"]').attributes('data-active')).toBe('true')
       wrapper.unmount()
     } finally {
@@ -310,12 +314,41 @@ describe('components/LegalPage', () => {
     expect(wrapper.find('select').exists()).toBe(true)
   })
 
-  it('active la première section pour un hash inconnu', () => {
+  it('active la première section pour un hash inconnu', async () => {
     routeMock.hash = '#section-inexistante'
-    const wrapper = mount(LegalPage, { props: { page, tabs }, global: { stubs } })
+    // Hash inconnu → repli sur la première ancre. Les mocks de scroll
+    // maintiennent « editeur » au-dessus du seuil pour que
+    // computeActiveSection (lancé après onMounted) conserve ce choix.
+    const originalScroll = Object.getOwnPropertyDescriptor(document.documentElement, 'scrollHeight')
+    Object.defineProperty(document.documentElement, 'scrollHeight', {
+      value: 10000,
+      configurable: true
+    })
+    const originalRect = Element.prototype.getBoundingClientRect
+    Element.prototype.getBoundingClientRect = function (this: Element) {
+      return {
+        ...originalRect.call(this),
+        top: this.id === 'editeur' ? 0 : 500
+      } as DOMRect
+    }
+    try {
+      const wrapper = mount(LegalPage, {
+        props: { page, tabs },
+        global: { stubs },
+        attachTo: document.body
+      })
+      await nextTick()
+      await new Promise((resolve) => setTimeout(resolve, 0))
 
-    const first = page.sections[0]!
-    expect(wrapper.find(`a[href="#${first.id}"]`).attributes('data-active')).toBe('true')
+      const first = page.sections[0]!
+      expect(wrapper.find(`a[href="#${first.id}"]`).attributes('data-active')).toBe('true')
+      wrapper.unmount()
+    } finally {
+      Element.prototype.getBoundingClientRect = originalRect
+      if (originalScroll)
+        Object.defineProperty(document.documentElement, 'scrollHeight', originalScroll)
+      else delete (document.documentElement as { scrollHeight?: number }).scrollHeight
+    }
   })
 
   it('monte une page sans sections', () => {

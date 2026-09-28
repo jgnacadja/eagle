@@ -66,7 +66,16 @@ const pageFixture = {
   label: 'Mentions légales',
   title: 'Mentions légales',
   updated_at: '2025-01-15T00:00:00Z',
-  sections: [{ id: 's1', title: 'Éditeur', paragraphs: ['Paragraphe'], bullets: [] }],
+  sections: [
+    {
+      id: 1,
+      sort: 1,
+      title: 'Éditeur',
+      anchor: 'editeur',
+      body: '<p>Paragraphe</p>',
+      subsections: []
+    }
+  ],
   cta_label: null,
   cta_to: null,
   show_in_tabs: true
@@ -172,8 +181,22 @@ describe('pages/[slug] (pages légales)', () => {
         updated_at: null,
         created_at: '2024-06-01T00:00:00Z',
         sections: [
-          { id: 's1', title: 'Sans contenu', paragraphs: null, bullets: null },
-          { id: 's2', title: 'Avec contenu', paragraphs: ['p'], bullets: ['b'] }
+          {
+            id: 1,
+            sort: 1,
+            title: 'Sans contenu',
+            anchor: 'sans-contenu',
+            body: null,
+            subsections: null
+          },
+          {
+            id: 2,
+            sort: 2,
+            title: 'Avec contenu',
+            anchor: 'avec-contenu',
+            body: '<p>p</p>',
+            subsections: [{ id: 3, sort: 1, title: 'Sub', anchor: 'sub', body: '<p>s</p>' }]
+          }
         ]
       }
     ])
@@ -181,12 +204,12 @@ describe('pages/[slug] (pages légales)', () => {
     await flushPromises()
 
     const page = wrapper.findComponent({ name: 'LegalPage' }).props('page') as {
-      sections: { paragraphs: unknown[]; bullets: unknown[] }[]
+      sections: { body: string | null; subsections: { number: string }[] }[]
       lastUpdated: string
     }
-    expect(page.sections[0]!.paragraphs).toEqual([])
-    expect(page.sections[0]!.bullets).toEqual([])
-    expect(page.sections[1]!.paragraphs).toEqual(['p'])
+    expect(page.sections[0]!.body).toBeNull()
+    expect(page.sections[0]!.subsections).toEqual([])
+    expect(page.sections[1]!.subsections[0]).toMatchObject({ id: 'sub', number: '2.1' })
     expect(page.lastUpdated).toBeTruthy()
   })
 

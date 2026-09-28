@@ -9,7 +9,7 @@
 export const centres = [
   {
     slug: 'creteil',
-    name: 'Centre LEARN UP de Créteil',
+    name: 'Centre LEARN UP de Val-de-Marne',
     status: 'published',
     address: '14 rue des Refuzniks',
     city: 'Créteil',
@@ -71,7 +71,7 @@ export const centres = [
   },
   {
     slug: 'lyon',
-    name: 'Centre LEARN UP de Lyon',
+    name: 'Centre LEARN UP de Rhône',
     status: 'published',
     address: '12 cours Lafayette',
     city: 'Lyon',
@@ -102,7 +102,7 @@ export const centres = [
   },
   {
     slug: 'marseille',
-    name: 'Centre LEARN UP de Marseille',
+    name: 'Centre LEARN UP de Bouches-du-Rhône',
     status: 'published',
     address: '5 quai de la Joliette',
     city: 'Marseille',
@@ -133,7 +133,7 @@ export const centres = [
   },
   {
     slug: 'lille',
-    name: 'Centre LEARN UP de Lille',
+    name: 'Centre LEARN UP de Nord',
     status: 'published',
     address: '40 rue des Canonniers',
     city: 'Lille',
@@ -164,7 +164,7 @@ export const centres = [
   },
   {
     slug: 'bordeaux',
-    name: 'Centre LEARN UP de Bordeaux',
+    name: 'Centre LEARN UP de Gironde',
     status: 'published',
     address: '8 cours du Chapeau-Rouge',
     city: 'Bordeaux',
@@ -195,7 +195,7 @@ export const centres = [
   },
   {
     slug: 'nantes',
-    name: 'Centre LEARN UP de Nantes',
+    name: 'Centre LEARN UP de Loire-Atlantique',
     status: 'published',
     address: '3 rue de la Barillerie',
     city: 'Nantes',
@@ -226,7 +226,7 @@ export const centres = [
   },
   {
     slug: 'toulouse',
-    name: 'Centre LEARN UP de Toulouse',
+    name: 'Centre LEARN UP de Haute-Garonne',
     status: 'published',
     address: '17 rue d’Alsace-Lorraine',
     city: 'Toulouse',

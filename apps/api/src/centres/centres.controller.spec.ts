@@ -26,7 +26,7 @@ describe('CentresController', () => {
       count: vi.fn()
     }
     geocoding = {
-      syncMissing: vi.fn().mockResolvedValue({ geocoded: 0, failed: 0 }),
+      syncMissing: vi.fn().mockResolvedValue({ geocoded: 0, renamed: 0, failed: 0 }),
       reverseGeocode: vi.fn()
     }
 
@@ -124,13 +124,13 @@ describe('CentresController', () => {
       })
   })
   it('POST /admin/centres/geocode triggers the sync', async () => {
-    geocoding.syncMissing.mockResolvedValue({ geocoded: 3, failed: 1 })
+    geocoding.syncMissing.mockResolvedValue({ geocoded: 3, renamed: 1, failed: 1 })
 
     await request(app.getHttpServer())
       .post('/admin/centres/geocode')
       .expect(201)
       .expect((res) => {
-        expect(res.body).toEqual({ geocoded: 3, failed: 1 })
+        expect(res.body).toEqual({ geocoded: 3, renamed: 1, failed: 1 })
       })
 
     expect(geocoding.syncMissing).toHaveBeenCalledWith({ force: true })

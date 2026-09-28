@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { CacheService } from '../common/cache/cache.service'
 import { DirectusCatalogService } from '../directus/directus.catalog.service'
+import { departmentName } from './departments'
 
 export interface GeocodedAddress {
   city: string | null
@@ -65,7 +66,21 @@ function parseBanContext(context: string | undefined): {
 // `{ force: true }` (sync, endpoint admin) court-circuite le cooldown.
 const SYNC_MISSING_COOLDOWN_MS = 60_000
 
-type SyncMissingResult = { geocoded: number; failed: number }
+type SyncMissingResult = { geocoded: number; renamed: number; failed: number }
+
+/**
+ * Titre affiché d'un centre — calculé, jamais éditorial : « Centre LEARN UP
+ * de {département} » (les centres sont répertoriés par département). Repli
+ * sur la ville tant que le département n'est pas géocodé ; `null` si ni
+ * l'un ni l'autre (le nom existant est conservé).
+ */
+export function centreDisplayName(
+  department: string | null | undefined,
+  city: string | null | undefined
+): string | null {
+  const location = departmentName(department) || (city ?? '').trim()
+  return location ? `Centre LEARN UP de ${location}` : null
+}
 
 @Injectable()
 export class GeocodingService {
@@ -160,7 +175,7 @@ export class GeocodingService {
   async syncMissing(options?: { force?: boolean }): Promise<SyncMissingResult> {
     if (this.inflight) return this.inflight
     if (!options?.force && Date.now() - this.lastRunAt < SYNC_MISSING_COOLDOWN_MS) {
-      return { geocoded: 0, failed: 0 }
+      return { geocoded: 0, renamed: 0, failed: 0 }
     }
 
     this.inflight = this.doSyncMissing().finally(() => {
@@ -176,14 +191,16 @@ export class GeocodingService {
       centres = await this.directus.fetchCentresForGeocoding()
     } catch (error) {
       this.logger.warn({ error }, 'Centres fetch for geocoding failed')
-      return { geocoded: 0, failed: 0 }
+      return { geocoded: 0, renamed: 0, failed: 0 }
     }
 
     const stale = centres.filter(
       (centre) => centre.address?.trim() && centre.address !== centre.geocoded_address
     )
+    const staleIds = new Set(stale.map((centre) => centre.id))
 
     let geocoded = 0
+    let renamed = 0
     let failed = 0
     for (const centre of stale) {
       const geo = await this.geocodeAddress(centre.address as string)
@@ -191,9 +208,11 @@ export class GeocodingService {
         failed += 1
         continue
       }
+      const name = centreDisplayName(geo.department, geo.city)
       try {
         await this.directus.updateCentre(centre.id, {
           ...geo,
+          ...(name ? { name } : {}),
           geocoded_address: centre.address
         })
         geocoded += 1
@@ -203,12 +222,30 @@ export class GeocodingService {
       }
     }
 
-    if (geocoded > 0) {
+    // Centres déjà géocodés dont le nom ne suit pas le département dérivé
+    // (migration vers « Centre LEARN UP de {département} » ou édition
+    // manuelle ultérieure) : renommés sans re-géocodage.
+    for (const centre of centres) {
+      if (staleIds.has(centre.id)) continue
+      const expected = centreDisplayName(centre.department, centre.city)
+      if (!expected || centre.name === expected) continue
+      try {
+        await this.directus.updateCentre(centre.id, { name: expected })
+        renamed += 1
+      } catch (error) {
+        this.logger.warn({ error, centre: centre.slug }, 'Failed to rename centre')
+        failed += 1
+      }
+    }
+
+    if (geocoded + renamed > 0) {
       await this.cache.invalidateCatalog()
     }
-    if (geocoded > 0 || failed > 0) {
-      this.logger.log(`Centre geocoding: ${geocoded} updated, ${failed} failed`)
+    if (geocoded + renamed > 0 || failed > 0) {
+      this.logger.log(
+        `Centre geocoding: ${geocoded} geocoded, ${renamed} renamed, ${failed} failed`
+      )
     }
-    return { geocoded, failed }
+    return { geocoded, renamed, failed }
   }
 }

@@ -91,7 +91,13 @@ export const collections = [
       {
         field: 'name',
         type: 'string',
-        meta: { interface: 'input', width: 'half', required: true, ...fr('Nom') }
+        meta: {
+          interface: 'input',
+          width: 'half',
+          readonly: true,
+          note: 'Calculé depuis le département (« Centre LEARN UP de … »)',
+          ...fr('Nom')
+        }
       },
       {
         field: 'address',
@@ -99,7 +105,7 @@ export const collections = [
         meta: {
           interface: 'input-multiline',
           width: 'full',
-          note: 'Seul champ à saisir : ville, CP, département, région et coordonnées sont calculés automatiquement (géocodage BAN).',
+          note: 'Seul champ à saisir : nom, ville, CP, département, région et coordonnées sont calculés automatiquement (géocodage BAN).',
           ...fr('Adresse')
         }
       },

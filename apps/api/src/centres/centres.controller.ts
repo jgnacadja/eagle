@@ -47,7 +47,7 @@ export class CentresController {
   @ApiTags('admin')
   @ApiSecurity('x-api-key')
   @ApiOperation({ summary: 'Geocode centres whose address changed (BAN)' })
-  async geocode(): Promise<{ geocoded: number; failed: number }> {
+  async geocode(): Promise<{ geocoded: number; renamed: number; failed: number }> {
     return this.geocoding.syncMissing({ force: true })
   }
 }

@@ -53,7 +53,9 @@ describe('SyncService', () => {
         { provide: SchedulerRegistry, useValue: scheduler },
         {
           provide: GeocodingService,
-          useValue: { syncMissing: vi.fn().mockResolvedValue({ geocoded: 0, failed: 0 }) }
+          useValue: {
+            syncMissing: vi.fn().mockResolvedValue({ geocoded: 0, renamed: 0, failed: 0 })
+          }
         }
       ]
     }).compile()

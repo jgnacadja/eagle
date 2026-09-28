@@ -738,6 +738,7 @@ import { availabilityStatus, useCentreSessionDates } from '~/composables/useCent
 import { useGeolocation } from '~/composables/useGeolocation'
 import { useGeoSuggest } from '~/composables/useGeoSuggest'
 import { distanceKm, formatDistance } from '~/utils/geo'
+import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { heroStagger, revealStagger } from '~/utils/reveal'
 import { articleAssetUrl, formatArticleDate } from '~/utils/article'
 import { mapAvis } from '~/utils/avis'
@@ -796,17 +797,24 @@ useContentSeo(
 )
 
 const heroSearch = ref('')
+const assistant = useAssistantLauncher()
 
+// C1 — point d'entrée principal : le besoin saisi ouvre le panneau de
+// recherche assistée et est envoyé comme premier message.
 function onHeroSearch() {
   const q = heroSearch.value.trim()
-  navigateTo({ path: '/formations', query: q ? { q } : {} })
+  assistant.open({ context: { source: 'home' }, message: q || undefined })
+  heroSearch.value = ''
 }
 
 const ctaSearch = ref('')
 
+// C1 — même point d'entrée que le hero : le besoin saisi ouvre le panneau de
+// recherche assistée (pas de redirection vers le catalogue).
 function onCtaSearch() {
   const q = ctaSearch.value.trim()
-  navigateTo({ path: '/formations', query: q ? { q } : {} })
+  assistant.open({ context: { source: 'home' }, message: q || undefined })
+  ctaSearch.value = ''
 }
 
 const mapSearch = ref('')

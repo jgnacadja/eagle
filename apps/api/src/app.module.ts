@@ -18,6 +18,7 @@ import { CentresModule } from './centres/centres.module'
 import { LeadsModule } from './leads/leads.module'
 import { CacheModule } from './common/cache/cache.module'
 import { DirectusModule } from './directus/directus.module'
+import { AssistantModule } from './assistant/assistant.module'
 
 function isAdminRoute(context: ExecutionContext): boolean {
   const request = context.switchToHttp().getRequest<{ originalUrl?: string }>()
@@ -47,6 +48,14 @@ function isLeadsRoute(context: ExecutionContext): boolean {
   const request = context.switchToHttp().getRequest<{ originalUrl?: string }>()
   const url = request.originalUrl ?? ''
   return url === '/leads' || url.startsWith('/leads/')
+}
+
+// La recherche assistée déclenche un appel LLM par message : quota dédié,
+// plus resserré que le catalogue, et sorti du bucket public de 100 req/min.
+function isAssistantRoute(context: ExecutionContext): boolean {
+  const request = context.switchToHttp().getRequest<{ originalUrl?: string }>()
+  const url = request.originalUrl ?? ''
+  return url === '/assistant' || url.startsWith('/assistant/')
 }
 
 // Le SSR du front appelle l'API depuis l'IP du serveur Nuxt : sans bypass,
@@ -176,8 +185,16 @@ function createRedisThrottlerStorage(url: string): ThrottlerStorage {
                 isDirectusRoute(context) ||
                 isHealthRoute(context) ||
                 isLeadsRoute(context) ||
+                isAssistantRoute(context) ||
                 isInternalSsr(context, internalSsrToken),
               getTracker: ipTracker
+            },
+            {
+              name: 'assistant',
+              ttl: 60_000,
+              limit: 20,
+              skipIf: (context) => !isAssistantRoute(context),
+              getTracker: (req) => req.ip ?? req.socket?.remoteAddress ?? 'anonymous'
             },
             {
               name: 'directus',
@@ -212,7 +229,8 @@ function createRedisThrottlerStorage(url: string): ThrottlerStorage {
     CatalogModule,
     CentresModule,
     DirectusModule,
-    LeadsModule
+    LeadsModule,
+    AssistantModule
   ],
   controllers: [HealthController],
   providers: [

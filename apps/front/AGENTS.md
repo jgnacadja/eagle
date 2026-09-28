@@ -18,6 +18,8 @@ Lire d'abord `AGENTS.md` à la racine.
 - `useDirectusItemBySlug<T>(collection, slug, cacheKey)` : fiche par slug.
 - `useContentSeo(source, fallbackTitle)` : met à jour `useHead` depuis les champs SEO Directus.
 - `useCatalog()` : appel API NestJS `/courses` via `useAsyncData`, clés de cache dérivées du JSON de la requête, dégradation gracieuse.
+- `useAssistant(context)` : machine à états de la recherche assistée (`POST /assistant/message`). Fil de conversation, envoi/réessai/reset, chips de contexte et slots (effectif, lieu) agrégés pour pré-remplir `demande-de-formation` (`besoin`, `salaries`, `lieu`).
+- `useAssistantLauncher()` : ouverture du widget `AssistantChat` (panneau bas-droite, monté dans `app.vue`). Les points d'entrée appellent `open({ context, message })` — jamais de navigation dédiée.
 
 ## Conventions UI
 

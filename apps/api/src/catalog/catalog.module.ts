@@ -7,6 +7,7 @@ import { CatalogService } from './catalog.service'
 @Module({
   imports: [CacheModule, DirectusModule],
   controllers: [CatalogController],
-  providers: [CatalogService]
+  providers: [CatalogService],
+  exports: [CatalogService]
 })
 export class CatalogModule {}

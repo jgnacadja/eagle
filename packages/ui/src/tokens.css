@@ -148,6 +148,14 @@
   --shadow-md: 0 8px 20px rgb(20 42 82 / 10%);
   --shadow-lg: 0 16px 34px rgb(20 42 82 / 13%);
 
+  /* Motion — shared durations and easing curves */
+  --motion-duration-fast: 160ms;
+  --motion-duration-base: 280ms;
+  --motion-duration-slow: 560ms;
+  --motion-easing-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-easing-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-easing-exit: cubic-bezier(0.4, 0, 1, 1);
+
   /* Points de rupture (informatif : non utilisables dans @media) */
   --breakpoint-sm: 640px;
   --breakpoint-md: 768px;

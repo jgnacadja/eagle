@@ -15,7 +15,10 @@
       <div
         class="pointer-events-none absolute right-6 top-8 hidden lg:block xl:right-3 xl:top-12 -rotate-3 z-10"
       >
-        <div class="rounded-2xl border border-rule/50 bg-paper px-6 py-4 shadow-md text-left">
+        <div
+          v-reveal-media
+          class="rounded-2xl border border-rule/50 bg-paper px-6 py-4 shadow-md text-left"
+        >
           <p class="font-display text-lead font-bold italic leading-snug text-ink">
             Elargissez vos compétences<br />
             aujourd'hui pour les défis de demain
@@ -30,12 +33,14 @@
         <div>
           <!-- Pill badge -->
           <span
+            v-hero="heroStagger(0)"
             class="inline-block rounded-full border border-primary/25 bg-paper px-4 py-1.5 text-xs md:text-small font-bold uppercase tracking-wider text-primary shadow-xs"
             >Réseau national d'organismes de formation et plateforme de conseil
           </span>
 
           <!-- H1 -->
           <h1
+            v-hero="heroStagger(1)"
             class="mt-4 md:mt-5 font-display text-h2 md:text-h1 font-extrabold leading-tight text-ink"
           >
             Vos besoins de formation,<br />
@@ -43,13 +48,16 @@
           </h1>
 
           <!-- Subtitle -->
-          <p class="mt-3 md:mt-4 font-sans text-body md:text-lead font-bold text-ink">
+          <p
+            v-hero="heroStagger(2)"
+            class="mt-3 md:mt-4 font-sans text-body md:text-lead font-bold text-ink"
+          >
             La bonne formation. Au bon endroit. Au bon moment.
             <span class="text-accent-text">Partout en France.</span>
           </p>
 
           <!-- Prompt -->
-          <div class="mt-6 md:mt-8">
+          <div v-hero="heroStagger(3)" class="mt-6 md:mt-8">
             <h2 class="font-display text-h4 md:text-h3 font-extrabold text-ink">
               Besoin d'aide pour choisir votre formation&nbsp;?
             </h2>
@@ -60,7 +68,11 @@
           </div>
 
           <!-- Search bar -->
-          <form class="mx-auto mt-6 w-full max-w-prose" @submit.prevent="onHeroSearch">
+          <form
+            v-hero="heroStagger(4)"
+            class="mx-auto mt-6 w-full max-w-prose"
+            @submit.prevent="onHeroSearch"
+          >
             <div
               class="flex h-14 md:h-16 items-center gap-3 rounded-full border-2 border-primary/75 bg-paper pl-4 md:pl-6 pr-2 shadow-sm transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"
             >
@@ -92,6 +104,7 @@
 
           <!-- 3 Value propositions -->
           <div
+            v-hero="heroStagger(5)"
             class="mx-auto mt-6 flex flex-col items-start gap-3 text-small font-bold text-ink md:w-auto md:flex-row md:items-center md:justify-center md:gap-5"
           >
             <div class="inline-flex items-center gap-2">
@@ -111,7 +124,7 @@
           </div>
 
           <!-- CTA Link -->
-          <div class="mt-5">
+          <div v-hero="heroStagger(6)" class="mt-5">
             <NuxtLink
               to="/parler-a-votre-conseiller"
               class="inline-block text-small md:text-body font-bold text-accent-text underline underline-offset-4 transition-colors hover:text-primary"
@@ -124,7 +137,10 @@
 
         <!-- Floating badge mobile -->
         <div class="my-6 flex justify-center -rotate-3 lg:hidden">
-          <div class="rounded-xl border border-rule/60 bg-paper px-5 py-3 shadow-md text-left">
+          <div
+            v-reveal-media
+            class="rounded-xl border border-rule/60 bg-paper px-5 py-3 shadow-md text-left"
+          >
             <p class="font-display text-sm font-extrabold italic leading-snug text-ink">
               Elargissez vos compétences aujourd'hui<br />
               pour les défis de demain
@@ -263,7 +279,7 @@
       <div class="mx-auto px-gutter-mobile md:px-gutter">
         <div class="flex items-end justify-between">
           <div>
-            <h2 class="font-display text-xl md:text-h2 font-extrabold text-ink">
+            <h2 v-reveal-soft class="font-display text-xl md:text-h2 font-extrabold text-ink">
               Les formations réglementaires adaptées à vos métiers
             </h2>
             <p class="mt-sm font-sans text-sm md:text-body text-ink-muted">
@@ -317,7 +333,7 @@
     <section id="centres" class="mx-auto px-gutter-mobile md:px-gutter py-section">
       <div class="flex flex-col gap-md sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 class="font-display text-xl md:text-h2 font-extrabold text-ink">
+          <h2 v-reveal-soft class="font-display text-xl md:text-h2 font-extrabold text-ink">
             Trouvez le centre de formation le plus proche de chez vous
           </h2>
           <p class="mt-sm max-w-prose font-sans text-sm text-ink-muted">
@@ -455,7 +471,7 @@
       class="mx-auto px-gutter-mobile md:px-gutter py-section"
     >
       <div>
-        <h2 class="font-display text-xl md:text-h2 font-extrabold text-ink">
+        <h2 v-reveal-soft class="font-display text-xl md:text-h2 font-extrabold text-ink">
           Les prochaines sessions près de chez vous
         </h2>
         <p class="mt-xs max-w-prose text-sm text-ink-muted">
@@ -526,7 +542,7 @@
     ════════════════════════════════════════════════════ -->
     <section id="pourquoi" class="bg-surface py-section">
       <div class="mx-auto px-gutter-mobile md:px-gutter">
-        <h2 class="font-display text-xl md:text-h2 font-extrabold text-ink">
+        <h2 v-reveal-soft class="font-display text-xl md:text-h2 font-extrabold text-ink">
           Pourquoi Learn Up Academy ?
         </h2>
 
@@ -558,7 +574,7 @@
     ════════════════════════════════════════════════════ -->
     <section v-if="testimonials.length" class="border-b border-rule bg-paper py-section">
       <div class="mx-auto px-gutter-mobile md:px-gutter">
-        <h2 class="font-display text-xl md:text-h2 font-extrabold text-ink">
+        <h2 v-reveal-soft class="font-display text-xl md:text-h2 font-extrabold text-ink">
           Les clients parlent de nous
         </h2>
 
@@ -610,7 +626,10 @@
     ════════════════════════════════════════════════════ -->
     <section class="bg-surface py-section">
       <div class="mx-auto px-gutter-mobile md:px-gutter">
-        <h2 class="text-center font-display text-xl md:text-h2 font-extrabold text-ink">
+        <h2
+          v-reveal-soft
+          class="text-center font-display text-xl md:text-h2 font-extrabold text-ink"
+        >
           Construisons ensemble le réseau Learn Up Academy
         </h2>
 
@@ -636,7 +655,7 @@
       class="mx-auto px-gutter-mobile md:px-gutter py-section"
     >
       <div>
-        <h2 class="font-display text-xl md:text-h2 font-extrabold text-ink">
+        <h2 v-reveal-soft class="font-display text-xl md:text-h2 font-extrabold text-ink">
           Actualités et conseils
         </h2>
       </div>
@@ -671,6 +690,7 @@
     <section class="bg-primary py-section text-ink-inverse">
       <div class="mx-auto px-gutter-mobile md:px-gutter">
         <h2
+          v-reveal-soft
           class="mx-auto text-center font-display text-xl md:text-h2 font-extrabold leading-tight text-ink-inverse"
         >
           Un besoin de formation ? Décrivez-nous votre situation.
@@ -722,7 +742,7 @@ import { availabilityStatus, useCentreSessionDates } from '~/composables/useCent
 import { useGeolocation } from '~/composables/useGeolocation'
 import { useGeoSuggest } from '~/composables/useGeoSuggest'
 import { distanceKm, formatDistance } from '~/utils/geo'
-import { revealStagger } from '~/utils/reveal'
+import { heroStagger, revealStagger } from '~/utils/reveal'
 import { articleAssetUrl, formatArticleDate } from '~/utils/article'
 import { mapAvis } from '~/utils/avis'
 import { placesLabel, sessionSeatType } from '~/utils/placesLabel'

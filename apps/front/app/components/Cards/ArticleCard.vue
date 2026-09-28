@@ -1,7 +1,7 @@
 <template>
   <article
     v-if="variant === 'card'"
-    class="group relative flex flex-row items-center gap-3.5 rounded-2xl border border-rule bg-paper p-3.5 shadow-xs transition-all duration-200 hover:border-primary/40 hover:shadow-sm sm:gap-4 sm:p-4 md:flex-col md:items-stretch md:gap-0 md:p-md"
+    class="motion-surface group relative flex flex-row items-center gap-3.5 rounded-2xl border border-rule bg-paper p-3.5 shadow-xs hover:border-primary/40 sm:gap-4 sm:p-4 md:flex-col md:items-stretch md:gap-0 md:p-md"
   >
     <!-- Zone Visuel / Placeholder -->
     <div
@@ -44,7 +44,7 @@
 
   <article
     v-else
-    class="group relative flex flex-row gap-md rounded-md border border-rule bg-paper p-md shadow-sm transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-md md:flex-col md:gap-0 md:overflow-hidden md:p-0"
+    class="motion-surface group relative flex flex-row gap-md rounded-md border border-rule bg-paper p-md shadow-sm hover:border-primary/40 md:flex-col md:gap-0 md:overflow-hidden md:p-0"
   >
     <div
       class="flex aspect-3/2 w-2/5 shrink-0 items-center justify-center overflow-hidden rounded-sm text-center md:w-auto md:rounded-none"

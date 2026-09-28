@@ -1,7 +1,7 @@
 <template>
   <div class="flex-1">
     <div class="mx-auto px-gutter-mobile py-section md:px-gutter">
-      <div class="mb-2xl">
+      <div v-hero class="mb-2xl">
         <h1 class="font-display text-h2 font-extrabold text-ink lg:text-h1">
           Parler à votre conseiller
         </h1>

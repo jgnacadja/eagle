@@ -62,7 +62,7 @@
 
 <script setup lang="ts">
 /// <reference types="leaflet.markercluster" />
-import { ref, shallowRef, computed, watch, onMounted, onBeforeUnmount, createApp } from 'vue'
+import { ref, shallowRef, computed, watch, onBeforeUnmount, createApp } from 'vue'
 import { Button } from '@/components/ui/button'
 import IconPlus from '@/components/icons/IconPlus.vue'
 import IconMinus from '@/components/icons/IconMinus.vue'
@@ -108,6 +108,8 @@ let Leaf: typeof import('leaflet') | null = null
 let popupApp: ReturnType<typeof createApp> | null = null
 let popupMarker: Leaflet.Marker | null = null
 let pendingReveal: (() => void) | null = null
+let resizeObserver: ResizeObserver | null = null
+let visibilityObserver: IntersectionObserver | null = null
 // Dernier focus appliqué : un changement de `centers`/`userPosition` ne doit
 // pas re-cadrer la carte si l'utilisateur l'a déjà déplacée.
 let lastFocus: { lat: number; lng: number } | null = null
@@ -368,10 +370,16 @@ function syncActive(L: typeof import('leaflet'), id: string | null) {
   clusterGroup?.zoomToShowLayer(marker, reveal)
 }
 
-onMounted(async () => {
-  if (!mapEl.value || !props.centers.length) return
+// Init déclenché par `watch(mapEl)` : `mapEl` est sous `v-if` et peut
+// apparaître après le montage quand les centres arrivent en async — un
+// `onMounted` unique ratait ce cas et la carte restait vide jusqu'au
+// rechargement.
+async function initMap(el: HTMLElement) {
+  if (mapInstance.value) return
   const L = await ensureLeaflet()
-  mapInstance.value = L.map(mapEl.value, {
+  // L'import dynamique laisse le temps à l'élément d'être retiré du DOM.
+  if (mapInstance.value || mapEl.value !== el) return
+  mapInstance.value = L.map(el, {
     zoomControl: false,
     minZoom: props.minZoom,
     maxBounds: L.latLngBounds(FRANCE_MAX_BOUNDS),
@@ -384,7 +392,11 @@ onMounted(async () => {
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors',
     maxZoom: 19,
-    bounds: L.latLngBounds(FRANCE_MAX_BOUNDS)
+    bounds: L.latLngBounds(FRANCE_MAX_BOUNDS),
+    // `updateWhenIdle` vaut true par défaut sur mobile : les tuiles des
+    // zones révélées n'étaient demandées qu'au moveend → zones grises
+    // pendant et après le pan. false = chargement continu.
+    updateWhenIdle: false
   }).addTo(mapInstance.value)
 
   // Masque opaque hors de France : à petit zoom les tuiles OSM couvrent des
@@ -420,7 +432,49 @@ onMounted(async () => {
 
   mapInstance.value?.on?.('dragstart', closePopup)
   mapInstance.value?.on?.('zoomstart', closePopup)
-})
+
+  // Leaflet fige la taille du conteneur à l'init : un resize ultérieur
+  // (panneau mobile, breakpoint hidden lg:block, fontes) laissait des
+  // zones sans tuiles jusqu'au rechargement. L'observation initiale
+  // déclenche un invalidateSize qui couvre aussi un init avant la fin
+  // du layout.
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(() => mapInstance.value?.invalidateSize())
+    resizeObserver.observe(el)
+  }
+}
+
+watch(
+  mapEl,
+  (el) => {
+    visibilityObserver?.disconnect()
+    visibilityObserver = null
+    if (el) {
+      // Init à l'entrée dans le viewport (marge de pré-chargement : les
+      // tuiles sont déjà là quand la carte devient visible). Garantit une
+      // taille réelle pour L.map — une carte masquée (hidden lg:block)
+      // ou sous le fold ne charge ni le chunk Leaflet ni les tuiles.
+      if (typeof IntersectionObserver !== 'undefined') {
+        visibilityObserver = new IntersectionObserver(
+          (entries) => {
+            if (!entries.some((entry) => entry.isIntersecting)) return
+            visibilityObserver?.disconnect()
+            visibilityObserver = null
+            void initMap(el)
+          },
+          { rootMargin: '300px' }
+        )
+        visibilityObserver.observe(el)
+      } else {
+        void initMap(el)
+      }
+    } else if (mapInstance.value) {
+      mapInstance.value.remove()
+      mapInstance.value = null
+    }
+  },
+  { flush: 'post' }
+)
 
 watch(
   () => props.activeId,
@@ -460,6 +514,10 @@ watch([() => props.focusCenter, () => props.focusZoom], async () => {
 
 onBeforeUnmount(() => {
   closePopup()
+  visibilityObserver?.disconnect()
+  visibilityObserver = null
+  resizeObserver?.disconnect()
+  resizeObserver = null
   mapInstance.value?.remove()
 })
 </script>

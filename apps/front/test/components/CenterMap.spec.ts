@@ -94,7 +94,8 @@ vi.mock('leaflet', () => {
         distanceTo: vi.fn(() => mapMockState.distance.value)
       })),
       unproject: vi.fn(() => [0, 0]),
-      closePopup: vi.fn()
+      closePopup: vi.fn(),
+      invalidateSize: vi.fn()
     })),
     Marker: FakeMarker,
     marker,
@@ -121,6 +122,20 @@ vi.mock('leaflet.markercluster', () => {
 })
 vi.mock('leaflet.markercluster/dist/MarkerCluster.css', () => ({}))
 vi.mock('leaflet.markercluster/dist/MarkerCluster.Default.css', () => ({}))
+
+// Le stub global de setup.ts est un noop : ici la carte doit s'initialiser,
+// on intersecte donc immédiatement à l'observe.
+vi.stubGlobal(
+  'IntersectionObserver',
+  class {
+    constructor(private cb: (entries: { isIntersecting: boolean }[]) => void) {}
+    observe() {
+      this.cb([{ isIntersecting: true }])
+    }
+    unobserve() {}
+    disconnect() {}
+  }
+)
 
 interface CenterMapProps {
   centers: CenterResult[]
@@ -436,7 +451,7 @@ describe('CenterMap', () => {
     mountWithStubs({ centers, activeId: null, caption: 'Tous les départements' })
     await flushPromises()
 
-    const options = vi.mocked(Leaflet.markerClusterGroup).mock.calls[0]?.[0] as {
+    const options = vi.mocked(Leaflet.markerClusterGroup).mock.calls[0]?.[0] as unknown as {
       iconCreateFunction: (cluster: { getChildCount: () => number }) => { html: string }
     }
     const icon = options.iconCreateFunction({ getChildCount: () => 7 })

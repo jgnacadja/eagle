@@ -41,8 +41,8 @@ describe('ClientLogoWall', () => {
     expect(container.classes()).toContain('grid-cols-3')
   })
 
-  it('variante wrap : défilement continu avec animation marquee et bordures dashed', () => {
-    const wrapper = mount(ClientLogoWall, { props: { variant: 'wrap' } })
+  it('variante marquee : défilement continu avec animation marquee et bordures dashed', () => {
+    const wrapper = mount(ClientLogoWall, { props: { variant: 'marquee' } })
 
     const container = wrapper.find('div')
     expect(container.attributes('aria-label')).toBe('Références clients')
@@ -53,5 +53,10 @@ describe('ClientLogoWall', () => {
     expect(firstCard.classes()).toContain('border-dashed')
     expect(firstCard.classes()).toContain('h-14')
     expect(firstCard.attributes('aria-label')).toMatch(/^Logo client /)
+  })
+
+  it('variante wrap : rétrocompatible avec marquee', () => {
+    const wrapper = mount(ClientLogoWall, { props: { variant: 'wrap' } })
+    expect(wrapper.find('.marquee').exists()).toBe(true)
   })
 })

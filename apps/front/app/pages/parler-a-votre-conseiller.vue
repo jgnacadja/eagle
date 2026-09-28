@@ -264,7 +264,7 @@
 
           <p class="text-meta leading-relaxed text-ink-subtle">
             Les informations recueillies servent uniquement au traitement de la demande conformément
-            a notre
+            à notre
             <NuxtLink
               to="/confidentialite"
               class="font-medium text-primary underline underline-offset-4 transition-colors hover:text-accent-text"

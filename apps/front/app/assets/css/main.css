@@ -548,14 +548,25 @@
   .candidature-step-enter-active,
   .candidature-step-leave-active,
   .page-enter-active,
-  .page-leave-active {
+  .page-leave-active,
+  .marquee {
     animation: none;
     transition: none;
   }
 }
 
+/* Animation de défilement continu (marquee) : durée longue volontairement hors échelle de transition UI (max 560ms) */
+:root {
+  --motion-duration-marquee: 30s;
+}
+
 .marquee {
-  animation: scroll-left 30s linear infinite;
+  animation: scroll-left var(--motion-duration-marquee) linear infinite;
+}
+
+.marquee:hover,
+.marquee:focus-within {
+  animation-play-state: paused;
 }
 
 @keyframes scroll-left {

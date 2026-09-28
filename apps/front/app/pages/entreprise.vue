@@ -34,9 +34,9 @@
           >
             <span class="hidden md:inline"
               >Un interlocuteur unique pour vos besoins de formation,
-              <span class="text-accent">Partout en France.</span> </span
+              <span class="text-accent-text">Partout en France.</span> </span
             ><span class="md:hidden"
-              >Un interlocuteur unique, <span class="text-accent">Partout en France.</span>
+              >Un interlocuteur unique, <span class="text-accent-text">Partout en France.</span>
             </span>
           </p>
           <p v-hero="heroStagger(3)" class="mx-auto mt-sm text-ink-muted text-small max-w-prose">

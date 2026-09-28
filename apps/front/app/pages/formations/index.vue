@@ -822,23 +822,62 @@ const familyShortcuts = computed<
   })
 
   const topSlugs = new Set(top.map((family) => family.slug))
-  const remainingOptions = familyOptions.value
-    .filter((family) => !topSlugs.has(family.key))
-    .map((family) => family.label)
-  const remainingDirectus = (directusFamilies.value ?? [])
-    .filter((family) => !topSlugs.has(family.slug))
-    .map((family) => family.name)
-  const remainingLabels = Array.from(new Set([...remainingOptions, ...remainingDirectus]))
+  const normalizeForDedupe = (str: string) =>
+    str
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, ' ')
+      .trim()
 
-  const allCaption =
-    remainingLabels.length > 0
-      ? `${remainingLabels.slice(0, 3).join(', ')}…`
-      : familyOptions.value.length > 0
-        ? `${familyOptions.value
-            .slice(0, 3)
-            .map((family) => family.label)
-            .join(', ')}…`
-        : 'Management, bureautique, qualité…'
+  const remainingLabels: string[] = []
+  const seenKeys = new Set<string>()
+
+  for (const family of familyOptions.value) {
+    if (topSlugs.has(family.key)) continue
+    const norm = normalizeForDedupe(family.label)
+    if (!seenKeys.has(family.key) && !seenKeys.has(norm)) {
+      seenKeys.add(family.key)
+      seenKeys.add(norm)
+      remainingLabels.push(family.label)
+    }
+  }
+
+  for (const family of directusFamilies.value ?? []) {
+    if (topSlugs.has(family.slug)) continue
+    const norm = normalizeForDedupe(family.name)
+    const isDuplicate =
+      seenKeys.has(family.slug) ||
+      seenKeys.has(norm) ||
+      Array.from(seenKeys).some(
+        (key) => key.length >= 4 && (norm.startsWith(key) || key.startsWith(norm))
+      )
+
+    if (!isDuplicate) {
+      seenKeys.add(family.slug)
+      seenKeys.add(norm)
+      remainingLabels.push(family.name)
+    }
+  }
+
+  let allCaption: string
+  if (remainingLabels.length > 0) {
+    const shown = remainingLabels.slice(0, 3)
+    const remainingCount = remainingLabels.length - shown.length
+    allCaption =
+      remainingCount > 0
+        ? `${shown.join(', ')}, +${remainingCount} autre${remainingCount > 1 ? 's' : ''}`
+        : shown.join(', ')
+  } else if (familyOptions.value.length > 0) {
+    const shown = familyOptions.value.slice(0, 3).map((family) => family.label)
+    const remainingCount = familyOptions.value.length - shown.length
+    allCaption =
+      remainingCount > 0
+        ? `${shown.join(', ')}, +${remainingCount} autre${remainingCount > 1 ? 's' : ''}`
+        : shown.join(', ')
+  } else {
+    allCaption = 'Management, bureautique, qualité…'
+  }
 
   return [
     ...top,

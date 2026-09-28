@@ -53,7 +53,7 @@
             class="mt-3 md:mt-4 font-sans text-body md:text-lead font-bold text-ink"
           >
             La bonne formation. Au bon endroit. Au bon moment.
-            <span class="text-accent">Partout en France.</span>
+            <span class="text-accent-text">Partout en France.</span>
           </p>
 
           <!-- Prompt -->
@@ -68,7 +68,11 @@
           </div>
 
           <!-- Search bar -->
-          <form class="mx-auto mt-6 w-full max-w-prose" @submit.prevent="onHeroSearch">
+          <form
+            v-hero="heroStagger(4)"
+            class="mx-auto mt-6 w-full max-w-prose"
+            @submit.prevent="onHeroSearch"
+          >
             <label for="hero-search-input" class="sr-only"
               >Décrivez votre besoin de formation</label
             >
@@ -246,7 +250,7 @@
           Ils nous font confiance
         </p>
 
-        <ClientLogoWall variant="wrap" :logos="homeLogos" />
+        <ClientLogoWall variant="marquee" :logos="homeLogos" />
       </div>
     </section>
 
@@ -383,7 +387,7 @@
     <!-- ═══════════════════════════════════════════════════
          4. CONFIER (section sombre)
     ════════════════════════════════════════════════════ -->
-    <section id="confier" class="bg-primary-muted py-9.75 text-ink-inverse">
+    <section id="confier" class="bg-primary-muted py-section text-ink-inverse">
       <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter">
         <div class="grid grid-cols-1 items-center gap-lg md:grid-cols-2 md:gap-xl lg:gap-2xl">
           <!-- Colonne gauche : Contenu & CTA -->
@@ -430,7 +434,7 @@
             <img
               src="/images/formation2.webp"
               alt="Responsable formation en entreprise"
-              class="h-56 sm:h-64 md:h-72 lg:h-76 w-full rounded-xl object-cover shadow-md"
+              class="aspect-16/10 w-full rounded-xl object-cover shadow-md"
               loading="lazy"
             />
           </div>

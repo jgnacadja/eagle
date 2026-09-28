@@ -1,7 +1,7 @@
 <template>
   <div
-    v-if="variant === 'wrap'"
-    class="relative mt-md w-full overflow-hidden"
+    v-if="variant === 'marquee' || variant === 'wrap'"
+    :class="styles.container"
     :aria-label="ariaLabel"
   >
     <!-- Masques de fondu gauche et droite -->
@@ -14,7 +14,9 @@
       aria-hidden="true"
     />
 
-    <div class="flex w-max marquee hover:[animation-play-state:paused]">
+    <div
+      class="flex w-max marquee hover:[animation-play-state:paused] focus-within:[animation-play-state:paused]"
+    >
       <!-- Premier groupe (accessible) -->
       <div class="flex shrink-0 items-center gap-2 sm:gap-3 md:gap-md pr-2 sm:pr-3 md:pr-md">
         <div
@@ -70,14 +72,17 @@ import { computed } from 'vue'
 import { companyLogos, type CompanyLogo } from '~/data/companies'
 import { revealStagger } from '~/utils/reveal'
 
-type Variant = 'scroll' | 'grid' | 'wrap'
+type Variant = 'scroll' | 'grid' | 'marquee' | 'wrap'
+
+const MARQUEE_STYLES = {
+  container: 'relative mt-md w-full overflow-hidden',
+  card: 'flex h-14 w-28 shrink-0 items-center justify-center rounded-xl border border-dashed border-rule px-2 text-xs text-ink-subtle sm:w-32 md:h-14 md:w-36 md:rounded md:px-3',
+  img: 'max-h-7 max-w-4/5 object-contain grayscale opacity-75 transition-[filter,opacity] hover:grayscale-0 hover:opacity-100 md:max-h-8'
+}
 
 const VARIANT_STYLES: Record<Variant, { container: string; card: string; img: string }> = {
-  wrap: {
-    container: 'relative mt-md w-full overflow-hidden',
-    card: 'flex h-14 w-28 shrink-0 items-center justify-center rounded-xl border border-dashed border-rule px-2 text-xs text-ink-subtle sm:w-32 md:h-14 md:w-36 md:rounded md:px-3',
-    img: 'max-h-7 max-w-4/5 object-contain grayscale opacity-75 transition-[filter,opacity] hover:grayscale-0 hover:opacity-100 md:max-h-8'
-  },
+  marquee: MARQUEE_STYLES,
+  wrap: MARQUEE_STYLES,
   grid: {
     container: 'mt-lg grid grid-cols-3 gap-sm sm:gap-grid md:grid-cols-6',
     card: 'flex h-16 sm:h-20 items-center justify-center rounded-sm border border-rule bg-surface p-md shadow-sm transition-all hover:border-primary/40',
@@ -106,12 +111,12 @@ const props = withDefaults(
 
 const styles = computed(() => VARIANT_STYLES[props.variant])
 
+const MIN_CARDS_PER_GROUP = 16
+
 const marqueeLogos = computed(() => {
   const list = props.logos
-  if (list.length === 0) return []
-  if (list.length < 12) {
-    return [...list, ...list]
-  }
-  return list
+  if (!list || list.length === 0) return []
+  const repeats = Math.max(1, Math.ceil(MIN_CARDS_PER_GROUP / list.length))
+  return Array.from({ length: repeats }, () => list).flat()
 })
 </script>

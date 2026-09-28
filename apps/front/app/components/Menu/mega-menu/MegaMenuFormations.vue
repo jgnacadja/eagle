@@ -1,5 +1,7 @@
 <template>
-  <div class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter">
+  <div
+    class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-md lg:px-gutter"
+  >
     <!-- FAMILLES -->
     <div>
       <h3 class="text-small font-semibold text-ink-muted">Familles</h3>
@@ -38,9 +40,12 @@
       <Transition name="menu-panel" mode="out-in">
         <ul :key="selectedFamille" class="mt-sm grid grid-cols-2 gap-sm">
           <li
-            v-for="formation in formationsFamille"
+            v-for="(formation, i) in formationsFamille"
             :key="formation.slug"
-            :class="{ 'col-span-2': formationsFamille.length === 1 }"
+            :class="[
+              formationsFamille.length === 1 ? 'col-span-2' : '',
+              i >= 2 ? 'hidden lg:block' : ''
+            ]"
           >
             <MegaMenuCard
               :to="formation.to"
@@ -78,7 +83,7 @@
         </li>
       </ul>
 
-      <Card variant="dark" class="mt-md px-md py-lg">
+      <Card variant="dark" class="mt-md px-md py-lg hidden lg:block">
         <p class="text-body font-semibold">Vous ne savez pas quelle formation choisir ?</p>
         <Button variant="paper" size="pill-sm" class="mt-sm w-full" @click="openAssistant">
           Être guidé dans mon choix

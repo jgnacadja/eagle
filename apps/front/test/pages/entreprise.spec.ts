@@ -140,7 +140,10 @@ function mountPage() {
             <li v-for="step in steps" :key="step.title">{{ step.number }} {{ step.title }} {{ step.body }}</li>
           </ol>`
         },
-        Badge: { template: '<span class="badge-mock"><slot /></span>' }
+        Badge: {
+          props: ['as'],
+          template: '<component :is="as || \'span\'" class="badge-mock"><slot /></component>'
+        }
       }
     }
   })
@@ -267,7 +270,13 @@ describe('EntreprisePage', () => {
     ).toBe(true)
   })
 
-  it('affiche les tags de formation avec liens de recherche', async () => {
+  it('affiche les tags de formation et permet de filtrer', async () => {
+    entrepriseState.catalogItems.push({
+      slug: 'formation-aipr-intervenant',
+      title: 'Formation AIPR Intervenant',
+      familySlug: 'securite-prevention',
+      description: 'Autorisation d’intervention à proximité des réseaux.'
+    })
     const wrapper = mountPage()
     await flushPromises()
 
@@ -276,10 +285,18 @@ describe('EntreprisePage', () => {
     expect(wrapper.text()).toContain('Amiante SS4')
     expect(wrapper.text()).toContain('SECUFER')
     expect(wrapper.text()).toContain('Gestes & postures')
-    expect(wrapper.find('a[href="/formations?q=AIPR"]').exists()).toBe(true)
-    expect(wrapper.find(`a[href="/formations?q=${encodeURIComponent('CATEC®')}"]`).exists()).toBe(
-      true
-    )
+
+    const aiprBadge = wrapper.findAll('button').find((b) => b.text().includes('AIPR'))
+    expect(aiprBadge).toBeDefined()
+    await aiprBadge!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Formation AIPR Intervenant')
+
+    // Toggle off
+    await aiprBadge!.trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('CACES® R489')
   })
 
   it('redirige vers /parler-a-votre-conseiller lors de la soumission de la recherche hero', async () => {

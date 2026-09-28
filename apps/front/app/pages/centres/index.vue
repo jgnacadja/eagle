@@ -31,12 +31,12 @@
     <section class="shrink-0 bg-surface-soft lg:sticky lg:top-0 lg:z-30">
       <div class="mx-auto px-gutter-mobile md:px-gutter pb-lg">
         <div class="flex flex-col gap-md">
-          <div class="flex flex-col gap-md sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex flex-col gap-md lg:flex-row lg:items-center lg:justify-between">
             <div class="flex flex-col gap-md sm:flex-row sm:items-center">
               <Label for="dept-select" class="relative block">
                 <span class="sr-only">Sélectionner un département</span>
                 <Select v-model="selectedDept" @update:model-value="deptUserTouched = true">
-                  <SelectTrigger id="dept-select" variant="field-lg" class="sm:w-64">
+                  <SelectTrigger id="dept-select" variant="field-lg" class="w-full sm:w-auto">
                     <span class="truncate">{{ selectedDeptLabel }}</span>
                   </SelectTrigger>
                   <SelectContent>
@@ -59,7 +59,7 @@
                 sr-label="Rechercher par ville ou code postal"
                 placeholder="Ville ou code postal"
                 :loading="centresPending"
-                class="w-full sm:w-96"
+                class="w-full sm:flex-1 sm:max-w-callout"
                 @submit="onSearch"
               >
                 <template #action>
@@ -68,7 +68,7 @@
               </SearchInput>
             </div>
 
-            <div class="flex items-center justify-between gap-sm">
+            <div class="flex w-full items-center justify-between gap-sm lg:w-auto">
               <!-- Compteur masqué sans résultat : « 0 centre en X » n'a
                    pas de sens — l'état vide en dessous porte le message. -->
               <p v-if="filteredCenters.length" class="text-small text-ink">
@@ -90,7 +90,7 @@
                 type="button"
                 :variant="isMobileMapOpen ? 'default' : 'outline'"
                 size="pill-sm"
-                class="shrink-0 gap-sm lg:hidden"
+                class="ml-auto shrink-0 gap-sm lg:ml-0 lg:hidden"
                 @click="isMobileMapOpen ? closeMobileMap() : openMobileMap()"
               >
                 <IconList v-if="isMobileMapOpen" :size="16" />

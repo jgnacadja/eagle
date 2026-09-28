@@ -1,6 +1,8 @@
 <template>
-  <div class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter">
-    <div class="col-span-3">
+  <div
+    class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:grid-cols-3 md:px-md lg:grid-cols-4 lg:px-gutter"
+  >
+    <div class="col-span-3 md:col-span-2 lg:col-span-3">
       <h3 class="text-small font-semibold uppercase text-ink-muted">Learn Up Academy</h3>
       <ul class="mt-md space-y-2">
         <li v-for="lien in aproposLiens" :key="lien.slug">

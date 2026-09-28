@@ -1,5 +1,7 @@
 <template>
-  <div class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter">
+  <div
+    class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-md lg:px-gutter"
+  >
     <!-- RUBRIQUES -->
     <div class="border-r border-rule pr-lg">
       <h3 class="text-small font-semibold text-ink-muted uppercase">Rubriques</h3>

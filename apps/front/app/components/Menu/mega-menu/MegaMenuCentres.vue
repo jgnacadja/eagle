@@ -1,5 +1,7 @@
 <template>
-  <div class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-gutter">
+  <div
+    class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-md lg:px-gutter"
+  >
     <!-- RÉGIONS -->
     <div>
       <h3 class="text-small font-semibold text-ink-muted uppercase">Régions</h3>
@@ -77,7 +79,7 @@
         />
       </form>
 
-      <Card variant="dark" class="mt-md px-md py-lg">
+      <Card variant="dark" class="mt-md hidden px-md py-lg lg:block">
         <p class="whitespace-nowrap text-small font-semibold">
           Besoin d’une formation sur votre site ?
         </p>

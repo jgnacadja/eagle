@@ -721,14 +721,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, resolveComponent, watch } from 'vue'
-import type { Article, Avis, Centre, CourseListItem } from '@learnup/types'
-import {
-  mapCourse,
-  upcomingSessions,
-  useCatalog,
-  type CatalogApiResult
-} from '~/composables/useCatalog'
+import { computed, ref, resolveComponent } from 'vue'
+import type { Article, Avis, Centre } from '@learnup/types'
+import { mapCourse, upcomingSessions, useCatalog } from '~/composables/useCatalog'
+import { useTagFilter } from '~/composables/useTagFilter'
 import { availabilityStatus, useCentreSessionDates } from '~/composables/useCentres'
 import { useGeolocation } from '~/composables/useGeolocation'
 import { useGeoSuggest } from '~/composables/useGeoSuggest'
@@ -924,72 +920,9 @@ const testimonials = computed(() => (homeAvisData.value ?? []).map(mapAvis))
 // (ou filtrées par tag) et les prochaines sessions à afficher en page d'accueil.
 const { data: catalogue } = await useCatalog({ limit: 50, sort: 'updatedAt', order: 'desc' })
 
-const formationTags = ['AIPR', 'CATEC®', 'Amiante SS4', 'PASO', 'SECUFER', 'Gestes & postures']
-const selectedTag = ref<string | null>(null)
-const apiTagResults = ref<Record<string, CourseListItem[]>>({})
-
-function toggleTag(tag: string) {
-  selectedTag.value = selectedTag.value === tag ? null : tag
-}
-
-function matchesTag(course: CourseListItem, tag: string): boolean {
-  const normalize = (str: string) =>
-    str
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, ' ')
-
-  const cleanTag = normalize(tag).trim()
-  const cleanTokens = cleanTag.split(/\s+/).filter(Boolean)
-
-  const corpus = normalize(
-    [
-      course.title,
-      course.description,
-      course.category,
-      course.certification,
-      course.certifierName,
-      course.subFamilyName,
-      course.familySlug,
-      course.slug
-    ]
-      .filter((v): v is string => typeof v === 'string')
-      .join(' ')
-  )
-
-  if (corpus.includes(cleanTag)) return true
-
-  if (cleanTokens.length > 0 && cleanTokens.every((token) => corpus.includes(token))) {
-    return true
-  }
-
-  const significantTokens = cleanTokens.filter((t) => t.length >= 4)
-  if (significantTokens.length > 0 && significantTokens.some((token) => corpus.includes(token))) {
-    return true
-  }
-
-  return false
-}
-
-watch(selectedTag, async (tag) => {
-  if (!tag || !import.meta.client) return
-  const localMatches = (catalogue.value?.items ?? []).filter((c) => matchesTag(c, tag))
-  if (localMatches.length >= 4 || apiTagResults.value[tag]) return
-
-  try {
-    const apiBase = config.public.apiBase || 'http://localhost:3001'
-    const cleanSearch = tag.replace(/®/g, '').trim()
-    const res = await $fetch<CatalogApiResult>(`${apiBase}/courses`, {
-      query: { search: cleanSearch, limit: 4 }
-    })
-    if (res?.items && selectedTag.value === tag) {
-      apiTagResults.value = { ...apiTagResults.value, [tag]: res.items }
-    }
-  } catch {
-    // Dégradation gracieuse : les résultats locaux restent utilisés
-  }
-})
+const { selectedTag, apiTagResults, formationTags, toggleTag, matchesTag } = useTagFilter(
+  () => catalogue.value?.items
+)
 
 const dernieresFormations = computed(() => {
   const all = catalogue.value?.items ?? []

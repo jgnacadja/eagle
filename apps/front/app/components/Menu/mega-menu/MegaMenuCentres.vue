@@ -1,6 +1,6 @@
 <template>
   <div
-    class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-4 lg:px-gutter"
+    class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-md lg:px-gutter"
   >
     <!-- RÉGIONS -->
     <div>

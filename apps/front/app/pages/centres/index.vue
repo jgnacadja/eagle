@@ -36,7 +36,7 @@
               <Label for="dept-select" class="relative block">
                 <span class="sr-only">Sélectionner un département</span>
                 <Select v-model="selectedDept" @update:model-value="deptUserTouched = true">
-                  <SelectTrigger id="dept-select" variant="field-lg" class="w-full sm:w-56 md:w-64">
+                  <SelectTrigger id="dept-select" variant="field-lg" class="w-full sm:w-auto">
                     <span class="truncate">{{ selectedDeptLabel }}</span>
                   </SelectTrigger>
                   <SelectContent>
@@ -59,7 +59,7 @@
                 sr-label="Rechercher par ville ou code postal"
                 placeholder="Ville ou code postal"
                 :loading="centresPending"
-                class="w-full sm:w-72 md:w-96"
+                class="w-full sm:flex-1 sm:max-w-callout"
                 @submit="onSearch"
               >
                 <template #action>

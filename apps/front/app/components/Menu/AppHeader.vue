@@ -2,21 +2,21 @@
   <header class="relative z-50 border-b border-rule bg-paper">
     <div
       ref="rootEl"
-      class="relative mx-auto flex items-center px-gutter-mobile md:px-4 lg:px-gutter py-3 text-sm"
+      class="relative mx-auto flex items-center px-gutter-mobile md:px-md lg:px-gutter py-sm text-small"
     >
       <NuxtLink to="/" aria-label="LEARN UP ACADEMY — Accueil" class="inline-block shrink-0">
         <Logo />
       </NuxtLink>
 
       <NavigationMenu
-        class="ml-2 lg:ml-7 hidden md:flex shrink-0"
+        class="ml-sm lg:ml-lg hidden md:flex shrink-0"
         :model-value="openMenu ?? ''"
         aria-label="Navigation principale"
         disable-hover-trigger
         disable-pointer-leave-close
         @update:model-value="onMenuUpdate"
       >
-        <NavigationMenuList class="gap-0.5 lg:gap-1">
+        <NavigationMenuList class="gap-xs lg:gap-sm">
           <NavigationMenuItem value="formations">
             <NavigationMenuTrigger variant="header"> Formations </NavigationMenuTrigger>
             <NavigationMenuContent>
@@ -66,7 +66,7 @@
           as-child
           variant="outline"
           size="pill-sm"
-          class="hidden md:inline-flex shrink-0 gap-xs md:h-9 md:px-3 md:text-xs lg:h-control lg:px-md lg:text-small"
+          class="hidden md:inline-flex shrink-0 gap-xs md:h-control-sm md:px-sm md:text-meta lg:h-control lg:px-md lg:text-small"
         >
           <NuxtLink to="/rejoindre-le-reseau">
             Rejoindre le réseau <span class="link-arrow">→</span>

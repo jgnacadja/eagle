@@ -1,6 +1,6 @@
 <template>
   <div
-    class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-4 lg:px-gutter"
+    class="mega-menu-panel grid w-full grid-cols-4 gap-lg px-gutter-mobile py-lg md:px-md lg:px-gutter"
   >
     <!-- FAMILLES -->
     <div>
@@ -40,9 +40,12 @@
       <Transition name="menu-panel" mode="out-in">
         <ul :key="selectedFamille" class="mt-sm grid grid-cols-2 gap-sm">
           <li
-            v-for="formation in formationsFamille"
+            v-for="(formation, i) in formationsFamille"
             :key="formation.slug"
-            :class="{ 'col-span-2': formationsFamille.length === 1 }"
+            :class="[
+              formationsFamille.length === 1 ? 'col-span-2' : '',
+              i >= 2 ? 'hidden lg:block' : ''
+            ]"
           >
             <MegaMenuCard
               :to="formation.to"

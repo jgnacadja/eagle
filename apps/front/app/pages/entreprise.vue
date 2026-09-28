@@ -87,7 +87,7 @@
           <!-- Carte citation flottante (desktop : absolue haut-droite, tablette/mobile : centrée sous le lien) -->
           <div
             v-reveal-media
-            class="mx-auto mt-md max-w-57.5 xl:absolute xl:-top-4 xl:right-0 xl:mt-0"
+            class="mx-auto mt-md w-fit max-w-56 xl:absolute xl:-top-4 xl:right-0 xl:mt-0"
           >
             <div
               class="-rotate-2 rounded-md border border-rule/80 bg-paper p-md text-left shadow-md transition-all hover:rotate-0 hover:shadow-lg"
@@ -466,9 +466,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import type { Avis, Centre, CourseListItem } from '@learnup/types'
-import { mapCourse, useCatalog, type CatalogApiResult } from '~/composables/useCatalog'
+import { computed, ref } from 'vue'
+import type { Avis, Centre } from '@learnup/types'
+import { mapCourse, useCatalog } from '~/composables/useCatalog'
+import { useTagFilter } from '~/composables/useTagFilter'
 import { heroStagger, revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
 import { toCenterResults } from '~/utils/centre'
@@ -612,85 +613,9 @@ const REGULATORY_FAMILIES = [
 
 const { data: catalogue } = await useCatalog({ limit: 50, sort: 'updatedAt', order: 'desc' })
 
-const formationTags = ['AIPR', 'CATEC®', 'Amiante SS4', 'PASO', 'SECUFER', 'Gestes & postures']
-const selectedTag = ref<string | null>(null)
-const apiTagResults = ref<Record<string, CourseListItem[]>>({})
-
-function toggleTag(tag: string) {
-  selectedTag.value = selectedTag.value === tag ? null : tag
-}
-
-function matchesTag(
-  course: {
-    title: string
-    description?: string | null
-    category?: string | null
-    certification?: string | null
-    certifierName?: string | null
-    subFamilyName?: string | null
-    familySlug?: string | null
-    slug?: string | null
-  },
-  tag: string
-): boolean {
-  const normalize = (str: string) =>
-    str
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, ' ')
-
-  const cleanTag = normalize(tag).trim()
-  const cleanTokens = cleanTag.split(/\s+/).filter(Boolean)
-
-  const corpus = normalize(
-    [
-      course.title,
-      course.description,
-      course.category,
-      course.certification,
-      course.certifierName,
-      course.subFamilyName,
-      course.familySlug,
-      course.slug
-    ]
-      .filter((v): v is string => typeof v === 'string')
-      .join(' ')
-  )
-
-  if (corpus.includes(cleanTag)) return true
-
-  if (cleanTokens.length > 0 && cleanTokens.every((token) => corpus.includes(token))) {
-    return true
-  }
-
-  const significantTokens = cleanTokens.filter((t) => t.length >= 4)
-  if (significantTokens.length > 0 && significantTokens.some((token) => corpus.includes(token))) {
-    return true
-  }
-
-  return false
-}
-
-watch(selectedTag, async (tag) => {
-  if (!tag || !import.meta.client) return
-  const localMatches = (catalogue.value?.items ?? []).filter((c) => matchesTag(c, tag))
-  if (localMatches.length >= 4 || apiTagResults.value[tag]) return
-
-  try {
-    const config = useRuntimeConfig()
-    const apiBase = config.public.apiBase || 'http://localhost:3001'
-    const cleanSearch = tag.replace(/®/g, '').trim()
-    const res = await $fetch<CatalogApiResult>(`${apiBase}/courses`, {
-      query: { search: cleanSearch, limit: 4 }
-    })
-    if (res?.items && selectedTag.value === tag) {
-      apiTagResults.value = { ...apiTagResults.value, [tag]: res.items }
-    }
-  } catch {
-    // Dégradation gracieuse : les résultats locaux restent utilisés
-  }
-})
+const { selectedTag, apiTagResults, formationTags, toggleTag, matchesTag } = useTagFilter(
+  () => catalogue.value?.items
+)
 
 const formations = computed(() => {
   const items = catalogue.value?.items ?? []

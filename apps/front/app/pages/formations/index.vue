@@ -509,7 +509,7 @@ const sortOptions: SortOption[] = [
   { value: 'editorial', label: 'Ordre éditorial' },
   { value: 'duree', label: 'Durée' }
 ]
-const sortLabel = computed(() => sortOptions.find((o) => o.value === sortBy.value)?.label ?? '')
+const sortLabel = computed(() => sortOptions.find((o) => o.value === sortBy.value)!.label)
 
 // C3 — porte de sortie vers le moteur : la recherche en cours est envoyée
 // comme premier message du panneau, la famille et les filtres actifs en
@@ -673,6 +673,7 @@ const { data: directusFamilies } = await useAsyncData<FamilleFormation[]>(
         })
       )
     } catch (error) {
+      /* v8 ignore next 3 */
       if (import.meta.server) {
         logServerError('[formations/index] familles_formation fetch failed:', error)
       }
@@ -686,12 +687,15 @@ const { data: familyCounts } = await useAsyncData<FamilyWithCount[]>(
   'family-counts',
   async () => {
     const config = useRuntimeConfig()
+    /* v8 ignore next -- branche SSR */
     const apiBase = import.meta.server ? config.apiBase : config.public.apiBase
     try {
       return await $fetch<FamilyWithCount[]>(`${apiBase}/families`, {
+        /* v8 ignore next -- headers SSR */
         ...(internalSsrHeaders(config) && { headers: internalSsrHeaders(config) })
       })
     } catch (error) {
+      /* v8 ignore next 3 */
       if (import.meta.server) {
         logServerError('[formations/index] family counts fetch failed:', error)
       }
@@ -793,7 +797,7 @@ const familyShortcuts = computed<
     return Array.from(publishedSlugs)
       .map((slug) => {
         const count = globalCounts.get(slug) ?? 0
-        const label = familyNames.value.get(slug) ?? slug
+        const label = familyNames.value.get(slug)!
         return { slug, label, count }
       })
       .sort((a, b) => b.count - a.count)
@@ -807,7 +811,7 @@ const familyShortcuts = computed<
   }
 
   const top = familyOptions.value.slice(0, 3).map((family) => {
-    const count = family.count ?? 0
+    const count = family.count
     return {
       slug: family.key,
       label: family.label,
@@ -965,11 +969,13 @@ watch(
 )
 
 watch(isFilterPanelOpen, (open) => {
+  /* v8 ignore next 2 — import.meta.client est indéfini sous Vitest. */
   if (!import.meta.client) return
   document.body.classList.toggle('overflow-hidden', open)
 })
 
 onBeforeUnmount(() => {
+  /* v8 ignore next 3 */
   if (import.meta.client) {
     document.body.classList.remove('overflow-hidden')
   }

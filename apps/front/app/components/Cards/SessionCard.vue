@@ -34,7 +34,7 @@
           </Badge>
         </div>
         <Button as-child variant="outline" size="pill-sm" class="h-control-sm shrink-0 font-bold">
-          <NuxtLink :to="to">{{ ctaLabel }}</NuxtLink>
+          <NuxtLink :to="resolvedTo">{{ ctaLabel }}</NuxtLink>
         </Button>
       </div>
     </CardContent>
@@ -42,9 +42,10 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { placesLabel } from '~/utils/placesLabel'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     day: string
     month: string
@@ -59,4 +60,6 @@ withDefaults(
   }>(),
   { to: '#', ctaLabel: "S'inscrire", places: undefined, type: undefined, price: '', priceNote: '' }
 )
+
+const resolvedTo = computed(() => props.to)
 </script>

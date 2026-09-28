@@ -12,10 +12,11 @@ vi.stubGlobal('useContentSeo', seoMock)
 
 // Stub du composable de soumission : le mock contrôle le résultat de l'appel API.
 const leadSubmitMock = vi.fn<(endpoint: string, payload: unknown) => Promise<boolean>>()
+const leadState = { sending: ref(false), error: ref<string | null>(null) }
 vi.stubGlobal('useLeadSubmit', () => ({
   submit: leadSubmitMock,
-  sending: ref(false),
-  error: ref(null)
+  sending: leadState.sending,
+  error: leadState.error
 }))
 
 const routeStub = { query: {} as Record<string, string> }
@@ -78,6 +79,8 @@ async function fillValidForm(wrapper: Awaited<ReturnType<typeof mountPage>>) {
 
 describe('pages/parler-a-votre-conseiller', () => {
   beforeEach(() => {
+    leadState.sending.value = false
+    leadState.error.value = null
     vi.clearAllMocks()
     leadSubmitMock.mockReset().mockResolvedValue(true)
     routeStub.query = {}
@@ -229,6 +232,88 @@ describe('pages/parler-a-votre-conseiller', () => {
         seo_noindex: true
       }),
       'Parler à votre conseiller'
+    )
+  })
+
+  it('affiche le spinner et le libellé pendant l’envoi', async () => {
+    const wrapper = await mountPage()
+    leadState.sending.value = true
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Envoi en cours…')
+  })
+
+  it('affiche l’erreur de soumission', async () => {
+    const wrapper = await mountPage()
+    leadState.error.value = 'Échec réseau'
+    await flushPromises()
+
+    expect(wrapper.find('[role="alert"]').text()).toBe('Échec réseau')
+  })
+
+  it('retente le tirage de la référence quand la borne est dépassée', async () => {
+    const spy = vi.spyOn(crypto, 'getRandomValues')
+    spy
+      .mockImplementationOnce((arr) => {
+        arr[0] = 4_294_967_295
+        return arr
+      })
+      .mockImplementationOnce((arr) => {
+        arr[0] = 42
+        return arr
+      })
+
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.text().includes('Référence de suivi'))
+
+    expect(wrapper.text()).toContain('-042')
+    spy.mockRestore()
+  })
+
+  it('retombe sur 0 quand getRandomValues ne renvoie rien', async () => {
+    const spy = vi
+      .spyOn(crypto, 'getRandomValues')
+      .mockImplementation(() => new Uint32Array(0) as Uint32Array<ArrayBuffer>)
+
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.text().includes('Référence de suivi'))
+
+    expect(wrapper.text()).toContain('-000')
+    spy.mockRestore()
+  })
+
+  it('retombe sur 0 dans la boucle de re-tirage', async () => {
+    const spy = vi
+      .spyOn(crypto, 'getRandomValues')
+      .mockImplementationOnce((arr) => {
+        arr[0] = 4_294_967_295
+        return arr
+      })
+      .mockImplementation(() => new Uint32Array(0) as Uint32Array<ArrayBuffer>)
+
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.text().includes('Référence de suivi'))
+
+    expect(wrapper.text()).toContain('-000')
+    spy.mockRestore()
+  })
+
+  it('poste le message facultatif quand il est renseigné', async () => {
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+    await wrapper.find('#message').setValue('Précisions sur le besoin')
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+    expect(leadSubmitMock).toHaveBeenCalledWith(
+      'conseiller',
+      expect.objectContaining({ message: expect.stringContaining('Précisions sur le besoin') })
     )
   })
 })

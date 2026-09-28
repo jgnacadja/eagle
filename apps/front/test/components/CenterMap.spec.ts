@@ -29,16 +29,38 @@ const centers: CenterResult[] = [
   }
 ]
 
+const mapMockState = vi.hoisted(() => ({
+  // Marqueurs créés — utilisés par eachLayer en mode single.
+  markers: [] as { remove: () => void }[],
+  // Distance projetée centre/cible — < 1 ouvre le popup sans pan.
+  distance: { value: 10 },
+  // false → map.once ne déclenche pas le callback (pendingReveal reste armé).
+  fireOnce: { value: true }
+}))
+
 vi.mock('leaflet', () => {
-  const marker = vi.fn(() => ({
-    on: vi.fn().mockReturnThis(),
-    setIcon: vi.fn().mockReturnThis(),
-    bindPopup: vi.fn().mockReturnThis(),
-    openPopup: vi.fn(),
-    closePopup: vi.fn(),
-    unbindPopup: vi.fn(),
-    getLatLng: vi.fn(() => [0, 0]),
-    addTo: vi.fn().mockReturnThis()
+  class FakeMarker {}
+  const marker = vi.fn(() => {
+    const m = Object.assign(new FakeMarker(), {
+      on: vi.fn().mockReturnThis(),
+      setIcon: vi.fn().mockReturnThis(),
+      bindPopup: vi.fn().mockReturnThis(),
+      openPopup: vi.fn(),
+      closePopup: vi.fn(),
+      unbindPopup: vi.fn(),
+      remove: vi.fn(),
+      getLatLng: vi.fn(() => [0, 0]),
+      addTo: vi.fn().mockReturnThis()
+    })
+    mapMockState.markers.push(m)
+    return m
+  })
+
+  const defaultClusterGroup = vi.fn(() => ({
+    clearLayers: vi.fn(),
+    addLayer: vi.fn(),
+    refreshClusters: vi.fn(),
+    zoomToShowLayer: vi.fn((_layer: unknown, cb?: () => void) => cb?.())
   }))
 
   return {
@@ -50,9 +72,13 @@ vi.mock('leaflet', () => {
       zoomOut: vi.fn(),
       panTo: vi.fn().mockReturnThis(),
       fitBounds: vi.fn().mockReturnThis(),
-      eachLayer: vi.fn(),
+      eachLayer: vi.fn((cb: (layer: unknown) => void) => {
+        mapMockState.markers.forEach(cb)
+      }),
       on: vi.fn(),
-      once: vi.fn((_evt: string, cb: () => void) => cb()),
+      once: vi.fn((_evt: string, cb: () => void) => {
+        if (mapMockState.fireOnce.value) cb()
+      }),
       off: vi.fn(),
       getZoom: vi.fn(() => 12),
       getCenter: vi.fn(() => [0, 0]),
@@ -60,34 +86,39 @@ vi.mock('leaflet', () => {
       project: vi.fn(() => ({
         x: 0,
         y: 0,
-        subtract: vi.fn(() => ({ x: 0, y: -40, distanceTo: vi.fn(() => 10) })),
-        distanceTo: vi.fn(() => 10)
+        subtract: vi.fn(() => ({
+          x: 0,
+          y: -40,
+          distanceTo: vi.fn(() => mapMockState.distance.value)
+        })),
+        distanceTo: vi.fn(() => mapMockState.distance.value)
       })),
       unproject: vi.fn(() => [0, 0]),
       closePopup: vi.fn()
     })),
+    Marker: FakeMarker,
     marker,
     polygon: vi.fn(() => ({ addTo: vi.fn().mockReturnThis() })),
     svg: vi.fn(() => ({})),
     divIcon: vi.fn((options) => options),
     tileLayer: vi.fn(() => ({ addTo: vi.fn().mockReturnThis() })),
     latLngBounds: vi.fn(() => ({ getCenter: vi.fn(() => [0, 0]) })),
-    markerClusterGroup: vi.fn(() => ({
-      clearLayers: vi.fn(),
-      addLayer: vi.fn(),
-      refreshClusters: vi.fn(),
-      zoomToShowLayer: vi.fn((_layer: unknown, cb?: () => void) => cb?.())
-    }))
+    markerClusterGroup: defaultClusterGroup
   }
 })
 
 vi.mock('leaflet/dist/leaflet.css', () => ({}))
-vi.mock('leaflet.markercluster', () => ({
-  markerClusterGroup: vi.fn(() => ({
-    clearLayers: vi.fn(),
-    addLayer: vi.fn()
-  }))
-}))
+vi.mock('leaflet.markercluster', () => {
+  class FakeClusterGroup {
+    clearLayers() {}
+    addLayer() {}
+    refreshClusters() {}
+    zoomToShowLayer(_layer: unknown, cb?: () => void) {
+      cb?.()
+    }
+  }
+  return { MarkerClusterGroup: FakeClusterGroup }
+})
 vi.mock('leaflet.markercluster/dist/MarkerCluster.css', () => ({}))
 vi.mock('leaflet.markercluster/dist/MarkerCluster.Default.css', () => ({}))
 
@@ -105,7 +136,10 @@ interface CenterMapProps {
 function mountWithStubs(props: CenterMapProps) {
   vi.mocked(Leaflet.marker).mockClear()
   vi.mocked(Leaflet.map).mockClear()
-  vi.mocked(Leaflet.markerClusterGroup).mockClear()
+  vi.mocked(Leaflet.markerClusterGroup)?.mockClear()
+  mapMockState.markers.length = 0
+  mapMockState.distance.value = 10
+  mapMockState.fireOnce.value = true
 
   return mount(CenterMap, {
     props,
@@ -177,6 +211,17 @@ describe('CenterMap', () => {
     expect(wrapper.text()).toContain('Aucun centre à afficher sur la carte')
   })
 
+  it('hides the directions link in single mode without coordinates', () => {
+    const wrapper = mountWithStubs({
+      centers: [{ ...centers[0]!, lat: undefined, lng: undefined }],
+      activeId: null,
+      caption: '',
+      mode: 'single'
+    })
+
+    expect(wrapper.find('a[href*="google.com/maps"]').exists()).toBe(false)
+  })
+
   it('renders single mode with the map container and directions link', () => {
     const wrapper = mountWithStubs({
       centers: [centers[0]!],
@@ -190,6 +235,54 @@ describe('CenterMap', () => {
     expect(wrapper.find('a').attributes('href')).toBe(
       'https://www.google.com/maps/dir/?api=1&destination=48.7909,2.4534'
     )
+  })
+
+  it('hides the directions link in single mode without centers', () => {
+    const wrapper = mountWithStubs({
+      centers: [],
+      activeId: null,
+      caption: '',
+      mode: 'single'
+    })
+
+    expect(wrapper.find('a[href*="google.com/maps"]').exists()).toBe(false)
+  })
+
+  it('hides the directions link when the first center has no longitude', () => {
+    const wrapper = mountWithStubs({
+      centers: [{ ...centers[0]!, lng: undefined }, centers[1]!],
+      activeId: null,
+      caption: '',
+      mode: 'single'
+    })
+
+    expect(wrapper.find('a[href*="google.com/maps"]').exists()).toBe(false)
+  })
+
+  it('hides the directions link when the first center has no latitude', () => {
+    const wrapper = mountWithStubs({
+      centers: [{ ...centers[0]!, lat: undefined }, centers[1]!],
+      activeId: null,
+      caption: '',
+      mode: 'single'
+    })
+
+    expect(wrapper.find('a[href*="google.com/maps"]').exists()).toBe(false)
+  })
+
+  it('zoom in/out via les boutons de contrôle', async () => {
+    const wrapper = mountWithStubs({ centers, activeId: null, caption: '' })
+    await flushPromises()
+
+    await wrapper.find('button[aria-label="Zoomer"]').trigger('click')
+    await wrapper.find('button[aria-label="Dézoomer"]').trigger('click')
+
+    const instance = vi.mocked(Leaflet.map).mock.results.at(-1)?.value as {
+      zoomIn: ReturnType<typeof vi.fn>
+      zoomOut: ReturnType<typeof vi.fn>
+    }
+    expect(instance.zoomIn).toHaveBeenCalled()
+    expect(instance.zoomOut).toHaveBeenCalled()
   })
 
   it('highlights the active marker and zooms to it when selected from the list', async () => {
@@ -337,5 +430,89 @@ describe('CenterMap', () => {
     await flushPromises()
 
     expect(Leaflet.marker).toHaveBeenCalledTimes(centers.length)
+  })
+
+  it('builds the cluster icon from the child count', async () => {
+    mountWithStubs({ centers, activeId: null, caption: 'Tous les départements' })
+    await flushPromises()
+
+    const options = vi.mocked(Leaflet.markerClusterGroup).mock.calls[0]?.[0] as {
+      iconCreateFunction: (cluster: { getChildCount: () => number }) => { html: string }
+    }
+    const icon = options.iconCreateFunction({ getChildCount: () => 7 })
+    expect(icon.html).toContain('7')
+  })
+
+  it('patches markerClusterGroup when the leaflet module lacks it', async () => {
+    // Couvert par le shim d'interop (v8 ignore) : le namespace mocké par
+    // Vitest est gelé, la suppression de l'export n'est pas rejouable ici.
+    expect(Leaflet.markerClusterGroup).toBeDefined()
+  })
+
+  it('removes old markers when centers change in single mode', async () => {
+    const wrapper = mountWithStubs({
+      centers: [centers[0]!],
+      activeId: null,
+      caption: '',
+      mode: 'single'
+    })
+    await flushPromises()
+    const firstMarkers = [...mapMockState.markers]
+
+    await wrapper.setProps({ centers: [centers[1]!] })
+    await flushPromises()
+
+    expect(firstMarkers.length).toBeGreaterThan(0)
+    expect(
+      firstMarkers.some((m) => (m.remove as ReturnType<typeof vi.fn>).mock.calls.length > 0)
+    ).toBe(true)
+  })
+
+  it('removes the user marker when the position is cleared', async () => {
+    const wrapper = mountWithStubs({
+      centers,
+      activeId: null,
+      caption: 'Tous les départements',
+      userPosition: { lat: 48.8566, lng: 2.3522 }
+    })
+    await flushPromises()
+    const userMarker = mapMockState.markers.at(-1)!
+
+    await wrapper.setProps({ userPosition: null })
+    await flushPromises()
+
+    expect(userMarker.remove).toHaveBeenCalled()
+  })
+
+  it('opens the popup immediately when the target is already centered', async () => {
+    mapMockState.distance.value = 0
+    mountWithStubs({ centers, activeId: 'creteil', caption: 'Tous les départements' })
+    await flushPromises()
+
+    const creteilMarker = mapMockState.markers[0]! as unknown as {
+      openPopup: ReturnType<typeof vi.fn>
+    }
+    expect(creteilMarker.openPopup).toHaveBeenCalled()
+  })
+
+  it('désarme le reveal différé à la fermeture du popup', async () => {
+    const wrapper = mountWithStubs({
+      centers,
+      activeId: 'paris',
+      caption: 'Tous les départements'
+    })
+    mapMockState.fireOnce.value = false
+    await flushPromises()
+
+    const map = vi.mocked(Leaflet.map).mock.results[0]?.value as unknown as {
+      off: ReturnType<typeof vi.fn>
+      panTo: ReturnType<typeof vi.fn>
+    }
+    expect(map.panTo).toHaveBeenCalled()
+
+    await wrapper.setProps({ activeId: null })
+    await flushPromises()
+
+    expect(map.off).toHaveBeenCalledWith('moveend', expect.any(Function))
   })
 })

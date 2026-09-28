@@ -26,7 +26,9 @@ const stubs = {
   MegaMenuAPropos: { template: '<div data-test="mega-apropos" />' },
   MegaMenuActualites: { template: '<div data-test="mega-actualites" />' },
   MobileMenu: {
+    name: 'MobileMenu',
     props: ['open'],
+    emits: ['update:open'],
     template: '<div v-if="open" id="mobile-menu" />'
   }
 }
@@ -104,6 +106,31 @@ describe('AppHeader', () => {
     await wrapper.find('button[aria-label="Ouvrir le menu"]').trigger('click')
 
     expect(wrapper.find('#mobile-menu').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('ferme le menu mobile quand MobileMenu émet update:open', async () => {
+    const wrapper = mountHeader()
+
+    await wrapper.find('button[aria-label="Ouvrir le menu"]').trigger('click')
+    expect(wrapper.find('#mobile-menu').exists()).toBe(true)
+
+    await wrapper.findComponent({ name: 'MobileMenu' }).vm.$emit('update:open', false)
+    expect(wrapper.find('#mobile-menu').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('ferme le méga menu au clic sur le voile', async () => {
+    const wrapper = mountHeader()
+    await navStub(wrapper).vm.$emit('update:modelValue', 'formations')
+    await nextTick()
+
+    const overlay = wrapper.find('.fixed.inset-0.bg-ink\\/40')
+    expect(overlay.exists()).toBe(true)
+    await overlay.trigger('click')
+    await nextTick()
+
+    expect(wrapper.find('.fixed.inset-0.bg-ink\\/40').exists()).toBe(false)
     wrapper.unmount()
   })
 })

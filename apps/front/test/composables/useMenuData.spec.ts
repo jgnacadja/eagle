@@ -6,7 +6,10 @@ import {
   useMenuFamilles,
   useMenuFormationsALaUne,
   useMenuFormationsParFamille,
-  useMenuActualites
+  useMenuActualites,
+  useMenuLegalPages,
+  useMenuPreload,
+  useMenuSousFamillesParFamille
 } from '~/composables/useMenuData'
 
 const fetchMock = vi.fn()
@@ -33,18 +36,31 @@ vi.stubGlobal(
 vi.stubGlobal('logServerError', vi.fn())
 vi.stubGlobal('computed', computed)
 
-vi.stubGlobal('useAsyncData', (_key: string, handler: () => Promise<unknown>) => {
-  const data = ref<unknown>(null)
-  const result = handler()
-  if (result && typeof (result as { then?: unknown }).then === 'function') {
-    result.then((res: unknown) => {
-      data.value = res
-    })
-  } else {
-    data.value = result
+vi.stubGlobal(
+  'useAsyncData',
+  (
+    key: string,
+    handler: () => Promise<unknown>,
+    options?: {
+      getCachedData?: (key: string, nuxtApp: unknown, ctx: { cause?: string }) => unknown
+    }
+  ) => {
+    const nuxtApp = { isHydrating: true, payload: { data: {} }, static: { data: {} } }
+    options?.getCachedData?.(key, nuxtApp, { cause: 'initial' })
+    options?.getCachedData?.(key, nuxtApp, { cause: 'navigation' })
+    options?.getCachedData?.(key, { ...nuxtApp, isHydrating: false }, { cause: 'initial' })
+    const data = ref<unknown>(null)
+    const result = handler()
+    if (result && typeof (result as { then?: unknown }).then === 'function') {
+      result.then((res: unknown) => {
+        data.value = res
+      })
+    } else {
+      data.value = result
+    }
+    return { data }
   }
-  return { data }
-})
+)
 
 describe('useMenuData', () => {
   beforeEach(() => {
@@ -84,6 +100,20 @@ describe('useMenuData', () => {
       expect(fetchMock).toHaveBeenCalledWith('http://api.test/families')
     })
 
+    it('passe les en-têtes internes à /families quand disponibles', async () => {
+      vi.stubGlobal('internalSsrHeaders', () => ({ 'x-internal-ssr': 'token' }))
+      directusRequestMock.mockResolvedValue([])
+      fetchMock.mockResolvedValue([])
+
+      useMenuFamilles()
+      await flushPromises()
+
+      expect(fetchMock).toHaveBeenCalledWith('http://api.test/families', {
+        headers: { 'x-internal-ssr': 'token' }
+      })
+      vi.stubGlobal('internalSsrHeaders', () => undefined)
+    })
+
     it('dégrade avec les noms Directus si /families échoue', async () => {
       directusRequestMock.mockResolvedValue([
         { slug: 'caces', name: 'CACES' },
@@ -108,6 +138,41 @@ describe('useMenuData', () => {
       await flushPromises()
 
       expect(familles.value).toEqual([])
+    })
+
+    it('trie par libellé les familles à nombre de formations égal', async () => {
+      directusRequestMock.mockResolvedValue([
+        { slug: 'a-famille', name: 'Alpha' },
+        { slug: 'b-famille', name: 'Beta' }
+      ])
+      fetchMock.mockResolvedValue([
+        { slug: 'b-famille', count: 5 },
+        { slug: 'a-famille', count: 5 }
+      ])
+
+      const familles = useMenuFamilles()
+      await flushPromises()
+
+      expect(familles.value.map((f) => f.slug)).toEqual(['a-famille', 'b-famille'])
+    })
+
+    it('expose les listes vides tant que les données ne sont pas résolues', () => {
+      directusRequestMock.mockReturnValue(new Promise(() => {}))
+      fetchMock.mockReturnValue(new Promise(() => {}))
+
+      expect(useMenuFamilles().value).toEqual([])
+      expect(useMenuFormationsParFamille().value).toEqual({})
+      expect(useMenuSousFamillesParFamille().value).toEqual({})
+      expect(useMenuLegalPages().value).toEqual([])
+
+      const { regions, centresParRegion } = useMenuCentres()
+      expect(regions.value).toEqual([])
+      expect(centresParRegion.value.size).toBe(0)
+
+      const menu = useMenuActualites()
+      expect(menu.rubriques.value).toEqual([])
+      expect(menu.regions.value).toEqual([])
+      expect(menu.actualitesParRegion.value).toEqual({})
     })
 
     it('fallback sur humanizeSlug si le nom Directus est absent', async () => {
@@ -218,7 +283,10 @@ describe('useMenuData', () => {
     })
 
     it('regroupe les centres sans région sous « Autres régions »', async () => {
-      directusRequestMock.mockResolvedValue([{ ...centres[0], slug: 'orphelin', region: null }])
+      directusRequestMock.mockResolvedValue([
+        { ...centres[0], slug: 'orphelin', region: null },
+        { ...centres[0], slug: 'espaces', region: '   ' }
+      ])
 
       const { regions, centresParRegion } = useMenuCentres()
       await flushPromises()
@@ -226,7 +294,7 @@ describe('useMenuData', () => {
       expect(regions.value[0]).toEqual({
         slug: 'autres-regions',
         label: 'Autres régions',
-        count: 1
+        count: 2
       })
       expect(centresParRegion.value.get('Autres régions')![0]!.slug).toBe('orphelin')
     })
@@ -304,6 +372,164 @@ describe('useMenuData', () => {
         title: 'Anticiper les échéances CACES'
       })
       expect(directusRequestMock).toHaveBeenCalled()
+    })
+
+    it('ignore les articles sans région et retombe sur la rubrique générique', async () => {
+      directusRequestMock.mockResolvedValue([
+        {
+          slug: 'sans-region',
+          title: 'Article national',
+          category: null,
+          region: null,
+          publish_at: '2026-09-03T08:00:00.000Z'
+        },
+        {
+          slug: 'region-sans-rubrique',
+          title: 'Article régional',
+          category: null,
+          region: 'Occitanie',
+          publish_at: '2026-09-04T08:00:00.000Z'
+        }
+      ])
+
+      const menu = useMenuActualites()
+      await flushPromises()
+
+      expect(menu.regions.value).toEqual([{ slug: 'occitanie', label: 'Occitanie', count: 1 }])
+      expect(menu.actualitesParRegion.value['occitanie']?.[0]).toMatchObject({
+        slug: 'region-sans-rubrique',
+        tag: 'Actualité',
+        categorySlug: ''
+      })
+    })
+
+    it('dégrade en vides si le fetch des articles échoue', async () => {
+      directusRequestMock.mockRejectedValue(new Error('directus down'))
+
+      const menu = useMenuActualites()
+      await flushPromises()
+
+      expect(menu.rubriques.value).toEqual([])
+      expect(menu.regions.value).toEqual([])
+      expect(menu.actualitesParRegion.value).toEqual({})
+    })
+  })
+
+  describe('useMenuSousFamillesParFamille', () => {
+    it('peuple les sous-familles avec les noms Directus et humanise les slugs orphelins', async () => {
+      directusRequestMock
+        .mockResolvedValueOnce([{ slug: 'caces', name: 'CACES' }])
+        .mockResolvedValueOnce([
+          {
+            slug: 'chariots',
+            name: 'Chariots & gerbeurs',
+            famille: { slug: 'caces' }
+          },
+          { slug: 'orphelin', name: null, famille: { slug: 'caces' } },
+          { slug: 'autre', name: 'Autre', famille: 'texte-brut' }
+        ])
+      fetchMock.mockImplementation((url: string, options?: unknown) => {
+        if (url.endsWith('/families')) {
+          return Promise.resolve([
+            { slug: 'caces', count: 12 },
+            { slug: 'sans-sous-familles', count: 2 }
+          ])
+        }
+        const facets =
+          (options as { query?: { family?: string } } | undefined)?.query?.family === 'caces'
+            ? { subFamilies: { chariots: 3, 'slug-sans-nom': 2 } }
+            : undefined
+        return Promise.resolve({
+          items: [],
+          total: 0,
+          page: 1,
+          pageSize: 6,
+          facets
+        })
+      })
+
+      const parFamille = useMenuSousFamillesParFamille()
+      await flushPromises()
+
+      expect(parFamille.value['caces']).toEqual([
+        { slug: 'chariots', label: 'Chariots & gerbeurs', count: 3 },
+        { slug: 'slug-sans-nom', label: 'Slug Sans Nom', count: 2 }
+      ])
+      // Famille sans sous-familles nommées côté Directus → liste vide.
+      expect(parFamille.value['sans-sous-familles']).toEqual([])
+    })
+
+    it('groupe plusieurs sous-familles sous une même famille et saute les entrées incomplètes', async () => {
+      directusRequestMock
+        .mockResolvedValueOnce([{ slug: 'caces', name: 'CACES' }])
+        .mockResolvedValueOnce([
+          { slug: 'chariots', name: 'Chariots', famille: { slug: 'caces' } },
+          { slug: 'nacelles', name: 'Nacelles', famille: { slug: 'caces' } },
+          { slug: 'sans-compte', name: 'Sans compte', famille: { slug: 'caces' } },
+          { slug: 'orphelin', name: 'Orphelin', famille: null },
+          { slug: null, name: 'Sans slug', famille: { slug: 'caces' } },
+          { slug: 'sans-nom', name: null, famille: { slug: 'caces' } }
+        ])
+      fetchMock.mockImplementation((url: string, options?: unknown) => {
+        if (url.endsWith('/families')) {
+          return Promise.resolve([
+            { slug: 'caces', count: 10 },
+            { slug: 'vides', count: 3 }
+          ])
+        }
+        const facets =
+          (options as { query?: { family?: string } } | undefined)?.query?.family === 'caces'
+            ? { subFamilies: { chariots: 2, nacelles: 1 } }
+            : { subFamilies: { mystere: 4, zero: 0, abricot: 4 } }
+        return Promise.resolve({
+          items: [],
+          total: 0,
+          page: 1,
+          pageSize: 6,
+          facets
+        })
+      })
+
+      const parFamille = useMenuSousFamillesParFamille()
+      await flushPromises()
+
+      expect(parFamille.value['caces']).toEqual([
+        { slug: 'chariots', label: 'Chariots', count: 2 },
+        { slug: 'nacelles', label: 'Nacelles', count: 1 }
+      ])
+      // « vides » n'a aucune sous-famille nommée : les slugs comptés sont humanisés
+      // et triés par label à count égal (« zero » à 0 est masqué).
+      expect(parFamille.value['vides']).toEqual([
+        { slug: 'abricot', label: 'Abricot', count: 4 },
+        { slug: 'mystere', label: 'Mystere', count: 4 }
+      ])
+    })
+  })
+
+  describe('useMenuLegalPages', () => {
+    it('mappe les pages légales publiées', async () => {
+      directusRequestMock.mockResolvedValue([
+        { slug: 'mentions-legales', label: 'Mentions légales', show_in_tabs: true },
+        { slug: 'cookies', label: 'Cookies', show_in_tabs: false }
+      ])
+
+      const pages = useMenuLegalPages()
+      await flushPromises()
+
+      expect(pages.value).toEqual([
+        { slug: 'mentions-legales', label: 'Mentions légales', showInTabs: true },
+        { slug: 'cookies', label: 'Cookies', showInTabs: false }
+      ])
+    })
+  })
+
+  describe('useMenuPreload', () => {
+    it('précharge les données des méga-menus sans erreur', async () => {
+      directusRequestMock.mockResolvedValue([])
+      fetchMock.mockResolvedValue([])
+
+      expect(() => useMenuPreload()).not.toThrow()
+      await flushPromises()
     })
   })
 })

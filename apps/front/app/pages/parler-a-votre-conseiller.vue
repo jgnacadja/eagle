@@ -199,34 +199,20 @@
                 />
               </div>
 
-              <div>
-                <div class="flex items-center gap-sm">
-                  <Checkbox
-                    id="consentement"
-                    v-model="consentement"
-                    :aria-invalid="showError('consentement') || undefined"
-                    :aria-describedby="showError('consentement') ? 'consentement-error' : undefined"
-                  />
-                  <Label for="consentement" variant="muted">
-                    J'accepte que ces informations soient utilisées pour le traitement de ma
-                    demande.
-                    <NuxtLink
-                      to="/confidentialite"
-                      class="font-medium text-primary underline underline-offset-4 transition-colors hover:text-accent-text"
-                    >
-                      Politique de confidentialité
-                    </NuxtLink>
-                    <span class="text-danger" aria-hidden="true"> *</span>
-                  </Label>
-                </div>
-                <p
-                  v-if="showError('consentement')"
-                  id="consentement-error"
-                  class="mt-xs text-small font-semibold text-danger"
+              <ConsentField
+                v-model="consentement"
+                :invalid="showError('consentement')"
+                :error="errors.consentement"
+              >
+                J'accepte que ces informations soient utilisées pour le traitement de ma demande.
+                <NuxtLink
+                  to="/confidentialite"
+                  class="font-medium text-primary underline underline-offset-4 transition-colors hover:text-accent-text"
                 >
-                  {{ errors.consentement }}
-                </p>
-              </div>
+                  Politique de confidentialité
+                </NuxtLink>
+                <span class="text-danger" aria-hidden="true"> *</span>
+              </ConsentField>
 
               <div>
                 <Button
@@ -304,6 +290,7 @@ import type { ConseillerBesoin } from '@learnup/types'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
+import { leadFields } from '~/utils/leadFields'
 
 definePageMeta({
   layout: 'with-breadcrumb',
@@ -348,23 +335,10 @@ const initialMessage = typeof route.query.q === 'string' ? route.query.q.trim().
 const { handleSubmit, errors, submitCount, defineField } = useForm({
   validationSchema: toTypedSchema(
     z.object({
-      nom: z
-        .string({ error: 'Indiquez votre nom et prénom.' })
-        .trim()
-        .min(1, 'Indiquez votre nom et prénom.'),
-      email: z
-        .string({ error: 'Indiquez votre adresse e-mail.' })
-        .trim()
-        .min(1, 'Indiquez votre adresse e-mail.')
-        .pipe(z.email('Format d’e-mail invalide.')),
-      telephone: z
-        .string({ error: 'Indiquez votre téléphone.' })
-        .trim()
-        .min(1, 'Indiquez votre téléphone.')
-        .refine(
-          (value) => value.replace(/\D/g, '').length >= 10,
-          'Numéro incomplet — 10 chiffres attendus.'
-        ),
+      ...leadFields({
+        email: 'Indiquez votre adresse e-mail.',
+        consentement: 'Consentement requis pour envoyer la demande.'
+      }),
       siret: z
         .string()
         .transform((value) => value.replace(/\s/g, ''))
@@ -374,10 +348,7 @@ const { handleSubmit, errors, submitCount, defineField } = useForm({
         ),
       // « En quelques mots » : limite basse — marge sous le MaxLength(5000)
       // de l'API pour la référence de suivi suffixée à l'envoi.
-      message: z.string().max(2000, 'Message trop long — 2 000 caractères maximum.').optional(),
-      consentement: z
-        .boolean({ error: 'Consentement requis pour envoyer la demande.' })
-        .refine((value) => value, 'Consentement requis pour envoyer la demande.')
+      message: z.string().max(2000, 'Message trop long — 2 000 caractères maximum.').optional()
     })
   ),
   initialValues: { siret: '', message: initialMessage, consentement: false }

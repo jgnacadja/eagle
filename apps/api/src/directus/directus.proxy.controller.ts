@@ -119,7 +119,7 @@ export class DirectusProxyController {
       throw new ServiceUnavailableException('Directus proxy non configuré')
     }
 
-    const rawRelative = (req.originalUrl ?? '').replace(/^\/directus/, '')
+    const rawRelative = req.originalUrl.replace(/^\/directus/, '')
     const incoming = new URL(rawRelative, 'https://directus.invalid')
 
     if (incoming.hostname !== 'directus.invalid') {

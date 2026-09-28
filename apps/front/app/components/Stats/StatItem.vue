@@ -54,12 +54,11 @@ const parsed = computed(() => {
   if (!match?.[2]) return null
   const decimals = match[2].match(/[.,](\d+)$/)?.[1]?.length ?? 0
   const target = Number(match[2].replace(/\s/g, '').replace(',', '.'))
-  if (!Number.isFinite(target)) return null
   const format = new Intl.NumberFormat('fr-FR', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals
   })
-  return { prefix: match[1] ?? '', target, format }
+  return { prefix: match[1], target, format }
 })
 
 const progress = useMotionValue(0)

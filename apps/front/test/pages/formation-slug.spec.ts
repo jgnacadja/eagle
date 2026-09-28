@@ -192,6 +192,10 @@ const navigateToMock = vi.fn()
 const setResponseStatusMock = vi.fn()
 const useContentSeoMock = vi.fn()
 const headMock = vi.fn()
+const fetchMock = vi.fn()
+const directusRequest = vi.fn()
+const refreshMock = vi.fn()
+const requestEvent = { name: 'event' }
 
 vi.stubGlobal('ref', ref)
 vi.stubGlobal('computed', computed)
@@ -205,13 +209,16 @@ vi.stubGlobal('useRoute', () => routeMock)
 vi.stubGlobal('useRouter', () => ({ replace: vi.fn() }))
 vi.stubGlobal('useContentSeo', useContentSeoMock)
 vi.stubGlobal('useHead', headMock)
-vi.stubGlobal('useRequestEvent', () => undefined)
+vi.stubGlobal('useRequestEvent', () => requestEvent)
 vi.stubGlobal('setResponseStatus', setResponseStatusMock)
 vi.stubGlobal('navigateTo', navigateToMock)
 vi.stubGlobal('logServerError', vi.fn())
+vi.stubGlobal('$fetch', fetchMock)
+
+const mockHeight = vi.hoisted(() => ({ value: 0 }))
 
 vi.mock('@vueuse/core', () => ({
-  useElementSize: () => ({ height: { value: 0 } })
+  useElementSize: () => ({ height: mockHeight })
 }))
 
 const catalogMocks = vi.hoisted(() => {
@@ -269,29 +276,25 @@ vi.mock('~/composables/useCatalog', () => ({
 }))
 
 vi.mock('~/composables/useDirectus', () => ({
-  useDirectusClient: () => ({ request: vi.fn() })
+  useDirectusClient: () => ({ request: directusRequest })
 }))
 
-const defaultUseAsyncData = async (key: string) => {
-  if (
-    routeMock?.query.error === '1' &&
-    key === `course-${routeMock.params.famille}-${routeMock.params.slug}`
-  ) {
-    return { data: ref(null), pending: ref(false), error: ref(new Error('down')), refresh: vi.fn() }
+const defaultUseAsyncData = async (
+  key: string,
+  handler: () => Promise<unknown>,
+  options?: {
+    getCachedData?: (key: string, nuxtApp: unknown, ctx: { cause?: string }) => unknown
   }
-  if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
-    return { data: ref(course), pending: ref(false), error: ref(null), refresh: vi.fn() }
+) => {
+  const nuxtApp = { isHydrating: true, payload: { data: {} }, static: { data: {} } }
+  options?.getCachedData?.(key, nuxtApp, { cause: 'initial' })
+  options?.getCachedData?.(key, { ...nuxtApp, isHydrating: false }, { cause: 'navigation' })
+  try {
+    const data = await handler()
+    return { data: ref(data), pending: ref(false), error: ref(null), refresh: refreshMock }
+  } catch (error) {
+    return { data: ref(null), pending: ref(false), error: ref(error), refresh: refreshMock }
   }
-  if (key === 'famille-name-caces-conduite-engins') {
-    return { data: ref(family), pending: ref(false), error: ref(null), refresh: vi.fn() }
-  }
-  if (key === 'course-caces-conduite-engins-inconnu') {
-    return { data: ref(null), pending: ref(false), error: ref(null), refresh: vi.fn() }
-  }
-  if (key === 'famille-name-inconnue') {
-    return { data: ref(null), pending: ref(false), error: ref(null), refresh: vi.fn() }
-  }
-  return { data: ref(null), pending: ref(false), error: ref(null), refresh: vi.fn() }
 }
 
 vi.stubGlobal('useAsyncData', defaultUseAsyncData)
@@ -319,8 +322,9 @@ const stubs = {
   LoadError,
   NotFound,
   SessionCard: {
-    props: ['title', 'meta', 'places'],
-    template: '<div class="session-card">{{ title }} — {{ meta }} — {{ places }}</div>'
+    props: ['title', 'meta', 'places', 'ctaLabel', 'to'],
+    template:
+      '<div class="session-card">{{ title }} — {{ meta }} — {{ places }} — {{ ctaLabel }}</div>'
   },
   CenterCard: {
     props: ['name', 'distance', 'formations', 'status', 'to'],
@@ -358,6 +362,19 @@ describe('pages/formations/[famille]/[slug]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.stubGlobal('useAsyncData', defaultUseAsyncData)
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes('inconnu')) {
+        return Promise.reject(Object.assign(new Error('nf'), { statusCode: 404 }))
+      }
+      if (routeMock?.query.error === '1') {
+        return Promise.reject(Object.assign(new Error('down'), { statusCode: 500 }))
+      }
+      return Promise.resolve(course)
+    })
+    directusRequest.mockImplementation((command: () => { params?: Record<string, unknown> }) => {
+      const slug = (command().params?.filter as { slug?: { _eq?: string } } | undefined)?.slug?._eq
+      return Promise.resolve(slug === 'caces-conduite-engins' ? [family] : [])
+    })
     routeMock = {
       params: { famille: 'caces-conduite-engins', slug: 'caces-r489-chariots-elevateurs' },
       query: {},
@@ -385,12 +402,15 @@ describe('pages/formations/[famille]/[slug]', () => {
       ...course,
       description: '<p>Initiez-vous au march&eacute; du <strong>cloud</strong>.</p>'
     }
-    vi.stubGlobal('useAsyncData', async (key: string) => {
-      if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
-        return { data: ref(richCourse), pending: ref(false), error: ref(null), refresh: vi.fn() }
+    vi.stubGlobal(
+      'useAsyncData',
+      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+        if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+          return { data: ref(richCourse), pending: ref(false), error: ref(null), refresh: vi.fn() }
+        }
+        return defaultUseAsyncData(key, handler, options)
       }
-      return defaultUseAsyncData(key)
-    })
+    )
 
     const wrapper = await mountPage()
 
@@ -422,12 +442,15 @@ describe('pages/formations/[famille]/[slug]', () => {
     expect(wrapper.text()).not.toContain('Formation en intra')
 
     const intraCourse: Course = { ...course, modalities: ['inter', 'intra'] }
-    vi.stubGlobal('useAsyncData', async (key: string) => {
-      if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
-        return { data: ref(intraCourse), pending: ref(false), error: ref(null), refresh: vi.fn() }
+    vi.stubGlobal(
+      'useAsyncData',
+      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+        if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+          return { data: ref(intraCourse), pending: ref(false), error: ref(null), refresh: vi.fn() }
+        }
+        return defaultUseAsyncData(key, handler, options)
       }
-      return defaultUseAsyncData(key)
-    })
+    )
 
     const intraWrapper = await mountPage()
     expect(intraWrapper.text()).toContain('Formation en intra')
@@ -444,12 +467,15 @@ describe('pages/formations/[famille]/[slug]', () => {
       image: 'file-abc-123',
       imageUrl: 'https://digiforma.example/visuel.jpg'
     }
-    vi.stubGlobal('useAsyncData', async (key: string) => {
-      if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
-        return { data: ref(withImage), pending: ref(false), error: ref(null), refresh: vi.fn() }
+    vi.stubGlobal(
+      'useAsyncData',
+      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+        if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+          return { data: ref(withImage), pending: ref(false), error: ref(null), refresh: vi.fn() }
+        }
+        return defaultUseAsyncData(key, handler, options)
       }
-      return defaultUseAsyncData(key)
-    })
+    )
 
     const wrapper = await mountPage()
 
@@ -460,12 +486,15 @@ describe('pages/formations/[famille]/[slug]', () => {
 
   it('retombe sur imageUrl quand aucun fichier Directus n’est lié', async () => {
     const withoutFile: Course = { ...course, image: null, imageUrl: 'https://cdn.example/v.jpg' }
-    vi.stubGlobal('useAsyncData', async (key: string) => {
-      if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
-        return { data: ref(withoutFile), pending: ref(false), error: ref(null), refresh: vi.fn() }
+    vi.stubGlobal(
+      'useAsyncData',
+      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+        if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+          return { data: ref(withoutFile), pending: ref(false), error: ref(null), refresh: vi.fn() }
+        }
+        return defaultUseAsyncData(key, handler, options)
       }
-      return defaultUseAsyncData(key)
-    })
+    )
 
     const wrapper = await mountPage()
 
@@ -474,15 +503,18 @@ describe('pages/formations/[famille]/[slug]', () => {
 
   it('affiche l’état vide des sessions quand aucune session n’est publiée', async () => {
     const emptyCourse: Course = { ...course, sessions: null }
-    vi.stubGlobal('useAsyncData', async (key: string) => {
-      if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
-        return { data: ref(emptyCourse), pending: ref(false), error: ref(null), refresh: vi.fn() }
+    vi.stubGlobal(
+      'useAsyncData',
+      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+        if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+          return { data: ref(emptyCourse), pending: ref(false), error: ref(null), refresh: vi.fn() }
+        }
+        if (key === 'famille-name-caces-conduite-engins') {
+          return { data: ref(family), pending: ref(false), error: ref(null), refresh: vi.fn() }
+        }
+        return { data: ref(null), pending: ref(false), error: ref(null), refresh: vi.fn() }
       }
-      if (key === 'famille-name-caces-conduite-engins') {
-        return { data: ref(family), pending: ref(false), error: ref(null), refresh: vi.fn() }
-      }
-      return { data: ref(null), pending: ref(false), error: ref(null), refresh: vi.fn() }
-    })
+    )
 
     const wrapper = await mountPage()
 
@@ -512,17 +544,20 @@ describe('pages/formations/[famille]/[slug]', () => {
         }
       }))
     }
-    vi.stubGlobal('useAsyncData', async (key: string) => {
-      if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
-        return {
-          data: ref(multiSessionCourse),
-          pending: ref(false),
-          error: ref(null),
-          refresh: vi.fn()
+    vi.stubGlobal(
+      'useAsyncData',
+      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+        if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+          return {
+            data: ref(multiSessionCourse),
+            pending: ref(false),
+            error: ref(null),
+            refresh: vi.fn()
+          }
         }
+        return defaultUseAsyncData(key, handler, options)
       }
-      return defaultUseAsyncData(key)
-    })
+    )
 
     const wrapper = await mountPage()
 
@@ -586,17 +621,20 @@ describe('pages/formations/[famille]/[slug]', () => {
       ...course,
       seoCanonical: 'https://learnup.test/formations/custom-canonical'
     }
-    vi.stubGlobal('useAsyncData', async (key: string) => {
-      if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
-        return {
-          data: ref(canonicalCourse),
-          pending: ref(false),
-          error: ref(null),
-          refresh: vi.fn()
+    vi.stubGlobal(
+      'useAsyncData',
+      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+        if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+          return {
+            data: ref(canonicalCourse),
+            pending: ref(false),
+            error: ref(null),
+            refresh: vi.fn()
+          }
         }
+        return defaultUseAsyncData(key, handler, options)
       }
-      return defaultUseAsyncData(key)
-    })
+    )
     await mountPage()
 
     const [, , options] = seoArgs()
@@ -691,5 +729,479 @@ describe('pages/formations/[famille]/[slug]', () => {
       path: '/formations',
       query: { q: 'caces' }
     })
+  })
+
+  it('passe le statut 404 quand la formation est introuvable', async () => {
+    routeMock.params.slug = 'inconnu'
+    routeMock.path = '/formations/caces-conduite-engins/inconnu'
+    await mountPage()
+
+    expect(setResponseStatusMock).toHaveBeenCalledWith(requestEvent, 404, 'Formation introuvable')
+  })
+
+  it('passe le statut 500 quand le chargement échoue', async () => {
+    fetchMock.mockRejectedValue(Object.assign(new Error('down'), { statusCode: 500 }))
+    await mountPage()
+
+    expect(setResponseStatusMock).toHaveBeenCalledWith(
+      requestEvent,
+      500,
+      'Erreur de chargement de la formation'
+    )
+  })
+
+  it('« Réessayer » relance le chargement hors ?error=1', async () => {
+    fetchMock.mockRejectedValue(Object.assign(new Error('down'), { statusCode: 500 }))
+    const wrapper = await mountPage()
+
+    wrapper.findComponent(LoadError).vm.$emit('retry')
+    await flushPromises()
+
+    expect(refreshMock).toHaveBeenCalled()
+    expect(navigateToMock).not.toHaveBeenCalled()
+  })
+
+  it('affiche le badge session du hero', async () => {
+    const { buildSessionBadge } = await import('~/composables/useCatalog')
+    vi.mocked(buildSessionBadge).mockReturnValue('Sessions ce mois-ci')
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Sessions ce mois-ci')
+    vi.mocked(buildSessionBadge).mockReturnValue(null)
+  })
+
+  it('« Voir plus » déplie les sessions puis « Voir moins » replie', async () => {
+    const manySessions: Course = {
+      ...course,
+      sessions: Array.from({ length: 6 }, (_, i) => ({
+        id: `sess-${i}`,
+        startDate: `2026-1${i}-10`,
+        endDate: null,
+        modality: i % 2 ? 'distanciel' : null,
+        seatsRemaining: null,
+        location: null
+      }))
+    }
+    vi.stubGlobal(
+      'useAsyncData',
+      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+        if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+          return {
+            data: ref(manySessions),
+            pending: ref(false),
+            error: ref(null),
+            refresh: refreshMock
+          }
+        }
+        return defaultUseAsyncData(key, handler, options)
+      }
+    )
+    const wrapper = await mountPage()
+
+    const before = wrapper.findAll('.session-card').length
+    expect(before).toBeLessThanOrEqual(2)
+
+    const more = wrapper.findAll('button').find((b) => b.text().includes('Voir plus'))
+    await more!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.findAll('.session-card').length).toBeGreaterThan(before)
+
+    const less = wrapper.findAll('button').find((b) => b.text().includes('Voir moins'))
+    await less!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.findAll('.session-card')).toHaveLength(before)
+  })
+
+  it('espace le CTA mobile de la hauteur mesurée', async () => {
+    mockHeight.value = 48
+    const wrapper = await mountPage()
+
+    expect(wrapper.html()).toContain('height: 48px')
+    mockHeight.value = 0
+  })
+
+  it('retombe sur le slug famille quand le nom de famille échoue', async () => {
+    directusRequest.mockRejectedValue(new Error('down'))
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('CACES R489 — chariots élévateurs')
+  })
+
+  it('passe les en-têtes internes au fetch quand disponibles', async () => {
+    vi.stubGlobal('internalSsrHeaders', () => ({ 'x-internal-ssr': 'token' }))
+    const wrapper = await mountPage()
+
+    expect(fetchMock).toHaveBeenCalledWith(expect.any(String), {
+      headers: { 'x-internal-ssr': 'token' }
+    })
+    expect(wrapper.text()).toContain('CACES R489')
+    vi.stubGlobal('internalSsrHeaders', () => undefined)
+  })
+
+  it('joint certification et certificateur quand la validité manque', async () => {
+    fetchMock.mockImplementation(() => Promise.resolve({ ...course, validity: null }))
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Certification CACES · Opérateur réglementaire')
+  })
+
+  it('affiche la durée en jours d’un module du programme', async () => {
+    fetchMock.mockImplementation(() =>
+      Promise.resolve({
+        ...course,
+        blocks: [{ name: 'Théorie', description: 'd', durationInDays: 3, goals: [] }]
+      })
+    )
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('3 jours')
+  })
+
+  it('affiche une pédagogie générique avec l’icône livre', async () => {
+    fetchMock.mockImplementation(() =>
+      Promise.resolve({
+        ...course,
+        pedagogy: [{ title: 'Apports théoriques', description: 'd' }]
+      })
+    )
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Apports théoriques')
+  })
+
+  it('retombe sur les modalités de la formation quand la session n’en précise pas', async () => {
+    fetchMock.mockImplementation(() =>
+      Promise.resolve({
+        ...course,
+        sessions: [
+          {
+            id: 'sess-1',
+            startDate: '2026-10-12',
+            endDate: '2026-10-14',
+            modality: null,
+            seatsRemaining: 5,
+            location: {
+              name: 'Centre de Créteil',
+              city: 'Créteil',
+              postalCode: '94000',
+              department: 'Val-de-Marne',
+              region: 'Île-de-France',
+              centreSlug: 'creteil'
+            }
+          }
+        ]
+      })
+    )
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Inter · Présentiel')
+  })
+
+  it('affiche une fiche réduite au minimum (tous champs optionnels absents)', async () => {
+    const minimal: Course = {
+      ...course,
+      description: null,
+      durationDays: null,
+      durationHours: null,
+      price: null,
+      cpf: false,
+      cpfCode: null,
+      certification: null,
+      certifierName: null,
+      validity: null,
+      centerSlug: null,
+      centerSlugs: [],
+      modalities: null,
+      sessions: null,
+      image: null,
+      imageUrl: null,
+      generatedProgramUrl: null,
+      targets: null,
+      prerequisites: null,
+      pedagogy: null,
+      evaluation: null,
+      blocks: null,
+      seoTitle: null,
+      seoDescription: null
+    }
+    vi.stubGlobal(
+      'useAsyncData',
+      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+        if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+          return { data: ref(minimal), pending: ref(false), error: ref(null), refresh: vi.fn() }
+        }
+        return defaultUseAsyncData(key, handler, options)
+      }
+    )
+    const wrapper = await mountPage()
+
+    // Titre rendu, sections optionnelles masquées, SEO dégradé.
+    expect(wrapper.text()).toContain('CACES R489')
+    expect(wrapper.text()).not.toContain('Public et prérequis')
+    expect(wrapper.text()).not.toContain('Programme')
+    expect(wrapper.text()).not.toContain('Formation en intra')
+    const [source] = seoArgs()
+    expect(source).toEqual(
+      expect.objectContaining({ seo_title: 'CACES R489 — chariots élévateurs' })
+    )
+  })
+
+  it('affiche les variantes de modules du programme', async () => {
+    const withModules: Course = {
+      ...course,
+      blocks: [
+        {
+          name: 'Évaluation pratique',
+          type: 'evaluation',
+          subtitle: 'Épreuve finale',
+          description: '<p>Passage devant jury.</p>',
+          durationInDays: 1,
+          goals: [{ text: 'Réussir l’épreuve' }, { text: 'Épreuve finale' }]
+        },
+        {
+          name: 'Module sans type',
+          description: 'Description texte simple.',
+          durationInHours: 4,
+          goals: null
+        },
+        'bloc-invalide',
+        null,
+        { name: '' }
+      ]
+    }
+    vi.stubGlobal(
+      'useAsyncData',
+      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+        if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+          return { data: ref(withModules), pending: ref(false), error: ref(null), refresh: vi.fn() }
+        }
+        return defaultUseAsyncData(key, handler, options)
+      }
+    )
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Évaluation pratique')
+    expect(wrapper.text()).toContain('Épreuve finale')
+    expect(wrapper.text()).toContain('Module sans type')
+  })
+
+  it('couvre les variantes de sessions (sans id, lieu, modalité ou places)', async () => {
+    const future = new Date()
+    future.setUTCDate(future.getUTCDate() + 30)
+    const futureIso = future.toISOString().slice(0, 10)
+    const withSessions: Course = {
+      ...course,
+      centerSlug: null,
+      sessions: [
+        {
+          id: null,
+          startDate: futureIso,
+          endDate: null,
+          modality: null,
+          seatsRemaining: 0,
+          location: {
+            name: null,
+            city: 'Lyon',
+            postalCode: '69',
+            department: null,
+            region: 'ARA',
+            centreSlug: null
+          }
+        },
+        {
+          id: 's2',
+          startDate: futureIso,
+          endDate: null,
+          modality: 'distanciel',
+          seatsRemaining: 3,
+          location: {
+            name: 'Site partenaire',
+            city: null,
+            postalCode: null,
+            department: 'Rhône',
+            region: null,
+            centreSlug: null
+          }
+        },
+        {
+          id: 's3',
+          startDate: futureIso,
+          endDate: null,
+          modality: null,
+          seatsRemaining: null,
+          location: null
+        }
+      ]
+    }
+    vi.stubGlobal(
+      'useAsyncData',
+      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+        if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+          return {
+            data: ref(withSessions),
+            pending: ref(false),
+            error: ref(null),
+            refresh: vi.fn()
+          }
+        }
+        return defaultUseAsyncData(key, handler, options)
+      }
+    )
+    const wrapper = await mountPage()
+
+    // Session à 0 place → « Être informé » ; ville en repli de nom ; lieu
+    // « planifié » quand ni nom ni ville.
+    expect(wrapper.text()).toContain("Être informé d'une place")
+    expect(wrapper.text()).toContain('Lyon')
+    expect(wrapper.text()).toContain('Session planifiée')
+  })
+
+  it('couvre les replis de contenu (prérequis, durée, prix, CPF, évaluation, lieux)', async () => {
+    const future = new Date()
+    future.setUTCDate(future.getUTCDate() + 30)
+    const futureIso = future.toISOString().slice(0, 10)
+    const variant: Course = {
+      ...course,
+      durationDays: null,
+      durationHours: null,
+      price: null,
+      cpf: true,
+      cpfCode: null,
+      certifierName: null,
+      validity: null,
+      modalities: null,
+      evaluation: null,
+      prerequisites: null,
+      blocks: [
+        {
+          name: 'Module sans sous-titre',
+          type: 'theory',
+          subtitle: null,
+          description: '',
+          durationInDays: null,
+          durationInHours: null,
+          goals: null
+        }
+      ],
+      sessions: [
+        {
+          id: 'a',
+          startDate: futureIso,
+          endDate: null,
+          modality: 'mode-custom',
+          seatsRemaining: null,
+          location: {
+            name: null,
+            city: null,
+            postalCode: null,
+            department: null,
+            region: null,
+            centreSlug: 'site-x'
+          }
+        },
+        {
+          id: 'b',
+          startDate: futureIso,
+          endDate: null,
+          modality: null,
+          seatsRemaining: 2,
+          location: {
+            name: null,
+            city: 'Paris',
+            postalCode: null,
+            department: null,
+            region: null,
+            centreSlug: null
+          }
+        },
+        {
+          id: 'c',
+          startDate: futureIso,
+          endDate: null,
+          modality: null,
+          seatsRemaining: null,
+          location: {
+            name: null,
+            city: null,
+            postalCode: null,
+            department: 'Dept',
+            region: null,
+            centreSlug: null
+          }
+        },
+        {
+          id: 'd',
+          startDate: futureIso,
+          endDate: null,
+          modality: null,
+          seatsRemaining: null,
+          location: null
+        }
+      ]
+    }
+    vi.stubGlobal(
+      'useAsyncData',
+      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+        if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+          return { data: ref(variant), pending: ref(false), error: ref(null), refresh: vi.fn() }
+        }
+        return defaultUseAsyncData(key, handler, options)
+      }
+    )
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Aucun prérequis particulier.')
+    expect(wrapper.text()).toContain('Éligible CPF')
+    expect(wrapper.text()).toContain('Lieu de formation')
+    expect(wrapper.text()).toContain('Session mode-custom')
+    expect(wrapper.text()).not.toContain('Évaluation')
+  })
+
+  it('affiche les sections via prérequis et évaluation seuls, modalité inconnue', async () => {
+    const variant: Course = {
+      ...course,
+      targets: null,
+      pedagogy: null,
+      modalities: ['mode-x']
+    }
+    vi.stubGlobal(
+      'useAsyncData',
+      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+        if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+          return { data: ref(variant), pending: ref(false), error: ref(null), refresh: vi.fn() }
+        }
+        return defaultUseAsyncData(key, handler, options)
+      }
+    )
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Prérequis')
+    expect(wrapper.text()).toContain('Évaluation')
+    expect(wrapper.text()).toContain('mode-x')
+  })
+
+  it('retombe sur une liste vide quand le catalogue similaire renvoie null', async () => {
+    catalogMocks.useCatalog.mockImplementationOnce(() => ({
+      data: ref(null),
+      pending: ref(false),
+      error: ref(null),
+      refresh: vi.fn()
+    }))
+
+    const wrapper = await mountPage()
+
+    expect(wrapper.findAll('.formation-card')).toHaveLength(0)
+  })
+
+  it('la recherche vide sur la fiche introuvable part sans query', async () => {
+    routeMock.params.slug = 'inconnu'
+    const wrapper = await mountPage()
+
+    await wrapper.findComponent(NotFound).vm.$emit('search', '')
+    await flushPromises()
+
+    expect(navigateToMock).toHaveBeenCalledWith({ path: '/formations', query: {} })
   })
 })

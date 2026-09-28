@@ -68,6 +68,16 @@ describe('components/GeoNearMe', () => {
     expect(document.body.textContent).toContain('Autoriser la géolocalisation')
   })
 
+  it('ignore activate() pendant une localisation en cours', async () => {
+    geo.status.value = 'locating'
+    const wrapper = mount(GeoNearMe, { attachTo: document.body })
+
+    ;(wrapper.vm as unknown as { activate: () => void }).activate()
+    await flushPromises()
+
+    expect(document.body.textContent).not.toContain('Autoriser la géolocalisation')
+  })
+
   it('demande la position après consentement explicite', async () => {
     const getCurrentPosition = vi.fn()
     vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
@@ -96,6 +106,19 @@ describe('components/GeoNearMe', () => {
     await flushPromises()
 
     expect(getCurrentPosition).not.toHaveBeenCalled()
+    expect(document.body.textContent).not.toContain('Voir les centres autour de vous')
+  })
+
+  it('ferme le dialogue quand le Dialog émet update:open false', async () => {
+    const wrapper = mount(GeoNearMe, { attachTo: document.body })
+
+    await wrapper.find('button').trigger('click')
+    await waitUntil(() => Boolean(document.body.textContent?.includes('Autoriser')))
+
+    const dialog = wrapper.findComponent({ name: 'DialogRoot' })
+    dialog.vm.$emit('update:open', false)
+    await flushPromises()
+
     expect(document.body.textContent).not.toContain('Voir les centres autour de vous')
   })
 

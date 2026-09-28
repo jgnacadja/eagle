@@ -9,7 +9,9 @@ vi.stubGlobal('useContentSeo', vi.fn())
 vi.stubGlobal('useRuntimeConfig', () => ({ public: { siteUrl: 'https://learnup.fr' } }))
 
 const CandidatureStub = {
+  name: 'Candidature',
   props: ['open', 'voie'],
+  emits: ['update:open'],
   template: '<div class="candidature-dialog" :data-open="String(open)" :data-voie="voie" />'
 }
 
@@ -71,5 +73,16 @@ describe('Rejoindre le réseau page', () => {
 
     expect(dialog().attributes('data-open')).toBe('true')
     expect(dialog().attributes('data-voie')).toBe(voie)
+  })
+
+  it('referme le dialog quand Candidature émet update:open false', async () => {
+    const wrapper = mountPage()
+
+    const cta = wrapper.findAll('button').find((b) => b.text().includes('Candidater'))
+    await cta!.trigger('click')
+    expect(wrapper.find('.candidature-dialog').attributes('data-open')).toBe('true')
+
+    await wrapper.findComponent({ name: 'Candidature' }).vm.$emit('update:open', false)
+    expect(wrapper.find('.candidature-dialog').attributes('data-open')).toBe('false')
   })
 })

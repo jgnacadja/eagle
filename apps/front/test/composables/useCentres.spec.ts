@@ -20,6 +20,7 @@ vi.mock('~/composables/useCatalog', async (importOriginal) => ({
 
 interface AsyncDataOptions {
   getCachedData?: (key: string, nuxtApp: unknown, ctx: { cause: string }) => unknown
+  watch?: (() => unknown)[]
 }
 
 let capturedOptions: AsyncDataOptions | undefined
@@ -135,11 +136,26 @@ describe('useCentres', () => {
     expect(getCachedData?.('centres:{}', nuxtApp, { cause: 'initial' })).toEqual([
       { slug: 'cached' }
     ])
+    const staticApp = {
+      ...nuxtApp,
+      payload: { data: {} },
+      static: { data: { 'centres:{}': [{ slug: 'static' }] } }
+    }
+    expect(getCachedData?.('centres:{}', staticApp, { cause: 'initial' })).toEqual([
+      { slug: 'static' }
+    ])
     expect(
       getCachedData?.('centres:{}', { ...nuxtApp, isHydrating: false }, { cause: 'initial' })
     ).toBeUndefined()
     expect(getCachedData?.('centres:{}', nuxtApp, { cause: 'watch' })).toBeUndefined()
     expect(getCachedData?.('centres:{}', nuxtApp, { cause: 'refresh:manual' })).toBeUndefined()
+  })
+
+  it('relit la query courante dans le watcher', async () => {
+    const query = ref({ search: 'lyon' })
+    await useCentres(query)
+
+    expect(capturedOptions?.watch?.map((w) => w())).toEqual([{ search: 'lyon' }])
   })
 })
 
@@ -159,6 +175,29 @@ describe('useCentresTotal', () => {
     const { data } = await useCentresTotal()
 
     expect(data.value).toBe(0)
+  })
+
+  it('ne sert le payload Nuxt que sur la cause initiale', async () => {
+    await useCentresTotal()
+
+    const nuxtApp = {
+      isHydrating: true,
+      payload: { data: { 'centres-total': 7 } },
+      static: { data: {} }
+    }
+    const getCachedData = capturedOptions?.getCachedData
+
+    expect(getCachedData?.('centres-total', nuxtApp, { cause: 'initial' })).toBe(7)
+    const staticApp = {
+      ...nuxtApp,
+      payload: { data: {} },
+      static: { data: { 'centres-total': 9 } }
+    }
+    expect(getCachedData?.('centres-total', staticApp, { cause: 'initial' })).toBe(9)
+    expect(
+      getCachedData?.('centres-total', { ...nuxtApp, isHydrating: false }, { cause: 'initial' })
+    ).toBeUndefined()
+    expect(getCachedData?.('centres-total', nuxtApp, { cause: 'watch' })).toBeUndefined()
   })
 })
 
@@ -219,6 +258,18 @@ describe('useCentreDepartments', () => {
     expect(data.value).toEqual(['Hauts-de-Seine', 'Paris', 'Val-de-Marne'])
   })
 
+  it('passe les en-têtes internes quand ils existent', async () => {
+    vi.stubGlobal('internalSsrHeaders', () => ({ 'x-internal-ssr': 'token' }))
+    fetchMock.mockResolvedValue([])
+
+    await useCentreDepartments()
+
+    expect(fetchMock).toHaveBeenCalledWith('http://api.test/centres/departments', {
+      headers: { 'x-internal-ssr': 'token' }
+    })
+    vi.stubGlobal('internalSsrHeaders', () => undefined)
+  })
+
   it('dégrade à [] en cas d’erreur API', async () => {
     fetchMock.mockRejectedValue(new Error('network'))
 
@@ -238,6 +289,14 @@ describe('useCentreDepartments', () => {
     const getCachedData = capturedOptions?.getCachedData
 
     expect(getCachedData?.('centres-departments', nuxtApp, { cause: 'initial' })).toEqual(['Paris'])
+    const staticApp = {
+      ...nuxtApp,
+      payload: { data: {} },
+      static: { data: { 'centres-departments': ['Lyon'] } }
+    }
+    expect(getCachedData?.('centres-departments', staticApp, { cause: 'initial' })).toEqual([
+      'Lyon'
+    ])
     expect(
       getCachedData?.(
         'centres-departments',

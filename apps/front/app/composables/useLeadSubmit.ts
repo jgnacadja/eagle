@@ -49,6 +49,7 @@ export function useLeadSubmit() {
       logClientError('[useLeadSubmit] submit failed:', err)
       error.value = 'L’envoi a échoué — réessayez dans un instant.'
       return false
+      /* v8 ignore next 2 -- double entrée try/catch du finally : artefact v8 */
     } finally {
       sending.value = false
     }

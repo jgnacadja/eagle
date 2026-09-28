@@ -94,10 +94,10 @@ function startOfTodayUtc(): Date {
 
 export function upcomingSessions(course: CourseListItem): CourseSession[] {
   const today = startOfTodayUtc()
-  return (course.sessions ?? []).filter((s) => {
-    if (!s.startDate) return false
-    return new Date(`${s.startDate}T00:00:00Z`) >= today
-  })
+  return (course.sessions ?? []).filter(
+    (s): s is CourseSession & { startDate: string } =>
+      Boolean(s.startDate) && new Date(`${s.startDate}T00:00:00Z`) >= today
+  )
 }
 
 // Tag de disponibilité affiché sur les cartes : priorité aux places
@@ -125,9 +125,9 @@ export function buildStatus(
   course: CourseListItem
 ): { type: AvailabilityType; label: string; labelShort?: string } | undefined {
   const upcoming = upcomingSessions(course).sort((a, b) =>
-    (a.startDate ?? '').localeCompare(b.startDate ?? '')
+    a.startDate.localeCompare(b.startDate)
   )[0]
-  if (!upcoming?.startDate) return { type: 'neutral', label: 'Sur demande' }
+  if (!upcoming) return { type: 'neutral', label: 'Sur demande' }
 
   const seats = upcoming.seatsRemaining
   if (seats != null && seats <= 3) {
@@ -178,6 +178,7 @@ export type CatalogApiResult = CoursePage
 
 export async function useCatalog(query: MaybeRefOrGetter<CatalogQuery>) {
   const config = useRuntimeConfig()
+  /* v8 ignore next -- server arm unreachable in the test environment */
   const apiBase = import.meta.server ? config.apiBase : config.public.apiBase
 
   // Clé dérivée de la requête : deux pages (catalogue, famille, fiche) ne
@@ -193,6 +194,7 @@ export async function useCatalog(query: MaybeRefOrGetter<CatalogQuery>) {
           headers
         })
       } catch (err) {
+        /* v8 ignore next 3 */
         if (import.meta.server) {
           logServerError('[useCatalog] catalog fetch failed:', err)
         }

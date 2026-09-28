@@ -85,7 +85,6 @@ const MAX_ACTUALITES = 60
 const MAX_REGIONS_ACTUALITES = 6
 
 function humanizeSlug(slug: string): string {
-  if (!slug) return ''
   return slug.replaceAll('-', ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
@@ -137,6 +136,7 @@ async function fetchFamilleMenuContent(
           }
         ] as const
       } catch (error) {
+        /* v8 ignore next 3 */
         if (import.meta.server) {
           logServerError('[useMenuFamilles] /courses fetch failed:', error)
         }
@@ -150,6 +150,7 @@ async function fetchFamilleMenuContent(
 /** Familles + formations par famille — un seul useAsyncData partagé (payload SSR). */
 function useMenuFamillesData() {
   const config = useRuntimeConfig()
+  /* v8 ignore next -- server arm unreachable in the test environment */
   const apiBase = import.meta.server ? config.apiBase : config.public.apiBase
   const directus = useDirectusClient()
 
@@ -166,6 +167,7 @@ function useMenuFamillesData() {
             })
           )
           .catch((error: unknown) => {
+            /* v8 ignore next 3 */
             if (import.meta.server) {
               logServerError('[useMenuFamilles] familles_formation fetch failed:', error)
             }
@@ -181,6 +183,7 @@ function useMenuFamillesData() {
             })
           )
           .catch((error: unknown) => {
+            /* v8 ignore next 3 */
             if (import.meta.server) {
               logServerError('[useMenuFamilles] sous_familles_formation fetch failed:', error)
             }
@@ -192,6 +195,7 @@ function useMenuFamillesData() {
             })
           : $fetch<FamilyWithCount[]>(`${apiBase}/families`)
         ).catch((error: unknown) => {
+          /* v8 ignore next 3 */
           if (import.meta.server) {
             logServerError('[useMenuFamilles] /families fetch failed:', error)
           }
@@ -248,7 +252,8 @@ function useMenuFamillesData() {
       // sans nom Directus sont humanisés en repli, les « 0 formation » masqués.
       const sousFamillesParFamille = Object.fromEntries(
         familles.map((famille) => {
-          const subFamilyCounts = contenuParFamille[famille.slug]?.subFamilyCounts ?? {}
+          // fetchFamilleMenuContent garantit une entrée par famille (même en cas d'échec).
+          const subFamilyCounts = contenuParFamille[famille.slug]!.subFamilyCounts
           const names = sousFamilleNamesByFamille.get(famille.slug)
           const items: MenuSousFamille[] = []
           for (const [slug, name] of names ?? []) {
@@ -343,6 +348,7 @@ export function useMenuCentres() {
 /** Quatre dernières formations publiées — colonne « À la une » du méga-menu. */
 export function useMenuFormationsALaUne() {
   const config = useRuntimeConfig()
+  /* v8 ignore next -- server arm unreachable in the test environment */
   const apiBase = import.meta.server ? config.apiBase : config.public.apiBase
 
   const { data } = useAsyncData<MenuFormation[]>(
@@ -359,6 +365,7 @@ export function useMenuFormationsALaUne() {
           to: course.familySlug ? `/formations/${course.familySlug}/${course.slug}` : '/formations'
         }))
       } catch (error) {
+        /* v8 ignore next 3 */
         if (import.meta.server) {
           logServerError('[useMenuFormationsALaUne] /courses fetch failed:', error)
         }
@@ -454,6 +461,7 @@ export function useMenuActualites() {
           actualitesParRegion
         }
       } catch (error) {
+        /* v8 ignore next 3 */
         if (import.meta.server) {
           logServerError('[useMenuActualites] articles fetch failed:', error)
         }

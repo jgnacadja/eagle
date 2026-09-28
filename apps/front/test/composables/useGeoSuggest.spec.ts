@@ -63,6 +63,71 @@ describe('useGeoSuggest', () => {
     expect(suggest.byLocation('45.764,4.8357')?.label).toBe('Lyon (69)')
   })
 
+  it('retombe sur le nom pour une commune sans centre ni code département', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/communes')) {
+        return Promise.resolve([{ nom: 'Hameau isolé' }])
+      }
+      return Promise.resolve([])
+    })
+    const suggest = useGeoSuggest()
+
+    await request(suggest, 'hameau')
+
+    expect(suggest.suggestions.value).toEqual([
+      expect.objectContaining({
+        label: 'Hameau isolé',
+        location: 'Hameau isolé',
+        kind: 'commune'
+      })
+    ])
+  })
+
+  it('déplie les codes postaux de Corse pour une saisie « 20 »', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/departements')) {
+        return Promise.resolve([
+          { code: '2A', nom: 'Corse-du-Sud' },
+          { code: '2B', nom: 'Haute-Corse' }
+        ])
+      }
+      if (url.includes('/departements/2A/communes')) {
+        return Promise.resolve([
+          {
+            nom: 'Ajaccio',
+            codeDepartement: '2A',
+            codesPostaux: null,
+            centre: { coordinates: [8.73, 41.92] }
+          }
+        ])
+      }
+      if (url.includes('/departements/2B/communes')) {
+        return Promise.resolve([
+          {
+            nom: 'Bastia',
+            codeDepartement: '2B',
+            codesPostaux: ['20200'],
+            centre: { coordinates: [9.45, 42.7] }
+          }
+        ])
+      }
+      return Promise.resolve([])
+    })
+    const suggest = useGeoSuggest()
+
+    await request(suggest, '20')
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/departements/2A/communes'),
+      expect.anything()
+    )
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/departements/2B/communes'),
+      expect.anything()
+    )
+    expect(suggest.suggestions.value.map((s) => s.label)).toContain('20200 Bastia')
+  })
+
   it('conserve ville et département homonymes (« paris » → ville + département)', async () => {
     fetchMock.mockImplementation((url: string) => {
       if (url.endsWith('/communes')) {
@@ -251,6 +316,32 @@ describe('useGeoSuggest', () => {
     await request(suggest, '69')
     suggest.reset()
 
+    expect(suggest.suggestions.value).toEqual([])
+  })
+
+  it('déduplique les communes homonymes du même département', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/communes')) {
+        return Promise.resolve([
+          { nom: 'Saint-Denis', codeDepartement: '93', centre: { coordinates: [2.35, 48.93] } },
+          { nom: 'Saint-Denis', codeDepartement: '93', centre: { coordinates: [2.36, 48.94] } }
+        ])
+      }
+      return Promise.resolve([])
+    })
+    const suggest = useGeoSuggest()
+
+    await request(suggest, 'saint')
+
+    expect(suggest.suggestions.value.map((s) => s.label)).toEqual(['Saint-Denis (93)'])
+  })
+
+  it('ignore une saisie de moins de 2 caractères', async () => {
+    const suggest = useGeoSuggest()
+
+    await request(suggest, 'a')
+
+    expect(fetchMock).not.toHaveBeenCalled()
     expect(suggest.suggestions.value).toEqual([])
   })
 })

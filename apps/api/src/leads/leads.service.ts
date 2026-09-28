@@ -35,8 +35,8 @@ function fields(entries: (HubSpotField | null)[]): HubSpotField[] {
 // « Nom et prénom » unique côté site → firstname/lastname HubSpot :
 // 1er mot = prénom, le reste = nom. Un seul mot → prénom seul.
 function splitName(nom: string): { firstname: string; lastname: string } {
-  const [firstname, ...rest] = nom.trim().split(/\s+/)
-  return { firstname: firstname ?? '', lastname: rest.join(' ') }
+  const [firstname = '', ...rest] = nom.trim().split(/\s+/)
+  return { firstname, lastname: rest.join(' ') }
 }
 
 // Les CTA réseau historiques envoient ?sujet=franchise — la propriété

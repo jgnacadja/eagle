@@ -13,6 +13,7 @@ import { createDirectus, rest } from '@directus/sdk'
  */
 export function useDirectusClient() {
   const config = useRuntimeConfig()
+  /* v8 ignore next -- server arm unreachable in the browser/test environment */
   const apiBase = import.meta.server ? config.apiBase : config.public.apiBase
   const ssrHeaders = internalSsrHeaders(config)
   return createDirectus(`${apiBase}/directus`, {

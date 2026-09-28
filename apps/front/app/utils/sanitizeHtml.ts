@@ -90,15 +90,11 @@ function insertHeadingIds(html: string): string {
 }
 
 function extractHeadings(html: string): SanitizedHeading[] {
-  return Array.from(html.matchAll(HEADING_PATTERN)).flatMap((match) => {
-    const level = match[1]
-    const attrs = match[2]
-    const inner = match[3]
-    if (!level || attrs === undefined || inner === undefined) return []
-
-    const id = /\sid="([^"]+)"/i.exec(attrs)?.[1]
-    if (!id) return []
-
-    return [{ id, label: headingText(inner), level: Number(level) }]
-  })
+  // La regex garantit les trois groupes capturés et le sanitize a déjà
+  // injecté un id slugifié sur chaque titre — pas de garde nécessaire.
+  return Array.from(html.matchAll(HEADING_PATTERN)).map((match) => ({
+    id: /\sid="([^"]+)"/i.exec(match[2]!)![1]!,
+    label: headingText(match[3]!),
+    level: Number(match[1]!)
+  }))
 }

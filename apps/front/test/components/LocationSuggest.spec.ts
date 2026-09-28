@@ -133,4 +133,114 @@ describe('LocationSuggest', () => {
 
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([undefined])
   })
+
+  it('navigue au clavier dans la liste', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/communes')) {
+        return Promise.resolve([
+          { nom: 'Lyon', codeDepartement: '69', centre: { coordinates: [4.8357, 45.764] } },
+          { nom: 'Lyon 3e', codeDepartement: '69', centre: { coordinates: [4.9, 45.76] } }
+        ])
+      }
+      return Promise.resolve([])
+    })
+    const wrapper = mountSuggest()
+    const input = wrapper.find('input')
+
+    // Ouverture au focus, puis navigation haut/bas et surbrillance souris.
+    await input.trigger('focus')
+    await typeAndSuggest(wrapper, 'lyon')
+    await input.trigger('keydown', { key: 'ArrowDown' })
+    await input.trigger('keydown', { key: 'ArrowUp' })
+    await wrapper.findAll('li button')[1]!.trigger('mouseenter')
+    await input.trigger('keydown', { key: 'Enter' })
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['45.76,4.9'])
+  })
+
+  it('ignore les autres touches et ferme au blur ou Échap', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/communes')) {
+        return Promise.resolve([
+          { nom: 'Lyon', codeDepartement: '69', centre: { coordinates: [4.8357, 45.764] } }
+        ])
+      }
+      return Promise.resolve([])
+    })
+    const wrapper = mountSuggest()
+    const input = wrapper.find('input')
+
+    // Liste fermée : la touche n'est pas consommée.
+    await input.trigger('keydown', { key: 'ArrowDown' })
+    await typeAndSuggest(wrapper, 'lyon')
+    await input.trigger('keydown', { key: 'Tab' })
+    expect(wrapper.find('ul').exists()).toBe(true)
+
+    await input.trigger('keydown', { key: 'Escape' })
+    expect(wrapper.find('ul').exists()).toBe(false)
+
+    await input.trigger('focus')
+    await input.trigger('blur')
+    expect(wrapper.find('ul').exists()).toBe(false)
+  })
+
+  it('resynchronise le label depuis la valeur du modèle', async () => {
+    fetchMock.mockResolvedValue([])
+    const wrapper = mountSuggest()
+
+    // Valeur reconnue → libellé de la suggestion ; valeur brute sinon.
+    await wrapper.setProps({ modelValue: 'zzz' })
+    expect((wrapper.find('input').element as HTMLInputElement).value).toBe('zzz')
+  })
+
+  it('traduit une valeur de modèle connue en libellé de suggestion', async () => {
+    fetchMock.mockImplementation((url: string) =>
+      Promise.resolve(url.endsWith('/departements') ? [{ code: '69', nom: 'Rhône' }] : [])
+    )
+    const wrapper = mountSuggest()
+
+    await typeAndSuggest(wrapper, '69')
+
+    await wrapper.setProps({ modelValue: '69' })
+    expect((wrapper.find('input').element as HTMLInputElement).value).toBe('Rhône (département 69)')
+
+    await wrapper.setProps({ modelValue: undefined })
+    expect((wrapper.find('input').element as HTMLInputElement).value).toBe('')
+  })
+
+  it('émet undefined quand la saisie est vidée à la main', async () => {
+    fetchMock.mockResolvedValue([])
+    const wrapper = mountSuggest('Lyon')
+
+    await wrapper.find('input').setValue('')
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([undefined])
+  })
+
+  it('ignore un Enter sans suggestion active', async () => {
+    fetchMock.mockImplementation((url: string) => {
+      if (url.endsWith('/communes')) {
+        return Promise.resolve([
+          { nom: 'Lyon', codeDepartement: '69', centre: { coordinates: [4.83, 45.76] } }
+        ])
+      }
+      return Promise.resolve([])
+    })
+    const wrapper = mountSuggest()
+    const input = wrapper.find('input')
+
+    await typeAndSuggest(wrapper, 'lyon')
+    const emitsBefore = wrapper.emitted('update:modelValue')?.length ?? 0
+    await input.trigger('keydown', { key: 'Enter' })
+
+    expect(wrapper.emitted('update:modelValue')?.length).toBe(emitsBefore)
+  })
+
+  it('monte sans valeur de modèle', () => {
+    const wrapper = mount(LocationSuggest, {
+      global: { stubs: { IconMapPin: true, IconClose: true } }
+    })
+
+    expect((wrapper.find('input').element as HTMLInputElement).value).toBe('')
+  })
 })

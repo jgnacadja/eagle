@@ -69,6 +69,34 @@ describe('ui/Select', () => {
     )
     expect(options).toEqual(['Option A', 'Option B'])
   })
+
+  it('affiche les boutons de scroll quand la liste déborde', async () => {
+    // happy-dom n'a pas de layout : on simule un viewport qui déborde pour
+    // que reka-ui affiche les SelectScrollUp/DownButton.
+    const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollHeight')
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get: () => 500
+    })
+    try {
+      const wrapper = mount(createSelect(), { attachTo: document.body })
+      const trigger = wrapper.find('button')
+      await trigger.trigger('pointerdown', { button: 0 })
+      await waitUntil(() => Boolean(document.body.querySelector('[role="option"]')))
+      // Force la réévaluation du débordement par reka-ui : scrollTop > 0
+      // rend le bouton « haut » visible, scrollHeight > 0 le bouton « bas ».
+      const viewport = document.body.querySelector<HTMLElement>('[data-reka-select-viewport]')
+      if (viewport) {
+        viewport.scrollTop = 100
+        viewport.dispatchEvent(new Event('scroll'))
+      }
+      await flushPromises()
+
+      expect(document.body.textContent).toContain('Option A')
+    } finally {
+      if (original) Object.defineProperty(HTMLElement.prototype, 'scrollHeight', original)
+    }
+  })
 })
 
 describe('selectTriggerVariants', () => {

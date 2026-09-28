@@ -104,20 +104,26 @@ vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' 
 // tests de pré-remplissage le surchargent avec une réponse de département.
 const reverseFetchMock = vi.fn().mockResolvedValue({ city: null, department: null })
 vi.stubGlobal('$fetch', reverseFetchMock)
+// Pending partagé et mutable : un seul commutateur pilote les trois
+// sources (centres, total, départements) comme un vrai premier rendu client.
+const pendingState = ref(false)
 vi.stubGlobal('useCentres', (query: Parameters<typeof toValue>[0]) => ({
-  data: computed(() => filterFixture(toValue(query) as CentresQuery)),
-  pending: ref(false),
+  data: computed(() =>
+    centresFixture.value === null ? null : filterFixture(toValue(query) as CentresQuery)
+  ),
+  pending: pendingState,
   error: ref(null),
   refresh: vi.fn()
 }))
 vi.stubGlobal('useCentresTotal', () => ({
-  data: computed(() => centresFixture.value.length),
-  pending: ref(false),
+  data: computed(() => centresFixture.value?.length ?? null),
+  pending: pendingState,
   error: ref(null),
   refresh: vi.fn()
 }))
 vi.stubGlobal('useCentreDepartments', () => ({
   data: computed(() => {
+    if (!centresFixture.value) return null
     // Rejoue la normalisation de l'API : les codes `departments_covered`
     // sont traduits en noms et dédupliqués avec le département géocodé.
     const set = new Set<string>()
@@ -131,7 +137,7 @@ vi.stubGlobal('useCentreDepartments', () => ({
     // l'état « département sans centre » (RG01).
     return [...set, 'Ain'].sort((a, b) => a.localeCompare(b, 'fr'))
   }),
-  pending: ref(false),
+  pending: pendingState,
   error: ref(null),
   refresh: vi.fn()
 }))
@@ -155,14 +161,19 @@ const stubs = {
     props: ['modelValue'],
     emits: ['update:modelValue', 'submit'],
     template:
-      '<span><input class="city-search" :value="modelValue" @keydown.enter="$emit(\'submit\', $event.target.value)" /><slot name="action" /></span>'
+      '<span><input class="city-search" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" @keydown.enter="$emit(\'submit\', $event.target.value)" /><slot name="action" /></span>'
   },
   Button: { template: '<button><slot /></button>' },
   CenterMap: {
+    name: 'CenterMap',
     props: ['centers', 'activeId', 'caption', 'minZoom', 'mode', 'popup', 'focusCenter'],
     emits: ['select'],
     template:
-      '<div class="center-map" :data-active-id="activeId" :data-popup="String(popup)" :data-focus="focusCenter ? `${focusCenter.lat},${focusCenter.lng}` : \'\'" />'
+      '<div class="center-map" :data-active-id="activeId" :data-popup="String(popup)" :data-focus="focusCenter ? `${focusCenter.lat},${focusCenter.lng}` : \'\'">' +
+      '<button class="map-select-creteil" @click="$emit(\'select\', \'creteil\')" />' +
+      '<button class="map-select-empty" @click="$emit(\'select\', \'\')" />' +
+      '<button class="map-select-ghost" @click="$emit(\'select\', \'ghost\')" />' +
+      '</div>'
   },
   CenterResultCard: {
     props: ['center', 'active'],
@@ -210,6 +221,7 @@ describe('pages/centres/index', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     centresFixture.value = directusCentres
+    pendingState.value = false
     routeStub.query = {}
     // État géo partagé au niveau module : reset entre tests. `navigator`
     // sans `permissions` : happy-dom résoudrait `granted`, ce qui court-
@@ -760,6 +772,68 @@ describe('pages/centres/index', () => {
     }
   })
 
+  it('conserve le ?dept= explicite même hors liste et sans géoloc', async () => {
+    // Département absent de la liste : repli sur la valeur brute. La
+    // géoloc inactive ne doit pas réinitialiser un choix utilisateur.
+    routeStub.query = { dept: 'Mordor' }
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Mordor')
+    expect(wrapper.findAll('.center-card')).toHaveLength(0)
+  })
+
+  it('garde le premier département auto-détecté quand la position change', async () => {
+    const getCurrentPosition = vi.fn(
+      (success: (position: { coords: { latitude: number; longitude: number } }) => void) => {
+        success({ coords: { latitude: 45.764, longitude: 4.8357 } }) // Lyon
+      }
+    )
+    const originalNavigator = globalThis.navigator
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
+    reverseFetchMock.mockResolvedValue({ city: 'Lyon', department: 'Rhône' })
+
+    try {
+      const wrapper = await mountPage()
+      await activateGeo(wrapper)
+      expect((wrapper.find('.dept-select').element as HTMLSelectElement).value).toBe('Rhône')
+
+      // Nouvelle position vers un autre département : le filtre auto-rempli
+      // précédent est conservé (pas de renseignement utilisateur entre-temps).
+      reverseFetchMock.mockResolvedValue({ city: 'Versailles', department: 'Yvelines' })
+      useGeolocation().position.value = { lat: 48.8, lng: 2.13 }
+      await flushPromises()
+
+      expect((wrapper.find('.dept-select').element as HTMLSelectElement).value).toBe('Rhône')
+    } finally {
+      vi.stubGlobal('navigator', originalNavigator)
+      reverseFetchMock.mockResolvedValue({ city: null, department: null })
+      useGeolocation().clear()
+    }
+  })
+
+  it('retombe sur le département brut quand la géoloc renvoie un inconnu', async () => {
+    const getCurrentPosition = vi.fn(
+      (success: (position: { coords: { latitude: number; longitude: number } }) => void) => {
+        success({ coords: { latitude: 1, longitude: 1 } })
+      }
+    )
+    const originalNavigator = globalThis.navigator
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
+    reverseFetchMock.mockResolvedValue({ city: 'Atlantis', department: 'Atlantis' })
+
+    try {
+      const wrapper = await mountPage()
+      await activateGeo(wrapper)
+      await flushPromises()
+
+      expect(wrapper.text()).toContain('Atlantis')
+    } finally {
+      vi.stubGlobal('navigator', originalNavigator)
+      reverseFetchMock.mockResolvedValue({ city: null, department: null })
+      useGeolocation().clear()
+    }
+  })
+
   it('normalise la valeur détectée sur la graphie canonique de la liste', async () => {
     const getCurrentPosition = vi.fn(
       (success: (position: { coords: { latitude: number; longitude: number } }) => void) => {
@@ -814,5 +888,297 @@ describe('pages/centres/index', () => {
       vi.stubGlobal('navigator', originalNavigator)
       reverseFetchMock.mockResolvedValue({ city: null, department: null })
     }
+  })
+
+  it('affiche les skeletons pendant le chargement initial', async () => {
+    pendingState.value = true
+    centresFixture.value = []
+    const wrapper = await mountPage()
+
+    // Skeleton hero (compteur), carte et liste — avant l'arrivée des données.
+    expect(wrapper.text()).toContain('Chargement des centres')
+    expect(wrapper.findAll('.animate-pulse').length).toBeGreaterThan(0)
+  })
+
+  it('affiche l’état vide quand le réseau ne renvoie aucun centre', async () => {
+    centresFixture.value = []
+    const wrapper = await mountPage()
+
+    expect(wrapper.findAll('.center-card')).toHaveLength(0)
+    expect(wrapper.text()).toContain('Aucun centre ne correspond à cette sélection')
+  })
+
+  it('affiche le placeholder de chargement dans la carte mobile', async () => {
+    pendingState.value = true
+    centresFixture.value = []
+    const wrapper = await mountPage()
+
+    const toggle = wrapper.findAll('button').find((b) => b.text().includes('Voir la carte'))!
+    await toggle.trigger('click')
+
+    const mobileMap = wrapper.find('.h-\\[60vh\\]')
+    expect(mobileMap.exists()).toBe(true)
+    expect(mobileMap.find('.animate-pulse').exists()).toBe(true)
+  })
+
+  it('désélectionne le centre quand la carte renvoie un id vide', async () => {
+    const wrapper = await mountPage()
+
+    await wrapper.find('.map-select-creteil').trigger('click')
+    expect(wrapper.find('.center-map').attributes('data-active-id')).toBe('creteil')
+
+    await wrapper.find('.map-select-empty').trigger('click')
+    expect(wrapper.find('.center-map').attributes('data-active-id')).toBeUndefined()
+  })
+
+  it('ouvre puis ferme la carte mobile via le bouton liste/carte', async () => {
+    const wrapper = await mountPage()
+
+    const toggle = () => wrapper.findAll('button').find((b) => b.text().includes('Voir la'))!
+
+    expect(toggle().text()).toContain('Voir la carte')
+
+    await toggle().trigger('click')
+    expect(toggle().text()).toContain('Voir la liste')
+
+    await toggle().trigger('click')
+    expect(toggle().text()).toContain('Voir la carte')
+
+    await toggle().trigger('click')
+    expect(toggle().text()).toContain('Voir la liste')
+  })
+
+  it('nettoie une sélection sortie du filtre courant', async () => {
+    const wrapper = await mountPage()
+
+    await wrapper.find('.map-select-creteil').trigger('click')
+    expect(wrapper.find('.center-map').attributes('data-active-id')).toBe('creteil')
+
+    // « Rhône » ne contient pas Créteil : la sélection est libérée.
+    await wrapper.find('.dept-select').setValue('Rhône')
+    await flushPromises()
+
+    expect(wrapper.find('.center-map').attributes('data-active-id')).toBeUndefined()
+  })
+
+  it('élargit la liste visible quand la sélection dépasse le premier lot', async () => {
+    centresFixture.value = Array.from({ length: 15 }, (_, i) => ({
+      ...directusCentres[0]!,
+      id: i + 1,
+      slug: `centre-${i}`,
+      name: `Centre ${i}`
+    }))
+    const wrapper = await mountPage()
+
+    // Seules 12 cartes sont rendues (lot initial) : la sélection du 15e
+    // centre passe par la carte — findIndex 14 ≥ visibleCount → extension.
+    wrapper.findComponent({ name: 'CenterMap' }).vm.$emit('select', 'centre-14')
+    await flushPromises()
+
+    expect(wrapper.find('.center-map').attributes('data-active-id')).toBe('centre-14')
+    expect(wrapper.findAll('.center-card').length).toBe(15)
+  })
+
+  it('re-sélectionne via la carte épinglée puis les cartes de la liste', async () => {
+    const wrapper = await mountPage()
+
+    wrapper.findComponent({ name: 'CenterMap' }).vm.$emit('select', 'creteil')
+    await flushPromises()
+
+    const cards = wrapper.findAll('.center-card')
+    // La première est la carte épinglée mobile : son select active la même id.
+    await cards[0]!.trigger('click')
+    await flushPromises()
+    // Une carte de la liste : sélection via onListCardSelect.
+    await cards[1]!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.center-map').attributes('data-active-id')).toBeTruthy()
+  })
+
+  it('re-sélectionne le centre via la carte épinglée sous la carte mobile', async () => {
+    const wrapper = await mountPage()
+
+    const toggle = wrapper.findAll('button').find((b) => b.text().includes('Voir la carte'))
+    await toggle!.trigger('click')
+    await flushPromises()
+
+    wrapper.findComponent({ name: 'CenterMap' }).vm.$emit('select', 'creteil')
+    await flushPromises()
+
+    const pinned = wrapper.find('.center-card.sticky')
+    expect(pinned.exists()).toBe(true)
+    expect(wrapper.findAll('.center-map').map((m) => m.attributes('data-active-id'))).toContain(
+      'creteil'
+    )
+
+    // Recliquer le centre épinglé re-passe par selectCenter : même id → désélection.
+    await pinned.trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.center-map').map((m) => m.attributes('data-active-id'))).not.toContain(
+      'creteil'
+    )
+  })
+
+  it('retombe sur les listes vides et compteurs à zéro quand les données sont null', async () => {
+    centresFixture.value = null as never
+    const wrapper = await mountPage()
+
+    expect(wrapper.findAll('.center-card')).toHaveLength(0)
+  })
+
+  it('ignore les centres sans coordonnées dans le focus département', async () => {
+    centresFixture.value = [
+      ...directusCentres,
+      {
+        id: 99,
+        status: 'published',
+        slug: 'sans-geo',
+        name: 'Centre sans géoloc',
+        address: null,
+        city: 'Créteil',
+        postal_code: null,
+        department: 'Val-de-Marne',
+        region: null,
+        specialties: null,
+        departments_covered: ['94'],
+        latitude: null,
+        longitude: null
+      }
+    ] as never
+    routeStub.query = { dept: 'Val-de-Marne' }
+
+    const wrapper = await mountPage()
+
+    expect(wrapper.findAll('.center-card')).toHaveLength(3)
+  })
+
+  it('ignore le département géocodé après un choix manuel du filtre', async () => {
+    const getCurrentPosition = vi.fn(
+      (success: (position: { coords: { latitude: number; longitude: number } }) => void) => {
+        success({ coords: { latitude: 45.764, longitude: 4.8357 } })
+      }
+    )
+    const originalNavigator = globalThis.navigator
+    vi.stubGlobal('navigator', { geolocation: { getCurrentPosition } })
+    reverseFetchMock.mockResolvedValue({ city: 'Lyon', department: 'Rhône' })
+
+    try {
+      const wrapper = await mountPage()
+      // Choix manuel AVANT la géolocalisation → le département détecté
+      // ne doit pas l'écraser.
+      await wrapper.find('.dept-select').setValue('Val-de-Marne')
+      await activateGeo(wrapper)
+      await flushPromises()
+
+      const select = wrapper.find('.dept-select').element as HTMLSelectElement
+      expect(select.value).toBe('Val-de-Marne')
+    } finally {
+      vi.stubGlobal('navigator', originalNavigator)
+      reverseFetchMock.mockResolvedValue({ city: null, department: null })
+    }
+  })
+
+  it('ignore les intersections pendant un chargement puis en fin de liste', async () => {
+    centresFixture.value = Array.from({ length: 15 }, (_, index) => ({
+      ...directusCentres[index % directusCentres.length]!,
+      slug: `centre-${index}`,
+      name: `Centre ${index + 1}`
+    }))
+    const OriginalIntersectionObserver = globalThis.IntersectionObserver
+    const originalRequestAnimationFrame = globalThis.requestAnimationFrame
+    let observerCallback:
+      ((entries: IntersectionObserverEntry[], observer: IntersectionObserver) => void) | undefined
+    let frameCallback: ((time: number) => void) | undefined
+
+    class IntersectionObserverMock {
+      root = null
+      rootMargin = ''
+      thresholds = []
+
+      constructor(
+        callback: (entries: IntersectionObserverEntry[], observer: IntersectionObserver) => void
+      ) {
+        observerCallback = callback
+      }
+
+      disconnect() {
+        return undefined
+      }
+      observe() {
+        return undefined
+      }
+      takeRecords() {
+        return []
+      }
+      unobserve() {
+        return undefined
+      }
+    }
+
+    vi.stubGlobal('IntersectionObserver', IntersectionObserverMock)
+    vi.stubGlobal('requestAnimationFrame', (callback: (time: number) => void) => {
+      frameCallback = callback
+      return 1
+    })
+
+    const wrapper = await mountPage()
+    const entry = [{ isIntersecting: true } as IntersectionObserverEntry]
+
+    // Deux intersections successives : la seconde est ignorée (chargement
+    // en cours), puis une troisième en fin de liste (visibleCount atteint).
+    observerCallback?.(entry, {} as IntersectionObserver)
+    observerCallback?.(entry, {} as IntersectionObserver)
+    await nextTick()
+    frameCallback?.(0)
+    await flushPromises()
+    observerCallback?.(entry, {} as IntersectionObserver)
+    await flushPromises()
+
+    expect(wrapper.findAll('.center-card')).toHaveLength(15)
+
+    wrapper.unmount()
+    vi.stubGlobal('IntersectionObserver', OriginalIntersectionObserver)
+    vi.stubGlobal('requestAnimationFrame', originalRequestAnimationFrame)
+  })
+
+  it('mesure le débordement quand la liste a overflow-y auto', async () => {
+    const originalGetComputedStyle = globalThis.getComputedStyle
+    vi.stubGlobal('getComputedStyle', () => ({ overflowY: 'auto' }) as CSSStyleDeclaration)
+
+    try {
+      const wrapper = await mountPage()
+      expect(wrapper.findAll('.center-card').length).toBeGreaterThan(0)
+    } finally {
+      vi.stubGlobal('getComputedStyle', originalGetComputedStyle)
+    }
+  })
+
+  it('sélectionne une carte sans élément DOM associé', async () => {
+    const wrapper = await mountPage()
+
+    await wrapper.find('.map-select-ghost').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.center-map').attributes('data-active-id')).toBe('ghost')
+  })
+
+  it('fait défiler la liste jusqu’à la carte sélectionnée', async () => {
+    const scrollIntoView = vi.fn()
+    Element.prototype.scrollIntoView = scrollIntoView
+    const Host = defineComponent({
+      render() {
+        return h(Suspense, () => h(CentresPage))
+      }
+    })
+    const wrapper = mount(Host, { global: { stubs }, attachTo: document.body })
+    mountedWrappers.push(wrapper)
+    await flushPromises()
+
+    await wrapper.find('.map-select-creteil').trigger('click')
+    await flushPromises()
+
+    expect(scrollIntoView).toHaveBeenCalled()
+    wrapper.unmount()
   })
 })

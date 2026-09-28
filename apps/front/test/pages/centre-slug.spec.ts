@@ -3,6 +3,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, ref, Suspense, watchEffect } from 'vue'
 import LoadError from '~/components/ErrorState/LoadError.vue'
 import NotFound from '~/components/ErrorState/NotFound.vue'
+// Stub local : reproduit le pied « adresse + itinéraire » du mode single
+// (contrat du composant) et expose des boutons pour émettre `select`.
+const CenterMapStub = {
+  name: 'CenterMap',
+  props: ['centers', 'activeId', 'caption', 'mode'],
+  emits: ['select'],
+  template: `<div class="center-map">
+    <template v-if="mode === 'single' && centers.length">
+      <span>{{ centers[0].address }}</span>
+      <a v-if="centers[0].lat != null">Ouvrir l'itinéraire →</a>
+    </template>
+    <button class="select-vitry" @click="$emit('select', 'vitry')" />
+    <button class="select-same" @click="$emit('select', 'creteil')" />
+    <button class="select-empty" @click="$emit('select', '')" />
+  </div>`
+}
 import CentrePage from '~/pages/centres/[slug].vue'
 
 const navigateToMock = vi.fn()
@@ -20,6 +36,7 @@ interface RouteMock {
 
 let routeMock: RouteMock
 let forceError: Error | null = null
+const requestEvent = { node: { req: {}, res: {} } }
 
 const centreCreteil = {
   id: 1,
@@ -68,52 +85,52 @@ const centreVitry = {
   longitude: 2.3928
 }
 
-const catalogueCourses = {
-  items: [
+const catalogueCourseFixture = {
+  id: 1,
+  slug: 'sst-initial',
+  title: 'SST — Sauveteur secouriste du travail',
+  description: 'Formation initiale SST.',
+  durationDays: 2,
+  durationHours: 14,
+  price: 350,
+  cpf: false,
+  cpfCode: null,
+  certification: 'Certificat SST',
+  certifierName: 'INRS',
+  category: 'Santé',
+  familySlug: 'sante',
+  subFamilySlug: null,
+  subFamilyName: null,
+  centerSlug: 'creteil',
+  centerSlugs: ['creteil'],
+  modalities: ['inter', 'presentiel'],
+  sessions: [
     {
-      id: 1,
-      slug: 'sst-initial',
-      title: 'SST — Sauveteur secouriste du travail',
-      description: 'Formation initiale SST.',
-      durationDays: 2,
-      durationHours: 14,
-      price: 350,
-      cpf: false,
-      cpfCode: null,
-      certification: 'Certificat SST',
-      certifierName: 'INRS',
-      category: 'Santé',
-      familySlug: 'sante',
-      subFamilySlug: null,
-      subFamilyName: null,
-      centerSlug: 'creteil',
-      centerSlugs: ['creteil'],
-      modalities: ['inter', 'presentiel'],
-      sessions: [
-        {
-          id: 'sess-1',
-          startDate: '2026-10-12',
-          endDate: '2026-10-13',
-          modality: 'presentiel',
-          seatsRemaining: 5,
-          location: {
-            name: 'Centre de Créteil',
-            city: 'Créteil',
-            postalCode: '94000',
-            department: 'Val-de-Marne',
-            region: 'Île-de-France',
-            centreSlug: 'creteil'
-          }
-        }
-      ],
-      imageUrl: null,
-      generatedProgramUrl: null,
-      status: 'published',
-      seoTitle: null,
-      seoDescription: null,
-      seoCanonical: null
+      id: 'sess-1',
+      startDate: '2026-10-12',
+      endDate: '2026-10-13',
+      modality: 'presentiel',
+      seatsRemaining: 5,
+      location: {
+        name: 'Centre de Créteil',
+        city: 'Créteil',
+        postalCode: '94000',
+        department: 'Val-de-Marne',
+        region: 'Île-de-France',
+        centreSlug: 'creteil'
+      }
     }
   ],
+  imageUrl: null,
+  generatedProgramUrl: null,
+  status: 'published',
+  seoTitle: null,
+  seoDescription: null,
+  seoCanonical: null
+}
+
+const catalogueCourses = {
+  items: [structuredClone(catalogueCourseFixture)],
   total: 12,
   page: 1,
   pageSize: 12,
@@ -143,7 +160,7 @@ vi.stubGlobal('useAsyncData', async (_key: string, handler: () => Promise<unknow
     return { data: ref(null), error: ref(e), refresh: refreshMock }
   }
 })
-vi.stubGlobal('useRequestEvent', () => undefined)
+vi.stubGlobal('useRequestEvent', () => requestEvent)
 vi.stubGlobal('setResponseStatus', setResponseStatusMock)
 vi.stubGlobal('useContentSeo', seoMock)
 vi.stubGlobal('navigateTo', navigateToMock)
@@ -155,19 +172,19 @@ vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' 
 // explicitement — le mock remplace le module, `geoPosition` décide si la
 // distance ou la ville s'affiche sur les cartes des autres centres.
 const geoPosition = vi.hoisted(() => ({ value: null as { lat: number; lng: number } | null }))
+const catalogNull = vi.hoisted(() => ({ value: false }))
 vi.mock('~/composables/useGeolocation', () => ({
   useGeolocation: () => ({ position: geoPosition })
 }))
-const centreArticlesFixture = [
-  {
-    slug: 'actu-creteil',
-    title: 'Actualité du centre de Créteil',
-    excerpt: 'Résumé de l’actualité.',
-    category: 'SST & sécurité',
-    publish_at: '2026-09-01T09:00:00+00:00',
-    cover_image: null
-  }
-]
+const articleFixtureBase = {
+  slug: 'actu-creteil',
+  title: 'Actualité du centre de Créteil',
+  excerpt: 'Résumé de l’actualité.',
+  category: 'SST & sécurité',
+  publish_at: '2026-09-01T09:00:00+00:00',
+  cover_image: null
+}
+const centreArticlesFixture: (typeof articleFixtureBase)[] = []
 const centreAvisFixture = [
   {
     slug: 'avis-qhse',
@@ -180,20 +197,32 @@ const centreAvisFixture = [
 ]
 // Mutable pour tester le masquage de la section quand la collection est vide.
 const avisFixture: typeof centreAvisFixture = []
+// Mutable pour piloter la liste des centres voisins.
+const centresFixture: (typeof centreCreteil)[] = []
 
-vi.stubGlobal('useDirectusList', async (collection: string) =>
-  ref(
+// Collections renvoyant `null` (donnée absente avant résolution) :
+// couvre les replis `?? []` des sections fiche.
+const nullCollections = new Set<string>()
+
+vi.stubGlobal('useDirectusList', async (collection: string, _key: string, query?: unknown) => {
+  if (typeof query === 'function') query()
+  if (nullCollections.has(collection)) return ref(null)
+  return ref(
     collection === 'articles'
       ? centreArticlesFixture
       : collection === 'avis'
         ? avisFixture
-        : [centreCreteil, centreVitry]
+        : centresFixture
   )
-)
+})
 vi.stubGlobal('useMenuFamilles', async () => ref([{ slug: 'sante', label: 'Santé', count: 2 }]))
 
 vi.mock('~/composables/useCatalog', () => ({
-  useCatalog: async () => ({ data: ref(catalogueCourses) }),
+  // `catalogNull` simule une réponse API absente (erreur ou résolution
+  // tardive) : les replis `data.value?.` de la fiche sont exercés.
+  useCatalog: async () => ({
+    data: computed(() => (catalogNull.value ? null : catalogueCourses))
+  }),
   buildSessionBadge: vi.fn(() => null),
   mapCourse: (
     course: {
@@ -230,7 +259,8 @@ const stubs = {
   SearchInput: {
     props: ['modelValue'],
     emits: ['update:modelValue', 'submit'],
-    template: '<button class="search-stub" @click="$emit(\'submit\', \'caces\')" />'
+    template:
+      '<div><button class="search-stub" @click="$emit(\'submit\', \'caces\')" /><button class="search-empty" @click="$emit(\'submit\', \'\')" /></div>'
   },
   Badge: true,
   // Slots rendus : sans ça le contenu des cartes (infos pratiques,
@@ -241,10 +271,12 @@ const stubs = {
   CardFooter: { template: '<div><slot /></div>' },
   CenterFormationCard: true,
   SessionCard: {
-    props: ['title', 'meta', 'places'],
-    template: '<div class="session-card">{{ title }}</div>'
+    props: ['title', 'meta', 'places', 'type', 'to', 'ctaLabel'],
+    template:
+      '<div class="session-card">{{ title }}<a v-if="to" :href="to">{{ ctaLabel }}</a></div>'
   },
   CtaBanner: true,
+  CenterMap: CenterMapStub,
   CenterCard: {
     props: ['name', 'distance', 'formations', 'to'],
     template: '<div class="center-card">{{ name }} {{ distance }}</div>'
@@ -296,7 +328,30 @@ describe('pages/centres/[slug]', () => {
     vi.clearAllMocks()
     forceError = null
     geoPosition.value = null
+    catalogNull.value = false
+    nullCollections.clear()
     avisFixture.splice(0, avisFixture.length, ...centreAvisFixture)
+    centresFixture.splice(0, centresFixture.length, centreCreteil, centreVitry)
+    centreArticlesFixture.splice(
+      0,
+      centreArticlesFixture.length,
+      structuredClone(articleFixtureBase)
+    )
+    catalogueCourses.items.splice(
+      0,
+      catalogueCourses.items.length,
+      structuredClone(catalogueCourseFixture)
+    )
+    catalogueCourses.total = 12
+    catalogueCourses.facets = {
+      families: { sante: 12 },
+      subFamilies: {},
+      modalities: {},
+      durations: {},
+      locations: {},
+      cpf: 0,
+      certifying: 0
+    }
     directusRequestMock.mockImplementation(async () => {
       return routeMock.params.slug === 'creteil' ? [centreCreteil] : []
     })
@@ -615,6 +670,84 @@ describe('pages/centres/[slug]', () => {
     expect(navigateToMock).not.toHaveBeenCalled()
   })
 
+  it('renvoie un statut 404 quand le centre est introuvable et 500 en cas d’erreur', async () => {
+    routeMock.params.slug = 'inconnu'
+    routeMock.path = '/centres/inconnu'
+    await mountPage()
+    expect(setResponseStatusMock).toHaveBeenCalledWith(requestEvent, 404, 'Centre introuvable')
+  })
+
+  it('renvoie un statut 500 quand le chargement échoue', async () => {
+    forceError = new Error('API down')
+    await mountPage()
+    expect(setResponseStatusMock).toHaveBeenCalledWith(
+      requestEvent,
+      500,
+      'Erreur de chargement du centre'
+    )
+  })
+
+  it('propage l’erreur de requête via useAsyncData', async () => {
+    directusRequestMock.mockRejectedValue(new Error('directus down'))
+    const wrapper = await mountPage()
+    expect(wrapper.text()).toContain("Les informations du centre n'ont pas pu être chargées.")
+  })
+
+  it('affiche le bouton de téléchargement du certificat Qualiopi', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      { ...centreCreteil, qualiopi_certificate: 'cert-file-uuid' }
+    ])
+    const wrapper = await mountPage()
+
+    const link = wrapper
+      .findAll('a')
+      .find((a) => a.text().includes('Télécharger le certificat Qualiopi'))
+    expect(link).toBeTruthy()
+    expect(link!.attributes('href')).toContain('cert-file-uuid')
+  })
+
+  it('affiche le message quand aucune session n’est programmée', async () => {
+    catalogueCourses.items.splice(0, catalogueCourses.items.length)
+    const wrapper = await mountPage()
+    expect(wrapper.text()).toContain('Aucune session programmée dans ce centre pour le moment')
+  })
+
+  it('n’affiche pas d’email quand le code postal et l’email sont absents', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      { ...centreCreteil, postal_code: null, email: null }
+    ])
+    const wrapper = await mountPage()
+    expect(wrapper.text()).not.toContain('contact94@learnup-academy.com')
+    expect(wrapper.text()).not.toContain('creteil@learnupacademy.fr')
+  })
+
+  it('navigue vers la fiche d’un autre centre sélectionné sur la mini-carte', async () => {
+    const wrapper = await mountPage()
+    await wrapper.find('.select-vitry').trigger('click')
+    expect(navigateToMock).toHaveBeenCalledWith('/centres/vitry')
+  })
+
+  it('met à jour le marqueur actif sans naviguer pour le centre courant', async () => {
+    const wrapper = await mountPage()
+    await wrapper.find('.select-same').trigger('click')
+    await wrapper.find('.select-empty').trigger('click')
+    expect(navigateToMock).not.toHaveBeenCalledWith('/centres/creteil')
+    expect(navigateToMock).not.toHaveBeenCalledWith('/centres/')
+  })
+
+  it('retombe sur la ville quand le centre voisin n’a pas de coordonnées', async () => {
+    geoPosition.value = { lat: 48.85, lng: 2.35 }
+    centresFixture.splice(0, centresFixture.length, {
+      ...centreVitry,
+      latitude: null,
+      longitude: null
+    })
+    const wrapper = await mountPage()
+    const card = wrapper.findAll('.center-card').find((c) => c.text().includes('Vitry'))
+    expect(card).toBeTruthy()
+    expect(card!.text()).toContain('Vitry-sur-Seine')
+  })
+
   it('la recherche de l’état introuvable redirige vers /formations avec la requête', async () => {
     routeMock.params.slug = 'inconnu'
     routeMock.path = '/centres/inconnu'
@@ -626,5 +759,329 @@ describe('pages/centres/[slug]', () => {
       path: '/formations',
       query: { q: 'caces' }
     })
+  })
+
+  it('redirige sans query quand la recherche est vide', async () => {
+    routeMock.params.slug = 'inconnu'
+    routeMock.path = '/centres/inconnu'
+    const wrapper = await mountPage()
+
+    await wrapper.find('.search-empty').trigger('click')
+
+    expect(navigateToMock).toHaveBeenCalledWith({ path: '/formations', query: {} })
+  })
+
+  it('affiche une fiche centre sans aucune information facultative', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      {
+        ...centreCreteil,
+        image: null,
+        contact_name: null,
+        contact_role: null,
+        franchise_since: null,
+        description: null,
+        specialties: null,
+        opening_hours: null,
+        transport: null,
+        parking: null,
+        pmr_accessible: false,
+        phone: null,
+        mobile: null,
+        email: null,
+        postal_code: null,
+        city: null,
+        department: null,
+        region: null,
+        latitude: null,
+        longitude: null,
+        qualiopi_certified: false,
+        qualiopi_certifier: null,
+        qualiopi_certificate: null,
+        qualiopi_certificate_number: null,
+        qualiopi_valid_until: null
+      }
+    ])
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Centre LEARN UP ACADEMY de Créteil')
+    // Ni photo, ni carte d'accès (pas de coordonnées), breadcrumb sans région.
+    expect(wrapper.find('figure').exists()).toBe(false)
+    expect(wrapper.findComponent({ name: 'CenterMap' }).exists()).toBe(false)
+    expect(routeMock.meta.breadcrumb).toEqual([
+      { label: 'Accueil', to: '/' },
+      { label: 'Réseau de centres', to: '/centres' },
+      { label: 'Centre LEARN UP ACADEMY de Créteil' }
+    ])
+    const [source] = seoArgs()
+    expect(source).toEqual(
+      expect.objectContaining({
+        seo_description: 'Centre de formation  — LEARN UP ACADEMY.'
+      })
+    )
+  })
+
+  it('affiche le responsable sans rôle ni date de franchise', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      {
+        ...centreCreteil,
+        contact_name: 'Marie Dupont',
+        contact_role: null,
+        franchise_since: null,
+        image: 'portrait-responsable'
+      }
+    ])
+    const wrapper = await mountPage()
+
+    const figcaption = wrapper.find('figcaption')
+    expect(figcaption.exists()).toBe(true)
+    expect(figcaption.text()).toContain('Marie Dupont')
+    expect(figcaption.findAll('p')).toHaveLength(1)
+  })
+
+  it('affiche la référence quand le certificateur manque et ignore une date invalide', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      {
+        ...centreCreteil,
+        qualiopi_certifier: null,
+        qualiopi_certificate_number: 'REF-42',
+        qualiopi_valid_until: 'date-invalide'
+      }
+    ])
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('réf. REF-42')
+    expect(wrapper.text()).not.toContain('valide jusqu')
+  })
+
+  it('affiche « 1 formation · 1 famille » au singulier sans lien liste', async () => {
+    catalogueCourses.total = 1
+    catalogueCourses.facets = { ...catalogueCourses.facets, families: { sante: 1 } }
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('1 formation')
+    expect(wrapper.text()).toContain('1 famille')
+    expect(wrapper.text()).not.toContain('formations du centre')
+  })
+
+  it('masque le lien catalogue quand le total est absent', async () => {
+    catalogueCourses.total = null as unknown as number
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).not.toContain('formations du centre')
+  })
+
+  it('retombe sur /formations quand la fiche catalogue n’a pas de famille', async () => {
+    catalogueCourses.items.splice(
+      0,
+      catalogueCourses.items.length,
+      structuredClone({ ...catalogueCourseFixture, familySlug: null })
+    )
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('SST — Sauveteur secouriste du travail')
+    const sessionLink = wrapper
+      .findAll('a')
+      .find((a) => a.text().includes("S'inscrire") || a.text().includes('informé'))
+    expect(sessionLink?.attributes('href')).toBe('/formations')
+  })
+
+  it('couvre les variantes de sessions (lieu, date, places, modalité)', async () => {
+    const future = new Date()
+    future.setUTCDate(future.getUTCDate() + 30)
+    const futureIso = future.toISOString().slice(0, 10)
+    catalogueCourses.items.splice(0, catalogueCourses.items.length, {
+      ...structuredClone(catalogueCourseFixture),
+      durationDays: null,
+      sessions: [
+        {
+          id: null,
+          startDate: futureIso,
+          endDate: null,
+          modality: null,
+          seatsRemaining: null,
+          location: {
+            name: 'C',
+            city: 'Créteil',
+            postalCode: '94',
+            department: '94',
+            region: 'IDF',
+            centreSlug: 'creteil'
+          }
+        },
+        {
+          id: 'sess-full',
+          startDate: futureIso,
+          endDate: null,
+          modality: 'hybride',
+          seatsRemaining: 0,
+          location: {
+            name: 'C',
+            city: 'Créteil',
+            postalCode: '94',
+            department: '94',
+            region: 'IDF',
+            centreSlug: 'creteil'
+          }
+        },
+        {
+          id: 'sess-nodate',
+          startDate: null,
+          endDate: null,
+          modality: null,
+          seatsRemaining: null,
+          location: {
+            name: 'C',
+            city: 'Créteil',
+            postalCode: '94',
+            department: '94',
+            region: 'IDF',
+            centreSlug: 'creteil'
+          }
+        },
+        {
+          id: 'sess-autre',
+          startDate: futureIso,
+          endDate: null,
+          modality: null,
+          seatsRemaining: 3,
+          location: {
+            name: 'A',
+            city: 'Lyon',
+            postalCode: '69',
+            department: '69',
+            region: 'ARA',
+            centreSlug: 'autre'
+          }
+        },
+        {
+          id: 'sess-noloc',
+          startDate: futureIso,
+          endDate: null,
+          modality: null,
+          seatsRemaining: 2,
+          location: null
+        }
+      ]
+    })
+    const wrapper = await mountPage()
+
+    // Session complète à 0 place → « Être informé » ; les sessions hors
+    // centre ou sans date sont filtrées.
+    expect(wrapper.text()).toContain("Être informé d'une place")
+    expect(wrapper.findAll('a').filter((a) => a.text().includes('informé')).length).toBeGreaterThan(
+      0
+    )
+  })
+
+  it('supporte les collections Directus non résolues', async () => {
+    nullCollections.add('avis')
+    nullCollections.add('articles')
+    nullCollections.add('centres')
+    const wrapper = await mountPage()
+
+    // Sections avis/actualités/autres centres masquées, fiche toujours rendue.
+    expect(wrapper.text()).toContain('Centre LEARN UP ACADEMY de Créteil')
+    expect(wrapper.text()).not.toContain('Toutes les actualités')
+  })
+
+  it('affiche les centres voisins sans spécialités ni coordonnées', async () => {
+    geoPosition.value = { lat: 48.85, lng: 2.35 }
+    centresFixture.splice(0, centresFixture.length, centreCreteil, {
+      ...centreVitry,
+      specialties: null,
+      latitude: null,
+      longitude: null,
+      city: null
+    })
+    const wrapper = await mountPage()
+
+    const card = wrapper.findAll('.center-card').find((c) => c.text().includes('Vitry'))
+    expect(card).toBeTruthy()
+  })
+
+  it('gère un catalogue non résolu (sections formations et sessions vides)', async () => {
+    catalogNull.value = true
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Centre LEARN UP ACADEMY de Créteil')
+    expect(wrapper.text()).toContain('Aucune session programmée dans ce centre')
+  })
+
+  it('utilise les replis des articles sans catégorie ni extrait', async () => {
+    centreArticlesFixture.splice(0, centreArticlesFixture.length, {
+      ...articleFixtureBase,
+      category: null,
+      excerpt: null
+    })
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Actualité du centre de Créteil')
+  })
+
+  it('affiche le pluriel quand plusieurs familles sont présentes', async () => {
+    catalogueCourses.facets = {
+      ...catalogueCourses.facets,
+      families: { sante: 8, caces: 4 }
+    }
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('familles')
+  })
+
+  it('retombe sur « Réseau national » et une adresse vide dans la carte', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      { ...centreCreteil, region: null, address: null, qualiopi_valid_until: null }
+    ])
+    const wrapper = await mountPage()
+
+    const map = wrapper.findComponent({ name: 'CenterMap' })
+    expect(map.exists()).toBe(true)
+    expect(map.props('caption')).toBe('Réseau national')
+  })
+
+  it('ignore une date de validité Qualiopi invalide', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      { ...centreCreteil, qualiopi_valid_until: 'date-invalide' }
+    ])
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).not.toContain('mars 2027')
+  })
+
+  it('retombe sur les libellés bruts quand les familles sont null', async () => {
+    nullCollections.add('familles_formation')
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Centre LEARN UP ACADEMY de Créteil')
+  })
+
+  it('couvre les replis catalogue : facettes nulles, modalités inconnues', async () => {
+    catalogueCourses.facets = null as never
+    catalogueCourses.items.splice(
+      0,
+      catalogueCourses.items.length,
+      structuredClone({
+        ...catalogueCourseFixture,
+        modalities: null,
+        sessions: [
+          { ...catalogueCourseFixture.sessions![0]!, modality: null },
+          { ...catalogueCourseFixture.sessions![0]!, id: 'sess-2', modality: 'mode-x' }
+        ]
+      }),
+      structuredClone({ ...catalogueCourseFixture, slug: 'sst-2', modalities: ['mode-x'] })
+    )
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Prochaines sessions')
+    expect(wrapper.findAll('.session-card').length).toBeGreaterThan(0)
+  })
+
+  it('retombe sur une URL vide quand le certificat est absent', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      { ...centreCreteil, qualiopi_certificate: null }
+    ])
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Qualiopi')
   })
 })

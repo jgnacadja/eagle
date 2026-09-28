@@ -24,48 +24,43 @@ vi.mock('~/composables/useCatalog', () => ({
     description: c.description ?? '',
     family: c.familySlug ?? 'Autre',
     meta: '',
-    to: c.familySlug ? `/formations/${c.familySlug}/${c.slug}` : `/formations/${c.slug}`
+    to: c.familySlug ? `/formations/${c.familySlug}/${c.slug}` : null
   }),
   useCatalog: vi.fn(async () => ({
-    data: ref({
-      items: [
-        {
-          slug: 'caces-r489-chariots-elevateurs',
-          title: 'CACES® R489 Chariots élévateurs',
-          familySlug: 'caces-conduite-engins',
-          description: 'Catégories 1A, 1B, 3 et 5 — Initiale et recyclage.'
-        },
-        {
-          slug: 'habilitation-electrique-b1v-b2v',
-          title: 'Habilitation électrique B1V / B2V',
-          familySlug: 'habilitation-electrique',
-          description: 'Travaux électriques basse tension et interventions.'
-        }
-      ],
-      total: 2,
-      page: 1,
-      pages: 1
-    }),
+    data: ref(
+      entrepriseState.catalogNull
+        ? null
+        : {
+            items: entrepriseState.catalogItems,
+            total: entrepriseState.catalogItems.length,
+            page: 1,
+            pages: 1
+          }
+    ),
     pending: ref(false),
     error: ref(null),
     refresh: vi.fn()
   }))
 }))
 
-vi.stubGlobal('useDirectusList', (collection: string) => {
-  if (collection === 'avis') {
-    return ref([
-      {
-        slug: 'avis-1',
-        author: 'Responsable QHSE — logistique',
-        quote:
-          'Douze habilitations à renouveler sur trois sites, tout était planifié en une semaine.',
-        stars: 5,
-        published_at: '2024-03-01'
-      }
-    ])
-  }
-  return ref([
+const entrepriseState = vi.hoisted(() => ({
+  catalogItems: [
+    {
+      slug: 'caces-r489-chariots-elevateurs',
+      title: 'CACES® R489 Chariots élévateurs',
+      familySlug: 'caces-conduite-engins',
+      description: 'Catégories 1A, 1B, 3 et 5 — Initiale et recyclage.'
+    },
+    {
+      slug: 'habilitation-electrique-b1v-b2v',
+      title: 'Habilitation électrique B1V / B2V',
+      familySlug: 'habilitation-electrique',
+      description: 'Travaux électriques basse tension et interventions.'
+    }
+  ] as { slug: string; title: string; familySlug: string | null; description?: string }[],
+  catalogNull: false,
+  avisNull: false,
+  centres: [
     {
       slug: 'centre-lyon',
       name: 'Centre Lyon Est',
@@ -78,7 +73,24 @@ vi.stubGlobal('useDirectusList', (collection: string) => {
       latitude: 45.764,
       longitude: 4.8357
     }
-  ])
+  ] as unknown[]
+}))
+
+vi.stubGlobal('useDirectusList', (collection: string) => {
+  if (collection === 'avis') {
+    if (entrepriseState.avisNull) return ref(null)
+    return ref([
+      {
+        slug: 'avis-1',
+        author: 'Responsable QHSE — logistique',
+        quote:
+          'Douze habilitations à renouveler sur trois sites, tout était planifié en une semaine.',
+        stars: 5,
+        published_at: '2024-03-01'
+      }
+    ])
+  }
+  return ref(entrepriseState.centres)
 })
 
 function mountPage() {
@@ -99,6 +111,7 @@ function mountPage() {
           template: '<div class="center-map-mock" :data-count="centers?.length" />'
         },
         SearchInput: {
+          name: 'SearchInput',
           props: ['modelValue', 'placeholder', 'inputId'],
           emits: ['update:modelValue', 'submit'],
           template: `
@@ -136,6 +149,36 @@ function mountPage() {
 describe('EntreprisePage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    entrepriseState.catalogNull = false
+    entrepriseState.avisNull = false
+    entrepriseState.centres = [
+      {
+        slug: 'centre-lyon',
+        name: 'Centre Lyon Est',
+        address: '10 Rue de la République',
+        postal_code: '69001',
+        city: 'Lyon',
+        department: 'Rhône',
+        region: 'Auvergne-Rhône-Alpes',
+        specialties: ['CACES', 'SST'],
+        latitude: 45.764,
+        longitude: 4.8357
+      }
+    ]
+    entrepriseState.catalogItems = [
+      {
+        slug: 'caces-r489-chariots-elevateurs',
+        title: 'CACES® R489 Chariots élévateurs',
+        familySlug: 'caces-conduite-engins',
+        description: 'Catégories 1A, 1B, 3 et 5 — Initiale et recyclage.'
+      },
+      {
+        slug: 'habilitation-electrique-b1v-b2v',
+        title: 'Habilitation électrique B1V / B2V',
+        familySlug: 'habilitation-electrique',
+        description: 'Travaux électriques basse tension et interventions.'
+      }
+    ]
   })
 
   it('affiche le hero et la carte flottante de performance durable', async () => {
@@ -283,5 +326,83 @@ describe('EntreprisePage', () => {
     expect(wrapper.find('a[href="#multisites"]').exists()).toBe(true)
     expect(wrapper.find('a[href="/entreprise-reseau"]').exists()).toBe(true)
     expect(wrapper.find('a[href="/rejoindre-le-reseau"]').exists()).toBe(true)
+  })
+
+  it('affiche le repli quand aucun centre n’est retourné', async () => {
+    entrepriseState.centres = []
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('La carte des centres est temporairement indisponible.')
+  })
+
+  it('retombe sur les formations statiques quand le catalogue est vide', async () => {
+    entrepriseState.catalogItems = []
+    const wrapper = mountPage()
+    await flushPromises()
+
+    // Le fallback éditorial garde des cartes « formation » même sans API.
+    expect(wrapper.text()).toContain('AIPR')
+  })
+
+  it('retombe sur les formations statiques quand le catalogue est null', async () => {
+    entrepriseState.catalogNull = true
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('AIPR')
+  })
+
+  it('dégrade titre/lien pour une formation sans famille ni description', async () => {
+    entrepriseState.catalogItems = [
+      { slug: 'orpheline', title: 'Formation orpheline', familySlug: null }
+    ]
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(wrapper.find('a[href="/formations"]').exists()).toBe(true)
+  })
+
+  it('retombe sur la saisie quand submit est émis sans valeur', async () => {
+    const wrapper = mountPage()
+    await flushPromises()
+
+    const [hero, final] = wrapper.findAllComponents({ name: 'SearchInput' })
+    await hero!.vm.$emit('submit', '   ')
+    expect(navigateToMock).toHaveBeenCalledWith({
+      path: '/parler-a-votre-conseiller',
+      query: {}
+    })
+
+    navigateToMock.mockClear()
+    await wrapper.find('#entreprises-hero-search').setValue('Habilitation B2V')
+    await hero!.vm.$emit('submit')
+    expect(navigateToMock).toHaveBeenCalledWith({
+      path: '/parler-a-votre-conseiller',
+      query: { q: 'Habilitation B2V' }
+    })
+
+    navigateToMock.mockClear()
+    await wrapper.find('#entreprises-final-search').setValue('Échéance amiante')
+    await final!.vm.$emit('submit')
+    expect(navigateToMock).toHaveBeenCalledWith({
+      path: '/parler-a-votre-conseiller',
+      query: { q: 'Échéance amiante' }
+    })
+
+    navigateToMock.mockClear()
+    await final!.vm.$emit('submit', '   ')
+    expect(navigateToMock).toHaveBeenCalledWith({
+      path: '/parler-a-votre-conseiller',
+      query: {}
+    })
+  })
+
+  it('dégrade la liste d’avis quand elle est null', async () => {
+    entrepriseState.avisNull = true
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Pour aller plus loin')
   })
 })

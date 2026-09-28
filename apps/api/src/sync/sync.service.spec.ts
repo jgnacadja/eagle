@@ -139,4 +139,52 @@ describe('SyncService', () => {
 
     expect(cache.setSyncRun).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'failed' }))
   })
+  it('skips a run while one is already in progress', async () => {
+    vi.mocked(client.fetchAllPrograms).mockImplementation(
+      () => new Promise((resolve) => setTimeout(() => resolve([sampleProgram]), 20))
+    )
+
+    const first = service.run()
+    await service.run()
+    await first
+
+    expect(client.fetchAllPrograms).toHaveBeenCalledTimes(1)
+  })
+
+  it('registers the cron job with the default expression when unset', () => {
+    vi.mocked(config.get).mockReturnValue(undefined)
+
+    service.onModuleInit()
+
+    expect(scheduler.addCronJob).toHaveBeenCalled()
+  })
+
+  it('logs cron-triggered failures without crashing', async () => {
+    vi.mocked(config.get).mockImplementation((key: string) =>
+      key === 'NODE_ENV' ? 'production' : '0 * * * *'
+    )
+    vi.mocked(client.fetchAllPrograms).mockRejectedValue(new Error('cron network'))
+    service.onModuleInit()
+    const job = scheduler.addCronJob.mock.calls[0][1] as {
+      fireOnTick: () => void
+    }
+
+    job.fireOnTick()
+    await vi.waitFor(() => {
+      expect(cache.setSyncRun).toHaveBeenLastCalledWith(
+        expect.objectContaining({ status: 'failed', error: 'cron network' })
+      )
+    })
+  })
+
+  it('records unknown errors thrown as non-Error values', async () => {
+    vi.mocked(client.fetchAllPrograms).mockResolvedValue([sampleProgram])
+    vi.mocked(catalog.upsertMany).mockRejectedValue('plain string failure')
+
+    await expect(service.run()).rejects.toBe('plain string failure')
+
+    expect(cache.setSyncRun).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: 'failed', error: 'Unknown error' })
+    )
+  })
 })

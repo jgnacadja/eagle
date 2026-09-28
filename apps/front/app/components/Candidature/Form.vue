@@ -137,29 +137,15 @@
       </p>
     </div>
 
-    <div>
-      <div class="flex items-center gap-sm">
-        <Checkbox
-          id="candidature-consentement"
-          v-model="consentement"
-          :aria-invalid="showError('consentement') || undefined"
-          :aria-describedby="
-            showError('consentement') ? 'candidature-consentement-error' : undefined
-          "
-        />
-        <Label for="candidature-consentement" variant="muted">
-          J'accepte que ces informations soient utilisées pour l'étude de ma candidature. Elles ne
-          sont utilisées à aucune autre fin.
-        </Label>
-      </div>
-      <p
-        v-if="showError('consentement')"
-        id="candidature-consentement-error"
-        class="mt-xs text-small font-semibold text-danger"
-      >
-        {{ errors.consentement }}
-      </p>
-    </div>
+    <ConsentField
+      id="candidature-consentement"
+      v-model="consentement"
+      :invalid="showError('consentement')"
+      :error="errors.consentement"
+    >
+      J'accepte que ces informations soient utilisées pour l'étude de ma candidature. Elles ne sont
+      utilisées à aucune autre fin.
+    </ConsentField>
 
     <div class="flex flex-col gap-sm sm:flex-row sm:items-center">
       <Button
@@ -184,6 +170,7 @@
 import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
+import { leadFields } from '~/utils/leadFields'
 import type { CandidaturePayload, CandidatureVoie } from '~/types/candidature'
 
 const props = defineProps<{
@@ -207,23 +194,10 @@ const VOIE_OPTIONS: { value: CandidatureVoie; label: string }[] = [
 const { handleSubmit, errors, submitCount, defineField } = useForm({
   validationSchema: toTypedSchema(
     z.object({
-      nom: z
-        .string({ error: 'Indiquez votre nom et prénom.' })
-        .trim()
-        .min(1, 'Indiquez votre nom et prénom.'),
-      email: z
-        .string({ error: 'Indiquez votre e-mail professionnel.' })
-        .trim()
-        .min(1, 'Indiquez votre e-mail professionnel.')
-        .pipe(z.email('Format d’e-mail invalide.')),
-      telephone: z
-        .string({ error: 'Indiquez votre téléphone.' })
-        .trim()
-        .min(1, 'Indiquez votre téléphone.')
-        .refine(
-          (value) => value.replace(/\D/g, '').length >= 10,
-          'Numéro incomplet — 10 chiffres attendus.'
-        ),
+      ...leadFields({
+        email: 'Indiquez votre e-mail professionnel.',
+        consentement: 'Consentement requis pour envoyer la candidature.'
+      }),
       ville: z
         .string({ error: 'Indiquez la ville ou le territoire visé.' })
         .trim()
@@ -231,10 +205,7 @@ const { handleSubmit, errors, submitCount, defineField } = useForm({
       parcours: z
         .string({ error: 'Décrivez votre parcours et votre projet.' })
         .trim()
-        .min(1, 'Décrivez votre parcours et votre projet.'),
-      consentement: z
-        .boolean({ error: 'Consentement requis pour envoyer la candidature.' })
-        .refine((value) => value, 'Consentement requis pour envoyer la candidature.')
+        .min(1, 'Décrivez votre parcours et votre projet.')
     })
   ),
   initialValues: { consentement: false }

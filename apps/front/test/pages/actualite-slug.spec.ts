@@ -20,6 +20,7 @@ interface RouteMock {
 
 let routeMock: RouteMock
 let forceError: Error | null = null
+const requestEvent = { node: { req: {}, res: {} } }
 
 const articleFixture: Article = {
   id: 1,
@@ -93,24 +94,34 @@ vi.stubGlobal('watchEffect', watchEffect)
 vi.stubGlobal('onScopeDispose', onScopeDispose)
 vi.stubGlobal('definePageMeta', vi.fn())
 vi.stubGlobal('useRoute', () => routeMock)
-vi.stubGlobal('useAsyncData', async (key: string, handler: () => Promise<unknown>) => {
-  if (
-    forceError ||
-    (routeMock?.query.error === '1' && key === `article-${routeMock.params.slug}`)
-  ) {
-    return {
-      data: ref(null),
-      error: ref(forceError ?? new Error('down')),
-      refresh: refreshMock
+vi.stubGlobal(
+  'useAsyncData',
+  async (
+    key: string,
+    handler: () => Promise<unknown>,
+    options?: { getCachedData?: (k: string, nuxtApp: unknown) => unknown }
+  ) => {
+    // Exécute getCachedData comme Nuxt : le payload SSR est vide en test,
+    // mais la fonction doit être invoquée pour couvrir son repli.
+    options?.getCachedData?.(key, { payload: { data: {} }, static: { data: {} } })
+    if (
+      forceError ||
+      (routeMock?.query.error === '1' && key === `article-${routeMock.params.slug}`)
+    ) {
+      return {
+        data: ref(null),
+        error: ref(forceError ?? new Error('down')),
+        refresh: refreshMock
+      }
+    }
+    try {
+      return { data: ref(await handler()), error: ref(null), refresh: refreshMock }
+    } catch (e) {
+      return { data: ref(null), error: ref(e), refresh: refreshMock }
     }
   }
-  try {
-    return { data: ref(await handler()), error: ref(null), refresh: refreshMock }
-  } catch (e) {
-    return { data: ref(null), error: ref(e), refresh: refreshMock }
-  }
-})
-vi.stubGlobal('useRequestEvent', () => undefined)
+)
+vi.stubGlobal('useRequestEvent', () => requestEvent)
 vi.stubGlobal('setResponseStatus', setResponseStatusMock)
 vi.stubGlobal('useContentSeo', seoMock)
 vi.stubGlobal('navigateTo', navigateToMock)
@@ -370,6 +381,115 @@ describe('pages/actualites/[slug]', () => {
     expect(navigateToMock).not.toHaveBeenCalled()
   })
 
+  it('affiche la photo de l’auteur quand elle est renseignée', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      { ...articleFixture, author_image: 'portrait-auteur' }
+    ])
+    const wrapper = await mountPage()
+
+    const img = wrapper.find('img[alt="Équipe réglementation LEARN UP ACADEMY"]')
+    expect(img.exists()).toBe(true)
+    expect(img.attributes('src')).toContain('portrait-auteur')
+  })
+
+  it('retombe sur les initiales « LU » quand l’auteur est anonyme', async () => {
+    directusRequestMock.mockImplementation(async () => [{ ...articleFixture, author_name: null }])
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('LU')
+  })
+
+  it('propage l’erreur Directus via useAsyncData', async () => {
+    directusRequestMock.mockRejectedValue(new Error('directus down'))
+    const wrapper = await mountPage()
+    expect(wrapper.text()).toContain("L'article n'a pas pu être chargé.")
+  })
+
+  it('masque la formation liée quand elle n’est pas publiée', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      {
+        ...articleFixture,
+        related_formation: { ...articleFixture.related_formation, status: 'draft' }
+      }
+    ])
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).not.toContain('Recyclage CACES R489 — toutes catégories')
+  })
+
+  it('masque la formation liée quand la famille est absente', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      {
+        ...articleFixture,
+        related_formation: { ...articleFixture.related_formation, famille: null }
+      }
+    ])
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).not.toContain('Recyclage CACES R489 — toutes catégories')
+  })
+
+  it('adapte le fil d’Ariane selon la source ?from=/formations', async () => {
+    routeMock.query = { from: '/formations/caces-conduite-engins' }
+    await mountPage()
+
+    expect(routeMock.meta.breadcrumb).toContainEqual({
+      label: 'Formations',
+      to: '/formations'
+    })
+  })
+
+  it('adapte le fil d’Ariane selon la source ?from=/centres', async () => {
+    routeMock.query = { from: '/centres/creteil' }
+    await mountPage()
+
+    expect(routeMock.meta.breadcrumb).toContainEqual({
+      label: 'Réseau de centres',
+      to: '/centres'
+    })
+  })
+
+  it('n’affiche pas « Lien copié » quand le presse-papiers est indisponible', async () => {
+    const wrapper = await mountPage()
+    await wrapper
+      .findAll('button')
+      .find((b) => b.attributes('aria-label') === "Copier le lien de l'article")!
+      .trigger('click')
+    await flushPromises()
+
+    expect(
+      wrapper.findAll('button').find((b) => b.attributes('aria-label') === 'Lien copié')
+    ).toBeUndefined()
+  })
+
+  it('réinitialise « Lien copié » après le délai et au démontage', async () => {
+    vi.useFakeTimers()
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(window.navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true
+    })
+    const wrapper = await mountPage()
+
+    await wrapper
+      .findAll('button')
+      .find((b) => b.attributes('aria-label') === "Copier le lien de l'article")!
+      .trigger('click')
+    await vi.advanceTimersByTimeAsync(0)
+
+    expect(
+      wrapper.findAll('button').find((b) => b.attributes('aria-label') === 'Lien copié')
+    ).toBeTruthy()
+
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(
+      wrapper.findAll('button').find((b) => b.attributes('aria-label') === 'Lien copié')
+    ).toBeUndefined()
+
+    wrapper.unmount()
+    vi.useRealTimers()
+  })
+
   it('la recherche de l’état introuvable redirige vers /actualites avec la requête', async () => {
     routeMock.params.slug = 'inconnu'
     routeMock.path = '/actualites/inconnu'
@@ -381,5 +501,56 @@ describe('pages/actualites/[slug]', () => {
       path: '/actualites',
       query: { q: 'caces' }
     })
+  })
+
+  it('masque la formation liée quand son chargement échoue', async () => {
+    fetchMock.mockRejectedValue(new Error('down'))
+    const wrapper = await mountPage()
+
+    expect(
+      wrapper
+        .find('a[href="/formations/caces-conduite-engins/caces-r489-chariots-elevateurs"]')
+        .exists()
+    ).toBe(false)
+  })
+
+  it('retombe sur « Auteur » pour l’alt quand le nom manque avec photo', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      {
+        ...articleFixture,
+        author_image: 'uuid-photo',
+        author_name: null,
+        content: null,
+        excerpt: null
+      }
+    ])
+    const wrapper = await mountPage()
+
+    expect(wrapper.find('img[alt="Auteur"]').exists()).toBe(true)
+  })
+
+  it('adapte la carte formation quand la famille n’a pas de nom et la formation pas de famille', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      {
+        ...articleFixture,
+        related_formation: {
+          ...articleFixture.related_formation,
+          famille: { slug: 'caces-conduite-engins', name: null }
+        }
+      }
+    ])
+    fetchMock.mockResolvedValue({ ...relatedCourse, familySlug: null })
+    const wrapper = await mountPage()
+
+    expect(wrapper.find('a[href^="/formations/"]').exists()).toBe(false)
+  })
+
+  it('active le titre courant au clic dans la table des matières', async () => {
+    const wrapper = await mountPage()
+
+    const link = wrapper.find('a[href="#pourquoi-2027-concentre-les-echeances"]')
+    await link.trigger('click')
+
+    expect(link.classes()).toContain('font-bold')
   })
 })

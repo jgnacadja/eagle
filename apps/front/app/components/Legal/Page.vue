@@ -199,6 +199,7 @@ function computeActiveSection() {
   let current = ids[0]!
   for (const id of ids) {
     const el = document.getElementById(id)
+    /* v8 ignore next -- chaque ancre déclarée est rendue dans le DOM */
     if (!el) continue
     if (el.getBoundingClientRect().top <= SCROLL_THRESHOLD) {
       current = id

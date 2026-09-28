@@ -76,6 +76,15 @@ describe('CatalogueFilters', () => {
     expect(wrapper.emitted('update:modalities')?.[0]).toEqual([['presentiel']])
   })
 
+  it('removes the modality when an active pill is clicked again', async () => {
+    const wrapper = mountFilters({ modalities: ['presentiel', 'distanciel'] })
+
+    const presentiel = wrapper.findAll('button').find((b) => b.text() === 'Présentiel')
+    await presentiel?.trigger('click')
+
+    expect(wrapper.emitted('update:modalities')?.[0]).toEqual([['distanciel']])
+  })
+
   it('emits updated durations when a checkbox is toggled', async () => {
     const wrapper = mountFilters()
 
@@ -116,5 +125,21 @@ describe('CatalogueFilters', () => {
     await wrapper.find('input[type="text"]').setValue('')
 
     expect(wrapper.emitted('update:location')?.[0]).toEqual([''])
+  })
+
+  it('emits update:cpf when the CPF checkbox is toggled', async () => {
+    const wrapper = mountFilters({ cpf: false })
+
+    await wrapper.find('#filter-cpf').trigger('click')
+
+    expect(wrapper.emitted('update:cpf')?.[0]).toEqual([true])
+  })
+
+  it('emits update:certifying when the certifying checkbox is toggled', async () => {
+    const wrapper = mountFilters({ certifying: false })
+
+    await wrapper.find('#filter-certifying').trigger('click')
+
+    expect(wrapper.emitted('update:certifying')?.[0]).toEqual([true])
   })
 })

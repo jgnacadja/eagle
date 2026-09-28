@@ -16,4 +16,14 @@ describe('CtaBanner', () => {
     expect(wrapper.text()).toContain('On vous rappelle.')
     expect(wrapper.text()).toContain('Action')
   })
+
+  it('generates a title id when titleId is not provided', () => {
+    const wrapper = mount(CtaBanner, {
+      props: { title: 'Prêt ?', text: 'On vous écoute.' }
+    })
+
+    const heading = wrapper.find('h2')
+    expect(heading.attributes('id')).toBeTruthy()
+    expect(wrapper.attributes('aria-labelledby')).toBe(heading.attributes('id'))
+  })
 })

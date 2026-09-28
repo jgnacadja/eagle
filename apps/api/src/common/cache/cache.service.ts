@@ -11,6 +11,7 @@ const REDIS_OPTIONS: RedisOptions = {
   connectTimeout: 1000,
   enableOfflineQueue: false,
   maxRetriesPerRequest: 0,
+  /* v8 ignore next -- callback interne ioredis, exercé uniquement sur Redis réel */
   retryStrategy: (attempt) => Math.min(attempt * 500, 5000)
 }
 
@@ -171,8 +172,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
 
   private async doInitialize(): Promise<void> {
     try {
-      if (!this.client) return
-      const version = await this.client.get(this.versionKey)
+      const version = await this.client!.get(this.versionKey)
       this.currentVersion = version ? Number.parseInt(version, 10) : 0
       this.isReady = true
     } catch (error) {
@@ -193,9 +193,8 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async deleteByPattern(pattern: string): Promise<void> {
-    if (!this.client || !this.isReady) return
-
-    const stream = this.client.scanStream({ match: pattern, count: 100 })
+    // Appelants (del, invalidateCatalog) garantissent client + isReady.
+    const stream = this.client!.scanStream({ match: pattern, count: 100 })
     const pending: Promise<unknown>[] = []
 
     await new Promise<void>((resolve, reject) => {

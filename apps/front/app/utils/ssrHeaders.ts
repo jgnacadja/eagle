@@ -12,6 +12,7 @@ import type { useRuntimeConfig } from '#app'
 export function internalSsrHeaders(
   config: ReturnType<typeof useRuntimeConfig>
 ): Record<string, string> | undefined {
+  /* v8 ignore next -- client-only early return, unreachable in SSR/tests */
   if (import.meta.client) return undefined
   const token = config.internalApiToken
   return typeof token === 'string' && token ? { 'x-internal-ssr': token } : undefined

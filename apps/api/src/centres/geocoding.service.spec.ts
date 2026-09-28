@@ -271,5 +271,99 @@ describe('GeocodingService', () => {
 
       expect(result).toEqual({ city: null, postcode: null, department: null, region: null })
     })
+
+    it('retourne des champs null quand la feature n’a pas de properties', async () => {
+      await build([])
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ features: [{ geometry: { coordinates: [2.45, 48.79] } }] })
+      })
+
+      const result = await service.reverseGeocode(48.79, 2.45)
+
+      expect(result).toEqual({ city: null, postcode: null, department: null, region: null })
+    })
+  })
+
+  it('retourne 0/0 quand la liste des centres échoue', async () => {
+    const deps = await build([])
+    deps.fetchCentresForGeocoding.mockRejectedValue(new Error('down'))
+
+    expect(await service.syncMissing()).toEqual({ geocoded: 0, failed: 0 })
+  })
+
+  it('compte un échec quand la persistance du centre échoue', async () => {
+    const deps = await build([
+      {
+        id: 9,
+        slug: 'fragile',
+        name: 'Centre fragile',
+        status: 'published',
+        address: '1 rue du Test, 75001 Paris',
+        geocoded_address: null
+      }
+    ])
+    fetchMock.mockResolvedValue({ ok: true, json: () => Promise.resolve(banResponse) })
+    deps.updateCentre.mockRejectedValue(new Error('write'))
+
+    const result = await service.syncMissing()
+
+    expect(result).toEqual({ geocoded: 0, failed: 1 })
+    expect(deps.invalidateCatalog).not.toHaveBeenCalled()
+  })
+
+  it('gère les réponses BAN dégradées (HTTP KO, sans coordonnées, sans contexte)', async () => {
+    const deps = await build([
+      {
+        id: 1,
+        slug: 'a',
+        name: 'A',
+        status: 'published',
+        address: 'adresse A',
+        geocoded_address: null
+      },
+      {
+        id: 2,
+        slug: 'b',
+        name: 'B',
+        status: 'published',
+        address: 'adresse B',
+        geocoded_address: null
+      },
+      {
+        id: 3,
+        slug: 'c',
+        name: 'C',
+        status: 'published',
+        address: 'adresse C',
+        geocoded_address: null
+      }
+    ])
+    fetchMock
+      .mockResolvedValueOnce({ ok: false, status: 503 })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({})
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            features: [{ geometry: { coordinates: [2.35, 48.85] } }]
+          })
+      })
+
+    const result = await service.syncMissing()
+
+    expect(result).toEqual({ geocoded: 1, failed: 2 })
+    expect(deps.updateCentre).toHaveBeenCalledWith(3, {
+      city: null,
+      postal_code: null,
+      department: null,
+      region: null,
+      latitude: 48.85,
+      longitude: 2.35,
+      geocoded_address: 'adresse C'
+    })
   })
 })

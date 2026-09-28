@@ -821,12 +821,31 @@ const familyShortcuts = computed<
     }
   })
 
+  const topSlugs = new Set(top.map((family) => family.slug))
+  const remainingOptions = familyOptions.value
+    .filter((family) => !topSlugs.has(family.key))
+    .map((family) => family.label)
+  const remainingDirectus = (directusFamilies.value ?? [])
+    .filter((family) => !topSlugs.has(family.slug))
+    .map((family) => family.name)
+  const remainingLabels = Array.from(new Set([...remainingOptions, ...remainingDirectus]))
+
+  const allCaption =
+    remainingLabels.length > 0
+      ? `${remainingLabels.slice(0, 3).join(', ')}…`
+      : familyOptions.value.length > 0
+        ? `${familyOptions.value
+            .slice(0, 3)
+            .map((family) => family.label)
+            .join(', ')}…`
+        : 'Management, bureautique, qualité…'
+
   return [
     ...top,
     {
       slug: 'all',
       label: 'Toutes les familles',
-      caption: 'Management, bureautique, qualité…',
+      caption: allCaption,
       linkLabel: 'Parcourir',
       to: null
     }

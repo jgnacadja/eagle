@@ -27,7 +27,7 @@
             <div>
               <h2 class="font-display text-h3 font-extrabold text-ink">Demande transmise</h2>
               <p class="mt-sm max-w-prose text-body text-ink-muted">
-                Un conseiller vous recontacte sous 24&nbsp;h ouvrées aux coordonnées indiquées.
+                Votre conseiller vous recontacte sous 24&nbsp;h ouvrées aux coordonnées indiquées.
               </p>
             </div>
             <div class="rounded-md border border-rule bg-surface px-xl py-md">
@@ -178,9 +178,6 @@
                 >
                   {{ errors.siret }}
                 </p>
-                <p v-else id="siret-hint" class="mt-xs text-meta text-ink-subtle">
-                  Utilisé pour identifier votre entreprise et votre territoire d'intervention.
-                </p>
               </div>
 
               <div>
@@ -225,7 +222,7 @@
                   {{ sending ? 'Envoi en cours…' : 'Envoyer ma demande' }}
                 </Button>
                 <p class="mt-sm text-center text-meta text-ink-subtle">
-                  Un conseiller vous recontacte sous 24&nbsp;h ouvrées.
+                  Votre conseiller vous recontacte sous 24&nbsp;h ouvrées.
                 </p>
                 <p
                   v-if="submitError"
@@ -318,7 +315,7 @@ const besoin = ref<ConseillerBesoin>('conseiller')
 
 const nextSteps = [
   "Votre demande est transmise à l'interlocuteur compétent de votre territoire.",
-  'Un conseiller vous recontacte sous 24 h ouvrées.',
+  'Votre conseiller vous recontacte sous 24 h ouvrées.',
   'Vous recevez une proposition adaptée : sessions, lieux, dates.'
 ]
 

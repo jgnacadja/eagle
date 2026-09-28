@@ -63,13 +63,13 @@
               </h2>
               <p class="mt-sm max-w-prose text-body text-ink-muted">
                 <template v-if="formationName">
-                  Un conseiller LEARN&nbsp;UP&nbsp;ACADEMY vous recontacte sous 24&nbsp;h ouvrées au
-                  sujet de la formation
+                  Votre conseiller LEARN&nbsp;UP&nbsp;ACADEMY vous recontacte sous 24&nbsp;h ouvrées
+                  au sujet de la formation
                   <strong class="font-semibold text-ink">{{ formationName }}</strong
                   >{{ confirmationSuffix }}
                 </template>
                 <template v-else>
-                  Un conseiller LEARN&nbsp;UP&nbsp;ACADEMY prend en charge votre demande et vous
+                  Votre conseiller LEARN&nbsp;UP&nbsp;ACADEMY prend en charge votre demande et vous
                   recontacte sous 24&nbsp;h ouvrées.
                 </template>
               </p>
@@ -477,7 +477,7 @@
               <li class="flex items-start gap-sm">
                 <IconCheck :size="16" class="mt-xs shrink-0 text-success" />
                 <span>
-                  Un conseiller LEARN&nbsp;UP&nbsp;ACADEMY organise la suite&nbsp;: devis,
+                  Votre conseiller LEARN&nbsp;UP&nbsp;ACADEMY organise la suite&nbsp;: devis,
                   convocations, attestations.
                 </span>
               </li>
@@ -724,7 +724,7 @@ const contextMeta = computed(() => {
     case 'sujet':
       return sujet.value!.body
     default:
-      return 'Un conseiller identifie le centre et la session adaptés.'
+      return 'Votre conseiller identifie le centre et la session adaptés.'
   }
 })
 

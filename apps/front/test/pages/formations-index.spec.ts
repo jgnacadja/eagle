@@ -158,13 +158,26 @@ const families: FamilleFormation[] = [
     seo_title: null,
     seo_description: null,
     seo_canonical: null
+  },
+  {
+    id: 4,
+    slug: 'management-leadership',
+    name: 'Management & Leadership',
+    status: 'published',
+    intro: null,
+    icon: null,
+    image: null,
+    seo_title: null,
+    seo_description: null,
+    seo_canonical: null
   }
 ]
 
 const counts = [
   { slug: 'caces-conduite-engins', count: 8 },
   { slug: 'securite-prevention', count: 5 },
-  { slug: 'habilitations-electriques', count: 2 }
+  { slug: 'habilitations-electriques', count: 2 },
+  { slug: 'management-leadership', count: 1 }
 ]
 
 const routerReplace = vi.fn()
@@ -452,6 +465,8 @@ describe('pages/formations/index', () => {
 
       const shortcuts = shortcutsList().findAll('li')
       expect(shortcuts.at(3)!.text()).toContain('Toutes les familles')
+      expect(shortcuts.at(3)!.text()).toContain('Management & Leadership…')
+      expect(shortcuts.at(3)!.text()).not.toContain('Management, bureautique, qualité…')
 
       const parcourirButton = shortcuts.at(3)!.find('button')
       expect(parcourirButton.exists()).toBe(true)

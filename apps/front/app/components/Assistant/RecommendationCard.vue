@@ -151,7 +151,7 @@ const props = withDefaults(
     demandeTo: string
     /** Alternative compacte (E4) : label + titre + justification + lien fiche. */
     compact?: boolean
-    /** Lien « parler à un conseiller » (variante sans session, É6). */
+    /** Lien « parler à votre conseiller » (variante sans session, É6). */
     advisorTo?: string
   }>(),
   { compact: false, advisorTo: undefined }

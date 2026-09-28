@@ -448,6 +448,11 @@
                   :author="avis.author"
                 />
               </div>
+              <div class="mt-lg">
+                <Button as-child variant="outline" size="pill" class="gap-xs">
+                  <NuxtLink to="/formations">Consulter</NuxtLink>
+                </Button>
+              </div>
             </section>
 
             <!-- Actualités liées au centre (relation M2O `articles.centre`) -->

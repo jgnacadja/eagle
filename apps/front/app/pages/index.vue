@@ -383,7 +383,7 @@
     <!-- ═══════════════════════════════════════════════════
          4. CONFIER (section sombre)
     ════════════════════════════════════════════════════ -->
-    <section id="confier" class="bg-primary-muted py-10 md:py-14 text-ink-inverse">
+    <section id="confier" class="bg-primary-muted py-9.75 text-ink-inverse">
       <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter">
         <div class="grid grid-cols-1 items-center gap-lg md:grid-cols-2 md:gap-xl lg:gap-2xl">
           <!-- Colonne gauche : Contenu & CTA -->

@@ -239,7 +239,7 @@
                                 :to="advisorTo"
                                 class="font-semibold text-primary underline underline-offset-2 transition-colors hover:text-accent-text"
                               >
-                                Être accompagné par un conseiller
+                                Être accompagné par votre conseiller
                               </NuxtLink>
                             </p>
                             <AssistantCompareTable
@@ -300,7 +300,7 @@
                                       class="shrink-0 text-primary"
                                       aria-hidden="true"
                                     />
-                                    Parler à un conseiller
+                                    Parler à votre conseiller
                                   </NuxtLink>
                                 </Button>
                               </li>
@@ -325,7 +325,7 @@
                                 class="rounded-full bg-accent px-md py-sm text-meta font-semibold text-ink hover:bg-accent-text hover:text-paper"
                               >
                                 <NuxtLink :to="advisorTo"
-                                  >Décrire mon besoin à un conseiller</NuxtLink
+                                  >Décrire mon besoin à votre conseiller</NuxtLink
                                 >
                               </Button>
                               <Button
@@ -426,7 +426,7 @@
                           variant="outline"
                           class="h-control flex-1 rounded-full border-rule px-md text-meta font-semibold text-ink hover:border-primary"
                         >
-                          <NuxtLink :to="advisorTo">Parler à un conseiller</NuxtLink>
+                          <NuxtLink :to="advisorTo">Parler à votre conseiller</NuxtLink>
                         </Button>
                       </div>
                     </div>

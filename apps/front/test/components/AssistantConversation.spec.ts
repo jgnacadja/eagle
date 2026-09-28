@@ -121,7 +121,7 @@ describe('AssistantConversation', () => {
     const text = wrapper.text()
     expect(text).toContain('Reformuler mon besoin')
     expect(text).toContain('Consulter le catalogue')
-    expect(text).toContain('Parler à un conseiller')
+    expect(text).toContain('Parler à votre conseiller')
     expect(text).toContain('Faire une demande personnalisée')
   })
 
@@ -135,7 +135,7 @@ describe('AssistantConversation', () => {
         }
       ]
     })
-    expect(wrapper.text()).toContain('Décrire mon besoin à un conseiller')
+    expect(wrapper.text()).toContain('Décrire mon besoin à votre conseiller')
     expect(wrapper.findAll('.rec-card')).toHaveLength(0)
   })
 

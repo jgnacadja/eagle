@@ -537,6 +537,7 @@ describe('pages/centres/[slug]', () => {
 
     expect(wrapper.text()).toContain('Avis')
     expect(wrapper.findAll('.testimonial-card').length).toBeGreaterThan(0)
+    expect(wrapper.text()).toContain('Consulter')
     expect(wrapper.text()).toContain('Actualités de votre centre')
     expect(wrapper.findAll('.article-card')).toHaveLength(1)
     expect(wrapper.text()).toContain('Actualité du centre de Créteil')

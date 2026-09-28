@@ -73,7 +73,7 @@ const props = withDefaults(
     recommendations: AssistantRecommendation[]
     /** Besoin utilisateur, rappelé en sous-titre (E10). */
     needSummary?: string
-    /** Lien « parler à un conseiller ». */
+    /** Lien « parler à votre conseiller ». */
     advisorTo?: string
   }>(),
   { needSummary: '', advisorTo: undefined }

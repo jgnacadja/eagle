@@ -1,6 +1,6 @@
 <template>
   <article
-    class="flex flex-col rounded-md border border-rule bg-paper p-md shadow-sm transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-md"
+    class="motion-surface flex flex-col rounded-md border border-rule bg-paper p-md shadow-sm hover:border-primary/40"
   >
     <div class="flex items-start justify-between gap-sm">
       <NuxtLink v-if="titleTo" :to="titleTo" class="group">

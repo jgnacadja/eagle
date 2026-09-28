@@ -323,38 +323,38 @@
 }
 
 .mega-menu-viewport {
-  transition: height 200ms ease-out;
+  transition: height var(--motion-duration-fast) var(--motion-easing-standard);
 }
 
 .mega-menu-viewport[data-state='open'] {
-  animation: mega-menu-in 200ms ease-out;
+  animation: mega-menu-in var(--motion-duration-fast) var(--motion-easing-enter);
 }
 
 .mega-menu-viewport[data-state='closed'] {
-  animation: mega-menu-out 150ms ease-in;
+  animation: mega-menu-out var(--motion-duration-fast) var(--motion-easing-exit);
 }
 
 [data-motion='from-start'] {
-  animation: nav-enter-from-start 200ms ease-out;
+  animation: nav-enter-from-start var(--motion-duration-fast) var(--motion-easing-enter);
 }
 
 [data-motion='from-end'] {
-  animation: nav-enter-from-end 200ms ease-out;
+  animation: nav-enter-from-end var(--motion-duration-fast) var(--motion-easing-enter);
 }
 
 [data-motion='to-start'] {
-  animation: nav-exit-to-start 150ms ease-in;
+  animation: nav-exit-to-start var(--motion-duration-fast) var(--motion-easing-exit);
 }
 
 [data-motion='to-end'] {
-  animation: nav-exit-to-end 150ms ease-in;
+  animation: nav-exit-to-end var(--motion-duration-fast) var(--motion-easing-exit);
 }
 
 .menu-panel-enter-active,
 .menu-panel-leave-active {
   transition:
-    opacity 150ms ease-out,
-    transform 150ms ease-out;
+    opacity var(--motion-duration-fast) var(--motion-easing-standard),
+    transform var(--motion-duration-fast) var(--motion-easing-standard);
 }
 
 .menu-panel-enter-from {
@@ -368,7 +368,7 @@
 
 .menu-overlay-enter-active,
 .menu-overlay-leave-active {
-  transition: opacity 200ms ease-out;
+  transition: opacity var(--motion-duration-fast) var(--motion-easing-standard);
 }
 
 .menu-overlay-enter-from,
@@ -379,8 +379,8 @@
 .mobile-menu-enter-active,
 .mobile-menu-leave-active {
   transition:
-    opacity 200ms ease-out,
-    transform 200ms ease-out;
+    opacity var(--motion-duration-fast) var(--motion-easing-standard),
+    transform var(--motion-duration-fast) var(--motion-easing-standard);
 }
 
 .mobile-menu-enter-from,
@@ -389,21 +389,23 @@
   transform: translateY(calc(-1 * var(--spacing-md)));
 }
 
-.page-enter-active,
-.page-leave-active,
-.layout-enter-active,
-.layout-leave-active {
+/* Route transition — asymmetric: visible enter, brief exit. */
+.page-enter-active {
   transition:
-    opacity 250ms ease-out,
-    transform 250ms ease-out;
+    opacity var(--motion-duration-base) var(--motion-easing-enter),
+    transform var(--motion-duration-base) var(--motion-easing-enter);
+}
+
+.page-leave-active {
+  transition: opacity var(--motion-duration-fast) var(--motion-easing-exit);
 }
 
 /* Dialog candidature — transition formulaire ↔ confirmation. */
 .candidature-step-enter-active,
 .candidature-step-leave-active {
   transition:
-    opacity 200ms ease-out,
-    translate 200ms ease-out;
+    opacity var(--motion-duration-fast) var(--motion-easing-standard),
+    translate var(--motion-duration-fast) var(--motion-easing-standard);
 }
 
 .candidature-step-enter-from {
@@ -421,11 +423,11 @@
 .dialog-content {
   width: calc(100vw - 2 * var(--spacing-md));
   max-height: calc(100dvh - 2 * var(--spacing-md));
-  animation: dialog-in 200ms ease-out;
+  animation: dialog-in var(--motion-duration-fast) var(--motion-easing-enter);
 }
 
 .dialog-overlay {
-  animation: dialog-fade-in 200ms ease-out;
+  animation: dialog-fade-in var(--motion-duration-fast) var(--motion-easing-standard);
 }
 
 .dialog-content[data-state='closed'],
@@ -435,19 +437,19 @@
 }
 
 .dialog-overlay[data-state='closed'] {
-  animation: dialog-fade-out 200ms ease-out forwards;
+  animation: dialog-fade-out var(--motion-duration-fast) var(--motion-easing-exit) forwards;
 }
 
 .dialog-content[data-state='closed'] {
-  animation: dialog-out 200ms ease-out forwards;
+  animation: dialog-out var(--motion-duration-fast) var(--motion-easing-exit) forwards;
 }
 
 .dialog-scroll-content {
-  animation: dialog-fade-in 200ms ease-out;
+  animation: dialog-fade-in var(--motion-duration-fast) var(--motion-easing-standard);
 }
 
 .dialog-scroll-content[data-state='closed'] {
-  animation: dialog-fade-out 200ms ease-out forwards;
+  animation: dialog-fade-out var(--motion-duration-fast) var(--motion-easing-exit) forwards;
 }
 
 @keyframes dialog-fade-in {
@@ -476,18 +478,46 @@
   }
 }
 
-.page-enter-from,
-.layout-enter-from {
+.page-enter-from {
   opacity: 0;
   transform: translateY(var(--spacing-sm));
 }
 
-.page-leave-to,
-.layout-leave-to {
+.page-leave-to {
   opacity: 0;
 }
 
+/* Shared elevation for interactive cards — transform, shadow and
+   border-color animated through the motion tokens. */
+.motion-surface {
+  transition:
+    transform var(--motion-duration-base) var(--motion-easing-standard),
+    box-shadow var(--motion-duration-base) var(--motion-easing-standard),
+    border-color var(--motion-duration-base) var(--motion-easing-standard);
+}
+
+@media (hover: hover) {
+  .motion-surface:hover {
+    transform: translateY(calc(-1 * var(--spacing-xs)));
+    box-shadow: var(--shadow-md);
+  }
+}
+
+.motion-surface:focus-within {
+  transform: translateY(calc(-1 * var(--spacing-xs)));
+  box-shadow: var(--shadow-md);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .motion-surface {
+    transform: none;
+    transition: none;
+  }
+
   .mega-menu-viewport,
   [data-motion],
   .menu-panel-enter-active,
@@ -502,9 +532,7 @@
   .candidature-step-enter-active,
   .candidature-step-leave-active,
   .page-enter-active,
-  .page-leave-active,
-  .layout-enter-active,
-  .layout-leave-active {
+  .page-leave-active {
     animation: none;
     transition: none;
   }

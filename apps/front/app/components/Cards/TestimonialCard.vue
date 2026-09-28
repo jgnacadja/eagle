@@ -1,7 +1,7 @@
 <template>
   <figure
     :class="[
-      'flex flex-col justify-between rounded-2xl p-lg transition-all duration-200 hover:shadow-xs',
+      'motion-surface flex flex-col justify-between rounded-2xl p-lg',
       variant === 'surface' ? 'bg-surface' : 'bg-paper'
     ]"
   >

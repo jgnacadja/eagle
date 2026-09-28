@@ -92,6 +92,63 @@ async function fetchSlugs(api: ApiFetch, collection: string): Promise<DirectusRo
   return rows
 }
 
+interface SitemapSources {
+  formations: CourseRow[]
+  familles: DirectusRow[]
+  centres: CentreRow[]
+  articles: DirectusRow[]
+  legales: DirectusRow[]
+}
+
+// Les slugs en base ne sont pas tous normalisés (saisie éditoriale :
+// espaces, &, ®, accents) — encodage segment par segment : la loc
+// reste une URL valide et le routeur la décode vers le slug exact
+// attendu par le filtre `slug _eq` (slugifier ici produirait des 404).
+const seg = (slug: string) => encodeURIComponent(slug)
+
+function buildSitemapUrls(src: SitemapSources): SitemapUrlInput[] {
+  // Dédup par loc : une page légale peut porter le slug d'une route
+  // statique (le router tranche en faveur de la statique, l'URL reste
+  // la même dans les deux cas).
+  const urls = new Map<string, SitemapUrlInput>()
+  const push = (loc: string, lastmod?: string | null) => {
+    if (urls.has(loc)) return
+    urls.set(loc, lastmod ? { loc, lastmod } : { loc })
+  }
+  const addRows = <T extends { slug?: string | null }>(
+    rows: T[],
+    toLoc: (slug: string) => string,
+    lastmod?: (row: T) => string | null | undefined
+  ) => {
+    for (const row of rows) {
+      if (row.slug) push(toLoc(row.slug), lastmod?.(row))
+    }
+  }
+
+  addRows(src.familles, (slug) => `/formations/${seg(slug)}`)
+  addRows(src.centres, (slug) => `/centres/${seg(slug)}`)
+  addRows(
+    src.articles,
+    (slug) => `/actualites/${seg(slug)}`,
+    (row) => row.publish_at
+  )
+  addRows(
+    src.legales,
+    (slug) => `/${seg(slug)}`,
+    (row) => row.updated_at
+  )
+
+  // Sans famille pas de route fiche (mapCourse renvoie `to: null`) :
+  // une formation orpheline ne doit jamais apparaître dans le sitemap.
+  for (const course of src.formations) {
+    if (course.slug && course.familySlug) {
+      push(`/formations/${seg(course.familySlug)}/${seg(course.slug)}`)
+    }
+  }
+
+  return [...urls.values()]
+}
+
 export default defineCachedEventHandler(
   defineSitemapEventHandler(async (event) => {
     const config = useRuntimeConfig(event)
@@ -107,42 +164,13 @@ export default defineCachedEventHandler(
       fetchSlugs(api, 'pages_legales')
     ])
 
-    // Dédup par loc : une page légale peut porter le slug d'une route
-    // statique (le router tranche en faveur de la statique, l'URL reste
-    // la même dans les deux cas).
-    const urls = new Map<string, SitemapUrlInput>()
-    const push = (loc: string, lastmod?: string | null) => {
-      if (urls.has(loc)) return
-      urls.set(loc, lastmod ? { loc, lastmod } : { loc })
-    }
-
-    // Les slugs en base ne sont pas tous normalisés (saisie éditoriale :
-    // espaces, &, ®, accents) — encodage segment par segment : la loc
-    // reste une URL valide et le routeur la décode vers le slug exact
-    // attendu par le filtre `slug _eq` (slugifier ici produirait des 404).
-    const seg = (slug: string) => encodeURIComponent(slug)
-
-    for (const famille of familles) {
-      if (famille.slug) push(`/formations/${seg(famille.slug)}`)
-    }
-    // Sans famille pas de route fiche (mapCourse renvoie `to: null`) :
-    // une formation orpheline ne doit jamais apparaître dans le sitemap.
-    for (const course of formations) {
-      if (course.slug && course.familySlug) {
-        push(`/formations/${seg(course.familySlug)}/${seg(course.slug)}`)
-      }
-    }
-    for (const centre of centres as CentreRow[]) {
-      if (centre.slug) push(`/centres/${seg(centre.slug)}`)
-    }
-    for (const article of articles) {
-      if (article.slug) push(`/actualites/${seg(article.slug)}`, article.publish_at)
-    }
-    for (const pageLegale of legales) {
-      if (pageLegale.slug) push(`/${seg(pageLegale.slug)}`, pageLegale.updated_at)
-    }
-
-    return [...urls.values()]
+    return buildSitemapUrls({
+      formations,
+      familles,
+      centres: centres as CentreRow[],
+      articles,
+      legales
+    })
   }),
   { maxAge: CACHE_MAX_AGE_S }
 )

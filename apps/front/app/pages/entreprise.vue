@@ -14,24 +14,29 @@
       <div class="relative mx-auto px-gutter-mobile md:px-gutter pb-section pt-4xl text-center">
         <div class="text-center md:relative">
           <span
+            v-hero="heroStagger(0)"
             class="inline-block rounded-full border border-primary/25 bg-paper px-md py-xs text-meta font-bold uppercase tracking-wider text-primary shadow-sm"
           >
             Entreprises
           </span>
 
           <h1
+            v-hero="heroStagger(1)"
             class="mx-auto mt-lg max-w-prose font-display text-h2 font-extrabold text-ink md:text-hero"
           >
             Simplifiez la gestion de <span class="text-accent-text">vos</span><br />
             <span class="text-accent-text">formations.</span>
           </h1>
 
-          <p class="mx-auto mt-md max-w-prose font-semibold text-ink text-body">
+          <p
+            v-hero="heroStagger(2)"
+            class="mx-auto mt-md max-w-prose font-semibold text-ink text-body"
+          >
             <span class="hidden md:inline"
               >Un interlocuteur unique pour vos besoins de formation, partout en France.</span
             ><span class="md:hidden">Un interlocuteur unique, partout en France.</span>
           </p>
-          <p class="mx-auto mt-sm text-ink-muted text-small max-w-prose">
+          <p v-hero="heroStagger(3)" class="mx-auto mt-sm text-ink-muted text-small max-w-prose">
             <span class="hidden md:inline"
               >Learn Up Academy vous accompagne dans la recherche, l'organisation et le déploiement
               de vos formations réglementaires, au plus près de vos équipes.</span
@@ -41,7 +46,11 @@
             >
           </p>
 
-          <form class="mx-auto mt-xl w-full max-w-prose" @submit.prevent="onHeroSearch()">
+          <form
+            v-hero="heroStagger(4)"
+            class="mx-auto mt-xl w-full max-w-prose"
+            @submit.prevent="onHeroSearch()"
+          >
             <SearchInput
               v-model="heroSearch"
               input-id="entreprises-hero-search"
@@ -63,6 +72,7 @@
           </p>
 
           <NuxtLink
+            v-hero="heroStagger(5)"
             to="/parler-a-votre-conseiller"
             class="mt-sm inline-block text-small font-bold text-accent-text underline underline-offset-4 transition-colors hover:text-primary"
           >
@@ -71,12 +81,17 @@
 
           <!-- Carte citation flottante (desktop : absolue haut-droite, mobile : centrée sous le lien) -->
           <div
-            class="mx-auto mt-lg max-w-57.5 -rotate-2 rounded-md border border-rule/80 bg-paper p-md text-left shadow-md transition-all hover:rotate-0 hover:shadow-lg md:absolute md:-top-4 md:right-0 lg:right-4 md:mt-0"
+            v-reveal-media
+            class="mx-auto mt-lg max-w-57.5 md:absolute md:-top-4 md:right-0 lg:right-4 md:mt-0"
           >
-            <p class="font-sans text-small font-bold italic text-primary">
-              La formation, un levier<br />de performance durable
-            </p>
-            <span class="mt-sm block h-1 w-12 rounded-full bg-accent" />
+            <div
+              class="-rotate-2 rounded-md border border-rule/80 bg-paper p-md text-left shadow-md transition-all hover:rotate-0 hover:shadow-lg"
+            >
+              <p class="font-sans text-small font-bold italic text-primary">
+                La formation, un levier<br />de performance durable
+              </p>
+              <span class="mt-sm block h-1 w-12 rounded-full bg-accent" />
+            </div>
           </div>
         </div>
       </div>
@@ -106,6 +121,7 @@
     >
       <h2
         id="solutions-title"
+        v-reveal-soft
         class="text-center font-display text-h3 font-extrabold text-ink md:text-h2"
       >
         Des solutions pour tous les types d'entreprises
@@ -155,7 +171,7 @@
         <p class="text-overline font-bold uppercase tracking-widest text-accent">
           Gestion multisites
         </p>
-        <h2 class="mt-sm max-w-prose font-display text-h3 font-extrabold md:text-h2">
+        <h2 v-reveal-soft class="mt-sm max-w-prose font-display text-h3 font-extrabold md:text-h2">
           Un seul partenaire pour coordonner vos formations partout en France
         </h2>
         <p class="hidden md:block mt-sm max-w-prose text-small text-ink-inverse-muted md:text-body">
@@ -193,7 +209,7 @@
     <section class="mx-auto px-gutter-mobile md:px-gutter py-section">
       <div class="grid gap-xl lg:grid-cols-2 lg:items-center">
         <div>
-          <h2 class="font-display text-h3 font-extrabold text-ink md:text-h2">
+          <h2 v-reveal-soft class="font-display text-h3 font-extrabold text-ink md:text-h2">
             Un réseau de centres au plus près de vos équipes
           </h2>
           <p class="mt-sm text-body text-ink-muted hidden md:block">
@@ -212,7 +228,7 @@
           </Button>
         </div>
 
-        <div v-reveal class="h-72 overflow-hidden rounded-sm border border-rule bg-surface md:h-96">
+        <div class="h-72 overflow-hidden rounded-sm border border-rule bg-surface md:h-96">
           <CenterMap
             v-if="mapCenters.length"
             :centers="mapCenters"
@@ -245,7 +261,11 @@
       class="mx-auto px-gutter-mobile md:px-gutter py-section bg-surface"
       aria-labelledby="formations-title"
     >
-      <h2 id="formations-title" class="font-display text-h3 font-extrabold text-ink md:text-h2">
+      <h2
+        id="formations-title"
+        v-reveal-soft
+        class="font-display text-h3 font-extrabold text-ink md:text-h2"
+      >
         Les formations réglementaires dont vos équipes ont besoin
       </h2>
 
@@ -300,6 +320,7 @@
       <div class="mx-auto px-gutter-mobile md:px-gutter py-section">
         <h2
           id="comment-title"
+          v-reveal-soft
           class="text-center font-display text-h3 font-extrabold text-ink md:text-h2"
         >
           Comment ça marche ?
@@ -315,7 +336,11 @@
       class="mx-auto px-gutter-mobile md:px-gutter py-section bg-surface"
       aria-labelledby="confiance-title"
     >
-      <h2 id="confiance-title" class="font-display text-h3 font-extrabold text-ink md:text-h2">
+      <h2
+        id="confiance-title"
+        v-reveal-soft
+        class="font-display text-h3 font-extrabold text-ink md:text-h2"
+      >
         Ils nous font confiance
       </h2>
 
@@ -345,7 +370,7 @@
     <!-- CTA final -->
     <section class="bg-primary-muted py-section text-ink-inverse">
       <div class="px-gutter-mobile text-center">
-        <h2 class="font-display text-h3 font-extrabold text-ink-inverse md:text-h2">
+        <h2 v-reveal-soft class="font-display text-h3 font-extrabold text-ink-inverse md:text-h2">
           Un projet de formation pour votre entreprise ?
         </h2>
 
@@ -377,7 +402,7 @@
 
     <!-- Pour aller plus loin -->
     <section class="mx-auto px-gutter-mobile md:px-gutter py-section bg-surface">
-      <h2 class="text-center font-display text-h3 font-extrabold text-ink md:text-h2">
+      <h2 v-reveal-soft class="text-center font-display text-h3 font-extrabold text-ink md:text-h2">
         Pour aller plus loin
       </h2>
 
@@ -411,7 +436,7 @@
 import { computed, ref } from 'vue'
 import type { Avis, Centre } from '@learnup/types'
 import { mapCourse, useCatalog } from '~/composables/useCatalog'
-import { revealStagger } from '~/utils/reveal'
+import { heroStagger, revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
 import { mapAvis } from '~/utils/avis'
 import IconSparkle from '~/components/icons/IconSparkle.vue'

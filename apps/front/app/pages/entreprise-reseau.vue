@@ -2,7 +2,7 @@
   <div class="bg-paper">
     <!-- Intro + stats -->
     <section class="bg-surface">
-      <div class="mx-auto px-gutter-mobile py-xl md:px-gutter md:py-4xl">
+      <div v-hero class="mx-auto px-gutter-mobile py-xl md:px-gutter md:py-4xl">
         <h1 class="font-display font-extrabold text-ink text-h2 sm:text-h1">
           <span class="sm:hidden" aria-hidden="true"
             >Les entreprises qui forment<br />avec le réseau</span
@@ -73,6 +73,7 @@
       <section class="py-xl md:py-section" aria-labelledby="certificateurs-title">
         <h2
           id="certificateurs-title"
+          v-reveal-soft
           class="font-display text-h3 font-extrabold text-ink md:text-h2"
         >
           Ils confient leurs formations au réseau
@@ -86,7 +87,11 @@
 
       <!-- Secteurs réglementaires -->
       <section class="pb-xl md:pb-section" aria-labelledby="secteurs-title">
-        <h2 id="secteurs-title" class="font-display text-h3 font-extrabold text-ink md:text-h2">
+        <h2
+          id="secteurs-title"
+          v-reveal-soft
+          class="font-display text-h3 font-extrabold text-ink md:text-h2"
+        >
           Des secteurs soumis à obligations réglementaires
         </h2>
 
@@ -140,7 +145,11 @@
 
       <!-- De la PME au groupe multi-sites -->
       <section class="pb-xl md:pb-section" aria-labelledby="segments-title">
-        <h2 id="segments-title" class="font-display text-h3 font-extrabold text-ink md:text-h2">
+        <h2
+          id="segments-title"
+          v-reveal-soft
+          class="font-display text-h3 font-extrabold text-ink md:text-h2"
+        >
           De la PME au groupe multi-sites
         </h2>
 
@@ -168,7 +177,11 @@
 
       <!-- Ce que les entreprises trouvent dans le réseau -->
       <section class="pb-xl md:pb-section" aria-labelledby="benefices-title">
-        <h2 id="benefices-title" class="font-display text-h3 font-extrabold text-ink md:text-h2">
+        <h2
+          id="benefices-title"
+          v-reveal-soft
+          class="font-display text-h3 font-extrabold text-ink md:text-h2"
+        >
           Ce que les entreprises <span class="hidden md:inline">trouvent dans le réseau</span
           ><span class="md:hidden" aria-hidden="true">y trouvent</span>
         </h2>
@@ -205,7 +218,7 @@
       <div class="mx-auto px-gutter-mobile md:px-gutter">
         <div class="flex flex-col gap-lg text-left md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 class="font-display text-h3 font-extrabold text-ink md:text-h2">
+            <h2 v-reveal-soft class="font-display text-h3 font-extrabold text-ink md:text-h2">
               Un besoin de formation ?
             </h2>
             <p class="mt-xs text-small text-ink-muted">

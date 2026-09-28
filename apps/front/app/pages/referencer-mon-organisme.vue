@@ -13,20 +13,24 @@
       <div class="relative mx-auto px-gutter-mobile py-4xl md:px-gutter">
         <div class="max-w-prose">
           <span
+            v-hero="heroStagger(0)"
             class="inline-block rounded-full border border-outline-inverse px-lg py-sm text-overline font-bold uppercase text-ink-inverse-muted"
           >
             ORGANISME PARTENAIRE
           </span>
-          <h1 class="mt-xl font-display text-h2 font-extrabold md:text-hero">
+          <h1
+            v-hero="heroStagger(1)"
+            class="mt-xl font-display text-h2 font-extrabold md:text-hero"
+          >
             Référencer vos centres,
             <span class="text-accent"> recevez des demandes qualifiées</span>.
           </h1>
-          <p class="mt-lg max-w-prose text-lead text-ink-inverse-muted">
+          <p v-hero="heroStagger(2)" class="mt-lg max-w-prose text-lead text-ink-inverse-muted">
             Votre organisme de formation conserve son identité juridique et son fonctionnement. Le
             réseau LEARN UP ACADEMY qualifie les besoins des entreprises et transmet les demandes
             aux partenaires de leur territoire.
           </p>
-          <div class="mt-xl flex flex-wrap gap-md">
+          <div v-hero="heroStagger(3)" class="mt-xl flex flex-wrap gap-md">
             <Button as-child variant="accent" size="pill-lg" class="w-full sm:w-auto">
               <NuxtLink to="#candidater">Référencer mon organisme</NuxtLink>
             </Button>
@@ -35,7 +39,7 @@
               <NuxtLink to="#modele">Comment fonctionne le réseau</NuxtLink>
             </Button>
           </div>
-          <p class="mt-xl text-small text-ink-inverse-muted">
+          <p v-hero="heroStagger(4)" class="mt-xl text-small text-ink-inverse-muted">
             La candidature se dépose sur la page Rejoindre le réseau — réponse sous 5 jours ouvrés.
           </p>
         </div>
@@ -44,7 +48,7 @@
 
     <div class="mx-auto px-gutter-mobile py-section md:px-gutter md:py-4xl">
       <section aria-labelledby="options-title">
-        <h2 id="options-title" class="font-display text-h2 font-extrabold text-ink">
+        <h2 id="options-title" v-reveal-soft class="font-display text-h2 font-extrabold text-ink">
           Comment fonctionne le partenariat
         </h2>
         <ProcessSteps
@@ -89,10 +93,7 @@
           </div>
 
           <!-- Carte -->
-          <div
-            v-reveal
-            class="flex-1 w-full h-96 rounded-md border border-rule overflow-hidden bg-surface"
-          >
+          <div class="flex-1 w-full h-96 rounded-md border border-rule overflow-hidden bg-surface">
             <CenterMap
               v-if="mapCenters.length"
               :centers="mapCenters"
@@ -140,6 +141,7 @@ import { computed, ref } from 'vue'
 import type { Centre } from '@learnup/types'
 import { useGeolocation } from '~/composables/useGeolocation'
 import type { CenterResult } from '~/types/center-result'
+import { heroStagger } from '~/utils/reveal'
 
 useContentSeo(
   {

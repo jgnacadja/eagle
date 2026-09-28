@@ -2,7 +2,7 @@
   <div class="flex flex-1 flex-col">
     <!-- Hero / recherche -->
     <section class="border-b border-rule bg-linear-to-b from-paper to-surface">
-      <div class="mx-auto px-gutter-mobile py-2xl md:px-gutter">
+      <div v-hero class="mx-auto px-gutter-mobile py-2xl md:px-gutter">
         <p class="text-overline text-accent-text">Catalogue de formations</p>
         <h1
           class="mt-sm max-w-prose font-display text-h2 font-extrabold leading-tight text-ink lg:text-h1"

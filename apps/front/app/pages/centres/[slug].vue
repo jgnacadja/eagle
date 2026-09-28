@@ -52,14 +52,15 @@
                       <span class="hidden sm:inline">Parler à votre conseiller</span>
                     </NuxtLink>
                   </Button>
-                  <NuxtLink
+                  <button
                     v-if="centre.phone"
-                    :to="`tel:${centre.phone.replace(/\s/g, '')}`"
-                    class="inline-flex flex-1 items-center justify-center gap-sm rounded-full border border-outline bg-paper px-sm py-sm text-badge font-semibold text-ink sm:flex-initial sm:justify-start sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:text-body sm:font-medium sm:hover:border-transparent"
+                    type="button"
+                    class="inline-flex flex-1 items-center justify-center gap-sm rounded-full border border-outline bg-paper px-sm py-sm text-badge font-semibold text-ink transition-colors hover:bg-accent sm:flex-initial sm:justify-start sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:text-body sm:font-medium sm:hover:border-transparent sm:hover:bg-transparent sm:hover:text-accent-text"
+                    @click="callCentrePhone"
                   >
                     <IconPhone :size="16" class="shrink-0 text-primary" />
                     <span>{{ centre.phone }}</span>
-                  </NuxtLink>
+                  </button>
                 </div>
               </div>
             </div>
@@ -693,6 +694,11 @@ const contactEmail = computed(() => {
   return code ? `contact${code}@learnup-academy.com` : (centre.value!.email ?? null)
 })
 
+function callCentrePhone() {
+  const phone = centre.value?.phone
+  if (phone) window.location.href = `tel:${phone.replace(/\s/g, '')}`
+}
+
 const { position: userPosition } = useGeolocation()
 
 // Mode « single » : un seul pin — le centre affiché. L'`activeId`
@@ -759,7 +765,9 @@ function onMapSelect(id: string) {
 
 const specialties = computed(() => centre.value!.specialties ?? [])
 
-const qualiopiCertificateUrl = computed(() => directusAssetUrl(centre.value!.qualiopi_certificate))
+const qualiopiCertificateUrl = computed(
+  () => directusAssetUrl(centre.value!.qualiopi_certificate) ?? undefined
+)
 
 // « valide jusqu'au 14 mars 2027 » — date de fin de validité Qualiopi
 // éditée dans Directus, formatée en français.

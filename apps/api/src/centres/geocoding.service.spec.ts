@@ -82,7 +82,7 @@ describe('GeocodingService', () => {
 
     const result = await service.syncMissing()
 
-    expect(result).toEqual({ geocoded: 1, failed: 0 })
+    expect(result).toEqual({ geocoded: 1, renamed: 0, failed: 0 })
     expect(deps.updateCentre).toHaveBeenCalledWith(1, {
       city: 'Lyon',
       postal_code: '69003',
@@ -90,6 +90,7 @@ describe('GeocodingService', () => {
       region: 'Auvergne-Rhône-Alpes',
       latitude: 45.76,
       longitude: 4.85,
+      name: 'Centre LEARN UP de Rhône',
       geocoded_address: '12 rue de la Part-Dieu, 69003 Lyon'
     })
     expect(deps.invalidateCatalog).toHaveBeenCalled()
@@ -109,10 +110,70 @@ describe('GeocodingService', () => {
 
     const result = await service.syncMissing()
 
-    expect(result).toEqual({ geocoded: 0, failed: 0 })
+    expect(result).toEqual({ geocoded: 0, renamed: 0, failed: 0 })
     expect(fetchMock).not.toHaveBeenCalled()
     expect(deps.updateCentre).not.toHaveBeenCalled()
     expect(deps.invalidateCatalog).not.toHaveBeenCalled()
+  })
+
+  it('renomme un centre déjà géocodé dont le nom ne suit pas le département', async () => {
+    const deps = await build([
+      {
+        id: 1,
+        slug: 'lille',
+        name: 'Centre LEARN UP de Lille',
+        status: 'published',
+        address: '10 rue Faidherbe, 59000 Lille',
+        geocoded_address: '10 rue Faidherbe, 59000 Lille',
+        department: 'Nord',
+        city: 'Lille'
+      }
+    ])
+
+    const result = await service.syncMissing()
+
+    expect(result).toEqual({ geocoded: 0, renamed: 1, failed: 0 })
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(deps.updateCentre).toHaveBeenCalledWith(1, { name: 'Centre LEARN UP de Nord' })
+    expect(deps.invalidateCatalog).toHaveBeenCalled()
+  })
+
+  it('dérive le nom depuis un code département quand le nom est déjà bon', async () => {
+    const deps = await build([
+      {
+        id: 1,
+        slug: 'creteil',
+        name: 'Centre LEARN UP de Val-de-Marne',
+        status: 'published',
+        address: '14 rue des Refuzniks, 94000 Créteil',
+        geocoded_address: '14 rue des Refuzniks, 94000 Créteil',
+        department: '94',
+        city: 'Créteil'
+      }
+    ])
+
+    const result = await service.syncMissing()
+
+    expect(result).toEqual({ geocoded: 0, renamed: 0, failed: 0 })
+    expect(deps.updateCentre).not.toHaveBeenCalled()
+  })
+
+  it('conserve le nom quand ni département ni ville ne permettent de le dériver', async () => {
+    const deps = await build([
+      {
+        id: 1,
+        slug: 'sans-geo',
+        name: 'Antenne partenaire',
+        status: 'draft',
+        address: null,
+        geocoded_address: null
+      }
+    ])
+
+    const result = await service.syncMissing()
+
+    expect(result).toEqual({ geocoded: 0, renamed: 0, failed: 0 })
+    expect(deps.updateCentre).not.toHaveBeenCalled()
   })
 
   it('compte un échec quand la BAN ne trouve pas l’adresse', async () => {
@@ -130,7 +191,7 @@ describe('GeocodingService', () => {
 
     const result = await service.syncMissing()
 
-    expect(result).toEqual({ geocoded: 0, failed: 1 })
+    expect(result).toEqual({ geocoded: 0, renamed: 0, failed: 1 })
     expect(deps.updateCentre).not.toHaveBeenCalled()
   })
 
@@ -149,7 +210,7 @@ describe('GeocodingService', () => {
 
     const result = await service.syncMissing()
 
-    expect(result).toEqual({ geocoded: 0, failed: 1 })
+    expect(result).toEqual({ geocoded: 0, renamed: 0, failed: 1 })
   })
 
   it('déduplique les appels concurrents sur la promesse en cours', async () => {
@@ -180,7 +241,7 @@ describe('GeocodingService', () => {
 
     const result = await service.syncMissing()
 
-    expect(result).toEqual({ geocoded: 0, failed: 0 })
+    expect(result).toEqual({ geocoded: 0, renamed: 0, failed: 0 })
     expect(deps.fetchCentresForGeocoding).toHaveBeenCalledOnce()
   })
 
@@ -289,7 +350,7 @@ describe('GeocodingService', () => {
     const deps = await build([])
     deps.fetchCentresForGeocoding.mockRejectedValue(new Error('down'))
 
-    expect(await service.syncMissing()).toEqual({ geocoded: 0, failed: 0 })
+    expect(await service.syncMissing()).toEqual({ geocoded: 0, renamed: 0, failed: 0 })
   })
 
   it('compte un échec quand la persistance du centre échoue', async () => {
@@ -308,7 +369,7 @@ describe('GeocodingService', () => {
 
     const result = await service.syncMissing()
 
-    expect(result).toEqual({ geocoded: 0, failed: 1 })
+    expect(result).toEqual({ geocoded: 0, renamed: 0, failed: 1 })
     expect(deps.invalidateCatalog).not.toHaveBeenCalled()
   })
 
@@ -355,7 +416,7 @@ describe('GeocodingService', () => {
 
     const result = await service.syncMissing()
 
-    expect(result).toEqual({ geocoded: 1, failed: 2 })
+    expect(result).toEqual({ geocoded: 1, renamed: 0, failed: 2 })
     expect(deps.updateCentre).toHaveBeenCalledWith(3, {
       city: null,
       postal_code: null,

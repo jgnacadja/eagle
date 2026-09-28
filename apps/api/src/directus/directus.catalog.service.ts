@@ -35,6 +35,8 @@ export interface GeocodableCentre {
   status: string
   address: string | null
   geocoded_address: string | null
+  department?: string | null
+  city?: string | null
 }
 
 export interface CentreGeodata {
@@ -296,7 +298,16 @@ export class DirectusCatalogService {
 
     const url = new URL(`${this.baseUrl}/items/centres`)
     url.searchParams.set('limit', '-1')
-    for (const field of ['id', 'slug', 'name', 'status', 'address', 'geocoded_address']) {
+    for (const field of [
+      'id',
+      'slug',
+      'name',
+      'status',
+      'address',
+      'geocoded_address',
+      'department',
+      'city'
+    ]) {
       url.searchParams.append('fields[]', field)
     }
 
@@ -304,8 +315,8 @@ export class DirectusCatalogService {
     return response.data ?? []
   }
 
-  /** Écrit les champs géo dérivés de l'adresse sur un centre. */
-  async updateCentre(id: number, patch: Partial<CentreGeodata>): Promise<void> {
+  /** Écrit les champs dérivés d'un centre (géodata + nom issu du département). */
+  async updateCentre(id: number, patch: Partial<CentreGeodata> & { name?: string }): Promise<void> {
     if (!this.enabled) {
       throw new Error('Directus catalog disabled: missing DIRECTUS_TOKEN or DIRECTUS_INTERNAL_URL')
     }

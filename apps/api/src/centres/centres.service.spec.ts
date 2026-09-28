@@ -77,7 +77,9 @@ describe('CentresService', () => {
         { provide: DirectusCatalogService, useValue: directusMock },
         {
           provide: GeocodingService,
-          useValue: { syncMissing: vi.fn().mockResolvedValue({ geocoded: 0, failed: 0 }) }
+          useValue: {
+            syncMissing: vi.fn().mockResolvedValue({ geocoded: 0, renamed: 0, failed: 0 })
+          }
         }
       ]
     }).compile()

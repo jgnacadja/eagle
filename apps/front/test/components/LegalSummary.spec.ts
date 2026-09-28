@@ -3,8 +3,17 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import LegalSummary from '~/components/Legal/Summary.vue'
 
 const sections = [
-  { id: 'editeur', title: '1. Éditeur du site', paragraphs: [''] },
-  { id: 'hebergement', title: '2. Hébergement', paragraphs: [''] }
+  {
+    id: 'editeur',
+    number: '1',
+    title: 'Éditeur du site',
+    body: null,
+    subsections: [
+      { id: 'editeur-forme', number: '1.1', title: 'Forme juridique', body: null },
+      { id: 'editeur-capital', number: '1.2', title: 'Capital social', body: null }
+    ]
+  },
+  { id: 'hebergement', number: '2', title: 'Hébergement', body: null, subsections: [] }
 ]
 
 const defaultRect: DOMRect = {
@@ -40,17 +49,31 @@ describe('components/LegalSummary', () => {
     })
   })
 
-  it('affiche un lien par section', () => {
+  it('affiche un lien par section et sous-section', () => {
     const wrapper = mount(LegalSummary, {
       props: { sections, activeId: 'editeur' }
     })
 
     const links = wrapper.findAll('a')
-    expect(links).toHaveLength(sections.length)
+    expect(links).toHaveLength(4)
     expect(links[0]!.attributes('href')).toBe('#editeur')
-    expect(links[1]!.attributes('href')).toBe('#hebergement')
+    expect(links[1]!.attributes('href')).toBe('#editeur-forme')
+    expect(links[3]!.attributes('href')).toBe('#hebergement')
     expect(wrapper.text()).toContain('1. Éditeur du site')
+    expect(wrapper.text()).toContain('1.1 Forme juridique')
+    expect(wrapper.text()).toContain('1.2 Capital social')
     expect(wrapper.text()).toContain('2. Hébergement')
+  })
+
+  it('met en évidence une sous-section active', () => {
+    const wrapper = mount(LegalSummary, {
+      props: { sections, activeId: 'editeur-capital' }
+    })
+
+    const activeLink = wrapper.find('a[href="#editeur-capital"]')
+    expect(activeLink.classes()).toContain('text-primary')
+    const parentLink = wrapper.find('a[href="#editeur"]')
+    expect(parentLink.classes()).toContain('text-ink-muted')
   })
 
   it('met en évidence la section active', () => {
@@ -73,10 +96,11 @@ describe('components/LegalSummary', () => {
     })
 
     const links = wrapper.findAll('a')
-    links[0]!.element.dataset.rectTop = '0'
-    links[0]!.element.dataset.rectHeight = '32'
-    links[1]!.element.dataset.rectTop = '40'
-    links[1]!.element.dataset.rectHeight = '32'
+    const byHref = (href: string) => links.find((a) => a.attributes('href') === href)!.element
+    byHref('#editeur').dataset.rectTop = '0'
+    byHref('#editeur').dataset.rectHeight = '32'
+    byHref('#hebergement').dataset.rectTop = '40'
+    byHref('#hebergement').dataset.rectHeight = '32'
 
     await flushPromises()
 

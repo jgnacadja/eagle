@@ -42,7 +42,9 @@ collections:
       hidden: false
       icon: null
       item_duplication_fields: null
-      note: Avis clients affichés dans la section « Avis » des fiches centres. Sans centre associé, l’avis vaut pour la marque (toutes implantations).
+      note: >-
+        Avis clients affichés dans la section « Avis » des fiches centres. Sans
+        centre associé, l’avis vaut pour la marque (toutes implantations).
       preview_url: null
       singleton: false
       sort: null
@@ -214,6 +216,62 @@ collections:
       versioning: false
     schema:
       name: pages_legales
+  - collection: pages_legales_sections
+    meta:
+      accountability: all
+      archive_app_filter: true
+      archive_field: null
+      archive_value: null
+      collapse: open
+      collection: pages_legales_sections
+      color: null
+      display_template: null
+      group: null
+      hidden: false
+      icon: null
+      item_duplication_fields: null
+      note: >-
+        Sections des pages légales — tri manuel par glisser-déposer
+        (numérotation 1., 2.… calculée côté site).
+      preview_url: null
+      singleton: false
+      sort: null
+      sort_field: null
+      translations:
+        - language: fr-FR
+          translation: Sections de pages légales
+      unarchive_value: null
+      versioning: false
+    schema:
+      name: pages_legales_sections
+  - collection: pages_legales_subsections
+    meta:
+      accountability: all
+      archive_app_filter: true
+      archive_field: null
+      archive_value: null
+      collapse: open
+      collection: pages_legales_subsections
+      color: null
+      display_template: null
+      group: null
+      hidden: false
+      icon: null
+      item_duplication_fields: null
+      note: >-
+        Sous-sections des pages légales — numérotation 1.1, 1.2… calculée depuis
+        l’ordre.
+      preview_url: null
+      singleton: false
+      sort: null
+      sort_field: null
+      translations:
+        - language: fr-FR
+          translation: Sous-sections de pages légales
+      unarchive_value: null
+      versioning: false
+    schema:
+      name: pages_legales_subsections
   - collection: sous_familles_formation
     meta:
       accountability: all
@@ -2274,6 +2332,48 @@ fields:
       foreign_key_table: null
       foreign_key_column: null
   - collection: centres
+    field: mobile
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: mobile
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 21
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Mobile
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: mobile
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
     field: email
     type: string
     meta:
@@ -2290,7 +2390,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 21
+      sort: 22
       special: null
       translations:
         - language: fr-FR
@@ -2332,7 +2432,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 22
+      sort: 23
       special: null
       translations:
         - language: fr-FR
@@ -2374,7 +2474,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 23
+      sort: 24
       special: null
       translations:
         - language: fr-FR
@@ -2388,6 +2488,50 @@ fields:
       data_type: character varying
       default_value: null
       max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: franchise_since
+    type: date
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: franchise_since
+      group: null
+      hidden: false
+      interface: datetime
+      note: >-
+        Date d’entrée dans le réseau — affichée « Franchisé depuis … » sous le
+        nom du responsable sur la fiche
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 25
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Franchisé depuis
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: franchise_since
+      table: centres
+      data_type: date
+      default_value: null
+      max_length: null
       numeric_precision: null
       numeric_scale: null
       is_nullable: true
@@ -2416,7 +2560,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 24
+      sort: 26
       special:
         - cast-json
       translations:
@@ -2459,7 +2603,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 25
+      sort: 27
       special: null
       translations:
         - language: fr-FR
@@ -2501,7 +2645,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 26
+      sort: 28
       special: null
       translations:
         - language: fr-FR
@@ -2543,7 +2687,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 27
+      sort: 29
       special: null
       translations:
         - language: fr-FR
@@ -2553,258 +2697,6 @@ fields:
       width: half
     schema:
       name: qualiopi_certificate_number
-      table: centres
-      data_type: character varying
-      default_value: null
-      max_length: 255
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: centres
-    field: qualiopi_certificate
-    type: uuid
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: qualiopi_certificate
-      group: null
-      hidden: false
-      interface: file
-      note: Certificat Qualiopi (PDF)
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 28
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Certificat Qualiopi
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: qualiopi_certificate
-      table: centres
-      data_type: uuid
-      default_value: null
-      max_length: null
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: directus_files
-      foreign_key_column: id
-  - collection: centres
-    field: seo_title
-    type: string
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: seo_title
-      group: null
-      hidden: false
-      interface: input
-      note: null
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 29
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Titre SEO
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: seo_title
-      table: centres
-      data_type: character varying
-      default_value: null
-      max_length: 255
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: centres
-    field: seo_description
-    type: text
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: seo_description
-      group: null
-      hidden: false
-      interface: input-multiline
-      note: null
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 30
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Description SEO
-      validation: null
-      validation_message: null
-      width: full
-    schema:
-      name: seo_description
-      table: centres
-      data_type: text
-      default_value: null
-      max_length: null
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: centres
-    field: seo_canonical
-    type: string
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: seo_canonical
-      group: null
-      hidden: false
-      interface: input
-      note: null
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 31
-      special: null
-      translations:
-        - language: fr-FR
-          translation: URL canonique
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: seo_canonical
-      table: centres
-      data_type: character varying
-      default_value: null
-      max_length: 255
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: centres
-    field: image
-    type: uuid
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: image
-      group: null
-      hidden: false
-      interface: file-image
-      note: Portrait du responsable affiché en hero de la fiche — plus une photo du centre
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 32
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Photo du responsable
-      validation: null
-      validation_message: null
-      width: full
-    schema:
-      name: image
-      table: centres
-      data_type: uuid
-      default_value: null
-      max_length: null
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: directus_files
-      foreign_key_column: id
-  - collection: centres
-    field: mobile
-    type: string
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: mobile
-      group: null
-      hidden: false
-      interface: input
-      note: null
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 33
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Mobile
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: mobile
       table: centres
       data_type: character varying
       default_value: null
@@ -2837,7 +2729,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 34
+      sort: 30
       special: null
       translations:
         - language: fr-FR
@@ -2879,7 +2771,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 35
+      sort: 31
       special: null
       translations:
         - language: fr-FR
@@ -2905,34 +2797,118 @@ fields:
       foreign_key_table: null
       foreign_key_column: null
   - collection: centres
-    field: franchise_since
-    type: date
+    field: qualiopi_certificate
+    type: uuid
     meta:
       collection: centres
       conditions: null
       display: null
       display_options: null
-      field: franchise_since
+      field: qualiopi_certificate
       group: null
       hidden: false
-      interface: datetime
-      note: Date d’entrée dans le réseau — affichée « Franchisé depuis … » sous le nom du responsable sur la fiche
+      interface: file
+      note: Certificat Qualiopi (PDF)
       options: null
       readonly: false
       required: false
       searchable: true
-      sort: 36
+      sort: 32
       special: null
       translations:
         - language: fr-FR
-          translation: Franchisé depuis
+          translation: Certificat Qualiopi
       validation: null
       validation_message: null
       width: half
     schema:
-      name: franchise_since
+      name: qualiopi_certificate
       table: centres
-      data_type: date
+      data_type: uuid
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: directus_files
+      foreign_key_column: id
+  - collection: centres
+    field: seo_title
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_title
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 33
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Titre SEO
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_title
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: seo_description
+    type: text
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_description
+      group: null
+      hidden: false
+      interface: input-multiline
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 34
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Description SEO
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: seo_description
+      table: centres
+      data_type: text
       default_value: null
       max_length: null
       numeric_precision: null
@@ -2946,6 +2922,92 @@ fields:
       has_auto_increment: false
       foreign_key_table: null
       foreign_key_column: null
+  - collection: centres
+    field: seo_canonical
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_canonical
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 35
+      special: null
+      translations:
+        - language: fr-FR
+          translation: URL canonique
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_canonical
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: image
+    type: uuid
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: image
+      group: null
+      hidden: false
+      interface: file-image
+      note: >-
+        Portrait du responsable affiché en hero de la fiche — plus une photo du
+        centre
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 36
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Photo du responsable
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: image
+      table: centres
+      data_type: uuid
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: directus_files
+      foreign_key_column: id
   - collection: familles_formation
     field: id
     type: integer
@@ -6058,81 +6120,6 @@ fields:
       foreign_key_table: null
       foreign_key_column: null
   - collection: pages_legales
-    field: sections
-    type: json
-    meta:
-      collection: pages_legales
-      conditions: null
-      display: null
-      display_options: null
-      field: sections
-      group: null
-      hidden: false
-      interface: list
-      note: Sections de la page — ancre, titre, paragraphes, puces
-      options:
-        fields:
-          - field: id
-            meta:
-              interface: input
-              note: 'Ancre HTML (ex: editeur)'
-              required: true
-              width: half
-            name: Ancre
-            schema: {}
-            type: string
-          - field: title
-            meta:
-              interface: input
-              required: true
-              width: half
-            name: Titre
-            schema: {}
-            type: string
-          - field: paragraphs
-            meta:
-              interface: tags
-              width: full
-            name: Paragraphes
-            schema: {}
-            type: json
-          - field: bullets
-            meta:
-              interface: tags
-              width: full
-            name: Puces
-            schema: {}
-            type: json
-      readonly: false
-      required: false
-      searchable: true
-      sort: 8
-      special:
-        - cast-json
-      translations:
-        - language: fr-FR
-          translation: Sections
-      validation: null
-      validation_message: null
-      width: full
-    schema:
-      name: sections
-      table: pages_legales
-      data_type: json
-      default_value: null
-      max_length: null
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: pages_legales
     field: cta_label
     type: string
     meta:
@@ -6149,7 +6136,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 9
+      sort: 8
       special: null
       translations:
         - language: fr-FR
@@ -6191,7 +6178,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 10
+      sort: 9
       special: null
       translations:
         - language: fr-FR
@@ -6233,7 +6220,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 11
+      sort: 10
       special: null
       translations:
         - language: fr-FR
@@ -6275,7 +6262,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 12
+      sort: 11
       special: null
       translations:
         - language: fr-FR
@@ -6317,7 +6304,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 13
+      sort: 12
       special: null
       translations:
         - language: fr-FR
@@ -6359,7 +6346,7 @@ fields:
       readonly: true
       required: false
       searchable: true
-      sort: 14
+      sort: 13
       special:
         - date-created
       translations:
@@ -6402,7 +6389,7 @@ fields:
       readonly: true
       required: false
       searchable: true
-      sort: 15
+      sort: 14
       special:
         - date-updated
       translations:
@@ -6428,6 +6415,572 @@ fields:
       has_auto_increment: false
       foreign_key_table: null
       foreign_key_column: null
+  - collection: pages_legales
+    field: sections
+    type: alias
+    meta:
+      collection: pages_legales
+      conditions: null
+      display: null
+      display_options: null
+      field: sections
+      group: null
+      hidden: false
+      interface: list-o2m
+      note: Ordre = numérotation 1., 2., 3.… sur le site
+      options:
+        enableCreate: true
+        enableSelect: false
+        template: '{{title}}'
+      readonly: false
+      required: false
+      searchable: true
+      sort: null
+      special:
+        - o2m
+      translations:
+        - language: fr-FR
+          translation: Sections
+      validation: null
+      validation_message: null
+      width: full
+  - collection: pages_legales_sections
+    field: id
+    type: integer
+    meta:
+      collection: pages_legales_sections
+      conditions: null
+      display: null
+      display_options: null
+      field: id
+      group: null
+      hidden: true
+      interface: input
+      note: null
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 1
+      special: null
+      translations:
+        - language: fr-FR
+          translation: ID
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: id
+      table: pages_legales_sections
+      data_type: integer
+      default_value: nextval('pages_legales_sections_id_seq'::regclass)
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: false
+      is_unique: true
+      is_indexed: false
+      is_primary_key: true
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: true
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales_sections
+    field: sort
+    type: integer
+    meta:
+      collection: pages_legales_sections
+      conditions: null
+      display: null
+      display_options: null
+      field: sort
+      group: null
+      hidden: true
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 2
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Ordre
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: sort
+      table: pages_legales_sections
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales_sections
+    field: title
+    type: string
+    meta:
+      collection: pages_legales_sections
+      conditions: null
+      display: null
+      display_options: null
+      field: title
+      group: null
+      hidden: false
+      interface: input
+      note: Sans le numéro — ajouté automatiquement d’après l’ordre
+      options: null
+      readonly: false
+      required: true
+      searchable: true
+      sort: 3
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Titre
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: title
+      table: pages_legales_sections
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales_sections
+    field: anchor
+    type: string
+    meta:
+      collection: pages_legales_sections
+      conditions: null
+      display: null
+      display_options: null
+      field: anchor
+      group: null
+      hidden: false
+      interface: input
+      note: 'Ancre du sommaire (ex: editeur) — sans espaces, stable dans le temps'
+      options: null
+      readonly: false
+      required: true
+      searchable: true
+      sort: 4
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Ancre
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: anchor
+      table: pages_legales_sections
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales_sections
+    field: body
+    type: text
+    meta:
+      collection: pages_legales_sections
+      conditions: null
+      display: null
+      display_options: null
+      field: body
+      group: null
+      hidden: false
+      interface: input-rich-text-html
+      note: 'Texte libre : paragraphes, listes, liens, gras…'
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 5
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Contenu
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: body
+      table: pages_legales_sections
+      data_type: text
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales_sections
+    field: page
+    type: integer
+    meta:
+      collection: pages_legales_sections
+      conditions: null
+      display: related-values
+      display_options:
+        template: '{{title}}'
+      field: page
+      group: null
+      hidden: false
+      interface: select-dropdown-m2o
+      note: null
+      options:
+        template: '{{title}}'
+      readonly: false
+      required: true
+      searchable: true
+      sort: 6
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Page légale
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: page
+      table: pages_legales_sections
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales_sections
+    field: subsections
+    type: alias
+    meta:
+      collection: pages_legales_sections
+      conditions: null
+      display: null
+      display_options: null
+      field: subsections
+      group: null
+      hidden: false
+      interface: list-o2m
+      note: Ordre = numérotation x.1, x.2… sur le site
+      options:
+        enableCreate: true
+        enableSelect: false
+        template: '{{title}}'
+      readonly: false
+      required: false
+      searchable: true
+      sort: null
+      special:
+        - o2m
+      translations:
+        - language: fr-FR
+          translation: Sous-sections
+      validation: null
+      validation_message: null
+      width: full
+  - collection: pages_legales_subsections
+    field: id
+    type: integer
+    meta:
+      collection: pages_legales_subsections
+      conditions: null
+      display: null
+      display_options: null
+      field: id
+      group: null
+      hidden: true
+      interface: input
+      note: null
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 1
+      special: null
+      translations:
+        - language: fr-FR
+          translation: ID
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: id
+      table: pages_legales_subsections
+      data_type: integer
+      default_value: nextval('pages_legales_subsections_id_seq'::regclass)
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: false
+      is_unique: true
+      is_indexed: false
+      is_primary_key: true
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: true
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales_subsections
+    field: sort
+    type: integer
+    meta:
+      collection: pages_legales_subsections
+      conditions: null
+      display: null
+      display_options: null
+      field: sort
+      group: null
+      hidden: true
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 2
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Ordre
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: sort
+      table: pages_legales_subsections
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales_subsections
+    field: title
+    type: string
+    meta:
+      collection: pages_legales_subsections
+      conditions: null
+      display: null
+      display_options: null
+      field: title
+      group: null
+      hidden: false
+      interface: input
+      note: Sans le numéro — ajouté automatiquement d’après l’ordre
+      options: null
+      readonly: false
+      required: true
+      searchable: true
+      sort: 3
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Titre
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: title
+      table: pages_legales_subsections
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales_subsections
+    field: anchor
+    type: string
+    meta:
+      collection: pages_legales_subsections
+      conditions: null
+      display: null
+      display_options: null
+      field: anchor
+      group: null
+      hidden: false
+      interface: input
+      note: Ancre du sommaire — sans espaces, stable dans le temps
+      options: null
+      readonly: false
+      required: true
+      searchable: true
+      sort: 4
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Ancre
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: anchor
+      table: pages_legales_subsections
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales_subsections
+    field: body
+    type: text
+    meta:
+      collection: pages_legales_subsections
+      conditions: null
+      display: null
+      display_options: null
+      field: body
+      group: null
+      hidden: false
+      interface: input-rich-text-html
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 5
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Contenu
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: body
+      table: pages_legales_subsections
+      data_type: text
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales_subsections
+    field: section
+    type: integer
+    meta:
+      collection: pages_legales_subsections
+      conditions: null
+      display: related-values
+      display_options:
+        template: '{{title}}'
+      field: section
+      group: null
+      hidden: false
+      interface: select-dropdown-m2o
+      note: null
+      options:
+        template: '{{title}}'
+      readonly: false
+      required: true
+      searchable: true
+      sort: 6
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Section parente
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: section
+      table: pages_legales_subsections
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: pages_legales_sections
+      foreign_key_column: id
   - collection: sous_familles_formation
     field: id
     type: integer
@@ -7247,6 +7800,40 @@ relations:
       foreign_key_table: directus_files
       foreign_key_column: id
       constraint_name: page_blocks_image_foreign
+      on_update: NO ACTION
+      on_delete: NO ACTION
+  - collection: pages_legales_sections
+    field: page
+    related_collection: pages_legales
+    meta:
+      junction_field: null
+      many_collection: pages_legales_sections
+      many_field: page
+      one_allowed_collections: null
+      one_collection: pages_legales
+      one_collection_field: null
+      one_deselect_action: nullify
+      one_field: sections
+      sort_field: sort
+  - collection: pages_legales_subsections
+    field: section
+    related_collection: pages_legales_sections
+    meta:
+      junction_field: null
+      many_collection: pages_legales_subsections
+      many_field: section
+      one_allowed_collections: null
+      one_collection: pages_legales_sections
+      one_collection_field: null
+      one_deselect_action: nullify
+      one_field: subsections
+      sort_field: sort
+    schema:
+      table: pages_legales_subsections
+      column: section
+      foreign_key_table: pages_legales_sections
+      foreign_key_column: id
+      constraint_name: pages_legales_subsections_section_foreign
       on_update: NO ACTION
       on_delete: NO ACTION
   - collection: sous_familles_formation

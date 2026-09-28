@@ -77,7 +77,10 @@ vi.stubGlobal('useRoute', () => routeState)
 config.global.directives = {
   ...config.global.directives,
   motion: {},
-  reveal: {}
+  reveal: {},
+  hero: {},
+  revealSoft: {},
+  revealMedia: {}
 }
 
 // happy-dom n'expose pas IntersectionObserver (requis par motion-v/inView).

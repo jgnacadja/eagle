@@ -14,7 +14,7 @@ interface UseContentSeoOptions {
    * Getter réactif : renvoyer `null`/`[]` tant que la donnée manque ou que
    * la page n'est pas indexable — aucun script n'est alors émis.
    */
-  jsonLd?: MaybeRefOrGetter<Record<string, unknown> | Record<string, unknown>[] | null | undefined>
+  jsonLd?: MaybeRefOrGetter<Record<string, unknown> | Record<string, unknown>[] | null>
 }
 
 /** Alimente useHead depuis les champs SEO Directus (title/meta/canonique) + JSON-LD. */
@@ -48,13 +48,14 @@ export function useContentSeo(
 // `</script>` dans une chaîne JSON-LD casserait le document (ou pire) —
 // échappement standard `<` → \u003c, invisible pour les parsers.
 function serializeJsonLd(entry: Record<string, unknown>): string {
-  return JSON.stringify(entry).replace(/</g, '\\u003c')
+  return JSON.stringify(entry).replaceAll('<', String.raw`\u003c`)
 }
 
 function jsonLdScripts(
   input: Record<string, unknown> | Record<string, unknown>[] | null | undefined
 ): { type: 'application/ld+json'; innerHTML: string }[] {
-  const entries = (Array.isArray(input) ? input : input ? [input] : []).filter(
+  const items = Array.isArray(input) ? input : [input]
+  const entries = items.filter(
     (entry): entry is Record<string, unknown> =>
       Boolean(entry) && typeof entry === 'object' && !Array.isArray(entry)
   )

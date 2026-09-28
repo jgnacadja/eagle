@@ -19,7 +19,7 @@ describe('ArticleCard', () => {
       }
     })
 
-    expect(wrapper.classes()).toContain('transition-[border-color,box-shadow]')
+    expect(wrapper.classes()).toContain('motion-surface')
     expect(wrapper.classes()).not.toContain('transition')
 
     expect(wrapper.text()).toContain('Réglementation')

@@ -1,7 +1,7 @@
 <template>
   <Card
     variant="panel"
-    class="flex h-full flex-col gap-md p-lg transition hover:border-primary/40 hover:shadow-md"
+    class="motion-surface flex h-full flex-col gap-md p-lg hover:border-primary/40"
   >
     <div>
       <h3 class="font-semibold text-ink">{{ name }}</h3>

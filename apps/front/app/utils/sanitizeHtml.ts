@@ -59,7 +59,7 @@ const HEADING_PATTERN = /<h([1-3])((?:[^>"']|"[^"]*"|'[^']*')*)>([\s\S]*?)<\/h\1
 // « &lt; » (le &amp; est décodé sans re-scanner le résultat). Le motif
 // accepte les « > » dans les valeurs d'attribut quotées.
 export function htmlToText(html?: string | null): string {
-  return decodeHTML((html ?? '').replace(/<(?:[^>"']|"[^"]*"|'[^']*')*>/g, ' '))
+  return decodeHTML((html ?? '').replace(/<(?:[^>"'<]|"[^"]*"|'[^']*')*>/g, ' '))
     .replace(/\s+/g, ' ')
     .trim()
 }
@@ -83,7 +83,7 @@ function insertHeadingIds(html: string): string {
     seen.add(id)
 
     // On retire un éventuel id existant dans attrs pour éviter les doublons
-    const cleanAttrs = attrs.replace(/\s+id="[^"]*"/i, '')
+    const cleanAttrs = attrs.replace(/(?:^|\s)id="[^"]*"/i, '')
 
     return `<h${level}${cleanAttrs} id="${id}">${inner}</h${level}>`
   })
@@ -96,7 +96,7 @@ function extractHeadings(html: string): SanitizedHeading[] {
     const inner = match[3]
     if (!level || attrs === undefined || inner === undefined) return []
 
-    const id = attrs.match(/\sid="([^"]+)"/i)?.[1]
+    const id = /\sid="([^"]+)"/i.exec(attrs)?.[1]
     if (!id) return []
 
     return [{ id, label: headingText(inner), level: Number(level) }]

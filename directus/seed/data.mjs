@@ -826,6 +826,9 @@ export const articles = [
 ]
 
 // Pages légales — contenu démo repris de l'ancien data/legal.ts du front.
+// `sections`/`subsections` sont déclaratives : seed.mjs les convertit en
+// lignes `pages_legales_sections`/`_subsections` (body WYSIWYG, tri par
+// position dans le tableau — numérotation calculée côté front).
 // `show_in_tabs: false` sur cookies : la page existe mais n'apparaît pas
 // dans la navigation par onglets des autres pages légales.
 export const pagesLegales = [
@@ -838,23 +841,23 @@ export const pagesLegales = [
     show_in_tabs: true,
     sections: [
       {
-        id: 'editeur',
-        title: '1. Éditeur du site',
+        anchor: 'editeur',
+        title: 'Éditeur du site',
         paragraphs: [
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor. Cras elementum ultrices diam. Maecenas ligula massa, varius a, semper congue, euismod non, mi.',
           'Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat. Duis semper. Duis arcu massa, scelerisque vitae, consequat in, pretium a, enim. Pellentesque congue.'
         ]
       },
       {
-        id: 'hebergement',
-        title: '2. Hébergement',
+        anchor: 'hebergement',
+        title: 'Hébergement',
         paragraphs: [
           'Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim. Pellentesque sed dui ut augue blandit sodales. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.'
         ]
       },
       {
-        id: 'propriete',
-        title: '3. Propriété intellectuelle',
+        anchor: 'propriete',
+        title: 'Propriété intellectuelle',
         paragraphs: [
           'Aliquam nibh. Mauris ac mauris sed pede pellentesque fermentum. Maecenas adipiscing ante non diam sodales hendrerit. Ut velit mauris, egestas sed, gravida nec, ornare ut, mi. Aenean ut orci vel massa suscipit pulvinar. Nulla sollicitudin.'
         ],
@@ -865,15 +868,15 @@ export const pagesLegales = [
         ]
       },
       {
-        id: 'responsabilite',
-        title: '4. Responsabilité',
+        anchor: 'responsabilite',
+        title: 'Responsabilité',
         paragraphs: [
           'Morbi in sem quis dui placerat ornare. Pellentesque odio nisi, euismod in, pharetra a, ultricies in, diam. Sed arcu. Cras consequat. Praesent dapibus, neque id cursus faucibus, tortor neque egestas augue, eu vulputate magna eros eu erat.'
         ]
       },
       {
-        id: 'contact',
-        title: '5. Contact',
+        anchor: 'contact',
+        title: 'Contact',
         paragraphs: [
           'Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus. Phasellus ultrices nulla quis nibh. Quisque a lectus.'
         ]
@@ -894,16 +897,16 @@ export const pagesLegales = [
     show_in_tabs: true,
     sections: [
       {
-        id: 'collecte',
-        title: '1. Collecte des données',
+        anchor: 'collecte',
+        title: 'Collecte des données',
         paragraphs: [
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor.',
           'Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat.'
         ]
       },
       {
-        id: 'utilisation',
-        title: '2. Utilisation des données',
+        anchor: 'utilisation',
+        title: 'Utilisation des données',
         paragraphs: [
           'Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim.'
         ],
@@ -911,11 +914,27 @@ export const pagesLegales = [
           'Gestion des demandes de renseignements ;',
           'Envoi de communications et de newsletters ;',
           'Amélioration des services et de l’expérience utilisateur.'
+        ],
+        subsections: [
+          {
+            anchor: 'utilisation-finalites',
+            title: 'Finalités du traitement',
+            paragraphs: [
+              'Maecenas tempus, tellus eget condimentum rhoncus, sem quam semper libero, sit amet adipiscing sem neque sed ipsum.'
+            ]
+          },
+          {
+            anchor: 'utilisation-duree',
+            title: 'Durée de conservation',
+            paragraphs: [
+              'Nam quam nunc, blandit vel, luctus pulvinar, hendrerit id, lorem. Maecenas nec odio et ante tincidunt tempus.'
+            ]
+          }
         ]
       },
       {
-        id: 'droits',
-        title: '3. Vos droits',
+        anchor: 'droits',
+        title: 'Vos droits',
         paragraphs: [
           'Morbi in sem quis dui placerat ornare. Pellentesque odio nisi, euismod in, pharetra a, ultricies in, diam. Sed arcu. Cras consequat.'
         ]
@@ -936,23 +955,23 @@ export const pagesLegales = [
     show_in_tabs: true,
     sections: [
       {
-        id: 'objet',
-        title: '1. Objet',
+        anchor: 'objet',
+        title: 'Objet',
         paragraphs: [
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor.',
           'Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat.'
         ]
       },
       {
-        id: 'acces',
-        title: '2. Accès au site',
+        anchor: 'acces',
+        title: 'Accès au site',
         paragraphs: [
           'Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim.'
         ]
       },
       {
-        id: 'responsabilites',
-        title: '3. Responsabilités',
+        anchor: 'responsabilites',
+        title: 'Responsabilités',
         paragraphs: [
           'Morbi in sem quis dui placerat ornare. Pellentesque odio nisi, euismod in, pharetra a, ultricies in, diam. Sed arcu. Cras consequat.'
         ]
@@ -972,22 +991,22 @@ export const pagesLegales = [
     show_in_tabs: true,
     sections: [
       {
-        id: 'engagement',
-        title: '1. Engagement',
+        anchor: 'engagement',
+        title: 'Engagement',
         paragraphs: [
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor.'
         ]
       },
       {
-        id: 'etat',
-        title: '2. État de conformité',
+        anchor: 'etat',
+        title: 'État de conformité',
         paragraphs: [
           'Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim.'
         ]
       },
       {
-        id: 'contact',
-        title: '3. Contact et amélioration',
+        anchor: 'contact',
+        title: 'Contact et amélioration',
         paragraphs: [
           'Morbi in sem quis dui placerat ornare. Pellentesque odio nisi, euismod in, pharetra a, ultricies in, diam. Sed arcu. Cras consequat.'
         ]
@@ -1008,16 +1027,16 @@ export const pagesLegales = [
     show_in_tabs: false,
     sections: [
       {
-        id: 'cookies',
-        title: '1. Cookies utilisés',
+        anchor: 'cookies',
+        title: 'Cookies utilisés',
         paragraphs: [
           'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor.',
           'Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat.'
         ]
       },
       {
-        id: 'gestion',
-        title: '2. Gestion des préférences',
+        anchor: 'gestion',
+        title: 'Gestion des préférences',
         paragraphs: [
           'Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim.'
         ]

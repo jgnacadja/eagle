@@ -5,7 +5,7 @@
       <section class="border-b border-rule bg-linear-to-b from-paper to-surface">
         <div class="mx-auto px-gutter-mobile md:px-gutter py-control-sm">
           <div class="grid grid-cols-1 items-start gap-2xl lg:grid-cols-5">
-            <div class="lg:col-span-3">
+            <div v-hero class="lg:col-span-3">
               <p class="text-overline text-accent-text">Famille de formations</p>
               <h1
                 class="mt-sm font-display text-h2 font-extrabold leading-tight text-ink lg:text-h1"
@@ -33,6 +33,7 @@
             </div>
 
             <figure
+              v-reveal-media
               class="aspect-video w-full rounded-md lg:col-span-2 lg:aspect-4/3"
               :class="
                 heroImage
@@ -61,7 +62,7 @@
         class="mx-auto w-full px-gutter-mobile py-section md:px-gutter"
         aria-labelledby="sous-familles-title"
       >
-        <h2 id="sous-familles-title" class="font-sans text-h4 font-bold text-ink">
+        <h2 id="sous-familles-title" v-reveal-soft class="font-sans text-h4 font-bold text-ink">
           {{ subnavTitle }}
         </h2>
 

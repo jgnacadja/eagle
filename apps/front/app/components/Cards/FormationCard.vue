@@ -1,6 +1,6 @@
 <template>
   <article
-    class="rounded-md border border-rule bg-paper p-md transition-[border-color,box-shadow] hover:border-primary/40 hover:shadow-md"
+    class="motion-surface rounded-md border border-rule bg-paper p-md hover:border-primary/40"
   >
     <div v-if="image" class="relative aspect-video overflow-hidden rounded-sm">
       <img :src="image" :alt="title" class="h-full w-full object-cover" loading="lazy" />

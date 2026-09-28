@@ -147,6 +147,70 @@ export function buildFlows({ syncUserId } = {}) {
           }
         }
       ]
+    },
+    {
+      // Sans ce déclencheur, le géocodage d'une adresse fraîchement saisie
+      // n'attendait qu'un miss `centres:all` (TTL + cooldown) : les champs
+      // readonly restaient figés après la sauvegarde. Trigger `action`
+      // non bloquant — une BAN lente ou en échec ne fait pas échouer
+      // l'écriture éditoriale.
+      name: 'Geocode centre on address change',
+      icon: 'location_on',
+      trigger: 'event',
+      accountability: 'all',
+      status: 'active',
+      options: {
+        type: 'action',
+        scope: ['items.create', 'items.update'],
+        collections: ['centres']
+      },
+      operations: [
+        {
+          name: 'Adresse saisie ?',
+          key: 'address-written',
+          type: 'condition',
+          position_x: 20,
+          position_y: 20,
+          options: {
+            // `payload` ne porte que les champs écrits : `address` présent
+            // ⇔ l'éditeur vient de saisir/corriger l'adresse (update) ou
+            // de la renseigner à la création. Le PATCH géodata de l'API
+            // (department, geocoded_address, name…) ne touche pas
+            // `address` → pas de boucle. (reject non câblé = arrêt propre)
+            filter: { $trigger: { payload: { address: { _nnull: true } } } }
+          }
+        },
+        {
+          name: 'Géocoder via l’API (BAN)',
+          key: 'geocode-centre',
+          type: 'request',
+          position_x: 40,
+          position_y: 20,
+          options: {
+            method: 'POST',
+            url: `${API_INTERNAL_URL}/admin/centres/geocode`,
+            headers: [{ header: 'x-api-key', value: process.env.ADMIN_API_KEY ?? '' }]
+          }
+        },
+        {
+          // Le PATCH géodata part du compte de sync (DIRECTUS_TOKEN) —
+          // exclu du flow « Invalidate site cache » par la garde. La
+          // purge ISR /centres est donc chaînée ici, après le géocodage.
+          name: 'Purge front (ISR)',
+          key: 'purge-front-centres',
+          type: 'request',
+          position_x: 60,
+          position_y: 20,
+          options: {
+            method: 'POST',
+            url: `${FRONT_INTERNAL_URL}/api/cache/invalidate`,
+            headers: [
+              { header: 'x-cache-secret', value: process.env.NUXT_CACHE_PURGE_SECRET ?? '' }
+            ],
+            body: '{"collection":"centres"}'
+          }
+        }
+      ]
     }
   ]
 }

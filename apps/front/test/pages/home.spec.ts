@@ -211,7 +211,7 @@ const stubs = {
     props: ['modelValue', 'suggestions'],
     emits: ['update:modelValue', 'submit', 'input'],
     template:
-      '<span><input v-bind="$attrs" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value); $emit(\'input\', $event.target.value)" @keydown.enter="$emit(\'submit\', $event.target.value)" /><datalist v-if="suggestions"><option v-for="s in suggestions" :key="s" :value="s" /></datalist><slot name="action" /></span>'
+      '<span><input v-bind="$attrs" :id="$attrs[\'input-id\']" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value); $emit(\'input\', $event.target.value)" @keydown.enter="$emit(\'submit\', $event.target.value)" /><datalist v-if="suggestions"><option v-for="s in suggestions" :key="s" :value="s" /></datalist><slot name="action" /></span>'
   },
   NetworkCard: {
     props: ['title', 'to'],

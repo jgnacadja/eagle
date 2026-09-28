@@ -337,11 +337,6 @@ function openAssistant() {
   })
 }
 
-interface RelatedFormationFamily {
-  slug: string
-  famille: { slug: string; name: string | null } | null
-}
-
 interface RelatedFormation {
   course: Course
   familyName: string | null

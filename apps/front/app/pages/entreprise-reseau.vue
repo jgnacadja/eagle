@@ -220,8 +220,8 @@
               Un besoin de formation ?
             </h2>
             <p class="mt-xs text-small text-ink-muted">
-              Le catalogue couvre les formations réglementaires ; un conseiller peut orienter votre
-              recherche.
+              Le catalogue couvre les formations réglementaires ; votre conseiller peut orienter
+              votre recherche.
             </p>
           </div>
           <div class="flex shrink-0 flex-col gap-sm w-full sm:w-auto sm:flex-row sm:items-center">

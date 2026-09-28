@@ -33,8 +33,11 @@
             class="mx-auto mt-md max-w-prose font-semibold text-ink text-body"
           >
             <span class="hidden md:inline"
-              >Un interlocuteur unique pour vos besoins de formation, partout en France.</span
-            ><span class="md:hidden">Un interlocuteur unique, partout en France.</span>
+              >Un interlocuteur unique pour vos besoins de formation,
+              <span class="text-accent-text">Partout en France.</span> </span
+            ><span class="md:hidden"
+              >Un interlocuteur unique, <span class="text-accent-text">Partout en France.</span>
+            </span>
           </p>
           <p v-hero="heroStagger(3)" class="mx-auto mt-sm text-ink-muted text-small max-w-prose">
             <span class="hidden md:inline"
@@ -66,9 +69,11 @@
 
           <p class="mx-auto mt-lg max-w-prose text-small text-ink-muted">
             <span class="hidden md:inline"
-              >Vous pouvez écrire comme vous le feriez à un conseiller — ex. « Nous avons 12 agences
-              en France et souhaitons centraliser nos formations réglementaires. »</span
-            ><span class="md:hidden">Vous pouvez écrire comme vous le feriez à un conseiller.</span>
+              >Vous pouvez écrire comme vous le feriez à votre conseiller — ex. « Nous avons 12
+              agences en France et souhaitons centraliser nos formations réglementaires. »</span
+            ><span class="md:hidden"
+              >Vous pouvez écrire comme vous le feriez à votre conseiller.</span
+            >
           </p>
 
           <NuxtLink
@@ -76,7 +81,7 @@
             to="/parler-a-votre-conseiller"
             class="mt-sm inline-block text-small font-bold text-accent-text underline underline-offset-4 transition-colors hover:text-primary"
           >
-            Vous préférez échanger ? Parler à un conseiller <span class="link-arrow">→</span>
+            Vous préférez échanger ? Parler à votre conseiller <span class="link-arrow">→</span>
           </NuxtLink>
 
           <!-- Carte citation flottante (desktop : absolue haut-droite, mobile : centrée sous le lien) -->
@@ -389,12 +394,12 @@
         </form>
 
         <p class="mt-md text-small text-ink-inverse-muted">
-          Vous pouvez écrire comme vous le feriez à un conseiller.
+          Vous pouvez écrire comme vous le feriez à votre conseiller.
         </p>
 
         <Button as-child variant="accent" size="pill-lg" class="gap-xs mt-lg w-full sm:w-auto">
           <NuxtLink to="/parler-a-votre-conseiller">
-            Échanger avec un conseiller <span class="link-arrow">→</span>
+            Échanger avec votre conseiller <span class="link-arrow">→</span>
           </NuxtLink>
         </Button>
       </div>

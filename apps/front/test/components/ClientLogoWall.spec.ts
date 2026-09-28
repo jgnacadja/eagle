@@ -41,13 +41,13 @@ describe('ClientLogoWall', () => {
     expect(container.classes()).toContain('grid-cols-3')
   })
 
-  it('variante wrap : grille 4 colonnes sur mobile et bordures dashed', () => {
-    const wrapper = mount(ClientLogoWall, { props: { variant: 'wrap' } })
+  it('variante marquee : défilement continu avec animation marquee et bordures dashed', () => {
+    const wrapper = mount(ClientLogoWall, { props: { variant: 'marquee' } })
 
     const container = wrapper.find('div')
-    expect(container.classes()).toContain('grid-cols-4')
-    expect(container.classes()).toContain('md:flex-wrap')
     expect(container.attributes('aria-label')).toBe('Références clients')
+    expect(wrapper.find('.marquee').exists()).toBe(true)
+    expect(wrapper.find('[aria-hidden="true"]').exists()).toBe(true)
 
     const firstCard = wrapper.find('[aria-label^="Logo client"]')
     expect(firstCard.classes()).toContain('border-dashed')

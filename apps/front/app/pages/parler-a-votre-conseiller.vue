@@ -27,7 +27,7 @@
             <div>
               <h2 class="font-display text-h3 font-extrabold text-ink">Demande transmise</h2>
               <p class="mt-sm max-w-prose text-body text-ink-muted">
-                Un conseiller vous recontacte sous 24&nbsp;h ouvrées aux coordonnées indiquées.
+                Votre conseiller vous recontacte sous 24&nbsp;h ouvrées aux coordonnées indiquées.
               </p>
             </div>
             <div class="rounded-md border border-rule bg-surface px-xl py-md">
@@ -159,9 +159,7 @@
               </div>
 
               <div>
-                <Label for="siret" class="mb-xs block">
-                  SIRET <span class="font-normal text-ink-subtle">(facultatif)</span>
-                </Label>
+                <Label for="siret" class="mb-xs block"> SIRET </Label>
                 <Input
                   id="siret"
                   v-model="siret"
@@ -180,16 +178,10 @@
                 >
                   {{ errors.siret }}
                 </p>
-                <p v-else id="siret-hint" class="mt-xs text-meta text-ink-subtle">
-                  Utilisé pour identifier votre entreprise et votre territoire d'intervention.
-                </p>
               </div>
 
               <div>
-                <Label for="message" class="mb-xs block">
-                  Votre besoin en quelques mots
-                  <span class="font-normal text-ink-subtle">(facultatif)</span>
-                </Label>
+                <Label for="message" class="mb-xs block"> Votre besoin en quelques mots </Label>
                 <Textarea
                   id="message"
                   v-model="message"
@@ -230,7 +222,7 @@
                   {{ sending ? 'Envoi en cours…' : 'Envoyer ma demande' }}
                 </Button>
                 <p class="mt-sm text-center text-meta text-ink-subtle">
-                  Un conseiller vous recontacte sous 24&nbsp;h ouvrées.
+                  Votre conseiller vous recontacte sous 24&nbsp;h ouvrées.
                 </p>
                 <p
                   v-if="submitError"
@@ -271,8 +263,8 @@
           </Card>
 
           <p class="text-meta leading-relaxed text-ink-subtle">
-            Les informations recueillies servent uniquement au traitement de la demande — détails
-            dans la
+            Les informations recueillies servent uniquement au traitement de la demande conformément
+            à notre
             <NuxtLink
               to="/confidentialite"
               class="font-medium text-primary underline underline-offset-4 transition-colors hover:text-accent-text"
@@ -323,7 +315,7 @@ const besoin = ref<ConseillerBesoin>('conseiller')
 
 const nextSteps = [
   "Votre demande est transmise à l'interlocuteur compétent de votre territoire.",
-  'Un conseiller vous recontacte sous 24 h ouvrées.',
+  'Votre conseiller vous recontacte sous 24 h ouvrées.',
   'Vous recevez une proposition adaptée : sessions, lieux, dates.'
 ]
 

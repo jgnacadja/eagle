@@ -73,32 +73,21 @@
             class="mx-auto mt-6 w-full max-w-prose"
             @submit.prevent="onHeroSearch"
           >
-            <div
-              class="flex h-14 md:h-16 items-center gap-3 rounded-full border-2 border-primary/75 bg-paper pl-4 md:pl-6 pr-2 shadow-sm transition-colors focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"
+            <SearchInput
+              v-model="heroSearch"
+              input-id="hero-search-input"
+              sr-label="Besoin d'aide pour choisir votre formation"
+              placeholder="Ex. : Je dois former 8 salariés au CACES près de Lyon avant septembre."
+              @submit="onHeroSearch"
             >
-              <IconSparkle :size="22" class="shrink-0 text-accent" />
-              <label for="hero-search-input" class="sr-only"
-                >Décrivez votre besoin de formation</label
-              >
-              <input
-                id="hero-search-input"
-                v-model="heroSearch"
-                type="text"
-                class="h-auto flex-1 border-0 bg-transparent px-0 text-small md:text-body text-ink placeholder:text-ink-subtle focus:outline-none"
-                placeholder="Ex. : Je dois former 8 salariés au CACES près de Lyon avant septembre."
-              />
-              <button
-                type="submit"
-                aria-label="Lancer la recherche"
-                class="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-full bg-primary text-paper transition-colors hover:bg-primary-dark"
-              >
-                <IconSearch :size="18" class="text-paper" />
-              </button>
-            </div>
+              <template #icon>
+                <IconSparkle :size="20" class="shrink-0 text-accent" />
+              </template>
+            </SearchInput>
             <p
               class="mt-3 text-xs md:text-small text-ink-muted whitespace-normal md:whitespace-nowrap"
             >
-              Vous pouvez écrire comme vous le feriez à un conseiller.
+              Vous pouvez écrire comme vous le feriez à votre conseiller.
             </p>
           </form>
 
@@ -226,7 +215,7 @@
     ════════════════════════════════════════════════════ -->
     <div class="bg-primary-dark">
       <div
-        class="mx-auto grid grid-cols-2 gap-px md:grid-cols-4 divide-x-0 md:divide-x divide-rule-strong p-sm"
+        class="mx-auto grid grid-cols-2 gap-px md:grid-cols-3 divide-x-0 md:divide-x divide-rule-strong p-sm"
       >
         <div
           v-for="item in tickerItems"
@@ -258,14 +247,7 @@
           Ils nous font confiance
         </p>
 
-        <ClientLogoWall variant="wrap" :logos="homeLogos" />
-
-        <p class="mt-sm text-center text-meta text-ink-subtle">
-          <span class="hidden md:inline">
-            Avis réels et références publiées avec l'accord des entreprises concernées.
-          </span>
-          <span class="md:hidden">Références publiées avec accord des entreprises.</span>
-        </p>
+        <ClientLogoWall variant="marquee" :logos="homeLogos" />
       </div>
     </section>
 
@@ -403,15 +385,15 @@
          4. CONFIER (section sombre)
     ════════════════════════════════════════════════════ -->
     <section id="confier" class="bg-primary-muted py-section text-ink-inverse">
-      <div class="mx-auto px-gutter-mobile md:px-gutter">
-        <div class="grid grid-cols-1 items-center gap-xl lg:grid-cols-2 lg:gap-2xl">
+      <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter">
+        <div class="grid grid-cols-1 items-center gap-lg md:grid-cols-2 md:gap-xl lg:gap-2xl">
           <!-- Colonne gauche : Contenu & CTA -->
           <div v-reveal class="flex flex-col items-start">
             <p class="text-overline font-extrabold uppercase tracking-wider text-accent">
               ENTREPRISES
             </p>
 
-            <h2 class="mt-xs font-display text-xl md:text-h2 font-extrabold text-ink-inverse">
+            <h2 class="mt-xs font-display text-h3 md:text-h2 font-extrabold text-ink-inverse">
               Simplifiez la gestion de vos formations
             </h2>
 
@@ -420,9 +402,7 @@
             </p>
 
             <!-- Checklist bénéfices -->
-            <ul
-              class="mt-lg flex flex-col gap-y-sm md:flex-row md:flex-wrap md:items-center md:gap-x-lg"
-            >
+            <ul class="mt-md flex flex-wrap items-center gap-x-md gap-y-xs sm:gap-x-lg">
               <li
                 v-for="benefit in enterpriseBenefits"
                 :key="benefit"
@@ -434,24 +414,24 @@
             </ul>
 
             <!-- Boutons d'action -->
-            <div class="mt-xl flex w-full flex-col gap-md sm:w-auto sm:flex-row sm:items-center">
-              <Button as-child variant="accent" size="pill-lg" class="w-full sm:w-auto">
+            <div class="mt-lg flex w-full flex-col gap-sm sm:w-auto sm:flex-row sm:items-center">
+              <Button as-child variant="accent" size="pill" class="w-full sm:w-auto">
                 <NuxtLink to="/centres/demande-de-formation">
                   Découvrir nos solutions entreprises <span class="link-arrow">→</span>
                 </NuxtLink>
               </Button>
-              <Button as-child variant="outline-inverse" size="pill-lg" class="w-full sm:w-auto">
+              <Button as-child variant="outline-inverse" size="pill" class="w-full sm:w-auto">
                 <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
               </Button>
             </div>
           </div>
 
           <!-- Colonne droite : Visuel formation entreprise -->
-          <div v-reveal>
+          <div v-reveal class="hidden md:flex justify-end items-center">
             <img
               src="/images/formation2.webp"
               alt="Responsable formation en entreprise"
-              class="hidden md:block aspect-16/10 w-full rounded-md object-cover shadow-sm"
+              class="aspect-16/10 w-full rounded-xl object-cover shadow-md"
               loading="lazy"
             />
           </div>
@@ -602,15 +582,9 @@
 
         <!-- Pied de section : Témoignages & CTA -->
         <div class="mt-xl flex flex-col gap-lg sm:flex-row sm:items-center sm:justify-between">
-          <p class="text-meta text-ink-subtle">
-            Avis réels et références publiées avec l'accord des entreprises concernées.
-          </p>
-
           <div class="shrink-0">
             <Button as-child variant="outline" size="pill-lg" class="lg:inline-flex gap-xs">
-              <NuxtLink to="/formations">
-                Voir tous les avis <span class="link-arrow">→</span>
-              </NuxtLink>
+              <NuxtLink to="/formations"> Consulter <span class="link-arrow">→</span></NuxtLink>
             </Button>
           </div>
         </div>
@@ -693,28 +667,19 @@
         </h2>
 
         <form class="mx-auto mt-lg w-full max-w-prose" @submit.prevent="onCtaSearch">
-          <div
-            class="flex h-14 md:h-16 items-center gap-3 rounded-full bg-paper pl-4 md:pl-6 pr-2 shadow-lg transition-colors focus-within:ring-2 focus-within:ring-primary/20"
+          <SearchInput
+            v-model="ctaSearch"
+            input-id="cta-search-input"
+            sr-label="Décrivez votre situation"
+            placeholder="Ex. : Nous devons renouveler 12 habilitations sur deux sites avant décembre."
+            @submit="onCtaSearch"
           >
-            <IconSparkle :size="22" class="shrink-0 text-accent" />
-            <label for="cta-search-input" class="sr-only"> Décrivez votre situation </label>
-            <input
-              id="cta-search-input"
-              v-model="ctaSearch"
-              type="text"
-              class="h-auto flex-1 border-0 bg-transparent px-0 text-small md:text-body text-ink placeholder:text-ink-subtle focus:outline-none"
-              placeholder="Ex. : Nous devons renouveler 12 habilitations sur deux sites avant décembre."
-            />
-            <button
-              type="submit"
-              aria-label="Lancer la recherche"
-              class="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-full bg-primary text-paper transition-colors hover:bg-primary-dark"
-            >
-              <IconSearch :size="18" class="text-paper" />
-            </button>
-          </div>
+            <template #icon>
+              <IconSparkle :size="20" class="shrink-0 text-accent" />
+            </template>
+          </SearchInput>
           <p class="mt-3 text-center text-xs md:text-small text-ink-inverse-muted">
-            Vous pouvez écrire comme vous le feriez à un conseiller.
+            Vous pouvez écrire comme vous le feriez à votre conseiller.
           </p>
         </form>
 
@@ -845,12 +810,6 @@ const tickerItems = [
     icon: resolveComponent('IconMapPin'),
     value: 'Réseau national',
     label: 'des centres partout en France'
-  },
-  {
-    key: 'live',
-    icon: resolveComponent('IconRefresh'),
-    value: 'Données actualisées',
-    label: 'en continu'
   }
 ]
 

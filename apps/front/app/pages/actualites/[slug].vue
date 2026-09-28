@@ -161,7 +161,7 @@
               <Card variant="dark" class="p-lg">
                 <h3 class="text-small font-bold">Un doute sur vos échéances ?</h3>
                 <p class="mt-sm text-meta leading-relaxed text-ink-inverse-muted">
-                  Transmettez vos dates de délivrance : un conseiller planifie les recyclages en
+                  Transmettez vos dates de délivrance : votre conseiller planifie les recyclages en
                   série avec vos équipes.
                 </p>
                 <Button as-child variant="paper" size="pill" class="mt-lg w-full">
@@ -335,11 +335,6 @@ function openAssistant() {
       formationSlug: typeof related === 'object' && related ? related.slug : undefined
     }
   })
-}
-
-interface RelatedFormationFamily {
-  slug: string
-  famille: { slug: string; name: string | null } | null
 }
 
 interface RelatedFormation {

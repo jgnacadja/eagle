@@ -48,7 +48,7 @@
                     class="flex-1 justify-center text-center max-sm:px-sm max-sm:text-badge sm:flex-initial"
                   >
                     <NuxtLink to="/parler-a-votre-conseiller">
-                      <span class="sm:hidden">Parler à un conseiller</span>
+                      <span class="sm:hidden">Parler à votre conseiller</span>
                       <span class="hidden sm:inline">Parler à votre conseiller</span>
                     </NuxtLink>
                   </Button>
@@ -448,6 +448,11 @@
                   :quote="avis.quote"
                   :author="avis.author"
                 />
+              </div>
+              <div class="mt-lg">
+                <Button as-child variant="outline" size="pill" class="gap-xs">
+                  <NuxtLink to="/formations">Consulter <span class="link-arrow">→</span></NuxtLink>
+                </Button>
               </div>
             </section>
 

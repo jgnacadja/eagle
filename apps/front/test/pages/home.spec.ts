@@ -211,7 +211,7 @@ const stubs = {
     props: ['modelValue', 'suggestions'],
     emits: ['update:modelValue', 'submit', 'input'],
     template:
-      '<span><input v-bind="$attrs" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value); $emit(\'input\', $event.target.value)" @keydown.enter="$emit(\'submit\', $event.target.value)" /><datalist v-if="suggestions"><option v-for="s in suggestions" :key="s" :value="s" /></datalist><slot name="action" /></span>'
+      '<span><input v-bind="$attrs" :id="$attrs[\'input-id\']" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value); $emit(\'input\', $event.target.value)" @keydown.enter="$emit(\'submit\', $event.target.value)" /><datalist v-if="suggestions"><option v-for="s in suggestions" :key="s" :value="s" /></datalist><slot name="action" /></span>'
   },
   NetworkCard: {
     props: ['title', 'to'],
@@ -560,7 +560,7 @@ describe('pages/index', () => {
     // ne doivent pas appara\u00eetre.
     expect(wrapper.findAll('.testimonial')).toHaveLength(0)
     expect(wrapper.text()).not.toContain('Les clients parlent de nous')
-    expect(wrapper.text()).not.toContain('Voir tous les avis')
+    expect(wrapper.text()).not.toContain('Consulter')
   })
 
   it('affiche un message utilisateur lorsque la carte des centres est indisponible', async () => {

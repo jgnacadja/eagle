@@ -9,7 +9,7 @@
         <div class="mx-auto px-gutter-mobile md:px-gutter py-control-sm">
           <div class="grid items-start gap-2xl lg:grid-cols-5">
             <div class="contents lg:block lg:col-span-3">
-              <div class="order-1 lg:order-0">
+              <div v-hero class="order-1 lg:order-0">
                 <p class="text-overline text-accent-text uppercase">
                   Réseau Learn Up Academy<template v-if="centre.department">
                     · {{ centre.department }}</template
@@ -33,7 +33,10 @@
                 </ul>
               </div>
 
-              <div class="order-3 flex w-full flex-wrap items-center gap-md lg:order-0 lg:mt-lg">
+              <div
+                v-hero
+                class="order-3 flex w-full flex-wrap items-center gap-md lg:order-0 lg:mt-lg"
+              >
                 <Button as-child variant="accent" size="pill" class="w-full sm:w-auto">
                   <NuxtLink to="#formations">Trouver une formation dans ce centre</NuxtLink>
                 </Button>
@@ -63,6 +66,7 @@
 
             <figure
               v-if="imageSrc"
+              v-reveal-media
               class="order-2 relative mx-auto aspect-3/4 w-full max-w-callout overflow-hidden rounded-md bg-surface-alt shadow-lg lg:order-0 lg:col-span-2"
             >
               <img
@@ -263,7 +267,11 @@
               aria-labelledby="le-centre-title"
               class="order-6 md:px-16 lg:order-0 lg:px-0"
             >
-              <h2 id="le-centre-title" class="font-display text-h2 font-extrabold text-ink">
+              <h2
+                id="le-centre-title"
+                v-reveal-soft
+                class="font-display text-h2 font-extrabold text-ink"
+              >
                 Le centre
               </h2>
               <div
@@ -279,7 +287,11 @@
               class="order-3 md:px-16 lg:order-0 lg:px-0"
             >
               <div class="flex flex-wrap items-baseline justify-between gap-sm">
-                <h2 id="formations-title" class="font-display text-h2 font-extrabold text-ink">
+                <h2
+                  id="formations-title"
+                  v-reveal-soft
+                  class="font-display text-h2 font-extrabold text-ink"
+                >
                   Les formations disponibles dans ce centre
                 </h2>
                 <span v-if="centreCatalog.data.value" class="text-small text-ink-muted">
@@ -329,7 +341,11 @@
               aria-labelledby="sessions-title"
               class="order-4 md:px-16 lg:order-0 lg:px-0"
             >
-              <h2 id="sessions-title" class="font-display text-h2 font-extrabold text-ink">
+              <h2
+                id="sessions-title"
+                v-reveal-soft
+                class="font-display text-h2 font-extrabold text-ink"
+              >
                 Prochaines sessions
               </h2>
               <p class="mt-sm text-small text-ink-muted">Disponibilités actualisées en continu.</p>
@@ -375,7 +391,13 @@
               aria-labelledby="avis-title"
               class="order-7 md:px-16 lg:order-0 lg:px-0"
             >
-              <h2 id="avis-title" class="font-display text-h2 font-extrabold text-ink">Avis</h2>
+              <h2
+                id="avis-title"
+                v-reveal-soft
+                class="font-display text-h2 font-extrabold text-ink"
+              >
+                Avis
+              </h2>
               <p class="mt-xs flex flex-wrap items-baseline gap-x-sm">
                 <span class="font-display text-h3 font-extrabold text-ink"
                   >4,7<span class="font-sans text-body font-medium text-ink-muted">/5</span></span
@@ -407,7 +429,11 @@
               class="order-8 md:px-16 lg:order-0 lg:px-0"
             >
               <div class="flex flex-wrap items-baseline justify-between gap-sm">
-                <h2 id="actus-title" class="font-display text-h2 font-extrabold text-ink">
+                <h2
+                  id="actus-title"
+                  v-reveal-soft
+                  class="font-display text-h2 font-extrabold text-ink"
+                >
                   Actualités de votre centre
                 </h2>
                 <Button as-child variant="link" size="inline" class="hidden font-bold sm:inline">
@@ -463,7 +489,11 @@
           aria-labelledby="autres-title"
         >
           <div class="flex flex-wrap items-baseline justify-between gap-sm">
-            <h2 id="autres-title" class="font-display text-h2 font-extrabold text-ink">
+            <h2
+              id="autres-title"
+              v-reveal-soft
+              class="font-display text-h2 font-extrabold text-ink"
+            >
               Autres centres<template v-if="centre.region"> en {{ centre.region }}</template>
             </h2>
             <Button as-child variant="link" size="inline" class="hidden font-bold sm:inline">

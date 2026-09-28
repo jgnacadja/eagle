@@ -1,11 +1,19 @@
-// View models des pages légales — alimentés depuis la collection Directus
-// `pages_legales` (voir PageLegale dans @learnup/types) par la page [slug].
+// View models des pages légales — alimentés depuis les collections
+// Directus `pages_legales` + `pages_legales_sections`/`_subsections`
+// (voir PageLegale dans @learnup/types) par la page [slug].
 
-export interface LegalPageSection {
+export interface LegalPageSubsection {
+  /** Ancre HTML — id DOM de la section et cible des liens du sommaire. */
   id: string
+  /** Numéro affiché (« 1 » / « 1.1 ») — calculé depuis l'ordre de tri. */
+  number: string
   title: string
-  paragraphs: string[]
-  bullets?: string[]
+  /** HTML sanitizé — rendu via v-html. */
+  body: string | null
+}
+
+export interface LegalPageSection extends LegalPageSubsection {
+  subsections: LegalPageSubsection[]
 }
 
 export interface LegalPageTab {

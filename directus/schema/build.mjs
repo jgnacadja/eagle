@@ -12,6 +12,7 @@
 import { collections, relations } from './collections.mjs'
 import { buildFlows } from './flows.mjs'
 import { permissionsFor, publicPermissions, roles } from './roles.mjs'
+import { legalSectionToHtml, stripSectionNumber } from '../legalContent.mjs'
 import { log, logError } from '../logger.mjs'
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL ?? 'http://localhost:8055'
@@ -109,34 +110,156 @@ async function relationExists(token, collection, field) {
   return res.ok
 }
 
+// Phase 1 : les colonnes M2O sont créées avant la migration de contenu —
+// une colonne suffit pour écrire des items, la relation n'est pas requise.
+async function ensureRelationFields(token) {
+  for (const rel of relations) {
+    if (await relationExists(token, rel.collection, rel.field)) continue
+    if (await fieldExists(token, rel.collection, rel.field)) continue
+    await api(token, 'POST', `/fields/${rel.collection}`, {
+      field: rel.field,
+      type: rel.related_collection === 'directus_files' ? 'uuid' : 'integer',
+      meta: rel.meta
+    })
+    log(`✔  champ ${rel.collection}.${rel.field} créé`)
+  }
+}
+
+// Le meta du champ relation (note, traductions…) reste convergent — sinon
+// les réglages déclarés ici ne s'appliqueraient jamais sur une relation
+// déjà créée. one_field/sort_field sont aussi reconvergés via PATCH.
+async function convergeRelation(token, rel) {
+  if (rel.meta) {
+    await api(token, 'PATCH', `/fields/${rel.collection}/${rel.field}`, {
+      meta: { readonly: false, hidden: false, ...rel.meta }
+    })
+  }
+  const { data: current } = await api(token, 'GET', `/relations/${rel.collection}/${rel.field}`)
+  const metaPatch = {}
+  if (rel.one_field && current.meta?.one_field !== rel.one_field)
+    metaPatch.one_field = rel.one_field
+  if (rel.sort_field && current.meta?.sort_field !== rel.sort_field)
+    metaPatch.sort_field = rel.sort_field
+  if (Object.keys(metaPatch).length) {
+    await api(token, 'PATCH', `/relations/${rel.collection}/${rel.field}`, {
+      meta: metaPatch
+    })
+  }
+  log(`↷  relation ${rel.collection}.${rel.field} déjà présente`)
+}
+
+async function createRelation(token, rel) {
+  const meta = {}
+  if (rel.one_field) meta.one_field = rel.one_field
+  if (rel.sort_field) meta.sort_field = rel.sort_field
+  await api(token, 'POST', '/relations', {
+    collection: rel.collection,
+    field: rel.field,
+    related_collection: rel.related_collection,
+    ...(Object.keys(meta).length ? { meta } : {})
+  })
+  log(`✔  relation ${rel.collection}.${rel.field} → ${rel.related_collection}`)
+}
+
+// Phase 2 : relations + alias O2M (`one_field` crée le champ miroir sur le
+// parent ; `sort_field` active le tri manuel et l'ordre de lecture). Sur
+// une relation existante, on converge one_field/sort_field via PATCH.
 async function ensureRelations(token) {
   for (const rel of relations) {
     if (await relationExists(token, rel.collection, rel.field)) {
-      // Le meta du champ relation (note, traductions…) reste convergent —
-      // sinon les réglages déclarés ici ne s'appliqueraient jamais sur une
-      // relation déjà créée.
-      if (rel.meta) {
-        await api(token, 'PATCH', `/fields/${rel.collection}/${rel.field}`, {
-          meta: { readonly: false, hidden: false, ...rel.meta }
-        })
-      }
-      log(`↷  relation ${rel.collection}.${rel.field} déjà présente`)
-      continue
+      await convergeRelation(token, rel)
+    } else {
+      await createRelation(token, rel)
     }
-    if (!(await fieldExists(token, rel.collection, rel.field))) {
-      await api(token, 'POST', `/fields/${rel.collection}`, {
-        field: rel.field,
-        type: rel.related_collection === 'directus_files' ? 'uuid' : 'integer',
-        meta: rel.meta
+    // Meta de l'alias O2M (interface, gabarit, traductions) — le champ est
+    // créé par Directus au POST /relations, son meta reste convergent ici.
+    if (rel.one_field && rel.one_meta) {
+      await api(token, 'PATCH', `/fields/${rel.related_collection}/${rel.one_field}`, {
+        meta: { readonly: false, hidden: false, ...rel.one_meta }
       })
     }
-    await api(token, 'POST', '/relations', {
-      collection: rel.collection,
-      field: rel.field,
-      related_collection: rel.related_collection
-    })
-    log(`✔  relation ${rel.collection}.${rel.field} → ${rel.related_collection}`)
   }
+}
+
+// Migration « pages légales » : le champ JSON `pages_legales.sections`
+// (interface `list` + tags — un clic supprimait un paragraphe) est
+// converti en lignes `pages_legales_sections` puis supprimé pour laisser
+// le nom `sections` à l'alias O2M créé par ensureRelations. Idempotent :
+// une section déjà copiée (même page + ancre) est ignorée ; sans champ
+// JSON, no-op. Interrompue avant toute suppression si le contenu source
+// n'est pas migrable en entier — sinon une section sans ancre ou avec
+// ancre dupliquée serait perdue avec le champ JSON.
+// Valide et planifie la migration : toute section sans ancre ou avec une
+// ancre dupliquée dans sa page est une erreur bloquante (la section serait
+// perdue à la suppression du champ JSON). Les sections déjà copiées
+// (même page + ancre) sont ignorées — le run est idempotent.
+// Valide l'ancre d'une section : vide ou dupliquée dans sa page → erreur
+// bloquante (la section serait perdue à la suppression du champ JSON).
+function validSectionAnchor(page, index, section, pageAnchors) {
+  const anchor = typeof section?.id === 'string' ? section.id.trim() : ''
+  if (!anchor) {
+    return { error: `${page.slug ?? page.id}#${index + 1} (ancre vide)` }
+  }
+  if (pageAnchors.has(anchor)) {
+    return { error: `${page.slug ?? page.id}#${anchor} (ancre dupliquée)` }
+  }
+  pageAnchors.add(anchor)
+  return { anchor }
+}
+
+// Valide et planifie la migration. Les sections déjà copiées (même page +
+// ancre) sont ignorées — le run est idempotent.
+function collectSectionsToMigrate(pages, migratedKeys) {
+  const errors = []
+  const toMigrate = []
+  for (const page of pages ?? []) {
+    const sections = Array.isArray(page.sections) ? page.sections : []
+    const pageAnchors = new Set()
+    for (const [index, section] of sections.entries()) {
+      const { anchor, error } = validSectionAnchor(page, index, section, pageAnchors)
+      if (error) {
+        errors.push(error)
+        continue
+      }
+      if (migratedKeys.has(`${page.id}:${anchor}`)) continue
+      toMigrate.push({ page, index, section, anchor })
+    }
+  }
+  return { errors, toMigrate }
+}
+
+async function migrateLegalSections(token) {
+  // Champ inconnu → 403 ou 404 selon l'état du schéma : on liste les
+  // champs de la collection plutôt que de lire le champ directement.
+  const { data: fields } = await api(token, 'GET', '/fields/pages_legales?limit=-1')
+  const field = (fields ?? []).find((f) => f.field === 'sections')
+  if (field?.type !== 'json') return // absent ou déjà un alias O2M
+
+  const { data: pages } = await api(token, 'GET', '/items/pages_legales?limit=-1')
+  const { data: existing } = await api(token, 'GET', '/items/pages_legales_sections?limit=-1')
+  const migratedKeys = new Set((existing ?? []).map((row) => `${row.page}:${row.anchor}`))
+
+  const { errors, toMigrate } = collectSectionsToMigrate(pages, migratedKeys)
+  if (errors.length) {
+    throw new Error(
+      `Migration pages_legales.sections interrompue — ancres à corriger avant suppression du champ JSON : ${errors.join(', ')}`
+    )
+  }
+
+  for (const { page, index, section, anchor } of toMigrate) {
+    await api(token, 'POST', '/items/pages_legales_sections', {
+      page: page.id,
+      sort: index + 1,
+      title: stripSectionNumber(section?.title) || `Section ${index + 1}`,
+      anchor,
+      body: legalSectionToHtml(section)
+    })
+  }
+
+  await api(token, 'DELETE', '/fields/pages_legales/sections')
+  log(
+    `✔  pages_legales.sections migré — ${toMigrate.length} section(s) copiée(s), champ JSON supprimé`
+  )
 }
 
 async function fetchByName(token, endpoint) {
@@ -206,28 +329,50 @@ async function fetchExistingPermissions(token, policyId) {
   const { data } = await api(token, 'GET', '/permissions?limit=-1')
   const map = new Map()
   for (const p of data.filter((p) => p.policy === policyId)) {
-    map.set(`${p.collection}:${p.action}`, { id: p.id, fields: p.fields })
+    map.set(`${p.collection}:${p.action}`, {
+      id: p.id,
+      fields: p.fields,
+      permissions: p.permissions
+    })
   }
   return map
 }
 
-// Convergent sur `fields` : une permission existante dont la liste de
-// champs diffère du schéma voulu est patchée — sinon une restriction type
-// ['famille'] resterait figée alors que le schéma a évolué.
+// Égalité profonde stable (ordre des clés insensible) — sert à comparer
+// les filtres `permissions` d'une permission existante au schéma voulu.
+function deepEqual(a, b) {
+  if (a === b) return true
+  if (typeof a !== 'object' || typeof b !== 'object' || !a || !b) return false
+  if (Array.isArray(a) !== Array.isArray(b)) return false
+  const keysA = Object.keys(a)
+  const keysB = Object.keys(b)
+  if (keysA.length !== keysB.length) return false
+  return keysA.every((key) => key in b && deepEqual(a[key], b[key]))
+}
+
+// Convergent sur `fields` et `permissions` : une permission existante dont
+// la liste de champs ou le filtre diffèrent du schéma voulu est patchée —
+// sinon une restriction type ['famille'] ou un filtre `status: published`
+// ajouté après coup resterait figé alors que le schéma a évolué.
 async function createPermissions(token, policyId, wanted, existing) {
   let created = 0
   let updated = 0
   for (const grant of wanted) {
     const key = `${grant.collection}:${grant.action}`
     const wantedFields = grant.fields ?? ['*']
+    const wantedPermissions = grant.permissions ?? {}
     const current = existing.get(key)
     if (current) {
       const currentFields = current.fields ?? ['*']
       const sameFields =
         currentFields.length === wantedFields.length &&
         wantedFields.every((f) => currentFields.includes(f))
-      if (!sameFields) {
-        await api(token, 'PATCH', `/permissions/${current.id}`, { fields: wantedFields })
+      const samePermissions = deepEqual(current.permissions ?? {}, wantedPermissions)
+      if (!sameFields || !samePermissions) {
+        await api(token, 'PATCH', `/permissions/${current.id}`, {
+          ...(sameFields ? {} : { fields: wantedFields }),
+          ...(samePermissions ? {} : { permissions: wantedPermissions })
+        })
         updated += 1
       }
       continue
@@ -237,7 +382,7 @@ async function createPermissions(token, policyId, wanted, existing) {
       collection: grant.collection,
       action: grant.action,
       fields: wantedFields,
-      permissions: grant.permissions ?? {},
+      permissions: wantedPermissions,
       validation: {}
     })
     created += 1
@@ -357,6 +502,11 @@ async function main() {
   const token = await authenticate()
 
   await ensureCollections(token)
+  await ensureRelationFields(token)
+  // La migration JSON → lignes tourne entre colonnes et alias : elle lit
+  // `pages_legales.sections` (encore JSON), écrit via la colonne `page`,
+  // puis supprime le champ pour libérer le nom de l'alias O2M.
+  await migrateLegalSections(token)
   await ensureRelations(token)
   const roleIds = await ensureRoles(token)
   const policyIds = await ensurePolicies(token)

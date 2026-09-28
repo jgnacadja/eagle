@@ -92,12 +92,21 @@ export interface SousFamilleFormation {
   famille: number | { slug: string } | null
 }
 
-/** Section de page légale — l'`id` sert d'ancre pour le sommaire. */
-export interface LegalSection {
-  id: string
+/** Sous-section de page légale — `anchor` sert d'ancre pour le sommaire. */
+export interface PageLegaleSubsection {
+  id: number
+  sort: number | null
+  /** Sans le numéro — le rendu ajoute « x.y » d'après `sort`. */
   title: string
-  paragraphs?: string[] | null
-  bullets?: string[] | null
+  anchor: string
+  /** HTML WYSIWYG — passer par sanitizeHtml avant v-html. */
+  body: string | null
+}
+
+/** Section de page légale — `anchor` sert d'ancre pour le sommaire. */
+export interface PageLegaleSection extends PageLegaleSubsection {
+  /** Alias O2M — objets si les fields `sections.subsections.*` sont demandés. */
+  subsections?: PageLegaleSubsection[] | null
 }
 
 export interface PageLegale extends SeoFields {
@@ -110,7 +119,7 @@ export interface PageLegale extends SeoFields {
   title: string
   /** false = page hors onglets (ex. cookies), toujours accessible par son slug. */
   show_in_tabs: boolean | null
-  sections: LegalSection[] | null
+  sections: PageLegaleSection[] | null
   cta_label: string | null
   cta_to: string | null
   created_at: string | null

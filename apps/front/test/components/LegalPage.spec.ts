@@ -54,14 +54,24 @@ const page: LegalPageModel = {
   sections: [
     {
       id: 'editeur',
-      title: '1. Éditeur du site',
-      paragraphs: ['Premier paragraphe.', 'Second paragraphe.']
+      number: '1',
+      title: 'Éditeur du site',
+      body: '<p>Premier paragraphe.</p><p>Second paragraphe.</p>',
+      subsections: [
+        {
+          id: 'editeur-forme',
+          number: '1.1',
+          title: 'Forme juridique',
+          body: '<p>Société par actions simplifiée.</p>'
+        }
+      ]
     },
     {
       id: 'hebergement',
-      title: '2. Hébergement',
-      paragraphs: ['Paragraphe hébergement.'],
-      bullets: ['Puce un', 'Puce deux']
+      number: '2',
+      title: 'Hébergement',
+      body: '<p>Paragraphe hébergement.</p><ul><li>Puce un</li><li>Puce deux</li></ul>',
+      subsections: []
     }
   ],
   cta: { label: 'Contacter LEARN UP ACADEMY', to: 'mailto:contact@learnup.fr' }
@@ -85,13 +95,31 @@ describe('components/LegalPage', () => {
     expect(wrapper.text()).toContain(`Dernière mise à jour : ${page.lastUpdated}`)
 
     for (const section of page.sections) {
-      expect(wrapper.text()).toContain(section.title)
-      for (const paragraph of section.paragraphs) {
-        expect(wrapper.text()).toContain(paragraph)
+      expect(wrapper.text()).toContain(`${section.number}. ${section.title}`)
+      expect(wrapper.text()).toContain('Premier paragraphe.')
+      for (const subsection of section.subsections) {
+        expect(wrapper.text()).toContain(`${subsection.number} ${subsection.title}`)
       }
     }
 
     expect(wrapper.text()).toContain(page.cta.label)
+  })
+
+  it('rend le corps WYSIWYG des sections en HTML', () => {
+    const wrapper = mount(LegalPage, { props: { page, tabs }, global: { stubs } })
+
+    const bodies = wrapper.findAll('.legal-body')
+    expect(bodies).toHaveLength(3)
+    const items = wrapper.findAll('.legal-body ul li')
+    expect(items.map((li) => li.text())).toEqual(['Puce un', 'Puce deux'])
+  })
+
+  it('expose des ancres sur les sections et sous-sections', () => {
+    const wrapper = mount(LegalPage, { props: { page, tabs }, global: { stubs } })
+
+    expect(wrapper.find('#editeur').exists()).toBe(true)
+    expect(wrapper.find('#editeur-forme').exists()).toBe(true)
+    expect(wrapper.find('#hebergement').exists()).toBe(true)
   })
 
   it('affiche les liens de navigation vers les autres pages légales', () => {

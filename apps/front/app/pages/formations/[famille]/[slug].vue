@@ -8,7 +8,7 @@
       >
         <div class="mx-auto px-gutter-mobile md:px-gutter py-control-sm">
           <div class="grid items-start gap-2xl lg:grid-cols-5">
-            <div class="lg:col-span-3">
+            <div v-hero class="lg:col-span-3">
               <p class="text-overline text-accent-text">
                 {{ familyName }}
                 <template v-if="course.certification"> · Formation certifiante</template>
@@ -66,6 +66,7 @@
 
             <figure
               v-if="imageSrc"
+              v-reveal-media
               class="relative aspect-video overflow-hidden rounded-md bg-surface-alt shadow-lg lg:col-span-2 lg:aspect-4/3"
             >
               <img :src="imageSrc" :alt="course.title" class="h-full w-full object-cover" />
@@ -81,7 +82,11 @@
           <div class="min-w-0 flex-1 space-y-2xl md:px-16">
             <!-- À propos -->
             <section v-if="course.description" aria-labelledby="apropos-title">
-              <h2 id="apropos-title" class="font-display text-h2 font-extrabold text-ink">
+              <h2
+                id="apropos-title"
+                v-reveal-soft
+                class="font-display text-h2 font-extrabold text-ink"
+              >
                 À propos de cette formation
               </h2>
               <div
@@ -92,7 +97,11 @@
 
             <!-- Objectifs -->
             <section v-if="objectives.length" aria-labelledby="objectifs-title">
-              <h2 id="objectifs-title" class="font-display text-h2 font-extrabold text-ink">
+              <h2
+                id="objectifs-title"
+                v-reveal-soft
+                class="font-display text-h2 font-extrabold text-ink"
+              >
                 Objectifs pédagogiques
               </h2>
               <ul class="mt-md space-y-sm">
@@ -141,7 +150,11 @@
             <!-- Programme -->
             <section v-if="programme.length" aria-labelledby="programme-title">
               <div class="flex flex-wrap items-baseline justify-between gap-md">
-                <h2 id="programme-title" class="font-display text-h2 font-extrabold text-ink">
+                <h2
+                  id="programme-title"
+                  v-reveal-soft
+                  class="font-display text-h2 font-extrabold text-ink"
+                >
                   Programme
                 </h2>
                 <p v-if="durationLabel" class="text-small text-ink-subtle">{{ durationLabel }}</p>
@@ -256,7 +269,11 @@
             <!-- Prochaines sessions -->
             <section id="sessionsList" aria-labelledby="sessions-title">
               <div class="flex flex-wrap items-baseline justify-between gap-md">
-                <h2 id="sessions-title" class="font-display text-h2 font-extrabold text-ink">
+                <h2
+                  id="sessions-title"
+                  v-reveal-soft
+                  class="font-display text-h2 font-extrabold text-ink"
+                >
                   Prochaines sessions
                 </h2>
               </div>
@@ -315,7 +332,11 @@
 
             <!-- Où suivre cette formation -->
             <section v-if="lieux.length" aria-labelledby="lieux-title">
-              <h2 id="lieux-title" class="font-display text-h2 font-extrabold text-ink">
+              <h2
+                id="lieux-title"
+                v-reveal-soft
+                class="font-display text-h2 font-extrabold text-ink"
+              >
                 Où suivre cette formation ?
               </h2>
               <div class="mt-md space-y-md text-body text-ink-body">
@@ -462,7 +483,11 @@
 
           <section v-if="similaires.length" aria-labelledby="similaires-title">
             <div class="flex flex-wrap items-baseline justify-between gap-md">
-              <h2 id="similaires-title" class="font-display text-h2 font-extrabold text-ink">
+              <h2
+                id="similaires-title"
+                v-reveal-soft
+                class="font-display text-h2 font-extrabold text-ink"
+              >
                 Formations similaires
               </h2>
               <Button as-child variant="link" size="inline" class="font-bold">

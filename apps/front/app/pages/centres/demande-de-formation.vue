@@ -2,7 +2,7 @@
   <div class="flex-1">
     <div class="mx-auto px-gutter-mobile py-section md:px-gutter">
       <!-- En-tête de page + stepper -->
-      <div class="mb-2xl flex items-start justify-between gap-lg">
+      <div v-hero class="mb-2xl flex items-start justify-between gap-lg">
         <div>
           <h1 class="font-display text-h2 font-extrabold text-ink lg:text-h1">
             {{ isIntra ? 'Organiser cette formation dans mon entreprise' : 'Demande de formation' }}

@@ -11,20 +11,24 @@
       <div class="relative mx-auto px-gutter-mobile py-4xl md:px-gutter md:py-4xl">
         <div class="max-w-prose">
           <span
+            v-hero="heroStagger(0)"
             class="inline-block rounded-full border border-outline-inverse px-lg py-sm text-overline font-bold uppercase text-ink-inverse-muted"
           >
             Réseau LEARN UP ACADEMY
           </span>
-          <h1 class="mt-xl font-display text-h2 font-extrabold leading-tight md:text-hero">
+          <h1
+            v-hero="heroStagger(1)"
+            class="mt-xl font-display text-h2 font-extrabold leading-tight md:text-hero"
+          >
             Un réseau national de centres de formation,
             <span class="text-accent"> porté par la demande</span>.
           </h1>
-          <p class="mt-lg max-w-prose text-lead text-ink-inverse-muted">
+          <p v-hero="heroStagger(2)" class="mt-lg max-w-prose text-lead text-ink-inverse-muted">
             LEARN UP réunit des centres de formation sous une marque commune : un catalogue
             mutualisé, un moteur de recherche qui qualifie les besoins des entreprises, et des
             demandes transmises aux centres du réseau.
           </p>
-          <div class="mt-xl flex flex-wrap gap-md">
+          <div v-hero="heroStagger(3)" class="mt-xl flex flex-wrap gap-md">
             <Button as-child variant="accent" size="pill-lg" class="w-full sm:w-auto">
               <NuxtLink to="#candidater">Candidater</NuxtLink>
             </Button>
@@ -39,7 +43,7 @@
 
     <div class="mx-auto px-gutter-mobile py-section md:px-gutter md:py-4xl">
       <section id="candidater" aria-labelledby="options-title">
-        <h2 id="options-title" class="font-display text-h2 font-extrabold text-ink">
+        <h2 id="options-title" v-reveal-soft class="font-display text-h2 font-extrabold text-ink">
           Trois façons de rejoindre le réseau
         </h2>
         <div class="mt-xl grid gap-grid md:grid-cols-3">
@@ -79,7 +83,11 @@
       <Benefits id="modele" title="Ce que le réseau apporte" :benefits="benefits" />
 
       <section class="mt-4xl" aria-labelledby="process-title">
-        <h2 id="process-title" class="md:text-center font-display text-h2 font-extrabold text-ink">
+        <h2
+          id="process-title"
+          v-reveal-soft
+          class="md:text-center font-display text-h2 font-extrabold text-ink"
+        >
           De la candidature à l'ouverture
         </h2>
 
@@ -115,7 +123,7 @@ import IconAward from '~/components/icons/IconAward.vue'
 import IconBook from '~/components/icons/IconBook.vue'
 import IconBuilding from '~/components/icons/IconBuilding.vue'
 import type { CandidatureVoie } from '~/types/candidature'
-import { revealStagger } from '~/utils/reveal'
+import { heroStagger, revealStagger } from '~/utils/reveal'
 
 useContentSeo(
   {

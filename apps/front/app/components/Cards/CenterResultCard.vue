@@ -1,10 +1,10 @@
 <template>
   <article
-    class="cursor-pointer rounded-md border p-md transition"
+    class="motion-surface cursor-pointer rounded-md border p-md"
     :class="
       active
         ? 'border-2 border-primary bg-surface shadow-md'
-        : 'border border-rule bg-paper hover:border-primary/40 hover:shadow-md'
+        : 'border border-rule bg-paper hover:border-primary/40'
     "
     @click="$emit('select')"
   >

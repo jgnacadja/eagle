@@ -26,6 +26,8 @@ const CONTENT_COLLECTIONS = [
   'pages',
   'page_blocks',
   'pages_legales',
+  'pages_legales_sections',
+  'pages_legales_subsections',
   'stats',
   'formations'
 ]
@@ -44,9 +46,14 @@ export function permissionsFor(roleName) {
 
     case 'editeur':
       return [
-        ...['articles', 'avis', 'page_blocks', 'sous_familles_formation'].flatMap((c) =>
-          grants(c, ['create', 'read', 'update'])
-        ),
+        ...[
+          'articles',
+          'avis',
+          'page_blocks',
+          'pages_legales_sections',
+          'pages_legales_subsections',
+          'sous_familles_formation'
+        ].flatMap((c) => grants(c, ['create', 'read', 'update'])),
         ...['centres', 'familles_formation', 'pages', 'pages_legales', 'stats'].flatMap((c) =>
           grants(c, ['read'])
         ),
@@ -93,7 +100,13 @@ export function permissionsFor(roleName) {
 
     case 'moderateur':
       return [
-        ...['articles', 'avis', 'page_blocks'].flatMap((c) => grants(c, ['read', 'update'])),
+        ...[
+          'articles',
+          'avis',
+          'page_blocks',
+          'pages_legales_sections',
+          'pages_legales_subsections'
+        ].flatMap((c) => grants(c, ['read', 'update'])),
         ...[
           'centres',
           'familles_formation',
@@ -131,6 +144,13 @@ const PUBLIC_STATUS_FILTERED = [
   'pages_legales',
   'formations'
 ]
+// Enfants des pages légales : pas de champ `status` propre — le filtre porte
+// sur le parent (`page` pour une section, `section.page` pour une
+// sous-section). Sans ça, le contenu d'une page en brouillon fuiterait.
+const PUBLIC_PARENT_STATUS = {
+  pages_legales_sections: { page: { status: { _eq: 'published' } } },
+  pages_legales_subsections: { section: { page: { status: { _eq: 'published' } } } }
+}
 const PUBLIC_UNRESTRICTED = ['page_blocks', 'stats', 'directus_files']
 
 // Champs exposés publiquement (allowlist) — le proxy `/directus` de l'API
@@ -232,6 +252,10 @@ const PUBLIC_FIELDS = {
     'seo_description',
     'seo_canonical'
   ],
+  // `page`/`section` : nécessaires au filtre `status` du parent et au
+  // peuplement de l'alias O2M côté page.
+  pages_legales_sections: ['id', 'sort', 'title', 'anchor', 'body', 'page'],
+  pages_legales_subsections: ['id', 'sort', 'title', 'anchor', 'body', 'section'],
   formations: [
     'id',
     'status',
@@ -274,6 +298,12 @@ export function publicPermissions() {
       action: 'read',
       fields: PUBLIC_FIELDS[collection] ?? ['*'],
       permissions: { status: { _eq: 'published' } }
+    })),
+    ...Object.entries(PUBLIC_PARENT_STATUS).map(([collection, permissions]) => ({
+      collection,
+      action: 'read',
+      fields: PUBLIC_FIELDS[collection] ?? ['*'],
+      permissions
     })),
     ...PUBLIC_UNRESTRICTED.map((collection) => ({ collection, action: 'read', permissions: {} }))
   ]

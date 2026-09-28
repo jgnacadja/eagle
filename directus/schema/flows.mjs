@@ -27,6 +27,8 @@ const CONTENT_COLLECTIONS = [
   'pages',
   'page_blocks',
   'pages_legales',
+  'pages_legales_sections',
+  'pages_legales_subsections',
   'stats'
 ]
 

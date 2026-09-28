@@ -16,6 +16,7 @@ import {
   pagesLegales,
   sousFamillesFormation
 } from './data.mjs'
+import { legalSectionToHtml } from '../legalContent.mjs'
 import { log, logError } from '../logger.mjs'
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL ?? 'http://localhost:8055'
@@ -32,7 +33,25 @@ const DATASETS = [
     // (collection seedée juste avant) avant l'upsert.
     refs: [{ key: 'familleSlug', collection: 'familles_formation', field: 'famille' }]
   },
-  { collection: 'pages_legales', items: pagesLegales },
+  {
+    collection: 'pages_legales',
+    items: pagesLegales,
+    // `sections` n'est pas un champ de pages_legales : chaque entrée devient
+    // une ligne `pages_legales_sections` (body WYSIWYG), elle-même parente
+    // de lignes `pages_legales_subsections`. Clé d'upsert = `anchor`.
+    children: {
+      key: 'sections',
+      collection: 'pages_legales_sections',
+      parentField: 'page',
+      matchField: 'anchor',
+      children: {
+        key: 'subsections',
+        collection: 'pages_legales_subsections',
+        parentField: 'section',
+        matchField: 'anchor'
+      }
+    }
+  },
   {
     collection: 'formations',
     items: formations,
@@ -152,9 +171,54 @@ async function upsertItem(token, collection, item, existingId) {
     body: JSON.stringify(item)
   })
   if (!res.ok) {
-    throw new Error(`Upsert ${collection}/${item.slug} échoué (${res.status})`)
+    throw new Error(`Upsert ${collection}/${item.slug ?? item.anchor} échoué (${res.status})`)
   }
-  return existingId ? 'updated' : 'created'
+  const body = existingId ? null : await res.json()
+  return { outcome: existingId ? 'updated' : 'created', id: existingId ?? body?.data?.id }
+}
+
+// Items enfants sans slug (sections/sous-sections de pages légales) :
+// l'upsert se fait sur (parent, matchField). Pas de `fields` ici non plus
+// — même piège limit=-1 que fetchExistingBySlug.
+async function fetchExistingChildren(token, spec, parentId) {
+  const url = new URL(`${DIRECTUS_URL}/items/${spec.collection}`)
+  url.searchParams.set('limit', '-1')
+  url.searchParams.set(`filter[${spec.parentField}][_eq]`, String(parentId))
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+  if (!res.ok) throw new Error(`Lecture ${spec.collection} échouée (${res.status})`)
+  const { data } = await res.json()
+  return new Map(data.map((row) => [row[spec.matchField], row.id]))
+}
+
+async function seedChildren(token, spec, parentId, rawChildren) {
+  if (!(await collectionExists(token, spec.collection))) {
+    log(`⏭  ${spec.collection} — collection absente, ignorée`)
+    return
+  }
+
+  const existing = await fetchExistingChildren(token, spec, parentId)
+  const results = { created: 0, updated: 0 }
+  for (const [index, raw] of (rawChildren ?? []).entries()) {
+    const { paragraphs, bullets, ...base } = raw
+    if (spec.children) delete base[spec.children.key]
+    const row = {
+      ...base,
+      [spec.parentField]: parentId,
+      sort: index + 1,
+      body: legalSectionToHtml({ paragraphs, bullets })
+    }
+    const { outcome, id } = await upsertItem(
+      token,
+      spec.collection,
+      row,
+      existing.get(raw[spec.matchField])
+    )
+    results[outcome] += 1
+    if (spec.children && raw[spec.children.key]?.length && id) {
+      await seedChildren(token, spec.children, id, raw[spec.children.key])
+    }
+  }
+  log(`✔  ${spec.collection} — ${results.created} créés, ${results.updated} mis à jour`)
 }
 
 // Résout les clés `*Slug` en ids de leurs collections cibles. Retourne
@@ -194,7 +258,8 @@ async function prepareItem(token, rawItem, refs, refsBySlug, collection) {
   return item
 }
 
-async function seedDataset(token, { collection, items, refs }) {
+async function seedDataset(token, dataset) {
+  const { collection, items, refs, children } = dataset
   if (!(await collectionExists(token, collection))) {
     log(`⏭  ${collection} — collection absente (ST-11 non livré), ignoré`)
     return
@@ -212,8 +277,20 @@ async function seedDataset(token, { collection, items, refs }) {
     const item = await prepareItem(token, rawItem, refs, refsBySlug, collection)
     if (!item) continue
 
-    const outcome = await upsertItem(token, collection, item, existingBySlug.get(item.slug))
+    // Les enfants déclaratifs ne sont pas des champs du parent — retirés
+    // avant l'upsert puis semés dans leur collection dédiée.
+    let childRows
+    if (children) {
+      childRows = item[children.key]
+      delete item[children.key]
+    }
+
+    const { outcome, id } = await upsertItem(token, collection, item, existingBySlug.get(item.slug))
     results[outcome] += 1
+
+    if (children && childRows?.length && id) {
+      await seedChildren(token, children, id, childRows)
+    }
   }
   log(`✔  ${collection} — ${results.created} créés, ${results.updated} mis à jour`)
 }

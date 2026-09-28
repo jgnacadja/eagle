@@ -4,7 +4,7 @@
       <div class="mx-auto w-full px-gutter-mobile py-2xl md:px-gutter">
         <div class="lg:grid lg:grid-cols-12 lg:gap-2xl">
           <article class="lg:col-span-8">
-            <header class="max-w-prose">
+            <header v-hero class="max-w-prose">
               <p class="text-overline text-accent-text">
                 <span class="font-bold uppercase">{{ article?.category }}</span>
                 <span class="font-medium text-ink-subtle">
@@ -65,7 +65,7 @@
               </div>
             </div>
 
-            <figure class="mt-lg">
+            <figure v-reveal-media class="mt-lg">
               <div
                 v-if="!article?.cover_image"
                 class="flex aspect-video items-center justify-center rounded-md border border-dashed border-outline bg-surface-alt text-center text-small text-ink-muted"
@@ -159,7 +159,11 @@
       <section aria-labelledby="lire-ensuite-heading" class="bg-paper">
         <div class="mx-auto w-full px-gutter-mobile py-2xl md:px-gutter">
           <div class="flex items-center justify-between">
-            <h2 id="lire-ensuite-heading" class="font-display text-h3 font-extrabold text-ink">
+            <h2
+              id="lire-ensuite-heading"
+              v-reveal-soft
+              class="font-display text-h3 font-extrabold text-ink"
+            >
               À lire ensuite
             </h2>
             <NuxtLink

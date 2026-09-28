@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-1 flex-col bg-paper">
     <header class="border-b border-rule bg-linear-to-b from-paper to-surface">
-      <div class="mx-auto w-full px-gutter-mobile pt-2xl md:px-gutter">
+      <div v-hero class="mx-auto w-full px-gutter-mobile pt-2xl md:px-gutter">
         <h1 class="font-display text-h1 font-extrabold text-ink">
           {{ page.title }}
         </h1>
@@ -80,23 +80,30 @@
             class="scroll-mt-24"
           >
             <h2 class="font-display text-h3 font-extrabold text-ink">
-              {{ section.title }}
+              {{ section.number }}. {{ section.title }}
             </h2>
-            <div class="mt-md space-y-md">
-              <p
-                v-for="(paragraph, index) in section.paragraphs"
-                :key="index"
-                class="text-body leading-relaxed text-ink-body"
+            <div
+              v-if="section.body"
+              class="legal-body mt-md text-body leading-relaxed text-ink-body"
+              v-html="sanitizeHtml(section.body)"
+            />
+            <div v-if="section.subsections.length" class="mt-lg space-y-lg">
+              <section
+                v-for="subsection in section.subsections"
+                :id="subsection.id"
+                :key="subsection.id"
+                class="scroll-mt-24"
               >
-                {{ paragraph }}
-              </p>
+                <h3 class="font-sans text-h4 font-semibold text-ink">
+                  {{ subsection.number }} {{ subsection.title }}
+                </h3>
+                <div
+                  v-if="subsection.body"
+                  class="legal-body mt-sm text-body leading-relaxed text-ink-body"
+                  v-html="sanitizeHtml(subsection.body)"
+                />
+              </section>
             </div>
-            <ul v-if="section.bullets?.length" class="mt-md space-y-sm">
-              <li v-for="(bullet, index) in section.bullets" :key="index" class="flex gap-2">
-                <span class="mt-sm h-1.5 w-1.5 shrink-0 rounded-full bg-ink-subtle" />
-                <span class="text-body leading-relaxed text-ink-body">{{ bullet }}</span>
-              </li>
-            </ul>
           </section>
 
           <div
@@ -128,6 +135,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { cn } from '@/lib/utils'
+import { sanitizeHtml } from '~/utils/sanitizeHtml'
 import type { LegalPage, LegalPageTab } from '~/types/legal'
 
 const props = defineProps<{
@@ -149,12 +157,24 @@ watch(selectedPage, (newSlug) => {
   }
 })
 
-const activeSectionId = ref<string>(
-  (() => {
-    const hash = route.hash.replace(/^#/, '')
-    return props.page.sections.find((s) => s.id === hash)?.id || props.page.sections[0]?.id || ''
-  })()
+// Ancres suivies par le scroll-spy : sections et sous-sections aplaties,
+// dans l'ordre du document.
+const anchorIds = computed(() =>
+  props.page.sections.flatMap((section) => [
+    section.id,
+    ...section.subsections.map((subsection) => subsection.id)
+  ])
 )
+
+// Init vide : le serveur et le client rendent le même état (aucune section
+// active), puis onMounted résout hash/première — sinon route.hash diffère
+// entre SSR et hydratation et provoque un mismatch de classes.
+const activeSectionId = ref('')
+
+function resolveInitialActive() {
+  const hash = route.hash.replace(/^#/, '')
+  activeSectionId.value = anchorIds.value.find((id) => id === hash) || anchorIds.value[0] || ''
+}
 
 // Seuil sous l'en-tête collant : une section est active dès que son titre
 // passe au-dessus. Plus stable qu'un IntersectionObserver, qui fait osciller
@@ -167,22 +187,22 @@ let lockUntil = 0
 let lockTimer: ReturnType<typeof setTimeout> | null = null
 
 function computeActiveSection() {
-  const sections = props.page.sections
-  if (!sections.length) return
+  const ids = anchorIds.value
+  if (!ids.length) return
 
   const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2
   if (atBottom) {
-    activeSectionId.value = sections[sections.length - 1]!.id
+    activeSectionId.value = ids[ids.length - 1]!
     return
   }
 
-  let current = sections[0]!.id
-  for (const section of sections) {
-    const el = document.getElementById(section.id)
-    /* v8 ignore next -- chaque section déclarée est rendue dans le DOM */
+  let current = ids[0]!
+  for (const id of ids) {
+    const el = document.getElementById(id)
+    /* v8 ignore next -- chaque ancre déclarée est rendue dans le DOM */
     if (!el) continue
     if (el.getBoundingClientRect().top <= SCROLL_THRESHOLD) {
-      current = section.id
+      current = id
     } else {
       break
     }
@@ -202,7 +222,7 @@ function onScroll() {
 function onSummaryClick(event: MouseEvent) {
   const anchor = (event.target as HTMLElement).closest('a[href^="#"]')
   const id = anchor?.getAttribute('href')?.slice(1)
-  if (!id || !props.page.sections.some((s) => s.id === id)) return
+  if (!id || !anchorIds.value.includes(id)) return
 
   activeSectionId.value = id
   lockUntil = Date.now() + CLICK_LOCK_MS
@@ -215,6 +235,7 @@ function onSummaryClick(event: MouseEvent) {
 }
 
 onMounted(() => {
+  resolveInitialActive()
   nextTick(computeActiveSection)
   window.addEventListener('scroll', onScroll, { passive: true })
   window.addEventListener('resize', onScroll, { passive: true })
@@ -230,11 +251,40 @@ onUnmounted(() => {
 watch(
   () => props.page.slug,
   () => {
-    activeSectionId.value =
-      props.page.sections.find((s) => s.id === route.hash.replace(/^#/, ''))?.id ||
-      props.page.sections[0]?.id ||
-      ''
+    resolveInitialActive()
     nextTick(computeActiveSection)
   }
 )
 </script>
+
+<style scoped>
+.legal-body :deep(ul),
+.legal-body :deep(ol) {
+  padding-left: var(--spacing-md);
+}
+
+.legal-body :deep(ul) {
+  list-style: disc;
+}
+
+.legal-body :deep(ol) {
+  list-style: decimal;
+}
+
+.legal-body :deep(li + li) {
+  margin-top: var(--spacing-xs);
+}
+
+.legal-body :deep(a) {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.legal-body :deep(p + p),
+.legal-body :deep(p + ul),
+.legal-body :deep(p + ol),
+.legal-body :deep(ul + p),
+.legal-body :deep(ol + p) {
+  margin-top: var(--spacing-sm);
+}
+</style>

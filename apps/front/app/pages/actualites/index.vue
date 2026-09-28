@@ -2,7 +2,7 @@
   <div class="flex flex-1 flex-col">
     <!-- Bandeau d'intro : titre, filtre région, catégories -->
     <section class="flex flex-col justify-center bg-primary-dark text-paper min-h-72">
-      <div class="mx-auto w-full px-gutter-mobile py-lg md:py-2xl md:px-gutter">
+      <div v-hero class="mx-auto w-full px-gutter-mobile py-lg md:py-2xl md:px-gutter">
         <p class="text-overline text-accent font-extrabold">ACTUALITÉS DU RÉSEAU</p>
 
         <div class="mt-md flex flex-col gap-lg lg:flex-row lg:items-end lg:justify-between">
@@ -86,6 +86,7 @@
             <div class="flex items-center gap-md">
               <h2
                 id="a-la-une-heading"
+                v-reveal-soft
                 class="text-overline uppercase text-accent-text font-extrabold"
               >
                 À la une
@@ -169,6 +170,7 @@
               <div class="max-w-prose">
                 <h2
                   id="newsletter-heading"
+                  v-reveal-soft
                   class="font-display text-button md:text-h3 font-extrabold text-ink"
                 >
                   Recevez les échéances réglementaires

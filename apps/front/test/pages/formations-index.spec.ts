@@ -465,7 +465,7 @@ describe('pages/formations/index', () => {
 
       const shortcuts = shortcutsList().findAll('li')
       expect(shortcuts.at(3)!.text()).toContain('Toutes les familles')
-      expect(shortcuts.at(3)!.text()).toContain('Management & Leadership…')
+      expect(shortcuts.at(3)!.text()).toContain('Management & Leadership')
       expect(shortcuts.at(3)!.text()).not.toContain('Management, bureautique, qualité…')
 
       const parcourirButton = shortcuts.at(3)!.find('button')

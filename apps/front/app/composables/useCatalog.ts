@@ -92,7 +92,9 @@ function startOfTodayUtc(): Date {
   return today
 }
 
-export function upcomingSessions(course: CourseListItem): CourseSession[] {
+export function upcomingSessions(
+  course: CourseListItem
+): (CourseSession & { startDate: string })[] {
   const today = startOfTodayUtc()
   return (course.sessions ?? []).filter(
     (s): s is CourseSession & { startDate: string } =>
@@ -210,7 +212,7 @@ export async function useCatalog(query: MaybeRefOrGetter<CatalogQuery>) {
       getCachedData: (key, nuxtApp, ctx) =>
         ctx.cause === 'initial' && nuxtApp.isHydrating
           ? ((nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as
-              CatalogApiResult | undefined)
+            CatalogApiResult | undefined)
           : undefined
     }
   )

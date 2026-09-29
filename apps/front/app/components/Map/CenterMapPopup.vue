@@ -1,6 +1,6 @@
 <template>
   <div
-    class="z-30 w-80 rounded-md bg-paper p-md shadow-lg"
+    class="z-30 flex w-80 flex-col gap-xs rounded-md bg-paper p-md shadow-lg"
     :class="popupClasses"
     :style="popupStyles"
   >
@@ -15,11 +15,15 @@
       <IconClose :size="16" />
     </Button>
     <h4 class="pr-6 font-sans text-h4 text-ink">{{ name }}</h4>
-    <p class="mt-xs text-meta text-ink-subtle">{{ locationLabel }}</p>
-    <p class="mt-sm text-small font-medium text-ink-body">{{ tagsShort }}</p>
-    <Button as-child size="pill-sm" class="mt-md font-bold">
+    <p class="text-meta text-ink-subtle">{{ locationLabel }}</p>
+    <p class="text-small font-medium text-ink-body">{{ tagsShort }}</p>
+    <Button as-child size="pill-sm" class="center-map-popup-cta self-start font-bold">
       <a :href="`/centres/${id}`">Voir le centre</a>
     </Button>
+    <span
+      aria-hidden="true"
+      class="absolute -bottom-1 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 bg-paper"
+    />
   </div>
 </template>
 

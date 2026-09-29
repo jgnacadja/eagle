@@ -541,10 +541,21 @@ onBeforeUnmount(() => {
 }
 .center-map-popup .leaflet-popup-content-wrapper {
   padding: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
+}
+.center-map-popup .leaflet-popup-tip-container {
+  display: none;
 }
 .center-map-popup .leaflet-popup-content {
   margin: 0;
+}
+/* Leaflet impose `margin: 18px 0` sur les <p> du contenu — hors layer,
+   ça écrase les utilitaires Tailwind. */
+.center-map-popup .leaflet-popup-content p {
+  margin: 0;
+}
+.center-map-popup .center-map-popup-cta {
+  margin-top: var(--spacing-sm);
 }
 /* Leaflet force `color` sur les liens (.leaflet-container a) et sur le
    contenu de popup (#333) : on restaure la couleur du bouton

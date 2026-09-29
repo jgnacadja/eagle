@@ -409,7 +409,7 @@
     <!-- ═══════════════════════════════════════════════════
          4. CONFIER (section sombre)
     ════════════════════════════════════════════════════ -->
-    <section id="confier" class="bg-primary-muted py-section text-ink-inverse">
+    <section id="confier" class="bg-primary-muted py-9.75 text-ink-inverse">
       <div class="mx-auto max-w-container px-gutter-mobile md:px-gutter">
         <div class="grid grid-cols-1 items-center gap-lg md:grid-cols-2 md:gap-xl lg:gap-2xl">
           <!-- Colonne gauche : Contenu & CTA -->
@@ -456,7 +456,7 @@
             <img
               src="/images/formation2.webp"
               alt="Responsable formation en entreprise"
-              class="aspect-16/10 w-full rounded-xl object-cover shadow-md"
+              class="h-56 sm:h-64 md:h-72 lg:h-76 w-full rounded-xl object-cover shadow-md"
               loading="lazy"
             />
           </div>

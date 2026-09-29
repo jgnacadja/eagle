@@ -162,84 +162,113 @@
               </li>
             </ul>
 
-            <!-- Bandeau newsletter -->
-            <section
-              aria-labelledby="newsletter-heading"
-              class="rounded-md bg-accent-soft p-xl mt-xl lg:mt-3xl lg:flex lg:items-center lg:justify-between lg:p-2xl"
-            >
-              <div class="max-w-prose">
-                <h2
-                  id="newsletter-heading"
-                  v-reveal-soft
-                  class="font-display text-button md:text-h3 font-extrabold text-ink"
-                >
-                  Recevez les échéances réglementaires
-                  <span class="hidden md:inline">qui vous concernent</span>
-                </h2>
-                <p class="text-small text-ink-body my-3">
-                  <span class="md:hidden text-meta"
-                    >Un e-mail par mois. Désinscription en un clic.</span
+            <!-- Bandeau newsletter / Confirmation -->
+            <Transition name="form-step" mode="out-in">
+              <!-- Formulaire newsletter -->
+              <section
+                v-if="!newsletterDone"
+                key="newsletter-form"
+                aria-labelledby="newsletter-heading"
+                class="mt-xl rounded-md bg-accent-soft p-xl lg:mt-3xl lg:flex lg:items-center lg:justify-between lg:p-2xl"
+              >
+                <div class="max-w-prose">
+                  <h2
+                    id="newsletter-heading"
+                    v-reveal-soft
+                    class="font-display text-button font-extrabold text-ink md:text-h3"
                   >
-                  <span class="hidden md:inline"
-                    >Un e-mail par mois : obligations, dates limites, nouvelles sessions.
-                    Désinscription en un clic.</span
-                  >
-                </p>
-              </div>
-              <div class="flex flex-col gap-sm lg:mt-0 lg:shrink-0">
-                <p
-                  v-if="newsletterDone"
-                  class="flex items-center gap-sm text-small font-semibold text-success"
-                >
-                  Inscription confirmée — merci&nbsp;!
-                </p>
-                <form
-                  v-show="!newsletterDone"
-                  novalidate
-                  class="flex flex-col gap-md sm:flex-row lg:w-auto"
-                  @submit.prevent="onSubscribe"
-                >
-                  <div class="flex flex-col gap-xs">
-                    <Label for="newsletter-email" class="sr-only"
-                      >Adresse e-mail professionnelle</Label
+                    Recevez les échéances réglementaires
+                    <span class="hidden md:inline">qui vous concernent</span>
+                  </h2>
+                  <p class="my-sm text-small text-ink-body">
+                    <span class="text-meta md:hidden"
+                      >Un e-mail par mois. Désinscription en un clic.</span
                     >
-                    <Input
-                      id="newsletter-email"
-                      v-model="newsletterEmail"
-                      type="email"
-                      placeholder="votre@email-professionnel.fr"
-                      variant="field-lg"
-                      class="sm:w-72"
-                      :disabled="newsletterSending"
-                      :aria-invalid="showEmailError || undefined"
-                    />
-                    <p v-if="showEmailError" class="text-small font-semibold text-danger">
-                      {{ newsletterFieldError }}
-                    </p>
-                  </div>
-                  <Button
-                    type="submit"
-                    variant="accent"
-                    size="pill-sm"
-                    class="w-full shrink-0 px-xl sm:w-auto"
-                    :disabled="newsletterSending"
+                    <span class="hidden md:inline"
+                      >Un e-mail par mois : obligations, dates limites, nouvelles sessions.
+                      Désinscription en un clic.</span
+                    >
+                  </p>
+                </div>
+                <div class="flex flex-col gap-sm lg:mt-0 lg:shrink-0">
+                  <form
+                    novalidate
+                    class="flex flex-col gap-md sm:flex-row lg:w-auto"
+                    @submit.prevent="onSubscribe"
                   >
-                    <span
-                      v-if="newsletterSending"
-                      class="mr-sm block h-md w-md animate-spin rounded-full border-2 border-ink/25 border-t-ink"
-                      aria-hidden="true"
-                    />
-                    {{ newsletterSending ? 'Envoi en cours…' : "S'abonner" }}
-                  </Button>
-                </form>
-                <p
-                  v-if="!newsletterDone && newsletterError"
-                  class="text-small font-semibold text-danger"
-                >
-                  {{ newsletterError }}
-                </p>
-              </div>
-            </section>
+                    <div class="flex flex-col gap-xs">
+                      <Label for="newsletter-email" class="sr-only"
+                        >Adresse e-mail professionnelle</Label
+                      >
+                      <Input
+                        id="newsletter-email"
+                        v-model="newsletterEmail"
+                        type="email"
+                        placeholder="votre@email-professionnel.fr"
+                        variant="field-lg"
+                        class="sm:w-72"
+                        :disabled="newsletterSending"
+                        :aria-invalid="showEmailError || undefined"
+                      />
+                      <p v-if="showEmailError" class="text-small font-semibold text-danger">
+                        {{ newsletterFieldError }}
+                      </p>
+                    </div>
+                    <Button
+                      type="submit"
+                      variant="accent"
+                      size="pill-sm"
+                      class="w-full shrink-0 px-xl sm:w-auto"
+                      :disabled="newsletterSending"
+                    >
+                      <span
+                        v-if="newsletterSending"
+                        class="mr-sm block h-md w-md animate-spin rounded-full border-2 border-ink/25 border-t-ink"
+                        aria-hidden="true"
+                      />
+                      {{ newsletterSending ? 'Envoi en cours…' : "S'abonner" }}
+                    </Button>
+                  </form>
+                  <p v-if="newsletterError" class="text-small font-semibold text-danger">
+                    {{ newsletterError }}
+                  </p>
+                </div>
+              </section>
+
+              <!-- Confirmation réussie : message centré et designé -->
+              <section
+                v-else
+                key="newsletter-success"
+                aria-labelledby="newsletter-success-heading"
+                role="status"
+                class="mt-xl rounded-md border border-rule bg-accent-soft p-xl text-center shadow-sm lg:mt-3xl lg:p-xl"
+              >
+                <div class="mx-auto flex flex-col items-center">
+                  <!-- Message explicite -->
+                  <h2
+                    id="newsletter-success-heading"
+                    class="mt-sm text-body font-semibold text-ink"
+                  >
+                    Votre adresse e-mail a bien été enregistrée.
+                  </h2>
+                  <p class="mt-xs text-small text-ink-body">
+                    Vous recevrez désormais les dates limites et les prochaines sessions de
+                    formation.
+                  </p>
+
+                  <!-- Encadré informatif -->
+                  <div
+                    class="mt-lg inline-flex items-center gap-sm rounded-full border border-rule bg-paper px-lg py-sm text-small text-ink-muted shadow-sm"
+                  >
+                    <IconMail :size="16" class="shrink-0 text-accent-text" />
+                    <span>
+                      Pensez à vérifier vos courriers indésirables si vous ne recevez rien d'ici
+                      quelques minutes.
+                    </span>
+                  </div>
+                </div>
+              </section>
+            </Transition>
 
             <!-- Pagination -->
             <Pagination

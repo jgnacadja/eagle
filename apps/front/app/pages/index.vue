@@ -241,12 +241,6 @@
     ════════════════════════════════════════════════════ -->
     <section class="border-b border-rule bg-paper py-lg">
       <div class="mx-auto px-gutter-mobile md:px-gutter">
-        <p
-          class="text-center text-xs font-bold uppercase tracking-widest text-ink md:text-ink-subtle"
-        >
-          Ils nous font confiance
-        </p>
-
         <ClientLogoWall variant="marquee" :logos="homeLogos" />
       </div>
     </section>

@@ -563,7 +563,7 @@
 
 /* Animation de défilement continu (marquee) : durée longue volontairement hors échelle de transition UI (max 560ms) */
 :root {
-  --motion-duration-marquee: 30s;
+  --motion-duration-marquee: 60s;
 }
 
 .marquee {

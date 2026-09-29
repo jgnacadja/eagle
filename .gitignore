@@ -42,6 +42,9 @@ docker-compose.override.yml
 .tmp
 /tmp
 
+# Directus data backups (contiennent des données réelles — jamais versionnés)
+/backups
+
 # OS / editor
 .DS_Store
 .scannerwork

@@ -29,7 +29,7 @@ Lire d'abord `AGENTS.md` à la racine.
 
 ## Moteur IA — recherche assistée
 
-- **Panneau conversationnel (en place)** : tous les points d'entrée appellent `useAssistantLauncher().open({ context, message })` ; `AssistantChat` (monté dans `app.vue`) affiche la conversation portée par `useAssistant()` (`POST /assistant/message`).
+- **Panneau conversationnel (en place)** : tous les points d'entrée appellent `useAssistantLauncher().open({ context, message })` ; `AssistantChat` (monté dans `app.vue`) affiche la conversation portée par `useAssistant()` (`POST /assistant/message`). `AssistantHeaderPill` est l'entrée compacte du header (≥ `xl`, pages intérieures uniquement).
 - **Page dédiée (coquille, pas encore reliée aux points d'entrée)** : route `/recherche-assistee` (`ASSISTANT_ROUTE`, `app/utils/assistant-route.ts` — seule source du libellé, arbitrage encore ouvert), requête initiale en `?q=` (deep-link partageable de l'entrée). L'arbitrage panneau / page reste à prendre : le lanceur flottant est masqué sur cette page.
 - `layouts/assistant.vue` : vue pleine page (header du site, pas de footer). `AssistantShell` (`components/Assistant/`) porte les deux sorties : « Fermer » (retour à la page précédente) et « Nouvelle recherche » (réinitialise, reste dans le moteur).
 - `useAssistantNavigation()` : `open({ query })` mémorise l'origine (`useState('assistant-origin')`) et navigue côté client ; `reset()` retire `?q=` en `replace` ; `close()` revient sur l'entrée d'historique précédente (`history.state.back`, cohérent avec le bouton précédent), sinon origine mémorisée ou Home en `replace`.

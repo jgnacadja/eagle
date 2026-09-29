@@ -31,11 +31,14 @@ config.global.components.ClientLogoWall = ClientLogoWall
 import ConsentField from '~/components/ConsentField.vue'
 config.global.components.ConsentField = ConsentField
 
-// Recherche assistée : champ d'entrée et coquille de la page moteur.
+// Recherche assistée : champ d'entrée et coquille de la page moteur, entrée
+// compacte du header.
 import AssistantSearchBar from '~/components/Assistant/SearchBar.vue'
 import AssistantShell from '~/components/Assistant/Shell.vue'
+import AssistantHeaderPill from '~/components/Assistant/HeaderPill.vue'
 config.global.components.AssistantSearchBar = AssistantSearchBar
 config.global.components.AssistantShell = AssistantShell
+config.global.components.AssistantHeaderPill = AssistantHeaderPill
 
 config.global.stubs = {
   ...config.global.stubs,

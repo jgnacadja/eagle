@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent, h, Suspense } from 'vue'
+import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import ReseauPage from '~/pages/entreprise-reseau.vue'
 
 beforeEach(() => {
@@ -98,11 +99,25 @@ describe('pages/entreprise-reseau.vue', () => {
     expect(wrapper.text()).toContain('Le suivi des échéances réglementaires')
   })
 
-  it('propose les CTA catalogue et conseiller', async () => {
+  it('propose le CTA catalogue', async () => {
     const wrapper = await mountReseau()
     const hrefs = wrapper.findAll('a').map((link) => link.attributes('href'))
 
     expect(hrefs).toContain('/formations')
-    expect(hrefs).toContain('/parler-a-votre-conseiller')
+  })
+
+  it('« Être guidé dans mon choix » ouvre la recherche assistée', async () => {
+    const launcher = useAssistantLauncher()
+    launcher.close()
+    const wrapper = await mountReseau()
+    const button = wrapper
+      .findAll('button')
+      .find((candidate) => candidate.text() === 'Être guidé dans mon choix')
+
+    await button!.trigger('click')
+
+    expect(launcher.isOpen.value).toBe(true)
+    expect(launcher.context.value).toEqual({ source: 'editorial' })
+    expect(launcher.pendingMessage.value).toBeNull()
   })
 })

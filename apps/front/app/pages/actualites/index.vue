@@ -163,15 +163,7 @@
             </ul>
 
             <!-- Bandeau newsletter / Confirmation -->
-            <Transition
-              enter-active-class="transition duration-300 ease-out"
-              enter-from-class="opacity-0 translate-y-2"
-              enter-to-class="opacity-100 translate-y-0"
-              leave-active-class="transition duration-200 ease-in"
-              leave-from-class="opacity-100 translate-y-0"
-              leave-to-class="opacity-0 -translate-y-2"
-              mode="out-in"
-            >
+            <Transition name="form-step" mode="out-in">
               <!-- Formulaire newsletter -->
               <section
                 v-if="!newsletterDone"
@@ -188,7 +180,7 @@
                     Recevez les échéances réglementaires
                     <span class="hidden md:inline">qui vous concernent</span>
                   </h2>
-                  <p class="my-3 text-small text-ink-body">
+                  <p class="my-sm text-small text-ink-body">
                     <span class="text-meta md:hidden"
                       >Un e-mail par mois. Désinscription en un clic.</span
                     >
@@ -249,20 +241,26 @@
                 key="newsletter-success"
                 aria-labelledby="newsletter-success-heading"
                 role="status"
-                class="relative mt-xl overflow-hidden rounded-md border border-rule bg-surface p-xl text-center shadow-sm lg:mt-3xl lg:p-xl"
+                class="mt-xl rounded-md border border-rule bg-surface p-xl text-center shadow-sm lg:mt-3xl lg:p-xl"
               >
-                <div class="relative mx-auto flex flex-col items-center">
+                <div class="mx-auto flex flex-col items-center">
                   <!-- Message explicite -->
-                  <p id="newsletter-success-heading" class="mt-sm text-body text-ink-body">
-                    Votre adresse e-mail a bien été enregistrée. Vous recevrez désormais les dates
-                    limites et les prochaines sessions de formation.
+                  <h2
+                    id="newsletter-success-heading"
+                    class="mt-sm text-body font-semibold text-ink"
+                  >
+                    Votre adresse e-mail a bien été enregistrée.
+                  </h2>
+                  <p class="mt-xs text-small text-ink-body">
+                    Vous recevrez désormais les dates limites et les prochaines sessions de
+                    formation.
                   </p>
 
                   <!-- Encadré informatif -->
                   <div
                     class="mt-lg inline-flex items-center gap-sm rounded-full border border-rule bg-paper px-lg py-sm text-small text-ink-muted shadow-sm"
                   >
-                    <IconMail :size="16" class="shrink-0 text-accent" />
+                    <IconMail :size="16" class="shrink-0 text-accent-text" />
                     <span>
                       Pensez à vérifier vos courriers indésirables si vous ne recevez rien d'ici
                       quelques minutes.

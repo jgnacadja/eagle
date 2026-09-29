@@ -83,6 +83,12 @@ export interface AssistantSlots {
   deadline?: string
 }
 
+/**
+ * Origine d'une réponse : `ai` = décision du modèle · `fallback` = recherche
+ * déterministe sur le catalogue (mode dégradé, API IA indisponible).
+ */
+export type AssistantMode = 'ai' | 'fallback'
+
 export interface AssistantReply {
   kind: AssistantReplyKind
   /** Texte d'accompagnement affiché dans la bulle assistant. */
@@ -95,4 +101,9 @@ export interface AssistantReply {
   /** Facettes agrégées du besoin (chips « Contexte » du fil). */
   contextChips?: string[]
   slots?: AssistantSlots
+  mode?: AssistantMode
+  /** Mention de source des recommandations (RG-IA-01) — présente avec `recommendations`. */
+  source?: string
+  /** Transparence : le visiteur dialogue avec un assistant automatisé. */
+  notice?: string
 }

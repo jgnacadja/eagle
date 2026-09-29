@@ -253,12 +253,6 @@
             </section>
           </aside>
 
-          <!-- Colonne principale : `contents` sur mobile pour ordonner
-               ses sections avec celles de la barre latérale (formations
-               et sessions avant « Le centre », maquette mobile) ;
-               redevient une colonne flex sur desktop. `md:px-16` est
-               reporté sur chaque section puisque contents ne génère
-               pas de boîte. -->
           <div
             class="order-2 contents min-w-0 flex-col gap-2xl lg:order-0 lg:col-start-1 lg:row-start-1 lg:flex"
           >
@@ -266,7 +260,7 @@
             <section
               v-if="centre.description"
               aria-labelledby="le-centre-title"
-              class="order-6 md:px-16 lg:order-0 lg:px-0"
+              class="order-6 lg:order-0 lg:px-0"
             >
               <h2
                 id="le-centre-title"
@@ -313,7 +307,7 @@
             <section
               id="formations"
               aria-labelledby="formations-title"
-              class="order-3 md:px-16 lg:order-0 lg:px-0"
+              class="order-3 lg:order-0 lg:px-0"
             >
               <div class="flex flex-wrap items-baseline justify-between gap-sm">
                 <h2
@@ -368,7 +362,7 @@
             <section
               v-if="sessions.length"
               aria-labelledby="sessions-title"
-              class="order-4 md:px-16 lg:order-0 lg:px-0"
+              class="order-4 lg:order-0 lg:px-0"
             >
               <h2
                 id="sessions-title"
@@ -418,7 +412,7 @@
             <section
               v-if="centreAvis.length"
               aria-labelledby="avis-title"
-              class="order-7 md:px-16 lg:order-0 lg:px-0"
+              class="order-7 lg:order-0 lg:px-0"
             >
               <h2
                 id="avis-title"
@@ -460,7 +454,7 @@
             <section
               v-if="centreArticles.length"
               aria-labelledby="actus-title"
-              class="order-8 md:px-16 lg:order-0 lg:px-0"
+              class="order-8 lg:order-0 lg:px-0"
             >
               <div class="flex flex-wrap items-baseline justify-between gap-sm">
                 <h2

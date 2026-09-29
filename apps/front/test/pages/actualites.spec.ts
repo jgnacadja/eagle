@@ -353,7 +353,7 @@ describe('pages/actualites/index', () => {
     expect(wrapper.text()).toContain("S'abonner")
   })
 
-  it('poste l’inscription newsletter au module leads puis confirme', async () => {
+  it('poste l’inscription newsletter au module leads puis confirme et masque le formulaire', async () => {
     const wrapper = await mountPage()
 
     await wrapper.find('input[type="email"]').setValue('abonne@site.fr')
@@ -365,9 +365,16 @@ describe('pages/actualites/index', () => {
       'newsletter',
       expect.objectContaining({ email: 'abonne@site.fr' })
     )
-    expect(wrapper.text()).toContain('Inscription confirmée')
-    // v-show : le formulaire reste monté mais masqué après confirmation.
-    expect(wrapper.find('form').attributes('style')).toContain('display: none')
+    // Le bandeau newsletter et son formulaire ont complètement disparu
+    expect(wrapper.find('section[aria-labelledby="newsletter-heading"]').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Inscription confirmée')
+
+    // La section de confirmation centrée et explicite est affichée
+    expect(wrapper.find('section[aria-labelledby="newsletter-success-heading"]').exists()).toBe(
+      true
+    )
+    expect(wrapper.text()).toContain('Votre adresse e-mail a bien été enregistrée')
+    expect(wrapper.text()).toContain('dates limites et les prochaines sessions de formation')
   })
 
   it('bloque la soumission et affiche l’erreur si l’e-mail est invalide', async () => {
@@ -392,7 +399,7 @@ describe('pages/actualites/index', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('envoi a échoué')
-    expect(wrapper.text()).not.toContain('Inscription confirmée')
+    expect(wrapper.text()).not.toContain('Votre adresse e-mail a bien été enregistrée')
     expect(wrapper.find('input[type="email"]').exists()).toBe(true)
   })
 

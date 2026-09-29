@@ -20,6 +20,7 @@ const baseFormation: DirectusFormation = {
   slug: 'pilotage-de-projet',
   title: 'Pilotage de projet',
   description: 'Apprendre à piloter.',
+  short_description: null,
   duration_days: 3,
   duration_hours: 21,
   price: 1500,

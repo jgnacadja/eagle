@@ -522,6 +522,7 @@ describe('pages/index', () => {
             slug: 'formation-1',
             title: 'Formation 1',
             description: null,
+            shortDescription: null,
             durationDays: null,
             durationHours: null,
             price: null,
@@ -690,6 +691,7 @@ describe('pages/index', () => {
     const baseCourse = {
       id: 1,
       description: null,
+      shortDescription: null,
       durationDays: null,
       durationHours: null,
       price: null,

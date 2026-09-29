@@ -23,6 +23,9 @@
       <IconMapPin :size="14" />
       {{ formatDistance(center.distanceKm) }}
     </p>
+    <p v-if="center.description" class="mt-sm text-small text-ink-body">
+      {{ center.description }}
+    </p>
     <p v-if="center.tags" class="mt-sm hidden text-small font-medium text-ink-body md:block">
       {{ center.tags }}
     </p>

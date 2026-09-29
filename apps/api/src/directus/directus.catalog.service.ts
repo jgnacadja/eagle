@@ -20,6 +20,8 @@ export type DirectusFormation = Omit<FormationDirectusPayload, 'image_url'> & {
   id: number
   famille: { id: number; slug: string } | null
   sous_famille: { id: number; slug: string; name: string } | null
+  /** Champ éditorial — hors payload de sync, jamais écrit par upsertMany. */
+  short_description: string | null
   validity: string | null
   image: string | null
   created_at: string | null
@@ -94,6 +96,7 @@ const ALL_CENTRE_FIELDS = [
   'address',
   'city',
   'postal_code',
+  'short_description',
   'department',
   'departments_covered',
   'region',
@@ -108,6 +111,7 @@ const ALL_FORMATION_FIELDS = [
   'slug',
   'title',
   'description',
+  'short_description',
   'duration_days',
   'duration_hours',
   'price',

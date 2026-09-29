@@ -1668,10 +1668,10 @@ fields:
       group: null
       hidden: false
       interface: input
-      note: null
+      note: Calculé depuis le département (« Centre LEARN UP de … »)
       options: null
-      readonly: false
-      required: true
+      readonly: true
+      required: false
       searchable: true
       sort: 5
       special: null
@@ -1711,8 +1711,8 @@ fields:
       hidden: false
       interface: input-multiline
       note: >-
-        Seul champ à saisir : ville, CP, département, région et coordonnées sont
-        calculés automatiquement (géocodage BAN).
+        Seul champ à saisir : nom, ville, CP, département, région et coordonnées
+        sont calculés automatiquement (géocodage BAN).
       options: null
       readonly: false
       required: false
@@ -3008,6 +3008,48 @@ fields:
       has_auto_increment: false
       foreign_key_table: directus_files
       foreign_key_column: id
+  - collection: centres
+    field: short_description
+    type: text
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: short_description
+      group: null
+      hidden: false
+      interface: input-multiline
+      note: Affichée sur les cartes du réseau — 2 à 3 lignes, texte brut
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 37
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Sous-description
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: short_description
+      table: centres
+      data_type: text
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
   - collection: familles_formation
     field: id
     type: integer
@@ -5211,6 +5253,50 @@ fields:
       has_auto_increment: false
       foreign_key_table: sous_familles_formation
       foreign_key_column: id
+  - collection: formations
+    field: short_description
+    type: text
+    meta:
+      collection: formations
+      conditions: null
+      display: null
+      display_options: null
+      field: short_description
+      group: null
+      hidden: false
+      interface: input-multiline
+      note: >-
+        Affichée sur les cartes du catalogue — 2 à 3 lignes, texte brut,
+        éditoriale (jamais écrite par la sync)
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 35
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Sous-description
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: short_description
+      table: formations
+      data_type: text
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
   - collection: page_blocks
     field: id
     type: integer
@@ -6696,8 +6782,8 @@ fields:
       is_generated: false
       generation_expression: null
       has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
+      foreign_key_table: pages_legales
+      foreign_key_column: id
   - collection: pages_legales_sections
     field: subsections
     type: alias
@@ -7815,6 +7901,14 @@ relations:
       one_deselect_action: nullify
       one_field: sections
       sort_field: sort
+    schema:
+      table: pages_legales_sections
+      column: page
+      foreign_key_table: pages_legales
+      foreign_key_column: id
+      constraint_name: pages_legales_sections_page_foreign
+      on_update: NO ACTION
+      on_delete: NO ACTION
   - collection: pages_legales_subsections
     field: section
     related_collection: pages_legales_sections

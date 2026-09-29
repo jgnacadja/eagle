@@ -196,6 +196,16 @@ export const collections = [
         }
       },
       {
+        field: 'short_description',
+        type: 'text',
+        meta: {
+          interface: 'input-multiline',
+          width: 'full',
+          note: 'Affichée sur les cartes du réseau — 2 à 3 lignes, texte brut',
+          ...fr('Sous-description')
+        }
+      },
+      {
         field: 'specialties',
         type: 'json',
         meta: {
@@ -821,6 +831,16 @@ export const collections = [
           width: 'full',
           note: 'Description — remplie par la sync, éditable',
           ...fr('Description')
+        }
+      },
+      {
+        field: 'short_description',
+        type: 'text',
+        meta: {
+          interface: 'input-multiline',
+          width: 'full',
+          note: 'Affichée sur les cartes du catalogue — 2 à 3 lignes, texte brut, éditoriale (jamais écrite par la sync)',
+          ...fr('Sous-description')
         }
       },
       {

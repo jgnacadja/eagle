@@ -10,6 +10,7 @@ function makeCourse(overrides: Partial<CourseListItem> = {}): CourseListItem {
     slug: 'sst-sauveteur-secouriste-du-travail',
     title: 'SST — Sauveteur Secouriste du Travail',
     description: 'Former les salariés aux premiers secours.',
+    shortDescription: null,
     durationDays: 2,
     durationHours: null,
     price: 220,

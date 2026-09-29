@@ -92,6 +92,7 @@ const catalogueCourseFixture: CourseListItem = {
   slug: 'sst-initial',
   title: 'SST — Sauveteur secouriste du travail',
   description: 'Formation initiale SST.',
+  shortDescription: null,
   durationDays: 2,
   durationHours: 14,
   price: 350,

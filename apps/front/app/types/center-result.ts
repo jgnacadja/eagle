@@ -5,6 +5,7 @@ export interface CenterResult {
   address: string
   tags: string
   tagsShort: string
+  description?: string
   status?: { type: 'success' | 'warning' | 'neutral'; label: string; labelShort?: string }
   pos?: { top: string; left: string }
   lat?: number

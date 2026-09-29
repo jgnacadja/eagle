@@ -164,8 +164,8 @@ export function mapCourse(course: CourseListItem, familyName?: string): Formatio
     familyKey,
     subFamily: course.subFamilyName ?? null,
     title: course.title,
-    // Champ WYSIWYG Directus : les cartes affichent un extrait en texte brut.
-    description: htmlToText(course.description),
+    // Accroche éditoriale si renseignée, sinon extrait texte du WYSIWYG.
+    description: course.shortDescription?.trim() || htmlToText(course.description),
     meta: buildMeta(course),
     days: course.durationDays ?? 0,
     duration: buildDuration(course),

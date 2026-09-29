@@ -54,6 +54,8 @@ export interface CourseBase {
   slug: string
   title: string
   description: string | null
+  /** Accroche courte éditoriale des cartes (champ Directus `short_description`). */
+  shortDescription: string | null
   durationDays: number | null
   durationHours: number | null
   price: number | null

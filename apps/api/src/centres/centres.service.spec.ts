@@ -14,6 +14,7 @@ const centre = (overrides: Partial<DirectusCentre> = {}): DirectusCentre => ({
   address: '12 cours Lafayette',
   city: 'Lyon',
   postal_code: '69003',
+  short_description: null,
   department: 'Rhône',
   departments_covered: ['69', '01'],
   region: 'Auvergne-Rhône-Alpes',

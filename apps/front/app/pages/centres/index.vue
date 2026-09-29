@@ -442,6 +442,7 @@ const filteredCenters = computed<CenterResult[]>(() => {
       address: location,
       tags,
       tagsShort: tags,
+      description: centre.short_description ?? '',
       status: availabilityStatus(centreSessionDates.value.get(centre.slug) ?? []),
       lat: centre.latitude ?? undefined,
       lng: centre.longitude ?? undefined,

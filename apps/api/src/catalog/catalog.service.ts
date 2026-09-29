@@ -174,6 +174,7 @@ function toListItem(raw: DirectusFormation): CourseListItem {
     slug: raw.slug,
     title: raw.title,
     description: raw.description,
+    shortDescription: raw.short_description ?? null,
     durationDays: toNumber(raw.duration_days),
     durationHours: toNumber(raw.duration_hours),
     price: toNumber(raw.price),

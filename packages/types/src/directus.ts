@@ -20,6 +20,8 @@ export interface Centre extends SeoFields {
   department: string | null
   region: string | null
   description: string | null
+  /** Accroche courte (texte brut) affichée sur les cartes du réseau. */
+  short_description: string | null
   specialties: string[] | null
   opening_hours: string | null
   transport: string | null
@@ -57,6 +59,7 @@ export type CentreListItem = Pick<
   | 'address'
   | 'city'
   | 'postal_code'
+  | 'short_description'
   | 'department'
   | 'departments_covered'
   | 'region'

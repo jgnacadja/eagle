@@ -16,6 +16,7 @@ const course: CourseListItem = {
   slug: 'caces-r489-chariots-elevateurs',
   title: 'CACES R489 — chariots élévateurs',
   description: 'Formation de conduite.',
+  shortDescription: null,
   durationDays: 3,
   durationHours: null,
   price: null,
@@ -172,6 +173,26 @@ describe('useCatalog helpers', () => {
     })
 
     expect(mapped.description).toBe('Initiez-vous au marché du cloud.')
+  })
+
+  it('prefers the editorial short description on cards', () => {
+    const mapped = mapCourse({
+      ...course,
+      description: '<p>Description longue.</p>',
+      shortDescription: 'Accroche éditoriale courte.'
+    })
+
+    expect(mapped.description).toBe('Accroche éditoriale courte.')
+  })
+
+  it('falls back to the WYSIWYG excerpt when the short description is blank', () => {
+    const mapped = mapCourse({
+      ...course,
+      description: '<p>Repli texte brut.</p>',
+      shortDescription: '   '
+    })
+
+    expect(mapped.description).toBe('Repli texte brut.')
   })
 
   it('renders family-less courses without a link', () => {

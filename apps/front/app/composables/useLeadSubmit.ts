@@ -2,14 +2,20 @@ import type {
   CandidatureLeadPayload,
   ConseillerLeadPayload,
   DemandeLeadPayload,
-  NewsletterLeadPayload
+  NewsletterLeadPayload,
+  RappelLeadPayload
 } from '@learnup/types'
 import { ref } from 'vue'
+import { logClientError } from '~/utils/logger'
 
-export type LeadFormName = 'newsletter' | 'demande' | 'candidature' | 'conseiller'
+export type LeadFormName = 'newsletter' | 'demande' | 'candidature' | 'conseiller' | 'rappel'
 
 type LeadPayload =
-  NewsletterLeadPayload | DemandeLeadPayload | CandidatureLeadPayload | ConseillerLeadPayload
+  | NewsletterLeadPayload
+  | DemandeLeadPayload
+  | CandidatureLeadPayload
+  | ConseillerLeadPayload
+  | RappelLeadPayload
 
 /**
  * Soumission des formulaires « lead » à l'API du site (`POST /leads/{form}`),
@@ -28,6 +34,7 @@ export function useLeadSubmit() {
   function submit(form: 'demande', payload: DemandeLeadPayload): Promise<boolean>
   function submit(form: 'candidature', payload: CandidatureLeadPayload): Promise<boolean>
   function submit(form: 'conseiller', payload: ConseillerLeadPayload): Promise<boolean>
+  function submit(form: 'rappel', payload: RappelLeadPayload): Promise<boolean>
   async function submit(form: LeadFormName, payload: LeadPayload): Promise<boolean> {
     if (sending.value) return false
     sending.value = true

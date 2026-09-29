@@ -4,7 +4,8 @@ import {
   CandidatureLeadDto,
   ConseillerLeadDto,
   DemandeLeadDto,
-  NewsletterLeadDto
+  NewsletterLeadDto,
+  RappelLeadDto
 } from './leads.dto'
 import { LeadsService } from './leads.service'
 
@@ -39,5 +40,12 @@ export class LeadsController {
   @ApiCreatedResponse({ description: 'Submission forwarded to HubSpot Forms' })
   conseiller(@Body() dto: ConseillerLeadDto): Promise<{ submitted: true }> {
     return this.leadsService.submitConseiller(dto)
+  }
+
+  @Post('rappel')
+  @ApiOperation({ summary: 'Submit a callback request to HubSpot' })
+  @ApiCreatedResponse({ description: 'Submission forwarded to HubSpot Forms' })
+  rappel(@Body() dto: RappelLeadDto): Promise<{ submitted: true }> {
+    return this.leadsService.submitRappel(dto)
   }
 }

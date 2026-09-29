@@ -252,15 +252,7 @@
             </ol>
           </Card>
 
-          <Card v-reveal variant="dark" class="p-lg">
-            <h2 class="text-small font-semibold text-paper">Vous préférez téléphoner&nbsp;?</h2>
-            <p class="mt-md text-small text-ink-inverse-muted">
-              Chaque centre affiche son numéro direct — trouvez celui de votre territoire.
-            </p>
-            <Button as-child variant="outline-inverse" size="pill" class="mt-md w-full">
-              <NuxtLink to="/centres">Trouver un centre</NuxtLink>
-            </Button>
-          </Card>
+          <ConseillerRappelRapideCard v-reveal />
 
           <p class="text-meta leading-relaxed text-ink-subtle">
             Les informations recueillies servent uniquement au traitement de la demande conformément
@@ -282,6 +274,7 @@ import type { ConseillerBesoin } from '@learnup/types'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
+import ConseillerRappelRapideCard from '~/components/Conseiller/RappelRapideCard.vue'
 import { leadFields } from '~/utils/leadFields'
 
 definePageMeta({

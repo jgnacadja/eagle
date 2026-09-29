@@ -45,7 +45,14 @@ const stubs = {
     template:
       '<button type="button" role="checkbox" :aria-checked="String(!!modelValue)" @click="$emit(\'update:modelValue\', !modelValue)" />'
   },
-  IconCheck: true
+  IconCheck: true,
+  IconPhone: true,
+  IconClock: true,
+  Select: { template: '<div><slot /></div>' },
+  SelectTrigger: { template: '<div><slot /></div>' },
+  SelectValue: { template: '<div><slot /></div>' },
+  SelectContent: { template: '<div><slot /></div>' },
+  SelectItem: { template: '<div><slot /></div>' }
 }
 
 const Host = defineComponent({
@@ -91,7 +98,8 @@ describe('pages/parler-a-votre-conseiller', () => {
 
     expect(wrapper.text()).toContain('Parler à votre conseiller')
     expect(wrapper.text()).toContain('Ce qui se passe ensuite')
-    expect(wrapper.text()).toContain('Vous préférez téléphoner')
+    expect(wrapper.text()).toContain("Besoin d'un échange téléphonique direct")
+    expect(wrapper.text()).toContain('Me faire appeler')
     expect(wrapper.text()).toContain('politique de confidentialité')
   })
 

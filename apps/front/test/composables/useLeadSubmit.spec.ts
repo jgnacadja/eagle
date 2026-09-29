@@ -102,6 +102,21 @@ describe('useLeadSubmit', () => {
     expect(body).toMatchObject({ besoin: 'centre', siret: '12345678901234' })
   })
 
+  it('rappel : poste le payload à /leads/rappel', async () => {
+    const { submit } = useLeadSubmit()
+
+    const ok = await submit('rappel', {
+      telephone: '06 12 34 56 78',
+      creneau: 'Cet après-midi',
+      consentement: true
+    })
+
+    expect(ok).toBe(true)
+    const { url, body } = lastCall()
+    expect(url).toBe('http://localhost:3001/leads/rappel')
+    expect(body).toMatchObject({ telephone: '06 12 34 56 78', creneau: 'Cet après-midi' })
+  })
+
   it('échec réseau : expose l’erreur et retourne false', async () => {
     fetchMock.mockRejectedValue(new Error('network down'))
     const { submit, error } = useLeadSubmit()

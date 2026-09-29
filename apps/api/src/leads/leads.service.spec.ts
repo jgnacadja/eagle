@@ -273,4 +273,22 @@ describe('LeadsService', () => {
       ServiceUnavailableException
     )
   })
+
+  it('rappel : poste le téléphone et le créneau avec consentement', async () => {
+    fetchMock.mockResolvedValue({ ok: true, status: 200 })
+    const service = new LeadsService(mockConfig())
+
+    const res = await service.submitRappel({
+      telephone: '06 12 34 56 78',
+      creneau: 'Cet après-midi',
+      consentement: true
+    })
+
+    expect(res).toEqual({ submitted: true })
+    const { body } = lastCall()
+    const fields = fieldNames(body)
+    expect(fields.phone).toBe('06 12 34 56 78')
+    expect(fields.learnup_precisions).toBe('Créneau souhaité : Cet après-midi')
+    expect(body.legalConsentOptions?.consent.consentToProcess).toBe(true)
+  })
 })

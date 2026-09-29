@@ -42,7 +42,9 @@ describe('ConseillerRappelRapideCard', () => {
     const wrapper = mount(ConseillerRappelRapideCard, { global: { stubs } })
 
     expect(wrapper.text()).toContain("Besoin d'un échange téléphonique direct")
-    expect(wrapper.text()).toContain("Saisissez votre numéro pour qu'un conseiller vous rappelle")
+    expect(wrapper.text()).toContain(
+      'Saisissez votre numéro afin que votre conseiller puisse vous rappeler.'
+    )
     expect(wrapper.text()).toContain('Me faire appeler')
     expect(wrapper.find('form').exists()).toBe(false)
   })

@@ -11,7 +11,7 @@
         Besoin d'un échange téléphonique direct&nbsp;?
       </h2>
       <p :class="['text-small', variant === 'dark' ? 'text-ink-inverse-muted' : 'text-ink-muted']">
-        Saisissez votre numéro pour qu'un conseiller vous rappelle.
+        Saisissez votre numéro afin que votre conseiller puisse vous rappeler.
       </p>
     </div>
 

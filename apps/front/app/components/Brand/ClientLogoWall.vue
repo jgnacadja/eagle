@@ -71,7 +71,7 @@ import { revealStagger } from '~/utils/reveal'
 type Variant = 'scroll' | 'grid' | 'marquee'
 
 const MARQUEE_STYLES = {
-  container: 'relative mt-md w-full overflow-hidden',
+  container: 'relative w-full overflow-hidden',
   card: 'flex h-14 w-28 shrink-0 items-center justify-center rounded-xl border border-dashed border-rule px-2 text-xs text-ink-subtle sm:w-32 md:h-14 md:w-36 md:rounded md:px-3',
   img: 'max-h-7 max-w-4/5 object-contain grayscale opacity-75 transition-[filter,opacity] hover:grayscale-0 hover:opacity-100 md:max-h-8'
 }

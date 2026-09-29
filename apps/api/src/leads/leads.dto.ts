@@ -197,3 +197,26 @@ export class ConseillerLeadDto extends LeadContactDto {
   @Equals(true, { message: 'Consent is required to submit the request.' })
   consentement!: boolean
 }
+
+export class RappelLeadDto extends LeadContextDto {
+  @ApiProperty({ description: 'Phone number' })
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^(?:(?:\+|00)33|0)[1-9](?:[\s.-]*\d{2}){4}$/, {
+    message: 'Numéro de téléphone invalide.'
+  })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  telephone!: string
+
+  @ApiPropertyOptional({ description: 'Desired callback slot' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  creneau?: string
+
+  @ApiProperty({ description: 'Consent to processing — must be accepted' })
+  @IsBoolean()
+  @Equals(true, { message: 'Consent is required to submit the request.' })
+  consentement!: boolean
+}

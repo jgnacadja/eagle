@@ -65,3 +65,9 @@ export interface ConseillerLeadPayload extends LeadPageContext {
   message?: string
   consentement: boolean
 }
+
+export interface RappelLeadPayload extends LeadPageContext {
+  telephone: string
+  creneau?: string
+  consentement: boolean
+}

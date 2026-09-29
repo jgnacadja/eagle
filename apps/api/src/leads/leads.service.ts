@@ -4,16 +4,18 @@ import type {
   CandidatureLeadPayload,
   ConseillerLeadPayload,
   DemandeLeadPayload,
-  NewsletterLeadPayload
+  NewsletterLeadPayload,
+  RappelLeadPayload
 } from '@learnup/types'
 import type {
   CandidatureLeadDto,
   ConseillerLeadDto,
   DemandeLeadDto,
-  NewsletterLeadDto
+  NewsletterLeadDto,
+  RappelLeadDto
 } from './leads.dto'
 
-export type LeadFormName = 'newsletter' | 'demande' | 'candidature' | 'conseiller'
+export type LeadFormName = 'newsletter' | 'demande' | 'candidature' | 'conseiller' | 'rappel'
 
 interface HubSpotField {
   objectTypeId: '0-1'
@@ -79,7 +81,9 @@ export class LeadsService {
       newsletter: config.get<string>('HUBSPOT_FORM_NEWSLETTER'),
       demande: config.get<string>('HUBSPOT_FORM_DEMANDE'),
       candidature: config.get<string>('HUBSPOT_FORM_CANDIDATURE'),
-      conseiller: config.get<string>('HUBSPOT_FORM_CONSEILLER')
+      conseiller: config.get<string>('HUBSPOT_FORM_CONSEILLER'),
+      rappel:
+        config.get<string>('HUBSPOT_FORM_RAPPEL') ?? config.get<string>('HUBSPOT_FORM_CONSEILLER')
     }
   }
 
@@ -103,14 +107,24 @@ export class LeadsService {
     return this.post('conseiller', fields, dto, true)
   }
 
+  submitRappel(dto: RappelLeadDto): Promise<{ submitted: true }> {
+    const fields = this.buildFields('rappel', dto)
+    return this.post('rappel', fields, dto, true)
+  }
+
   private buildFields(form: 'newsletter', payload: NewsletterLeadPayload): HubSpotField[]
   private buildFields(form: 'demande', payload: DemandeLeadPayload): HubSpotField[]
   private buildFields(form: 'candidature', payload: CandidatureLeadPayload): HubSpotField[]
   private buildFields(form: 'conseiller', payload: ConseillerLeadPayload): HubSpotField[]
+  private buildFields(form: 'rappel', payload: RappelLeadPayload): HubSpotField[]
   private buildFields(
     form: LeadFormName,
     payload:
-      NewsletterLeadPayload | DemandeLeadPayload | CandidatureLeadPayload | ConseillerLeadPayload
+      | NewsletterLeadPayload
+      | DemandeLeadPayload
+      | CandidatureLeadPayload
+      | ConseillerLeadPayload
+      | RappelLeadPayload
   ): HubSpotField[] {
     switch (form) {
       case 'newsletter': {
@@ -172,6 +186,15 @@ export class LeadsService {
           field('learnup_precisions', p.message),
           // besoin est déjà une valeur de l'enum HubSpot (DTO @IsIn).
           field('learnup_type_projet', p.besoin)
+        ])
+      }
+      case 'rappel': {
+        const p = payload as RappelLeadPayload
+        const precisions = p.creneau ? `Créneau souhaité : ${p.creneau}` : 'Dès que possible'
+        return fields([
+          field('phone', p.telephone),
+          field('learnup_precisions', precisions),
+          field('learnup_type_projet', 'conseiller')
         ])
       }
     }

@@ -80,6 +80,17 @@ const IMAGE_IMPORT_MARKER = 'digiforma-sync:'
 // valeur éditoriale n'est jamais écrasée.
 const ALWAYS_SYNCED_FIELDS = new Set(['digiforma_id', 'sessions', 'raw'])
 
+/** Transporte le statut HTTP pour distinguer 5xx/429 (rejouables) des 4xx. */
+class DirectusRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number
+  ) {
+    super(message)
+    this.name = 'DirectusRequestError'
+  }
+}
+
 function isEmptyValue(value: unknown): boolean {
   if (value === null || value === undefined) return true
   if (typeof value === 'string') return value.trim() === ''
@@ -570,7 +581,10 @@ export class DirectusCatalogService {
 
         if (!response.ok) {
           const text = await response.text()
-          throw new Error(`Directus ${method} ${url} failed: ${response.status} ${text}`)
+          throw new DirectusRequestError(
+            `Directus ${method} ${url} failed: ${response.status} ${text}`,
+            response.status
+          )
         }
 
         if (response.status === 204) {
@@ -579,7 +593,7 @@ export class DirectusCatalogService {
 
         return (await response.json()) as T
       } catch (error) {
-        if (attempt >= this.maxRetries) {
+        if (attempt >= this.maxRetries || !this.isRetryable(error, method)) {
           throw error
         }
 
@@ -591,5 +605,18 @@ export class DirectusCatalogService {
         clearTimeout(timeout)
       }
     }
+  }
+
+  // Retry borné aux méthodes idempotentes (GET/PATCH) sur faute
+  // transitoire : erreur réseau/timeout, 5xx et 429. Jamais de retry sur
+  // POST — un POST expiré peut avoir été traité côté Directus et le
+  // rejouer créerait un doublon (createMany, import de fichier). Les 4xx
+  // hors 429 sont des erreurs déterministes : inutile de rejouer.
+  private isRetryable(error: unknown, method: 'GET' | 'POST' | 'PATCH'): boolean {
+    if (method === 'POST') return false
+    if (error instanceof DirectusRequestError) {
+      return error.status === 429 || error.status >= 500
+    }
+    return true
   }
 }

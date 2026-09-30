@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, UseGuards } from '@nestjs/common'
+import { Controller, Get, HttpCode, Post, Query, UseGuards } from '@nestjs/common'
 import { ApiOkResponse, ApiOperation, ApiSecurity, ApiTags } from '@nestjs/swagger'
 import { AdminApiKeyGuard } from '../common/guards/admin-api-key.guard'
 import { CatalogIndexService } from './catalog-index.service'
@@ -30,6 +30,8 @@ export class RetrievalController {
   }
 
   @Post('reindex')
+  // Reconstruction idempotente, rien n'est créé : 200 plutôt que le 201 par défaut.
+  @HttpCode(200)
   @ApiOperation({ summary: 'Rebuild the retrieval index from the published catalogue' })
   @ApiOkResponse({ description: 'Index rebuilt' })
   async reindex(): Promise<RetrievalIndexInfo> {

@@ -90,4 +90,30 @@ describe('HttpEmbeddingsProvider', () => {
     fetchMock.mockResolvedValue(okResponse([[1, 0]]))
     await expect(makeProvider().embed(['a', 'b'])).rejects.toThrow('returned 1 vectors for 2 texts')
   })
+
+  it('rejects malformed vectors instead of silently degrading the semantic signal', async () => {
+    const malformed = (data: unknown[]) => ({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({ data }),
+      text: vi.fn().mockResolvedValue('')
+    })
+
+    fetchMock.mockResolvedValue(malformed([{ index: 0 }]))
+    await expect(makeProvider().embed(['a'])).rejects.toThrow('empty vector')
+
+    fetchMock.mockResolvedValue(malformed([{ index: 0, embedding: [1, 'x'] }]))
+    await expect(makeProvider().embed(['a'])).rejects.toThrow('non-numeric vector')
+
+    fetchMock.mockResolvedValue(malformed([{ index: 0, embedding: [1, Number.NaN] }]))
+    await expect(makeProvider().embed(['a'])).rejects.toThrow('non-numeric vector')
+
+    fetchMock.mockResolvedValue(
+      malformed([
+        { index: 0, embedding: [1, 0] },
+        { index: 1, embedding: [0, 1, 0] }
+      ])
+    )
+    await expect(makeProvider().embed(['a', 'b'])).rejects.toThrow('different dimensions')
+  })
 })

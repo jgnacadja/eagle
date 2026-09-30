@@ -457,7 +457,10 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
  * « lyon 13002 » ne matche pas une formation à Lyon 69003 + Marseille 13002.
  * Repli sur `locationText` quand aucune session n'est géolocalisée.
  */
-function matchesLocation(row: CatalogRow, location: string | undefined): boolean {
+export function matchesLocation(
+  row: Pick<CatalogRow, 'locations' | 'locationText'>,
+  location: string | undefined
+): boolean {
   const geo = parseGeoLocation(location)
   if (geo) {
     return row.locations.some(

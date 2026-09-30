@@ -14,7 +14,9 @@ interface CourseSeed {
   familySlug: string
   modalities?: string[]
   certification?: string
+  /** Une session par ville ; `postalCodes` s'aligne sur `cities`. */
   cities?: string[]
+  postalCodes?: string[]
   status?: string
 }
 
@@ -51,9 +53,21 @@ export function makeCourse(seed: CourseSeed): CourseListItem {
 }
 
 export function makeEntry(seed: CourseSeed): CatalogIndexEntry {
+  const cities = seed.cities ?? []
   return {
     course: makeCourse(seed),
-    locationText: (seed.cities ?? []).join(' ').toLowerCase()
+    locationText: cities.join(' ').toLowerCase(),
+    locations: cities.map((city, index) => ({
+      name: `Centre LEARN UP de ${city}`,
+      city,
+      postalCode: seed.postalCodes?.[index] ?? null,
+      department: null,
+      region: null,
+      centreSlug: null,
+      address: null,
+      latitude: null,
+      longitude: null
+    }))
   }
 }
 

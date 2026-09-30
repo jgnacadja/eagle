@@ -7,7 +7,11 @@ import { RetrievalService, analyzeQuery } from './retrieval.service'
 
 function makeService(entries = RETRIEVAL_CORPUS) {
   const catalog = { allCourses: vi.fn().mockResolvedValue(entries) }
-  const cache = { version: 1, onCatalogInvalidated: vi.fn(() => () => undefined) }
+  const cache = {
+    version: 1,
+    onCatalogInvalidated: vi.fn(() => () => undefined),
+    syncInvalidations: vi.fn().mockResolvedValue(false)
+  }
   const index = new CatalogIndexService(
     catalog as unknown as CatalogService,
     cache as unknown as CacheService,
@@ -101,6 +105,30 @@ describe('RetrievalService', () => {
     expect(slugs(distanciel)).toEqual([
       'gestion-des-conflits-en-equipe',
       'cybersecurite-fondamentaux'
+    ])
+  })
+
+  it('matches every location token within the same session, like the catalogue', async () => {
+    const service = makeService([
+      makeEntry({
+        id: 20,
+        slug: 'deux-villes',
+        title: 'Formation deux villes',
+        description: 'Session à Lyon et session à Marseille.',
+        category: 'Test',
+        familySlug: 'test',
+        cities: ['Lyon', 'Marseille'],
+        postalCodes: ['69003', '13002']
+      })
+    ])
+
+    // « Lyon 13002 » mélange deux sessions : aucune ne porte les deux jetons.
+    expect(slugs(await service.search({ text: 'formation', location: 'Lyon 13002' }))).toEqual([])
+    expect(slugs(await service.search({ text: 'formation', location: 'Lyon 69' }))).toEqual([
+      'deux-villes'
+    ])
+    expect(slugs(await service.search({ text: 'formation', location: '13002' }))).toEqual([
+      'deux-villes'
     ])
   })
 

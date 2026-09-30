@@ -28,7 +28,9 @@ describe('text util', () => {
 
   it('stems plurals conservatively', () => {
     expect(stemToken('formations')).toBe('formation')
-    expect(stemToken('travaux')).toBe('traval')
+    expect(stemToken('travaux')).toBe('travail')
+    expect(stemToken('travail')).toBe('travail')
+    expect(stemToken('journaux')).toBe('journal')
     expect(stemToken('conflits')).toBe('conflit')
     expect(stemToken('sst')).toBe('sst')
     expect(stemToken('cross')).toBe('cross')

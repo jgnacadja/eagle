@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
-import { normalizeText, stemToken, tokenize } from '../common/utils/text.util'
+import { matchesLocation } from '../catalog/catalog.service'
+import { stemToken, tokenize } from '../common/utils/text.util'
 import {
   CatalogIndexService,
   type IndexedDocument,
@@ -87,18 +88,16 @@ function coverageOf(index: RetrievalIndex, terms: QueryTerm[], matched: string[]
   return total > 0 ? covered / total : 0
 }
 
-function wordPrefixMatch(text: string, token: string): boolean {
-  return text.split(/[^a-z0-9]+/).some((word) => word.startsWith(token))
-}
-
+// Localisation : même règle que le catalogue public (`matchesLocation`) —
+// tous les jetons dans la MÊME session, code postal / département par
+// préfixe, rayon de 50 km autour d'un point « lat,lng ».
 function matchesFilters(document: IndexedDocument, query: RetrievalQuery): boolean {
   const { course } = document
   if (query.family && course.familySlug !== query.family) return false
   if (query.modalities?.length && !query.modalities.some((m) => course.modalities.includes(m))) {
     return false
   }
-  const locationTokens = normalizeText(query.location).match(/[a-z0-9]+/g) ?? []
-  return locationTokens.every((token) => wordPrefixMatch(document.locationText, token))
+  return matchesLocation(document, query.location)
 }
 
 /**

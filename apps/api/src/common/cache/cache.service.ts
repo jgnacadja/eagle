@@ -30,7 +30,11 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CacheService.name)
   private readonly client?: Redis
   private readonly versionKey = 'catalog:version'
+  // Compteur partagé de toutes les invalidations (complètes et ciblées) :
+  // permet à chaque instance de savoir qu'une autre a purgé le catalogue.
+  private readonly generationKey = 'catalog:generation'
   private currentVersion = 0
+  private knownGeneration = 0
   private isReady = false
   private initPromise?: Promise<void>
   private connectionErrorLogged = false
@@ -140,6 +144,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       const oldVersion = newVersion - 1
       this.currentVersion = newVersion
       await this.deleteByPattern(`catalog:v${oldVersion}:*`)
+      await this.bumpGeneration()
       this.logger.log(`Catalog cache invalidated, new version v${this.currentVersion}`)
     } catch (error) {
       this.logger.warn({ error }, 'Failed to invalidate catalog cache')
@@ -154,7 +159,41 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     for (const pattern of patterns) {
       await this.del(pattern)
     }
+    await this.bumpGeneration()
     this.notifyCatalogInvalidated()
+  }
+
+  /**
+   * Rattrape les invalidations faites par d'autres instances (déploiement
+   * multi-instances : la sync ou le webhook Directus n'atterrit que sur
+   * l'une d'elles) : réaligne la version des clés et prévient les
+   * abonnés. Retourne `true` quand une invalidation a été rattrapée.
+   */
+  async syncInvalidations(): Promise<boolean> {
+    if (!this.client || !this.isReady) return false
+
+    try {
+      const generation = Number.parseInt((await this.client.get(this.generationKey)) ?? '0', 10)
+      if (generation <= this.knownGeneration) return false
+      this.knownGeneration = generation
+      const version = await this.client.get(this.versionKey)
+      this.currentVersion = version ? Number.parseInt(version, 10) : this.currentVersion
+    } catch (error) {
+      this.logger.warn({ error }, 'Failed to sync catalog invalidations')
+      return false
+    }
+
+    this.notifyCatalogInvalidated()
+    return true
+  }
+
+  private async bumpGeneration(): Promise<void> {
+    if (!this.client || !this.isReady) return
+    try {
+      this.knownGeneration = await this.client.incr(this.generationKey)
+    } catch (error) {
+      this.logger.warn({ error }, 'Failed to bump the catalog invalidation generation')
+    }
   }
 
   private notifyCatalogInvalidated(): void {
@@ -206,6 +245,8 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     try {
       const version = await this.client!.get(this.versionKey)
       this.currentVersion = version ? Number.parseInt(version, 10) : 0
+      const generation = await this.client!.get(this.generationKey)
+      this.knownGeneration = generation ? Number.parseInt(generation, 10) : 0
       this.isReady = true
     } catch (error) {
       this.isReady = false

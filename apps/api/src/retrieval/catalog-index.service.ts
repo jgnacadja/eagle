@@ -2,7 +2,11 @@ import { Inject, Injectable, Logger, OnModuleDestroy } from '@nestjs/common'
 import type { CourseListItem } from '@learnup/types'
 import { CacheService } from '../common/cache/cache.service'
 import { stemToken, stripHtml, tokenize } from '../common/utils/text.util'
-import { CatalogService, type CatalogRow } from '../catalog/catalog.service'
+import {
+  CatalogService,
+  type CatalogRow,
+  type ResolvedSessionLocation
+} from '../catalog/catalog.service'
 import { HashingEmbeddingsProvider } from './embeddings/hashing-embeddings.provider'
 import {
   EMBEDDINGS_PROVIDER,
@@ -13,6 +17,10 @@ import {
 // Reconstruction de l'index : à chaque invalidation catalogue (sync
 // Digiforma, purge Directus) et, par sécurité, après ce délai.
 const MAX_AGE_MS = 15 * 60_000
+// Rattrapage des purges faites par d'autres instances (Vercel : la sync ou
+// le webhook Directus n'atterrit que sur l'une d'elles), au plus à cette
+// fréquence.
+const SHARED_SYNC_INTERVAL_MS = 30_000
 
 // Pondération des champs dans le score lexical (BM25) : l'intitulé exact
 // du catalogue prime, puis la classification et la certification.
@@ -35,7 +43,7 @@ const MODALITY_LABELS: Record<string, string> = {
 }
 
 /** Ce que l'index lit d'une row du catalogue publié (`CatalogService.allCourses()`). */
-export type CatalogIndexEntry = Pick<CatalogRow, 'course' | 'locationText'>
+export type CatalogIndexEntry = Pick<CatalogRow, 'course' | 'locationText' | 'locations'>
 
 export interface IndexedDocument {
   course: CourseListItem
@@ -45,6 +53,8 @@ export interface IndexedDocument {
   length: number
   vector: number[]
   locationText: string
+  /** Lieux résolus par session — le filtre de localisation raisonne par session. */
+  locations: ResolvedSessionLocation[]
 }
 
 export interface RetrievalIndex {
@@ -126,6 +136,10 @@ export class CatalogIndexService implements OnModuleDestroy {
   private readonly fallback = new HashingEmbeddingsProvider()
   private index: RetrievalIndex = EMPTY_INDEX
   private stale = true
+  // Incrémentée à chaque invalidation : une purge reçue pendant une
+  // construction en cours ne doit pas être perdue quand celle-ci se termine.
+  private generation = 0
+  private lastSharedSyncAt = 0
   private building?: Promise<RetrievalIndex>
   private readonly unsubscribe: () => void
 
@@ -144,22 +158,41 @@ export class CatalogIndexService implements OnModuleDestroy {
   /** Force la reconstruction au prochain accès (catalogue modifié). */
   markStale(): void {
     this.stale = true
+    this.generation += 1
   }
 
   get info(): RetrievalIndexInfo {
     return this.index.info
   }
 
-  /** Vecteur de requête, avec le même provider que l'index courant. */
+  /**
+   * Vecteur de requête, avec le même provider que l'index courant. Si ce
+   * provider ne répond plus, la recherche continue en lexical seul : un
+   * vecteur du provider local ne serait pas comparable à ceux de l'index.
+   */
   async embedQuery(text: string): Promise<number[]> {
     const provider = this.index.info.degraded ? this.fallback : this.embeddings
-    const [vector] = await provider.embed([text])
-    return vector ?? []
+    try {
+      const [vector] = await provider.embed([text])
+      return vector ?? []
+    } catch (error) {
+      this.logger.warn({ error }, `Query embedding failed with ${provider.name} — lexical only`)
+      return []
+    }
   }
 
   async getIndex(): Promise<RetrievalIndex> {
+    await this.syncSharedInvalidations()
     if (!this.needsRebuild()) return this.index
     return this.rebuild()
+  }
+
+  private async syncSharedInvalidations(): Promise<void> {
+    const now = Date.now()
+    if (now - this.lastSharedSyncAt < SHARED_SYNC_INTERVAL_MS) return
+    this.lastSharedSyncAt = now
+    // Une invalidation rattrapée passe par le listener → markStale().
+    await this.cache.syncInvalidations()
   }
 
   async rebuild(): Promise<RetrievalIndex> {
@@ -178,6 +211,7 @@ export class CatalogIndexService implements OnModuleDestroy {
   }
 
   private async build(): Promise<RetrievalIndex> {
+    const generation = this.generation
     const entries = await this.catalog.allCourses()
     const version = this.cache.version
     const { vectors, provider, degraded } = await this.embedEntries(entries)
@@ -191,7 +225,8 @@ export class CatalogIndexService implements OnModuleDestroy {
         terms,
         length,
         vector: vectors[i] ?? [],
-        locationText: entry.locationText
+        locationText: entry.locationText,
+        locations: entry.locations
       }
     })
 
@@ -215,9 +250,10 @@ export class CatalogIndexService implements OnModuleDestroy {
       documentFrequency,
       averageLength: documents.length > 0 ? totalLength / documents.length : 0
     }
-    // Un catalogue vide (Directus indisponible) n'est jamais figé : on
+    // Un catalogue vide (Directus indisponible) n'est jamais figé, ni un
+    // index dont le catalogue a changé pendant la construction : on
     // retentera au prochain accès.
-    this.stale = documents.length === 0
+    this.stale = documents.length === 0 || generation !== this.generation
     this.logger.log(
       `Retrieval index built: ${documents.length} courses, provider ${provider}${degraded ? ' (degraded)' : ''}`
     )

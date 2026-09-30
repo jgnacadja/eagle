@@ -124,15 +124,30 @@ export function tokenize(text: string | null | undefined, minLength = 2): string
   return matches.filter((token) => token.length >= minLength && !FRENCH_STOP_WORDS.has(token))
 }
 
+// Pluriels en « -aux » dont le singulier est en « -ail » (« travaux » →
+// « travail ») ; les autres suivent la règle « -al » (« journaux » → « journal »).
+const AIL_PLURALS = new Set([
+  'bail',
+  'corail',
+  'email',
+  'soupirail',
+  'travail',
+  'vantail',
+  'vitrail'
+])
+
 /**
  * Racinisation légère du français : pluriels (« formations » → « formation »,
- * « travaux » → « trava… » évité) et féminins en « -ée ». Volontairement
- * conservatrice — les variantes morphologiques restantes sont couvertes par
- * les n-grammes du provider d'embeddings local.
+ * « travaux » → « travail », « journaux » → « journal ») et féminins en
+ * « -ée ». Volontairement conservatrice — les variantes morphologiques
+ * restantes sont couvertes par les n-grammes du provider d'embeddings local.
  */
 export function stemToken(token: string): string {
   let stem = token
-  if (stem.length > 4 && stem.endsWith('aux')) return `${stem.slice(0, -3)}al`
+  if (stem.length > 4 && stem.endsWith('aux')) {
+    const singular = `${stem.slice(0, -3)}ail`
+    return AIL_PLURALS.has(singular) ? singular : `${stem.slice(0, -3)}al`
+  }
   if (stem.length > 4 && (stem.endsWith('s') || stem.endsWith('x')) && !stem.endsWith('ss')) {
     stem = stem.slice(0, -1)
   }

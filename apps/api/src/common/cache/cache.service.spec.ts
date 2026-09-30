@@ -128,6 +128,54 @@ describe('CacheService', () => {
     expect(listener).toHaveBeenCalledTimes(2)
   })
 
+  it('catches up on invalidations made by another instance', async () => {
+    const listener = vi.fn()
+    service.onCatalogInvalidated(listener)
+    const client = Reflect.get(service, 'client') as {
+      set: (key: string, value: string) => Promise<unknown>
+    }
+    await service.invalidateCatalog()
+    listener.mockClear()
+
+    // Rien de nouveau : la génération connue est celle de notre propre purge.
+    await expect(service.syncInvalidations()).resolves.toBe(false)
+    expect(listener).not.toHaveBeenCalled()
+
+    // Purge ciblée d'une autre instance : génération avancée, version inchangée.
+    const version = service.version
+    await client.set('catalog:generation', '5')
+    await expect(service.syncInvalidations()).resolves.toBe(true)
+    expect(listener).toHaveBeenCalledOnce()
+    expect(service.version).toBe(version)
+
+    // Purge complète d'une autre instance : génération et version avancées.
+    await client.set('catalog:generation', '7')
+    await client.set('catalog:version', '9')
+    await expect(service.syncInvalidations()).resolves.toBe(true)
+    expect(listener).toHaveBeenCalledTimes(2)
+    expect(service.key('x')).toBe('catalog:v9:x')
+
+    await expect(service.syncInvalidations()).resolves.toBe(false)
+  })
+
+  it('has nothing to catch up on a fresh store and keeps its version without a stored one', async () => {
+    await expect(service.syncInvalidations()).resolves.toBe(false)
+
+    const client = Reflect.get(service, 'client') as {
+      set: (key: string, value: string) => Promise<unknown>
+    }
+    await client.set('catalog:generation', '2')
+    await expect(service.syncInvalidations()).resolves.toBe(true)
+    expect(service.key('x')).toBe('catalog:v0:x')
+  })
+
+  it('reports nothing when the invalidation sync cannot reach Redis', async () => {
+    const client = Reflect.get(service, 'client') as { get: ReturnType<typeof vi.fn> }
+    client.get.mockRejectedValueOnce(new Error('down'))
+
+    await expect(service.syncInvalidations()).resolves.toBe(false)
+  })
+
   it('returns null for non-JSON cached values', async () => {
     const key = service.key('broken')
     await service.set('broken', { ok: true })
@@ -194,6 +242,9 @@ describe('CacheService', () => {
     disabled.onCatalogInvalidated(listener)
     await expect(disabled.invalidateCatalog()).resolves.toBeUndefined()
     expect(listener).toHaveBeenCalledOnce()
+    await expect(disabled.invalidatePatterns(['courses:*'])).resolves.toBeUndefined()
+    expect(listener).toHaveBeenCalledTimes(2)
+    await expect(disabled.syncInvalidations()).resolves.toBe(false)
     await expect(disabled.getSyncRun()).resolves.toBeNull()
     expect(disabled.key('courses')).toBe('catalog:v0:courses')
     await expect(disabled.onModuleDestroy()).resolves.toBeUndefined()
@@ -365,14 +416,25 @@ describe('CacheService', () => {
     expect(first).toBe(second)
   })
 
-  it('keeps a stored cache version at boot', async () => {
+  it('keeps a stored cache version and invalidation generation at boot', async () => {
     const redis = Reflect.get(service, 'client') as { get: ReturnType<typeof vi.fn> }
     redis.get.mockImplementation((key: string) =>
-      Promise.resolve(key === 'catalog:version' ? '7' : null)
+      Promise.resolve(key === 'catalog:version' ? '7' : key === 'catalog:generation' ? '3' : null)
     )
 
     await Reflect.get(service, 'initializeClient').call(service)
 
     expect(service.key('x')).toBe('catalog:v7:x')
+    // Génération 3 déjà connue : rien à rattraper.
+    await expect(service.syncInvalidations()).resolves.toBe(false)
+  })
+
+  it('does not throw when the generation bump fails', async () => {
+    const redis = Reflect.get(service, 'client') as { incr: ReturnType<typeof vi.fn> }
+    redis.incr.mockImplementation((key: string) =>
+      key === 'catalog:generation' ? Promise.reject(new Error('down')) : Promise.resolve(1)
+    )
+
+    await expect(service.invalidatePatterns(['courses:*'])).resolves.toBeUndefined()
   })
 })

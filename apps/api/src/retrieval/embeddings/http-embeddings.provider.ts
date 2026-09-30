@@ -71,6 +71,22 @@ export class HttpEmbeddingsProvider implements EmbeddingsProvider {
         `Embeddings provider returned ${data.length} vectors for ${batch.length} texts`
       )
     }
-    return data.map((entry) => l2Normalize(entry.embedding ?? []))
+    return data.map((entry) => l2Normalize(validVector(entry.embedding, data[0]?.embedding)))
   }
+}
+
+// Une réponse malformée (vecteur absent, vide, non numérique ou de dimension
+// différente) doit faire échouer le provider — sinon la similarité vaudrait
+// silencieusement 0 au lieu de déclencher le repli local.
+function validVector(vector: unknown, reference: unknown): number[] {
+  if (!Array.isArray(vector) || vector.length === 0) {
+    throw new Error('Embeddings provider returned an empty vector')
+  }
+  if (!vector.every((value) => typeof value === 'number' && Number.isFinite(value))) {
+    throw new Error('Embeddings provider returned a non-numeric vector')
+  }
+  if (Array.isArray(reference) && reference.length !== vector.length) {
+    throw new Error('Embeddings provider returned vectors of different dimensions')
+  }
+  return vector as number[]
 }

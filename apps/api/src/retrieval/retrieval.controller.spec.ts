@@ -60,7 +60,7 @@ describe('RetrievalController', () => {
   it('POST /admin/retrieval/reindex rebuilds the index', async () => {
     await request(app.getHttpServer())
       .post('/admin/retrieval/reindex')
-      .expect(201)
+      .expect(200)
       .expect((res) => expect(res.body).toEqual({ version: 2, documents: 8 }))
 
     expect(catalogIndex.rebuild).toHaveBeenCalledOnce()

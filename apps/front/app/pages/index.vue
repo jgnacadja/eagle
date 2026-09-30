@@ -62,8 +62,7 @@
               Besoin d'aide pour choisir votre formation&nbsp;?
             </h2>
             <p class="mx-auto mt-2 text-small md:text-sm text-ink-muted max-w-prose">
-              Décrivez votre besoin ou posez votre question. Nous vous guidons vers la solution
-              adaptée.
+              Décrivez votre besoin et nous pourrons vous recommander la solution la mieux adaptée
             </p>
           </div>
 
@@ -84,11 +83,6 @@
                 <IconSparkle :size="20" class="shrink-0 text-accent" />
               </template>
             </SearchInput>
-            <p
-              class="mt-3 text-xs md:text-small text-ink-muted whitespace-normal md:whitespace-nowrap"
-            >
-              Vous pouvez écrire comme vous le feriez à votre conseiller.
-            </p>
           </form>
 
           <!-- 3 Value propositions -->
@@ -697,9 +691,6 @@
               <IconSparkle :size="20" class="shrink-0 text-accent" />
             </template>
           </SearchInput>
-          <p class="mt-3 text-center text-xs md:text-small text-ink-inverse-muted">
-            Vous pouvez écrire comme vous le feriez à votre conseiller.
-          </p>
         </form>
 
         <div class="mt-lg flex justify-center">

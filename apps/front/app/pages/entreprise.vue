@@ -67,19 +67,10 @@
             </SearchInput>
           </form>
 
-          <p class="mx-auto mt-lg max-w-prose text-small text-ink-muted">
-            <span class="hidden md:inline"
-              >Vous pouvez écrire comme vous le feriez à votre conseiller — ex. « Nous avons 12
-              agences en France et souhaitons centraliser nos formations réglementaires. »</span
-            ><span class="md:hidden"
-              >Vous pouvez écrire comme vous le feriez à votre conseiller.</span
-            >
-          </p>
-
           <NuxtLink
             v-hero="heroStagger(5)"
             to="/parler-a-votre-conseiller"
-            class="mt-sm inline-block text-small font-bold text-accent-text underline underline-offset-4 transition-colors hover:text-primary"
+            class="mt-lg inline-block text-small font-bold text-accent-text underline underline-offset-4 transition-colors hover:text-primary"
           >
             Vous préférez échanger ? Parler à votre conseiller <span class="link-arrow">→</span>
           </NuxtLink>
@@ -420,10 +411,6 @@
             </template>
           </SearchInput>
         </form>
-
-        <p class="mt-md text-small text-ink-inverse-muted">
-          Vous pouvez écrire comme vous le feriez à votre conseiller.
-        </p>
 
         <Button as-child variant="accent" size="pill-lg" class="gap-xs mt-lg w-full sm:w-auto">
           <NuxtLink to="/parler-a-votre-conseiller">

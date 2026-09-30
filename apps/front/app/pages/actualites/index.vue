@@ -318,6 +318,8 @@ import { z } from 'zod'
 import { articleAssetUrl, articleReadingTime, formatArticleDate } from '~/utils/article'
 import { formatRegionLabel } from '~/utils/region'
 import { revealStagger } from '~/utils/reveal'
+import { useDataLayer } from '~/composables/useDataLayer'
+import { onMounted } from 'vue'
 
 const config = useRuntimeConfig()
 const route = useRoute()
@@ -366,8 +368,23 @@ function filtersQuery(patch: { category?: string; region?: string; page?: number
   return query
 }
 
+const { pushEvent } = useDataLayer()
+
+onMounted(() => {
+  pushEvent({
+    event: 'view_blog_list',
+    articles_count: listData.value?.total ?? 0,
+    page_path: typeof window !== 'undefined' ? window.location.pathname : ''
+  })
+})
+
 function setCategory(category: string) {
   if (category !== selectedCategory.value) {
+    pushEvent({
+      event: 'filter_blog_category',
+      category_name: category,
+      results_count: listData.value?.total ?? 0
+    })
     navigateTo({ path: '/actualites', query: filtersQuery({ category }) })
   }
 }

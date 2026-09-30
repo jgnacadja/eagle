@@ -31,6 +31,8 @@ import CandidatureForm from './Form.vue'
 import Confirmation from './Confirmation.vue'
 import { VOIE_LABELS, type CandidaturePayload, type CandidatureVoie } from '~/types/candidature'
 
+import { useDataLayer } from '~/composables/useDataLayer'
+
 const props = withDefaults(
   defineProps<{
     open: boolean
@@ -47,6 +49,7 @@ const voie = ref<CandidatureVoie>(props.voie)
 const submitted = ref(false)
 const projet = ref('')
 const { submit: submitLead, sending, error: submitError, reset: resetLeadError } = useLeadSubmit()
+const { pushEvent } = useDataLayer()
 
 // Chaque ouverture repart sur la voie demandée et le formulaire (pas l'écran succès).
 watch(
@@ -71,5 +74,19 @@ async function onSubmit(payload: CandidaturePayload) {
   // ville est requise par le schéma (min 1) : toujours renseignée ici.
   projet.value = `${VOIE_LABELS[payload.voie]} — ${payload.ville}`
   submitted.value = true
+
+  const formId =
+    payload.voie === 'centre'
+      ? 'demande_franchise'
+      : payload.voie === 'organisme'
+        ? 'demande_organisme'
+        : 'demande_formateur'
+
+  pushEvent({
+    event: 'submit_network_interest',
+    profile_type: payload.voie,
+    form_id: formId,
+    region: payload.ville
+  })
 }
 </script>

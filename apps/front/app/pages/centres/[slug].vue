@@ -501,7 +501,9 @@
           text="La demande transmet automatiquement le centre, la ville et la formation concernée — sans ressaisie."
         >
           <Button as-child variant="paper" size="pill-lg" class="w-full sm:w-auto">
-            <NuxtLink :to="`/centres/demande-de-formation?centre=${slug}`"
+            <NuxtLink
+              :to="`/centres/demande-de-formation?centre=${slug}`"
+              @click="onDemandeFormationClick('cta_banner')"
               >Demander une formation</NuxtLink
             >
           </Button>
@@ -613,6 +615,7 @@ import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
 import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
+import { useDataLayer } from '~/composables/useDataLayer'
 
 definePageMeta({
   layout: 'with-breadcrumb'
@@ -1068,5 +1071,30 @@ function retry() {
 
 function onErrorSearch(query: string) {
   navigateTo({ path: '/formations', query: query ? { q: query } : {} })
+}
+
+const { pushEvent } = useDataLayer()
+
+onMounted(() => {
+  if (centre.value) {
+    pushEvent({
+      event: 'view_centre_detail',
+      center_id: centre.value.slug,
+      center_name: centre.value.name,
+      center_city: centre.value.city ?? undefined,
+      center_department: centre.value.department ?? undefined,
+      center_specialties: centre.value.specialties?.length ? centre.value.specialties : undefined,
+      page_path: typeof window !== 'undefined' ? window.location.pathname : ''
+    })
+  }
+})
+
+function onDemandeFormationClick(location = 'cta_banner') {
+  pushEvent({
+    event: 'click_cta_demande_formation_from_centre',
+    center_id: slug,
+    cta_location: location,
+    page_path: typeof window !== 'undefined' ? window.location.pathname : ''
+  })
 }
 </script>

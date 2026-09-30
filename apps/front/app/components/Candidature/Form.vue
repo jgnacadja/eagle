@@ -1,5 +1,5 @@
 <template>
-  <form novalidate class="space-y-lg" @submit.prevent="onSubmit">
+  <form novalidate class="space-y-lg" @focusin="onFieldFocus" @submit.prevent="onSubmit">
     <fieldset>
       <legend class="mb-sm text-small font-semibold text-ink">Votre projet</legend>
       <div class="flex flex-wrap gap-sm">
@@ -167,11 +167,15 @@
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted } from 'vue'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
 import { leadFields } from '~/utils/leadFields'
 import type { CandidaturePayload, CandidatureVoie } from '~/types/candidature'
+import { VOIE_LABELS } from '~/types/candidature'
+import { useFormTracking } from '~/composables/useFormTracking'
+import type { FormId } from '~/types/analytics'
 
 const props = defineProps<{
   sending?: boolean
@@ -223,15 +227,51 @@ type CandidatureField = 'nom' | 'email' | 'telephone' | 'ville' | 'parcours' | '
 // Erreurs masquées jusqu'à la 1re tentative d'envoi, puis en direct.
 const showError = (field: CandidatureField) => submitCount.value > 0 && !!errors.value[field]
 
-const onSubmit = handleSubmit((values) => {
-  if (props.sending) return
-  emit('submit', {
-    voie: voie.value,
-    nom: values.nom,
-    email: values.email,
-    telephone: values.telephone,
-    ville: values.ville,
-    parcours: values.parcours
-  })
+const formIdMap: Record<CandidatureVoie, FormId> = {
+  centre: 'demande_franchise',
+  organisme: 'demande_organisme',
+  formateur: 'demande_formateur'
+}
+
+const currentFormId = computed(() => formIdMap[voie.value] ?? 'demande_franchise')
+
+const { trackFormView, trackFieldInteraction, trackFormError, trackFormSubmit } = useFormTracking({
+  formId: currentFormId.value,
+  formName: VOIE_LABELS[voie.value] ?? 'Candidature',
+  totalSteps: 1,
+  totalFields: 6
 })
+
+onMounted(() => {
+  trackFormView(1, 'Candidature')
+})
+
+function onFieldFocus(event: FocusEvent) {
+  const target = event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null
+  const fieldName = target?.name || target?.id?.replace(/^candidature-/, '')
+  if (fieldName) {
+    trackFieldInteraction(fieldName)
+  }
+}
+
+const onSubmit = handleSubmit(
+  (values) => {
+    if (props.sending) return
+    trackFormSubmit(currentFormId.value)
+    emit('submit', {
+      voie: voie.value,
+      nom: values.nom,
+      email: values.email,
+      telephone: values.telephone,
+      ville: values.ville,
+      parcours: values.parcours
+    })
+  },
+  ({ errors }) => {
+    const [firstField, firstError] = Object.entries(errors)[0] ?? []
+    if (firstField) {
+      trackFormError(firstField, firstError || 'Erreur de validation')
+    }
+  }
+)
 </script>

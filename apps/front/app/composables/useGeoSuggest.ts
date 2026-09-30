@@ -50,8 +50,9 @@ const MAX_DEPARTEMENT_FETCH = 5
 function communeToSuggestion(commune: GeoCommune): GeoSuggestion {
   const suffix = commune.codeDepartement ? ` (${commune.codeDepartement})` : ''
   // Centre de la commune → recherche par proximité (rayon) côté API catalogue.
+  // Le nom après « | » sert de repli texte pour les formations sans centre géocodé.
   const location = commune.centre
-    ? `${commune.centre.coordinates[1]},${commune.centre.coordinates[0]}`
+    ? `${commune.centre.coordinates[1]},${commune.centre.coordinates[0]}|${commune.nom}`
     : commune.nom
   return {
     label: `${commune.nom}${suffix}`,
@@ -68,8 +69,10 @@ function communeToSuggestion(commune: GeoCommune): GeoSuggestion {
  * recherche catalogue par rayon.
  */
 function codePostalToSuggestion(codePostal: string, commune: GeoCommune): GeoSuggestion {
+  // « lat,lng|Commune » : le nom sert de repli texte côté API quand aucune
+  // session n'a de coordonnées (localisation Digiforma seule).
   const location = commune.centre
-    ? `${commune.centre.coordinates[1]},${commune.centre.coordinates[0]}`
+    ? `${commune.centre.coordinates[1]},${commune.centre.coordinates[0]}|${commune.nom}`
     : codePostal
   return {
     label: `${codePostal} ${commune.nom}`,

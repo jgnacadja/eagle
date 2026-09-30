@@ -53,14 +53,14 @@ describe('useGeoSuggest', () => {
     expect(suggest.suggestions.value).toEqual([
       {
         label: 'Lyon (69)',
-        location: '45.764,4.8357',
+        location: '45.764,4.8357|Lyon',
         term: 'Lyon',
         kind: 'commune',
         departmentName: 'Rhône'
       }
     ])
     expect(suggest.byLabel('Lyon (69)')?.term).toBe('Lyon')
-    expect(suggest.byLocation('45.764,4.8357')?.label).toBe('Lyon (69)')
+    expect(suggest.byLocation('45.764,4.8357|Lyon')?.label).toBe('Lyon (69)')
   })
 
   it('retombe sur le nom pour une commune sans centre ni code département', async () => {
@@ -151,7 +151,7 @@ describe('useGeoSuggest', () => {
     expect(suggest.suggestions.value).toEqual([
       {
         label: 'Paris (75)',
-        location: '48.8566,2.3522',
+        location: '48.8566,2.3522|Paris',
         term: 'Paris',
         kind: 'commune',
         departmentName: 'Paris'
@@ -209,28 +209,28 @@ describe('useGeoSuggest', () => {
       { label: 'Paris (département 75)', location: '75', term: 'Paris', kind: 'department' },
       {
         label: '75001 Paris',
-        location: '48.8589,2.347',
+        location: '48.8589,2.347|Paris',
         term: '75001',
         kind: 'commune',
         departmentName: 'Paris'
       },
       {
         label: '75002 Paris',
-        location: '48.8589,2.347',
+        location: '48.8589,2.347|Paris',
         term: '75002',
         kind: 'commune',
         departmentName: 'Paris'
       },
       {
         label: '75020 Paris',
-        location: '48.8589,2.347',
+        location: '48.8589,2.347|Paris',
         term: '75020',
         kind: 'commune',
         departmentName: 'Paris'
       },
       {
         label: '75116 Paris',
-        location: '48.8589,2.347',
+        location: '48.8589,2.347|Paris',
         term: '75116',
         kind: 'commune',
         departmentName: 'Paris'
@@ -270,7 +270,7 @@ describe('useGeoSuggest', () => {
     await request(suggest, '69003')
 
     expect(suggest.suggestions.value).toEqual([
-      { label: '69003 Lyon 3e', location: '45.76,4.9', term: '69003', kind: 'commune' }
+      { label: '69003 Lyon 3e', location: '45.76,4.9|Lyon 3e', term: '69003', kind: 'commune' }
     ])
   })
 

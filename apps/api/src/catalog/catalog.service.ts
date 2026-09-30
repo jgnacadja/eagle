@@ -485,11 +485,46 @@ function wordPrefixMatch(field: string | null | undefined, token: string): boole
 type SessionLocation = ResolvedSessionLocation
 
 /**
+ * Départements corses émis par le geosuggest (« 2A »/« 2B ») : ce ne sont ni
+ * des codes postaux ni des préfixes de nom. On les déplie sur le bloc postal
+ * « 20x » (2A = 200xx–201xx, 2B = 202xx–206xx) et le nom du département.
+ */
+const CORSICA_DEPARTMENTS: Record<string, { cpPrefixes: string[]; nameTokens: string[] }> = {
+  '2a': { cpPrefixes: ['200', '201'], nameTokens: ['corse', 'sud'] },
+  '2b': { cpPrefixes: ['202', '203', '204', '205', '206'], nameTokens: ['haute', 'corse'] }
+}
+
+function corsicaNameMatches(nameTokens: string[], fields: (string | null | undefined)[]): boolean {
+  return nameTokens.every((name) => fields.some((field) => wordPrefixMatch(field, name)))
+}
+
+/**
+ * Repli texte (aucune session géolocalisée, ou label de commune en mode géo) :
+ * mêmes règles de matching que par session, sur le `locationText` agrégé.
+ */
+function matchesLocationText(locationText: string, tokens: string[]): boolean {
+  return tokens.every((token) => {
+    const corsica = CORSICA_DEPARTMENTS[token]
+    return corsica
+      ? corsica.cpPrefixes.some((prefix) => wordPrefixMatch(locationText, prefix)) ||
+          corsicaNameMatches(corsica.nameTokens, [locationText])
+      : wordPrefixMatch(locationText, token)
+  })
+}
+
+/**
  * Numérique : code postal exact (5 chiffres), préfixe CP (3-4) ou code
  * département via préfixe CP (1-2 : « 69 » matche « 69003 »).
  * Alpha : préfixe de mot sur ville / département / région / adresse / nom du centre.
  */
 function locationTokenMatches(token: string, loc: SessionLocation): boolean {
+  const corsica = CORSICA_DEPARTMENTS[token]
+  if (corsica) {
+    return (
+      corsica.cpPrefixes.some((prefix) => (loc.postalCode ?? '').startsWith(prefix)) ||
+      corsicaNameMatches(corsica.nameTokens, [loc.name, loc.city, loc.department, loc.region])
+    )
+  }
   if (/^\d+$/.test(token)) {
     const cp = loc.postalCode ?? ''
     if (token.length === 5) return cp === token
@@ -505,10 +540,19 @@ function locationTokenMatches(token: string, loc: SessionLocation): boolean {
 // géographique (lat,lng — émis par le geosuggest communes).
 const GEO_SEARCH_RADIUS_KM = 50
 
-function parseGeoLocation(location: string | undefined): { lat: number; lng: number } | null {
-  const match = location?.trim().match(/^(-?\d{1,2}(?:\.\d+)?),\s*(-?\d{1,3}(?:\.\d+)?)$/)
+interface GeoPoint {
+  lat: number
+  lng: number
+  /** Nom de la commune transporté par le geosuggest (« lat,lng|Lyon »). */
+  label?: string
+}
+
+function parseGeoLocation(location: string | undefined): GeoPoint | null {
+  const match = location
+    ?.trim()
+    .match(/^(-?\d{1,2}(?:\.\d+)?),\s*(-?\d{1,3}(?:\.\d+)?)(?:\|(.*))?$/)
   if (!match) return null
-  return { lat: Number(match[1]), lng: Number(match[2]) }
+  return { lat: Number(match[1]), lng: Number(match[2]), label: match[3]?.trim() || undefined }
 }
 
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -521,8 +565,11 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 }
 
 /**
- * Mode géographique (`lat,lng` issu du geosuggest) : une session matche si
- * son centre est à moins de GEO_SEARCH_RADIUS_KM du point.
+ * Mode géographique (`lat,lng` issu du geosuggest, optionnellement suivi de
+ * « |Commune ») : une session matche si son centre est à moins de
+ * GEO_SEARCH_RADIUS_KM du point. Quand aucune session n'est géocodée
+ * (localisation Digiforma seule), repli sur `locationText` avec le nom de
+ * commune transporté par le geosuggest.
  * Mode texte : tous les tokens doivent matcher dans la MÊME session —
  * « lyon 13002 » ne matche pas une formation à Lyon 69003 + Marseille 13002.
  * Repli sur `locationText` quand aucune session n'est géolocalisée.
@@ -530,19 +577,24 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 function matchesLocation(row: CatalogRow, location: string | undefined): boolean {
   const geo = parseGeoLocation(location)
   if (geo) {
-    return row.locations.some(
-      (loc) =>
-        loc.latitude != null &&
-        loc.longitude != null &&
-        haversineKm(geo.lat, geo.lng, loc.latitude, loc.longitude) <= GEO_SEARCH_RADIUS_KM
-    )
+    const geocoded = row.locations.filter((loc) => loc.latitude != null && loc.longitude != null)
+    if (geocoded.length > 0) {
+      return geocoded.some(
+        (loc) =>
+          loc.latitude != null &&
+          loc.longitude != null &&
+          haversineKm(geo.lat, geo.lng, loc.latitude, loc.longitude) <= GEO_SEARCH_RADIUS_KM
+      )
+    }
+    const tokens = toLocationTokens(geo.label)
+    return tokens != null && matchesLocationText(row.locationText, tokens)
   }
 
   const tokens = toLocationTokens(location)
   if (!tokens) return true
 
   if (row.locations.length === 0) {
-    return tokens.every((token) => wordPrefixMatch(row.locationText, token))
+    return matchesLocationText(row.locationText, tokens)
   }
   return row.locations.some((loc) => tokens.every((token) => locationTokenMatches(token, loc)))
 }

@@ -85,10 +85,15 @@ export class CentresService {
   ) {}
 
   async list(query: ListCentresDto): Promise<CentreListItem[]> {
-    // Clé déterministe : JSON.stringify(query) dépend de l'ordre des
-    // paramètres d'URL et fragmenterait le cache.
-    const cacheKey = `centres:list:${query.department ?? ''}|${query.search ?? ''}`
-    const cached = await this.cache.get<CentreListItem[]>(cacheKey)
+    // Clé canonique JSON : ordre des champs fixe et pas de séparateur « | »
+    // (une valeur contenant « | » pouvait entrer en collision avec une autre
+    // combinaison). `search` est du texte libre : jamais caché — chaque saisie
+    // créerait une entrée Redis d'1 h exploitable depuis l'endpoint public,
+    // et le recalcul sur `centres:all` (cachée) est peu coûteux.
+    const cacheKey = query.search
+      ? undefined
+      : `centres:list:${JSON.stringify({ department: normalizeDepartment(query.department) || null })}`
+    const cached = cacheKey ? await this.cache.get<CentreListItem[]>(cacheKey) : undefined
     if (cached) {
       return cached
     }
@@ -99,7 +104,9 @@ export class CentresService {
     }
     const result = all.filter((centre) => matchesCentre(centre, query))
 
-    await this.cache.set(cacheKey, result)
+    if (cacheKey) {
+      await this.cache.set(cacheKey, result)
+    }
     return result
   }
 

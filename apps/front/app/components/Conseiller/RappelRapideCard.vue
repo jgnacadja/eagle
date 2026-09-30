@@ -117,7 +117,7 @@
             variant === 'dark' ? 'text-ink-inverse-muted' : 'text-ink-muted'
           ]"
         >
-          En validant, vous acceptez d'être rappelé par un conseiller pour votre projet de
+          En validant, vous acceptez d'être rappelé par votre conseiller pour votre projet de
           formation.
         </p>
 

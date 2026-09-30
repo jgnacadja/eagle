@@ -35,7 +35,7 @@ export function matchesTag(course: MatchableCourse, tag: string): boolean {
   const cleanTag = normalize(tag).trim()
   const cleanTokens = cleanTag.split(/\s+/).filter(Boolean)
 
-  const corpus = normalize(
+  const rawCorpus = normalize(
     [
       course.title,
       course.description,
@@ -50,14 +50,13 @@ export function matchesTag(course: MatchableCourse, tag: string): boolean {
       .join(' ')
   )
 
-  if (corpus.includes(cleanTag)) return true
+  if (rawCorpus.includes(cleanTag)) return true
 
+  // Normalisation des variantes usuelles (ex: sous-section 4 <-> ss4)
+  const corpus = rawCorpus.replace(/sous\s+section\s+4/g, 'ss4')
+
+  // Pour les tags composés, tous les mots doivent être présents dans la formation
   if (cleanTokens.length > 0 && cleanTokens.every((token) => corpus.includes(token))) {
-    return true
-  }
-
-  const significantTokens = cleanTokens.filter((t) => t.length >= 4)
-  if (significantTokens.length > 0 && significantTokens.some((token) => corpus.includes(token))) {
     return true
   }
 

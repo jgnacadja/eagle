@@ -679,6 +679,43 @@ function sortCatalogRows(
 
 const ROWS_CACHE_KEY = 'courses:rows'
 
+/** Listes « a,b » insensibles à l'ordre côté filtre → triées dans la clé. */
+function canonicalCsv(value: string | undefined): string | undefined {
+  const items = value
+    ?.split(',')
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean)
+  return items?.length ? [...new Set(items)].sort().join(',') : undefined
+}
+
+/**
+ * Clé canonique pour `courses:list:*` : ordre des champs fixé ici, pas celui
+ * des params d'URL — deux requêtes équivalentes partagent la même entrée.
+ * L'encodage JSON évite les collisions de séparateur. `search`/`location`
+ * (texte libre) sont volontairement absents : ces requêtes ne sont jamais
+ * cachées (voir `list()`).
+ */
+function listCacheKey(query: ListCoursesDto): string {
+  return `courses:list:${JSON.stringify({
+    availability: query.availability,
+    center: query.center,
+    certifying: query.certifying,
+    cpf: query.cpf,
+    durationMax: query.durationMax,
+    durationMin: query.durationMin,
+    durations: canonicalCsv(query.durations),
+    family: query.family,
+    limit: query.limit,
+    modalities: canonicalCsv(query.modalities),
+    order: query.order,
+    page: query.page,
+    priceMax: query.priceMax,
+    priceMin: query.priceMin,
+    sort: query.sort,
+    subFamily: query.subFamily
+  })}`
+}
+
 @Injectable()
 export class CatalogService {
   private readonly logger = new Logger(CatalogService.name)
@@ -689,8 +726,11 @@ export class CatalogService {
   ) {}
 
   async list(query: ListCoursesDto): Promise<CoursePage> {
-    const cacheKey = `courses:list:${JSON.stringify(query)}`
-    const cached = await this.cache.get<CoursePage>(cacheKey)
+    // `search`/`location` sont du texte libre : jamais cachés — chaque saisie
+    // créerait une entrée Redis d'1 h, pollution exploitable depuis cet
+    // endpoint public. Le recalcul sur `courses:rows` (cachées) est peu coûteux.
+    const cacheKey = !query.search && !query.location ? listCacheKey(query) : undefined
+    const cached = cacheKey ? await this.cache.get<CoursePage>(cacheKey) : undefined
     // Une page vide en cache peut être un résidu dégradé (écrit avant la
     // garde anti-vide) : ignorée — le recalcul reste bon marché sur des
     // rows déjà cachées.
@@ -717,7 +757,7 @@ export class CatalogService {
     // Un résultat vide n'est jamais caché : dataset dégradé (Directus
     // indisponible ou sync incomplète) ou page filtrée sans correspondance —
     // dans les deux cas rien à figer pendant le TTL.
-    if (result.items.length > 0) {
+    if (result.items.length > 0 && cacheKey) {
       await this.cache.set(cacheKey, result)
     }
     return result

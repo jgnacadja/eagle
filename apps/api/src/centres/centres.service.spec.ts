@@ -108,15 +108,28 @@ describe('CentresService', () => {
     expect(result).toHaveLength(3)
     expect(directus.fetchAllCentres).toHaveBeenCalled()
     expect(cache.set).toHaveBeenCalledWith('centres:all', centres)
-    expect(cache.set).toHaveBeenCalledWith('centres:list:|', result)
+    expect(cache.set).toHaveBeenCalledWith('centres:list:{"department":null}', result)
   })
 
-  it('uses a param-order-independent cache key', async () => {
+  it('uses a canonical JSON cache key (no « | » collision)', async () => {
     cache.get.mockResolvedValue(null)
 
-    await service.list({ department: 'Rhône', search: 'lyon' } as ListCentresDto)
+    await service.list({ department: 'Rhône' } as ListCentresDto)
 
-    expect(cache.get).toHaveBeenCalledWith('centres:list:Rhône|lyon')
+    expect(cache.get).toHaveBeenCalledWith('centres:list:{"department":"rhone"}')
+    expect(cache.set).toHaveBeenCalledWith('centres:list:{"department":"rhone"}', expect.any(Array))
+  })
+
+  it('never caches free-text searches', async () => {
+    cache.get.mockResolvedValue(null)
+
+    const result = await service.list({ department: 'Rhône', search: 'lyon' } as ListCentresDto)
+
+    expect(result.length).toBeGreaterThan(0)
+    const touchedKeys = [...cache.get.mock.calls, ...cache.set.mock.calls].map((call) =>
+      String(call[0])
+    )
+    expect(touchedKeys.some((key) => key.startsWith('centres:list:'))).toBe(false)
   })
 
   it('filters by department including departments_covered', async () => {
@@ -301,7 +314,7 @@ describe('CentresService', () => {
         slug: 'sparse',
         city: 'Sparseville',
         department: null,
-        departments_covered: [null, ''],
+        departments_covered: [null, ''] as unknown as string[],
         specialties: null,
         region: null
       }),

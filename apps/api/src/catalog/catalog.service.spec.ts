@@ -166,6 +166,51 @@ describe('CatalogService', () => {
     expect(catalog.fetchAllFormations).toHaveBeenCalled()
   })
 
+  it('canonicalizes the list cache key regardless of query field order', async () => {
+    cache.get.mockResolvedValue(null)
+
+    await service.list({
+      page: 1,
+      limit: 10,
+      family: 'management',
+      durations: 'courte,longue'
+    } as ListCoursesDto)
+    await service.list({
+      limit: 10,
+      durations: 'longue,courte',
+      family: 'management',
+      page: 1
+    } as unknown as ListCoursesDto)
+
+    const keys = [...cache.get.mock.calls, ...cache.set.mock.calls]
+      .map((call) => String(call[0]))
+      .filter((key) => key.startsWith('courses:list:'))
+    expect(keys.length).toBeGreaterThan(0)
+    expect(new Set(keys).size).toBe(1)
+  })
+
+  it('never caches free-text search or location queries', async () => {
+    cache.get.mockResolvedValue(null)
+
+    const bySearch = await service.list({
+      search: 'pilotage',
+      page: 1,
+      limit: 10
+    } as ListCoursesDto)
+    const byLocation = await service.list({
+      location: '45.77,4.88|Lyon',
+      page: 1,
+      limit: 10
+    } as ListCoursesDto)
+    expect(bySearch.items.length).toBeGreaterThan(0)
+
+    const touchedKeys = [...cache.get.mock.calls, ...cache.set.mock.calls].map((call) =>
+      String(call[0])
+    )
+    expect(touchedKeys.some((key) => key.startsWith('courses:list:'))).toBe(false)
+    expect(byLocation.items).toHaveLength(0)
+  })
+
   it('filters by family, CPF and search', async () => {
     cache.get.mockResolvedValue(null)
 

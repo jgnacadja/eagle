@@ -3,9 +3,13 @@ import { ConfigService } from '@nestjs/config'
 import { EventEmitter } from 'node:events'
 import { CacheService } from './cache.service'
 
+// Store partagé entre toutes les instances MockRedis : permet de simuler
+// plusieurs instances CacheService derrière un seul Redis (multi-instances).
+const sharedStore = vi.hoisted(() => new Map<string, string>())
+
 vi.mock('ioredis', () => ({
   default: class MockRedis {
-    private readonly store = new Map<string, string>()
+    private readonly store = sharedStore
     status?: string
 
     get = vi.fn((key: string) => Promise.resolve(this.store.get(key) ?? null))
@@ -58,7 +62,7 @@ vi.mock('ioredis', () => ({
 describe('CacheService', () => {
   let service: CacheService
 
-  beforeEach(async () => {
+  const buildService = async (): Promise<CacheService> => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CacheService,
@@ -72,10 +76,16 @@ describe('CacheService', () => {
       ]
     }).compile()
 
-    service = module.get<CacheService>(CacheService)
-    const client = Reflect.get(service, 'client') as { status?: string }
+    const instance = module.get<CacheService>(CacheService)
+    const client = Reflect.get(instance, 'client') as { status?: string }
     client.status = 'ready'
-    await service.onModuleInit()
+    await instance.onModuleInit()
+    return instance
+  }
+
+  beforeEach(async () => {
+    sharedStore.clear()
+    service = await buildService()
   })
 
   afterEach(async () => {
@@ -351,5 +361,47 @@ describe('CacheService', () => {
     await Reflect.get(service, 'initializeClient').call(service)
 
     expect(service.key('x')).toBe('catalog:v7:x')
+  })
+
+  it('does not serve the old version to another instance after invalidation', async () => {
+    const other = await buildService()
+
+    await service.set('courses', { id: 1 })
+    await expect(other.get('courses')).resolves.toEqual({ id: 1 })
+
+    await service.invalidateCatalog()
+
+    // `other` n'a pas été notifié : son get lit la version Redis (v1) et
+    // ne doit plus voir la valeur stockée sous catalog:v0:*.
+    await expect(other.get('courses')).resolves.toBeNull()
+    expect(sharedStore.has('catalog:v1:courses')).toBe(false)
+
+    await other.onModuleDestroy()
+  })
+
+  it('writes under the latest version on another instance after invalidation', async () => {
+    const other = await buildService()
+
+    await service.invalidateCatalog() // Redis: v1 — `other` ne le sait pas
+    await other.set('courses', { id: 2 })
+
+    expect(sharedStore.get('catalog:v1:courses')).toBe(JSON.stringify({ id: 2 }))
+    expect(sharedStore.has('catalog:v0:courses')).toBe(false)
+
+    await other.onModuleDestroy()
+  })
+
+  it('purges the current Redis version on invalidatePatterns from a stale instance', async () => {
+    const other = await buildService()
+
+    await service.invalidateCatalog() // v1 — `other` reste sur v0
+    await other.set('courses', { id: 1 })
+    expect(sharedStore.has('catalog:v1:courses')).toBe(true)
+
+    await other.invalidatePatterns(['courses'])
+
+    expect(sharedStore.has('catalog:v1:courses')).toBe(false)
+
+    await other.onModuleDestroy()
   })
 })

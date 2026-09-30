@@ -58,6 +58,7 @@
       <NuxtLink
         v-if="advisorTo"
         :to="advisorTo"
+        data-advisor-escalation="compare"
         class="rounded-full border border-rule px-md py-sm text-small font-semibold text-ink transition-colors hover:border-primary hover:text-accent-text"
       >
         Être accompagné dans le choix

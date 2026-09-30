@@ -46,4 +46,22 @@ describe('useAssistantAnalytics', () => {
 
     expect(window.dataLayer).toEqual([{ event: 'ai_search_start' }])
   })
+
+  it('émet les jalons des états limites', () => {
+    const analytics = useAssistantAnalytics()
+
+    analytics.recommendationCompare({ source: 'home', count: 3 })
+    analytics.noResults({ source: 'home', turn: 2, kind: 'no_results', mode: 'ai' })
+    analytics.unavailable({ source: 'home', turn: 2 })
+    analytics.fallbackMode({ source: 'home', turn: 3, kind: 'recommend' })
+    analytics.advisorEscalation({ source: 'home', from: 'unavailable' })
+
+    expect(window.dataLayer).toEqual([
+      { event: 'ai_recommendation_compare', source: 'home', count: 3 },
+      { event: 'ai_no_results', source: 'home', turn: 2, kind: 'no_results', mode: 'ai' },
+      { event: 'ai_unavailable', source: 'home', turn: 2 },
+      { event: 'ai_fallback_mode', source: 'home', turn: 3, kind: 'recommend' },
+      { event: 'ai_advisor_escalation', source: 'home', from: 'unavailable' }
+    ])
+  })
 })

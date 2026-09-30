@@ -18,14 +18,16 @@ vi.stubGlobal('internalSsrHeaders', () => undefined)
 
 const conversationStub = {
   name: 'AssistantConversation',
-  props: ['entries', 'pending', 'unavailable', 'contextChips'],
-  emits: ['send', 'edit', 'stop', 'retry', 'reset', 'close', 'select'],
+  props: ['entries', 'pending', 'unavailable', 'contextChips', 'degraded', 'notice'],
+  emits: ['send', 'edit', 'stop', 'retry', 'reset', 'close', 'select', 'compare'],
   template:
     '<div class="conversation">' +
     '<button class="stop" @click="$emit(\'stop\')" />' +
     '<button class="reset" @click="$emit(\'reset\')" />' +
     '<button class="close" @click="$emit(\'close\')" />' +
     '<a class="link" href="/centres/demande-de-formation?formation=sst">Demander</a>' +
+    '<a class="advisor" href="/parler-a-votre-conseiller" data-advisor-escalation="out_of_catalog">Conseiller</a>' +
+    '<a class="advisor-unavailable" href="/parler-a-votre-conseiller" data-advisor-escalation="unavailable">Conseiller</a>' +
     '</div>'
 }
 
@@ -329,6 +331,117 @@ describe('AssistantChat', () => {
 
       expect(fetchMock).not.toHaveBeenCalled()
       expect(events()).toEqual(['ai_search_start'])
+    })
+  })
+
+  describe('edge states', () => {
+    it('keeps the conversation history when the panel is reopened', async () => {
+      const launcher = useAssistantLauncher()
+      launcher.open()
+      const wrapper = mountChat()
+      conversation(wrapper).vm.$emit('send', 'former au SST', 'text')
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+      launcher.close()
+      await nextTick()
+      launcher.open({ context: { source: 'header' } })
+      await nextTick()
+
+      // Accueil, message, réponse : ni ressaisie ni second accueil.
+      const roles = conversation(wrapper)
+        .props('entries')
+        .map((e: { role: string }) => e.role)
+      expect(roles).toEqual(['assistant', 'user', 'assistant'])
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('switches the panel to degraded mode on a fallback reply and tracks it', async () => {
+      fetchMock.mockResolvedValue({
+        kind: 'recommend',
+        text: 'Nous vous recommandons',
+        mode: 'fallback',
+        notice: 'Réponses générées par un assistant automatisé.',
+        recommendations: [{ slug: 'sst' }]
+      })
+      useAssistantLauncher().open({ context: { source: 'home' } })
+      const wrapper = mountChat()
+      expect(conversation(wrapper).props('degraded')).toBe(false)
+
+      conversation(wrapper).vm.$emit('send', 'former au SST', 'text')
+      await vi.waitFor(() => expect(events()).toContain('ai_fallback_mode'))
+
+      expect(conversation(wrapper).props('degraded')).toBe(true)
+      expect(conversation(wrapper).props('notice')).toBe(
+        'Réponses générées par un assistant automatisé.'
+      )
+      expect(window.dataLayer).toContainEqual({
+        event: 'ai_recommendation_display',
+        source: 'home',
+        turn: 1,
+        count: 1,
+        mode: 'fallback'
+      })
+      expect(window.dataLayer).toContainEqual({
+        event: 'ai_fallback_mode',
+        source: 'home',
+        turn: 1,
+        kind: 'recommend'
+      })
+    })
+
+    it('tracks a dead end, then the advisor escalation with its origin', async () => {
+      fetchMock.mockResolvedValue({ kind: 'out_of_catalog', text: 'Hors catalogue.', mode: 'ai' })
+      useAssistantLauncher().open({ context: { source: 'catalogue' } })
+      const wrapper = mountChat()
+
+      conversation(wrapper).vm.$emit('send', 'piloter un drone', 'text')
+      await vi.waitFor(() => expect(events()).toContain('ai_no_results'))
+      expect(window.dataLayer).toContainEqual({
+        event: 'ai_no_results',
+        source: 'catalogue',
+        turn: 1,
+        kind: 'out_of_catalog',
+        mode: 'ai'
+      })
+
+      await wrapper.find('.conversation .advisor').trigger('click')
+      expect(window.dataLayer?.at(-1)).toEqual({
+        event: 'ai_advisor_escalation',
+        source: 'catalogue',
+        from: 'out_of_catalog',
+        mode: 'ai'
+      })
+      expect(useAssistantLauncher().isOpen.value).toBe(false)
+    })
+
+    it('tracks the engine unavailability and an escalation from it', async () => {
+      fetchMock.mockRejectedValueOnce(new Error('503'))
+      useAssistantLauncher().open()
+      const wrapper = mountChat()
+
+      conversation(wrapper).vm.$emit('send', 'former au SST', 'text')
+      await vi.waitFor(() => expect(events()).toContain('ai_unavailable'))
+      expect(window.dataLayer).toContainEqual({ event: 'ai_unavailable', turn: 1 })
+      expect(conversation(wrapper).props('unavailable')).toBe(true)
+
+      await wrapper.find('.conversation .advisor-unavailable').trigger('click')
+      expect(window.dataLayer?.at(-1)).toEqual({
+        event: 'ai_advisor_escalation',
+        from: 'unavailable'
+      })
+    })
+
+    it('tracks the comparison table opening', () => {
+      useAssistantLauncher().open({ context: { source: 'home' } })
+      const wrapper = mountChat()
+
+      conversation(wrapper).vm.$emit('compare', 3)
+
+      expect(window.dataLayer?.at(-1)).toEqual({
+        event: 'ai_recommendation_compare',
+        source: 'home',
+        count: 3
+      })
     })
   })
 })

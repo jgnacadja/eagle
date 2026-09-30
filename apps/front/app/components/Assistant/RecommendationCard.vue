@@ -127,7 +127,9 @@
             variant="outline"
             class="h-control rounded-full border-outline px-md text-small font-semibold text-ink transition hover:border-primary hover:text-accent-text"
           >
-            <NuxtLink :to="advisorTo">Être accompagné</NuxtLink>
+            <NuxtLink :to="advisorTo" data-advisor-escalation="no_session"
+              >Être accompagné</NuxtLink
+            >
           </Button>
         </template>
       </div>

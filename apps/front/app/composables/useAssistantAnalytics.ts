@@ -1,4 +1,9 @@
-import type { AssistantMode, AssistantRecommendation, AssistantSource } from '@learnup/types'
+import type {
+  AssistantMode,
+  AssistantRecommendation,
+  AssistantReplyKind,
+  AssistantSource
+} from '@learnup/types'
 import { trackEvent, type AnalyticsEvent } from '~/utils/analytics'
 
 /**
@@ -24,7 +29,32 @@ export interface AssistantTurnParams {
   turn: number
 }
 
-/** Jalons du parcours nominal — contrat public, documenté dans `AGENTS.md`. */
+/**
+ * Attribut porté par chaque lien de sortie conseiller du panneau : l'état
+ * d'où il part. `AssistantChat` le lit par délégation au clic — aucune
+ * détection par `href`, aucune constante de chemin dupliquée.
+ */
+export const ADVISOR_ESCALATION_ATTR = 'data-advisor-escalation'
+
+/** États du panneau d'où part une sortie conseiller. */
+export const ESCALATION_ORIGINS = [
+  'clarify',
+  'recommend',
+  'no_results',
+  'out_of_catalog',
+  'unavailable',
+  'no_session',
+  'compare',
+  'degraded'
+] as const satisfies readonly (AssistantReplyKind | string)[]
+
+export type AssistantEscalationFrom = (typeof ESCALATION_ORIGINS)[number]
+
+export function isEscalationFrom(value: string): value is AssistantEscalationFrom {
+  return (ESCALATION_ORIGINS as readonly string[]).includes(value)
+}
+
+/** Jalons du moteur IA — contrat public, documenté dans `AGENTS.md`. */
 export interface AssistantAnalytics {
   /** Le panneau s'ouvre depuis un point d'entrée. */
   searchStart(source?: AssistantSource): AnalyticsEvent | null
@@ -44,11 +74,29 @@ export interface AssistantAnalytics {
   recommendationSelect(
     params: AssistantSelection & { source?: AssistantSource }
   ): AnalyticsEvent | null
+  /** Le tableau comparatif des recommandations est ouvert. */
+  recommendationCompare(params: { source?: AssistantSource; count: number }): AnalyticsEvent | null
+  /** Impasse : aucun résultat assez pertinent, ou besoin hors catalogue. */
+  noResults(
+    params: AssistantTurnParams & { kind: 'no_results' | 'out_of_catalog'; mode?: AssistantMode }
+  ): AnalyticsEvent | null
+  /** Le moteur ne répond pas (erreur API) : état indisponible affiché. */
+  unavailable(params: AssistantTurnParams): AnalyticsEvent | null
+  /** Réponse produite par la recherche déterministe (IA indisponible). */
+  fallbackMode(params: AssistantTurnParams & { kind: AssistantReplyKind }): AnalyticsEvent | null
+  /** Sortie « conseiller » cliquée depuis un état du panneau. */
+  advisorEscalation(params: {
+    source?: AssistantSource
+    from?: AssistantEscalationFrom
+    mode?: AssistantMode
+  }): AnalyticsEvent | null
 }
 
 /**
- * Jalons analytics du moteur IA (DEV-CORE) : ouverture, envoi, clarification,
- * recommandation, sélection. Jamais le contenu des messages.
+ * Jalons analytics du moteur IA : parcours nominal (DEV-CORE — ouverture,
+ * envoi, clarification, recommandation, sélection) et états limites
+ * (DEV-EDGE — impasses, indisponibilité, mode dégradé, comparaison, sortie
+ * conseiller). Jamais le contenu des messages.
  */
 export function useAssistantAnalytics(): AssistantAnalytics {
   return {
@@ -57,6 +105,11 @@ export function useAssistantAnalytics(): AssistantAnalytics {
     clarificationRequested: (params) => trackEvent('ai_clarification_requested', params),
     clarificationAnswer: (params) => trackEvent('ai_clarification_answer', params),
     recommendationDisplay: (params) => trackEvent('ai_recommendation_display', params),
-    recommendationSelect: (params) => trackEvent('ai_recommendation_select', params)
+    recommendationSelect: (params) => trackEvent('ai_recommendation_select', params),
+    recommendationCompare: (params) => trackEvent('ai_recommendation_compare', params),
+    noResults: (params) => trackEvent('ai_no_results', params),
+    unavailable: (params) => trackEvent('ai_unavailable', params),
+    fallbackMode: (params) => trackEvent('ai_fallback_mode', params),
+    advisorEscalation: (params) => trackEvent('ai_advisor_escalation', params)
   }
 }

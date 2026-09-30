@@ -20,11 +20,16 @@
       une formation.
     </p>
     <div class="mt-lg flex w-full flex-col gap-sm sm:w-auto sm:flex-row">
-      <Button type="button" size="pill" class="w-full gap-sm sm:w-auto" @click="emit('retry')">
+      <Button
+        type="button"
+        size="pill"
+        class="max-md:h-touch w-full gap-sm sm:w-auto"
+        @click="emit('retry')"
+      >
         <IconRefresh :size="16" class="shrink-0" />
         Réessayer
       </Button>
-      <Button as-child variant="outline" size="pill" class="w-full sm:w-auto">
+      <Button as-child variant="outline" size="pill" class="max-md:h-touch w-full sm:w-auto">
         <NuxtLink :to="advisorTo">Parler à un conseiller</NuxtLink>
       </Button>
     </div>

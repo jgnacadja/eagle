@@ -177,7 +177,7 @@ describe('AssistantSummary', () => {
         summary: {
           text: 'Votre demande complète : formation SST pour 8 salariés à Créteil.',
           course: { title: 'SST', to: '/formations/securite/sst' },
-          meta: 'Centre LEARN UP de Créteil · prochaine session : 18 septembre 2026',
+          meta: 'Centre LEARN UP de Créteil · prochaine session : 18 mars 2027',
           sessionsTo: '/formations/securite/sst#sessions'
         }
       }
@@ -188,6 +188,6 @@ describe('AssistantSummary', () => {
     expect(wrapper.find('a[href="/formations/securite/sst#sessions"]').text()).toBe(
       'Voir les sessions'
     )
-    expect(wrapper.text()).toContain('prochaine session : 18 septembre 2026')
+    expect(wrapper.text()).toContain('prochaine session : 18 mars 2027')
   })
 })

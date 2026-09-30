@@ -58,7 +58,9 @@ const FONDAMENTAUX: AssistantRecommendation = {
   attributes: []
 }
 
-const SST_TO = '/formations/securite-prevention/sst-sauveteur-secouriste-du-travail'
+// Slugs du jeu de données de démo (directus/seed) : la fiche SST vit sous la
+// famille « sante ».
+const SST_TO = '/formations/sante/sst-sauveteur-secouriste-du-travail'
 
 const SST: AssistantRecommendation = {
   course: { title: 'SST — Sauveteur Secouriste du Travail', to: SST_TO },
@@ -68,10 +70,10 @@ const SST: AssistantRecommendation = {
   availability: {
     centre: 'Centre LEARN UP de Créteil',
     distance: 'à 2,1 km du centre-ville',
-    nextSession: 'jeudi 18 septembre 2026',
+    nextSession: 'jeudi 18 mars 2027',
     seats: 'available',
     sessionsTo: `${SST_TO}#sessions`,
-    requestTo: `${ASSISTANT_REQUEST_ROUTE}?formation=sst-sauveteur-secouriste-du-travail&centre=creteil`
+    requestTo: `${ASSISTANT_REQUEST_ROUTE}?famille=sante&formation=sst-sauveteur-secouriste-du-travail&centre=creteil`
   }
 }
 
@@ -152,7 +154,7 @@ const CONVERSATIONS: Record<
             title: 'Habilitation électrique B0-H0',
             to: '/formations/habilitations-electriques/habilitation-electrique-b0-h0'
           },
-          requestTo: `${ASSISTANT_REQUEST_ROUTE}?formation=habilitation-electrique-b0-h0`
+          requestTo: `${ASSISTANT_REQUEST_ROUTE}?famille=habilitations-electriques&formation=habilitation-electrique-b0-h0`
         }
       }
     ]
@@ -195,7 +197,7 @@ const CONVERSATIONS: Record<
         summary: {
           text: 'Votre demande complète : formation SST pour 8 salariés à Créteil.',
           course: SST.course,
-          meta: 'Centre LEARN UP de Créteil · prochaine session : 18 septembre 2026',
+          meta: 'Centre LEARN UP de Créteil · prochaine session : 18 mars 2027',
           sessionsTo: `${SST_TO}#sessions`
         }
       }

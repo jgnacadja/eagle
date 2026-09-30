@@ -14,7 +14,12 @@
         </p>
         <p class="mt-xs text-small text-ink-muted">{{ summary.meta }}</p>
       </div>
-      <Button as-child variant="accent" size="pill-sm" class="w-full shrink-0 sm:w-auto">
+      <Button
+        as-child
+        variant="accent"
+        size="pill-sm"
+        class="max-md:h-touch w-full shrink-0 sm:w-auto"
+      >
         <NuxtLink :to="summary.sessionsTo">Voir les sessions</NuxtLink>
       </Button>
     </div>

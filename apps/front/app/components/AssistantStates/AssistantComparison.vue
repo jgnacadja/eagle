@@ -7,7 +7,7 @@
       type="button"
       variant="link"
       size="inline"
-      class="gap-xs text-small font-semibold"
+      class="max-md:min-h-touch gap-xs text-small font-semibold"
       @click="emit('back')"
     >
       <IconChevronLeft :size="16" />
@@ -82,7 +82,13 @@
     </ul>
 
     <div class="mt-lg flex flex-col gap-sm sm:flex-row sm:items-center">
-      <Button v-if="principal" as-child variant="accent" size="pill-sm" class="w-full sm:w-auto">
+      <Button
+        v-if="principal"
+        as-child
+        variant="accent"
+        size="pill-sm"
+        class="max-md:h-touch w-full sm:w-auto"
+      >
         <NuxtLink :to="principal.course.to">Voir la formation principale</NuxtLink>
       </Button>
       <NuxtLink

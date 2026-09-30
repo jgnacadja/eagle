@@ -75,16 +75,16 @@
       class="mt-md flex flex-col gap-sm sm:flex-row sm:flex-wrap sm:items-center"
     >
       <template v-if="availability">
-        <Button as-child variant="accent" size="pill-sm" class="w-full sm:w-auto">
+        <Button as-child variant="accent" size="pill-sm" class="max-md:h-touch w-full sm:w-auto">
           <NuxtLink :to="availability.sessionsTo">Voir les sessions</NuxtLink>
         </Button>
-        <Button as-child variant="outline" size="pill-sm" class="w-full sm:w-auto">
+        <Button as-child variant="outline" size="pill-sm" class="max-md:h-touch w-full sm:w-auto">
           <NuxtLink :to="availability.requestTo">Demander cette formation</NuxtLink>
         </Button>
         <NuxtLink :to="recommendation.course.to" :class="linkClass">Voir la formation</NuxtLink>
       </template>
       <template v-else>
-        <Button as-child variant="accent" size="pill-sm" class="w-full sm:w-auto">
+        <Button as-child variant="accent" size="pill-sm" class="max-md:h-touch w-full sm:w-auto">
           <NuxtLink :to="recommendation.course.to">Voir la formation</NuxtLink>
         </Button>
         <Button
@@ -92,7 +92,7 @@
           as-child
           variant="outline"
           size="pill-sm"
-          class="w-full sm:w-auto"
+          class="max-md:h-touch w-full sm:w-auto"
         >
           <NuxtLink :to="recommendation.sessionsTo">Voir les sessions</NuxtLink>
         </Button>

@@ -12,7 +12,7 @@
       type="button"
       variant="link"
       size="inline"
-      class="ml-auto text-small font-semibold underline underline-offset-4"
+      class="max-md:min-h-touch ml-auto text-small font-semibold underline underline-offset-4"
       @click="emit('edit')"
     >
       Modifier mon besoin

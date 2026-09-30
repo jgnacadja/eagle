@@ -24,7 +24,7 @@ const sst: AssistantRecommendation = {
   availability: {
     centre: 'Centre LEARN UP de Créteil',
     distance: 'à 2,1 km du centre-ville',
-    nextSession: 'jeudi 18 septembre 2026',
+    nextSession: 'jeudi 18 mars 2027',
     seats: 'available',
     sessionsTo: '/formations/securite/sst#sessions',
     requestTo: '/centres/demande-de-formation?formation=sst'
@@ -56,7 +56,7 @@ describe('AssistantStaticRecommendationCard', () => {
 
     expect(wrapper.text()).toContain('Centre LEARN UP de Créteil')
     expect(wrapper.text()).toContain('à 2,1 km du centre-ville')
-    expect(wrapper.text()).toContain('Prochaine session : jeudi 18 septembre 2026')
+    expect(wrapper.text()).toContain('Prochaine session : jeudi 18 mars 2027')
     expect(wrapper.text()).toContain('Places disponibles')
     expect(wrapper.find('a.bg-accent').text()).toBe('Voir les sessions')
     expect(wrapper.find('a[href="/centres/demande-de-formation?formation=sst"]').text()).toBe(

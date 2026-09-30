@@ -11,7 +11,7 @@
         as-child
         variant="accent"
         size="control"
-        class="order-first justify-start gap-sm sm:order-none sm:col-start-2 sm:row-start-2"
+        class="max-md:h-touch order-first justify-start gap-sm sm:order-none sm:col-start-2 sm:row-start-2"
       >
         <NuxtLink :to="requestTo">
           <IconPlus :size="16" class="shrink-0" />
@@ -22,19 +22,19 @@
         type="button"
         variant="outline"
         size="control"
-        class="justify-start gap-sm"
+        class="max-md:h-touch justify-start gap-sm"
         @click="emit('reformulate')"
       >
         <IconRefresh :size="16" class="shrink-0" />
         Reformuler mon besoin
       </Button>
-      <Button as-child variant="outline" size="control" class="justify-start gap-sm">
+      <Button as-child variant="outline" size="control" class="max-md:h-touch justify-start gap-sm">
         <NuxtLink :to="catalogueTo">
           <IconBook :size="16" class="shrink-0" />
           Consulter le catalogue
         </NuxtLink>
       </Button>
-      <Button as-child variant="outline" size="control" class="justify-start gap-sm">
+      <Button as-child variant="outline" size="control" class="max-md:h-touch justify-start gap-sm">
         <NuxtLink :to="advisorTo">
           <IconMessageCircle :size="16" class="shrink-0" />
           Parler à un conseiller

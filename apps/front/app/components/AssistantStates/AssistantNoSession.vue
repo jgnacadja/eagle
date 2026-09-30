@@ -16,10 +16,10 @@
         programmée.
       </p>
       <div class="mt-md flex flex-col gap-sm sm:flex-row">
-        <Button as-child variant="accent" size="pill-sm" class="w-full sm:w-auto">
+        <Button as-child variant="accent" size="pill-sm" class="max-md:h-touch w-full sm:w-auto">
           <NuxtLink :to="noSession.requestTo">Demander une session</NuxtLink>
         </Button>
-        <Button as-child variant="outline" size="pill-sm" class="w-full sm:w-auto">
+        <Button as-child variant="outline" size="pill-sm" class="max-md:h-touch w-full sm:w-auto">
           <NuxtLink :to="advisorTo">Être accompagné</NuxtLink>
         </Button>
       </div>

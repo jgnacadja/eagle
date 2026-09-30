@@ -11,7 +11,12 @@
       :placeholder="placeholder"
       class="flex-1"
     />
-    <Button type="submit" size="icon-sm" class="shrink-0" :aria-label="buttonLabel">
+    <Button
+      type="submit"
+      size="icon-sm"
+      class="max-md:h-touch max-md:w-touch shrink-0"
+      :aria-label="buttonLabel"
+    >
       <IconArrowRight :size="16" />
     </Button>
   </form>

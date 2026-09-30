@@ -4,10 +4,10 @@
   <div>
     <p class="text-small text-ink-body md:text-body">{{ outOfCatalog.message }}</p>
     <div class="mt-md flex flex-col gap-sm sm:flex-row">
-      <Button as-child variant="accent" size="pill-sm" class="w-full sm:w-auto">
+      <Button as-child variant="accent" size="pill-sm" class="max-md:h-touch w-full sm:w-auto">
         <NuxtLink :to="advisorTo">Décrire mon besoin à un conseiller</NuxtLink>
       </Button>
-      <Button as-child variant="outline" size="pill-sm" class="w-full sm:w-auto">
+      <Button as-child variant="outline" size="pill-sm" class="max-md:h-touch w-full sm:w-auto">
         <NuxtLink :to="catalogueTo">Voir le catalogue</NuxtLink>
       </Button>
     </div>

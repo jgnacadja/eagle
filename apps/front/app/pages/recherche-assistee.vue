@@ -2,6 +2,10 @@
   <div class="flex flex-1 flex-col">
     <AssistantShell @close="navigation.close()" @reset="startNewSearch" />
 
+    <!-- Hors état initial (qui porte son propre titre), un titre de niveau 1
+         masqué garde la navigation par titres des lecteurs d'écran. -->
+    <h1 v-if="view.kind !== 'hero'" class="sr-only">Recherche assistée</h1>
+
     <!-- É9 — moteur indisponible -->
     <AssistantUnavailable v-if="view.kind === 'unavailable'" @retry="showState('analyzing')" />
 

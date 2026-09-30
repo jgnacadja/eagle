@@ -59,7 +59,9 @@ describe('pages/recherche-assistee', () => {
       route.query = { state: 'recommendation' }
       const wrapper = mountPage()
 
-      expect(wrapper.find('h1').exists()).toBe(false)
+      // Le titre visible de l'état initial disparaît, un h1 masqué le remplace.
+      expect(wrapper.find('h1').classes()).toContain('sr-only')
+      expect(wrapper.find('h1').text()).toBe('Recherche assistée')
       expect(wrapper.text()).toContain('Nous vous recommandons')
 
       const compare = wrapper
@@ -116,11 +118,11 @@ describe('pages/recherche-assistee', () => {
 
     it('ignore un état inconnu et reste sur l’état initial hors mode démo', () => {
       route.query = { state: 'inconnu' }
-      expect(mountPage().find('h1').exists()).toBe(true)
+      expect(mountPage().find('h1').text()).toContain('Vous décrivez votre besoin')
 
       demoStatesEnabled = false
       route.query = { state: 'recommendation' }
-      expect(mountPage().find('h1').exists()).toBe(true)
+      expect(mountPage().find('h1').text()).toContain('Vous décrivez votre besoin')
     })
   })
 

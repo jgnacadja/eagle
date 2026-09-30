@@ -31,22 +31,10 @@ config.global.components.ClientLogoWall = ClientLogoWall
 import ConsentField from '~/components/ConsentField.vue'
 config.global.components.ConsentField = ConsentField
 
-// Recherche assistée : champ d'entrée et coquille de la page moteur, entrée
-// compacte du header.
-import AssistantSearchBar from '~/components/Assistant/SearchBar.vue'
-import AssistantShell from '~/components/Assistant/Shell.vue'
+// Recherche assistée : entrée compacte du header (préfixe `Assistant` de
+// l'auto-import Nuxt).
 import AssistantHeaderPill from '~/components/Assistant/HeaderPill.vue'
-config.global.components.AssistantSearchBar = AssistantSearchBar
-config.global.components.AssistantShell = AssistantShell
 config.global.components.AssistantHeaderPill = AssistantHeaderPill
-
-// États statiques de la recherche assistée (UI-STATIC) : auto-importés par
-// Nuxt sous leur nom de fichier.
-const assistantStates = import.meta.glob('~/components/AssistantStates/*.vue', {
-  eager: true,
-  import: 'default'
-})
-registerByName(assistantStates)
 
 // NuxtLink : href résolu depuis une chaîne ou un objet de route (path +
 // query) ; l'état d'historique transmis (`state` — besoin de la recherche

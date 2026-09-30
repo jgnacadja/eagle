@@ -2,7 +2,7 @@
   <div>
     <!-- Lanceur flottant -->
     <Motion
-      v-if="!isOpen && !onEnginePage"
+      v-if="!isOpen"
       :initial="{ opacity: 0, scale: 0.5 }"
       :animate="{ opacity: 1, scale: 1 }"
       :while-press="{ scale: 0.9 }"
@@ -57,14 +57,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import { Motion } from 'motion-v'
 import { useAssistant, type AssistantEntry } from '~/composables/useAssistant'
 import { ADVISOR_ESCALATION_ATTR } from '~/composables/useAssistantAnalytics'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { useAssistantTracking } from '~/composables/useAssistantTracking'
 import AssistantConversation from '~/components/Assistant/Conversation.vue'
-import { ASSISTANT_ROUTE } from '~/utils/assistant-route'
 
 const { isOpen, context, pendingMessage, open, close } = useAssistantLauncher()
 
@@ -164,9 +163,6 @@ watch(
     if (isOpen.value) close()
   }
 )
-
-// La page moteur est déjà la recherche assistée : pas de lanceur par-dessus.
-const onEnginePage = computed(() => route.path === ASSISTANT_ROUTE)
 
 function onPanelClick(event: MouseEvent) {
   const anchor = (event.target as HTMLElement | null)?.closest?.('a')

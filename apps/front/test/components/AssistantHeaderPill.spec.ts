@@ -18,11 +18,8 @@ describe('AssistantHeaderPill', () => {
     routeMock().path = '/'
   })
 
-  it('est masqué sur la Home et sur la page du moteur', () => {
+  it('est masqué sur la Home, qui porte déjà le champ dans son hero', () => {
     routeMock().path = '/'
-    expect(mount(AssistantHeaderPill).find('button').exists()).toBe(false)
-
-    routeMock().path = '/recherche-assistee'
     expect(mount(AssistantHeaderPill).find('button').exists()).toBe(false)
   })
 

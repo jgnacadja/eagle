@@ -23,14 +23,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
-import { ASSISTANT_ROUTE } from '~/utils/assistant-route'
 
-// Pages intérieures uniquement : la Home porte déjà le champ dans son hero,
-// la page moteur son propre champ.
+// Pages intérieures uniquement : la Home porte déjà le champ dans son hero.
 const route = useRoute()
 const assistant = useAssistantLauncher()
 
-const visible = computed(() => route.path !== '/' && route.path !== ASSISTANT_ROUTE)
+const visible = computed(() => route.path !== '/')
 
 function openAssistant() {
   assistant.open({ context: { source: 'header' } })

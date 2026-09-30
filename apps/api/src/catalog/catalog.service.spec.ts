@@ -180,6 +180,30 @@ describe('CatalogService', () => {
     expect(result.items[0].slug).toBe('pilotage-de-projet')
   })
 
+  it('matches accented search terms against de-accented text', async () => {
+    cache.get.mockResolvedValue(null)
+
+    const result = await service.list({
+      search: 'sécurité',
+      page: 1,
+      limit: 10
+    } as ListCoursesDto)
+
+    expect(result.items.map((i) => i.slug)).toEqual(['securite'])
+  })
+
+  it('ignores accented stop words in search', async () => {
+    cache.get.mockResolvedValue(null)
+
+    const result = await service.list({
+      search: 'sécurité dès',
+      page: 1,
+      limit: 10
+    } as ListCoursesDto)
+
+    expect(result.items.map((i) => i.slug)).toEqual(['securite'])
+  })
+
   it('filters by sub-family', async () => {
     cache.get.mockResolvedValue(null)
 

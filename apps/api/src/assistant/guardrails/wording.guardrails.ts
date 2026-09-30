@@ -15,11 +15,16 @@ export type GuardrailIssue =
   | 'assertive-wording'
   | 'regulatory-promise'
   | 'too-long'
+  | 'missing-justification'
   | 'duplicate-course'
   | 'too-many-alternatives'
 
+/** Justification de secours quand le modèle n'en fournit aucune. */
+export const FALLBACK_JUSTIFICATION =
+  'Cette formation semble correspondre aux termes de votre demande, à confirmer avec un conseiller.'
+
 const CONDITIONAL_MARKERS =
-  /\b(semble|semblent|devrait|devraient|pourrait|pourraient|parait|paraît|serait|seraient|peut|peuvent)\b/i
+  /\b(semble|semblent|devrait|devraient|devriez|pourrait|pourraient|pourriez|parait|paraît|serait|seraient|peut|peuvent)\b/i
 
 // Formulations assertives (§14) → équivalent au conditionnel.
 const ASSERTIVE_REWRITES: Array<[RegExp, string]> = [
@@ -58,6 +63,35 @@ const REGULATORY_REWRITES: Array<[RegExp, string]> = [
   [/\bcertification (assurée|garantie)\b/gi, 'certification visée']
 ]
 
+// Promesses de résultat au futur (« vous obtiendrez la certification ») :
+// un marqueur conditionnel ailleurs dans la phrase ne les excuse pas —
+// chaque verbe est ramené au conditionnel.
+const FUTURE_PROMISES: Record<string, string> = {
+  obtiendrez: 'pourriez obtenir',
+  aurez: 'pourriez avoir',
+  serez: 'pourriez être',
+  deviendrez: 'pourriez devenir',
+  saurez: 'pourriez savoir',
+  maîtriserez: 'pourriez maîtriser',
+  maitriserez: 'pourriez maîtriser',
+  réussirez: 'pourriez réussir',
+  reussirez: 'pourriez réussir',
+  acquerrez: 'pourriez acquérir',
+  disposerez: 'pourriez disposer',
+  pourrez: 'pourriez'
+}
+const FUTURE_PROMISE_PATTERN = new RegExp(
+  `\\bvous (${Object.keys(FUTURE_PROMISES).join('|')})\\b`,
+  'gi'
+)
+
+function softenFuturePromises(text: string): string {
+  return text.replace(
+    FUTURE_PROMISE_PATTERN,
+    (_match, verb: string) => `vous ${FUTURE_PROMISES[verb.toLowerCase()]}`
+  )
+}
+
 function splitSentences(text: string): string[] {
   return text
     .split(/(?<=[.!?])\s+/)
@@ -88,7 +122,7 @@ export function sanitizeJustification(text: string): { text: string; issues: Gua
   if (softened !== result) issues.push('regulatory-promise')
   result = softened
 
-  const conditional = applyRewrites(result, ASSERTIVE_REWRITES)
+  const conditional = softenFuturePromises(applyRewrites(result, ASSERTIVE_REWRITES))
   if (conditional !== result) issues.push('assertive-wording')
   result = conditional
 
@@ -133,9 +167,12 @@ export function applyWordingGuardrails(recommendations: AssistantRecommendation[
     seen.add(recommendation.slug)
     const { text, issues: found } = sanitizeJustification(recommendation.justification)
     found.forEach((issue) => issues.add(issue))
+    // Une recommandation sans explication ne sort jamais telle quelle (1 à 2
+    // phrases attendues) : texte de secours conditionnel, écart signalé.
+    if (!text) issues.add('missing-justification')
     kept.push({
       ...recommendation,
-      justification: text,
+      justification: text || FALLBACK_JUSTIFICATION,
       rank: kept.length === 0 ? 'primary' : 'alternative'
     })
   }

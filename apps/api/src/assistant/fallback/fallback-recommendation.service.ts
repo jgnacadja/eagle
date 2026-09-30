@@ -1,5 +1,5 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
-import type { AssistantReply, AssistantRequest } from '@learnup/types'
+import type { AssistantReply, AssistantRequest, CourseListItem } from '@learnup/types'
 import { CatalogService, type CatalogRow } from '../../catalog/catalog.service'
 import { stemToken, tokenize } from '../../common/utils/text.util'
 import { RetrievalService, analyzeQuery, type QueryTerm } from '../../retrieval/retrieval.service'
@@ -59,7 +59,7 @@ export function needText(request: AssistantRequest): string {
 function coveredWords(need: Need, candidate: RetrievalCandidate, max: number): string[] {
   const matched = new Set(candidate.matchedTerms)
   const covered = new Set(
-    need.terms.filter((term) => matched.has(term.term)).map((term) => term.source)
+    need.terms.filter((term) => matched.has(term.term)).flatMap((term) => term.sources)
   )
   const words = new Map<string, string>()
   for (const [word] of need.text.matchAll(WORD)) {
@@ -73,20 +73,51 @@ function quote(words: string[]): string {
   return words.map((word) => `« ${word} »`).join(', ')
 }
 
+// Les termes retrouvés peuvent venir de l'intitulé, du programme, de la
+// classification, de la certification, des modalités ou des lieux : la
+// justification parle de la fiche catalogue sans attribuer de champ.
 function principalJustification(need: Need, candidate: RetrievalCandidate): string {
   const words = coveredWords(need, candidate, 3)
   if (words.length === 0) {
-    return 'Cette formation semble correspondre à votre besoin : son intitulé et son programme sont proches des termes de votre demande.'
+    return 'Cette formation semble correspondre à votre besoin : sa fiche catalogue est proche des termes de votre demande.'
   }
-  return `Cette formation semble correspondre à votre besoin : elle couvre ${quote(words)} dans son intitulé ou son programme.`
+  return `Cette formation semble correspondre à votre besoin : sa fiche catalogue couvre ${quote(words)}.`
 }
 
-function alternativeJustification(need: Need, candidate: RetrievalCandidate): string {
-  const category = candidate.course.category
+const MODALITY_WORDING: Record<string, string> = {
+  presentiel: 'en présentiel',
+  distanciel: 'à distance',
+  hybride: 'en format hybride',
+  inter: 'en session inter-entreprises',
+  intra: 'en intra-entreprise, sur votre site',
+  e_learning: 'en e-learning'
+}
+
+/**
+ * Différence réelle entre une alternative et la principale, lue dans le
+ * catalogue (§15 : chaque alternative affiche sa différence) : domaine,
+ * sinon modalité que la principale n'offre pas, sinon certification.
+ */
+function differenceFromPrimary(primary: CourseListItem, course: CourseListItem): string | null {
+  if (course.category && course.category !== primary.category) {
+    return `votre besoin porte plutôt sur ${course.category.toLowerCase()}`
+  }
+  const modality = course.modalities.find((m) => !primary.modalities.includes(m))
+  if (modality) return `vous préférez suivre la formation ${MODALITY_WORDING[modality] ?? modality}`
+  if (course.certification && course.certification !== primary.certification) {
+    return `vous visez la certification ${course.certification}`
+  }
+  return null
+}
+
+function alternativeJustification(need: Need, primary: Match, alternative: Match): string {
+  const { candidate, row } = alternative
   const words = coveredWords(need, candidate, 2)
   const reason = words.length ? `elle couvre ${quote(words)}` : 'elle relève du même domaine'
-  return category
-    ? `Semble pertinente si votre besoin porte plutôt sur ${category.toLowerCase()} : ${reason}.`
+  // Différence lue dans le catalogue (rows), jamais dans les données de l'index.
+  const difference = differenceFromPrimary(primary.row.course, row.course)
+  return difference
+    ? `Semble pertinente si ${difference} : ${reason}.`
     : `Semble pertinente en alternative : ${reason}.`
 }
 
@@ -118,8 +149,13 @@ function toReply(matches: Match[], need: Need, location: string | undefined): As
     text: RECOMMEND_TEXT,
     recommendations: [
       toRecommendation(best.row, 'primary', principalJustification(need, best.candidate), location),
-      ...alternatives.map(({ candidate, row }) =>
-        toRecommendation(row, 'alternative', alternativeJustification(need, candidate), location)
+      ...alternatives.map((alternative) =>
+        toRecommendation(
+          alternative.row,
+          'alternative',
+          alternativeJustification(need, best, alternative),
+          location
+        )
       )
     ]
   }

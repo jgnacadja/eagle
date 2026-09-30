@@ -1,5 +1,5 @@
 import { ServiceUnavailableException } from '@nestjs/common'
-import type { CourseSession } from '@learnup/types'
+import type { CourseListItem, CourseSession } from '@learnup/types'
 import { CacheService } from '../../common/cache/cache.service'
 import { CatalogService, type CatalogRow } from '../../catalog/catalog.service'
 import { CatalogIndexService, type CatalogIndexEntry } from '../../retrieval/catalog-index.service'
@@ -48,7 +48,11 @@ function withSessions(slug: string, sessions: CourseSession[]): CatalogRow[] {
 
 function makeService(rows: CatalogRow[] = RETRIEVAL_CORPUS.map(toRow)) {
   const catalog = { allCourses: vi.fn().mockResolvedValue(rows) }
-  const cache = { version: 1, onCatalogInvalidated: vi.fn(() => () => undefined) }
+  const cache = {
+    version: 1,
+    onCatalogInvalidated: vi.fn(() => () => undefined),
+    syncInvalidations: vi.fn().mockResolvedValue(false)
+  }
   const index = new CatalogIndexService(
     catalog as unknown as CatalogService,
     cache as unknown as CacheService,
@@ -106,7 +110,7 @@ describe('FallbackRecommendationService', () => {
     })
     // Les mots du visiteur, tels que saisis — jamais les termes racinisés de l'index.
     expect(primary.justification).toBe(
-      'Cette formation semble correspondre à votre besoin : elle couvre « managers », « gérer », « conflits » dans son intitulé ou son programme.'
+      'Cette formation semble correspondre à votre besoin : sa fiche catalogue couvre « managers », « gérer », « conflits ».'
     )
     expect(alternatives.length).toBeLessThanOrEqual(2)
     for (const alternative of alternatives) {
@@ -170,7 +174,7 @@ describe('FallbackRecommendationService', () => {
     expect(reply.recommendations?.[0]).toMatchObject({
       slug: SST,
       justification:
-        'Cette formation semble correspondre à votre besoin : elle couvre « SST » dans son intitulé ou son programme.',
+        'Cette formation semble correspondre à votre besoin : sa fiche catalogue couvre « SST ».',
       availability: {
         sessionId: 'creteil-1',
         startDate: '2999-10-05',
@@ -275,9 +279,73 @@ describe('FallbackRecommendationService', () => {
     expect((reply.recommendations ?? []).map((r) => [r.slug, r.justification])).toEqual([
       [
         'habilitation-electrique-b0-h0',
-        'Cette formation semble correspondre à votre besoin : son intitulé et son programme sont proches des termes de votre demande.'
+        'Cette formation semble correspondre à votre besoin : sa fiche catalogue est proche des termes de votre demande.'
       ],
-      [SST, 'Semble pertinente en alternative : elle relève du même domaine.']
+      [
+        SST,
+        'Semble pertinente si votre besoin porte plutôt sur sécurité & prévention : elle relève du même domaine.'
+      ]
     ])
+  })
+
+  it('states a real difference for each alternative, read from the catalogue', async () => {
+    // Le catalogue (rows) fait foi : même domaine et mêmes modalités que la
+    // principale pour la CNV, modalité en plus pour le pilotage, autre domaine
+    // pour la finance.
+    const shared = {
+      category: 'Management',
+      modalities: ['inter', 'presentiel'],
+      certification: null
+    }
+    const overrides: Record<string, Partial<CourseListItem>> = {
+      'gestion-des-conflits-en-equipe': shared,
+      'communication-non-violente': shared,
+      'pilotage-de-projet': { ...shared, modalities: ['distanciel'] },
+      'finance-pour-managers': { ...shared, category: 'Finance' },
+      'cybersecurite-fondamentaux': { ...shared, certification: 'ISO 27001' },
+      [SST]: { ...shared, modalities: ['visio'] }
+    }
+    const rows = RETRIEVAL_CORPUS.map(toRow).map((row) => ({
+      ...row,
+      course: { ...row.course, ...overrides[row.course.slug] }
+    }))
+    const candidate = (slug: string, score: number) => ({
+      course: rows.find((row) => row.course.slug === slug)!.course,
+      score,
+      lexicalScore: 1,
+      semanticScore: 0.6,
+      matchedTerms: ['conflit'],
+      coverage: 1,
+      confident: true
+    })
+    const search = vi.fn()
+    const service = new FallbackRecommendationService(
+      { allCourses: vi.fn().mockResolvedValue(rows) } as unknown as CatalogService,
+      { search } as unknown as RetrievalService
+    )
+    const justificationOf = async (slug: string) => {
+      search.mockResolvedValue({
+        candidates: [candidate('gestion-des-conflits-en-equipe', 0.9), candidate(slug, 0.7)]
+      })
+      const reply = await service.recommend({ message: 'conflits' })
+      return reply.recommendations?.[1]?.justification
+    }
+
+    await expect(justificationOf('communication-non-violente')).resolves.toBe(
+      'Semble pertinente en alternative : elle couvre « conflits ».'
+    )
+    await expect(justificationOf('pilotage-de-projet')).resolves.toBe(
+      'Semble pertinente si vous préférez suivre la formation à distance : elle couvre « conflits ».'
+    )
+    await expect(justificationOf('finance-pour-managers')).resolves.toBe(
+      'Semble pertinente si votre besoin porte plutôt sur finance : elle couvre « conflits ».'
+    )
+    await expect(justificationOf('cybersecurite-fondamentaux')).resolves.toBe(
+      'Semble pertinente si vous visez la certification ISO 27001 : elle couvre « conflits ».'
+    )
+    // Modalité inconnue du libellé : rendue telle quelle.
+    await expect(justificationOf(SST)).resolves.toBe(
+      'Semble pertinente si vous préférez suivre la formation visio : elle couvre « conflits ».'
+    )
   })
 })

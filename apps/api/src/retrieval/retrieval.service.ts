@@ -29,24 +29,40 @@ export interface QueryTerm {
   weight: number
   /** Terme saisi (compte dans la couverture) ou expansion de synonyme. */
   typed: boolean
-  /** Terme saisi dont ce terme est l'expansion — couvre le terme saisi s'il matche. */
-  source: string
+  /**
+   * Termes saisis que ce terme couvre s'il matche : lui-même quand il est
+   * saisi, et chaque terme saisi dont il est l'expansion (« prévenir » et
+   * « protéger » partagent « prévention »).
+   */
+  sources: string[]
 }
 
 // Nombres seuls (effectifs, années) : jamais discriminants dans le référentiel.
 const NUMERIC = /^\d+$/
+
+function addQueryTerm(seen: Map<string, QueryTerm>, term: string, typed: boolean, source: string) {
+  const existing = seen.get(term)
+  if (!existing) {
+    seen.set(term, { term, weight: typed ? 1 : SYNONYM_WEIGHT, typed, sources: [source] })
+    return
+  }
+  // Un terme à la fois saisi et expansion d'un autre garde le poids du saisi
+  // et couvre les deux.
+  if (typed) {
+    existing.typed = true
+    existing.weight = 1
+  }
+  if (!existing.sources.includes(source)) existing.sources.push(source)
+}
 
 export function analyzeQuery(text: string): QueryTerm[] {
   const seen = new Map<string, QueryTerm>()
   for (const token of tokenize(text)) {
     if (QUERY_NOISE.has(token) || NUMERIC.test(token)) continue
     const term = stemToken(token)
-    seen.set(term, { term, weight: 1, typed: true, source: term })
+    addQueryTerm(seen, term, true, term)
     for (const synonym of QUERY_SYNONYMS[token] ?? []) {
-      const expanded = stemToken(synonym)
-      if (!seen.has(expanded)) {
-        seen.set(expanded, { term: expanded, weight: SYNONYM_WEIGHT, typed: false, source: term })
-      }
+      addQueryTerm(seen, stemToken(synonym), false, term)
     }
   }
   return [...seen.values()]
@@ -87,7 +103,7 @@ function coverageOf(index: RetrievalIndex, terms: QueryTerm[], matched: string[]
   if (typed.length === 0) return 0
   const matchedSet = new Set(matched)
   const coveredSources = new Set(
-    terms.filter((term) => matchedSet.has(term.term)).map((term) => term.source)
+    terms.filter((term) => matchedSet.has(term.term)).flatMap((term) => term.sources)
   )
   let total = 0
   let covered = 0

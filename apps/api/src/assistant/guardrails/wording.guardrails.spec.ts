@@ -1,6 +1,7 @@
 import type { AssistantRecommendation, AssistantReply } from '@learnup/types'
 import {
   ASSISTANT_NOTICE,
+  FALLBACK_JUSTIFICATION,
   SOURCE_MENTION,
   applyWordingGuardrails,
   guardReply,
@@ -67,6 +68,21 @@ describe('sanitizeJustification', () => {
 
     expect(sanitizeJustification('').text).toBe('')
   })
+
+  it('softens future-tense promises even next to a conditional marker', () => {
+    expect(
+      sanitizeJustification('Cette formation semble adaptée, et vous obtiendrez la certification.')
+    ).toEqual({
+      text: 'Cette formation semble adaptée, et vous pourriez obtenir la certification.',
+      issues: ['assertive-wording']
+    })
+    expect(sanitizeJustification('Vous aurez les bases et vous pourrez encadrer.').text).toBe(
+      'Vous pourriez avoir les bases et vous pourriez encadrer.'
+    )
+    expect(sanitizeJustification('Vous serez autonome sur les outils.').text).toBe(
+      'Vous pourriez être autonome sur les outils.'
+    )
+  })
 })
 
 describe('applyWordingGuardrails', () => {
@@ -84,6 +100,17 @@ describe('applyWordingGuardrails', () => {
     expect(issues).toEqual(
       expect.arrayContaining(['assertive-wording', 'duplicate-course', 'too-many-alternatives'])
     )
+  })
+
+  it('never lets a recommendation out without a justification', () => {
+    const { recommendations, issues } = applyWordingGuardrails([
+      recommendation('a', '   ', 'primary'),
+      recommendation('b', 'Semble utile en complément.')
+    ])
+
+    expect(recommendations[0].justification).toBe(FALLBACK_JUSTIFICATION)
+    expect(recommendations[1].justification).toBe('Semble utile en complément.')
+    expect(issues).toEqual(['missing-justification'])
   })
 
   it('always promotes the first kept recommendation to primary', () => {

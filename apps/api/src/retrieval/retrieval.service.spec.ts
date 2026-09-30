@@ -34,9 +34,48 @@ describe('analyzeQuery', () => {
     expect(terms.find((t) => t.term === 'management')).toMatchObject({
       weight: 0.6,
       typed: false,
-      source: 'manager'
+      sources: ['manager']
     })
     expect(terms.find((t) => t.term === 'mediation')).toMatchObject({ typed: false })
+  })
+
+  it('keeps every typed origin of a shared expansion, and the typed weight of an expanded term', () => {
+    // « prévenir » et « protéger » partagent l'expansion « prévention ».
+    const shared = analyzeQuery('prévenir et protéger')
+    expect(shared.find((t) => t.term === 'prevention')).toMatchObject({
+      typed: false,
+      sources: ['prevenir', 'proteger']
+    })
+
+    // « gestion » est saisi ET expansion de « gérer » : poids du saisi, deux origines.
+    const typed = analyzeQuery('gérer la gestion')
+    expect(typed.find((t) => t.term === 'gestion')).toMatchObject({
+      typed: true,
+      weight: 1,
+      sources: ['gerer', 'gestion']
+    })
+    expect(typed.filter((t) => t.term === 'gestion')).toHaveLength(1)
+  })
+
+  it('credits every typed term covered by one shared expansion', async () => {
+    const service = makeService([
+      makeEntry({
+        id: 30,
+        slug: 'prevention-des-risques',
+        title: 'Prévention des risques',
+        description: 'Prévention au poste de travail.',
+        category: 'Sécurité',
+        familySlug: 'securite'
+      })
+    ])
+
+    const result = await service.search({ text: 'prévenir et protéger' })
+
+    // Les deux verbes saisis sont couverts par « prévention » : couverture totale.
+    expect(result.candidates[0]).toMatchObject({
+      course: { slug: 'prevention-des-risques' },
+      coverage: 1
+    })
   })
 
   it('covers a typed verb through its noun expansion', async () => {

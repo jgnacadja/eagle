@@ -49,6 +49,13 @@ export interface CourseSession {
   location: CourseSessionLocation | null
 }
 
+/**
+ * Tranche de durée d'une formation, classifiée une seule fois par l'API
+ * (`/courses`) — le front consomme la valeur sans reclassifier. Bornes
+ * continues : courte ≤ 8 h ou ≤ 1 j ; moyenne ≤ 40 h ou ≤ 5 j ; longue sinon.
+ */
+export type DurationBucket = 'courte' | 'moyenne' | 'longue'
+
 export interface CourseBase {
   id: number
   slug: string
@@ -58,6 +65,7 @@ export interface CourseBase {
   shortDescription: string | null
   durationDays: number | null
   durationHours: number | null
+  durationBucket: DurationBucket
   price: number | null
   cpf: boolean | null
   cpfCode: string | null

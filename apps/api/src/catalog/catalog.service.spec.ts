@@ -252,8 +252,10 @@ describe('CatalogService', () => {
       slug: 'pilotage-de-projet',
       title: 'Pilotage de projet',
       description: 'Apprendre à piloter.',
+      shortDescription: null,
       durationDays: 3,
       durationHours: 21,
+      durationBucket: 'moyenne',
       price: 1500,
       cpf: true,
       cpfCode: 'CPF-12345',
@@ -1316,6 +1318,35 @@ describe('branch coverage: fallbacks', () => {
 
     expect(result.items.map((i) => i.slug)).toEqual(['pilotage-de-projet'])
   })
+
+  it.each([
+    { hours: 8, days: 2, expected: 'courte' },
+    { hours: 8.5, days: null, expected: 'moyenne' },
+    { hours: 9, days: null, expected: 'moyenne' },
+    { hours: 40, days: null, expected: 'moyenne' },
+    { hours: 40.5, days: null, expected: 'longue' },
+    { hours: null, days: 1, expected: 'courte' },
+    { hours: null, days: 1.5, expected: 'moyenne' },
+    { hours: null, days: 2, expected: 'moyenne' },
+    { hours: null, days: 5, expected: 'moyenne' },
+    { hours: null, days: 5.5, expected: 'longue' }
+  ])(
+    'no duration falls between buckets: $hours h / $days j → $expected',
+    async ({ hours, days, expected }) => {
+      catalog.fetchAllFormations.mockResolvedValue([
+        { ...baseFormation, duration_hours: hours, duration_days: days }
+      ] as unknown as DirectusFormation[])
+
+      const result = await service.list({
+        durations: expected,
+        page: 1,
+        limit: 10
+      } as ListCoursesDto)
+
+      expect(result.items).toHaveLength(1)
+      expect(result.items[0].durationBucket).toBe(expected)
+    }
+  )
 
   it('falls back to updatedAt when duration and price are equal', async () => {
     catalog.fetchAllFormations.mockResolvedValue([

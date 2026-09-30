@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import {
   buildCertifications,
-  buildDuration,
   buildMeta,
   buildSessionBadge,
   buildStatus,
@@ -19,6 +18,7 @@ const course: CourseListItem = {
   shortDescription: null,
   durationDays: 3,
   durationHours: null,
+  durationBucket: 'moyenne',
   price: null,
   cpf: null,
   cpfCode: null,
@@ -42,22 +42,8 @@ const course: CourseListItem = {
 }
 
 describe('useCatalog helpers', () => {
-  it('builds duration buckets from days when hours are missing', () => {
-    expect(buildDuration({ ...course, durationHours: null, durationDays: 0 })).toBe('courte')
-    expect(buildDuration({ ...course, durationHours: null, durationDays: 1 })).toBe('courte')
-    expect(buildDuration({ ...course, durationHours: null, durationDays: 2 })).toBe('moyenne')
-    expect(buildDuration({ ...course, durationHours: null, durationDays: 5 })).toBe('moyenne')
-    expect(buildDuration({ ...course, durationHours: null, durationDays: 6 })).toBe('longue')
-  })
-
-  it('builds duration buckets from hours when available', () => {
-    expect(buildDuration({ ...course, durationHours: 7 })).toBe('courte')
-    expect(buildDuration({ ...course, durationHours: 20 })).toBe('moyenne')
-    expect(buildDuration({ ...course, durationHours: 60 })).toBe('longue')
-  })
-
-  it('falls back to the single-day bucket when no duration is set', () => {
-    expect(buildDuration({ ...course, durationHours: null, durationDays: null })).toBe('courte')
+  it('maps the API duration bucket without reclassifying', () => {
+    expect(mapCourse({ ...course, durationBucket: 'longue' }).duration).toBe('longue')
     expect(mapCourse({ ...course, durationDays: null, modalities: null }).days).toBe(0)
     expect(mapCourse({ ...course, durationDays: null, modalities: null }).meta).toBe(
       'Certification CACES · Opérateur réglementaire'

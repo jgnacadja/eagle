@@ -48,6 +48,7 @@ const courses: CourseListItem[] = [
     shortDescription: null,
     durationDays: 3,
     durationHours: null,
+    durationBucket: 'moyenne',
     price: null,
     cpf: null,
     cpfCode: null,
@@ -77,6 +78,7 @@ const courses: CourseListItem[] = [
     shortDescription: null,
     durationDays: 5,
     durationHours: null,
+    durationBucket: 'moyenne',
     price: null,
     cpf: null,
     cpfCode: null,
@@ -213,7 +215,6 @@ const catalogMocks = vi.hoisted(() => {
 vi.mock('~/composables/useCatalog', () => ({
   useCatalog: catalogMocks.useCatalog,
   mapCourse: catalogMocks.mapCourse,
-  buildDuration: vi.fn(),
   buildMeta: vi.fn(),
   buildCertifications: vi.fn(),
   buildSessionBadge: vi.fn(() => null)

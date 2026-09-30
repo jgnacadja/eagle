@@ -54,8 +54,14 @@ function accumulate(group: SearchMissAggregate, row: RechercheSansResultat): voi
   group.lastSeen = latest(group.lastSeen, row.date_created)
 }
 
+// Un tableur interprète une cellule commençant par = + - @ (ou une
+// tabulation) comme une formule, même entre guillemets : les textes saisis
+// par les visiteurs sont neutralisés par une apostrophe de tête.
+const FORMULA_PREFIX = /^[=+\-@\t\r]/
+
 function csvCell(value: string | number | null): string {
-  const text = value === null ? '' : String(value)
+  const raw = value === null ? '' : String(value)
+  const text = typeof value === 'string' && FORMULA_PREFIX.test(raw) ? `'${raw}` : raw
   return /[";\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text
 }
 

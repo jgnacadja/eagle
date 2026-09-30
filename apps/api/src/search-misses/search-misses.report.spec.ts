@@ -65,4 +65,21 @@ describe('searchMissesToCsv', () => {
 
     expect(csv.split('\r\n')[1]).toBe('multi ligne;"multi\nligne ; ""citée""";1;;;1;0;1;0;')
   })
+
+  it('neutralizes cells a spreadsheet would run as formulas', () => {
+    const csv = searchMissesToCsv([
+      {
+        queryNormalized: '=cmd',
+        sampleQuery: '=1+1',
+        occurrences: 2,
+        firstSeen: null,
+        lastSeen: null,
+        outcomes: { no_result: 0, out_of_catalog: 2 },
+        sources: { catalog: 0, assistant: 2 },
+        intents: ['@import', '-danger', '+plus']
+      }
+    ])
+
+    expect(csv.split('\r\n')[1]).toBe(`'=cmd;'=1+1;2;;;0;2;0;2;'@import, -danger, +plus`)
+  })
 })

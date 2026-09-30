@@ -735,8 +735,9 @@ export class CatalogService {
 
     // Recherche textuelle sans aucune correspondance : journalisée pour la
     // revue produit (manques catalogue). Non bloquant — le service n'échoue
-    // jamais et ne doit pas retarder la réponse.
-    if (query.search && total === 0) {
+    // jamais et ne doit pas retarder la réponse. Un catalogue vide (Directus
+    // indisponible, sync incomplète) n'est pas un manque : rien n'est journalisé.
+    if (query.search && total === 0 && rows.length > 0) {
       void this.searchMisses.record({
         query: query.search,
         outcome: 'no_result',

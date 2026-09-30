@@ -1302,7 +1302,9 @@ export const collections = [
       },
       {
         field: 'query_normalized',
-        type: 'string',
+        // `text` : la clé peut faire 500 caractères comme la requête, au-delà
+        // du varchar(255) d'un champ `string`.
+        type: 'text',
         meta: {
           interface: 'input',
           width: 'half',

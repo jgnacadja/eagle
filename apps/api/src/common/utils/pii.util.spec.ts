@@ -29,6 +29,9 @@ describe('scrubPersonalData', () => {
       `IBAN ${PII_PLACEHOLDERS.iban}`
     )
     expect(scrubPersonalData('numéro 1234567890123')).toBe(`numéro ${PII_PLACEHOLDERS.number}`)
+    expect(scrubPersonalData('iban fr7630006000011234567890189')).toBe(
+      `iban ${PII_PLACEHOLDERS.iban}`
+    )
   })
 
   it('leaves short numbers (dates, headcounts, budgets) alone', () => {

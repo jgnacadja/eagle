@@ -176,6 +176,16 @@ describe('CatalogService', () => {
     expect(searchMisses.record).not.toHaveBeenCalled()
   })
 
+  it('does not record a miss while the catalogue itself is empty', async () => {
+    cache.get.mockResolvedValue(null)
+    catalog.fetchAllFormations.mockResolvedValue([])
+
+    const result = await service.list({ search: 'drone', page: 1, limit: 20 } as ListCoursesDto)
+
+    expect(result.total).toBe(0)
+    expect(searchMisses.record).not.toHaveBeenCalled()
+  })
+
   it('returns cached list when available', async () => {
     const cached: Paginated<CourseListItem> = {
       items: [{ id: 1, slug: 'pilotage-de-projet', title: 'Pilotage de projet' } as CourseListItem],

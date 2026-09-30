@@ -1,4 +1,5 @@
 import type { SearchMissContext } from '@learnup/types'
+import { scrubPersonalData } from '../common/utils/pii.util'
 
 const GEO_POINT_PATTERN = /^(-?\d{1,2}(?:\.\d+)?),\s*(-?\d{1,3}(?:\.\d+)?)$/
 
@@ -32,10 +33,17 @@ function isContextValue(value: unknown): value is string | number | boolean | nu
   )
 }
 
+function sanitizeContextValue(key: string, value: string): string {
+  // Les valeurs viennent de paramètres de requête ou de la conversation :
+  // elles sont masquées comme le texte saisi, puis la position est dégradée.
+  const scrubbed = scrubPersonalData(value)
+  return key === 'location' ? coarseLocation(scrubbed) : scrubbed
+}
+
 /**
  * Contexte de recherche prêt à être stocké : valeurs primitives non vides
- * uniquement, localisation géographique dégradée. `null` quand il ne reste
- * rien à conserver.
+ * uniquement, données personnelles masquées, localisation géographique
+ * dégradée. `null` quand il ne reste rien à conserver.
  */
 export function sanitizeContext(
   context: Record<string, unknown> | null | undefined
@@ -44,7 +52,7 @@ export function sanitizeContext(
   const clean: SearchMissContext = {}
   for (const [key, value] of Object.entries(context)) {
     if (!isContextValue(value) || value === '') continue
-    clean[key] = key === 'location' && typeof value === 'string' ? coarseLocation(value) : value
+    clean[key] = typeof value === 'string' ? sanitizeContextValue(key, value) : value
   }
   return Object.keys(clean).length > 0 ? clean : null
 }

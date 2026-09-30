@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger, OnModuleInit } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { CronJob, validateCronExpression } from 'cron'
@@ -24,7 +24,9 @@ const MIN_QUERY_LENGTH = 2
 const DEDUPE_WINDOW_MS = 60_000
 const DEDUPE_MAX_ENTRIES = 1_000
 const FETCH_PAGE_SIZE = 500
-const FETCH_MAX_PAGES = 40
+// Au-delà, l'agrégat serait tronqué en silence : on refuse et on invite à
+// restreindre la période (`from` / `to`).
+const FETCH_MAX_ROWS = 50_000
 const DEFAULT_RETENTION_DAYS = 180
 const DEFAULT_PURGE_CRON = '15 3 * * *'
 const PURGE_JOB_NAME = 'search-misses-purge'
@@ -140,7 +142,7 @@ export class SearchMissesService implements OnModuleInit {
         query_normalized: queryNormalized,
         outcome: input.outcome,
         source: input.source,
-        intent: input.intent?.trim() || null,
+        intent: scrubPersonalData(input.intent ?? '').trim() || null,
         context: sanitizeContext(input.context)
       })
       return created !== null
@@ -229,7 +231,7 @@ export class SearchMissesService implements OnModuleInit {
     const filter = withFilter(rangeFilter(range))
     const rows: RechercheSansResultat[] = []
 
-    for (let page = 1; page <= FETCH_MAX_PAGES; page += 1) {
+    for (let page = 1; ; page += 1) {
       const result = await this.directus.readMany<RechercheSansResultat>(SEARCH_MISSES_COLLECTION, {
         filter,
         fields: ROW_FIELDS,
@@ -239,6 +241,11 @@ export class SearchMissesService implements OnModuleInit {
       })
       rows.push(...result.data)
       if (result.data.length < FETCH_PAGE_SIZE) break
+      if (rows.length >= FETCH_MAX_ROWS) {
+        throw new BadRequestException(
+          `Plus de ${FETCH_MAX_ROWS} recherches sur la période : restreignez-la avec from / to`
+        )
+      }
     }
 
     return rows

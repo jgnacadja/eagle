@@ -34,4 +34,14 @@ describe('sanitizeContext', () => {
       })
     ).toEqual({ family: 'securite', cpf: true, page: 2, none: null, location: '48.9,2.4' })
   })
+
+  it('masks personal data typed into any context value', () => {
+    expect(
+      sanitizeContext({
+        location: 'chez jean@example.fr',
+        filters: 'rappel au 06 12 34 56 78',
+        cpf: true
+      })
+    ).toEqual({ location: 'chez [email]', filters: 'rappel au [téléphone]', cpf: true })
+  })
 })

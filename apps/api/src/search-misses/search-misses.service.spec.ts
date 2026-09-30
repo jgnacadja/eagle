@@ -95,6 +95,20 @@ describe('SearchMissesService', () => {
       expect(payload.context).toBeNull()
     })
 
+    it('masks personal data in the intent and the context as well', async () => {
+      await service.record({
+        query: 'former mes équipes',
+        outcome: 'no_result',
+        source: 'assistant',
+        intent: 'contact jean@example.fr · SST',
+        context: { location: 'Lyon, rappel au 06 12 34 56 78' }
+      })
+
+      const payload = directus.createOne.mock.calls[0]![1] as Record<string, unknown>
+      expect(payload.intent).toBe('contact [email] · SST')
+      expect(payload.context).toEqual({ location: 'Lyon, rappel au [téléphone]' })
+    })
+
     it('ignores blank or too short queries', async () => {
       expect(await service.record({ query: '  ', outcome: 'no_result', source: 'catalog' })).toBe(
         false
@@ -294,6 +308,14 @@ describe('SearchMissesService', () => {
       expect(aggregate!.occurrences).toBe(501)
       expect(directus.readMany).toHaveBeenCalledTimes(2)
       expect(directus.readMany.mock.calls[1]![1]).toMatchObject({ page: 2 })
+    })
+
+    it('refuses to aggregate a period with more than 50 000 entries instead of truncating', async () => {
+      const fullPage = Array.from({ length: 500 }, (_, i) => row({ id: i + 1 }))
+      directus.readMany.mockResolvedValue({ data: fullPage })
+
+      await expect(service.aggregate({})).rejects.toThrow(/restreignez-la avec from \/ to/)
+      expect(directus.readMany).toHaveBeenCalledTimes(100)
     })
 
     it('exports an Excel-friendly CSV with BOM, semicolons and quoting', async () => {

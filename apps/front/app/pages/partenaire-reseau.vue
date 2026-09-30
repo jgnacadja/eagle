@@ -13,15 +13,48 @@
           site ou en intra-entreprise.
         </p>
 
-        <div class="mt-xl flex">
+        <!-- Stats mobile (pleine largeur 3 colonnes) -->
+        <div class="mt-lg grid grid-cols-3 divide-x divide-rule md:hidden" aria-hidden="true">
+          <StatItem
+            value="+400"
+            label="centres"
+            size="sm"
+            class="pr-sm [&_p:first-child]:text-h3 [&_p:last-child]:text-meta"
+          />
+          <StatItem
+            value="France entière"
+            label="couverte par le réseau"
+            size="sm"
+            class="px-sm [&_p:first-child]:text-small [&_p:last-child]:text-meta"
+          />
+          <StatItem
+            value="+250"
+            label="formations"
+            size="sm"
+            class="pl-sm [&_p:first-child]:text-h3 [&_p:last-child]:text-meta"
+          />
+        </div>
+
+        <!-- Stats desktop (inline non-full) -->
+        <div class="mt-xl hidden md:flex flex-wrap gap-y-lg">
           <StatItem
             value="+400"
             label="centres partenaires"
             size="sm"
             class="pr-lg whitespace-nowrap"
           />
-          <StatItem value="96" label="départements couverts" size="sm" class="border-l px-md" />
-          <StatItem value="+250" label="formations au catalogue" size="sm" class="border-l pl-md" />
+          <StatItem
+            value="France entière"
+            label="couverte par le réseau"
+            size="sm"
+            class="border-l border-rule px-lg"
+          />
+          <StatItem
+            value="+250"
+            label="formations au catalogue"
+            size="sm"
+            class="border-l border-rule pl-lg"
+          />
         </div>
       </div>
     </section>
@@ -173,9 +206,7 @@
               <NuxtLink to="/formations">Parcourir le catalogue</NuxtLink>
             </Button>
             <Button as-child variant="outline" size="pill-lg" class="w-full sm:w-auto">
-              <NuxtLink to="/centres/demande-de-formation?sujet=conseiller">
-                Être guidé dans mon choix
-              </NuxtLink>
+              <NuxtLink to="/parler-a-votre-conseiller"> Être guidé dans mon choix </NuxtLink>
             </Button>
           </div>
         </div>

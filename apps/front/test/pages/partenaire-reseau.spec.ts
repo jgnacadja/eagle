@@ -65,8 +65,8 @@ describe('pages/a-propos/reseau.vue', () => {
 
     expect(wrapper.text()).toContain('+400')
     expect(wrapper.text()).toContain('centres partenaires')
-    expect(wrapper.text()).toContain('96')
-    expect(wrapper.text()).toContain('départements couverts')
+    expect(wrapper.text()).toContain('France entière')
+    expect(wrapper.text()).toContain('couverte par le réseau')
     expect(wrapper.text()).toContain('+250')
     expect(wrapper.text()).toContain('formations au catalogue')
   })
@@ -123,7 +123,7 @@ describe('pages/a-propos/reseau.vue', () => {
     const hrefs = wrapper.findAll('a').map((link) => link.attributes('href'))
 
     expect(hrefs).toContain('/formations')
-    expect(hrefs).toContain('/centres/demande-de-formation?sujet=conseiller')
+    expect(hrefs).toContain('/parler-a-votre-conseiller')
     expect(hrefs).toContain('/rejoindre-le-reseau')
   })
 })

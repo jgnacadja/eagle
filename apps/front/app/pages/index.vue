@@ -214,23 +214,25 @@
          TICKER — barre de chiffres clés
     ════════════════════════════════════════════════════ -->
     <div class="bg-primary-dark">
-      <div
-        class="mx-auto grid grid-cols-2 gap-px md:grid-cols-3 divide-x-0 md:divide-x divide-rule-strong p-sm"
-      >
-        <div
-          v-for="item in tickerItems"
-          :key="item.key"
-          class="flex items-center gap-3 px-gutter-mobile md:px-lg py-md"
-        >
-          <!-- icône -->
-          <component :is="item.icon" :size="22" class="shrink-0 text-ink-inverse/50" />
-          <div>
-            <p class="font-display text-h4 md:text-h3 font-extrabold leading-none text-ink-inverse">
-              {{ item.value }}
-            </p>
-            <p class="text-xs md:text-small text-ink-inverse-muted leading-tight mt-0.5">
-              {{ item.label }}
-            </p>
+      <div class="mx-auto px-gutter-mobile md:px-gutter">
+        <div class="grid grid-cols-2 gap-px py-sm md:grid-cols-3 md:divide-x md:divide-rule-strong">
+          <div
+            v-for="item in tickerItems"
+            :key="item.key"
+            class="flex items-center justify-center gap-3 py-md"
+          >
+            <!-- icône -->
+            <component :is="item.icon" :size="22" class="shrink-0 text-ink-inverse/50" />
+            <div>
+              <p
+                class="font-display text-h4 font-extrabold leading-none text-ink-inverse md:text-h3"
+              >
+                {{ item.value }}
+              </p>
+              <p class="mt-xs text-xs leading-tight text-ink-inverse-muted md:text-small">
+                {{ item.label }}
+              </p>
+            </div>
           </div>
         </div>
       </div>

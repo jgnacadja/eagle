@@ -1,6 +1,5 @@
 // Flows Directus d'invalidation de cache — webhooks sortants créés par
-// `pnpm directus:build`. URLs et secrets lus depuis .env au build —
-// jamais commités dans le schéma. Trigger `action` (non bloquant) : une
+// `pnpm directus:build`. Trigger `action` (non bloquant) : une
 // purge qui échoue ne fait jamais échouer l'écriture éditoriale.
 //
 // Deux niveaux de précision :
@@ -10,12 +9,16 @@
 // - « Invalidate formation page » (formations uniquement) : relit le slug
 //   de la formation et purge uniquement sa page fiche côté front.
 
-// Directus tourne dans docker-compose alors que l'API et le front tournent
-// sur l'hôte en dev (`pnpm dev`) : `localhost` dans le container désigne le
-// container lui-même — les webhooks passent par `host.docker.internal`.
-// En stack full-compose, surcharger avec `api:3001` / `front:3000`.
-const API_INTERNAL_URL = process.env.API_INTERNAL_URL ?? 'http://host.docker.internal:3001'
-const FRONT_INTERNAL_URL = process.env.FRONT_INTERNAL_URL ?? 'http://host.docker.internal:3000'
+// URLs et secrets ne sont PAS cuits en base : `{{ $env.* }}` est interpolé
+// à l'exécution depuis l'env du container Directus — un rebuild avec un
+// .env différent ne casse plus les flows et aucun secret n'est stocké.
+// Prérequis sur l'instance Directus (docker-compose.yml les pose déjà) :
+//   FLOWS_ENV_ALLOW_LIST=API_INTERNAL_URL,FRONT_INTERNAL_URL,ADMIN_API_KEY,NUXT_CACHE_PURGE_SECRET
+//   + les 4 variables elles-mêmes (base URLs sans slash final).
+const API_INTERNAL_URL = '{{$env.API_INTERNAL_URL}}'
+const FRONT_INTERNAL_URL = '{{$env.FRONT_INTERNAL_URL}}'
+const ADMIN_API_KEY = '{{$env.ADMIN_API_KEY}}'
+const CACHE_PURGE_SECRET = '{{$env.NUXT_CACHE_PURGE_SECRET}}'
 
 // Collections dont une écriture peut changer une page publique.
 const CONTENT_COLLECTIONS = [
@@ -84,7 +87,7 @@ export function buildFlows({ syncUserId } = {}) {
           options: {
             method: 'POST',
             url: `${API_INTERNAL_URL}/admin/cache/invalidate`,
-            headers: [{ header: 'x-api-key', value: process.env.ADMIN_API_KEY ?? '' }],
+            headers: [{ header: 'x-api-key', value: ADMIN_API_KEY }],
             body: '{"collection":"{{$trigger.collection}}"}'
           }
         },
@@ -97,9 +100,7 @@ export function buildFlows({ syncUserId } = {}) {
           options: {
             method: 'POST',
             url: `${FRONT_INTERNAL_URL}/api/cache/invalidate`,
-            headers: [
-              { header: 'x-cache-secret', value: process.env.NUXT_CACHE_PURGE_SECRET ?? '' }
-            ],
+            headers: [{ header: 'x-cache-secret', value: CACHE_PURGE_SECRET }],
             body: '{"collection":"{{$trigger.collection}}"}'
           }
         }
@@ -140,9 +141,7 @@ export function buildFlows({ syncUserId } = {}) {
           options: {
             method: 'POST',
             url: `${FRONT_INTERNAL_URL}/api/cache/invalidate`,
-            headers: [
-              { header: 'x-cache-secret', value: process.env.NUXT_CACHE_PURGE_SECRET ?? '' }
-            ],
+            headers: [{ header: 'x-cache-secret', value: CACHE_PURGE_SECRET }],
             body: '{"match":"{{$last.slug}}"}'
           }
         }
@@ -189,7 +188,7 @@ export function buildFlows({ syncUserId } = {}) {
           options: {
             method: 'POST',
             url: `${API_INTERNAL_URL}/admin/centres/geocode`,
-            headers: [{ header: 'x-api-key', value: process.env.ADMIN_API_KEY ?? '' }]
+            headers: [{ header: 'x-api-key', value: ADMIN_API_KEY }]
           }
         },
         {
@@ -204,9 +203,7 @@ export function buildFlows({ syncUserId } = {}) {
           options: {
             method: 'POST',
             url: `${FRONT_INTERNAL_URL}/api/cache/invalidate`,
-            headers: [
-              { header: 'x-cache-secret', value: process.env.NUXT_CACHE_PURGE_SECRET ?? '' }
-            ],
+            headers: [{ header: 'x-cache-secret', value: CACHE_PURGE_SECRET }],
             body: '{"collection":"centres"}'
           }
         }

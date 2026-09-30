@@ -14,7 +14,7 @@
         </p>
 
         <!-- Stats mobile (pleine largeur 3 colonnes) -->
-        <div class="mt-lg grid grid-cols-3 divide-x divide-rule md:hidden" aria-hidden="true">
+        <div class="mt-lg grid grid-cols-3 divide-x divide-rule md:hidden">
           <StatItem
             value="+400"
             label="centres"
@@ -75,10 +75,10 @@
             v-for="(option, idx) in networkMembers"
             :key="option.title"
             v-reveal="revealStagger(idx)"
-            class="group flex flex-col rounded-md border border-rule bg-paper p-lg shadow-sm transition-all hover:border-primary hover:shadow-md"
+            class="group flex flex-col rounded-md border border-rule bg-paper p-lg shadow-sm transition-[border-color,box-shadow] hover:border-primary hover:shadow-md"
           >
             <div
-              class="hidden md:flex h-control w-control items-center justify-center rounded-sm bg-primary-soft text-primary transition-colors group-hover:bg-primary group-hover:text-accent-text"
+              class="hidden md:flex h-control w-control items-center justify-center rounded-sm bg-primary-soft text-primary transition-colors group-hover:bg-primary group-hover:text-paper"
             >
               <component :is="option.icon" :size="22" />
             </div>
@@ -124,7 +124,7 @@
               <IconCheck :size="18" />
             </div>
             <div>
-              <h3 class="text-sm font-bold text-ink">{{ item.title }}</h3>
+              <h3 class="text-small font-bold text-ink">{{ item.title }}</h3>
               <p class="mt-xs text-small text-ink-muted">{{ item.body }}</p>
             </div>
           </div>
@@ -157,7 +157,7 @@
           </h2>
           <NuxtLink
             to="/centres"
-            class="hidden text-sm font-bold text-primary transition-colors hover:text-accent-text md:block"
+            class="hidden text-small font-bold text-primary transition-colors hover:text-accent-text md:block"
           >
             Explorer la carte des centres <span class="link-arrow">→</span>
           </NuxtLink>
@@ -174,7 +174,7 @@
             v-else
             class="flex h-full items-center justify-center px-lg text-center text-small text-ink-muted"
           >
-            Carte de France interactive<br />départements couverts + centres du réseau
+            La carte des centres est temporairement indisponible.
           </div>
         </div>
 
@@ -206,7 +206,7 @@
               <NuxtLink to="/formations">Parcourir le catalogue</NuxtLink>
             </Button>
             <Button as-child variant="outline" size="pill-lg" class="w-full sm:w-auto">
-              <NuxtLink to="/parler-a-votre-conseiller"> Être guidé dans mon choix </NuxtLink>
+              <NuxtLink to="/parler-a-votre-conseiller">Être guidé dans mon choix</NuxtLink>
             </Button>
           </div>
         </div>
@@ -287,14 +287,6 @@ const commitments = [
     title: 'Un interlocuteur unique',
     body: 'De la demande au suivi, la relation est assurée sous la marque LEARN UP ACADEMY.'
   }
-]
-
-const certifiers = [
-  'Logo certificateur\nà fournir',
-  'Logo certificateur\nà fournir',
-  'Logo organisme\nde branche',
-  'Logo organisme\nde branche',
-  'Label qualité\nà fournir'
 ]
 
 // Même pattern que entreprise.vue / referencer-mon-organisme.vue : centres publiés pour la carte,

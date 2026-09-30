@@ -1,4 +1,4 @@
-// test/pages/reseau.spec.ts
+// test/pages/partenaire-reseau.spec.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent, h, Suspense, ref } from 'vue'
@@ -25,7 +25,6 @@ const stubs = {
       CenterMap: true,
       ClientLogoWall: true,
       IconBuilding: true,
-      IconLayers: true,
       IconCheck: true,
       StatItem: {
         props: ['value', 'label'],
@@ -51,7 +50,7 @@ async function mountReseau() {
   return wrapper
 }
 
-describe('pages/a-propos/reseau.vue', () => {
+describe('pages/partenaire-reseau.vue', () => {
   it('affiche le titre h1 attendu', async () => {
     const wrapper = await mountReseau()
     const h1 = wrapper.find('h1')
@@ -90,7 +89,7 @@ describe('pages/a-propos/reseau.vue', () => {
   it("affiche le placeholder carte quand aucun centre n'est retourné", async () => {
     const wrapper = await mountReseau()
 
-    expect(wrapper.text()).toContain('Carte de France interactive')
+    expect(wrapper.text()).toContain('La carte des centres est temporairement indisponible.')
   })
 
   it('affiche la carte quand des centres sont retournés', async () => {
@@ -115,7 +114,7 @@ describe('pages/a-propos/reseau.vue', () => {
     const wrapper = await mountReseau()
 
     expect(wrapper.findComponent({ name: 'CenterMap' }).exists()).toBe(true)
-    expect(wrapper.text()).not.toContain('Carte de France interactive')
+    expect(wrapper.text()).not.toContain('La carte des centres est temporairement indisponible.')
   })
 
   it('propose les CTA catalogue, conseiller et rejoindre le réseau', async () => {

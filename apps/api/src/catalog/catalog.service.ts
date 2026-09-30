@@ -11,6 +11,7 @@ import type {
   SearchMissContext
 } from '@learnup/types'
 import { CacheService } from '../common/cache/cache.service'
+import { normalizeText, tokenize } from '../common/utils/text.util'
 import { SearchMissesService } from '../search-misses/search-misses.service'
 import {
   DirectusCatalogService,
@@ -216,87 +217,15 @@ function toCourse(raw: DirectusFormation): Course {
   }
 }
 
-const STOP_WORDS = new Set([
-  'a',
-  'à',
-  'au',
-  'aux',
-  'avec',
-  'ce',
-  'cet',
-  'cette',
-  'ces',
-  'dans',
-  'de',
-  'des',
-  'du',
-  'elle',
-  'en',
-  'est',
-  'et',
-  'eux',
-  'il',
-  'ils',
-  'je',
-  'la',
-  'le',
-  'les',
-  'leur',
-  'leurs',
-  'lui',
-  'ma',
-  'mais',
-  'me',
-  'mes',
-  'mon',
-  'ne',
-  'nos',
-  'notre',
-  'nous',
-  'on',
-  'ou',
-  'par',
-  'pas',
-  'pour',
-  'qu',
-  'que',
-  'qui',
-  'quoi',
-  'sa',
-  'se',
-  'ses',
-  'son',
-  'sur',
-  'ta',
-  'te',
-  'tes',
-  'ton',
-  'tu',
-  'un',
-  'une',
-  'vos',
-  'votre',
-  'vous',
-  'y'
-])
-
+// Tokens normalis\u00e9s (sans accents), comme `searchText` \u2014 sinon \u00ab s\u00e9curit\u00e9 \u00bb
+// ne trouvait jamais \u00ab S\u00e9curit\u00e9 \u00bb.
 function toSearchTokens(raw: string | undefined): string[] | undefined {
   if (!raw) return undefined
-
-  const tokens = raw
-    .toLowerCase()
-    .match(/[\p{L}\p{N}]+/gu)
-    ?.filter((token) => token.length > 2 && !STOP_WORDS.has(token))
-
-  return tokens && tokens.length > 0 ? tokens : undefined
+  const tokens = tokenize(raw, 3)
+  return tokens.length > 0 ? tokens : undefined
 }
 
-function normalizeSearch(text: string | null | undefined): string {
-  return (text ?? '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-}
+const normalizeSearch = normalizeText
 
 function buildLocationText(
   locationsText: string | null | undefined,
@@ -528,7 +457,10 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
  * « lyon 13002 » ne matche pas une formation à Lyon 69003 + Marseille 13002.
  * Repli sur `locationText` quand aucune session n'est géolocalisée.
  */
-function matchesLocation(row: CatalogRow, location: string | undefined): boolean {
+export function matchesLocation(
+  row: Pick<CatalogRow, 'locations' | 'locationText'>,
+  location: string | undefined
+): boolean {
   const geo = parseGeoLocation(location)
   if (geo) {
     return row.locations.some(

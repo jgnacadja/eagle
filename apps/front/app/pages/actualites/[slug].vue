@@ -48,6 +48,7 @@
                   :url="shareUrl"
                   :title="article?.title"
                   :text="article?.excerpt ?? undefined"
+                  :article-id="slug"
                 />
                 <Button
                   type="button"
@@ -256,6 +257,8 @@ import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { articleAssetUrl, articleReadingTime, formatArticleDate } from '~/utils/article'
 import { sanitizeHtmlWithHeadings } from '~/utils/sanitizeHtml'
 import { copyTextToClipboard } from '~/utils/clipboard'
+import { useDataLayer } from '~/composables/useDataLayer'
+import { onMounted } from 'vue'
 
 definePageMeta({
   layout: 'with-breadcrumb',
@@ -524,10 +527,30 @@ const shareUrl = computed(() =>
   typeof window === 'undefined' ? '' : `${window.location.origin}${route.path}`
 )
 
+const { pushEvent } = useDataLayer()
+
+onMounted(() => {
+  if (article.value) {
+    pushEvent({
+      event: 'view_article_detail',
+      article_id: article.value.slug,
+      article_title: article.value.title,
+      article_category: article.value.category ?? undefined,
+      publish_date: article.value.publish_at ?? undefined,
+      page_path: typeof window !== 'undefined' ? window.location.pathname : ''
+    })
+  }
+})
+
 async function onCopyLink() {
   if (typeof window === 'undefined') return
   if (!(await copyTextToClipboard(shareUrl.value))) return
   linkCopied.value = true
+  pushEvent({
+    event: 'share_article',
+    article_id: slug,
+    share_channel: 'copier_lien'
+  })
   clearTimeout(linkCopiedTimer)
   linkCopiedTimer = setTimeout(() => {
     linkCopied.value = false

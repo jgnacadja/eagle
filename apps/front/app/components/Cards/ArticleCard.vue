@@ -28,7 +28,7 @@
         {{ category }}
       </p>
 
-      <NuxtLink :to="to" class="mt-0.5 md:mt-1 after:absolute after:inset-0">
+      <NuxtLink :to="to" class="mt-0.5 md:mt-1 after:absolute after:inset-0" @click="onClick">
         <h3
           class="line-clamp-2 font-sans text-sm font-bold text-ink transition-colors group-hover:text-primary md:text-body"
         >
@@ -69,7 +69,7 @@
         <p class="hidden text-meta font-medium text-ink-subtle md:block">{{ date }}</p>
       </div>
 
-      <NuxtLink :to="to" class="after:absolute after:inset-0 hover:underline">
+      <NuxtLink :to="to" class="after:absolute after:inset-0 hover:underline" @click="onClick">
         <h3 class="mt-sm font-sans text-small font-bold text-ink md:text-h4">{{ title }}</h3>
       </NuxtLink>
       <p class="mt-sm hidden text-small text-ink-body md:block">{{ excerpt }}</p>
@@ -87,7 +87,9 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(
+import { useDataLayer } from '~/composables/useDataLayer'
+
+const props = withDefaults(
   defineProps<{
     category: string
     title: string
@@ -99,4 +101,17 @@ withDefaults(
   }>(),
   { excerpt: '', imageUrl: '', to: '#', variant: 'default' }
 )
+
+const { pushEvent } = useDataLayer()
+
+function onClick() {
+  const articleId = props.to ? props.to.split('/').pop() || props.title : props.title
+  pushEvent({
+    event: 'select_article_card',
+    article_id: articleId,
+    article_title: props.title,
+    article_category: props.category,
+    list_name: 'actualites_liste'
+  })
+}
 </script>

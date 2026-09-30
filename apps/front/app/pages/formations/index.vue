@@ -445,6 +445,7 @@ import {
 } from '~/utils/catalog-filters'
 import { useDirectusClient } from '~/composables/useDirectus'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
+import { useDataLayer } from '~/composables/useDataLayer'
 import { revealStagger } from '~/utils/reveal'
 import { readItems } from '@directus/sdk'
 
@@ -929,7 +930,25 @@ const hasActiveCriteria = computed(
   () => activeFilters.value.length > 0 || searchQuery.value.trim().length > 0
 )
 
+const { pushEvent } = useDataLayer()
+
+onMounted(() => {
+  pushEvent({
+    event: 'view_formations_catalog',
+    results_count: catalog.data.value?.total ?? 0,
+    filters_active_count: activeFilters.value.length
+  })
+})
+
 function removeFilter(filter: ActiveFilter) {
+  pushEvent({
+    event: 'filter_formations',
+    filter_type: filter.group,
+    filter_value: filter.label,
+    filter_action: 'retrait',
+    results_count: catalog.data.value?.total ?? 0
+  })
+
   if (filter.group === 'families') {
     selectedFamilies.value = selectedFamilies.value.filter((key) => key !== filter.key)
   } else if (filter.group === 'modalities') {
@@ -944,6 +963,32 @@ function removeFilter(filter: ActiveFilter) {
     certifying.value = false
   }
 }
+
+watch(activeFilters, (current, prev) => {
+  if (!prev) return
+  if (current.length > prev.length) {
+    const added = current.find((c) => !prev.some((p) => p.group === c.group && p.key === c.key))
+    if (added) {
+      pushEvent({
+        event: 'filter_formations',
+        filter_type: added.group,
+        filter_value: added.label,
+        filter_action: 'ajout',
+        results_count: catalog.data.value?.total ?? 0
+      })
+    }
+  }
+})
+
+watch(sortBy, (newSort, oldSort) => {
+  if (newSort !== oldSort) {
+    pushEvent({
+      event: 'sort_formations',
+      sort_type: newSort,
+      results_count: catalog.data.value?.total ?? 0
+    })
+  }
+})
 
 function resetFilters() {
   searchQuery.value = ''
@@ -974,6 +1019,15 @@ function triggerSearch() {
   searchQuery.value = searchQuery.value.trim()
   sortBy.value = searchQuery.value ? 'pertinence' : 'editorial'
   currentPage.value = 1
+
+  if (searchQuery.value) {
+    pushEvent({
+      event: 'search_formations',
+      search_term: searchQuery.value,
+      results_count: catalog.data.value?.total ?? 0,
+      page_path: window.location.pathname
+    })
+  }
 }
 
 // La page ne se remonte plus sur changement de query (page-key = path) :

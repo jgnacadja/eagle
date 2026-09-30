@@ -72,6 +72,7 @@
               v-else
               :to="option.to"
               class="mt-lg text-small font-bold text-primary underline underline-offset-4 transition-colors hover:text-accent-text"
+              @click="onProfileClick('organisme')"
             >
               {{ option.cta }} <span class="link-arrow">→</span>
             </NuxtLink>
@@ -124,6 +125,8 @@ import IconBook from '~/components/icons/IconBook.vue'
 import IconBuilding from '~/components/icons/IconBuilding.vue'
 import type { CandidatureVoie } from '~/types/candidature'
 import { heroStagger, revealStagger } from '~/utils/reveal'
+import { useDataLayer } from '~/composables/useDataLayer'
+import { onMounted } from 'vue'
 
 useContentSeo(
   {
@@ -136,8 +139,27 @@ useContentSeo(
 
 const candidatureOpen = ref(false)
 const candidatureVoie = ref<CandidatureVoie>('centre')
+const { pushEvent } = useDataLayer()
+
+onMounted(() => {
+  pushEvent({
+    event: 'view_rejoindre_reseau_page',
+    page_path: typeof window !== 'undefined' ? window.location.pathname : '',
+    page_title: 'Rejoindre le réseau — LEARN UP ACADEMY'
+  })
+})
+
+function onProfileClick(profileType: string) {
+  pushEvent({
+    event: 'select_network_profile',
+    profile_type: profileType,
+    cta_location: 'rejoindre_reseau_options',
+    page_path: typeof window !== 'undefined' ? window.location.pathname : ''
+  })
+}
 
 function openCandidature(voie: CandidatureVoie) {
+  onProfileClick(voie)
   candidatureVoie.value = voie
   candidatureOpen.value = true
 }

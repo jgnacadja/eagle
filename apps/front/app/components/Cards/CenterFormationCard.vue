@@ -30,7 +30,9 @@
         size="pill-sm"
         class="mt-md w-full px-lg font-bold"
       >
-        <NuxtLink :to="to" class="after:absolute after:inset-0">Voir la formation</NuxtLink>
+        <NuxtLink :to="to" class="after:absolute after:inset-0" @click="onClick"
+          >Voir la formation</NuxtLink
+        >
       </Button>
       <Button
         v-else-if="to"
@@ -40,7 +42,7 @@
         class="gap-xs font-bold"
         :class="variant === 'similar' ? 'mt-0 self-start' : 'mt-md self-end'"
       >
-        <NuxtLink :to="to" class="after:absolute after:inset-0"
+        <NuxtLink :to="to" class="after:absolute after:inset-0" @click="onClick"
           >Consulter <span class="link-arrow">→</span></NuxtLink
         >
       </Button>
@@ -50,6 +52,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useDataLayer } from '~/composables/useDataLayer'
 
 const props = withDefaults(
   defineProps<{
@@ -75,6 +78,19 @@ const props = withDefaults(
     family: ''
   }
 )
+
+const { pushEvent } = useDataLayer()
+
+function onClick() {
+  const formationId = props.to ? props.to.split('/').pop() || props.title : props.title
+  pushEvent({
+    event: 'select_formation_card',
+    formation_id: formationId,
+    formation_name: props.title,
+    formation_family: props.family || props.subFamily || '',
+    list_name: props.variant === 'similar' ? 'formations_similaires' : 'formations_centre'
+  })
+}
 
 const overline = computed(() => (props.variant === 'similar' ? props.family : props.subFamily))
 </script>

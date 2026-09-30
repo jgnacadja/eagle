@@ -27,6 +27,7 @@
             :target="channel.external ? '_blank' : undefined"
             :rel="channel.external ? 'noopener noreferrer' : undefined"
             class="flex cursor-pointer items-center gap-sm px-sm py-sm text-small text-ink-body"
+            @click="onChannelClick(channel.label)"
           >
             <component :is="channel.icon" :size="16" class="shrink-0 text-ink-subtle" />
             {{ channel.label }}
@@ -63,12 +64,25 @@ import IconLinkedin from '~/components/icons/IconLinkedin.vue'
 import IconMail from '~/components/icons/IconMail.vue'
 import IconWhatsapp from '~/components/icons/IconWhatsapp.vue'
 import IconX from '~/components/icons/IconX.vue'
+import { useDataLayer } from '~/composables/useDataLayer'
 
 const props = defineProps<{
   url: string
   title?: string
   text?: string
+  articleId?: string
 }>()
+
+const { pushEvent } = useDataLayer()
+
+function onChannelClick(channelLabel: string) {
+  const id = props.articleId || props.url.split('/').pop() || ''
+  pushEvent({
+    event: 'share_article',
+    article_id: id,
+    share_channel: channelLabel.toLowerCase()
+  })
+}
 
 // Web Share API : mobile uniquement en pratique — détectée au mount.
 const canNativeShare = ref(false)
@@ -115,6 +129,7 @@ const channels = computed(() => {
 })
 
 function onNativeShare() {
+  onChannelClick('native')
   navigator.share({ title: props.title, text: props.text, url: props.url }).catch(() => {})
 }
 </script>

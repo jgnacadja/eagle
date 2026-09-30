@@ -252,6 +252,7 @@ describe('CatalogService', () => {
       slug: 'pilotage-de-projet',
       title: 'Pilotage de projet',
       description: 'Apprendre à piloter.',
+      shortDescription: null,
       durationDays: 3,
       durationHours: 21,
       price: 1500,

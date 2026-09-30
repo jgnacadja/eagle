@@ -720,6 +720,63 @@ describe('CatalogService', () => {
       } as ListCoursesDto)
       expect(result.items).toHaveLength(1)
     })
+
+    it('retombe sur locationText en mode géo (lat,lng|label) sans centre géocodé', async () => {
+      // geoFormation : sessions avec lieux Digiforma (pas de centreSlug) →
+      // aucune coordonnée ; le geosuggest transporte le nom de la commune.
+      expect(await listWithLocation('45.77,4.88|Lyon')).toBe(1)
+      expect(await listWithLocation('45.77,4.88|Brest')).toBe(0)
+    })
+
+    it('exclut en mode géo sans label quand aucun centre n’est géocodé', async () => {
+      expect(await listWithLocation('45.77,4.88')).toBe(0)
+    })
+
+    it('distingue les départements corses « 2A » et « 2B »', async () => {
+      const corsica = (slug: string, postalCode: string, department: string, city: string) =>
+        ({
+          ...baseFormation,
+          id: slug === 'ajaccio' ? 5 : 6,
+          digiforma_id: `prog-${slug}`,
+          slug,
+          sessions: [
+            {
+              id: 's1',
+              startDate: null,
+              endDate: null,
+              modality: 'presentiel',
+              seatsRemaining: null,
+              location: {
+                name: null,
+                city,
+                postalCode,
+                department,
+                region: 'Corse',
+                centreSlug: null
+              }
+            }
+          ]
+        }) as unknown as DirectusFormation
+      cache.get.mockResolvedValue(null)
+      catalog.fetchAllFormations.mockResolvedValue([
+        corsica('ajaccio', '20090', 'Corse-du-Sud', 'Ajaccio'),
+        corsica('bastia', '20200', 'Haute-Corse', 'Bastia')
+      ])
+
+      const sud = await service.list({ location: '2A', page: 1, limit: 10 } as ListCoursesDto)
+      expect(sud.items.map((i) => i.slug)).toEqual(['ajaccio'])
+      const nord = await service.list({ location: '2B', page: 1, limit: 10 } as ListCoursesDto)
+      expect(nord.items.map((i) => i.slug)).toEqual(['bastia'])
+    })
+
+    it('matche « 2A » via locations_text quand aucune session n’est structurée', async () => {
+      cache.get.mockResolvedValue(null)
+      catalog.fetchAllFormations.mockResolvedValue([
+        { ...geoFormation, sessions: null, locations_text: 'Ajaccio 20090 Corse-du-Sud' }
+      ])
+      const result = await service.list({ location: '2A', page: 1, limit: 10 } as ListCoursesDto)
+      expect(result.items).toHaveLength(1)
+    })
   })
 
   describe('facets', () => {

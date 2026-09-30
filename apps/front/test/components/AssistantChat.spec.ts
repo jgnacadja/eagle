@@ -5,6 +5,7 @@ import AssistantChat from '~/components/Assistant/Chat.vue'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 
 const routeMock = (globalThis as Record<string, unknown>).useRoute as () => {
+  path: string
   fullPath: string
 }
 
@@ -49,6 +50,19 @@ describe('AssistantChat', () => {
 
     await launcher.trigger('click')
     expect(wrapper.find('dialog').exists()).toBe(true)
+  })
+
+  it('hides the floating launcher on the assistant page', async () => {
+    const wrapper = mountChat()
+    const launcher = 'button[aria-label="Ouvrir la recherche assistée"]'
+
+    routeMock().path = '/recherche-assistee'
+    await nextTick()
+    expect(wrapper.find(launcher).exists()).toBe(false)
+
+    routeMock().path = '/'
+    await nextTick()
+    expect(wrapper.find(launcher).exists()).toBe(true)
   })
 
   it('greets the user when opened without a message', () => {

@@ -672,7 +672,7 @@ function sortCatalogRows(
       if (ap !== bp) return direction * (ap - bp)
     }
 
-    return direction * b.updatedAt.localeCompare(a.updatedAt)
+    return direction * a.updatedAt.localeCompare(b.updatedAt)
   })
 }
 

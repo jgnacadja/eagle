@@ -1334,14 +1334,43 @@ describe('branch coverage: fallbacks', () => {
     ] as unknown as DirectusFormation[])
 
     for (const sort of [CourseSortField.duration, CourseSortField.price]) {
-      const result = await service.list({
+      const asc = await service.list({
         sort,
         order: CourseSortOrder.asc,
         page: 1,
         limit: 10
       } as ListCoursesDto)
-      expect(result.items[0].slug).toBe('securite')
+      expect(asc.items[0].slug).toBe('pilotage-de-projet')
+
+      const desc = await service.list({
+        sort,
+        order: CourseSortOrder.desc,
+        page: 1,
+        limit: 10
+      } as ListCoursesDto)
+      expect(desc.items[0].slug).toBe('securite')
     }
+  })
+
+  it('orders by updatedAt desc by default and honors order=asc', async () => {
+    const desc = await service.list({
+      sort: CourseSortField.updatedAt,
+      order: CourseSortOrder.desc,
+      page: 1,
+      limit: 10
+    } as ListCoursesDto)
+    expect(desc.items.map((i) => i.slug)).toEqual(['securite', 'pilotage-de-projet'])
+
+    const implicit = await service.list({ page: 1, limit: 10 } as ListCoursesDto)
+    expect(implicit.items.map((i) => i.slug)).toEqual(['securite', 'pilotage-de-projet'])
+
+    const asc = await service.list({
+      sort: CourseSortField.updatedAt,
+      order: CourseSortOrder.asc,
+      page: 1,
+      limit: 10
+    } as ListCoursesDto)
+    expect(asc.items.map((i) => i.slug)).toEqual(['pilotage-de-projet', 'securite'])
   })
 
   it('recomputes rows when the cache entry is malformed', async () => {

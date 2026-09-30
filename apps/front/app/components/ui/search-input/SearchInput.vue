@@ -5,10 +5,14 @@
         cn(
           'relative flex h-control items-center gap-sm rounded-full border bg-paper pl-md pr-sm shadow-sm transition-colors',
           sizeClasses.pill,
+          sizeClasses.border,
+          $attrs.class as string,
+          // États en dernier : `cn()` garde la dernière classe en conflit —
+          // la bordure de chargement puis d'erreur priment sur la bordure
+          // normale et sur celle passée par le consommateur.
           isLoading ? 'border-outline-soft bg-surface-soft' : '',
-          hasError ? 'border-danger' : sizeClasses.border,
-          !isLoading && !hasError ? sizeClasses.focus : '',
-          $attrs.class as string
+          hasError ? 'border-danger' : '',
+          !isLoading && !hasError ? sizeClasses.focus : ''
         )
       "
     >
@@ -103,9 +107,9 @@ interface SizeClasses {
   iconSize: number
 }
 
-// Une seule anatomie déclinée en deux tailles (§3) : `default` (44px —
-// catalogue, header) et `hero` (48px, bordure marine épaisse — Home et page
-// moteur, composant validé 9a).
+// Une seule anatomie déclinée en deux tailles (§3) : `default` (pilule
+// 44 px — catalogue, header) et `hero` (pilule 56 px, 64 px dès md, bordure
+// marine épaisse, bouton loupe 48 px — Home et page moteur, composant validé 9a).
 const SIZE_CLASSES: Record<SearchInputSize, SizeClasses> = {
   default: {
     pill: '',

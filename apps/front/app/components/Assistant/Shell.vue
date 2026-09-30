@@ -44,5 +44,5 @@
 <script setup lang="ts">
 const emit = defineEmits<{ close: []; reset: [] }>()
 
-const closeLabel = 'Fermer la recherche assistée et revenir à la page précédente'
+const closeLabel = 'Fermer la recherche assistée'
 </script>

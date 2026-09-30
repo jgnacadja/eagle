@@ -120,9 +120,7 @@ describe('pages/recherche-assistee', () => {
     window.history.replaceState({ back: '/formations' }, '')
     const wrapper = mountPage()
 
-    await wrapper
-      .find('button[aria-label="Fermer la recherche assistée et revenir à la page précédente"]')
-      .trigger('click')
+    await wrapper.find('button[aria-label="Fermer la recherche assistée"]').trigger('click')
     await flushPromises()
 
     expect(backMock).toHaveBeenCalledOnce()

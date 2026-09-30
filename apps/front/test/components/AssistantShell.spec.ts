@@ -14,9 +14,7 @@ describe('AssistantShell', () => {
 
   it('« Fermer » émet close avec un libellé accessible explicite', async () => {
     const wrapper = mount(AssistantShell)
-    const close = wrapper.find(
-      'button[aria-label="Fermer la recherche assistée et revenir à la page précédente"]'
-    )
+    const close = wrapper.find('button[aria-label="Fermer la recherche assistée"]')
 
     expect(close.exists()).toBe(true)
     await close.trigger('click')

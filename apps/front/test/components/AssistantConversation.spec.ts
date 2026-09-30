@@ -18,12 +18,15 @@ const mountOptions = {
       NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
       AssistantRecommendationCard: {
         props: ['recommendation', 'demandeTo', 'advisorTo'],
+        emits: ['select'],
         template:
-          '<article class="rec-card" :data-rank="recommendation.rank">{{ recommendation.title }}</article>'
+          '<article class="rec-card" :data-rank="recommendation.rank" :data-advisor="advisorTo" @click="$emit(\'select\', \'sessions\')">{{ recommendation.title }}</article>'
       },
       AssistantCompareTable: {
-        props: ['recommendations'],
-        template: '<table class="compare-table" />'
+        props: ['recommendations', 'advisorTo'],
+        emits: ['select'],
+        template:
+          '<table class="compare-table" :data-advisor="advisorTo" @click="$emit(\'select\', recommendations[1], \'formation\')" />'
       }
     }
   }
@@ -64,7 +67,7 @@ describe('AssistantConversation', () => {
     expect(wrapper.text()).toContain('Quel type de risque ?')
     const pills = wrapper.findAll('button').filter((b) => b.text() === 'Premiers secours')
     await pills[0]!.trigger('click')
-    expect(wrapper.emitted('send')?.[0]).toEqual(['Premiers secours'])
+    expect(wrapper.emitted('send')?.[0]).toEqual(['Premiers secours', 'suggestion'])
   })
 
   it('renders recommendations and toggles the compare table', async () => {
@@ -106,6 +109,110 @@ describe('AssistantConversation', () => {
       .find((b) => b.text().includes('Comparer ces 2 formations'))
     await compareBtn!.trigger('click')
     expect(wrapper.find('.compare-table').exists()).toBe(true)
+  })
+
+  it('relays recommendation CTA clicks with the course and its rank', async () => {
+    const rec = {
+      slug: 'sst',
+      familySlug: 'secours',
+      title: 'SST',
+      description: null,
+      durationDays: 2,
+      durationHours: null,
+      modalities: ['presentiel'],
+      certification: null,
+      justification: 'Semble adaptée.',
+      availability: null,
+      url: '/formations/secours/sst'
+    }
+    const wrapper = mountConversation({
+      entries: [
+        {
+          role: 'assistant',
+          content: 'Nous vous recommandons',
+          reply: {
+            kind: 'recommend',
+            text: 'Nous vous recommandons',
+            recommendations: [
+              { ...rec, rank: 'primary' as const },
+              { ...rec, slug: 'mac-sst', title: 'MAC SST', rank: 'alternative' as const }
+            ]
+          }
+        }
+      ]
+    })
+
+    await wrapper.findAll('.rec-card')[1]!.trigger('click')
+    expect(wrapper.emitted('select')?.[0]).toEqual([
+      { slug: 'mac-sst', rank: 'alternative', action: 'sessions' }
+    ])
+
+    await wrapper
+      .findAll('button')
+      .find((b) => b.text().includes('Comparer ces 2 formations'))!
+      .trigger('click')
+    await wrapper.find('.compare-table').trigger('click')
+    expect(wrapper.emitted('select')?.[1]).toEqual([
+      { slug: 'mac-sst', rank: 'alternative', action: 'formation' }
+    ])
+  })
+
+  it('carries the need in natural language to every advisor exit', () => {
+    const rec = {
+      slug: 'sst',
+      familySlug: 'secours',
+      title: 'SST',
+      description: null,
+      durationDays: 2,
+      durationHours: null,
+      modalities: ['presentiel'],
+      certification: null,
+      justification: 'Semble adaptée.',
+      availability: null,
+      url: '/formations/secours/sst',
+      rank: 'primary' as const
+    }
+    const wrapper = mountConversation({
+      needSummary: 'former 8 salariés au SST à Créteil',
+      unavailable: true,
+      entries: [
+        {
+          role: 'assistant',
+          content: 'Nous vous recommandons',
+          reply: { kind: 'recommend', text: 'Nous vous recommandons', recommendations: [rec] }
+        },
+        {
+          role: 'assistant',
+          content: 'Aucune formation identifiée.',
+          reply: { kind: 'no_results', text: 'Aucune formation identifiée.' }
+        },
+        {
+          role: 'assistant',
+          content: 'Hors catalogue.',
+          reply: { kind: 'out_of_catalog', text: 'Hors catalogue.' }
+        }
+      ]
+    })
+
+    const advisorTo =
+      '/parler-a-votre-conseiller?q=former+8+salari%C3%A9s+au+SST+%C3%A0+Cr%C3%A9teil'
+    const advisorLinks = wrapper.findAll('a').filter((a) => a.attributes('href') === advisorTo)
+    // Pied des recommandations, aucun résultat, hors catalogue, indisponible.
+    expect(advisorLinks).toHaveLength(4)
+    expect(advisorLinks.map((a) => a.text())).toEqual([
+      'Être accompagné par votre conseiller',
+      'Parler à votre conseiller',
+      'Décrire mon besoin à votre conseiller',
+      'Parler à votre conseiller'
+    ])
+    // Carte sans session : le même lien est transmis à la carte.
+    expect(wrapper.find('.rec-card').attributes('data-advisor')).toBe(advisorTo)
+  })
+
+  it('links the advisor page without a query while nothing was described', () => {
+    const wrapper = mountConversation({ unavailable: true })
+    const hrefs = wrapper.findAll('a').map((a) => a.attributes('href'))
+    expect(hrefs).toContain('/parler-a-votre-conseiller')
   })
 
   it('renders the no_results action grid', () => {
@@ -196,7 +303,7 @@ describe('AssistantConversation', () => {
     const input = wrapper.find('textarea')
     await input.setValue('former 8 salariés au SST')
     await wrapper.find('form').trigger('submit.prevent')
-    expect(wrapper.emitted('send')?.[0]).toEqual(['former 8 salariés au SST'])
+    expect(wrapper.emitted('send')?.[0]).toEqual(['former 8 salariés au SST', 'text'])
     expect((input.element as HTMLTextAreaElement).value).toBe('')
   })
 
@@ -210,5 +317,22 @@ describe('AssistantConversation', () => {
     expect(
       wrapper.find('[data-slot="message-scroller-item"]').attributes('data-scroll-anchor')
     ).toBe('true')
+  })
+
+  it('announces new replies politely and marks the log busy while analyzing', async () => {
+    const wrapper = mountConversation({ pending: true })
+    const log = wrapper.find('[data-slot="message-scroller-content"]')
+
+    expect(log.attributes('aria-live')).toBe('polite')
+    expect(log.attributes('aria-busy')).toBe('true')
+
+    await wrapper.setProps({ pending: false })
+    expect(log.attributes('aria-busy')).toBe('false')
+  })
+
+  it('keeps the header actions reachable on touch screens', () => {
+    const wrapper = mountConversation()
+    const close = wrapper.find('button[aria-label="Fermer la recherche assistée"]')
+    expect(close.classes()).toEqual(expect.arrayContaining(['h-touch', 'w-touch']))
   })
 })

@@ -9,7 +9,7 @@
       <div class="flex items-center gap-md">
         <Button
           variant="outline"
-          class="flex items-center gap-xs rounded-full border-rule px-md py-xs text-meta font-semibold text-ink hover:border-primary hover:text-accent-text"
+          class="flex items-center gap-xs rounded-full border-rule px-md py-xs text-meta font-semibold text-ink hover:border-primary hover:text-accent-text max-md:min-h-touch"
           @click="$emit('reset')"
         >
           <IconPlus :size="14" aria-hidden="true" />
@@ -19,7 +19,7 @@
           variant="ghost"
           size="icon"
           aria-label="Fermer la recherche assistée"
-          class="h-lg w-lg rounded-full text-ink-subtle hover:text-ink"
+          class="h-touch w-touch rounded-full text-ink-subtle hover:text-ink"
           @click="$emit('close')"
         >
           <IconClose :size="16" aria-hidden="true" />
@@ -48,11 +48,14 @@
       </div>
     </div>
 
-    <!-- Fil de conversation : un seul viewport scrollable -->
+    <!-- Fil de conversation : un seul viewport scrollable. Région live
+         polie : chaque réponse est annoncée à son arrivée (rendu progressif),
+         le squelette d'analyse porte sa propre annonce pendant `aria-busy`. -->
     <MessageScrollerProvider auto-scroll default-scroll-position="end">
       <MessageScroller class="min-h-0 flex-1">
         <MessageScrollerViewport class="px-lg py-lg">
           <MessageScrollerContent
+            aria-live="polite"
             :aria-busy="pending"
             class="mx-auto w-full max-w-[calc(var(--spacing-container)*0.8)] gap-lg"
           >
@@ -168,8 +171,8 @@
                                 >
                                   <Button
                                     variant="outline"
-                                    class="rounded-full border-rule px-md py-sm text-meta font-medium text-ink-muted hover:border-primary hover:text-primary"
-                                    @click="$emit('send', suggestion)"
+                                    class="rounded-full border-rule px-md py-sm text-meta font-medium text-ink-muted hover:border-primary hover:text-primary max-md:min-h-touch"
+                                    @click="$emit('send', suggestion, 'suggestion')"
                                   >
                                     {{ suggestion }}
                                   </Button>
@@ -198,6 +201,7 @@
                                   :recommendation="rec"
                                   :demande-to="demandeTo(rec)"
                                   :advisor-to="advisorTo"
+                                  @select="onSelect(rec, $event)"
                                 />
                               </Motion>
                               <div
@@ -219,22 +223,23 @@
                                     :recommendation="rec"
                                     :demande-to="demandeTo(rec)"
                                     compact
+                                    @select="onSelect(rec, $event)"
                                   />
                                 </Motion>
                               </div>
                             </div>
-                            <p
-                              v-if="(entry.reply.recommendations?.length ?? 0) > 1"
-                              class="mt-md text-meta"
-                            >
-                              <Button
-                                variant="link"
-                                class="h-auto p-0 font-semibold text-primary underline underline-offset-2 hover:text-accent-text"
-                                @click="toggleCompare(i)"
-                              >
-                                Comparer ces {{ entry.reply.recommendations?.length }} formations
-                              </Button>
-                              ·
+                            <!-- Sortie conseiller toujours présente ; comparaison dès 2 formations -->
+                            <p class="mt-md text-meta">
+                              <template v-if="(entry.reply.recommendations?.length ?? 0) > 1">
+                                <Button
+                                  variant="link"
+                                  class="h-auto p-0 font-semibold text-primary underline underline-offset-2 hover:text-accent-text"
+                                  @click="toggleCompare(i)"
+                                >
+                                  Comparer ces {{ entry.reply.recommendations?.length }} formations
+                                </Button>
+                                ·
+                              </template>
                               <NuxtLink
                                 :to="advisorTo"
                                 class="font-semibold text-primary underline underline-offset-2 transition-colors hover:text-accent-text"
@@ -250,6 +255,7 @@
                               :need-summary="needSummary"
                               :advisor-to="advisorTo"
                               class="mt-md"
+                              @select="onSelect"
                             />
                             <p class="mt-md text-meta text-ink-subtle">
                               {{ provenanceNote(entry) }}
@@ -261,7 +267,7 @@
                               <li>
                                 <Button
                                   variant="outline"
-                                  class="w-full gap-sm rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary"
+                                  class="w-full gap-sm rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary max-md:min-h-touch"
                                   @click="focusInput"
                                 >
                                   <IconRefresh
@@ -276,7 +282,7 @@
                                 <Button
                                   as-child
                                   variant="outline"
-                                  class="w-full gap-sm rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary"
+                                  class="w-full gap-sm rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary max-md:min-h-touch"
                                 >
                                   <NuxtLink to="/formations">
                                     <IconBook
@@ -292,7 +298,7 @@
                                 <Button
                                   as-child
                                   variant="outline"
-                                  class="w-full gap-sm rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary"
+                                  class="w-full gap-sm rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary max-md:min-h-touch"
                                 >
                                   <NuxtLink :to="advisorTo">
                                     <IconMessages
@@ -307,7 +313,7 @@
                               <li>
                                 <Button
                                   as-child
-                                  class="w-full gap-sm rounded-full bg-accent px-md py-sm text-meta font-semibold text-ink hover:bg-accent-text hover:text-paper"
+                                  class="w-full gap-sm rounded-full bg-accent px-md py-sm text-meta font-semibold text-ink hover:bg-accent-text hover:text-paper max-md:min-h-touch"
                                 >
                                   <NuxtLink :to="demandeBaseTo">
                                     <IconPlus :size="14" class="shrink-0" aria-hidden="true" />
@@ -322,7 +328,7 @@
                             <div class="mt-md flex flex-wrap gap-md">
                               <Button
                                 as-child
-                                class="rounded-full bg-accent px-md py-sm text-meta font-semibold text-ink hover:bg-accent-text hover:text-paper"
+                                class="rounded-full bg-accent px-md py-sm text-meta font-semibold text-ink hover:bg-accent-text hover:text-paper max-md:min-h-touch"
                               >
                                 <NuxtLink :to="advisorTo"
                                   >Décrire mon besoin à votre conseiller</NuxtLink
@@ -331,7 +337,7 @@
                               <Button
                                 as-child
                                 variant="outline"
-                                class="rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary"
+                                class="rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary max-md:min-h-touch"
                               >
                                 <NuxtLink to="/formations">Voir le catalogue</NuxtLink>
                               </Button>
@@ -373,7 +379,7 @@
                           </div>
                           <Button
                             variant="outline"
-                            class="mt-md w-fit rounded-full border-rule px-md py-xs text-meta font-semibold text-ink hover:border-primary hover:text-primary"
+                            class="mt-md w-fit rounded-full border-rule px-md py-xs text-meta font-semibold text-ink hover:border-primary hover:text-primary max-md:min-h-touch"
                             @click="$emit('stop')"
                           >
                             Arrêter la réponse
@@ -485,11 +491,16 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
 import { useTextareaAutosize } from '@vueuse/core'
 import { Motion } from 'motion-v'
 import type { AssistantRecommendation } from '@learnup/types'
 import type { AssistantEntry } from '~/composables/useAssistant'
+import type {
+  AssistantSelectAction,
+  AssistantSelection,
+  AssistantSubmitVia
+} from '~/composables/useAssistantAnalytics'
 import AssistantCompareTable from '~/components/Assistant/CompareTable.vue'
 import AssistantRecommendationCard from '~/components/Assistant/RecommendationCard.vue'
 import {
@@ -522,12 +533,15 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  send: [value: string]
+  /** Message envoyé : réponse rapide (chip) ou saisie libre. */
+  send: [value: string, via: AssistantSubmitVia]
   edit: [id: string, value: string]
   stop: []
   retry: []
   reset: []
   close: []
+  /** CTA cliqué sur une recommandation (fiche, sessions, demande). */
+  select: [selection: AssistantSelection]
 }>()
 
 const inputId = useId()
@@ -551,8 +565,21 @@ onBeforeUnmount(() => {
   textarea.value = null
 })
 
-const advisorTo = '/centres/demande-de-formation?sujet=conseiller'
 const demandeBaseTo = '/centres/demande-de-formation'
+const advisorBaseTo = '/parler-a-votre-conseiller'
+
+// Le besoin agrégé part en query param : tronqué pour garder une URL
+// raisonnable après une longue conversation (le fil complet reste visible
+// dans le panneau).
+const NEED_PARAM_MAX = 500
+
+// Escalade conseiller (toutes les impasses et le pied des recommandations) :
+// le besoin en langage naturel pré-remplit « Votre besoin en quelques mots »
+// de la page conseiller (`?q=`) — aucune ressaisie.
+const advisorTo = computed(() => {
+  const need = props.needSummary.trim().slice(0, NEED_PARAM_MAX)
+  return need ? `${advisorBaseTo}?${new URLSearchParams({ q: need })}` : advisorBaseTo
+})
 
 function entryId(entry: AssistantEntry, index: number): string {
   return entry.id ?? `entry-${index}`
@@ -586,11 +613,6 @@ function provenanceNote(entry: AssistantEntry): string {
     : 'Recommandations issues des formations publiées du catalogue LEARN UP.'
 }
 
-// Le besoin agrégé part en query param : tronqué pour garder une URL
-// raisonnable après une longue conversation (le fil complet reste visible
-// dans le panneau).
-const NEED_PARAM_MAX = 500
-
 function demandeTo(rec: AssistantRecommendation): string {
   const params = new URLSearchParams()
   if (rec.familySlug) params.set('famille', rec.familySlug)
@@ -606,7 +628,11 @@ function submit() {
   const text = draft.value.trim()
   if (!text || props.pending) return
   draft.value = ''
-  emit('send', text)
+  emit('send', text, 'text')
+}
+
+function onSelect(rec: AssistantRecommendation, action: AssistantSelectAction) {
+  emit('select', { slug: rec.slug, rank: rec.rank, action })
 }
 
 function startEdit(entry: AssistantEntry) {

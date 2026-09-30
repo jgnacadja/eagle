@@ -40,12 +40,13 @@
           :need-summary="needSummary"
           :headcount="slots.headcount"
           :location="slots.location"
-          @send="send"
-          @edit="editAndSend"
+          @send="submit"
+          @edit="onEdit"
           @stop="stop"
           @retry="retry"
           @reset="onReset"
           @close="close"
+          @select="onSelect"
         />
       </dialog>
     </Transition>
@@ -56,11 +57,17 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { Motion } from 'motion-v'
 import { useAssistant, type AssistantEntry } from '~/composables/useAssistant'
+import {
+  useAssistantAnalytics,
+  type AssistantSelection,
+  type AssistantSubmitVia
+} from '~/composables/useAssistantAnalytics'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import AssistantConversation from '~/components/Assistant/Conversation.vue'
 import { ASSISTANT_ROUTE } from '~/utils/assistant-route'
 
 const { isOpen, context, pendingMessage, open, close } = useAssistantLauncher()
+const analytics = useAssistantAnalytics()
 
 const {
   entries,
@@ -75,7 +82,62 @@ const {
   retry,
   reset,
   stop
-} = useAssistant(context)
+} = useAssistant(context, {
+  // Jalons côté réponse : précision demandée, recommandations affichées.
+  onReply(reply, { turn }) {
+    const source = context.value.source
+    if (reply.kind === 'clarify') {
+      analytics.clarificationRequested({ source, turn })
+    } else if (reply.kind === 'recommend') {
+      analytics.recommendationDisplay({
+        source,
+        turn,
+        count: reply.recommendations?.length ?? 0,
+        mode: reply.mode
+      })
+    }
+  }
+})
+
+function userTurns(): number {
+  return entries.value.filter((e) => e.role === 'user').length
+}
+
+// Dernière réponse réelle de l'API (l'accueil local ne compte pas) : un
+// message envoyé après une question de précision y répond.
+function answersClarification(): boolean {
+  const last = entries.value.findLast((e) => e.role === 'assistant' && !e.id?.startsWith('local-'))
+  return last?.reply?.kind === 'clarify'
+}
+
+/** Envoi tracé : nouveau besoin ou réponse à une précision. */
+function submit(message: string, via: AssistantSubmitVia = 'text'): Promise<void> {
+  if (!message.trim()) return Promise.resolve()
+  const params = { source: context.value.source, turn: userTurns() + 1, via }
+  if (answersClarification()) analytics.clarificationAnswer(params)
+  else analytics.searchSubmit(params)
+  return send(message)
+}
+
+function onEdit(id: string, message: string): Promise<void> {
+  if (!message.trim()) return Promise.resolve()
+  const turn = entries.value.filter((e) => e.role === 'user').findIndex((e) => e.id === id) + 1
+  analytics.searchSubmit({ source: context.value.source, turn: turn || userTurns(), via: 'edit' })
+  return editAndSend(id, message)
+}
+
+function onSelect(selection: AssistantSelection) {
+  analytics.recommendationSelect({ ...selection, source: context.value.source })
+}
+
+// Ouverture depuis un point d'entrée = début de recherche.
+watch(
+  isOpen,
+  (open) => {
+    if (open) analytics.searchStart(context.value.source)
+  },
+  { immediate: true }
+)
 
 const GREETING: AssistantEntry = {
   role: 'assistant',
@@ -128,7 +190,7 @@ watch(
     const message = pendingMessage.value
     if (message) {
       pendingMessage.value = null
-      send(message)
+      submit(message, 'entry')
       return
     }
     // Pas de message en file : accueil, sauf si un envoi est déjà en cours

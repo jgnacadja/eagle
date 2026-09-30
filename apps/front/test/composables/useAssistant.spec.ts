@@ -328,4 +328,21 @@ describe('useAssistant', () => {
     expect(assistant.started.value).toBe(false)
     expect(assistant.needSummary.value).toBe('')
   })
+
+  it('reports each API reply with the user turn that produced it', async () => {
+    const clarify = { kind: 'clarify', text: 'Pour combien de personnes ?' }
+    const recommend = { kind: 'recommend', text: 'Nous vous recommandons', recommendations: [] }
+    fetchMock.mockResolvedValueOnce(clarify).mockResolvedValueOnce(recommend)
+    const onReply = vi.fn()
+    const assistant = useAssistant({}, { onReply })
+
+    // L'accueil local n'est pas une réponse de l'API.
+    assistant.append({ role: 'assistant', content: 'Bonjour' })
+    await assistant.send('sst')
+    await assistant.send('8 salariés')
+
+    expect(onReply).toHaveBeenCalledTimes(2)
+    expect(onReply).toHaveBeenNthCalledWith(1, clarify, { turn: 1 })
+    expect(onReply).toHaveBeenNthCalledWith(2, recommend, { turn: 2 })
+  })
 })

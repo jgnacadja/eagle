@@ -69,4 +69,17 @@ describe('AssistantCompareTable', () => {
     expect(wrapper.text()).toContain('Voir la formation principale')
     expect(wrapper.text()).toContain('Être accompagné dans le choix')
   })
+
+  it('signale la fiche ouverte depuis une ligne ou le CTA principal', async () => {
+    const wrapper = mountTable()
+    const link = (text: string) => wrapper.findAll('a').find((a) => a.text() === text)!
+
+    await link('Communication managériale').trigger('click')
+    await link('Voir la formation principale').trigger('click')
+
+    expect(wrapper.emitted('select')).toEqual([
+      [alternative, 'formation'],
+      [primary, 'formation']
+    ])
+  })
 })

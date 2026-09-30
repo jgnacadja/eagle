@@ -108,4 +108,32 @@ describe('AssistantRecommendationCard', () => {
     expect(hrefs).toContain('/formations/secours/sst#sessionsList')
     expect(hrefs).toContain('/centres/demande-de-formation?formation=sst')
   })
+
+  it('emits the selected action for each CTA', async () => {
+    const wrapper = mountCard()
+    const link = (text: string) => wrapper.findAll('a').find((a) => a.text() === text)!
+
+    await link('SST — Sauveteur Secouriste du Travail').trigger('click')
+    await link('Voir les sessions').trigger('click')
+    await link('Demander cette formation').trigger('click')
+    await link('Voir la formation').trigger('click')
+
+    expect(wrapper.emitted('select')).toEqual([
+      ['formation'],
+      ['sessions'],
+      ['demande'],
+      ['formation']
+    ])
+  })
+
+  it('emits the request action from the no-session variant', async () => {
+    const wrapper = mountCard({ availability: null })
+
+    await wrapper
+      .findAll('a')
+      .find((a) => a.text() === 'Demander une session')!
+      .trigger('click')
+
+    expect(wrapper.emitted('select')).toEqual([['demande']])
+  })
 })

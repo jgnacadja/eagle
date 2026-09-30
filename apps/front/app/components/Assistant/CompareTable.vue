@@ -30,6 +30,7 @@
                 v-if="rec.url"
                 :to="rec.url"
                 class="font-semibold text-ink transition-colors hover:text-accent-text"
+                @click="$emit('select', rec, 'formation')"
               >
                 {{ rec.title }}
               </NuxtLink>
@@ -50,7 +51,9 @@
         as-child
         class="h-control rounded-full bg-accent px-md text-small font-semibold text-ink transition hover:bg-accent-text hover:text-paper"
       >
-        <NuxtLink :to="primaryRec.url">Voir la formation principale</NuxtLink>
+        <NuxtLink :to="primaryRec.url" @click="$emit('select', primaryRec, 'formation')">
+          Voir la formation principale
+        </NuxtLink>
       </Button>
       <NuxtLink
         v-if="advisorTo"
@@ -66,6 +69,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { AssistantRecommendation } from '@learnup/types'
+import type { AssistantSelectAction } from '~/composables/useAssistantAnalytics'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 
 const props = withDefaults(
@@ -78,6 +82,9 @@ const props = withDefaults(
   }>(),
   { needSummary: '', advisorTo: undefined }
 )
+
+/** Fiche ouverte depuis le tableau (jalon analytics). */
+defineEmits<{ select: [recommendation: AssistantRecommendation, action: AssistantSelectAction] }>()
 
 const primaryRec = computed(
   () => props.recommendations.find((r) => r.rank === 'primary') ?? props.recommendations[0]

@@ -53,7 +53,7 @@ describe('LocationSuggest', () => {
 
     await wrapper.find('input').setValue('Lyon (69)')
 
-    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['45.764,4.8357'])
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['45.764,4.8357|Lyon'])
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('Lyon (69)')
   })
 
@@ -71,7 +71,7 @@ describe('LocationSuggest', () => {
     await typeAndSuggest(wrapper, 'lyon')
     await wrapper.find('li button').trigger('click')
 
-    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['45.764,4.8357'])
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['45.764,4.8357|Lyon'])
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('Lyon (69)')
     expect(wrapper.find('ul').exists()).toBe(false)
   })
@@ -112,7 +112,7 @@ describe('LocationSuggest', () => {
 
     expect(wrapper.find('li button').text()).toBe('69003 Lyon 3e')
     await wrapper.find('input').setValue('69003 Lyon 3e')
-    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['45.76,4.9'])
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['45.76,4.9|Lyon 3e'])
   })
 
   it('keeps working when the geo API fails', async () => {
@@ -155,7 +155,7 @@ describe('LocationSuggest', () => {
     await wrapper.findAll('li button')[1]!.trigger('mouseenter')
     await input.trigger('keydown', { key: 'Enter' })
 
-    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['45.76,4.9'])
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['45.76,4.9|Lyon 3e'])
   })
 
   it('ignore les autres touches et ferme au blur ou Échap', async () => {

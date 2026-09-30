@@ -1,4 +1,5 @@
 import type { CourseListItem } from '@learnup/types'
+import { normalizeText } from '../common/utils/text.util'
 import type { CatalogIndexEntry } from './catalog-index.service'
 
 // Corpus de test du retrieval — dérivé de test/fixtures/programs.json,
@@ -56,7 +57,8 @@ export function makeEntry(seed: CourseSeed): CatalogIndexEntry {
   const cities = seed.cities ?? []
   return {
     course: makeCourse(seed),
-    locationText: cities.join(' ').toLowerCase(),
+    // Comme CatalogService.buildLocationText : normalisé, sans accents.
+    locationText: normalizeText(cities.join(' ')),
     locations: cities.map((city, index) => ({
       name: `Centre LEARN UP de ${city}`,
       city,

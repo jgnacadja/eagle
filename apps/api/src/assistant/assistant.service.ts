@@ -124,7 +124,7 @@ function sessionMatchesLocation(row: CatalogRow, sessionIndex: number, tokens: s
   return tokens.some((token) => haystack.includes(token))
 }
 
-function buildAvailability(
+export function buildAvailability(
   row: CatalogRow,
   location: string | undefined
 ): AssistantAvailability | null {
@@ -156,6 +156,34 @@ function buildAvailability(
     centreSlug: resolved?.centreSlug ?? session.location?.centreSlug ?? null,
     city: resolved?.city ?? null,
     department: resolved?.department ?? null
+  }
+}
+
+/**
+ * Recommandation ancrée sur le référentiel : titre, attributs et
+ * disponibilité viennent exclusivement du catalogue. Partagé par la
+ * décision du modèle et le repli déterministe (mode dégradé).
+ */
+export function toRecommendation(
+  row: CatalogRow,
+  rank: AssistantRecommendation['rank'],
+  justification: string,
+  location: string | undefined
+): AssistantRecommendation {
+  const course = row.course
+  return {
+    slug: course.slug,
+    familySlug: course.familySlug,
+    title: course.title,
+    description: course.description,
+    durationDays: course.durationDays,
+    durationHours: course.durationHours,
+    modalities: course.modalities,
+    certification: course.certification,
+    rank,
+    justification,
+    availability: buildAvailability(row, location),
+    url: course.familySlug ? `/formations/${course.familySlug}/${course.slug}` : null
   }
 }
 
@@ -281,23 +309,16 @@ export class AssistantService {
     for (const [index, item] of (decision.recommendations ?? []).entries()) {
       const row = bySlug.get(item.slug)
       if (!row) continue
-      const course = row.course
-      recommendations.push({
-        slug: course.slug,
-        familySlug: course.familySlug,
-        title: course.title,
-        description: course.description,
-        durationDays: course.durationDays,
-        durationHours: course.durationHours,
-        modalities: course.modalities,
-        certification: course.certification,
-        rank: index === 0 ? 'primary' : 'alternative',
-        justification: item.justification,
-        // Le lieu extrait de la conversation (slot) prime sur le lieu du
-        // contexte d'entrée : l'utilisateur peut avoir précisé autre chose.
-        availability: buildAvailability(row, decision.slots?.location ?? request.context?.location),
-        url: course.familySlug ? `/formations/${course.familySlug}/${course.slug}` : null
-      })
+      recommendations.push(
+        toRecommendation(
+          row,
+          index === 0 ? 'primary' : 'alternative',
+          item.justification,
+          // Le lieu extrait de la conversation (slot) prime sur le lieu du
+          // contexte d'entrée : l'utilisateur peut avoir précisé autre chose.
+          decision.slots?.location ?? request.context?.location
+        )
+      )
     }
 
     // Slugs hallucinés ou catalogue désynchronisé : jamais de « recommandation » vide.

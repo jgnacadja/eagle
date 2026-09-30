@@ -29,7 +29,8 @@ const CONTENT_COLLECTIONS = [
   'pages_legales_sections',
   'pages_legales_subsections',
   'stats',
-  'formations'
+  'formations',
+  'recherches_sans_resultat'
 ]
 
 function grants(collection, actions) {
@@ -54,9 +55,14 @@ export function permissionsFor(roleName) {
           'pages_legales_subsections',
           'sous_familles_formation'
         ].flatMap((c) => grants(c, ['create', 'read', 'update'])),
-        ...['centres', 'familles_formation', 'pages', 'pages_legales', 'stats'].flatMap((c) =>
-          grants(c, ['read'])
-        ),
+        ...[
+          'centres',
+          'familles_formation',
+          'pages',
+          'pages_legales',
+          'stats',
+          'recherches_sans_resultat'
+        ].flatMap((c) => grants(c, ['read'])),
         ...grants('directus_files', ['create', 'read']),
         { collection: 'formations', action: 'read' },
         {
@@ -114,11 +120,14 @@ export function permissionsFor(roleName) {
           'pages',
           'pages_legales',
           'stats',
-          'directus_files'
+          'directus_files',
+          'recherches_sans_resultat'
         ].flatMap((c) => grants(c, ['read'])),
         { collection: 'formations', action: 'read' },
         // Publier / dépublier une formation = mettre à jour son status.
-        { collection: 'formations', action: 'update', fields: ['status'] }
+        { collection: 'formations', action: 'update', fields: ['status'] },
+        // Revue produit : marquer une recherche sans résultat comme traitée.
+        { collection: 'recherches_sans_resultat', action: 'update', fields: ['reviewed'] }
       ]
 
     case 'lecteur':
@@ -134,6 +143,8 @@ export function permissionsFor(roleName) {
 // tout GET est 403 (deny-by-default). Statut "published" uniquement sur les
 // collections qui ont un champ status ; le reste (page_blocks, stats,
 // directus_files) n'en a pas, lecture non filtrée.
+// `recherches_sans_resultat` reste volontairement hors accès public : le
+// journal contient les textes saisis par les visiteurs.
 const PUBLIC_STATUS_FILTERED = [
   'centres',
   'familles_formation',

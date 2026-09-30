@@ -7,6 +7,7 @@ export interface FamilyApplyResult {
   assigned: number
   cleared: number
   subAssigned: number
+  failed: number
 }
 
 export interface AssignmentProposal {
@@ -348,8 +349,11 @@ export class DirectusCatalogService {
       this.getSubFamilyIdsByFamilySlug()
     ])
 
-    const result: FamilyApplyResult = { assigned: 0, cleared: 0, subAssigned: 0 }
-    const patches: Promise<unknown>[] = []
+    const result: FamilyApplyResult = { assigned: 0, cleared: 0, subAssigned: 0, failed: 0 }
+    // Thunks, pas de promesses : les PATCH ne partent qu'au moment où leur
+    // tranche est exécutée — updateConcurrency borne réellement les requêtes
+    // en vol (empiler des promesses les lancerait toutes en rafale).
+    const tasks: Array<() => Promise<void>> = []
 
     for (const formation of formations) {
       const proposal = assignments.get(formation.digiforma_id)
@@ -363,19 +367,27 @@ export class DirectusCatalogService {
       )
       if (Object.keys(patch).length === 0) continue
 
-      patches.push(
-        this.request(`${this.baseUrl}/items/formations/${formation.id}`, 'PATCH', patch).then(
-          () => {
-            if (patch.famille !== undefined) result.assigned += 1
-            if (patch.sous_famille !== undefined) result.subAssigned += 1
-          }
-        )
-      )
+      tasks.push(async () => {
+        await this.request(`${this.baseUrl}/items/formations/${formation.id}`, 'PATCH', patch)
+        if (patch.famille !== undefined) result.assigned += 1
+        if (patch.sous_famille !== undefined) result.subAssigned += 1
+      })
     }
 
-    for (let i = 0; i < patches.length; i += this.updateConcurrency) {
-      const slice = patches.slice(i, i + this.updateConcurrency)
-      await Promise.all(slice)
+    for (let i = 0; i < tasks.length; i += this.updateConcurrency) {
+      const slice = tasks.slice(i, i + this.updateConcurrency)
+      // allSettled : un PATCH en échec n'interrompt pas les tranches
+      // suivantes et aucun rejet n'est non géré — les échecs sont comptés.
+      for (const outcome of await Promise.allSettled(slice.map((task) => task()))) {
+        if (outcome.status === 'rejected') {
+          result.failed += 1
+          this.logger.warn({ error: outcome.reason }, 'Family assignment PATCH failed')
+        }
+      }
+    }
+
+    if (result.failed > 0) {
+      this.logger.warn(`${result.failed}/${tasks.length} family assignment PATCH(es) failed`)
     }
 
     return result

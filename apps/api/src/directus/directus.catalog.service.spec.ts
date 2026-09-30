@@ -458,7 +458,7 @@ describe('DirectusCatalogService', () => {
       new Map([['p1', { famille: 'management', sousFamille: 'leadership' }]])
     )
 
-    expect(result).toEqual({ assigned: 1, cleared: 0, subAssigned: 1 })
+    expect(result).toEqual({ assigned: 1, cleared: 0, subAssigned: 1, failed: 0 })
     const patchCall = fetch.mock.calls[3]
     expect(patchCall[0]).toBe('http://directus:8055/items/formations/9')
     expect(JSON.parse(patchCall[1].body)).toEqual({ famille: 1, sous_famille: 5 })
@@ -491,7 +491,7 @@ describe('DirectusCatalogService', () => {
       new Map([['p1', { famille: 'management', sousFamille: 'leadership' }]])
     )
 
-    expect(result).toEqual({ assigned: 0, cleared: 0, subAssigned: 0 })
+    expect(result).toEqual({ assigned: 0, cleared: 0, subAssigned: 0, failed: 0 })
     expect(fetch).toHaveBeenCalledTimes(3)
   })
 
@@ -529,7 +529,7 @@ describe('DirectusCatalogService', () => {
       new Map([['p1', { sousFamille: 'leadership' }]])
     )
 
-    expect(result).toEqual({ assigned: 0, cleared: 0, subAssigned: 1 })
+    expect(result).toEqual({ assigned: 0, cleared: 0, subAssigned: 1, failed: 0 })
     expect(JSON.parse(fetch.mock.calls[3][1].body)).toEqual({ sous_famille: 5 })
   })
 
@@ -550,7 +550,7 @@ describe('DirectusCatalogService', () => {
       new Map([['p1', { famille: 'unknown', sousFamille: 'orphan' }]])
     )
 
-    expect(result).toEqual({ assigned: 0, cleared: 0, subAssigned: 0 })
+    expect(result).toEqual({ assigned: 0, cleared: 0, subAssigned: 0, failed: 0 })
     expect(fetch).toHaveBeenCalledTimes(3)
   })
 
@@ -691,7 +691,7 @@ describe('DirectusCatalogService', () => {
     expect(await service.getSubFamilyIdsByFamilySlug()).toEqual(new Map())
 
     const result = await service.applyFamilyAssignments(new Map([['prog-1', { famille: 'x' }]]))
-    expect(result).toEqual({ assigned: 0, cleared: 0, subAssigned: 0 })
+    expect(result).toEqual({ assigned: 0, cleared: 0, subAssigned: 0, failed: 0 })
   })
 
   it('treats a missing data payload on fetchExisting as new formations', async () => {
@@ -707,5 +707,72 @@ describe('DirectusCatalogService', () => {
 
     expect(result.inserted).toBe(1)
     expect(fetch.mock.calls.some((call) => call[1]?.method === 'PATCH')).toBe(false)
+  })
+
+  it('applyFamilyAssignments keeps at most updateConcurrency PATCH in flight', async () => {
+    const formations = Array.from({ length: 25 }, (_, i) => ({
+      id: i + 1,
+      digiforma_id: `p${i + 1}`,
+      famille: null,
+      sous_famille: null
+    }))
+    fetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: formations }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 1, slug: 'management' }] }), { status: 200 })
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+
+    let inFlight = 0
+    let maxInFlight = 0
+    fetch.mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          inFlight += 1
+          maxInFlight = Math.max(maxInFlight, inFlight)
+          setTimeout(() => {
+            inFlight -= 1
+            resolve(new Response(null, { status: 204 }))
+          }, 5)
+        })
+    )
+
+    const result = await service.applyFamilyAssignments(
+      new Map(formations.map((f) => [f.digiforma_id, { famille: 'management' }]))
+    )
+
+    expect(result).toEqual({ assigned: 25, cleared: 0, subAssigned: 0, failed: 0 })
+    expect(maxInFlight).toBeLessThanOrEqual(10)
+  })
+
+  it('applyFamilyAssignments counts failures without aborting later slices', async () => {
+    const formations = Array.from({ length: 12 }, (_, i) => ({
+      id: i + 1,
+      digiforma_id: `p${i + 1}`,
+      famille: null,
+      sous_famille: null
+    }))
+    fetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: formations }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 1, slug: 'management' }] }), { status: 200 })
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+
+    fetch.mockImplementation((input) => {
+      const failing = String(input).endsWith('/items/formations/5')
+      return Promise.resolve(new Response(failing ? 'boom' : null, { status: failing ? 500 : 204 }))
+    })
+
+    const result = await service.applyFamilyAssignments(
+      new Map(formations.map((f) => [f.digiforma_id, { famille: 'management' }]))
+    )
+
+    // Le PATCH du premier slice échoue après retries ; le second slice
+    // (formations 11-12) est quand même exécuté et compté.
+    expect(result).toEqual({ assigned: 11, cleared: 0, subAssigned: 0, failed: 1 })
+    expect(fetch.mock.calls.some((call) => String(call[0]).endsWith('/items/formations/12'))).toBe(
+      true
+    )
   })
 })

@@ -331,8 +331,7 @@
             Trouvez le centre de formation le plus proche de chez vous
           </h2>
           <p class="mt-sm max-w-prose font-sans text-sm text-ink-muted">
-            <span class="font-bold text-primary">+400 centres partenaires</span>
-            — en centre, sur votre site ou en intra-entreprise.
+            Notre réseau national pour vous accompagner partout en France
           </p>
         </div>
       </div>

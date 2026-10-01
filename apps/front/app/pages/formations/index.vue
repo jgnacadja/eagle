@@ -26,7 +26,7 @@
             v-model="searchQuery"
             input-id="catalogue-search"
             sr-label="Rechercher une formation"
-            placeholder="CACES, SST, habilitation électrique, hauteur…"
+            placeholder="Ex. : Rechercher une formation CACES, SST ou habilitation électrique."
             button-label="Lancer la recherche"
             :loading="catalog.pending.value"
             class="w-full"

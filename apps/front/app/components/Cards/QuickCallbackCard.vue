@@ -82,6 +82,7 @@
 
         <div>
           <Label
+            id="rappel-creneau-label"
             for="rappel-creneau"
             :class="[
               'mb-xs block text-meta font-medium',
@@ -92,7 +93,11 @@
             <span class="text-meta font-normal opacity-80">(optionnel)</span>
           </Label>
           <Select v-model="creneau">
-            <SelectTrigger id="rappel-creneau" variant="field">
+            <SelectTrigger
+              id="rappel-creneau"
+              variant="field"
+              aria-labelledby="rappel-creneau-label"
+            >
               <span class="flex items-center gap-xs">
                 <IconClock :size="16" class="text-ink-subtle" aria-hidden="true" />
                 <SelectValue placeholder="Dès que possible" />
@@ -115,7 +120,7 @@
           id="rappel-consentement"
           v-model="consentement"
           :invalid="showConsentError"
-          :error="consentErrorMessage"
+          :error="errors.consentement"
           :label-class="variant === 'dark' ? 'text-ink-inverse-muted' : undefined"
         >
           {{ RAPPEL_CONSENT_TEXT }}
@@ -174,10 +179,9 @@
       </form>
 
       <!-- État C : Confirmation après validation -->
-      <div
+      <output
         v-else
         key="confirmed"
-        role="status"
         aria-live="polite"
         class="mt-md flex flex-col items-center gap-sm text-center py-sm"
       >
@@ -219,7 +223,7 @@
         >
           Faire une autre demande
         </button>
-      </div>
+      </output>
     </Transition>
   </Card>
 </template>
@@ -321,8 +325,7 @@ const [consentement] = defineField('consentement')
 
 const errorMessage = computed(() => errors.value.telephone ?? null)
 const showError = computed(() => submitAttempted.value && !!errorMessage.value)
-const consentErrorMessage = computed(() => errors.value.consentement ?? null)
-const showConsentError = computed(() => submitAttempted.value && !!consentErrorMessage.value)
+const showConsentError = computed(() => submitAttempted.value && !!errors.value.consentement)
 
 function openForm() {
   isOpen.value = true

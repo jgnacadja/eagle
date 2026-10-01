@@ -194,8 +194,8 @@ describe('QuickCallbackCard', () => {
       }
     ])
 
-    // Live region status pour les lecteurs d'écran
-    const statusRegion = wrapper.find('[role="status"]')
+    // Live region status pour les lecteurs d'écran (<output> = role status implicite)
+    const statusRegion = wrapper.find('output')
     expect(statusRegion.exists()).toBe(true)
     expect(statusRegion.attributes('aria-live')).toBe('polite')
     expect(wrapper.text()).toContain('Demande de rappel enregistrée')

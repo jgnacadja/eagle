@@ -12,6 +12,7 @@ import {
   watchEffect
 } from 'vue'
 import DemandePage from '~/pages/centres/demande-de-formation.vue'
+import { upcomingMonthLabelsFr } from '~/utils/date'
 
 const seoMock = vi.fn()
 const fetchMock = vi.fn()
@@ -572,6 +573,57 @@ describe('pages/centres/demande-de-formation', () => {
         consentement: true
       })
     )
+  })
+
+  it('propose uniquement des échéances à venir ou non datées', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Dès que possible')
+    expect(wrapper.text()).toContain('Pas de date précise')
+    for (const label of upcomingMonthLabelsFr(3)) {
+      expect(wrapper.text()).toContain(label)
+    }
+  })
+
+  it('soumet le mois courant comme échéance par défaut', async () => {
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+    const { echeance } = leadSubmitMock.mock.calls[0]![1] as { echeance: string }
+    expect(echeance).toBe(upcomingMonthLabelsFr(3)[0])
+  })
+
+  it('ignore une échéance de brouillon devenue hors liste', async () => {
+    window.sessionStorage.setItem(
+      'demande-formation-draft',
+      '{"echeance":"Janvier 2000","consentement":true}'
+    )
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+    const { echeance } = leadSubmitMock.mock.calls[0]![1] as { echeance: string }
+    expect(echeance).toBe(upcomingMonthLabelsFr(3)[0])
+  })
+
+  it('restaure une échéance de brouillon encore valable', async () => {
+    window.sessionStorage.setItem(
+      'demande-formation-draft',
+      '{"echeance":"Pas de date précise","consentement":true}'
+    )
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+    const { echeance } = leadSubmitMock.mock.calls[0]![1] as { echeance: string }
+    expect(echeance).toBe('Pas de date précise')
   })
 
   it('poste pageUri sans query même avec un besoin long dans l’URL', async () => {

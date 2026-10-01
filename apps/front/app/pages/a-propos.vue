@@ -34,7 +34,7 @@
             <span class="text-accent-text"> du terrain</span>.
           </h1>
 
-          <p v-hero="heroStagger(3)" class="mx-auto mt-sm text-ink-muted text-small max-w-prose">
+          <p v-hero="heroStagger(2)" class="mx-auto mt-sm text-ink-muted text-small max-w-prose">
             <span
               >Learn Up Academy est une plateforme de conseil et d'orientation en formation
               professionnelle. Nous comprenons votre besoin, localisons la bonne session dans un
@@ -103,7 +103,7 @@
       <!-- ═══════════════════════════════════════════════════
            3. NOTRE MISSION (Ordre mobile : Titre -> Image -> Texte)
       ════════════════════════════════════════════════════ -->
-      <section id="mission" class="py-xl md:py-section" aria-labelledby="mission-title">
+      <section id="mission" class="py-xl md:py-section" aria-label="Notre mission">
         <!-- Version Mobile (< md) : Titre -> Image -> Texte -->
         <div class="md:hidden flex flex-col gap-lg">
           <div>
@@ -185,7 +185,7 @@
               <img
                 src="/images/formation1.webp"
                 alt="Équipe Learn Up Academy en session de formation"
-                class="h-72 lg:h-95 w-full rounded-xl object-cover shadow-md"
+                class="h-72 md:h-96 w-full rounded-xl object-cover shadow-md"
                 loading="lazy"
               />
               <div
@@ -335,9 +335,7 @@
               des actions de formation. Le certificat et son périmètre sont consultables ci-dessous.
             </p>
             <a
-              href="#qualite-certificat"
               class="mt-md inline-flex w-full sm:w-auto items-center justify-center gap-xs rounded-full border border-primary/30 bg-white py-2 px-md font-sans text-small font-bold text-primary shadow-xs transition-colors hover:bg-primary/5 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none hover:text-accent-text"
-              @click.prevent="openQualiopiModal"
             >
               <IconDownload :size="16" class="shrink-0" />
               <span>Télécharger le certificat (PDF)</span>
@@ -376,7 +374,7 @@
          7. LE RÉSEAU (Carte + Contenu)
     ════════════════════════════════════════════════════ -->
     <div class="px-gutter-mobile md:px-gutter">
-      <section id="reseau" class="py-xl md:py-section" aria-labelledby="reseau-title">
+      <section id="reseau" class="py-xl md:py-section" aria-label="Le réseau">
         <!-- Version Mobile (< lg) : Titre -> Carte -> Description -> Boutons -->
         <div class="lg:hidden flex flex-col gap-lg">
           <div>
@@ -560,7 +558,7 @@ import { toCenterResults } from '~/utils/centre'
 import { heroStagger, revealStagger } from '~/utils/reveal'
 
 definePageMeta({
-  breadcrumb: [{ label: 'Accueil', to: '/' }, { label: 'À propos' }]
+  layout: 'default'
 })
 
 useContentSeo(
@@ -571,12 +569,6 @@ useContentSeo(
   },
   'À propos — LEARN UP ACADEMY'
 )
-
-// Modal Qualiopi
-const qualiopiModalOpen = ref(false)
-function openQualiopiModal() {
-  qualiopiModalOpen.value = true
-}
 
 // Données : Notre métier (3 étapes)
 const steps = [

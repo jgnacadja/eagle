@@ -160,7 +160,6 @@ describe('pages/a-propos.vue', () => {
       .findAll('a')
       .find((a) => a.text().includes('Télécharger le certificat (PDF)'))
     expect(downloadLink).toBeTruthy()
-    expect(downloadLink!.attributes('href')).toBe('#qualite-certificat')
 
     await downloadLink!.trigger('click')
   })

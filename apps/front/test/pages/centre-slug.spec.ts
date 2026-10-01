@@ -1,6 +1,6 @@
 import type { Article, Centre, CourseListItem, CoursePage } from '@learnup/types'
 import { flushPromises, mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, ref, Suspense, watchEffect } from 'vue'
 import LoadError from '~/components/ErrorState/LoadError.vue'
 import NotFound from '~/components/ErrorState/NotFound.vue'
@@ -332,6 +332,8 @@ async function mountPage() {
 
 describe('pages/centres/[slug]', () => {
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-09-15T10:00:00Z'))
     vi.clearAllMocks()
     forceError = null
     geoPosition.value = null
@@ -385,6 +387,10 @@ describe('pages/centres/[slug]', () => {
         }
       }
     ]
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('affiche le centre et le breadcrumb par défaut pour un slug connu', async () => {

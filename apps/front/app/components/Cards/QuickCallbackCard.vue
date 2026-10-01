@@ -100,7 +100,7 @@
             </SelectTrigger>
             <SelectContent>
               <SelectItem
-                v-for="option in CRENEAU_OPTIONS"
+                v-for="option in creneauOptions"
                 :key="option"
                 :value="option"
                 class="text-small"
@@ -111,15 +111,26 @@
           </Select>
         </div>
 
-        <p
-          :class="[
-            'text-meta leading-tight',
-            variant === 'dark' ? 'text-ink-inverse-muted' : 'text-ink-muted'
-          ]"
+        <ConsentField
+          id="rappel-consentement"
+          v-model="consentement"
+          :invalid="showConsentError"
+          :error="consentErrorMessage"
+          :label-class="variant === 'dark' ? 'text-ink-inverse-muted' : undefined"
         >
-          En validant, vous acceptez d'être rappelé par votre conseiller pour votre projet de
-          formation.
-        </p>
+          {{ RAPPEL_CONSENT_TEXT }}
+          <NuxtLink
+            to="/confidentialite"
+            :class="[
+              'font-medium underline underline-offset-2 transition-colors',
+              variant === 'dark'
+                ? 'text-paper hover:text-accent'
+                : 'text-primary hover:text-accent-text'
+            ]"
+          >
+            Politique de confidentialité
+          </NuxtLink>
+        </ConsentField>
 
         <div>
           <Button
@@ -230,8 +241,25 @@ import {
   SelectValue
 } from '~/components/ui/select'
 import { leadFields } from '~/utils/leadFields'
+import ConsentField from '~/components/ConsentField.vue'
 
-const CRENEAU_OPTIONS = ['Dès que possible', 'Ce matin', 'Cet après-midi'] as const
+const CRENEAU_ASAP = 'Dès que possible'
+const CRENEAU_MATIN = 'Ce matin'
+const CRENEAU_OPTIONS = [CRENEAU_ASAP, CRENEAU_MATIN, 'Cet après-midi'] as const
+
+// Libellé de la case de consentement — transmis tel quel à l'API qui le
+// verse dans legalConsentOptions HubSpot : le CRM enregistre exactement ce
+// que l'utilisateur a lu.
+const RAPPEL_CONSENT_TEXT =
+  "J'accepte d'être rappelé par un conseiller au sujet de mon projet de formation."
+
+// « Ce matin » n'a de sens qu'avant midi : passé 12 h le créneau est déjà
+// révolu — recalculé à l'ouverture du formulaire et à la soumission.
+function availableCreneaux(now = new Date()): string[] {
+  return now.getHours() < 12
+    ? [...CRENEAU_OPTIONS]
+    : CRENEAU_OPTIONS.filter((option) => option !== CRENEAU_MATIN)
+}
 
 withDefaults(
   defineProps<{
@@ -250,6 +278,7 @@ const emit = defineEmits<{
 const isOpen = ref(false)
 const submitted = ref(false)
 const submitAttempted = ref(false)
+const creneauOptions = ref<string[]>(availableCreneaux())
 
 const openButtonRef = ref<{ $el?: HTMLButtonElement; focus?: () => void } | null>(null)
 const phoneInputRef = ref<{ $el?: HTMLInputElement; focus?: () => void } | null>(null)
@@ -272,24 +301,33 @@ const {
   validationSchema: toTypedSchema(
     z.object({
       telephone: leadFields({ email: '', consentement: '' }).telephone,
-      creneau: z.string().optional()
+      creneau: z.string().optional(),
+      consentement: leadFields({
+        email: '',
+        consentement: 'Consentement requis pour demander un rappel.'
+      }).consentement
     })
   ),
   initialValues: {
     telephone: '',
-    creneau: 'Dès que possible'
+    creneau: 'Dès que possible',
+    consentement: false
   }
 })
 
 const [telephone] = defineField('telephone')
 const [creneau] = defineField('creneau')
+const [consentement] = defineField('consentement')
 
 const errorMessage = computed(() => errors.value.telephone ?? null)
 const showError = computed(() => submitAttempted.value && !!errorMessage.value)
+const consentErrorMessage = computed(() => errors.value.consentement ?? null)
+const showConsentError = computed(() => submitAttempted.value && !!consentErrorMessage.value)
 
 function openForm() {
   isOpen.value = true
   submitAttempted.value = false
+  creneauOptions.value = availableCreneaux()
   resetLeadError()
 }
 
@@ -317,12 +355,16 @@ const handleSubmit = validateAndSubmit(
   async (values) => {
     submitAttempted.value = true
     const tel = values.telephone.trim()
-    const cr = values.creneau || 'Dès que possible'
+    // Le créneau peut être devenu invalide depuis l'ouverture du formulaire
+    // (« Ce matin » choisi à 11 h 59, validé à 12 h 01) → repli.
+    const requested = values.creneau || CRENEAU_ASAP
+    const cr = availableCreneaux().includes(requested) ? requested : CRENEAU_ASAP
 
     const success = await submitLead('rappel', {
       telephone: tel,
       creneau: cr,
-      consentement: true
+      consentement: values.consentement,
+      consentementTexte: RAPPEL_CONSENT_TEXT
     })
 
     if (success) {
@@ -348,7 +390,8 @@ function reset() {
   resetForm({
     values: {
       telephone: '',
-      creneau: 'Dès que possible'
+      creneau: 'Dès que possible',
+      consentement: false
     }
   })
 }

@@ -54,4 +54,9 @@ describe('components/ConsentField', () => {
     expect(checkbox.props('ariaInvalid')).toBeUndefined()
     expect(checkbox.props('ariaDescribedby')).toBeUndefined()
   })
+
+  it('applique labelClass au label (contexte carte sombre)', () => {
+    const wrapper = mountField({ labelClass: 'text-ink-inverse-muted' })
+    expect(wrapper.find('label').classes()).toContain('text-ink-inverse-muted')
+  })
 })

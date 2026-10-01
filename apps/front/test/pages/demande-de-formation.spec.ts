@@ -582,7 +582,7 @@ describe('pages/centres/demande-de-formation', () => {
     await wrapper.find('form').trigger('submit.prevent')
     await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
 
-    const { pageUri } = leadSubmitMock.mock.calls[0][1] as { pageUri: string }
+    const { pageUri } = leadSubmitMock.mock.calls[0]![1] as { pageUri: string }
     expect(pageUri).toBe(`${window.location.origin}${window.location.pathname}`)
     expect(pageUri).not.toContain('?')
     expect(pageUri.length).toBeLessThanOrEqual(2000)
@@ -597,7 +597,7 @@ describe('pages/centres/demande-de-formation', () => {
     await wrapper.find('form').trigger('submit.prevent')
     await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
 
-    const { precisions } = leadSubmitMock.mock.calls[0][1] as { precisions: string }
+    const { precisions } = leadSubmitMock.mock.calls[0]![1] as { precisions: string }
     expect(precisions.length).toBeLessThanOrEqual(5000)
     expect(precisions).toContain('Besoin exprimé :')
     expect(precisions.endsWith('…')).toBe(true)

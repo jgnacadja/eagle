@@ -12,6 +12,19 @@ export interface AssistantEntry {
   reply?: AssistantReply
 }
 
+export interface AssistantReplyMeta {
+  /** Rang du tour utilisateur ayant produit la réponse (1 = premier message). */
+  turn: number
+}
+
+export interface UseAssistantOptions {
+  /**
+   * Réponse structurée reçue de l'API — jamais l'accueil local injecté via
+   * `append`. Sert aux jalons analytics du parcours.
+   */
+  onReply?: (reply: AssistantReply, meta: AssistantReplyMeta) => void
+}
+
 /**
  * Message UI SDK : le texte vit dans les parts `text`, la réponse structurée
  * (kind, suggestions, recommandations…) dans une data part `data-assistant`.
@@ -67,7 +80,10 @@ function replyStream(reply: AssistantReply): ReadableStream<UIMessageChunk> {
  * (ville, formation d'origine, thème) est transmis à chaque tour ; le besoin
  * brut agrégé sert à contextualiser la demande de formation (D1).
  */
-export function useAssistant(initialContext: MaybeRefOrGetter<AssistantContext> = {}) {
+export function useAssistant(
+  initialContext: MaybeRefOrGetter<AssistantContext> = {},
+  options: UseAssistantOptions = {}
+) {
   const config = useRuntimeConfig()
 
   const contextChips = ref<string[]>([])
@@ -130,6 +146,10 @@ export function useAssistant(initialContext: MaybeRefOrGetter<AssistantContext> 
       const reply = part.data
       if (reply.contextChips?.length) contextChips.value = reply.contextChips
       if (reply.slots) slots.value = { ...slots.value, ...reply.slots }
+      // Le message utilisateur du tour est déjà dans le fil quand la réponse arrive.
+      options.onReply?.(reply, {
+        turn: messages.value.filter((m) => m.role === 'user').length
+      })
     },
     onError(error) {
       if (import.meta.server) {
@@ -157,6 +177,17 @@ export function useAssistant(initialContext: MaybeRefOrGetter<AssistantContext> 
   )
 
   const started = computed(() => entries.value.length > 0)
+
+  /** Dernière réponse réelle de l'API — l'accueil local (`append`) ne compte pas. */
+  const lastReply = computed<AssistantReply | undefined>(() => {
+    const message = messages.value.findLast(
+      (m) => m.role === 'assistant' && !m.id.startsWith('local-')
+    )
+    return message ? replyOf(message) : undefined
+  })
+
+  /** Le prochain message utilisateur répond à une question de précision. */
+  const awaitingClarification = computed(() => lastReply.value?.kind === 'clarify')
 
   /** Besoin agrégé tel que décrit — joint à la demande de formation. */
   const needSummary = computed(() =>
@@ -258,6 +289,8 @@ export function useAssistant(initialContext: MaybeRefOrGetter<AssistantContext> 
     contextChips,
     slots,
     started,
+    lastReply,
+    awaitingClarification,
     needSummary,
     append,
     send,

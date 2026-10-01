@@ -1,6 +1,6 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { mount } from '@vue/test-utils'
+import { mount, type VueWrapper } from '@vue/test-utils'
 import AssistantChat from '~/components/Assistant/Chat.vue'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 
@@ -19,7 +19,7 @@ vi.stubGlobal('internalSsrHeaders', () => undefined)
 const conversationStub = {
   name: 'AssistantConversation',
   props: ['entries', 'pending', 'unavailable', 'contextChips'],
-  emits: ['send', 'edit', 'stop', 'retry', 'reset', 'close'],
+  emits: ['send', 'edit', 'stop', 'retry', 'reset', 'close', 'select'],
   template:
     '<div class="conversation">' +
     '<button class="stop" @click="$emit(\'stop\')" />' +
@@ -29,12 +29,34 @@ const conversationStub = {
     '</div>'
 }
 
+// Le widget est unique dans l'application : chaque instance montée observe
+// l'état global du lanceur, un widget d'un test précédent réagirait encore.
+const mounted: VueWrapper[] = []
+
 function mountChat() {
-  return mount(AssistantChat, { global: { stubs: { AssistantConversation: conversationStub } } })
+  const wrapper = mount(AssistantChat, {
+    global: { stubs: { AssistantConversation: conversationStub } }
+  })
+  mounted.push(wrapper)
+  return wrapper
+}
+
+function conversation(wrapper: ReturnType<typeof mountChat>) {
+  return wrapper.findComponent(conversationStub)
+}
+
+afterEach(() => {
+  mounted.splice(0).forEach((wrapper) => wrapper.unmount())
+})
+
+/** Événements analytics poussés depuis le montage, sans leurs paramètres. */
+function events(): string[] {
+  return (window.dataLayer as { event: string }[]).map((e) => e.event)
 }
 
 beforeEach(() => {
   fetchMock.mockReset().mockResolvedValue({ kind: 'clarify', text: 'ok' })
+  window.dataLayer = []
   const launcher = useAssistantLauncher()
   launcher.isOpen.value = false
   launcher.pendingMessage.value = null
@@ -149,5 +171,164 @@ describe('AssistantChat', () => {
     const entries = wrapper.findComponent(conversationStub).props('entries')
     expect(entries).toHaveLength(1)
     expect(entries[0].role).toBe('assistant')
+  })
+
+  describe('analytics', () => {
+    it('tracks the search start with the entry-point source on open', async () => {
+      const wrapper = mountChat()
+      expect(events()).toEqual([])
+
+      await wrapper.find('button[aria-label="Ouvrir la recherche assistée"]').trigger('click')
+      expect(window.dataLayer).toEqual([{ event: 'ai_search_start' }])
+
+      useAssistantLauncher().close()
+      await nextTick()
+      useAssistantLauncher().open({ context: { source: 'catalogue' } })
+      await nextTick()
+      expect(window.dataLayer?.at(-1)).toEqual({ event: 'ai_search_start', source: 'catalogue' })
+    })
+
+    it('tracks an entry-point message as a search submit, then the clarification', async () => {
+      useAssistantLauncher().open({ context: { source: 'home' }, message: 'former au SST' })
+      mountChat()
+      await vi.waitFor(() => expect(events()).toContain('ai_clarification_requested'))
+
+      expect(window.dataLayer).toEqual([
+        { event: 'ai_search_start', source: 'home' },
+        { event: 'ai_search_submit', source: 'home', turn: 1, via: 'entry' },
+        { event: 'ai_clarification_requested', source: 'home', turn: 1 }
+      ])
+    })
+
+    it('tracks a message sent after a clarification as its answer', async () => {
+      fetchMock
+        .mockResolvedValueOnce({ kind: 'clarify', text: 'Pour combien de personnes ?' })
+        .mockResolvedValueOnce({
+          kind: 'recommend',
+          text: 'Nous vous recommandons',
+          mode: 'ai',
+          recommendations: [{ slug: 'sst' }, { slug: 'mac-sst' }]
+        })
+      useAssistantLauncher().open({ context: { source: 'home' } })
+      const wrapper = mountChat()
+
+      conversation(wrapper).vm.$emit('send', 'former au SST', 'text')
+      await vi.waitFor(() => expect(events()).toContain('ai_clarification_requested'))
+      conversation(wrapper).vm.$emit('send', '8 salariés', 'suggestion')
+      await vi.waitFor(() => expect(events()).toContain('ai_recommendation_display'))
+
+      expect(window.dataLayer).toEqual([
+        { event: 'ai_search_start', source: 'home' },
+        { event: 'ai_search_submit', source: 'home', turn: 1, via: 'text' },
+        { event: 'ai_clarification_requested', source: 'home', turn: 1 },
+        { event: 'ai_clarification_answer', source: 'home', turn: 2, via: 'suggestion' },
+        { event: 'ai_recommendation_display', source: 'home', turn: 2, count: 2, mode: 'ai' }
+      ])
+    })
+
+    it('tracks an edited message as a new search submit at its turn', async () => {
+      useAssistantLauncher().open()
+      const wrapper = mountChat()
+      conversation(wrapper).vm.$emit('send', 'premier', 'text')
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+      const id = conversation(wrapper).props('entries')[1].id
+
+      conversation(wrapper).vm.$emit('edit', id, 'premier modifié')
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+
+      expect(window.dataLayer).toContainEqual({ event: 'ai_search_submit', turn: 1, via: 'edit' })
+    })
+
+    it('tracks a recommendation CTA with the entry-point source', async () => {
+      useAssistantLauncher().open({ context: { source: 'formation', formationSlug: 'caces' } })
+      const wrapper = mountChat()
+
+      conversation(wrapper).vm.$emit('select', { slug: 'sst', rank: 'primary', action: 'sessions' })
+
+      expect(window.dataLayer?.at(-1)).toEqual({
+        event: 'ai_recommendation_select',
+        slug: 'sst',
+        rank: 'primary',
+        action: 'sessions',
+        source: 'formation'
+      })
+    })
+
+    it('ignores blank submissions', () => {
+      useAssistantLauncher().open()
+      const wrapper = mountChat()
+
+      conversation(wrapper).vm.$emit('send', '   ', 'text')
+
+      expect(fetchMock).not.toHaveBeenCalled()
+      expect(events()).toEqual(['ai_search_start'])
+    })
+
+    it('does not count reopening an ongoing conversation as a new search', async () => {
+      const launcher = useAssistantLauncher()
+      launcher.open({ context: { source: 'home' } })
+      const wrapper = mountChat()
+      conversation(wrapper).vm.$emit('send', 'former au SST', 'text')
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+      launcher.close()
+      await nextTick()
+      launcher.open({ context: { source: 'header' } })
+      await nextTick()
+
+      expect(events().filter((e) => e === 'ai_search_start')).toHaveLength(1)
+    })
+
+    it('treats an entry-point message during a conversation as a new search', async () => {
+      const launcher = useAssistantLauncher()
+      launcher.open({ context: { source: 'home' } })
+      const wrapper = mountChat()
+      conversation(wrapper).vm.$emit('send', 'former au SST', 'text')
+      await vi.waitFor(() => expect(events()).toContain('ai_clarification_requested'))
+
+      // Une précision est attendue, mais le message vient d'un point d'entrée.
+      launcher.open({ context: { source: 'catalogue' }, message: 'un autre besoin' })
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+
+      // Nouveau début de recherche puis envoi « entry » au tour 2 — la réponse
+      // à ce second tour peut déjà être tracée derrière.
+      expect(window.dataLayer).toContainEqual({ event: 'ai_search_start', source: 'catalogue' })
+      expect(window.dataLayer).toContainEqual({
+        event: 'ai_search_submit',
+        source: 'catalogue',
+        turn: 2,
+        via: 'entry'
+      })
+      expect(events().filter((e) => e === 'ai_search_start')).toHaveLength(2)
+      expect(events()).not.toContain('ai_clarification_answer')
+    })
+
+    it('ignores panel submissions while a reply is pending', async () => {
+      fetchMock.mockImplementationOnce(() => new Promise(() => {}))
+      useAssistantLauncher().open()
+      const wrapper = mountChat()
+
+      conversation(wrapper).vm.$emit('send', 'premier', 'text')
+      conversation(wrapper).vm.$emit('send', 'pendant l’analyse', 'suggestion')
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+      expect(events()).toEqual(['ai_search_start', 'ai_search_submit'])
+      expect(
+        conversation(wrapper)
+          .props('entries')
+          .filter((e: { role: string }) => e.role === 'user')
+      ).toHaveLength(1)
+    })
+
+    it('does not track nor send an edit whose message is unknown', async () => {
+      useAssistantLauncher().open()
+      const wrapper = mountChat()
+
+      conversation(wrapper).vm.$emit('edit', 'unknown-id', 'nouveau besoin')
+      await nextTick()
+
+      expect(fetchMock).not.toHaveBeenCalled()
+      expect(events()).toEqual(['ai_search_start'])
+    })
   })
 })

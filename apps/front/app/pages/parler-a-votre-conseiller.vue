@@ -278,10 +278,12 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import type { ConseillerBesoin } from '@learnup/types'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
+import { readHandoff } from '~/utils/assistant-handoff'
 import { leadFields } from '~/utils/leadFields'
 
 definePageMeta({
@@ -324,7 +326,7 @@ const nextSteps = [
 const route = useRoute()
 const initialMessage = typeof route.query.q === 'string' ? route.query.q.trim().slice(0, 2000) : ''
 
-const { handleSubmit, errors, submitCount, defineField } = useForm({
+const { handleSubmit, errors, submitCount, defineField, setFieldValue } = useForm({
   validationSchema: toTypedSchema(
     z.object({
       ...leadFields({
@@ -352,6 +354,14 @@ const [telephone] = defineField('telephone')
 const [siret] = defineField('siret')
 const [message] = defineField('message')
 const [consentement] = defineField('consentement')
+
+// Besoin décrit dans la recherche assistée, transmis hors URL
+// (`history.state`, voir utils/assistant-handoff) : pré-remplit « Votre
+// besoin en quelques mots » au montage, sans écraser une saisie.
+onMounted(() => {
+  const need = readHandoff()?.need
+  if (need && !message.value) setFieldValue('message', need.slice(0, 2000))
+})
 
 type ConseillerField = 'nom' | 'email' | 'telephone' | 'siret' | 'consentement'
 

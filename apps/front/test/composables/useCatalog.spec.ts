@@ -67,10 +67,12 @@ describe('useCatalog helpers', () => {
   it('trie la prochaine session quand plusieurs dates futures existent', () => {
     const today = new Date()
     today.setUTCHours(0, 0, 0, 0)
+    // 45 et 75 jours : toujours au-delà du mois courant, quel que soit le jour
+    // (+30 depuis le 1er d'un mois de 31 jours resterait « ce mois-ci »).
     const plus30 = new Date(today)
-    plus30.setUTCDate(plus30.getUTCDate() + 30)
+    plus30.setUTCDate(plus30.getUTCDate() + 45)
     const plus60 = new Date(today)
-    plus60.setUTCDate(plus60.getUTCDate() + 60)
+    plus60.setUTCDate(plus60.getUTCDate() + 75)
     const session = (startDate: string) => ({
       id: startDate,
       startDate,
@@ -209,7 +211,8 @@ describe('useCatalog helpers', () => {
     const past = new Date(today)
     past.setUTCDate(past.getUTCDate() - 10)
     const future = new Date(today)
-    future.setUTCDate(future.getUTCDate() + 30)
+    // Au-delà du mois courant quel que soit le jour (voir ci-dessus).
+    future.setUTCDate(future.getUTCDate() + 45)
 
     const session = (startDate: string) => ({
       id: startDate,

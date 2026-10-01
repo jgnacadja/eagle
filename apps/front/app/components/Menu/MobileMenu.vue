@@ -203,33 +203,13 @@
             </NuxtLink>
 
             <!-- À PROPOS -->
-            <AccordionItem value="apropos" variant="menu">
-              <AccordionTrigger variant="menu">À propos</AccordionTrigger>
-              <AccordionContent>
-                <ul class="pb-sm px-3">
-                  <li v-for="lien in aproposLiens" :key="lien.slug">
-                    <NuxtLink
-                      :to="`/${lien.slug}`"
-                      class="block py-2 text-body text-primary transition-colors hover:text-accent-text"
-                      @click="closeMenu"
-                    >
-                      {{ lien.label }}
-                    </NuxtLink>
-                  </li>
-                </ul>
-                <ul class="rounded-md bg-surface p-3">
-                  <li v-for="lien in legalLiens" :key="lien.slug">
-                    <NuxtLink
-                      :to="`/${lien.slug}`"
-                      class="block py-2 text-body text-primary transition-colors hover:text-accent-text"
-                      @click="closeMenu"
-                    >
-                      {{ lien.label }}
-                    </NuxtLink>
-                  </li>
-                </ul>
-              </AccordionContent>
-            </AccordionItem>
+            <NuxtLink
+              to="/a-propos"
+              class="flex w-full items-center py-md text-h3 text-ink transition-all hover:text-accent-text"
+              @click="closeMenu"
+            >
+              À propos
+            </NuxtLink>
 
             <!-- ACTUALITÉS -->
             <AccordionItem value="actualites" variant="menu">
@@ -300,12 +280,10 @@ import {
   AccordionTrigger
 } from '~/components/ui/accordion'
 import IconLocate from '~/components/icons/IconLocate.vue'
-import { aproposLiens } from '~/data/navigation'
 import {
   useMenuActualites,
   useMenuCentres,
   useMenuFamilles,
-  useMenuLegalPages,
   useMenuSousFamillesParFamille
 } from '~/composables/useMenuData'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
@@ -319,7 +297,6 @@ const familles = useMenuFamilles()
 const sousFamillesParFamille = useMenuSousFamillesParFamille()
 const { regions, centresParRegion } = useMenuCentres()
 const { rubriques: actualitesRubriques, regions: actualitesRegions } = useMenuActualites()
-const legalLiens = useMenuLegalPages()
 
 function centresForRegion(label: string) {
   return centresParRegion.value.get(label) ?? []

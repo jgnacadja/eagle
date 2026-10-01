@@ -3,7 +3,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { defineComponent, h, Suspense } from 'vue'
 import MegaMenuFormations from '~/components/Menu/mega-menu/MegaMenuFormations.vue'
 import MegaMenuCentres from '~/components/Menu/mega-menu/MegaMenuCentres.vue'
-import MegaMenuAPropos from '~/components/Menu/mega-menu/MegaMenuAPropos.vue'
 import MegaMenuActualites from '~/components/Menu/mega-menu/MegaMenuActualites.vue'
 
 const navigateMock = vi.fn()
@@ -269,17 +268,6 @@ describe('MegaMenuCentres', () => {
   })
 })
 
-describe('MegaMenuAPropos', () => {
-  it('liste les liens à propos et légaux', () => {
-    const wrapper = mount(MegaMenuAPropos, { global: { stubs } })
-
-    expect(wrapper.text()).toContain('Qui sommes-nous')
-    expect(wrapper.text()).toContain('Mentions légales')
-    expect(wrapper.find('a[href="/contact"]').exists()).toBe(true)
-    expect(wrapper.find('a[href="/confidentialite"]').exists()).toBe(true)
-  })
-})
-
 describe('MegaMenuActualites', () => {
   it('liste les rubriques et seules les régions avec actus', () => {
     const wrapper = mount(MegaMenuActualites, { global: { stubs } })
@@ -474,19 +462,5 @@ describe('MegaMenuFormations — interactions close', () => {
     await cta.trigger('click')
 
     expect(menu.emitted('close')!.length).toBeGreaterThanOrEqual(4)
-  })
-})
-
-describe('MegaMenuAPropos — interactions close', () => {
-  it('émet close sur les liens à propos et légaux', async () => {
-    const wrapper = await mountMenu(MegaMenuAPropos)
-    const menu = wrapper.findComponent(MegaMenuAPropos)
-
-    const links = wrapper.findAll('a')
-    for (const link of links) {
-      await link.trigger('click')
-    }
-
-    expect(menu.emitted('close')!.length).toBe(links.length)
   })
 })

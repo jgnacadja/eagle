@@ -810,6 +810,7 @@ const { handleSubmit, errors, submitCount, defineField, setValues, values } = us
         telephonePro: z
           .string()
           .trim()
+          .max(30, 'Numéro de téléphone trop long — 30 caractères maximum.')
           .refine(
             (value) => !value || value.replace(/\D/g, '').length >= 10,
             'Numéro incomplet — 10 chiffres attendus.'

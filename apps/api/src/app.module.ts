@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config'
 import {
   ThrottlerGuard,
   ThrottlerModule,
+  type ThrottlerOptions,
   ThrottlerStorage,
   ThrottlerStorageService
 } from '@nestjs/throttler'
@@ -20,42 +21,53 @@ import { CacheModule } from './common/cache/cache.module'
 import { DirectusModule } from './directus/directus.module'
 import { AssistantModule } from './assistant/assistant.module'
 
+// Express route sans tenir compte de la casse (`/LEADS/demande` atteint le
+// contrôleur) et `originalUrl` contient la query (« /health?x=1 ») : le
+// routage des quotas compare `req.path` en minuscules — path sans query,
+// même insensibilité à la casse que le routeur.
+function requestPath(context: ExecutionContext): string {
+  const request = context.switchToHttp().getRequest<{ path?: string; originalUrl?: string }>()
+  return (request.path ?? request.originalUrl?.split('?')[0] ?? '').toLowerCase()
+}
+
+function routeStartsWith(context: ExecutionContext, prefix: string): boolean {
+  const path = requestPath(context)
+  return path === prefix || path.startsWith(`${prefix}/`)
+}
+
 function isAdminRoute(context: ExecutionContext): boolean {
-  const request = context.switchToHttp().getRequest<{ originalUrl?: string }>()
-  const url = request.originalUrl ?? ''
-  return url === '/admin' || url.startsWith('/admin/')
+  return routeStartsWith(context, '/admin')
 }
 
 // Le proxy /directus sert aussi les assets (une image par carte) : le quota
 // public de 100 req/min se viderait en quelques navigations. Il garde sa
 // propre limite, plus large, et ne consomme pas le quota catalogue.
 function isDirectusRoute(context: ExecutionContext): boolean {
-  const request = context.switchToHttp().getRequest<{ originalUrl?: string }>()
-  const url = request.originalUrl ?? ''
-  return url === '/directus' || url.startsWith('/directus/')
+  return routeStartsWith(context, '/directus')
 }
 
 // Les checks de santé (uptime, LB) ne consomment pas le quota public.
 function isHealthRoute(context: ExecutionContext): boolean {
-  const request = context.switchToHttp().getRequest<{ originalUrl?: string }>()
-  const url = request.originalUrl ?? ''
-  return url === '/health' || url.startsWith('/health/')
+  return routeStartsWith(context, '/health')
 }
 
 // Les formulaires leads ont leur propre quota, plus strict : le endpoint
 // relaie vers HubSpot — 100 soumissions/min pousseraient du spam dans le CRM.
 function isLeadsRoute(context: ExecutionContext): boolean {
-  const request = context.switchToHttp().getRequest<{ originalUrl?: string }>()
-  const url = request.originalUrl ?? ''
-  return url === '/leads' || url.startsWith('/leads/')
+  return routeStartsWith(context, '/leads')
 }
 
 // La recherche assistée déclenche un appel LLM par message : quota dédié,
 // plus resserré que le catalogue, et sorti du bucket public de 100 req/min.
 function isAssistantRoute(context: ExecutionContext): boolean {
-  const request = context.switchToHttp().getRequest<{ originalUrl?: string }>()
-  const url = request.originalUrl ?? ''
-  return url === '/assistant' || url.startsWith('/assistant/')
+  return routeStartsWith(context, '/assistant')
+}
+
+// Comparaison à temps constant, comme AdminApiKeyGuard.
+function safeEqual(raw: string, expected: string): boolean {
+  const provided = Buffer.from(raw)
+  const wanted = Buffer.from(expected)
+  return provided.length === wanted.length && timingSafeEqual(provided, wanted)
 }
 
 // Le SSR du front appelle l'API depuis l'IP du serveur Nuxt : sans bypass,
@@ -65,7 +77,9 @@ function isAssistantRoute(context: ExecutionContext): boolean {
 function isInternalSsr(context: ExecutionContext, token: string | undefined): boolean {
   if (!token) return false
   const request = context.switchToHttp().getRequest<{ headers?: Record<string, unknown> }>()
-  return request.headers?.['x-internal-ssr'] === token
+  const raw = request.headers?.['x-internal-ssr']
+  const header = Array.isArray(raw) ? raw[0] : raw
+  return typeof header === 'string' && safeEqual(header, token)
 }
 
 const THROTTLER_REDIS_OPTIONS: RedisOptions = {
@@ -127,13 +141,6 @@ function ipTracker(req: TrackerRequest): string {
   return req.ip ?? req.socket?.remoteAddress ?? 'anonymous'
 }
 
-// Comparaison à temps constant, comme AdminApiKeyGuard.
-function isAdminApiKey(raw: string, adminApiKey: string): boolean {
-  const provided = Buffer.from(raw)
-  const expected = Buffer.from(adminApiKey)
-  return provided.length === expected.length && timingSafeEqual(provided, expected)
-}
-
 // Tracker admin : une clé valide partage le bucket « admin » (10/min,
 // indépendant de l'IP — une seule clé existe, ADMIN_API_KEY) ; une clé
 // absente ou invalide partage le bucket IP. Avant, un scryptSync par
@@ -143,7 +150,7 @@ export function adminThrottlerTracker(adminApiKey: string) {
   return (req: TrackerRequest): string => {
     const key = req.headers?.['x-api-key']
     const raw = Array.isArray(key) ? key[0] : key
-    return typeof raw === 'string' && raw.length > 0 && isAdminApiKey(raw, adminApiKey)
+    return typeof raw === 'string' && raw.length > 0 && safeEqual(raw, adminApiKey)
       ? 'admin'
       : ipTracker(req)
   }
@@ -161,6 +168,58 @@ function createRedisThrottlerStorage(url: string): ThrottlerStorage {
   return throttlerStorage
 }
 
+// Extraite du `useFactory` pour être testée telle quelle en e2e — la config
+// réelle des quotas (routage par path, trackers) est couverte par le spec.
+export function buildThrottlers(
+  adminApiKey: string,
+  internalSsrToken: string | undefined
+): ThrottlerOptions[] {
+  return [
+    {
+      // Lecture publique : les fetches SSR (x-internal-ssr) sont exclus
+      // pour ne pas mutualiser tous les visiteurs sur l'IP du serveur Nuxt.
+      ttl: 60_000,
+      limit: 100,
+      skipIf: (context) =>
+        isAdminRoute(context) ||
+        isDirectusRoute(context) ||
+        isHealthRoute(context) ||
+        isLeadsRoute(context) ||
+        isAssistantRoute(context) ||
+        isInternalSsr(context, internalSsrToken),
+      getTracker: ipTracker
+    },
+    {
+      name: 'assistant',
+      ttl: 60_000,
+      limit: 20,
+      skipIf: (context) => !isAssistantRoute(context),
+      getTracker: (req) => req.ip ?? req.socket?.remoteAddress ?? 'anonymous'
+    },
+    {
+      name: 'directus',
+      ttl: 60_000,
+      limit: 600,
+      skipIf: (context) => !isDirectusRoute(context) || isInternalSsr(context, internalSsrToken),
+      getTracker: ipTracker
+    },
+    {
+      name: 'leads',
+      ttl: 60_000,
+      limit: 10,
+      skipIf: (context) => !isLeadsRoute(context),
+      getTracker: ipTracker
+    },
+    {
+      name: 'admin',
+      ttl: 60_000,
+      limit: 10,
+      skipIf: (context) => !isAdminRoute(context),
+      getTracker: adminThrottlerTracker(adminApiKey)
+    }
+  ]
+}
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -174,51 +233,7 @@ function createRedisThrottlerStorage(url: string): ThrottlerStorage {
         const redisUrl = config.get<string>('REDIS_URL')
         const internalSsrToken = config.get<string>('INTERNAL_API_TOKEN')
         return {
-          throttlers: [
-            {
-              // Lecture publique : les fetches SSR (x-internal-ssr) sont exclus
-              // pour ne pas mutualiser tous les visiteurs sur l'IP du serveur Nuxt.
-              ttl: 60_000,
-              limit: 100,
-              skipIf: (context) =>
-                isAdminRoute(context) ||
-                isDirectusRoute(context) ||
-                isHealthRoute(context) ||
-                isLeadsRoute(context) ||
-                isAssistantRoute(context) ||
-                isInternalSsr(context, internalSsrToken),
-              getTracker: ipTracker
-            },
-            {
-              name: 'assistant',
-              ttl: 60_000,
-              limit: 20,
-              skipIf: (context) => !isAssistantRoute(context),
-              getTracker: (req) => req.ip ?? req.socket?.remoteAddress ?? 'anonymous'
-            },
-            {
-              name: 'directus',
-              ttl: 60_000,
-              limit: 600,
-              skipIf: (context) =>
-                !isDirectusRoute(context) || isInternalSsr(context, internalSsrToken),
-              getTracker: ipTracker
-            },
-            {
-              name: 'leads',
-              ttl: 60_000,
-              limit: 10,
-              skipIf: (context) => !isLeadsRoute(context),
-              getTracker: ipTracker
-            },
-            {
-              name: 'admin',
-              ttl: 60_000,
-              limit: 10,
-              skipIf: (context) => !isAdminRoute(context),
-              getTracker: adminThrottlerTracker(adminApiKey)
-            }
-          ],
+          throttlers: buildThrottlers(adminApiKey, internalSsrToken),
           storage: redisUrl ? createRedisThrottlerStorage(redisUrl) : undefined
         }
       }

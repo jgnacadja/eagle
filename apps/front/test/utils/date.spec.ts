@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDateFr, formatMonthYearFr } from '~/utils/date'
+import { formatDateFr, formatMonthYearFr, upcomingMonthLabelsFr } from '~/utils/date'
 
 describe('date utils', () => {
   describe('formatDateFr', () => {
@@ -23,6 +23,30 @@ describe('date utils', () => {
       expect(formatMonthYearFr(null)).toBe('')
       expect(formatMonthYearFr(undefined)).toBe('')
       expect(formatMonthYearFr('pas-une-date')).toBe('')
+    })
+  })
+
+  describe('upcomingMonthLabelsFr', () => {
+    it('liste le mois courant et les suivants, capitalisés', () => {
+      expect(upcomingMonthLabelsFr(3, new Date(2026, 9, 15))).toEqual([
+        'Octobre 2026',
+        'Novembre 2026',
+        'Décembre 2026'
+      ])
+    })
+
+    it('enchaîne sur l’année suivante en fin d’année', () => {
+      expect(upcomingMonthLabelsFr(3, new Date(2026, 11, 20))).toEqual([
+        'Décembre 2026',
+        'Janvier 2027',
+        'Février 2027'
+      ])
+    })
+
+    it('ne retourne jamais un mois passé', () => {
+      const labels = upcomingMonthLabelsFr(3, new Date(2027, 0, 31))
+      expect(labels[0]).toBe('Janvier 2027')
+      expect(labels).not.toContain('Décembre 2026')
     })
   })
 })

@@ -495,6 +495,7 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
 import { leadFields } from '~/utils/leadFields'
+import { upcomingMonthLabelsFr } from '~/utils/date'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import IconMapPin from '~/components/icons/IconMapPin.vue'
 import IconBook from '~/components/icons/IconBook.vue'
@@ -783,7 +784,13 @@ useContentSeo(
   'Demande de formation'
 )
 
-const echeanceOptions = ['Septembre 2026', 'Octobre 2026', 'Novembre 2026']
+// Échéances : les 3 prochains mois générés à la date du jour — jamais un mois
+// passé en option ni en défaut. « Dès que possible » couvre l'urgence,
+// « Pas de date précise » les demandes sans échéance (chaîne libre côté API).
+const ECHEANCE_ASAP = 'Dès que possible'
+const ECHEANCE_FLEXIBLE = 'Pas de date précise'
+const echeanceMonthOptions = upcomingMonthLabelsFr(3)
+const echeanceOptions = [ECHEANCE_ASAP, ...echeanceMonthOptions, ECHEANCE_FLEXIBLE]
 
 const { handleSubmit, errors, submitCount, defineField, setValues, values } = useForm({
   validationSchema: toTypedSchema(
@@ -843,7 +850,7 @@ const { handleSubmit, errors, submitCount, defineField, setValues, values } = us
     // D1 : effectif et lieu pré-remplis depuis la recherche assistée.
     salaries: salariesParam.value ?? 8,
     lieu: lieuParam.value ?? '',
-    echeance: 'Septembre 2026',
+    echeance: echeanceMonthOptions[0] ?? ECHEANCE_ASAP,
     precisions: '',
     consentement: false
   }
@@ -920,6 +927,11 @@ onMounted(() => {
       const draft = Object.fromEntries(
         Object.entries(parsed as Record<string, unknown>).filter(([key]) => DRAFT_FIELDS.has(key))
       )
+      // Une échéance de brouillon peut désigner un mois depuis passé :
+      // hors liste, on retombe sur le défaut plutôt que l'envoyer.
+      if (typeof draft.echeance === 'string' && !echeanceOptions.includes(draft.echeance)) {
+        delete draft.echeance
+      }
       setValues(draft)
     }
   } catch {

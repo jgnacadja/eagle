@@ -252,7 +252,7 @@
             </ol>
           </Card>
 
-          <ConseillerRappelRapideCard v-reveal />
+          <QuickCallbackCard v-reveal />
 
           <p class="text-meta leading-relaxed text-ink-subtle">
             Les informations recueillies servent uniquement au traitement de la demande conformément
@@ -274,7 +274,6 @@ import type { ConseillerBesoin } from '@learnup/types'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
-import ConseillerRappelRapideCard from '~/components/Conseiller/RappelRapideCard.vue'
 import { leadFields } from '~/utils/leadFields'
 
 definePageMeta({

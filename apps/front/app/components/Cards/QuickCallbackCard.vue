@@ -191,7 +191,7 @@
               variant === 'dark' ? 'text-ink-inverse-muted' : 'text-ink-muted'
             ]"
           >
-            Un conseiller vous rappellera <strong>{{ creneau.toLowerCase() }}</strong> au
+            Un conseiller vous rappellera <strong>{{ creneau?.toLowerCase() }}</strong> au
             <strong>{{ telephone }}</strong
             >.
           </p>
@@ -254,13 +254,20 @@ const submitAttempted = ref(false)
 const openButtonRef = ref<{ $el?: HTMLButtonElement; focus?: () => void } | null>(null)
 const phoneInputRef = ref<{ $el?: HTMLInputElement; focus?: () => void } | null>(null)
 
-const { submit: submitLead, sending, error: submitError, reset: resetLeadError } = useLeadSubmit()
+const {
+  submit: submitLead,
+  sending,
+  error: submitError,
+  validationErrors,
+  reset: resetLeadError
+} = useLeadSubmit()
 
 const {
   errors,
   defineField,
   handleSubmit: validateAndSubmit,
-  resetForm
+  resetForm,
+  setFieldError
 } = useForm({
   validationSchema: toTypedSchema(
     z.object({
@@ -321,6 +328,11 @@ const handleSubmit = validateAndSubmit(
     if (success) {
       submitted.value = true
       emit('submit', { telephone: tel, creneau: cr })
+    } else if (validationErrors.value.length > 0) {
+      // 400 de validation : le message du champ remonte sous l'input
+      // plutôt que l'erreur générique sans piste de correction.
+      setFieldError('telephone', validationErrors.value.join(' '))
+      resetLeadError()
     }
   },
   () => {

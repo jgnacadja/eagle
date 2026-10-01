@@ -1,17 +1,23 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import ConseillerRappelRapideCard from '~/components/Conseiller/RappelRapideCard.vue'
+import QuickCallbackCard from '~/components/Cards/QuickCallbackCard.vue'
 
 const leadSubmitMock = vi.fn().mockResolvedValue(true)
-const leadState = { sending: ref(false), error: ref<string | null>(null) }
+const leadState = {
+  sending: ref(false),
+  error: ref<string | null>(null),
+  validationErrors: ref<string[]>([])
+}
 
 vi.stubGlobal('useLeadSubmit', () => ({
   submit: leadSubmitMock,
   sending: leadState.sending,
   error: leadState.error,
+  validationErrors: leadState.validationErrors,
   reset: vi.fn(() => {
     leadState.error.value = null
+    leadState.validationErrors.value = []
   })
 }))
 
@@ -62,16 +68,17 @@ async function openCard(wrapper: ReturnType<typeof mount>) {
   await flushPromises()
 }
 
-describe('ConseillerRappelRapideCard', () => {
+describe('QuickCallbackCard', () => {
   beforeEach(() => {
     leadSubmitMock.mockClear()
     leadSubmitMock.mockResolvedValue(true)
     leadState.error.value = null
+    leadState.validationErrors.value = []
     leadState.sending.value = false
   })
 
   it('affiche l’état initial compact avec titre, texte indicatif, CTA et lien « Trouver un centre »', () => {
-    const wrapper = mount(ConseillerRappelRapideCard, { global: { stubs } })
+    const wrapper = mount(QuickCallbackCard, { global: { stubs } })
 
     expect(wrapper.text()).toContain("Besoin d'un échange téléphonique direct")
     expect(wrapper.text()).toContain(
@@ -83,10 +90,10 @@ describe('ConseillerRappelRapideCard', () => {
   })
 
   it('applique le variant dark par défaut et le variant light si spécifié', () => {
-    const darkWrapper = mount(ConseillerRappelRapideCard, { global: { stubs } })
+    const darkWrapper = mount(QuickCallbackCard, { global: { stubs } })
     expect(darkWrapper.find('.card').attributes('data-variant')).toBe('dark')
 
-    const lightWrapper = mount(ConseillerRappelRapideCard, {
+    const lightWrapper = mount(QuickCallbackCard, {
       props: { variant: 'light' },
       global: { stubs }
     })
@@ -94,7 +101,7 @@ describe('ConseillerRappelRapideCard', () => {
   })
 
   it('déplie le formulaire au clic sur « Me faire appeler » sans prop de test', async () => {
-    const wrapper = mount(ConseillerRappelRapideCard, { global: { stubs } })
+    const wrapper = mount(QuickCallbackCard, { global: { stubs } })
 
     await openCard(wrapper)
 
@@ -107,7 +114,7 @@ describe('ConseillerRappelRapideCard', () => {
   })
 
   it('masque le formulaire et émet « cancel » au clic sur « Annuler »', async () => {
-    const wrapper = mount(ConseillerRappelRapideCard, { global: { stubs } })
+    const wrapper = mount(QuickCallbackCard, { global: { stubs } })
     await openCard(wrapper)
 
     expect(wrapper.find('form').exists()).toBe(true)
@@ -123,7 +130,7 @@ describe('ConseillerRappelRapideCard', () => {
   })
 
   it('affiche une erreur quand le numéro est vide à la soumission', async () => {
-    const wrapper = mount(ConseillerRappelRapideCard, { global: { stubs } })
+    const wrapper = mount(QuickCallbackCard, { global: { stubs } })
     await openCard(wrapper)
 
     await wrapper.find('form').trigger('submit')
@@ -135,7 +142,7 @@ describe('ConseillerRappelRapideCard', () => {
   })
 
   it('affiche une erreur quand le numéro a moins de 10 chiffres', async () => {
-    const wrapper = mount(ConseillerRappelRapideCard, { global: { stubs } })
+    const wrapper = mount(QuickCallbackCard, { global: { stubs } })
     await openCard(wrapper)
 
     await wrapper.find('input#rappel-telephone').setValue('06 12 34')
@@ -148,7 +155,7 @@ describe('ConseillerRappelRapideCard', () => {
   })
 
   it('poste la demande au module leads et émet « submit » avec succès puis affiche l’état confirmé avec live region', async () => {
-    const wrapper = mount(ConseillerRappelRapideCard, { global: { stubs } })
+    const wrapper = mount(QuickCallbackCard, { global: { stubs } })
     await openCard(wrapper)
 
     await wrapper.find('input#rappel-telephone').setValue('06 12 34 56 78')
@@ -195,7 +202,7 @@ describe('ConseillerRappelRapideCard', () => {
   })
 
   it('exerce la sélection d’un créneau personnalisé et transmet la valeur au payload', async () => {
-    const wrapper = mount(ConseillerRappelRapideCard, { global: { stubs } })
+    const wrapper = mount(QuickCallbackCard, { global: { stubs } })
     await openCard(wrapper)
 
     await wrapper.find('input#rappel-telephone').setValue('06 98 76 54 32')
@@ -230,7 +237,7 @@ describe('ConseillerRappelRapideCard', () => {
       return false
     })
 
-    const wrapper = mount(ConseillerRappelRapideCard, { global: { stubs } })
+    const wrapper = mount(QuickCallbackCard, { global: { stubs } })
     await openCard(wrapper)
 
     await wrapper.find('input#rappel-telephone').setValue('06 12 34 56 78')
@@ -239,6 +246,28 @@ describe('ConseillerRappelRapideCard', () => {
     await vi.waitFor(() => {
       expect(wrapper.text()).toContain('L’envoi a échoué')
     })
+    expect(wrapper.find('form').exists()).toBe(true)
+    expect(wrapper.emitted('submit')).toBeUndefined()
+  })
+
+  it('affiche le message de validation de l’API sous le champ téléphone sur un 400', async () => {
+    leadSubmitMock.mockImplementationOnce(async () => {
+      leadState.validationErrors.value = ['Numéro incomplet — 10 chiffres attendus.']
+      leadState.error.value = 'L’envoi a échoué — réessayez dans un instant.'
+      return false
+    })
+
+    const wrapper = mount(QuickCallbackCard, { global: { stubs } })
+    await openCard(wrapper)
+
+    await wrapper.find('input#rappel-telephone').setValue('0123456789')
+    await wrapper.find('form').trigger('submit')
+
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('Numéro incomplet — 10 chiffres attendus.')
+    })
+    // Le message remonte sous le champ, pas en erreur générique doublée.
+    expect(leadState.error.value).toBeNull()
     expect(wrapper.find('form').exists()).toBe(true)
     expect(wrapper.emitted('submit')).toBeUndefined()
   })

@@ -22,6 +22,7 @@ export const leadFields = ({ email, consentement }: LeadFieldMessages) => ({
     .string({ error: 'Indiquez votre téléphone.' })
     .trim()
     .min(1, 'Indiquez votre téléphone.')
+    .max(30, 'Numéro de téléphone trop long — 30 caractères maximum.')
     .refine(
       (value) => value.replace(/\D/g, '').length >= 10,
       'Numéro incomplet — 10 chiffres attendus.'

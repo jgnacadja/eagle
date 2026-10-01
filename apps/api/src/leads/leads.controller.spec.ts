@@ -195,10 +195,36 @@ describe('LeadsController', () => {
     )
   })
 
+  it('POST /leads/rappel accepte les formats espacés et internationaux', async () => {
+    // Même règle que LeadContactDto : au moins 10 chiffres, séparateurs
+    // et indicatif libres (la regex FR stricte rejetait +33 6 …, +33 (0)6…,
+    // +32, +41 alors que le front les laissait passer → 400 sans recours).
+    for (const telephone of [
+      '+33 6 12 34 56 78',
+      '+33 (0)6 12 34 56 78',
+      '+32 470 12 34 56',
+      '+41 44 123 45 67'
+    ]) {
+      await request(app.getHttpServer())
+        .post('/leads/rappel')
+        .send({ telephone, consentement: true })
+        .expect(201)
+    }
+  })
+
   it('POST /leads/rappel rejette un numéro invalide', async () => {
     await request(app.getHttpServer())
       .post('/leads/rappel')
       .send({ telephone: '123', consentement: true })
+      .expect(400)
+
+    expect(service.submitRappel).not.toHaveBeenCalled()
+  })
+
+  it('POST /leads/rappel rejette un numéro de plus de 30 caractères', async () => {
+    await request(app.getHttpServer())
+      .post('/leads/rappel')
+      .send({ telephone: `06 ${'12 '.repeat(20)}`, consentement: true })
       .expect(400)
 
     expect(service.submitRappel).not.toHaveBeenCalled()

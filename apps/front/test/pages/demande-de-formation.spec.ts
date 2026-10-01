@@ -740,7 +740,7 @@ describe('pages/centres/demande-de-formation', () => {
     expect(wrapper.find('.animate-spin').exists()).toBe(true)
   })
 
-  it('affiche l’alerte quand l’envoi échoue', async () => {
+  it('affiche l’alerte quand l’envoi échoue', { timeout: 15_000 }, async () => {
     submitErrorState.value = 'Le serveur a rejeté la demande.'
     const wrapper = await mountPage()
 

@@ -385,7 +385,8 @@ const onSubmit = handleSubmit(async (v) => {
     siret: v.siret || undefined,
     message: [v.message, `Référence : ${ref}`].filter(Boolean).join('\n\n'),
     consentement: v.consentement,
-    pageUri: window.location.href,
+    // Pas de query : elle peut porter du texte libre et dépasser la borne API.
+    pageUri: window.location.origin + window.location.pathname,
     pageName: 'Parler à votre conseiller'
   })
   if (ok) {

@@ -299,16 +299,11 @@ function normalizeSearch(text: string | null | undefined): string {
 
 function buildLocationText(
   locationsText: string | null | undefined,
-  locations: ResolvedSessionLocation[]
+  locations: (ResolvedSessionLocation | null)[]
 ): string {
-  const parts = locations.flatMap((loc) => [
-    loc.name,
-    loc.address,
-    loc.city,
-    loc.postalCode,
-    loc.department,
-    loc.region
-  ])
+  const parts = locations.flatMap((loc) =>
+    loc ? [loc.name, loc.address, loc.city, loc.postalCode, loc.department, loc.region] : []
+  )
   if (typeof locationsText === 'string' && locationsText.length > 0) {
     parts.push(locationsText)
   }
@@ -362,7 +357,8 @@ export interface CatalogRow {
   updatedAt: string
   searchText: string
   locationText: string
-  locations: ResolvedSessionLocation[]
+  /** Aligné sur `course.sessions` — null quand la session n'a pas de localisation. */
+  locations: (ResolvedSessionLocation | null)[]
 }
 
 function toCatalogRow(
@@ -370,9 +366,10 @@ function toCatalogRow(
   centresBySlug: Map<string, DirectusCentre>
 ): CatalogRow {
   const course = toListItem(raw)
-  const locations = (course.sessions ?? [])
-    .map((s) => resolveSessionLocation(s, centresBySlug))
-    .filter((l): l is ResolvedSessionLocation => l !== null)
+  // Aligné sur `course.sessions` (null quand la session n'a pas de
+  // localisation) : l'assistant indexe `locations` par numéro de session —
+  // filtrer les trous ici décalerait la correspondance.
+  const locations = (course.sessions ?? []).map((s) => resolveSessionLocation(s, centresBySlug))
 
   return {
     course,
@@ -577,7 +574,10 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 function matchesLocation(row: CatalogRow, location: string | undefined): boolean {
   const geo = parseGeoLocation(location)
   if (geo) {
-    const geocoded = row.locations.filter((loc) => loc.latitude != null && loc.longitude != null)
+    const geocoded = row.locations.filter(
+      (loc): loc is ResolvedSessionLocation =>
+        loc != null && loc.latitude != null && loc.longitude != null
+    )
     if (geocoded.length > 0) {
       return geocoded.some(
         (loc) =>
@@ -593,10 +593,11 @@ function matchesLocation(row: CatalogRow, location: string | undefined): boolean
   const tokens = toLocationTokens(location)
   if (!tokens) return true
 
-  if (row.locations.length === 0) {
+  const resolved = row.locations.filter((loc): loc is ResolvedSessionLocation => loc !== null)
+  if (resolved.length === 0) {
     return matchesLocationText(row.locationText, tokens)
   }
-  return row.locations.some((loc) => tokens.every((token) => locationTokenMatches(token, loc)))
+  return resolved.some((loc) => tokens.every((token) => locationTokenMatches(token, loc)))
 }
 
 function matchesSearchQuery(row: CatalogRow, search: string | undefined): boolean {
@@ -688,7 +689,7 @@ function computeCatalogFacets(rows: CatalogRow[], query: ListCoursesDto): Catalo
     // front propose les deux dimensions, la recherche plein-texte couvrant
     // déjà les villes.
     locations: countByKeys('location', (row) =>
-      row.locations.flatMap((loc) => [loc.department, loc.region])
+      row.locations.flatMap((loc) => (loc ? [loc.department, loc.region] : []))
     ),
     cpf: countWhere('cpf', (row) => row.course.cpf === true),
     certifying: countWhere(

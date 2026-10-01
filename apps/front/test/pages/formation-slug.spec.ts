@@ -1,6 +1,6 @@
 import type { Course, CourseListItem, FamilleFormation } from '@learnup/types'
 import { flushPromises, mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, ref, Suspense, watch, watchEffect } from 'vue'
 import LoadError from '~/components/ErrorState/LoadError.vue'
 import NotFound from '~/components/ErrorState/NotFound.vue'
@@ -364,6 +364,8 @@ async function mountPage() {
 
 describe('pages/formations/[famille]/[slug]', () => {
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-09-15T10:00:00Z'))
     vi.clearAllMocks()
     vi.stubGlobal('useAsyncData', defaultUseAsyncData)
     fetchMock.mockImplementation((url: string) => {
@@ -385,6 +387,10 @@ describe('pages/formations/[famille]/[slug]', () => {
       path: '/formations/caces-conduite-engins/caces-r489-chariots-elevateurs',
       meta: {}
     }
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('affiche la fiche formation', async () => {

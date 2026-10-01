@@ -813,6 +813,49 @@ describe('pages/centres/demande-de-formation', () => {
     expect(wrapper.find('#echeance-error').exists()).toBe(true)
   })
 
+  it('bloque un nombre de salariés non entier, comme @IsInt côté API', async () => {
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('#salaries').setValue('2.5')
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.find('#salaries-error').exists())
+
+    expect(wrapper.find('#salaries-error').text()).toContain('entier')
+    expect(leadSubmitMock).not.toHaveBeenCalled()
+  })
+
+  it('bloque les champs plus longs que les bornes @MaxLength de l’API', async () => {
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('#raison-sociale').setValue(`Société ${'x'.repeat(200)}`)
+    await wrapper.find('#nom').setValue(`Jean ${'D'.repeat(200)}`)
+    await wrapper.find('#fonction').setValue(`RH ${'f'.repeat(200)}`)
+    await wrapper.find('#precisions').setValue('x'.repeat(5001))
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.find('#raison-sociale-error').exists())
+
+    expect(wrapper.find('#raison-sociale-error').text()).toContain('200 caractères maximum')
+    expect(wrapper.find('#nom-error').text()).toContain('200 caractères maximum')
+    expect(wrapper.find('#fonction-error').text()).toContain('200 caractères maximum')
+    expect(wrapper.find('#precisions-error').text()).toContain('5000 caractères maximum')
+    expect(leadSubmitMock).not.toHaveBeenCalled()
+  })
+
+  it('bloque un lieu intra trop long avec un message de champ', async () => {
+    routeStub.query = { intra: '1' }
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('#lieu').setValue('x'.repeat(201))
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.find('#lieu-error').exists())
+
+    expect(wrapper.find('#lieu-error').text()).toContain('200 caractères maximum')
+    expect(leadSubmitMock).not.toHaveBeenCalled()
+  })
+
   it('affiche le spinner « Envoi en cours… » pendant la soumission', async () => {
     sendingState.value = true
     const wrapper = await mountPage()

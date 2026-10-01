@@ -158,6 +158,40 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  // Verrou distribué de la sync catalogue (SET NX PX) : une seule instance
+  // exécute la sync à la fois, même en multi-instances/serverless.
+  // Fail-open quand Redis est absent ou en erreur : le run est idempotent,
+  // un doublon coûte moins qu'une sync manquée ; le flag `running` du
+  // service conserve l'exclusion au sein du process.
+  async acquireSyncLock(token: string, ttlMs: number): Promise<boolean> {
+    if (!this.client || !this.isReady) return true
+
+    try {
+      const result = await this.client.set('sync:lock', token, 'PX', ttlMs, 'NX')
+      return result === 'OK'
+    } catch (error) {
+      this.logger.warn({ error }, 'Failed to acquire sync lock — proceeding without it')
+      return true
+    }
+  }
+
+  // Compare-and-delete : le token évite de libérer le verrou posé par une
+  // autre instance si le nôtre a déjà expiré (TTL dépassé pendant le run).
+  async releaseSyncLock(token: string): Promise<void> {
+    if (!this.client || !this.isReady) return
+
+    try {
+      await this.client.eval(
+        'if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end',
+        1,
+        'sync:lock',
+        token
+      )
+    } catch (error) {
+      this.logger.warn({ error }, 'Failed to release sync lock')
+    }
+  }
+
   key(path: string): string {
     return `catalog:v${this.currentVersion}:${path}`
   }

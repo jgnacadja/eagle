@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { ConfigService } from '@nestjs/config'
-import { SchedulerRegistry } from '@nestjs/schedule'
 import { SyncService } from './sync.service'
 import { DigiformaClient } from '../digiforma/digiforma.client'
 import { CacheService } from '../common/cache/cache.service'
@@ -20,37 +19,45 @@ const sampleProgram = {
   costsInter: [{ cost: 1800, vat: 20, type: 'inter' }]
 }
 
+// Déclenche la sync et attend sa fin : la libération du verrou est le
+// dernier maillon de la chaîne trigger → execute → finally.
+async function runAndWait(service: SyncService, cache: CacheService): Promise<void> {
+  await service.trigger()
+  await vi.waitFor(() => {
+    expect(vi.mocked(cache.releaseSyncLock)).toHaveBeenCalledTimes(1)
+  })
+}
+
 describe('SyncService', () => {
   let service: SyncService
   let client: DigiformaClient
   let cache: CacheService
   let catalog: DirectusCatalogService
   let config: ConfigService
-  let scheduler: { addCronJob: ReturnType<typeof vi.fn> }
 
   beforeEach(async () => {
     client = { fetchAllPrograms: vi.fn() } as unknown as DigiformaClient
     cache = {
       invalidateCatalog: vi.fn(),
       setSyncRun: vi.fn(),
-      getSyncRun: vi.fn()
+      getSyncRun: vi.fn(),
+      acquireSyncLock: vi.fn().mockResolvedValue(true),
+      releaseSyncLock: vi.fn().mockResolvedValue(undefined)
     } as unknown as CacheService
     catalog = {
       upsertMany: vi.fn().mockResolvedValue({ inserted: 1, updated: 0 })
     } as unknown as DirectusCatalogService
-    scheduler = { addCronJob: vi.fn() }
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SyncService,
         {
           provide: ConfigService,
-          useValue: { get: vi.fn((key: string) => (key === 'SYNC_CRON' ? '0 * * * *' : undefined)) }
+          useValue: { get: vi.fn(() => undefined) }
         },
         { provide: DigiformaClient, useValue: client },
         { provide: CacheService, useValue: cache },
         { provide: DirectusCatalogService, useValue: catalog },
-        { provide: SchedulerRegistry, useValue: scheduler },
         {
           provide: GeocodingService,
           useValue: {
@@ -68,21 +75,48 @@ describe('SyncService', () => {
     expect(service).toBeDefined()
   })
 
-  it('registers the cron job on module init', () => {
-    service.onModuleInit()
-    expect(scheduler.addCronJob).toHaveBeenCalledWith('digiforma-sync', expect.any(Object))
+  it('trigger() starts the run and returns true', async () => {
+    vi.mocked(client.fetchAllPrograms).mockResolvedValue([sampleProgram])
+
+    await expect(service.trigger()).resolves.toBe(true)
+    // releaseSyncLock est le dernier maillon de la chaîne (finally du
+    // trigger) — attendre sur lui garantit que le run est terminé.
+    await vi.waitFor(() => expect(cache.releaseSyncLock).toHaveBeenCalledTimes(1))
+
+    expect(client.fetchAllPrograms).toHaveBeenCalledTimes(1)
+    expect(cache.setSyncRun).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: 'success' })
+    )
   })
 
-  it('does not register a cron job with an invalid expression', () => {
-    vi.mocked(config.get).mockReturnValue('invalid-cron')
-    service.onModuleInit()
-    expect(scheduler.addCronJob).not.toHaveBeenCalled()
+  it('trigger() refuses a second run while one is in progress', async () => {
+    vi.mocked(client.fetchAllPrograms).mockImplementation(
+      () => new Promise((resolve) => setTimeout(() => resolve([sampleProgram]), 20))
+    )
+
+    const [first, second] = await Promise.all([service.trigger(), service.trigger()])
+
+    expect([first, second].sort()).toEqual([false, true])
+    await vi.waitFor(() => expect(cache.releaseSyncLock).toHaveBeenCalledTimes(1))
+    expect(client.fetchAllPrograms).toHaveBeenCalledTimes(1)
+    expect(cache.setSyncRun).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: 'success' })
+    )
+  })
+
+  it('trigger() skips when another instance holds the lock', async () => {
+    vi.mocked(cache.acquireSyncLock).mockResolvedValue(false)
+
+    await expect(service.trigger()).resolves.toBe(false)
+
+    expect(client.fetchAllPrograms).not.toHaveBeenCalled()
+    expect(cache.releaseSyncLock).not.toHaveBeenCalled()
   })
 
   it('upserts programs and tracks counts', async () => {
     vi.mocked(client.fetchAllPrograms).mockResolvedValue([sampleProgram])
 
-    await service.run()
+    await runAndWait(service, cache)
 
     expect(catalog.upsertMany).toHaveBeenCalledWith(
       expect.arrayContaining([expect.objectContaining({ digiforma_id: 'prog-001' })])
@@ -96,18 +130,22 @@ describe('SyncService', () => {
   it('falls back to fixture when Digiforma fails', async () => {
     vi.mocked(client.fetchAllPrograms).mockRejectedValue(new Error('no key'))
 
-    await service.run()
+    await runAndWait(service, cache)
 
     expect(catalog.upsertMany).toHaveBeenCalled()
   })
 
-  it('throws Digiforma errors in production instead of falling back', async () => {
+  it('records Digiforma errors as failed in production instead of falling back', async () => {
     vi.mocked(config.get).mockImplementation((key: string) =>
-      key === 'NODE_ENV' ? 'production' : '0 * * * *'
+      key === 'NODE_ENV' ? 'production' : undefined
     )
     vi.mocked(client.fetchAllPrograms).mockRejectedValue(new Error('network'))
 
-    await expect(service.run()).rejects.toThrow('network')
+    await runAndWait(service, cache)
+
+    expect(cache.setSyncRun).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: 'failed', error: 'network' })
+    )
   })
 
   it('logs individual program errors without failing the run', async () => {
@@ -116,7 +154,7 @@ describe('SyncService', () => {
       sampleProgram
     ])
 
-    await service.run()
+    await runAndWait(service, cache)
 
     expect(cache.setSyncRun).toHaveBeenLastCalledWith(
       expect.objectContaining({ status: 'success', failed: 1 })
@@ -133,57 +171,20 @@ describe('SyncService', () => {
     expect(latest).toEqual(run)
   })
 
-  it('records a failed sync run when Directus upsert fails', async () => {
+  it('records a failed sync run and releases the lock when upsert fails', async () => {
     vi.mocked(client.fetchAllPrograms).mockResolvedValue([sampleProgram])
     vi.mocked(catalog.upsertMany).mockRejectedValue(new Error('directus down'))
 
-    await expect(service.run()).rejects.toThrow('directus down')
+    await runAndWait(service, cache)
 
     expect(cache.setSyncRun).toHaveBeenLastCalledWith(expect.objectContaining({ status: 'failed' }))
-  })
-  it('skips a run while one is already in progress', async () => {
-    vi.mocked(client.fetchAllPrograms).mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve([sampleProgram]), 20))
-    )
-
-    const first = service.run()
-    await service.run()
-    await first
-
-    expect(client.fetchAllPrograms).toHaveBeenCalledTimes(1)
-  })
-
-  it('registers the cron job with the default expression when unset', () => {
-    vi.mocked(config.get).mockReturnValue(undefined)
-
-    service.onModuleInit()
-
-    expect(scheduler.addCronJob).toHaveBeenCalled()
-  })
-
-  it('logs cron-triggered failures without crashing', async () => {
-    vi.mocked(config.get).mockImplementation((key: string) =>
-      key === 'NODE_ENV' ? 'production' : '0 * * * *'
-    )
-    vi.mocked(client.fetchAllPrograms).mockRejectedValue(new Error('cron network'))
-    service.onModuleInit()
-    const job = scheduler.addCronJob.mock.calls[0][1] as {
-      fireOnTick: () => void
-    }
-
-    job.fireOnTick()
-    await vi.waitFor(() => {
-      expect(cache.setSyncRun).toHaveBeenLastCalledWith(
-        expect.objectContaining({ status: 'failed', error: 'cron network' })
-      )
-    })
   })
 
   it('records unknown errors thrown as non-Error values', async () => {
     vi.mocked(client.fetchAllPrograms).mockResolvedValue([sampleProgram])
     vi.mocked(catalog.upsertMany).mockRejectedValue('plain string failure')
 
-    await expect(service.run()).rejects.toBe('plain string failure')
+    await runAndWait(service, cache)
 
     expect(cache.setSyncRun).toHaveBeenLastCalledWith(
       expect.objectContaining({ status: 'failed', error: 'Unknown error' })

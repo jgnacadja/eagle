@@ -350,13 +350,44 @@ describe('DirectusCatalogService', () => {
 
   it('retries failed requests', async () => {
     fetch
+      .mockRejectedValueOnce(new Error('timeout'))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+
+    const rows = await service.fetchAllFormations()
+
+    expect(rows).toEqual([])
+    expect(fetch).toHaveBeenCalledTimes(2)
+  })
+
+  it('retries 429 and 5xx responses', async () => {
+    fetch
+      .mockResolvedValueOnce(new Response('rate limited', { status: 429 }))
+      .mockResolvedValueOnce(new Response('upstream error', { status: 502 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 1, slug: 'pilotage' }] }), { status: 200 })
+      )
+
+    const rows = await service.fetchAllFormations()
+
+    expect(rows).toEqual([{ id: 1, slug: 'pilotage' }])
+    expect(fetch).toHaveBeenCalledTimes(3)
+  })
+
+  it('does not retry 4xx responses', async () => {
+    fetch.mockResolvedValueOnce(new Response('bad filter', { status: 400 }))
+
+    await expect(service.fetchAllFormations()).rejects.toThrow('failed: 400')
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not retry POST requests — an expired POST may have been applied', async () => {
+    fetch
       .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
       .mockRejectedValueOnce(new Error('timeout'))
-      .mockResolvedValueOnce(new Response(null, { status: 204 }))
 
-    await service.upsertMany([samplePayloads[0]])
-
-    expect(fetch).toHaveBeenCalledTimes(3)
+    await expect(service.upsertMany([samplePayloads[0]])).rejects.toThrow('timeout')
+    // fetchExisting + un seul POST : pas de retry, jamais de doublon.
+    expect(fetch).toHaveBeenCalledTimes(2)
   })
 
   it('fetchAllFormations fetches every published formation', async () => {

@@ -49,7 +49,7 @@
             class="mt-xl flex flex-col sm:flex-row items-center justify-center gap-md"
           >
             <Button as-child variant="dark" size="pill-lg" class="w-full sm:w-auto shadow-sm">
-              <NuxtLink to="/parler-a-votre-conseiller">Parler à un conseiller</NuxtLink>
+              <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
             </Button>
             <Button as-child variant="outline" size="pill-lg" class="w-full sm:w-auto shadow-xs">
               <NuxtLink to="#reseau">Découvrir le réseau</NuxtLink>
@@ -529,7 +529,7 @@
 
         <div class="mt-xl flex flex-col sm:flex-row items-center justify-center gap-md">
           <Button as-child variant="accent" size="pill-lg" class="w-full sm:w-auto shadow-sm">
-            <NuxtLink to="/parler-a-votre-conseiller">Parler à un conseiller</NuxtLink>
+            <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
           </Button>
           <Button
             as-child

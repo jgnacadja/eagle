@@ -82,7 +82,7 @@ describe('pages/a-propos.vue', () => {
 
     const conseillerLink = links.find(
       (l) =>
-        l.text().includes('Parler à un conseiller') &&
+        l.text().includes('Parler à votre conseiller') &&
         l.attributes('href') === '/parler-a-votre-conseiller'
     )
     const reseauLink = links.find(

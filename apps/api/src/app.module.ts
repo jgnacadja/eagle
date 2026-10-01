@@ -20,6 +20,8 @@ import { LeadsModule } from './leads/leads.module'
 import { CacheModule } from './common/cache/cache.module'
 import { DirectusModule } from './directus/directus.module'
 import { AssistantModule } from './assistant/assistant.module'
+import { SearchMissesModule } from './search-misses/search-misses.module'
+import { RetrievalModule } from './retrieval/retrieval.module'
 
 // Express route sans tenir compte de la casse (`/LEADS/demande` atteint le
 // contrôleur) et `originalUrl` contient la query (« /health?x=1 ») : le
@@ -245,7 +247,9 @@ export function buildThrottlers(
     CentresModule,
     DirectusModule,
     LeadsModule,
-    AssistantModule
+    AssistantModule,
+    SearchMissesModule,
+    RetrievalModule
   ],
   controllers: [HealthController],
   providers: [

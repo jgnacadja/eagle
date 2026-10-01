@@ -69,6 +69,7 @@
       </NavigationMenu>
 
       <div class="ml-auto flex items-center gap-xs lg:gap-sm shrink-0">
+        <AssistantHeaderPill class="hidden xl:inline-flex" />
         <Button
           as-child
           variant="outline"

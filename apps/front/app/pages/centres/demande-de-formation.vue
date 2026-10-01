@@ -510,6 +510,7 @@ import IconMapPin from '~/components/icons/IconMapPin.vue'
 import IconBook from '~/components/icons/IconBook.vue'
 import IconCalendar from '~/components/icons/IconCalendar.vue'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
+import { readHandoff, type AssistantHandoff } from '~/utils/assistant-handoff'
 
 definePageMeta({
   layout: 'with-breadcrumb'
@@ -541,9 +542,12 @@ if (sujetSlug.value === 'conseiller') {
 
 // D1 — contexte transmis par le moteur de recherche assistée : besoin brut,
 // effectif et localisation extraits de la conversation (aucune ressaisie).
-const besoinParam = computed(() => queryValue(route.query.besoin))
-const salariesParam = computed(() => queryValue(route.query.salaries))
-const lieuParam = computed(() => queryValue(route.query.lieu))
+// Transmis hors URL (`history.state`, voir utils/assistant-handoff) : lu au
+// montage, jamais rendu côté serveur, absent du `page_location` analytics.
+const handoff = ref<AssistantHandoff | null>(null)
+const besoinParam = computed(() => handoff.value?.need ?? null)
+const salariesParam = computed(() => handoff.value?.headcount ?? null)
+const lieuParam = computed(() => handoff.value?.location ?? null)
 
 const besoinChips = computed(() => {
   const chips: string[] = []
@@ -865,9 +869,9 @@ const { handleSubmit, errors, submitCount, defineField, setValues, values } = us
       })
   ),
   initialValues: {
-    // D1 : effectif et lieu pré-remplis depuis la recherche assistée.
-    salaries: salariesParam.value ?? 8,
-    lieu: lieuParam.value ?? '',
+    // D1 : effectif et lieu de la recherche assistée appliqués au montage.
+    salaries: 8,
+    lieu: '',
     echeance: echeanceMonthOptions[0] ?? ECHEANCE_ASAP,
     precisions: '',
     consentement: false
@@ -952,6 +956,16 @@ function reopenAssistant() {
 }
 
 onMounted(() => {
+  // D1 : besoin transmis par la recherche assistée, puis brouillon éventuel
+  // (retour depuis « Modifier ») qui reprend la main sur les champs saisis.
+  handoff.value = readHandoff()
+  if (handoff.value) {
+    setValues({
+      ...(handoff.value.headcount ? { salaries: handoff.value.headcount } : {}),
+      ...(handoff.value.location ? { lieu: handoff.value.location } : {})
+    })
+  }
+
   const raw = window.sessionStorage.getItem(draftKey.value)
   if (!raw) return
   try {

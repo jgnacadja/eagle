@@ -29,16 +29,18 @@ const alternative: AssistantRecommendation = {
   url: '/formations/management/communication'
 }
 
+const advisorTo = {
+  path: '/parler-a-votre-conseiller',
+  state: { assistantHandoff: { need: 'gestion des conflits pour des managers' } }
+}
+
 function mountTable(props: Record<string, unknown> = {}) {
   return mount(AssistantCompareTable, {
     props: {
       recommendations: [primary, alternative],
       needSummary: 'gestion des conflits pour des managers',
-      advisorTo: '/centres/demande-de-formation?sujet=conseiller',
+      advisorTo,
       ...props
-    },
-    global: {
-      stubs: { NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' } }
     }
   })
 }
@@ -61,12 +63,28 @@ describe('AssistantCompareTable', () => {
     expect(text).toContain('Présentiel')
   })
 
-  it('lie le CTA à la fiche de la formation principale', () => {
+  it('lie le CTA à la fiche principale et le conseiller avec le besoin hors URL', () => {
     const wrapper = mountTable()
     const hrefs = wrapper.findAll('a').map((a) => a.attributes('href'))
     expect(hrefs).toContain('/formations/management/gestion-conflits')
-    expect(hrefs).toContain('/centres/demande-de-formation?sujet=conseiller')
+    expect(hrefs).toContain('/parler-a-votre-conseiller')
     expect(wrapper.text()).toContain('Voir la formation principale')
     expect(wrapper.text()).toContain('Être accompagné dans le choix')
+
+    const advisor = wrapper.findAll('a').find((a) => a.text() === 'Être accompagné dans le choix')!
+    expect(advisor.attributes('data-state')).toBe(JSON.stringify(advisorTo.state))
+  })
+
+  it('signale la fiche ouverte depuis une ligne ou le CTA principal', async () => {
+    const wrapper = mountTable()
+    const link = (text: string) => wrapper.findAll('a').find((a) => a.text() === text)!
+
+    await link('Communication managériale').trigger('click')
+    await link('Voir la formation principale').trigger('click')
+
+    expect(wrapper.emitted('select')).toEqual([
+      [alternative, 'formation'],
+      [primary, 'formation']
+    ])
   })
 })

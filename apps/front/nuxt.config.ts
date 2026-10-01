@@ -97,6 +97,9 @@ export default defineNuxtConfig({
     '/centres/**': { isr: { expiration: 600, passQuery: true } },
     '/actualites': { isr: { expiration: 600, passQuery: true } },
     '/actualites/**': { isr: { expiration: 600, passQuery: true } },
+    // Ancienne page du moteur IA (arbitrage : panneau conservé) : les liens
+    // partagés et favoris atterrissent sur la Home, qui porte le champ d'entrée.
+    '/recherche-assistee': { redirect: { to: '/', statusCode: 301 } },
     '/rejoindre-le-reseau': { prerender: true },
     '/referencer-mon-organisme': { prerender: true },
     '/entreprise-reseau': { prerender: true },

@@ -50,13 +50,19 @@
 
     <!-- Mode dégradé : l'API IA est indisponible, la recherche déterministe
          répond à sa place (`reply.mode === 'fallback'`) — bascule visible,
-         sortie conseiller à portée. -->
+         sortie conseiller à portée. La région de statut existe toujours dans
+         le DOM (WCAG 4.1.3) : une région live insérée avec son contenu n'est
+         souvent pas annoncée ; seul l'intérieur est conditionnel. -->
     <div
-      v-if="degraded"
       role="status"
-      class="border-b border-warning/40 bg-warning-soft px-lg py-sm text-meta text-ink"
+      :class="
+        degraded
+          ? 'border-b border-warning/40 bg-warning-soft px-lg py-sm text-meta text-ink'
+          : 'sr-only'
+      "
     >
       <div
+        v-if="degraded"
         class="mx-auto flex w-full max-w-[calc(var(--spacing-container)*0.8)] flex-wrap items-center gap-sm"
       >
         <IconZap :size="14" class="shrink-0 text-warning" aria-hidden="true" />
@@ -663,13 +669,19 @@ function alternativeRecs(entry: AssistantEntry): AssistantRecommendation[] {
 // E4/E5 — note de provenance sous le bloc recommandation : mention de source
 // renvoyée par l'API (RG-IA-01), complétée quand une session est affichée.
 const DEFAULT_SOURCE = 'Recommandations issues des formations publiées du catalogue LEARN UP.'
+const SESSION_NOTE =
+  'Session et disponibilité issues du référentiel — aucune disponibilité estimée.'
+
+// Deux phrases accolées : la mention de source renvoyée par l'API se termine
+// par un point, quelle que soit sa ponctuation d'origine.
+function asSentence(text: string): string {
+  return text.trim().replace(/[.s]*$/, '.')
+}
 
 function provenanceNote(entry: AssistantEntry): string {
   const hasSession = (entry.reply?.recommendations ?? []).some((r) => r.availability)
-  const source = entry.reply?.source || DEFAULT_SOURCE
-  return hasSession
-    ? `${source} Session et disponibilité issues du référentiel — aucune disponibilité estimée.`
-    : source
+  const source = asSentence(entry.reply?.source || DEFAULT_SOURCE)
+  return hasSession ? `${source} ${SESSION_NOTE}` : source
 }
 
 // Identifiants du catalogue en query, besoin hors URL.

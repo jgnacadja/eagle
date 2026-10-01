@@ -176,8 +176,56 @@ describe('AssistantConversation', () => {
         }
       ]
     })
-    expect(wrapper.find('[role="status"]').exists()).toBe(false)
+    // La région de statut existe toujours (WCAG 4.1.3), vide et masquée.
+    const status = wrapper.find('[role="status"]')
+    expect(status.exists()).toBe(true)
+    expect(status.classes()).toContain('sr-only')
+    expect(status.text()).toBe('')
     expect(wrapper.text()).not.toContain('Recherche simplifiée')
+  })
+
+  it('ends the API source mention with a period before the session note', () => {
+    const rec = {
+      slug: 'sst',
+      familySlug: 'secours',
+      title: 'SST',
+      description: null,
+      durationDays: 2,
+      durationHours: null,
+      modalities: ['presentiel'],
+      certification: null,
+      justification: 'Semble adaptée.',
+      availability: {
+        sessionId: 's1',
+        startDate: '2999-09-18',
+        modality: 'presentiel',
+        seatsRemaining: 8,
+        centreName: 'Centre LEARN UP de Créteil',
+        centreSlug: 'creteil',
+        city: 'Créteil',
+        department: 'Val-de-Marne'
+      },
+      url: '/formations/secours/sst',
+      rank: 'primary' as const
+    }
+    const wrapper = mountConversation({
+      entries: [
+        {
+          role: 'assistant',
+          content: 'Nous vous recommandons',
+          reply: {
+            kind: 'recommend',
+            text: 'Nous vous recommandons',
+            source: 'Recommandations issues du catalogue publié LEARN UP',
+            recommendations: [rec]
+          }
+        }
+      ]
+    })
+
+    expect(wrapper.text()).toContain(
+      'Recommandations issues du catalogue publié LEARN UP. Session et disponibilité issues du référentiel'
+    )
   })
 
   it('shows the automated-assistant notice under the composer', () => {

@@ -155,7 +155,7 @@
         <!-- Version Desktop (>= md) : 2 colonnes avec Titre + Paragraphes groupés (zéro écart anormal) -->
         <div class="hidden md:grid md:grid-cols-2 md:gap-2xl md:items-center">
           <div v-reveal>
-            <p class="text-overline font-extrabold uppercase tracking-wider text-accent-text">
+            <p class="text-overline font-extrabold uppercase tracking-wider text-accent-text py-sm">
               Notre mission
             </p>
             <h2
@@ -209,7 +209,7 @@
     ════════════════════════════════════════════════════ -->
     <section
       id="metier"
-      class="bg-primary-muted py-xl text-ink-inverse md:py-section"
+      class="bg-primary-muted py-3xl text-ink-inverse"
       aria-labelledby="metier-title"
     >
       <div class="px-gutter-mobile md:px-gutter">
@@ -273,7 +273,7 @@
             v-for="(pillar, idx) in pillars"
             :key="pillar.title"
             v-reveal="revealStagger(idx)"
-            class="flex flex-col rounded-xl bg-surface p-md sm:p-lg shadow-xs transition-shadow hover:shadow-sm"
+            class="flex flex-col rounded-xl bg-surface p-md shadow-xs transition-shadow hover:shadow-sm"
           >
             <div
               class="hidden md:flex h-10 w-10 items-center justify-center rounded-xl bg-white text-primary"

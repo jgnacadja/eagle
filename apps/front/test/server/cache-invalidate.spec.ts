@@ -19,7 +19,9 @@ let purgeSecret = 'test-secret'
 let bypassToken = ''
 let requestBody: unknown = null
 
-const fetchMock = vi.fn(async () => new Response(null, { status: 200 }))
+const fetchMock = vi.fn<(url: string, options?: unknown) => Promise<Response>>(
+  async () => new Response(null, { status: 200 })
+)
 
 vi.stubGlobal('defineEventHandler', (handler: unknown) => handler)
 vi.stubGlobal(

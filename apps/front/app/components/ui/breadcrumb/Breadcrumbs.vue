@@ -6,7 +6,11 @@
           <template v-if="index === items.length - 1">
             <BreadcrumbPage>{{ item.label }}</BreadcrumbPage>
           </template>
-          <BreadcrumbLink v-else as-child>
+          <BreadcrumbLink
+            v-else
+            as-child
+            :class="isHome(item) ? 'text-accent-text font-medium hover:underline' : undefined"
+          >
             <NuxtLink :to="item.to">{{ item.label }}</NuxtLink>
           </BreadcrumbLink>
         </BreadcrumbItem>
@@ -34,4 +38,8 @@ interface BreadcrumbRouteItem {
 defineProps<{
   items: BreadcrumbRouteItem[]
 }>()
+
+function isHome(item: BreadcrumbRouteItem): boolean {
+  return item.label.trim().toLowerCase() === 'accueil' || item.to === '/'
+}
 </script>

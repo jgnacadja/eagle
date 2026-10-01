@@ -170,9 +170,10 @@
         <h2 v-reveal-soft class="mt-sm max-w-prose font-display text-h3 font-extrabold md:text-h2">
           Un seul partenaire pour coordonner vos formations partout en France
         </h2>
-        <p class="hidden md:block mt-sm max-w-prose text-small text-ink-inverse-muted md:text-body">
-          Vos demandes sont centralisées, qualifiées, puis déployées site par site avec les centres
-          du territoire — vous gardez un interlocuteur et une vision d'ensemble.
+        <p class="mt-sm max-w-prose text-small text-ink-inverse-muted md:text-body">
+          Retrouvez toutes vos demandes centralisées et qualifiées au même endroit. Vos déploiements
+          s'effectuent site par site en lien avec nos centres locaux, tout en vous garantissant un
+          interlocuteur unique et une vision globale.
         </p>
 
         <ol class="mt-xl flex flex-col gap-md lg:flex-row lg:items-stretch">
@@ -209,8 +210,8 @@
             Un réseau de centres au plus près de vos équipes
           </h2>
           <p class="mt-sm text-body text-ink-muted hidden md:block">
-            Accédez aux formations dont vous avez besoin, en centre, sur votre site ou en intra — la
-            carte matérialise la couverture du réseau.
+            Formez vos équipes en centre, sur votre site ou en intra-entreprise. Découvrez la
+            couverture complète de notre réseau à travers notre carte.
           </p>
           <Button
             as-child

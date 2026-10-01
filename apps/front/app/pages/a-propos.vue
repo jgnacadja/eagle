@@ -26,9 +26,12 @@
             v-hero="heroStagger(1)"
             class="mx-auto mt-lg max-w-prose font-display text-h2 font-extrabold text-ink md:text-hero"
           >
-            Le conseil en formation, <span class="text-accent-text">au plus près</span
-            ><br class="hidden md:block" />
-            <span class="text-accent-text">&nbsp;du terrain.</span>
+            Le conseil en formation,
+            <span class="text-accent-text"
+              >au plus <br class="hidden md:block" />
+              près</span
+            >
+            <span class="text-accent-text"> du terrain</span>.
           </h1>
 
           <p v-hero="heroStagger(3)" class="mx-auto mt-sm text-ink-muted text-small max-w-prose">
@@ -157,11 +160,13 @@
             </p>
             <h2
               id="mission-title"
-              class="mt-xs font-display text-h2 font-extrabold leading-tight text-ink md:text-h2"
+              class="mt-xs max-w-105 font-display text-h2 font-extrabold leading-tight text-ink md:text-h2"
             >
-              Rendre la formation réglementaire simple à trouver, à organiser et à suivre
+              Rendre la formation réglementaire simple à trouver, à organiser et
+              <br class="hidden md:block" />
+              à suivre.
             </h2>
-            <p class="mt-md font-sans text-body text-ink-muted leading-relaxed">
+            <p class="mt-md font-sans text-h4 font-extralight text-ink-muted leading-relaxed">
               Les obligations de formation se multiplient, les conditions sont dispersées et les
               interlocuteurs nombreux. Nous centralisons la recherche, la qualification du besoin et
               la coordination des sessions, pour que les responsables formation, les dirigeants de
@@ -294,7 +299,7 @@
         <!-- Carte Qualité -->
         <article
           v-reveal="revealStagger(0)"
-          class="flex flex-col items-start gap-md p-md sm:p-lg sm:flex-row sm:gap-lg"
+          class="flex flex-col items-start gap-md sm:flex-row sm:gap-lg"
         >
           <!-- En-tête mobile : Logo + Titre / Badge -->
           <div class="flex items-center gap-md sm:block">
@@ -341,7 +346,7 @@
         </article>
 
         <!-- Carte Accessibilité -->
-        <article v-reveal="revealStagger(1)" class="flex flex-col justify-between p-md sm:p-lg">
+        <article v-reveal="revealStagger(1)" class="flex flex-col justify-between sm:pl-lg">
           <div>
             <p class="text-overline font-extrabold uppercase tracking-wider text-accent-text">
               Accessibilité & handicap
@@ -471,9 +476,10 @@
               id="reseau-title"
               class="mt-xs font-display text-h2 font-extrabold leading-tight text-ink"
             >
-              Un réseau national de centres, une seule marque
+              Un réseau national de centres, une <br class="hidden md:block" />
+              seule marque
             </h2>
-            <p class="mt-md font-sans text-body text-ink-muted leading-relaxed">
+            <p class="mt-md font-sans text-h4 font-extralight text-ink-muted leading-relaxed">
               Centres de formation, organismes référencés et formateurs indépendants travaillent
               sous la marque LEARN UP ACADEMY avec les mêmes exigences de qualité. Où que soient vos
               équipes, vous bénéficiez du même niveau de service et d'un interlocuteur unique.
@@ -510,8 +516,13 @@
           v-reveal-soft
           class="font-display text-h3 font-extrabold text-ink-inverse md:text-h2"
         >
-          Une question ou une formation à organiser ?
+          <span class="hidden md:block">
+            Une question sur nos services ou une <br />
+            formation à organiser ?
+          </span>
+          <span class="md:hidden">Une question ou une formation à organiser ?</span>
         </h2>
+
         <p class="hidden sm:block mt-sm font-sans text-small text-ink-inverse-muted md:text-lead">
           Un conseiller vous répond et vous oriente.
         </p>

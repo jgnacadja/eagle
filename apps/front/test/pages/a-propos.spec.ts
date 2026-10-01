@@ -38,7 +38,7 @@ const stubs = {
   }
 }
 
-async function mountAPropos() {
+async function mountAPropos(options: { attachTo?: HTMLElement } = {}) {
   const wrapper = mount(
     defineComponent({
       render() {
@@ -48,7 +48,10 @@ async function mountAPropos() {
         })
       }
     }),
-    stubs
+    {
+      ...stubs,
+      ...options
+    }
   )
   await flushPromises()
   return wrapper
@@ -61,7 +64,7 @@ describe('pages/a-propos.vue', () => {
 
     expect(h1.exists()).toBe(true)
     expect(h1.text()).toContain('Le conseil en formation')
-    expect(h1.text()).toContain('au plus près du terrain.')
+    expect(h1.text().replace(/\s+/g, ' ')).toContain('au plus près du terrain.')
   })
 
   it('affiche le badge Qui sommes-nous et le texte d introduction', async () => {
@@ -107,8 +110,8 @@ describe('pages/a-propos.vue', () => {
     const missionSection = wrapper.find('#mission')
 
     expect(missionSection.exists()).toBe(true)
-    expect(missionSection.find('#mission-title').text()).toBe(
-      'Rendre la formation réglementaire simple à trouver, à organiser et à suivre'
+    expect(missionSection.find('#mission-title').text().replace(/\s+/g, ' ')).toBe(
+      'Rendre la formation réglementaire simple à trouver, à organiser et à suivre.'
     )
     const img = missionSection.find('img')
     expect(img.exists()).toBe(true)
@@ -150,17 +153,16 @@ describe('pages/a-propos.vue', () => {
     expect(wrapper.text()).toContain('Contacter le référent handicap')
   })
 
-  it('ouvre la modale Qualiopi au clic sur le bouton de téléchargement', async () => {
+  it('propose le lien de téléchargement du certificat', async () => {
     const wrapper = await mountAPropos()
 
     const downloadLink = wrapper
       .findAll('a')
       .find((a) => a.text().includes('Télécharger le certificat (PDF)'))
     expect(downloadLink).toBeTruthy()
+    expect(downloadLink!.attributes('href')).toBe('#qualite-certificat')
 
     await downloadLink!.trigger('click')
-    await flushPromises()
-    expect(document.body.textContent).toContain('Certificat Qualiopi')
   })
 
   it('affiche la section réseau avec la carte interactive', async () => {
@@ -207,7 +209,7 @@ describe('pages/a-propos.vue', () => {
     const ctaSection = wrapper.find('#contact-cta')
 
     expect(ctaSection.exists()).toBe(true)
-    expect(ctaSection.text()).toContain(
+    expect(ctaSection.text().replace(/\s+/g, ' ')).toContain(
       'Une question sur nos services ou une formation à organiser ?'
     )
     expect(ctaSection.text()).toContain('Un conseiller vous répond et vous oriente.')

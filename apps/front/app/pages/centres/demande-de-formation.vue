@@ -373,7 +373,7 @@
                   J'accepte que ces informations soient utilisées pour le traitement de ma demande
                   de formation.
                   <NuxtLink
-                    to="#"
+                    to="/confidentialite"
                     class="font-medium text-primary transition-colors hover:text-accent-text"
                   >
                     Politique de confidentialité
@@ -887,7 +887,10 @@ const showError = (field: DemandeField) => submitCount.value > 0 && !!errors.val
 
 // Persistance de la saisie : le lien « Modifier » renvoie au point d'origine
 // sans perdre le formulaire déjà rempli (RG06).
-const DRAFT_KEY = 'demande-formation-draft'
+// Brouillon — RGPD : jamais `consentement` (la case doit être recochée par
+// une action explicite) ni données d'identité (nom, e-mail, téléphones).
+// Ne restent que le besoin et le contexte entreprise (données publiques).
+const DRAFT_KEY_BASE = 'demande-formation-draft'
 const DRAFT_FIELDS = new Set<string>([
   'salaries',
   'lieu',
@@ -895,18 +898,30 @@ const DRAFT_FIELDS = new Set<string>([
   'precisions',
   'raisonSociale',
   'siret',
-  'nom',
-  'fonction',
-  'email',
-  'telephone',
-  'telephonePro',
-  'consentement'
+  'fonction'
 ])
+
+// Clé suffixée par le contexte d'URL : un brouillon saisi sur une autre
+// formation/centre n'est pas restauré ici.
+const draftKey = computed(() => {
+  const context = [
+    centreSlug.value,
+    familleSlug.value,
+    formationSlug.value,
+    sessionSlug.value,
+    sujetSlug.value,
+    isIntra.value ? 'intra' : null
+  ]
+    .filter(Boolean)
+    .join(':')
+  return context ? `${DRAFT_KEY_BASE}:${context}` : DRAFT_KEY_BASE
+})
 
 function saveDraft() {
   /* v8 ignore next -- browser-only helper, guard unreachable in tests */
   if (typeof window === 'undefined') return
-  window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify(values))
+  const draft = Object.fromEntries(Object.entries(values).filter(([key]) => DRAFT_FIELDS.has(key)))
+  window.sessionStorage.setItem(draftKey.value, JSON.stringify(draft))
 }
 
 // D1 — « Modifier » rouvre le panneau (la conversation est conservée) et le
@@ -918,7 +933,7 @@ function reopenAssistant() {
 }
 
 onMounted(() => {
-  const raw = window.sessionStorage.getItem(DRAFT_KEY)
+  const raw = window.sessionStorage.getItem(draftKey.value)
   if (!raw) return
   try {
     const parsed: unknown = JSON.parse(raw)
@@ -935,7 +950,7 @@ onMounted(() => {
       setValues(draft)
     }
   } catch {
-    window.sessionStorage.removeItem(DRAFT_KEY)
+    window.sessionStorage.removeItem(draftKey.value)
   }
 })
 
@@ -1008,7 +1023,7 @@ const onSubmit = handleSubmit(async (v) => {
   })
   if (ok) {
     submitted.value = true
-    window.sessionStorage.removeItem(DRAFT_KEY)
+    window.sessionStorage.removeItem(draftKey.value)
   }
 })
 </script>

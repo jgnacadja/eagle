@@ -48,15 +48,15 @@
       </div>
     </div>
 
-    <!-- Fil de conversation : un seul viewport scrollable. Région live
-         polie : chaque réponse est annoncée à son arrivée (rendu progressif),
-         le squelette d'analyse porte sa propre annonce pendant `aria-busy`. -->
+    <!-- Fil de conversation : un seul viewport scrollable. Le contenu est la
+         seule région live du fil (`role="log"` : polie, additions) — chaque
+         ajout est annoncé à son arrivée, squelette d'analyse et réponse
+         compris ; pas d'`aria-busy` (il suspendrait les annonces) ni de région
+         imbriquée (double annonce). -->
     <MessageScrollerProvider auto-scroll default-scroll-position="end">
       <MessageScroller class="min-h-0 flex-1">
         <MessageScrollerViewport class="px-lg py-lg">
           <MessageScrollerContent
-            aria-live="polite"
-            :aria-busy="pending"
             class="mx-auto w-full max-w-[calc(var(--spacing-container)*0.8)] gap-lg"
           >
             <MessageScrollerItem
@@ -171,6 +171,7 @@
                                 >
                                   <Button
                                     variant="outline"
+                                    :disabled="pending"
                                     class="rounded-full border-rule px-md py-sm text-meta font-medium text-ink-muted hover:border-primary hover:text-primary max-md:min-h-touch"
                                     @click="$emit('send', suggestion, 'suggestion')"
                                   >
@@ -368,7 +369,7 @@
                   <MessageContent class="pt-xs">
                     <Bubble variant="ghost" class="w-full">
                       <BubbleContent class="p-0">
-                        <output class="block" aria-live="polite">
+                        <div class="block">
                           <p class="text-small font-medium text-ink-muted">
                             Analyse de votre besoin…
                           </p>
@@ -384,7 +385,7 @@
                           >
                             Arrêter la réponse
                           </Button>
-                        </output>
+                        </div>
                       </BubbleContent>
                     </Bubble>
                   </MessageContent>
@@ -501,6 +502,7 @@ import type {
   AssistantSelection,
   AssistantSubmitVia
 } from '~/composables/useAssistantAnalytics'
+import { advisorLink, demandeLink, type AssistantHandoff } from '~/utils/assistant-handoff'
 import AssistantCompareTable from '~/components/Assistant/CompareTable.vue'
 import AssistantRecommendationCard from '~/components/Assistant/RecommendationCard.vue'
 import {
@@ -565,21 +567,19 @@ onBeforeUnmount(() => {
   textarea.value = null
 })
 
-const demandeBaseTo = '/centres/demande-de-formation'
-const advisorBaseTo = '/parler-a-votre-conseiller'
+// Besoin en langage naturel (+ effectif, lieu extraits) transmis au tunnel de
+// demande et à la page conseiller — hors URL (RGPD, voir
+// utils/assistant-handoff) : aucune ressaisie, aucun texte libre dans
+// `page_location`.
+const handoff = computed<AssistantHandoff | null>(() =>
+  props.needSummary.trim()
+    ? { need: props.needSummary, headcount: props.headcount, location: props.location }
+    : null
+)
 
-// Le besoin agrégé part en query param : tronqué pour garder une URL
-// raisonnable après une longue conversation (le fil complet reste visible
-// dans le panneau).
-const NEED_PARAM_MAX = 500
-
-// Escalade conseiller (toutes les impasses et le pied des recommandations) :
-// le besoin en langage naturel pré-remplit « Votre besoin en quelques mots »
-// de la page conseiller (`?q=`) — aucune ressaisie.
-const advisorTo = computed(() => {
-  const need = props.needSummary.trim().slice(0, NEED_PARAM_MAX)
-  return need ? `${advisorBaseTo}?${new URLSearchParams({ q: need })}` : advisorBaseTo
-})
+// Escalade conseiller : toutes les impasses et le pied des recommandations.
+const advisorTo = computed(() => advisorLink(handoff.value))
+const demandeBaseTo = computed(() => demandeLink({}, handoff.value))
 
 function entryId(entry: AssistantEntry, index: number): string {
   return entry.id ?? `entry-${index}`
@@ -613,15 +613,16 @@ function provenanceNote(entry: AssistantEntry): string {
     : 'Recommandations issues des formations publiées du catalogue LEARN UP.'
 }
 
-function demandeTo(rec: AssistantRecommendation): string {
-  const params = new URLSearchParams()
-  if (rec.familySlug) params.set('famille', rec.familySlug)
-  params.set('formation', rec.slug)
-  if (rec.availability?.sessionId) params.set('session', rec.availability.sessionId)
-  if (props.needSummary) params.set('besoin', props.needSummary.slice(0, NEED_PARAM_MAX))
-  if (props.headcount) params.set('salaries', String(props.headcount))
-  if (props.location) params.set('lieu', props.location)
-  return `/centres/demande-de-formation?${params.toString()}`
+// Identifiants du catalogue en query, besoin hors URL.
+function demandeTo(rec: AssistantRecommendation) {
+  return demandeLink(
+    {
+      famille: rec.familySlug ?? undefined,
+      formation: rec.slug,
+      session: rec.availability?.sessionId ?? undefined
+    },
+    handoff.value
+  )
 }
 
 function submit() {

@@ -345,4 +345,32 @@ describe('useAssistant', () => {
     expect(onReply).toHaveBeenNthCalledWith(1, clarify, { turn: 1 })
     expect(onReply).toHaveBeenNthCalledWith(2, recommend, { turn: 2 })
   })
+
+  it('exposes the last API reply and whether a clarification is awaited', async () => {
+    const clarify = { kind: 'clarify', text: 'Précisez.', mode: 'ai' }
+    fetchMock
+      .mockResolvedValueOnce(clarify)
+      .mockResolvedValueOnce({ kind: 'recommend', text: 'ok', recommendations: [] })
+    const assistant = useAssistant()
+
+    // L'accueil local est une question, pas une réponse de l'API.
+    assistant.append({
+      role: 'assistant',
+      content: 'Bonjour',
+      reply: { kind: 'clarify', text: 'Bonjour' }
+    })
+    expect(assistant.lastReply.value).toBeUndefined()
+    expect(assistant.awaitingClarification.value).toBe(false)
+
+    await assistant.send('sst')
+    expect(assistant.lastReply.value).toEqual(clarify)
+    expect(assistant.awaitingClarification.value).toBe(true)
+
+    await assistant.send('8 salariés')
+    expect(assistant.lastReply.value?.kind).toBe('recommend')
+    expect(assistant.awaitingClarification.value).toBe(false)
+
+    assistant.reset()
+    expect(assistant.lastReply.value).toBeUndefined()
+  })
 })

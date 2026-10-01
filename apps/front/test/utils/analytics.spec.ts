@@ -31,4 +31,16 @@ describe('trackEvent', () => {
 
     expect(event).toEqual({ event: 'ai_recommendation_display', count: 3, fallback: false })
   })
+
+  it('never throws when the dataLayer rejects the push', () => {
+    // dataLayer surchargé par un script tiers : l'analytics ne casse pas l'UX.
+    window.dataLayer = {
+      push() {
+        throw new Error('boom')
+      }
+    } as unknown as unknown[]
+
+    expect(() => trackEvent('ai_search_start', { source: 'home' })).not.toThrow()
+    expect(trackEvent('ai_search_start', { source: 'home' })).toBeNull()
+  })
 })

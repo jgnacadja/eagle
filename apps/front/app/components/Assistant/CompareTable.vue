@@ -68,6 +68,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { RouteLocationRaw } from 'vue-router'
 import type { AssistantRecommendation } from '@learnup/types'
 import type { AssistantSelectAction } from '~/composables/useAssistantAnalytics'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
@@ -78,7 +79,7 @@ const props = withDefaults(
     /** Besoin utilisateur, rappelé en sous-titre (E10). */
     needSummary?: string
     /** Lien « parler à votre conseiller ». */
-    advisorTo?: string
+    advisorTo?: RouteLocationRaw
   }>(),
   { needSummary: '', advisorTo: undefined }
 )

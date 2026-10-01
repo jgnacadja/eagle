@@ -178,6 +178,17 @@ export function useAssistant(
 
   const started = computed(() => entries.value.length > 0)
 
+  /** Dernière réponse réelle de l'API — l'accueil local (`append`) ne compte pas. */
+  const lastReply = computed<AssistantReply | undefined>(() => {
+    const message = messages.value.findLast(
+      (m) => m.role === 'assistant' && !m.id.startsWith('local-')
+    )
+    return message ? replyOf(message) : undefined
+  })
+
+  /** Le prochain message utilisateur répond à une question de précision. */
+  const awaitingClarification = computed(() => lastReply.value?.kind === 'clarify')
+
   /** Besoin agrégé tel que décrit — joint à la demande de formation. */
   const needSummary = computed(() =>
     entries.value
@@ -278,6 +289,8 @@ export function useAssistant(
     contextChips,
     slots,
     started,
+    lastReply,
+    awaitingClarification,
     needSummary,
     append,
     send,

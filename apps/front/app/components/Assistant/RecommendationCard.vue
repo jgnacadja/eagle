@@ -150,6 +150,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { RouteLocationRaw } from 'vue-router'
 import type { AssistantRecommendation } from '@learnup/types'
 import type { AssistantSelectAction } from '~/composables/useAssistantAnalytics'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
@@ -158,12 +159,12 @@ import { placesLabel, sessionSeatType } from '~/utils/placesLabel'
 const props = withDefaults(
   defineProps<{
     recommendation: AssistantRecommendation
-    /** Chemin de la demande de formation pré-remplie (famille, session, besoin). */
-    demandeTo: string
+    /** Demande de formation pré-remplie (famille, session en query ; besoin hors URL). */
+    demandeTo: RouteLocationRaw
     /** Alternative compacte (E4) : label + titre + justification + lien fiche. */
     compact?: boolean
     /** Lien « parler à votre conseiller » (variante sans session, É6). */
-    advisorTo?: string
+    advisorTo?: RouteLocationRaw
   }>(),
   { compact: false, advisorTo: undefined }
 )

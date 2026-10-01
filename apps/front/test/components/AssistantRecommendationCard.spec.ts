@@ -27,13 +27,17 @@ const base: AssistantRecommendation = {
   url: '/formations/secours/sst'
 }
 
+// Le besoin transmis à la demande voyage dans l'état d'historique, pas dans l'URL.
+const handoffState = { assistantHandoff: { need: 'former au SST' } }
+
 const mountOptions = {
   props: {
     recommendation: base,
-    demandeTo: '/centres/demande-de-formation?formation=sst'
-  },
-  global: {
-    stubs: { NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' } }
+    demandeTo: {
+      path: '/centres/demande-de-formation',
+      query: { famille: 'secours', formation: 'sst' },
+      state: handoffState
+    }
   }
 }
 
@@ -73,7 +77,7 @@ describe('AssistantRecommendationCard', () => {
       props: {
         ...mountOptions.props,
         recommendation: { ...base, availability: null },
-        advisorTo: '/centres/demande-de-formation?sujet=conseiller'
+        advisorTo: { path: '/parler-a-votre-conseiller', state: handoffState }
       }
     })
     const text = wrapper.text()
@@ -83,6 +87,10 @@ describe('AssistantRecommendationCard', () => {
     expect(text).toContain('La page formation reste consultable')
     expect(text).toContain('Voir la formation')
     expect(text).not.toContain('Voir les sessions')
+
+    const advisor = wrapper.findAll('a').find((a) => a.text() === 'Être accompagné')!
+    expect(advisor.attributes('href')).toBe('/parler-a-votre-conseiller')
+    expect(advisor.attributes('data-state')).toBe(JSON.stringify(handoffState))
   })
 
   it('renders the compact alternative variant (E4)', () => {
@@ -101,12 +109,15 @@ describe('AssistantRecommendationCard', () => {
     expect(text).not.toContain('Prochaine session')
   })
 
-  it('links the title and CTAs', () => {
+  it('links the title and CTAs, the need travelling outside the URL', () => {
     const wrapper = mountCard()
     const hrefs = wrapper.findAll('a').map((a) => a.attributes('href'))
     expect(hrefs).toContain('/formations/secours/sst')
     expect(hrefs).toContain('/formations/secours/sst#sessionsList')
-    expect(hrefs).toContain('/centres/demande-de-formation?formation=sst')
+    expect(hrefs).toContain('/centres/demande-de-formation?famille=secours&formation=sst')
+
+    const demande = wrapper.findAll('a').find((a) => a.text() === 'Demander cette formation')!
+    expect(demande.attributes('data-state')).toBe(JSON.stringify(handoffState))
   })
 
   it('emits the selected action for each CTA', async () => {

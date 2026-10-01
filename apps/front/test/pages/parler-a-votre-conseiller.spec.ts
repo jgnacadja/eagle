@@ -223,6 +223,24 @@ describe('pages/parler-a-votre-conseiller', () => {
     )
   })
 
+  it('pré-remplit le message depuis le besoin transmis hors URL par la recherche assistée', async () => {
+    window.history.replaceState(
+      { assistantHandoff: { need: 'Former 8 salariés au SST à Créteil' } },
+      ''
+    )
+    try {
+      const wrapper = await mountPage()
+      await flushPromises()
+
+      const textarea = wrapper.find('#message')
+      expect((textarea.element as HTMLTextAreaElement).value).toBe(
+        'Former 8 salariés au SST à Créteil'
+      )
+    } finally {
+      window.history.replaceState(null, '')
+    }
+  })
+
   it('applique le SEO noindex de la page', async () => {
     await mountPage()
 

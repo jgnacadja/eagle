@@ -1,5 +1,5 @@
 import { config } from '@vue/test-utils'
-import { reactive, ref, type Component } from 'vue'
+import { defineComponent, reactive, ref, type Component } from 'vue'
 
 function registerByName(modules: Record<string, unknown>) {
   for (const [path, component] of Object.entries(modules)) {
@@ -48,9 +48,30 @@ const assistantStates = import.meta.glob('~/components/AssistantStates/*.vue', {
 })
 registerByName(assistantStates)
 
+// NuxtLink : href résolu depuis une chaîne ou un objet de route (path +
+// query) ; l'état d'historique transmis (`state` — besoin de la recherche
+// assistée, hors URL) est exposé en `data-state` pour les assertions.
+const NuxtLinkStub = defineComponent({
+  props: { to: { type: [String, Object], required: true } },
+  computed: {
+    href(): string {
+      const to = this.to as string | { path?: string; query?: Record<string, string> }
+      if (typeof to === 'string') return to
+      const query =
+        to.query && Object.keys(to.query).length ? `?${new URLSearchParams(to.query)}` : ''
+      return `${to.path ?? ''}${query}`
+    },
+    state(): string | undefined {
+      const to = this.to as string | { state?: unknown }
+      return typeof to === 'object' && to.state ? JSON.stringify(to.state) : undefined
+    }
+  },
+  template: '<a :href="href" :data-state="state"><slot /></a>'
+})
+
 config.global.stubs = {
   ...config.global.stubs,
-  NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
+  NuxtLink: NuxtLinkStub,
   CenterMap: {
     props: ['centers', 'activeId', 'caption', 'mode'],
     // Le pied « adresse + itinéraire » du mode single fait partie du

@@ -15,18 +15,17 @@ const mountOptions = {
   },
   global: {
     stubs: {
-      NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
       AssistantRecommendationCard: {
         props: ['recommendation', 'demandeTo', 'advisorTo'],
         emits: ['select'],
         template:
-          '<article class="rec-card" :data-rank="recommendation.rank" :data-advisor="advisorTo" @click="$emit(\'select\', \'sessions\')">{{ recommendation.title }}</article>'
+          '<article class="rec-card" :data-rank="recommendation.rank" :data-advisor="JSON.stringify(advisorTo)" :data-demande="JSON.stringify(demandeTo)" @click="$emit(\'select\', \'sessions\')">{{ recommendation.title }}</article>'
       },
       AssistantCompareTable: {
         props: ['recommendations', 'advisorTo'],
         emits: ['select'],
         template:
-          '<table class="compare-table" :data-advisor="advisorTo" @click="$emit(\'select\', recommendations[1], \'formation\')" />'
+          '<table class="compare-table" :data-advisor="JSON.stringify(advisorTo)" @click="$emit(\'select\', recommendations[1], \'formation\')" />'
       }
     }
   }
@@ -174,6 +173,8 @@ describe('AssistantConversation', () => {
     }
     const wrapper = mountConversation({
       needSummary: 'former 8 salariés au SST à Créteil',
+      headcount: 8,
+      location: 'Créteil',
       unavailable: true,
       entries: [
         {
@@ -194,9 +195,18 @@ describe('AssistantConversation', () => {
       ]
     })
 
-    const advisorTo =
-      '/parler-a-votre-conseiller?q=former+8+salari%C3%A9s+au+SST+%C3%A0+Cr%C3%A9teil'
-    const advisorLinks = wrapper.findAll('a').filter((a) => a.attributes('href') === advisorTo)
+    // Le besoin voyage dans l'état d'historique de la navigation — jamais
+    // dans l'URL (RGPD : `page_location`, Referer, journaux).
+    const state = {
+      assistantHandoff: {
+        need: 'former 8 salariés au SST à Créteil',
+        headcount: 8,
+        location: 'Créteil'
+      }
+    }
+    const advisorLinks = wrapper
+      .findAll('a')
+      .filter((a) => a.attributes('href') === '/parler-a-votre-conseiller')
     // Pied des recommandations, aucun résultat, hors catalogue, indisponible.
     expect(advisorLinks).toHaveLength(4)
     expect(advisorLinks.map((a) => a.text())).toEqual([
@@ -205,14 +215,56 @@ describe('AssistantConversation', () => {
       'Décrire mon besoin à votre conseiller',
       'Parler à votre conseiller'
     ])
-    // Carte sans session : le même lien est transmis à la carte.
-    expect(wrapper.find('.rec-card').attributes('data-advisor')).toBe(advisorTo)
+    for (const link of advisorLinks) {
+      expect(link.attributes('data-state')).toBe(JSON.stringify(state))
+    }
+    expect(
+      wrapper
+        .findAll('a')
+        .map((a) => a.attributes('href'))
+        .join(' ')
+    ).not.toContain('q=')
+
+    // Carte sans session et demande personnalisée : même transmission.
+    expect(wrapper.find('.rec-card').attributes('data-advisor')).toBe(
+      JSON.stringify({ path: '/parler-a-votre-conseiller', state })
+    )
+    expect(wrapper.find('.rec-card').attributes('data-demande')).toBe(
+      JSON.stringify({
+        path: '/centres/demande-de-formation',
+        query: { famille: 'secours', formation: 'sst' },
+        state
+      })
+    )
+    const demande = wrapper
+      .findAll('a')
+      .find((a) => a.text() === 'Faire une demande personnalisée')!
+    expect(demande.attributes('href')).toBe('/centres/demande-de-formation')
+    expect(demande.attributes('data-state')).toBe(JSON.stringify(state))
   })
 
-  it('links the advisor page without a query while nothing was described', () => {
+  it('links the advisor page without any state while nothing was described', () => {
     const wrapper = mountConversation({ unavailable: true })
-    const hrefs = wrapper.findAll('a').map((a) => a.attributes('href'))
-    expect(hrefs).toContain('/parler-a-votre-conseiller')
+    const advisor = wrapper
+      .findAll('a')
+      .find((a) => a.attributes('href') === '/parler-a-votre-conseiller')
+    expect(advisor).toBeDefined()
+    expect(advisor!.attributes('data-state')).toBeUndefined()
+  })
+
+  it('disables the quick replies while a reply is pending', () => {
+    const wrapper = mountConversation({
+      pending: true,
+      entries: [
+        {
+          role: 'assistant',
+          content: 'Précisez.',
+          reply: { kind: 'clarify', text: 'Précisez.', suggestions: ['Premiers secours'] }
+        }
+      ]
+    })
+    const pill = wrapper.findAll('button').find((b) => b.text() === 'Premiers secours')
+    expect(pill!.attributes('disabled')).toBeDefined()
   })
 
   it('renders the no_results action grid', () => {
@@ -319,15 +371,18 @@ describe('AssistantConversation', () => {
     ).toBe('true')
   })
 
-  it('announces new replies politely and marks the log busy while analyzing', async () => {
+  it('keeps the transcript as its only live region, never busy (WCAG 4.1.3)', () => {
     const wrapper = mountConversation({ pending: true })
     const log = wrapper.find('[data-slot="message-scroller-content"]')
 
-    expect(log.attributes('aria-live')).toBe('polite')
-    expect(log.attributes('aria-busy')).toBe('true')
-
-    await wrapper.setProps({ pending: false })
-    expect(log.attributes('aria-busy')).toBe('false')
+    // `role="log"` implique une région polie sur les ajouts : pas d'`aria-live`
+    // redondant, pas d'`aria-busy` (qui suspendrait les annonces), et aucune
+    // région imbriquée — le squelette d'analyse est annoncé comme un ajout.
+    expect(log.attributes('role')).toBe('log')
+    expect(log.attributes('aria-live')).toBeUndefined()
+    expect(log.attributes('aria-busy')).toBeUndefined()
+    expect(log.findAll('[aria-live], output, [role="status"], [role="log"]')).toHaveLength(0)
+    expect(log.text()).toContain('Analyse de votre besoin')
   })
 
   it('keeps the header actions reachable on touch screens', () => {

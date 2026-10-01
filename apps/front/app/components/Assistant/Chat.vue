@@ -40,13 +40,13 @@
           :need-summary="needSummary"
           :headcount="slots.headcount"
           :location="slots.location"
-          @send="submit"
-          @edit="onEdit"
+          @send="tracking.submit"
+          @edit="tracking.edit"
           @stop="stop"
           @retry="retry"
           @reset="onReset"
           @close="close"
-          @select="onSelect"
+          @select="tracking.select"
         />
       </dialog>
     </Transition>
@@ -57,18 +57,16 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { Motion } from 'motion-v'
 import { useAssistant, type AssistantEntry } from '~/composables/useAssistant'
-import {
-  useAssistantAnalytics,
-  type AssistantSelection,
-  type AssistantSubmitVia
-} from '~/composables/useAssistantAnalytics'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
+import { useAssistantTracking } from '~/composables/useAssistantTracking'
 import AssistantConversation from '~/components/Assistant/Conversation.vue'
 import { ASSISTANT_ROUTE } from '~/utils/assistant-route'
 
 const { isOpen, context, pendingMessage, open, close } = useAssistantLauncher()
-const analytics = useAssistantAnalytics()
 
+const assistant = useAssistant(context, {
+  onReply: (reply, meta) => tracking.onReply(reply, meta)
+})
 const {
   entries,
   pending,
@@ -77,67 +75,13 @@ const {
   slots,
   needSummary,
   append,
-  send,
-  editAndSend,
   retry,
   reset,
   stop
-} = useAssistant(context, {
-  // Jalons côté réponse : précision demandée, recommandations affichées.
-  onReply(reply, { turn }) {
-    const source = context.value.source
-    if (reply.kind === 'clarify') {
-      analytics.clarificationRequested({ source, turn })
-    } else if (reply.kind === 'recommend') {
-      analytics.recommendationDisplay({
-        source,
-        turn,
-        count: reply.recommendations?.length ?? 0,
-        mode: reply.mode
-      })
-    }
-  }
-})
+} = assistant
 
-function userTurns(): number {
-  return entries.value.filter((e) => e.role === 'user').length
-}
-
-// Dernière réponse réelle de l'API (l'accueil local ne compte pas) : un
-// message envoyé après une question de précision y répond.
-function answersClarification(): boolean {
-  const last = entries.value.findLast((e) => e.role === 'assistant' && !e.id?.startsWith('local-'))
-  return last?.reply?.kind === 'clarify'
-}
-
-/** Envoi tracé : nouveau besoin ou réponse à une précision. */
-function submit(message: string, via: AssistantSubmitVia = 'text'): Promise<void> {
-  if (!message.trim()) return Promise.resolve()
-  const params = { source: context.value.source, turn: userTurns() + 1, via }
-  if (answersClarification()) analytics.clarificationAnswer(params)
-  else analytics.searchSubmit(params)
-  return send(message)
-}
-
-function onEdit(id: string, message: string): Promise<void> {
-  if (!message.trim()) return Promise.resolve()
-  const turn = entries.value.filter((e) => e.role === 'user').findIndex((e) => e.id === id) + 1
-  analytics.searchSubmit({ source: context.value.source, turn: turn || userTurns(), via: 'edit' })
-  return editAndSend(id, message)
-}
-
-function onSelect(selection: AssistantSelection) {
-  analytics.recommendationSelect({ ...selection, source: context.value.source })
-}
-
-// Ouverture depuis un point d'entrée = début de recherche.
-watch(
-  isOpen,
-  (open) => {
-    if (open) analytics.searchStart(context.value.source)
-  },
-  { immediate: true }
-)
+// Jalons analytics du parcours : le widget relaie, le composable classe.
+const tracking = useAssistantTracking(assistant, context)
 
 const GREETING: AssistantEntry = {
   role: 'assistant',
@@ -185,14 +129,17 @@ watch(
 // `immediate` couvre le cas où open() a été appelé avant le mount du widget.
 watch(
   [isOpen, pendingMessage],
-  ([open]) => {
+  ([open], [wasOpen]) => {
     if (!open) return
     const message = pendingMessage.value
     if (message) {
       pendingMessage.value = null
-      submit(message, 'entry')
+      // Nouveau besoin transmis par un point d'entrée : début de recherche.
+      tracking.onOpen({ entryMessage: true })
+      tracking.submit(message, 'entry')
       return
     }
+    if (!wasOpen) tracking.onOpen()
     // Pas de message en file : accueil, sauf si un envoi est déjà en cours
     // (send() est asynchrone — le tour user n'est pas encore dans entries).
     if (entries.value.length === 0 && !pending.value) greet()

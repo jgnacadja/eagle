@@ -40,6 +40,6 @@ defineProps<{
 }>()
 
 function isHome(item: BreadcrumbRouteItem): boolean {
-  return item.label.trim().toLowerCase() === 'accueil' || item.to === '/'
+  return item.to === '/'
 }
 </script>

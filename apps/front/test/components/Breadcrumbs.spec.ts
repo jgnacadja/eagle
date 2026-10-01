@@ -50,4 +50,14 @@ describe('ui/Breadcrumbs', () => {
     expect(home?.classes()).toContain('text-accent-text')
     expect(centres?.classes()).not.toContain('text-accent-text')
   })
+
+  it('applique la couleur ambre sur tout lien vers l’accueil (to === "/") quel que soit le libellé', () => {
+    const wrapper = mount(Breadcrumbs, {
+      props: {
+        items: [{ label: 'Home', to: '/' }, { label: 'Catalogue' }]
+      }
+    })
+    const link = wrapper.find('a')
+    expect(link.classes()).toContain('text-accent-text')
+  })
 })

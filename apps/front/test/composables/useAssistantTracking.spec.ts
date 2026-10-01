@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { computed, ref } from 'vue'
-import type { AssistantContext } from '@learnup/types'
+import { computed, nextTick, ref } from 'vue'
+import type { AssistantContext, AssistantReply } from '@learnup/types'
 import type { AssistantEntry } from '~/composables/useAssistant'
 import { useAssistantTracking } from '~/composables/useAssistantTracking'
 
@@ -8,14 +8,20 @@ import { useAssistantTracking } from '~/composables/useAssistantTracking'
 function fakeAssistant(entries: AssistantEntry[] = []) {
   const list = ref(entries)
   const pending = ref(false)
+  const unavailable = ref(false)
   const awaiting = ref(false)
+  const lastReply = ref<AssistantReply>()
   return {
     list,
     pendingState: pending,
+    unavailableState: unavailable,
     awaitingState: awaiting,
+    lastReplyState: lastReply,
     assistant: {
       entries: computed(() => list.value),
       pending: computed(() => pending.value),
+      unavailable: computed(() => unavailable.value),
+      lastReply: computed(() => lastReply.value),
       awaitingClarification: computed(() => awaiting.value),
       send: vi.fn().mockResolvedValue(undefined),
       editAndSend: vi.fn().mockResolvedValue(undefined)
@@ -124,6 +130,7 @@ describe('useAssistantTracking', () => {
     expect(events()).toEqual([
       { event: 'ai_clarification_requested', source: 'formation', turn: 1 },
       { event: 'ai_recommendation_display', source: 'formation', turn: 2, count: 0, mode: 'ai' },
+      { event: 'ai_no_results', source: 'formation', turn: 3, kind: 'no_results' },
       {
         event: 'ai_recommendation_select',
         slug: 'sst',
@@ -131,6 +138,52 @@ describe('useAssistantTracking', () => {
         action: 'formation',
         source: 'formation'
       }
+    ])
+  })
+
+  it('trace les impasses et les réponses produites en mode dégradé', () => {
+    const { assistant } = fakeAssistant()
+    const tracking = useAssistantTracking(assistant, ref<AssistantContext>({ source: 'home' }))
+
+    tracking.onReply({ kind: 'no_results', text: 'rien', mode: 'ai' }, { turn: 1 })
+    tracking.onReply(
+      { kind: 'recommend', text: 'ok', mode: 'fallback', recommendations: [] },
+      { turn: 2 }
+    )
+
+    expect(events()).toEqual([
+      { event: 'ai_no_results', source: 'home', turn: 1, kind: 'no_results', mode: 'ai' },
+      { event: 'ai_recommendation_display', source: 'home', turn: 2, count: 0, mode: 'fallback' },
+      { event: 'ai_fallback_mode', source: 'home', turn: 2, kind: 'recommend' }
+    ])
+  })
+
+  it("trace l'indisponibilité du moteur au tour courant", async () => {
+    const { assistant, unavailableState } = fakeAssistant([userTurn('u1', 'sst')])
+    useAssistantTracking(assistant, ref<AssistantContext>({ source: 'centre' }))
+
+    unavailableState.value = true
+    await nextTick()
+    unavailableState.value = false
+    await nextTick()
+
+    expect(events()).toEqual([{ event: 'ai_unavailable', source: 'centre', turn: 1 }])
+  })
+
+  it("trace la comparaison et la sortie conseiller avec son état d'origine", () => {
+    const { assistant, lastReplyState } = fakeAssistant()
+    const tracking = useAssistantTracking(assistant, ref<AssistantContext>({ source: 'home' }))
+    lastReplyState.value = { kind: 'recommend', text: 'ok', mode: 'fallback' }
+
+    tracking.compare(3)
+    tracking.escalate('degraded')
+    // Un état inconnu n'est pas transmis : le jalon part sans origine.
+    tracking.escalate('nope')
+
+    expect(events()).toEqual([
+      { event: 'ai_recommendation_compare', source: 'home', count: 3 },
+      { event: 'ai_advisor_escalation', source: 'home', from: 'degraded', mode: 'fallback' },
+      { event: 'ai_advisor_escalation', source: 'home', mode: 'fallback' }
     ])
   })
 })

@@ -1,6 +1,5 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
-import AssistantLayout from '~/layouts/assistant.vue'
 import DefaultLayout from '~/layouts/default.vue'
 import WithBreadcrumbLayout from '~/layouts/with-breadcrumb.vue'
 
@@ -22,19 +21,6 @@ describe('layouts/default', () => {
     expect(wrapper.text()).toContain('header')
     expect(wrapper.text()).toContain('contenu')
     expect(wrapper.text()).toContain('footer')
-  })
-})
-
-describe('layouts/assistant', () => {
-  it('affiche header et slot en pleine page, sans footer', () => {
-    const wrapper = mount(AssistantLayout, {
-      slots: { default: '<p>contenu</p>' },
-      global: { stubs }
-    })
-    expect(wrapper.text()).toContain('header')
-    expect(wrapper.find('main').text()).toBe('contenu')
-    expect(wrapper.text()).not.toContain('footer')
-    expect(wrapper.find('.min-h-screen').exists()).toBe(true)
   })
 })
 

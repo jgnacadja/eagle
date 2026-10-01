@@ -2,7 +2,7 @@
   <div>
     <!-- Lanceur flottant -->
     <Motion
-      v-if="!isOpen && !onEnginePage"
+      v-if="!isOpen"
       :initial="{ opacity: 0, scale: 0.5 }"
       :animate="{ opacity: 1, scale: 1 }"
       :while-press="{ scale: 0.9 }"
@@ -40,6 +40,8 @@
           :need-summary="needSummary"
           :headcount="slots.headcount"
           :location="slots.location"
+          :degraded="lastReply?.mode === 'fallback'"
+          :notice="lastReply?.notice"
           @send="tracking.submit"
           @edit="tracking.edit"
           @stop="stop"
@@ -47,6 +49,7 @@
           @reset="onReset"
           @close="close"
           @select="tracking.select"
+          @compare="tracking.compare"
         />
       </dialog>
     </Transition>
@@ -54,13 +57,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import { Motion } from 'motion-v'
 import { useAssistant, type AssistantEntry } from '~/composables/useAssistant'
+import { ADVISOR_ESCALATION_ATTR } from '~/composables/useAssistantAnalytics'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { useAssistantTracking } from '~/composables/useAssistantTracking'
 import AssistantConversation from '~/components/Assistant/Conversation.vue'
-import { ASSISTANT_ROUTE } from '~/utils/assistant-route'
 
 const { isOpen, context, pendingMessage, open, close } = useAssistantLauncher()
 
@@ -73,6 +76,7 @@ const {
   unavailable,
   contextChips,
   slots,
+  lastReply,
   needSummary,
   append,
   retry,
@@ -160,11 +164,13 @@ watch(
   }
 )
 
-// La page moteur est déjà la recherche assistée : pas de lanceur par-dessus.
-const onEnginePage = computed(() => route.path === ASSISTANT_ROUTE)
-
 function onPanelClick(event: MouseEvent) {
-  if ((event.target as HTMLElement | null)?.closest?.('a')) close()
+  const anchor = (event.target as HTMLElement | null)?.closest?.('a')
+  if (!anchor) return
+  // Sortie conseiller : le lien porte l'état d'où il part.
+  const from = anchor.getAttribute(ADVISOR_ESCALATION_ATTR)
+  if (from) tracking.escalate(from)
+  close()
 }
 
 function onReset() {

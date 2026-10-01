@@ -11,7 +11,9 @@ const mountOptions = {
     contextChips: [] as string[],
     needSummary: '',
     headcount: undefined as number | undefined,
-    location: undefined as string | undefined
+    location: undefined as string | undefined,
+    degraded: false,
+    notice: undefined as string | undefined
   },
   global: {
     stubs: {
@@ -108,6 +110,128 @@ describe('AssistantConversation', () => {
       .find((b) => b.text().includes('Comparer ces 2 formations'))
     await compareBtn!.trigger('click')
     expect(wrapper.find('.compare-table').exists()).toBe(true)
+    expect(wrapper.emitted('compare')).toEqual([[2]])
+
+    // Refermer n'est pas une nouvelle comparaison.
+    await compareBtn!.trigger('click')
+    expect(wrapper.find('.compare-table').exists()).toBe(false)
+    expect(wrapper.emitted('compare')).toHaveLength(1)
+  })
+
+  it('switches to the simplified-search banner in degraded mode', () => {
+    const rec = {
+      slug: 'sst',
+      familySlug: 'secours',
+      title: 'SST',
+      description: null,
+      durationDays: 2,
+      durationHours: null,
+      modalities: ['presentiel'],
+      certification: null,
+      justification: 'Semble adaptée.',
+      availability: null,
+      url: '/formations/secours/sst',
+      rank: 'primary' as const
+    }
+    const wrapper = mountConversation({
+      degraded: true,
+      needSummary: 'sst',
+      entries: [
+        {
+          role: 'assistant',
+          content: 'Nous vous recommandons',
+          reply: {
+            kind: 'recommend',
+            text: 'Nous vous recommandons',
+            mode: 'fallback',
+            source: 'Source : catalogue publié LEARN UP (recherche directe).',
+            recommendations: [rec]
+          }
+        }
+      ]
+    })
+
+    const status = wrapper.find('[role="status"]')
+    expect(status.text()).toContain('Recherche simplifiée')
+    expect(status.text()).toContain("l'assistant IA est momentanément indisponible")
+    // Sortie conseiller du bandeau : besoin hors URL, état d'origine « degraded ».
+    expect(status.find('a').attributes('href')).toBe('/parler-a-votre-conseiller')
+    expect(status.find('a').attributes('data-state')).toBe(
+      JSON.stringify({ assistantHandoff: { need: 'sst' } })
+    )
+    expect(status.find('a').attributes('data-advisor-escalation')).toBe('degraded')
+    // Bandeau + libellé sur la réponse concernée.
+    expect(wrapper.text().split('Recherche simplifiée')).toHaveLength(3)
+    // La mention de source vient de l'API, jamais réécrite.
+    expect(wrapper.text()).toContain('Source : catalogue publié LEARN UP (recherche directe).')
+  })
+
+  it('shows no degraded cue for an AI reply', () => {
+    const wrapper = mountConversation({
+      entries: [
+        {
+          role: 'assistant',
+          content: 'Précisez.',
+          reply: { kind: 'clarify', text: 'Précisez.', mode: 'ai' }
+        }
+      ]
+    })
+    // La région de statut existe toujours (WCAG 4.1.3), vide et masquée.
+    const status = wrapper.find('[role="status"]')
+    expect(status.exists()).toBe(true)
+    expect(status.classes()).toContain('sr-only')
+    expect(status.text()).toBe('')
+    expect(wrapper.text()).not.toContain('Recherche simplifiée')
+  })
+
+  it('ends the API source mention with a period before the session note', () => {
+    const rec = {
+      slug: 'sst',
+      familySlug: 'secours',
+      title: 'SST',
+      description: null,
+      durationDays: 2,
+      durationHours: null,
+      modalities: ['presentiel'],
+      certification: null,
+      justification: 'Semble adaptée.',
+      availability: {
+        sessionId: 's1',
+        startDate: '2999-09-18',
+        modality: 'presentiel',
+        seatsRemaining: 8,
+        centreName: 'Centre LEARN UP de Créteil',
+        centreSlug: 'creteil',
+        city: 'Créteil',
+        department: 'Val-de-Marne'
+      },
+      url: '/formations/secours/sst',
+      rank: 'primary' as const
+    }
+    const wrapper = mountConversation({
+      entries: [
+        {
+          role: 'assistant',
+          content: 'Nous vous recommandons',
+          reply: {
+            kind: 'recommend',
+            text: 'Nous vous recommandons',
+            source: 'Recommandations issues du catalogue publié LEARN UP',
+            recommendations: [rec]
+          }
+        }
+      ]
+    })
+
+    expect(wrapper.text()).toContain(
+      'Recommandations issues du catalogue publié LEARN UP. Session et disponibilité issues du référentiel'
+    )
+  })
+
+  it('shows the automated-assistant notice under the composer', () => {
+    const notice = 'Réponses générées par un assistant automatisé à partir du catalogue.'
+    expect(mountConversation({ notice }).text()).toContain(notice)
+    expect(mountConversation().text()).not.toContain('assistant automatisé')
   })
 
   it('relays recommendation CTA clicks with the course and its rank', async () => {

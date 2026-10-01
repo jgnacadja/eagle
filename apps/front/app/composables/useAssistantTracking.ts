@@ -1,7 +1,8 @@
-import type { Ref } from 'vue'
+import { watch, type Ref } from 'vue'
 import type { AssistantContext, AssistantReply } from '@learnup/types'
 import type { AssistantReplyMeta, useAssistant } from '~/composables/useAssistant'
 import {
+  isEscalationFrom,
   useAssistantAnalytics,
   type AssistantSelection,
   type AssistantSubmitVia
@@ -10,13 +11,20 @@ import {
 /** Ce que le suivi observe et déclenche sur la conversation. */
 export type TrackedAssistant = Pick<
   ReturnType<typeof useAssistant>,
-  'entries' | 'pending' | 'awaitingClarification' | 'send' | 'editAndSend'
+  | 'entries'
+  | 'pending'
+  | 'unavailable'
+  | 'lastReply'
+  | 'awaitingClarification'
+  | 'send'
+  | 'editAndSend'
 >
 
 /**
- * Classification analytics du parcours (DEV-CORE), séparée du widget : le
- * composant ne fait que relayer les actions, le composable décide du jalon.
- * Testable sans monter `AssistantChat`.
+ * Classification analytics du parcours (DEV-CORE) et des états limites
+ * (DEV-EDGE), séparée du widget : le composant ne fait que relayer les
+ * actions, le composable décide du jalon. Testable sans monter
+ * `AssistantChat`.
  */
 export function useAssistantTracking(assistant: TrackedAssistant, context: Ref<AssistantContext>) {
   const analytics = useAssistantAnalytics()
@@ -32,19 +40,31 @@ export function useAssistantTracking(assistant: TrackedAssistant, context: Ref<A
     if (options.entryMessage || userTurns() === 0) analytics.searchStart(source())
   }
 
-  /** Jalons côté réponse : précision demandée, recommandations affichées. */
+  /**
+   * Jalons côté réponse : précision demandée, recommandations affichées,
+   * impasses (aucun résultat, hors catalogue) et réponses produites en mode
+   * dégradé.
+   */
   function onReply(reply: AssistantReply, { turn }: AssistantReplyMeta): void {
+    const params = { source: source(), turn }
     if (reply.kind === 'clarify') {
-      analytics.clarificationRequested({ source: source(), turn })
+      analytics.clarificationRequested(params)
     } else if (reply.kind === 'recommend') {
       analytics.recommendationDisplay({
-        source: source(),
-        turn,
+        ...params,
         count: reply.recommendations?.length ?? 0,
         mode: reply.mode
       })
+    } else {
+      analytics.noResults({ ...params, kind: reply.kind, mode: reply.mode })
     }
+    if (reply.mode === 'fallback') analytics.fallbackMode({ ...params, kind: reply.kind })
   }
+
+  // Moteur indisponible (E9) après un tour : jalon d'impasse.
+  watch(assistant.unavailable, (value) => {
+    if (value) analytics.unavailable({ source: source(), turn: userTurns() })
+  })
 
   /**
    * Envoi tracé. Un message du panneau pendant l'analyse est ignoré (le
@@ -80,5 +100,22 @@ export function useAssistantTracking(assistant: TrackedAssistant, context: Ref<A
     analytics.recommendationSelect({ ...selection, source: source() })
   }
 
-  return { onOpen, onReply, submit, edit, select }
+  /** Tableau comparatif ouvert (nombre de formations comparées). */
+  function compare(count: number): void {
+    analytics.recommendationCompare({ source: source(), count })
+  }
+
+  /**
+   * Sortie conseiller cliquée : `from` est l'état porté par le lien
+   * (`data-advisor-escalation`), le mode celui de la dernière réponse.
+   */
+  function escalate(from: string): void {
+    analytics.advisorEscalation({
+      source: source(),
+      from: isEscalationFrom(from) ? from : undefined,
+      mode: assistant.lastReply.value?.mode
+    })
+  }
+
+  return { onOpen, onReply, submit, edit, select, compare, escalate }
 }

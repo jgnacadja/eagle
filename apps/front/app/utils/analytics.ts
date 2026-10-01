@@ -21,6 +21,11 @@ export type AnalyticsEventName =
   | 'ai_clarification_answer'
   | 'ai_recommendation_display'
   | 'ai_recommendation_select'
+  | 'ai_recommendation_compare'
+  | 'ai_no_results'
+  | 'ai_unavailable'
+  | 'ai_fallback_mode'
+  | 'ai_advisor_escalation'
 
 export type AnalyticsValue = string | number | boolean
 

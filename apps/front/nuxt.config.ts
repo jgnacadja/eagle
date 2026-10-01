@@ -38,10 +38,10 @@ export default defineNuxtConfig({
   // production, pas une URL de preview.
   site: { url: siteUrl },
   sitemap: {
-    // Pages noindex (formulaires, moteur IA) hors sitemap ; les routes
-    // dynamiques (fiches, familles, centres, articles, pages légales) sont
-    // fournies par le endpoint ci-dessous, les pages statiques auto-découvertes.
-    exclude: ['/parler-a-votre-conseiller', '/centres/demande-de-formation', '/recherche-assistee'],
+    // Pages noindex (formulaires) hors sitemap ; les routes dynamiques
+    // (fiches, familles, centres, articles, pages légales) sont fournies par
+    // le endpoint ci-dessous, les pages statiques auto-découvertes.
+    exclude: ['/parler-a-votre-conseiller', '/centres/demande-de-formation'],
     sources: ['/api/__sitemap__/urls']
   },
   robots: {
@@ -97,11 +97,9 @@ export default defineNuxtConfig({
     '/centres/**': { isr: { expiration: 600, passQuery: true } },
     '/actualites': { isr: { expiration: 600, passQuery: true } },
     '/actualites/**': { isr: { expiration: 600, passQuery: true } },
-    // Moteur IA (vue de discussion pleine page) : contenu dynamique et
-    // paramétré (?q=), sans valeur SEO — rendu à la demande, noindex/follow
-    // (meta + en-tête), exclu du sitemap (`sitemap.exclude`). La Home garde
-    // le champ d'entrée et son indexation.
-    '/recherche-assistee': { isr: false, headers: { 'X-Robots-Tag': 'noindex, follow' } },
+    // Ancienne page du moteur IA (arbitrage : panneau conservé) : les liens
+    // partagés et favoris atterrissent sur la Home, qui porte le champ d'entrée.
+    '/recherche-assistee': { redirect: { to: '/', statusCode: 301 } },
     '/rejoindre-le-reseau': { prerender: true },
     '/referencer-mon-organisme': { prerender: true },
     '/entreprise-reseau': { prerender: true },
@@ -120,11 +118,7 @@ export default defineNuxtConfig({
     cachePurgeSecret: process.env.NUXT_CACHE_PURGE_SECRET ?? '',
     public: {
       apiBase: publicApiBase,
-      siteUrl,
-      // États statiques de démo du moteur IA (`/recherche-assistee?state=`) :
-      // dev uniquement par défaut — NUXT_PUBLIC_ASSISTANT_DEMO_STATES=true
-      // pour les previews de revue design / recette.
-      assistantDemoStates: process.env.NODE_ENV !== 'production'
+      siteUrl
     }
   }
 })

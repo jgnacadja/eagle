@@ -48,6 +48,39 @@
       </div>
     </div>
 
+    <!-- Mode dégradé : l'API IA est indisponible, la recherche déterministe
+         répond à sa place (`reply.mode === 'fallback'`) — bascule visible,
+         sortie conseiller à portée. La région de statut existe toujours dans
+         le DOM (WCAG 4.1.3) : une région live insérée avec son contenu n'est
+         souvent pas annoncée ; seul l'intérieur est conditionnel. -->
+    <div
+      role="status"
+      :class="
+        degraded
+          ? 'border-b border-warning/40 bg-warning-soft px-lg py-sm text-meta text-ink'
+          : 'sr-only'
+      "
+    >
+      <div
+        v-if="degraded"
+        class="mx-auto flex w-full max-w-[calc(var(--spacing-container)*0.8)] flex-wrap items-center gap-sm"
+      >
+        <IconZap :size="14" class="shrink-0 text-warning" aria-hidden="true" />
+        <span class="flex-1 basis-[calc(var(--spacing-container)*0.3)]">
+          <strong class="font-semibold">Recherche simplifiée</strong> — l'assistant IA est
+          momentanément indisponible : les résultats proviennent d'une recherche directe dans le
+          catalogue publié, à partir des mots de votre demande.
+        </span>
+        <NuxtLink
+          :to="advisorTo"
+          data-advisor-escalation="degraded"
+          class="font-semibold text-primary underline underline-offset-2 transition-colors hover:text-accent-text"
+        >
+          Parler à votre conseiller
+        </NuxtLink>
+      </div>
+    </div>
+
     <!-- Fil de conversation : un seul viewport scrollable. Le contenu est la
          seule région live du fil (`role="log"` : polie, additions) — chaque
          ajout est annoncé à son arrivée, squelette d'analyse et réponse
@@ -135,6 +168,14 @@
                     <MessageContent class="pt-xs">
                       <Bubble variant="ghost" class="w-full">
                         <BubbleContent class="p-0 text-small text-ink-body">
+                          <!-- Réponse produite en mode dégradé : signalée dans l'historique -->
+                          <Badge
+                            v-if="entry.reply?.mode === 'fallback'"
+                            variant="warning"
+                            class="mb-sm"
+                          >
+                            Recherche simplifiée
+                          </Badge>
                           <p
                             :class="{
                               'font-semibold text-ink':
@@ -243,6 +284,7 @@
                               </template>
                               <NuxtLink
                                 :to="advisorTo"
+                                data-advisor-escalation="recommend"
                                 class="font-semibold text-primary underline underline-offset-2 transition-colors hover:text-accent-text"
                               >
                                 Être accompagné par votre conseiller
@@ -301,7 +343,7 @@
                                   variant="outline"
                                   class="w-full gap-sm rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary max-md:min-h-touch"
                                 >
-                                  <NuxtLink :to="advisorTo">
+                                  <NuxtLink :to="advisorTo" data-advisor-escalation="no_results">
                                     <IconMessages
                                       :size="14"
                                       class="shrink-0 text-primary"
@@ -331,7 +373,7 @@
                                 as-child
                                 class="rounded-full bg-accent px-md py-sm text-meta font-semibold text-ink hover:bg-accent-text hover:text-paper max-md:min-h-touch"
                               >
-                                <NuxtLink :to="advisorTo"
+                                <NuxtLink :to="advisorTo" data-advisor-escalation="out_of_catalog"
                                   >Décrire mon besoin à votre conseiller</NuxtLink
                                 >
                               </Button>
@@ -433,7 +475,9 @@
                           variant="outline"
                           class="h-control flex-1 rounded-full border-rule px-md text-meta font-semibold text-ink hover:border-primary"
                         >
-                          <NuxtLink :to="advisorTo">Parler à votre conseiller</NuxtLink>
+                          <NuxtLink :to="advisorTo" data-advisor-escalation="unavailable"
+                            >Parler à votre conseiller</NuxtLink
+                          >
                         </Button>
                       </div>
                     </div>
@@ -487,6 +531,13 @@
           </InputGroupAddon>
         </InputGroup>
       </form>
+      <!-- Transparence : mention « assistant automatisé » renvoyée par l'API -->
+      <p
+        v-if="notice"
+        class="mx-auto mt-sm w-full max-w-[calc(var(--spacing-container)*0.8)] text-meta text-ink-subtle"
+      >
+        {{ notice }}
+      </p>
     </div>
   </div>
 </template>
@@ -532,6 +583,10 @@ const props = defineProps<{
   /** Créneaux extraits (effectif, lieu) pour pré-remplir la demande. */
   headcount?: number
   location?: string
+  /** Dernière réponse produite par la recherche déterministe (IA indisponible). */
+  degraded?: boolean
+  /** Mention « assistant automatisé » de la dernière réponse (transparence). */
+  notice?: string
 }>()
 
 const emit = defineEmits<{
@@ -544,6 +599,8 @@ const emit = defineEmits<{
   close: []
   /** CTA cliqué sur une recommandation (fiche, sessions, demande). */
   select: [selection: AssistantSelection]
+  /** Tableau comparatif ouvert (nombre de formations comparées). */
+  compare: [count: number]
 }>()
 
 const inputId = useId()
@@ -587,8 +644,12 @@ function entryId(entry: AssistantEntry, index: number): string {
 
 function toggleCompare(index: number) {
   const next = new Set(compareOpen.value)
-  if (next.has(index)) next.delete(index)
-  else next.add(index)
+  if (next.has(index)) {
+    next.delete(index)
+  } else {
+    next.add(index)
+    emit('compare', props.entries[index]?.reply?.recommendations?.length ?? 0)
+  }
   compareOpen.value = next
 }
 
@@ -605,12 +666,22 @@ function alternativeRecs(entry: AssistantEntry): AssistantRecommendation[] {
   return recs.filter((r) => !primaryRecs(entry).includes(r))
 }
 
-// E4/E5 — note de provenance sous le bloc recommandation.
+// E4/E5 — note de provenance sous le bloc recommandation : mention de source
+// renvoyée par l'API (RG-IA-01), complétée quand une session est affichée.
+const DEFAULT_SOURCE = 'Recommandations issues des formations publiées du catalogue LEARN UP.'
+const SESSION_NOTE =
+  'Session et disponibilité issues du référentiel — aucune disponibilité estimée.'
+
+// Deux phrases accolées : la mention de source renvoyée par l'API se termine
+// par un point, quelle que soit sa ponctuation d'origine.
+function asSentence(text: string): string {
+  return text.trim().replace(/[.s]*$/, '.')
+}
+
 function provenanceNote(entry: AssistantEntry): string {
   const hasSession = (entry.reply?.recommendations ?? []).some((r) => r.availability)
-  return hasSession
-    ? 'Session et disponibilité issues du référentiel — aucune disponibilité estimée.'
-    : 'Recommandations issues des formations publiées du catalogue LEARN UP.'
+  const source = asSentence(entry.reply?.source || DEFAULT_SOURCE)
+  return hasSession ? `${source} ${SESSION_NOTE}` : source
 }
 
 // Identifiants du catalogue en query, besoin hors URL.

@@ -19,6 +19,7 @@ function mockConfig(values: Record<string, string | undefined> = {}): ConfigServ
     HUBSPOT_FORM_DEMANDE: 'guid-demande',
     HUBSPOT_FORM_CANDIDATURE: 'guid-candidature',
     HUBSPOT_FORM_CONSEILLER: 'guid-conseiller',
+    HUBSPOT_FORM_RAPPEL: 'guid-rappel',
     ...values
   }
   return { get: (key: string) => env[key] } as unknown as ConfigService
@@ -274,21 +275,51 @@ describe('LeadsService', () => {
     )
   })
 
-  it('rappel : poste le téléphone et le créneau avec consentement', async () => {
+  it('rappel : poste téléphone et créneau au formulaire dédié avec le libellé affiché', async () => {
     fetchMock.mockResolvedValue({ ok: true, status: 200 })
     const service = new LeadsService(mockConfig())
 
     const res = await service.submitRappel({
       telephone: '06 12 34 56 78',
       creneau: 'Cet après-midi',
-      consentement: true
+      consentement: true,
+      consentementTexte: "J'accepte d'être rappelé par un conseiller au sujet de mon projet."
     })
 
     expect(res).toEqual({ submitted: true })
-    const { body } = lastCall()
+    const { url, body } = lastCall()
+    // Formulaire dédié — jamais celui du conseiller (qui exige un e-mail).
+    expect(url).toContain('guid-rappel')
     const fields = fieldNames(body)
     expect(fields.phone).toBe('06 12 34 56 78')
     expect(fields.learnup_precisions).toBe('Créneau souhaité : Cet après-midi')
-    expect(body.legalConsentOptions?.consent.consentToProcess).toBe(true)
+    expect(fields.email).toBeUndefined()
+    expect(body.legalConsentOptions?.consent).toEqual({
+      consentToProcess: true,
+      text: "J'accepte d'être rappelé par un conseiller au sujet de mon projet."
+    })
+  })
+
+  it('rappel : replie le libellé de consentement sur le texte affiché par défaut', async () => {
+    const service = new LeadsService(mockConfig())
+
+    await service.submitRappel({
+      telephone: '06 12 34 56 78',
+      consentement: true
+    })
+
+    const { body } = lastCall()
+    expect(body.legalConsentOptions?.consent.text).toBe(
+      "J'accepte d'être rappelé par un conseiller au sujet de mon projet de formation."
+    )
+  })
+
+  it('rappel : lève 503 sans formulaire dédié — pas de repli sur le form conseiller', async () => {
+    const service = new LeadsService(mockConfig({ HUBSPOT_FORM_RAPPEL: undefined }))
+
+    await expect(
+      service.submitRappel({ telephone: '06 12 34 56 78', consentement: true })
+    ).rejects.toBeInstanceOf(ServiceUnavailableException)
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })

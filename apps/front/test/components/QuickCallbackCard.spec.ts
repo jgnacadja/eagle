@@ -43,11 +43,17 @@ const stubs = {
   Label: {
     template: '<label><slot /></label>'
   },
+  ConsentField: {
+    props: ['modelValue', 'invalid', 'error', 'id'],
+    emits: ['update:modelValue'],
+    template:
+      '<div class="consent-field"><input type="checkbox" :id="id" :checked="modelValue" @change="$emit(\'update:modelValue\', $event.target.checked)" /><label :for="id"><slot /></label><p v-if="invalid" class="consent-error" role="alert">{{ error }}</p></div>'
+  },
   Select: {
     props: ['modelValue'],
     emits: ['update:modelValue'],
     template:
-      '<div class="select" :data-value="modelValue"><button type="button" class="select-change-creneau" @click="$emit(\'update:modelValue\', \'Cet après-midi\')">Changer</button><slot /></div>'
+      '<div class="select" :data-value="modelValue"><button type="button" class="select-change-creneau" @click="$emit(\'update:modelValue\', \'Cet après-midi\')">Changer</button><button type="button" class="select-change-matin" @click="$emit(\'update:modelValue\', \'Ce matin\')">Matin</button><slot /></div>'
   },
   SelectTrigger: { template: '<button type="button" class="select-trigger"><slot /></button>' },
   SelectValue: { props: ['placeholder'], template: '<span>{{ placeholder }}</span>' },
@@ -68,8 +74,14 @@ async function openCard(wrapper: ReturnType<typeof mount>) {
   await flushPromises()
 }
 
+async function fillValidForm(wrapper: ReturnType<typeof mount>, telephone = '06 12 34 56 78') {
+  await wrapper.find('input#rappel-telephone').setValue(telephone)
+  await wrapper.find('input#rappel-consentement').setValue(true)
+}
+
 describe('QuickCallbackCard', () => {
   beforeEach(() => {
+    vi.useRealTimers()
     leadSubmitMock.mockClear()
     leadSubmitMock.mockResolvedValue(true)
     leadState.error.value = null
@@ -158,7 +170,7 @@ describe('QuickCallbackCard', () => {
     const wrapper = mount(QuickCallbackCard, { global: { stubs } })
     await openCard(wrapper)
 
-    await wrapper.find('input#rappel-telephone').setValue('06 12 34 56 78')
+    await fillValidForm(wrapper)
     await wrapper.find('form').trigger('submit')
 
     await vi.waitFor(() => {
@@ -168,7 +180,8 @@ describe('QuickCallbackCard', () => {
     expect(leadSubmitMock).toHaveBeenCalledWith('rappel', {
       telephone: '06 12 34 56 78',
       creneau: 'Dès que possible',
-      consentement: true
+      consentement: true,
+      consentementTexte: expect.any(String)
     })
 
     await flushPromises()
@@ -181,8 +194,8 @@ describe('QuickCallbackCard', () => {
       }
     ])
 
-    // Live region status pour les lecteurs d'écran
-    const statusRegion = wrapper.find('[role="status"]')
+    // Live region status pour les lecteurs d'écran (<output> = role status implicite)
+    const statusRegion = wrapper.find('output')
     expect(statusRegion.exists()).toBe(true)
     expect(statusRegion.attributes('aria-live')).toBe('polite')
     expect(wrapper.text()).toContain('Demande de rappel enregistrée')
@@ -205,7 +218,7 @@ describe('QuickCallbackCard', () => {
     const wrapper = mount(QuickCallbackCard, { global: { stubs } })
     await openCard(wrapper)
 
-    await wrapper.find('input#rappel-telephone').setValue('06 98 76 54 32')
+    await fillValidForm(wrapper, '06 98 76 54 32')
     await wrapper.find('button.select-change-creneau').trigger('click')
     await flushPromises()
 
@@ -217,7 +230,8 @@ describe('QuickCallbackCard', () => {
     expect(leadSubmitMock).toHaveBeenCalledWith('rappel', {
       telephone: '06 98 76 54 32',
       creneau: 'Cet après-midi',
-      consentement: true
+      consentement: true,
+      consentementTexte: expect.any(String)
     })
 
     await flushPromises()
@@ -240,7 +254,7 @@ describe('QuickCallbackCard', () => {
     const wrapper = mount(QuickCallbackCard, { global: { stubs } })
     await openCard(wrapper)
 
-    await wrapper.find('input#rappel-telephone').setValue('06 12 34 56 78')
+    await fillValidForm(wrapper)
     await wrapper.find('form').trigger('submit')
 
     await vi.waitFor(() => {
@@ -260,7 +274,7 @@ describe('QuickCallbackCard', () => {
     const wrapper = mount(QuickCallbackCard, { global: { stubs } })
     await openCard(wrapper)
 
-    await wrapper.find('input#rappel-telephone').setValue('0123456789')
+    await fillValidForm(wrapper, '0123456789')
     await wrapper.find('form').trigger('submit')
 
     await vi.waitFor(() => {
@@ -270,5 +284,87 @@ describe('QuickCallbackCard', () => {
     expect(leadState.error.value).toBeNull()
     expect(wrapper.find('form').exists()).toBe(true)
     expect(wrapper.emitted('submit')).toBeUndefined()
+  })
+
+  it('exige le consentement : bloque la soumission tant que la case n’est pas cochée', async () => {
+    const wrapper = mount(QuickCallbackCard, { global: { stubs } })
+    await openCard(wrapper)
+
+    await wrapper.find('input#rappel-telephone').setValue('06 12 34 56 78')
+    await wrapper.find('form').trigger('submit')
+
+    await vi.waitFor(() => {
+      expect(wrapper.find('.consent-error').text()).toContain(
+        'Consentement requis pour demander un rappel.'
+      )
+    })
+    expect(leadSubmitMock).not.toHaveBeenCalled()
+    expect(wrapper.emitted('submit')).toBeUndefined()
+  })
+
+  it('envoie à l’API le libellé de consentement exactement tel qu’affiché', async () => {
+    const wrapper = mount(QuickCallbackCard, { global: { stubs } })
+    await openCard(wrapper)
+
+    // Le texte enregistré dans le CRM doit être celui lu par l'utilisateur —
+    // capturé avant soumission : le formulaire laisse place à la confirmation.
+    const labelText = wrapper.find('.consent-field label').text()
+    expect(wrapper.find('.consent-field a[href="/confidentialite"]').exists()).toBe(true)
+
+    await fillValidForm(wrapper)
+    await wrapper.find('form').trigger('submit')
+    await vi.waitFor(() => {
+      expect(leadSubmitMock).toHaveBeenCalledTimes(1)
+    })
+
+    const payload = leadSubmitMock.mock.calls[0]![1] as { consentementTexte?: string }
+    expect(payload.consentementTexte).toBeTruthy()
+    expect(labelText).toContain(payload.consentementTexte)
+  })
+
+  it('propose « Ce matin » avant midi', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-03-10T10:00:00'))
+
+    const wrapper = mount(QuickCallbackCard, { global: { stubs } })
+    await openCard(wrapper)
+
+    const options = wrapper.findAll('.select-item').map((o) => o.text())
+    expect(options).toEqual(['Dès que possible', 'Ce matin', 'Cet après-midi'])
+  })
+
+  it('masque « Ce matin » après midi', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-03-10T14:00:00'))
+
+    const wrapper = mount(QuickCallbackCard, { global: { stubs } })
+    await openCard(wrapper)
+
+    const options = wrapper.findAll('.select-item').map((o) => o.text())
+    expect(options).toEqual(['Dès que possible', 'Cet après-midi'])
+    expect(options).not.toContain('Ce matin')
+  })
+
+  it('déclasse un « Ce matin » choisi le matin mais soumis l’après-midi', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-03-10T11:59:00'))
+
+    const wrapper = mount(QuickCallbackCard, { global: { stubs } })
+    await openCard(wrapper)
+    await fillValidForm(wrapper)
+    await wrapper.find('button.select-change-matin').trigger('click')
+    await flushPromises()
+
+    // L'utilisateur met du temps : au submit, « Ce matin » n'est plus valide.
+    vi.setSystemTime(new Date('2026-03-10T13:00:00'))
+    await wrapper.find('form').trigger('submit')
+    await vi.waitFor(() => {
+      expect(leadSubmitMock).toHaveBeenCalledTimes(1)
+    })
+
+    expect(leadSubmitMock).toHaveBeenCalledWith(
+      'rappel',
+      expect.objectContaining({ creneau: 'Dès que possible' })
+    )
   })
 })

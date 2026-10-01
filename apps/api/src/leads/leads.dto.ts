@@ -221,6 +221,15 @@ export class RappelLeadDto extends LeadContextDto {
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   creneau?: string
 
+  @ApiPropertyOptional({
+    description: 'Consent label displayed by the checkbox — recorded verbatim by HubSpot'
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  consentementTexte?: string
+
   @ApiProperty({ description: 'Consent to processing — must be accepted' })
   @IsBoolean()
   @Equals(true, { message: 'Consent is required to submit the request.' })

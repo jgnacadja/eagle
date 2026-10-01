@@ -94,13 +94,12 @@ describe('pages/a-propos.vue', () => {
     const wrapper = await mountAPropos()
 
     expect(wrapper.text()).toContain('Réseau national')
-    expect(wrapper.text()).toContain('Centres partenaires · Partout en France')
-    expect(wrapper.text()).toContain('250+')
+    expect(wrapper.text()).toContain('Centres partenaires — France entière')
     expect(wrapper.text()).toContain('Formations au catalogue')
-    expect(wrapper.text()).toContain('80+')
-    expect(wrapper.text()).toContain('Sessions ouvertes chaque semaine')
+    expect(wrapper.text()).toContain('Stagiaires accompagnés par an')
     expect(wrapper.text()).toContain('Qualiopi')
-    expect(wrapper.text()).toContain('Certification · Qualité des actions')
+    expect(wrapper.text()).toContain('Certification — périmètre à confirmer')
+    expect(wrapper.text()).toContain('DYN.')
   })
 
   it('présente la section Notre mission avec son titre et son visuel', async () => {

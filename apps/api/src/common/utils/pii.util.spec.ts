@@ -34,6 +34,17 @@ describe('scrubPersonalData', () => {
     )
   })
 
+  it('masks postal addresses but keeps the postal code and city', () => {
+    expect(scrubPersonalData('Jean Dupont, 12 rue des Lilas, 69003 Lyon')).toBe(
+      `Jean Dupont, ${PII_PLACEHOLDERS.address}, 69003 Lyon`
+    )
+    expect(scrubPersonalData('livraison 4 bis avenue du Général Leclerc. Merci')).toBe(
+      `livraison ${PII_PLACEHOLDERS.address}. Merci`
+    )
+    const business = 'formation CACES 3 en centre à Lyon pour 5 personnes'
+    expect(scrubPersonalData(business)).toBe(business)
+  })
+
   it('leaves short numbers (dates, headcounts, budgets) alone', () => {
     const text = 'budget 15 000 € pour 12 personnes le 15 mars 2026 à 14h30'
     expect(scrubPersonalData(text)).toBe(text)

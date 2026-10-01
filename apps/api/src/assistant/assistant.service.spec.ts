@@ -360,6 +360,18 @@ describe('AssistantService', () => {
     expect(messages).toEqual([{ role: 'user', content: 'bonjour' }])
   })
 
+  it('forwards the abort signal to the model call', async () => {
+    catalog.allCourses.mockResolvedValue([makeRow(makeCourse())])
+    model.complete.mockResolvedValue(JSON.stringify({ kind: 'clarify', text: 'ok' }))
+    const controller = new AbortController()
+
+    await service.reply({ message: 'test' }, { signal: controller.signal })
+
+    expect(model.complete).toHaveBeenCalledWith(expect.any(String), expect.any(Array), {
+      signal: controller.signal
+    })
+  })
+
   it('throws 503 when the model call fails', async () => {
     catalog.allCourses.mockResolvedValue([makeRow(makeCourse())])
     model.complete.mockRejectedValue(new Error('gateway down'))

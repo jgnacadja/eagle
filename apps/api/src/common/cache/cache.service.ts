@@ -143,8 +143,11 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       const newVersion = await this.client.incr(this.versionKey)
       const oldVersion = newVersion - 1
       this.currentVersion = newVersion
-      await this.deleteByPattern(`catalog:v${oldVersion}:*`)
+      // La génération part dès que la nouvelle version existe : si la purge
+      // des anciennes clés échoue ensuite, les autres instances basculent
+      // quand même (les clés v{old} orphelines expirent d'elles-mêmes).
       await this.bumpGeneration()
+      await this.deleteByPattern(`catalog:v${oldVersion}:*`)
       this.logger.log(`Catalog cache invalidated, new version v${this.currentVersion}`)
     } catch (error) {
       this.logger.warn({ error }, 'Failed to invalidate catalog cache')
@@ -175,8 +178,10 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     try {
       const generation = Number.parseInt((await this.client.get(this.generationKey)) ?? '0', 10)
       if (generation <= this.knownGeneration) return false
-      this.knownGeneration = generation
       const version = await this.client.get(this.versionKey)
+      // La génération n'est consommée qu'une fois les deux lectures réussies :
+      // une lecture de version en échec est retentée au passage suivant.
+      this.knownGeneration = generation
       this.currentVersion = version ? Number.parseInt(version, 10) : this.currentVersion
     } catch (error) {
       this.logger.warn({ error }, 'Failed to sync catalog invalidations')

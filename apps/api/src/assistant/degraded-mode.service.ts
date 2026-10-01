@@ -15,13 +15,21 @@ export class AiUnavailableError extends Error {
   }
 }
 
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+/**
+ * Budget de temps : au-delà, la promesse est rejetée **et** la requête modèle
+ * en vol est annulée via le signal — sans quoi le SDK poursuivrait l'appel et
+ * ses retries pendant que le repli répond, en occupant sockets et quota
+ * fournisseur.
+ */
+function withTimeout<T>(run: (signal: AbortSignal) => Promise<T>, timeoutMs: number): Promise<T> {
+  const controller = new AbortController()
   return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(
-      () => reject(new AiUnavailableError(`AI timeout after ${timeoutMs}ms`)),
-      timeoutMs
-    )
-    promise.then(
+    const timer = setTimeout(() => {
+      const error = new AiUnavailableError(`AI timeout after ${timeoutMs}ms`)
+      controller.abort(error)
+      reject(error)
+    }, timeoutMs)
+    run(controller.signal).then(
       (value) => {
         clearTimeout(timer)
         resolve(value)
@@ -78,7 +86,10 @@ export class DegradedModeService {
   private async attempt(request: AssistantRequest): Promise<Attempt> {
     try {
       return {
-        reply: await withTimeout(this.assistant.reply(request), this.aiTimeoutMs),
+        reply: await withTimeout(
+          (signal) => this.assistant.reply(request, { signal }),
+          this.aiTimeoutMs
+        ),
         mode: 'ai'
       }
     } catch (error) {

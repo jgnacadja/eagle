@@ -42,12 +42,15 @@ export class HttpEmbeddingsProvider implements EmbeddingsProvider {
     const vectors: number[][] = []
     for (let start = 0; start < texts.length; start += BATCH_SIZE) {
       const batch = texts.slice(start, start + BATCH_SIZE)
-      vectors.push(...(await this.embedBatch(batch)))
+      // Dimension de référence = premier vecteur de l'index : un fournisseur
+      // qui changerait de dimension entre deux lots fausserait silencieusement
+      // la similarité (cosinus nul sur les documents décalés).
+      vectors.push(...(await this.embedBatch(batch, vectors[0])))
     }
     return vectors
   }
 
-  private async embedBatch(batch: string[]): Promise<number[][]> {
+  private async embedBatch(batch: string[], reference?: number[]): Promise<number[][]> {
     const response = (await fetch(this.url, {
       method: 'POST',
       headers: {
@@ -71,7 +74,9 @@ export class HttpEmbeddingsProvider implements EmbeddingsProvider {
         `Embeddings provider returned ${data.length} vectors for ${batch.length} texts`
       )
     }
-    return data.map((entry) => l2Normalize(validVector(entry.embedding, data[0]?.embedding)))
+    return data.map((entry) =>
+      l2Normalize(validVector(entry.embedding, reference ?? data[0]?.embedding))
+    )
   }
 }
 

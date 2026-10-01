@@ -1242,7 +1242,7 @@ export const collections = [
   {
     collection: 'recherches_sans_resultat',
     icon: 'search_off',
-    note: 'Journal des recherches sans correspondance — catalogue « aucun résultat », moteur IA « hors catalogue ». Alimenté automatiquement par l’API (texte nettoyé des données personnelles, purge après SEARCH_MISS_RETENTION_DAYS jours) ; consultation et export pour la revue produit.',
+    note: 'Journal des recherches sans correspondance — catalogue « aucun résultat », moteur IA « hors catalogue ». Alimenté automatiquement par l’API : identifiants masqués (e-mail, téléphone, SIRET, IBAN, adresse), mais le texte libre peut encore contenir des données personnelles saisies par le visiteur — accès réservé aux rôles internes, purge après SEARCH_MISS_RETENTION_DAYS jours ; consultation et export pour la revue produit.',
     ...fr('Recherches sans résultat'),
     fields: [
       primaryKey(),
@@ -1296,7 +1296,7 @@ export const collections = [
           interface: 'input-multiline',
           width: 'full',
           readonly: true,
-          note: 'Texte saisi par le visiteur — e-mail, téléphone, SIRET et IBAN masqués avant enregistrement',
+          note: 'Texte saisi par le visiteur — e-mail, téléphone, SIRET, IBAN et adresse masqués avant enregistrement ; peut contenir d’autres données personnelles saisies librement (accès restreint, purge automatique)',
           ...fr('Requête')
         }
       },

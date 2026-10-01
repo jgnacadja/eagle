@@ -67,6 +67,13 @@ catalogue ». Elle sert à la revue produit (formations manquantes récurrentes,
 boucle corpus / prompt du moteur IA) : consultation dans l'admin, case
 « Traité » pour le suivi, export agrégé via `GET /admin/search-misses/export`.
 
+Données personnelles : l'API masque les identifiants reconnaissables (e-mail,
+téléphone, SIRET, IBAN, adresse postale) avant enregistrement, mais le texte
+libre peut encore contenir ce que le visiteur a saisi (un nom, par exemple).
+La collection est donc une donnée à accès restreint — rôles internes
+uniquement, jamais publique — purgée automatiquement après
+`SEARCH_MISS_RETENTION_DAYS` jours, et l'export ne sert qu'à la revue produit.
+
 - Jamais lisible publiquement ; lecture pour tous les rôles internes,
   `moderateur` peut cocher « Traité », `admin` peut supprimer.
 - Hors du flow « Invalidate site cache » (`schema/flows.mjs`) : une écriture

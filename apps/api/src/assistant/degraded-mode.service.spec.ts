@@ -109,6 +109,25 @@ describe('DegradedModeService', () => {
     await expect(pending).resolves.toMatchObject({ mode: 'fallback' })
   })
 
+  it('aborts the in-flight model request once the time budget is exceeded', async () => {
+    vi.useFakeTimers()
+    const { service, assistant, fallback } = makeService({ ASSISTANT_AI_TIMEOUT_MS: '1000' })
+    assistant.reply.mockImplementation(
+      (_request: unknown, { signal }: { signal: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          signal.addEventListener('abort', () => reject(signal.reason))
+        })
+    )
+
+    const pending = service.answer(REQUEST)
+    await vi.advanceTimersByTimeAsync(1001)
+
+    await expect(pending).resolves.toMatchObject({ mode: 'fallback' })
+    const options = assistant.reply.mock.calls[0]?.[1] as { signal: AbortSignal }
+    expect(options.signal.aborted).toBe(true)
+    expect(fallback.recommend).toHaveBeenCalledOnce()
+  })
+
   it('wraps non-Error rejections and still falls back', async () => {
     const { service, assistant } = makeService()
     assistant.reply.mockReturnValue(Promise.reject('boom'))

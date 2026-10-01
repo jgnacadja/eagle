@@ -176,6 +176,40 @@ describe('CacheService', () => {
     await expect(service.syncInvalidations()).resolves.toBe(false)
   })
 
+  it('retries a generation whose version read failed', async () => {
+    const client = Reflect.get(service, 'client') as {
+      get: ReturnType<typeof vi.fn>
+      set: (key: string, value: string) => Promise<unknown>
+    }
+    await client.set('catalog:generation', '3')
+    await client.set('catalog:version', '4')
+
+    // Génération lue, version en échec : rien n'est consommé.
+    client.get.mockImplementationOnce(() => Promise.resolve('3'))
+    client.get.mockRejectedValueOnce(new Error('down'))
+    await expect(service.syncInvalidations()).resolves.toBe(false)
+    expect(service.key('x')).toBe('catalog:v0:x')
+
+    // Passage suivant : les deux lectures aboutissent.
+    await expect(service.syncInvalidations()).resolves.toBe(true)
+    expect(service.key('x')).toBe('catalog:v4:x')
+  })
+
+  it('announces a new version to other instances even when the old keys cannot be purged', async () => {
+    const client = Reflect.get(service, 'client') as {
+      get: (key: string) => Promise<string | null>
+      scanStream: ReturnType<typeof vi.fn>
+    }
+    const generation = Number((await client.get('catalog:generation')) ?? '0')
+    client.scanStream = vi.fn().mockImplementation(() => {
+      throw new Error('scan error')
+    })
+
+    await service.invalidateCatalog()
+
+    expect(Number(await client.get('catalog:generation'))).toBe(generation + 1)
+  })
+
   it('returns null for non-JSON cached values', async () => {
     const key = service.key('broken')
     await service.set('broken', { ok: true })

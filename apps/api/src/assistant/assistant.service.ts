@@ -210,18 +210,26 @@ export class AssistantService {
     private readonly model: AssistantModelClient
   ) {}
 
-  async reply(request: AssistantRequest): Promise<AssistantReply> {
+  /** `signal` annule l'appel modèle en vol (budget de temps du mode dégradé). */
+  async reply(
+    request: AssistantRequest,
+    options: { signal?: AbortSignal } = {}
+  ): Promise<AssistantReply> {
     const rows = await this.catalog.allCourses()
     if (rows.length === 0) {
       // Catalogue indisponible : pas de repli approximatif possible.
       throw new ServiceUnavailableException('assistant unavailable')
     }
 
-    const decision = await this.decide(request, rows)
+    const decision = await this.decide(request, rows, options.signal)
     return this.resolve(decision, rows, request)
   }
 
-  private async decide(request: AssistantRequest, rows: CatalogRow[]): Promise<AssistantDecision> {
+  private async decide(
+    request: AssistantRequest,
+    rows: CatalogRow[],
+    signal?: AbortSignal
+  ): Promise<AssistantDecision> {
     const contextLines = [
       request.context?.location ? `Localisation transmise : ${request.context.location}` : null,
       request.context?.formationSlug
@@ -272,7 +280,7 @@ export class AssistantService {
     else normalizedHistory.push({ role: 'user', content: userContent })
 
     try {
-      const raw = await this.model.complete(instructions, normalizedHistory)
+      const raw = await this.model.complete(instructions, normalizedHistory, { signal })
       return parseDecision(raw)
     } catch (error) {
       this.logger.warn({ error }, 'assistant model call failed')

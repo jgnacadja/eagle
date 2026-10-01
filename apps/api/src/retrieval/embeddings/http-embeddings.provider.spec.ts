@@ -91,6 +91,16 @@ describe('HttpEmbeddingsProvider', () => {
     await expect(makeProvider().embed(['a', 'b'])).rejects.toThrow('returned 1 vectors for 2 texts')
   })
 
+  it('rejects a batch whose dimension differs from the first batch', async () => {
+    fetchMock
+      .mockResolvedValueOnce(okResponse(Array.from({ length: 64 }, () => [1, 0])))
+      .mockResolvedValueOnce(okResponse([[1, 0, 0]]))
+
+    await expect(
+      makeProvider().embed(Array.from({ length: 65 }, (_, i) => `t${i}`))
+    ).rejects.toThrow('different dimensions')
+  })
+
   it('rejects malformed vectors instead of silently degrading the semantic signal', async () => {
     const malformed = (data: unknown[]) => ({
       ok: true,

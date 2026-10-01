@@ -12,7 +12,8 @@ export interface AssistantModelMessage {
  * OpenRouter (`ASSISTANT_BASE_URL`), ce qui permet de changer de modèle
  * sans changer de client : gratuit en dev (`ASSISTANT_MODEL`), puis
  * `anthropic/claude-haiku-4.5` en prod une fois validé.
- * Timeout et retries sont gérés par le SDK.
+ * Timeout et retries sont gérés par le SDK ; l'appelant peut aussi annuler
+ * la requête en vol via `signal` (budget de temps du mode dégradé).
  */
 const DEFAULT_BASE_URL = 'https://openrouter.ai/api/v1'
 const DEFAULT_MODEL = 'nvidia/nemotron-3-super-120b-a12b:free'
@@ -35,20 +36,28 @@ export class AssistantModelClient {
       : null
   }
 
-  async complete(instructions: string, messages: AssistantModelMessage[]): Promise<string> {
+  async complete(
+    instructions: string,
+    messages: AssistantModelMessage[],
+    options: { signal?: AbortSignal } = {}
+  ): Promise<string> {
     if (!this.client) throw new Error('assistant model is not configured')
 
-    const completion = await this.client.chat.completions.create({
-      model: this.model,
-      // Pas de `response_format` : tous les providers OpenRouter ne le
-      // supportent pas. Le JSON est exigé par le prompt et re-validé
-      // par Zod côté service.
-      messages: [{ role: 'system', content: instructions }, ...messages],
-      temperature: 0.2,
-      // La décision JSON tient en ~1K tokens ; la borne évite aussi une
-      // complétion non bornée si le modèle déraille.
-      max_tokens: 4096
-    })
+    const completion = await this.client.chat.completions.create(
+      {
+        model: this.model,
+        // Pas de `response_format` : tous les providers OpenRouter ne le
+        // supportent pas. Le JSON est exigé par le prompt et re-validé
+        // par Zod côté service.
+        messages: [{ role: 'system', content: instructions }, ...messages],
+        temperature: 0.2,
+        // La décision JSON tient en ~1K tokens ; la borne évite aussi une
+        // complétion non bornée si le modèle déraille.
+        max_tokens: 4096
+      },
+      // Annulation : le signal interrompt la requête HTTP et ses retries.
+      { signal: options.signal }
+    )
 
     const content = completion.choices[0]?.message?.content
     if (!content) throw new Error('assistant model returned no content')

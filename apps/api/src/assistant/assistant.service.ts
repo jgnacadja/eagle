@@ -79,7 +79,7 @@ function buildDigest(rows: CatalogRow[]): string {
     .map((row) => {
       const course = row.course
       const cities = Array.from(
-        new Set(row.locations.map((loc) => loc.city).filter((c): c is string => !!c))
+        new Set(row.locations.map((loc) => loc?.city).filter((c): c is string => !!c))
       ).join(', ')
       return [
         course.slug,

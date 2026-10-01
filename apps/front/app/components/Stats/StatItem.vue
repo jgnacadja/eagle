@@ -8,14 +8,20 @@
     <p
       ref="numberEl"
       class="font-display font-extrabold text-ink min-w-0 wrap-break-word"
-      :class="size === 'sm' ? 'text-h2' : 'text-h2 md:text-h1 lg:text-h2 xl:text-h1'"
+      :class="
+        size === 'lg'
+          ? 'text-h2 md:text-h1 lg:text-h2 xl:text-h1'
+          : size === 'sm'
+            ? 'text-h2'
+            : 'text-h3'
+      "
     >
       {{ displayed
       }}<span v-if="unit" class="text-h4 align-baseline text-ink-muted">{{ unit }}</span>
     </p>
     <p
       class="mt-xs font-medium text-ink-muted"
-      :class="size === 'sm' ? 'text-meta' : 'text-small md:text-body'"
+      :class="size === 'lg' ? 'text-small md:text-body' : 'text-meta'"
     >
       {{ label }}
     </p>
@@ -38,8 +44,8 @@ const props = withDefaults(
     value: string
     unit?: string
     label: string
-    /** `lg` : bandeau stats (accueil). `sm` : chiffres clés inline (organisme). */
-    size?: 'lg' | 'sm'
+    /** `lg` : bandeau stats (accueil). `sm` : chiffres clés inline (organisme). `xs` : stats en colonnes mobile (réseau). */
+    size?: 'lg' | 'sm' | 'xs'
   }>(),
   { unit: undefined, size: 'lg' }
 )

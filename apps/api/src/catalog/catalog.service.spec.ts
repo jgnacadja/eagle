@@ -822,6 +822,43 @@ describe('CatalogService', () => {
       const result = await service.list({ location: '2A', page: 1, limit: 10 } as ListCoursesDto)
       expect(result.items).toHaveLength(1)
     })
+
+    it('garde locations aligné sur sessions quand une session n’a pas de localisation', async () => {
+      const withHole = {
+        ...geoFormation,
+        id: 5,
+        digiforma_id: 'prog-hole',
+        slug: 'hole',
+        sessions: [
+          geoFormation.sessions?.[0],
+          {
+            id: 's-mid',
+            startDate: null,
+            endDate: null,
+            modality: 'presentiel',
+            seatsRemaining: null,
+            location: null
+          },
+          geoFormation.sessions?.[1]
+        ]
+      } as unknown as DirectusFormation
+      cache.get.mockResolvedValue(null)
+      catalog.fetchAllFormations.mockResolvedValue([withHole])
+
+      const rows = await service.allCourses()
+      // L'index de `locations` suit celui de `sessions` : trou en position 1.
+      expect(rows[0].locations).toHaveLength(3)
+      expect(rows[0].locations[1]).toBeNull()
+      expect(rows[0].locations[2]?.city).toBe('Marseille')
+
+      // Le trou ne fausse ni le matching ni le repli locationText.
+      const result = await service.list({
+        location: 'marseille',
+        page: 1,
+        limit: 10
+      } as ListCoursesDto)
+      expect(result.items.map((i) => i.slug)).toEqual(['hole'])
+    })
   })
 
   describe('facets', () => {

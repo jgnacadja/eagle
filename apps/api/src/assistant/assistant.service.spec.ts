@@ -43,17 +43,23 @@ function makeRow(course: CourseListItem): CatalogRow {
     updatedAt: '2026-01-01T00:00:00.000Z',
     searchText: course.title.toLowerCase(),
     locationText: 'creteil',
-    locations: (course.sessions ?? []).map((s) => ({
-      name: s.location?.name ?? 'Centre LEARN UP de Créteil',
-      city: s.location?.city ?? 'Créteil',
-      postalCode: '94000',
-      department: 'Val-de-Marne',
-      region: 'Île-de-France',
-      centreSlug: 'creteil',
-      address: null,
-      latitude: null,
-      longitude: null
-    }))
+    // Aligné sur `course.sessions` : null quand la session n'a pas de
+    // localisation — même contrat que `toCatalogRow` côté catalogue.
+    locations: (course.sessions ?? []).map((s) =>
+      s.location
+        ? {
+            name: s.location.name ?? 'Centre LEARN UP de Créteil',
+            city: s.location.city ?? 'Créteil',
+            postalCode: '94000',
+            department: 'Val-de-Marne',
+            region: 'Île-de-France',
+            centreSlug: 'creteil',
+            address: null,
+            latitude: null,
+            longitude: null
+          }
+        : null
+    )
   }
 }
 
@@ -181,6 +187,48 @@ describe('AssistantService', () => {
     })
 
     expect(reply.recommendations![0].availability?.sessionId).toBe('session-1')
+  })
+
+  it('reads the location of the right session when an earlier session has none', async () => {
+    // Sans localisation sur la session du milieu, un `locations` non aligné
+    // (trou filtré) ferait lire la localisation de Lyon à la session « noloc ».
+    const noLoc = {
+      ...FUTURE_SESSION,
+      id: 'noloc',
+      startDate: '2999-10-10',
+      location: null
+    }
+    const lyon = {
+      ...FUTURE_SESSION,
+      id: 'lyon-1',
+      startDate: '2999-10-20',
+      location: { ...FUTURE_SESSION.location, city: 'Lyon', centreSlug: 'lyon' }
+    }
+    const course = makeCourse({ sessions: [FUTURE_SESSION, noLoc, lyon] })
+    const row = makeRow(course)
+    row.locations[2] = {
+      ...row.locations[2],
+      city: 'Lyon',
+      centreSlug: 'lyon',
+      name: 'Centre Lyon'
+    }
+    catalog.allCourses.mockResolvedValue([row])
+    model.complete.mockResolvedValue(
+      JSON.stringify({
+        kind: 'recommend',
+        text: 'ok',
+        recommendations: [{ slug: course.slug, justification: 'proche.' }]
+      })
+    )
+
+    const reply = await service.reply({
+      message: 'SST à Lyon',
+      context: { location: 'Lyon' }
+    })
+
+    expect(reply.recommendations![0].availability?.sessionId).toBe('lyon-1')
+    expect(reply.recommendations![0].availability?.centreName).toBe('Centre Lyon')
+    expect(reply.recommendations![0].availability?.city).toBe('Lyon')
   })
 
   it('drops hallucinated slugs and degrades to no_results', async () => {

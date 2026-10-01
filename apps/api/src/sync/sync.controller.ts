@@ -1,4 +1,4 @@
-import { Controller, Get, Post, UseGuards } from '@nestjs/common'
+import { Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common'
 import { ApiSecurity, ApiTags } from '@nestjs/swagger'
 import { AdminApiKeyGuard } from '../common/guards/admin-api-key.guard'
 import { SyncService } from './sync.service'
@@ -10,10 +10,13 @@ import { SyncService } from './sync.service'
 export class SyncController {
   constructor(private readonly syncService: SyncService) {}
 
+  // 202 immédiat : la sync (Digiforma + upserts + géocodage) dépasse le
+  // budget d'une requête serverless — elle tourne en tâche de fond et le
+  // suivi passe par GET /admin/sync/status.
   @Post('sync')
-  async trigger(): Promise<{ success: boolean }> {
-    await this.syncService.run()
-    return { success: true }
+  @HttpCode(HttpStatus.ACCEPTED)
+  async trigger(): Promise<{ started: boolean }> {
+    return { started: await this.syncService.trigger() }
   }
 
   @Get('sync/status')

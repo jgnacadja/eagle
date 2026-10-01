@@ -54,8 +54,9 @@ Lire d'abord `AGENTS.md` à la racine.
 - Client GraphQL `DigiformaClient` : `fetch` vers `app.digiforma.com/api/v1/graphql`, auth Bearer, pagination, retry/exponential backoff, timeout.
 - Mapping `Program` → payload Directus (`FormationDirectusPayload`, snake_case) ; en cas de doute, garder le payload brut dans `raw`.
 - La sync écrit / met à jour les formations dans Directus (`DirectusCatalogService.upsertMany`).
-- Cron `@nestjs/schedule` toutes les 1 h (env `SYNC_CRON`).
-- Endpoint admin : `POST /admin/sync` (forcer), `GET /admin/sync/status`.
+- Planification externe : workflow GitHub `.github/workflows/sync.yml` toutes les 1 h (`POST /admin/sync` avec `x-api-key`) — pas de cron in-process (serverless). Déclenchement manuel identique.
+- `POST /admin/sync` répond `202 { started }` immédiatement ; le run part en tâche de fond (`waitUntil` Vercel pour survivre à la réponse), suivi via `GET /admin/sync/status`.
+- Exécution unique : verrou distribué Redis `sync:lock` (`SET NX PX`, libération compare-and-delete par token) + flag `running` local.
 
 ## Catalogue
 

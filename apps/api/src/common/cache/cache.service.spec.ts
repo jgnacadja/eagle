@@ -14,9 +14,17 @@ vi.mock('ioredis', () => ({
 
     get = vi.fn((key: string) => Promise.resolve(this.store.get(key) ?? null))
 
-    set = vi.fn((key: string, value: string | number) => {
+    set = vi.fn((key: string, value: string | number, ...args: unknown[]) => {
+      // SET ... NX : null si la clé existe déjà
+      if (args.includes('NX') && this.store.has(key)) return Promise.resolve(null)
       this.store.set(key, String(value))
       return Promise.resolve('OK')
+    })
+
+    eval = vi.fn((_script: string, _numKeys: number, key: string, token: string) => {
+      if (this.store.get(key) !== token) return Promise.resolve(0)
+      this.store.delete(key)
+      return Promise.resolve(1)
     })
 
     incr = vi.fn((key: string) => {
@@ -226,6 +234,41 @@ describe('CacheService', () => {
     await redis.set('sync:last_run', 'not-json')
 
     await expect(service.getSyncRun()).resolves.toBeNull()
+  })
+
+  it('acquires the sync lock once and releases it to its owner only', async () => {
+    const other = await buildService()
+
+    await expect(service.acquireSyncLock('token-a', 60_000)).resolves.toBe(true)
+    await expect(other.acquireSyncLock('token-b', 60_000)).resolves.toBe(false)
+
+    // Un autre token ne libère pas le verrou (TTL dépassé entre-temps).
+    await other.releaseSyncLock('token-b')
+    await expect(other.acquireSyncLock('token-b', 60_000)).resolves.toBe(false)
+
+    await service.releaseSyncLock('token-a')
+    await expect(other.acquireSyncLock('token-b', 60_000)).resolves.toBe(true)
+
+    await other.onModuleDestroy()
+  })
+
+  it('fails open on the sync lock when Redis is absent or errors', async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [CacheService, { provide: ConfigService, useValue: { get: () => undefined } }]
+    }).compile()
+    const disabled = module.get<CacheService>(CacheService)
+    await disabled.onModuleInit()
+
+    await expect(disabled.acquireSyncLock('t', 60_000)).resolves.toBe(true)
+    await expect(disabled.releaseSyncLock('t')).resolves.toBeUndefined()
+
+    const redis = Reflect.get(service, 'client') as { set: ReturnType<typeof vi.fn> }
+    redis.set = vi.fn().mockRejectedValue(new Error('redis down'))
+    await expect(service.acquireSyncLock('t', 60_000)).resolves.toBe(true)
+
+    const redisEval = Reflect.get(service, 'client') as { eval: ReturnType<typeof vi.fn> }
+    redisEval.eval = vi.fn().mockRejectedValue(new Error('redis down'))
+    await expect(service.releaseSyncLock('t')).resolves.toBeUndefined()
   })
 
   it('does not throw when setSyncRun fails', async () => {

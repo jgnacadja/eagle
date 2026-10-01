@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Label :for="id" variant="muted" class="flex items-center gap-sm">
+    <Label :for="id" variant="muted" :class="['flex items-center gap-sm', labelClass]">
       <Checkbox
         :id="id"
         v-model="model"
@@ -16,6 +16,8 @@
 </template>
 
 <script setup lang="ts">
+import type { HTMLAttributes } from 'vue'
+
 const model = defineModel<boolean>()
 
 withDefaults(
@@ -26,7 +28,9 @@ withDefaults(
     invalid?: boolean
     /** Message d'erreur affiché quand `invalid` est vrai. */
     error?: string
+    /** Classes additionnelles du label (ex. texte clair sur carte sombre). */
+    labelClass?: HTMLAttributes['class']
   }>(),
-  { id: 'consentement', error: undefined }
+  { id: 'consentement', error: undefined, labelClass: undefined }
 )
 </script>

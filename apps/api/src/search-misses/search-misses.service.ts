@@ -1,7 +1,5 @@
-import { BadRequestException, Injectable, Logger, OnModuleInit } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { SchedulerRegistry } from '@nestjs/schedule'
-import { CronJob, validateCronExpression } from 'cron'
 import type {
   RechercheSansResultat,
   SearchMissAggregate,
@@ -28,8 +26,6 @@ const FETCH_PAGE_SIZE = 500
 // restreindre la période (`from` / `to`).
 const FETCH_MAX_ROWS = 50_000
 const DEFAULT_RETENTION_DAYS = 180
-const DEFAULT_PURGE_CRON = '15 3 * * *'
-const PURGE_JOB_NAME = 'search-misses-purge'
 const DAY_MS = 86_400_000
 
 const ROW_FIELDS = [
@@ -81,46 +77,24 @@ function withFilter(filter: DirectusFilter): DirectusFilter | undefined {
 /**
  * Journal des recherches sans correspondance (collection Directus
  * `recherches_sans_resultat`) : capture non bloquante côté API, consultation
- * et export agrégé pour la revue produit, purge automatique après
+ * et export agrégé pour la revue produit, purge des entrées de plus de
  * `SEARCH_MISS_RETENTION_DAYS` jours (RGPD — durée de conservation bornée).
+ * La purge est planifiée hors process, comme la sync Digiforma : le workflow
+ * GitHub `search-misses-purge.yml` appelle `POST /admin/search-misses/purge`
+ * chaque nuit — un planificateur in-process ne tournerait que tant qu'une
+ * instance serverless est chaude.
  */
 @Injectable()
-export class SearchMissesService implements OnModuleInit {
+export class SearchMissesService {
   private readonly logger = new Logger(SearchMissesService.name)
   private readonly retentionDays: number
-  private readonly purgeCron: string
   private readonly recent = new Map<string, number>()
 
   constructor(
     config: ConfigService,
-    private readonly directus: DirectusItemsClient,
-    private readonly scheduler: SchedulerRegistry
+    private readonly directus: DirectusItemsClient
   ) {
     this.retentionDays = parseRetentionDays(config.get<string>('SEARCH_MISS_RETENTION_DAYS'))
-    this.purgeCron = config.get<string>('SEARCH_MISS_PURGE_CRON') ?? DEFAULT_PURGE_CRON
-  }
-
-  onModuleInit(): void {
-    if (this.retentionDays <= 0) {
-      this.logger.warn('SEARCH_MISS_RETENTION_DAYS <= 0: automatic search-miss purge disabled')
-      return
-    }
-
-    if (!validateCronExpression(this.purgeCron).valid) {
-      this.logger.error(`Invalid SEARCH_MISS_PURGE_CRON expression: ${this.purgeCron}`)
-      return
-    }
-
-    const job = new CronJob(this.purgeCron, () => {
-      void this.purgeExpired().catch((error) => {
-        this.logger.error(error, 'Scheduled search-miss purge failed')
-      })
-    })
-    this.scheduler.addCronJob(PURGE_JOB_NAME, job)
-    job.start()
-    this.logger.log(
-      `Search-miss purge scheduled: ${this.purgeCron} (retention ${this.retentionDays} days)`
-    )
   }
 
   /**

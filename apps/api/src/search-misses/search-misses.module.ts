@@ -4,8 +4,8 @@ import { DirectusModule } from '../directus/directus.module'
 import { SearchMissesController } from './search-misses.controller'
 import { SearchMissesService } from './search-misses.service'
 
-// Le cron de purge s'appuie sur SchedulerRegistry, fourni globalement par
-// ScheduleModule.forRoot() (importé une seule fois dans SyncModule).
+// Purge planifiée hors process (workflow GitHub `search-misses-purge.yml`
+// → `POST /admin/search-misses/purge`) : aucun scheduler in-process.
 @Module({
   imports: [ConfigModule, DirectusModule],
   controllers: [SearchMissesController],

@@ -7,6 +7,7 @@ export interface FamilyApplyResult {
   assigned: number
   cleared: number
   subAssigned: number
+  failed: number
 }
 
 export interface AssignmentProposal {
@@ -79,6 +80,17 @@ const IMAGE_IMPORT_MARKER = 'digiforma-sync:'
 // champs ne sont proposés que quand le champ Directus est vide — une
 // valeur éditoriale n'est jamais écrasée.
 const ALWAYS_SYNCED_FIELDS = new Set(['digiforma_id', 'sessions', 'raw'])
+
+/** Transporte le statut HTTP pour distinguer 5xx/429 (rejouables) des 4xx. */
+class DirectusRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number
+  ) {
+    super(message)
+    this.name = 'DirectusRequestError'
+  }
+}
 
 function isEmptyValue(value: unknown): boolean {
   if (value === null || value === undefined) return true
@@ -348,8 +360,11 @@ export class DirectusCatalogService {
       this.getSubFamilyIdsByFamilySlug()
     ])
 
-    const result: FamilyApplyResult = { assigned: 0, cleared: 0, subAssigned: 0 }
-    const patches: Promise<unknown>[] = []
+    const result: FamilyApplyResult = { assigned: 0, cleared: 0, subAssigned: 0, failed: 0 }
+    // Thunks, pas de promesses : les PATCH ne partent qu'au moment où leur
+    // tranche est exécutée — updateConcurrency borne réellement les requêtes
+    // en vol (empiler des promesses les lancerait toutes en rafale).
+    const tasks: Array<() => Promise<void>> = []
 
     for (const formation of formations) {
       const proposal = assignments.get(formation.digiforma_id)
@@ -363,19 +378,27 @@ export class DirectusCatalogService {
       )
       if (Object.keys(patch).length === 0) continue
 
-      patches.push(
-        this.request(`${this.baseUrl}/items/formations/${formation.id}`, 'PATCH', patch).then(
-          () => {
-            if (patch.famille !== undefined) result.assigned += 1
-            if (patch.sous_famille !== undefined) result.subAssigned += 1
-          }
-        )
-      )
+      tasks.push(async () => {
+        await this.request(`${this.baseUrl}/items/formations/${formation.id}`, 'PATCH', patch)
+        if (patch.famille !== undefined) result.assigned += 1
+        if (patch.sous_famille !== undefined) result.subAssigned += 1
+      })
     }
 
-    for (let i = 0; i < patches.length; i += this.updateConcurrency) {
-      const slice = patches.slice(i, i + this.updateConcurrency)
-      await Promise.all(slice)
+    for (let i = 0; i < tasks.length; i += this.updateConcurrency) {
+      const slice = tasks.slice(i, i + this.updateConcurrency)
+      // allSettled : un PATCH en échec n'interrompt pas les tranches
+      // suivantes et aucun rejet n'est non géré — les échecs sont comptés.
+      for (const outcome of await Promise.allSettled(slice.map((task) => task()))) {
+        if (outcome.status === 'rejected') {
+          result.failed += 1
+          this.logger.warn({ error: outcome.reason }, 'Family assignment PATCH failed')
+        }
+      }
+    }
+
+    if (result.failed > 0) {
+      this.logger.warn(`${result.failed}/${tasks.length} family assignment PATCH(es) failed`)
     }
 
     return result
@@ -570,7 +593,10 @@ export class DirectusCatalogService {
 
         if (!response.ok) {
           const text = await response.text()
-          throw new Error(`Directus ${method} ${url} failed: ${response.status} ${text}`)
+          throw new DirectusRequestError(
+            `Directus ${method} ${url} failed: ${response.status} ${text}`,
+            response.status
+          )
         }
 
         if (response.status === 204) {
@@ -579,7 +605,7 @@ export class DirectusCatalogService {
 
         return (await response.json()) as T
       } catch (error) {
-        if (attempt >= this.maxRetries) {
+        if (attempt >= this.maxRetries || !this.isRetryable(error, method)) {
           throw error
         }
 
@@ -591,5 +617,18 @@ export class DirectusCatalogService {
         clearTimeout(timeout)
       }
     }
+  }
+
+  // Retry borné aux méthodes idempotentes (GET/PATCH) sur faute
+  // transitoire : erreur réseau/timeout, 5xx et 429. Jamais de retry sur
+  // POST — un POST expiré peut avoir été traité côté Directus et le
+  // rejouer créerait un doublon (createMany, import de fichier). Les 4xx
+  // hors 429 sont des erreurs déterministes : inutile de rejouer.
+  private isRetryable(error: unknown, method: 'GET' | 'POST' | 'PATCH'): boolean {
+    if (method === 'POST') return false
+    if (error instanceof DirectusRequestError) {
+      return error.status === 429 || error.status >= 500
+    }
+    return true
   }
 }

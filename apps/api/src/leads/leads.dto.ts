@@ -14,6 +14,11 @@ import {
   Min
 } from 'class-validator'
 
+// Téléphone : au moins 10 chiffres, séparateurs libres (espaces, points,
+// tirets, parenthèses) et indicatifs internationaux acceptés — même règle
+// que le front (`leadFields.telephone`).
+const PHONE_PATTERN = /^\D*(?:\d\D*){10,}$/
+
 const VOIES = ['centre', 'organisme', 'formateur'] as const
 
 // Besoins du formulaire « Parler à votre conseiller » — les valeurs matchent
@@ -57,7 +62,7 @@ class LeadContactDto extends LeadContextDto {
 
   @ApiProperty({ description: 'Phone — at least 10 digits' })
   @IsString()
-  @Matches(/^\D*(?:\d\D*){10,}$/, {
+  @Matches(PHONE_PATTERN, {
     message: 'Incomplete phone number — at least 10 digits expected.'
   })
   @MaxLength(30)
@@ -67,7 +72,7 @@ class LeadContactDto extends LeadContextDto {
 export class DemandeLeadDto extends LeadContactDto {
   @ApiPropertyOptional({ description: 'Professional phone — at least 10 digits' })
   @IsOptional()
-  @Matches(/^\D*(?:\d\D*){10,}$/, {
+  @Matches(PHONE_PATTERN, {
     message: 'Incomplete phone number — at least 10 digits expected.'
   })
   @MaxLength(30)
@@ -191,6 +196,39 @@ export class ConseillerLeadDto extends LeadContactDto {
   @MaxLength(5000)
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   message?: string
+
+  @ApiProperty({ description: 'Consent to processing — must be accepted' })
+  @IsBoolean()
+  @Equals(true, { message: 'Consent is required to submit the request.' })
+  consentement!: boolean
+}
+
+export class RappelLeadDto extends LeadContextDto {
+  @ApiProperty({ description: 'Phone number — at least 10 digits' })
+  @IsString()
+  @IsNotEmpty()
+  @Matches(PHONE_PATTERN, {
+    message: 'Numéro incomplet — 10 chiffres attendus.'
+  })
+  @MaxLength(30)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  telephone!: string
+
+  @ApiPropertyOptional({ description: 'Desired callback slot' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  creneau?: string
+
+  @ApiPropertyOptional({
+    description: 'Consent label displayed by the checkbox — recorded verbatim by HubSpot'
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  consentementTexte?: string
 
   @ApiProperty({ description: 'Consent to processing — must be accepted' })
   @IsBoolean()

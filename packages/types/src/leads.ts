@@ -65,3 +65,15 @@ export interface ConseillerLeadPayload extends LeadPageContext {
   message?: string
   consentement: boolean
 }
+
+export interface RappelLeadPayload extends LeadPageContext {
+  telephone: string
+  creneau?: string
+  consentement: boolean
+  /**
+   * Libellé de consentement affiché par la case à cocher — enregistré tel
+   * quel par HubSpot (`legalConsentOptions`) : le CRM trace exactement ce
+   * que l'utilisateur a lu.
+   */
+  consentementTexte?: string
+}

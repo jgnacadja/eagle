@@ -252,15 +252,7 @@
             </ol>
           </Card>
 
-          <Card v-reveal variant="dark" class="p-lg">
-            <h2 class="text-small font-semibold text-paper">Vous préférez téléphoner&nbsp;?</h2>
-            <p class="mt-md text-small text-ink-inverse-muted">
-              Chaque centre affiche son numéro direct — trouvez celui de votre territoire.
-            </p>
-            <Button as-child variant="outline-inverse" size="pill" class="mt-md w-full">
-              <NuxtLink to="/centres">Trouver un centre</NuxtLink>
-            </Button>
-          </Card>
+          <QuickCallbackCard v-reveal />
 
           <p class="text-meta leading-relaxed text-ink-subtle">
             Les informations recueillies servent uniquement au traitement de la demande conformément
@@ -403,7 +395,8 @@ const onSubmit = handleSubmit(async (v) => {
     siret: v.siret || undefined,
     message: [v.message, `Référence : ${ref}`].filter(Boolean).join('\n\n'),
     consentement: v.consentement,
-    pageUri: window.location.href,
+    // Pas de query : elle peut porter du texte libre et dépasser la borne API.
+    pageUri: window.location.origin + window.location.pathname,
     pageName: 'Parler à votre conseiller'
   })
   if (ok) {

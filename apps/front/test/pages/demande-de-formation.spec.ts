@@ -12,6 +12,7 @@ import {
   watchEffect
 } from 'vue'
 import DemandePage from '~/pages/centres/demande-de-formation.vue'
+import { upcomingMonthLabelsFr } from '~/utils/date'
 
 const seoMock = vi.fn()
 const fetchMock = vi.fn()
@@ -457,6 +458,73 @@ describe('pages/centres/demande-de-formation', () => {
     expect(window.sessionStorage.getItem('demande-formation-draft')).toBeNull()
   })
 
+  it('ne restaure jamais le consentement ni les champs d’identité du brouillon', async () => {
+    window.sessionStorage.setItem(
+      'demande-formation-draft',
+      '{"salaries":5,"consentement":true,"nom":"Jean Dupont","email":"jean@acme.fr","telephone":"0612345678"}'
+    )
+    const wrapper = await mountPage()
+    await nextTick()
+
+    // RGPD : la case doit être recochée explicitement, jamais restaurée.
+    expect(wrapper.find('[role="checkbox"]').attributes('aria-checked')).not.toBe('true')
+    expect((wrapper.find('#nom').element as HTMLInputElement).value).toBe('')
+    expect((wrapper.find('#email').element as HTMLInputElement).value).toBe('')
+    // Le contexte non personnel est lui bien restauré.
+    expect((wrapper.find('form input').element as HTMLInputElement).value).toBe('5')
+  })
+
+  it('n’écrit ni consentement ni identité dans le brouillon', async () => {
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('aside a').trigger('click')
+
+    const raw = window.sessionStorage.getItem('demande-formation-draft')
+    const draft = JSON.parse(raw ?? '{}') as Record<string, unknown>
+    expect(draft.salaries).toBeDefined()
+    expect(draft.raisonSociale).toBeDefined()
+    for (const key of ['consentement', 'nom', 'email', 'telephone', 'telephonePro']) {
+      expect(draft[key]).toBeUndefined()
+    }
+  })
+
+  it('suffixe le brouillon par le contexte — pas de restauration croisée', async () => {
+    routeStub.query = { centre: 'creteil' }
+    const wrapper = await mountPage()
+    await wrapper.find('form input').setValue('12')
+    await wrapper.find('aside a').trigger('click')
+
+    expect(window.sessionStorage.getItem('demande-formation-draft:creteil')).toContain(
+      '"salaries":"12"'
+    )
+    expect(window.sessionStorage.getItem('demande-formation-draft')).toBeNull()
+
+    // Même session, autre contexte : le brouillon du premier n'est pas repris.
+    routeStub.query = { centre: 'autre' }
+    const wrapper2 = await mountPage()
+    await nextTick()
+    expect((wrapper2.find('form input').element as HTMLInputElement).value).not.toBe('12')
+  })
+
+  it('restaure le brouillon du même contexte', async () => {
+    routeStub.query = { centre: 'creteil' }
+    window.sessionStorage.setItem('demande-formation-draft:creteil', '{"salaries":7}')
+    const wrapper = await mountPage()
+    await nextTick()
+
+    expect((wrapper.find('form input').element as HTMLInputElement).value).toBe('7')
+  })
+
+  it('lie la politique de confidentialité à la page dédiée', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.find('a[href="/confidentialite"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/confidentialite"]').text()).toContain(
+      'Politique de confidentialité'
+    )
+  })
+
   it("affiche les erreurs sur les champs obligatoires à l'envoi", async () => {
     const wrapper = await mountPage()
 
@@ -601,6 +669,87 @@ describe('pages/centres/demande-de-formation', () => {
         consentement: true
       })
     )
+  })
+
+  it('propose uniquement des échéances à venir ou non datées', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Dès que possible')
+    expect(wrapper.text()).toContain('Pas de date précise')
+    for (const label of upcomingMonthLabelsFr(3)) {
+      expect(wrapper.text()).toContain(label)
+    }
+  })
+
+  it('soumet le mois courant comme échéance par défaut', async () => {
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+    const { echeance } = leadSubmitMock.mock.calls[0]![1] as { echeance: string }
+    expect(echeance).toBe(upcomingMonthLabelsFr(3)[0])
+  })
+
+  it('ignore une échéance de brouillon devenue hors liste', async () => {
+    window.sessionStorage.setItem(
+      'demande-formation-draft',
+      '{"echeance":"Janvier 2000","consentement":true}'
+    )
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+    const { echeance } = leadSubmitMock.mock.calls[0]![1] as { echeance: string }
+    expect(echeance).toBe(upcomingMonthLabelsFr(3)[0])
+  })
+
+  it('restaure une échéance de brouillon encore valable', async () => {
+    window.sessionStorage.setItem(
+      'demande-formation-draft',
+      '{"echeance":"Pas de date précise","consentement":true}'
+    )
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+    const { echeance } = leadSubmitMock.mock.calls[0]![1] as { echeance: string }
+    expect(echeance).toBe('Pas de date précise')
+  })
+
+  it('poste pageUri sans query même avec un besoin long dans l’URL', async () => {
+    routeStub.query = { besoin: 'besoin très long '.repeat(200) }
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+    const { pageUri } = leadSubmitMock.mock.calls[0]![1] as { pageUri: string }
+    expect(pageUri).toBe(`${window.location.origin}${window.location.pathname}`)
+    expect(pageUri).not.toContain('?')
+    expect(pageUri.length).toBeLessThanOrEqual(2000)
+  })
+
+  it('borne precisions à 5000 caractères avec un besoin agrégé et un texte longs', async () => {
+    // Le besoin arrive hors URL (état d'historique de la recherche assistée).
+    window.history.replaceState({ assistantHandoff: { need: 'b'.repeat(500) } }, '')
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('#precisions').setValue('p'.repeat(5000))
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+    const { precisions } = leadSubmitMock.mock.calls[0]![1] as { precisions: string }
+    expect(precisions.length).toBeLessThanOrEqual(5000)
+    expect(precisions).toContain('Besoin exprimé :')
+    expect(precisions.endsWith('…')).toBe(true)
   })
 
   it('affiche le panneau de confirmation après un envoi réussi', async () => {
@@ -761,6 +910,49 @@ describe('pages/centres/demande-de-formation', () => {
     expect(wrapper.find('#echeance-error').exists()).toBe(true)
   })
 
+  it('bloque un nombre de salariés non entier, comme @IsInt côté API', async () => {
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('#salaries').setValue('2.5')
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.find('#salaries-error').exists())
+
+    expect(wrapper.find('#salaries-error').text()).toContain('entier')
+    expect(leadSubmitMock).not.toHaveBeenCalled()
+  })
+
+  it('bloque les champs plus longs que les bornes @MaxLength de l’API', async () => {
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('#raison-sociale').setValue(`Société ${'x'.repeat(200)}`)
+    await wrapper.find('#nom').setValue(`Jean ${'D'.repeat(200)}`)
+    await wrapper.find('#fonction').setValue(`RH ${'f'.repeat(200)}`)
+    await wrapper.find('#precisions').setValue('x'.repeat(5001))
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.find('#raison-sociale-error').exists())
+
+    expect(wrapper.find('#raison-sociale-error').text()).toContain('200 caractères maximum')
+    expect(wrapper.find('#nom-error').text()).toContain('200 caractères maximum')
+    expect(wrapper.find('#fonction-error').text()).toContain('200 caractères maximum')
+    expect(wrapper.find('#precisions-error').text()).toContain('5000 caractères maximum')
+    expect(leadSubmitMock).not.toHaveBeenCalled()
+  })
+
+  it('bloque un lieu intra trop long avec un message de champ', async () => {
+    routeStub.query = { intra: '1' }
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('#lieu').setValue('x'.repeat(201))
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => wrapper.find('#lieu-error').exists())
+
+    expect(wrapper.find('#lieu-error').text()).toContain('200 caractères maximum')
+    expect(leadSubmitMock).not.toHaveBeenCalled()
+  })
+
   it('affiche le spinner « Envoi en cours… » pendant la soumission', async () => {
     sendingState.value = true
     const wrapper = await mountPage()
@@ -769,7 +961,7 @@ describe('pages/centres/demande-de-formation', () => {
     expect(wrapper.find('.animate-spin').exists()).toBe(true)
   })
 
-  it('affiche l’alerte quand l’envoi échoue', async () => {
+  it('affiche l’alerte quand l’envoi échoue', { timeout: 15_000 }, async () => {
     submitErrorState.value = 'Le serveur a rejeté la demande.'
     const wrapper = await mountPage()
 

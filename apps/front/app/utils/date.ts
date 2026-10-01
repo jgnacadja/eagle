@@ -20,3 +20,14 @@ export function formatMonthYearFr(value: string | null | undefined): string {
     timeZone: 'Europe/Paris'
   })
 }
+
+// Libellés « Mois année » des `count` mois à partir de `from` (mois courant
+// inclus) — utilisés pour les options d'échéance : la liste ne peut jamais
+// proposer un mois passé. Mois capitalisé pour l'affichage en liste.
+export function upcomingMonthLabelsFr(count: number, from = new Date()): string[] {
+  const formatter = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' })
+  return Array.from({ length: count }, (_, i) => {
+    const label = formatter.format(new Date(from.getFullYear(), from.getMonth() + i, 1))
+    return label.charAt(0).toUpperCase() + label.slice(1)
+  })
+}

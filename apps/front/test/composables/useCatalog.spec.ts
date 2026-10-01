@@ -67,12 +67,10 @@ describe('useCatalog helpers', () => {
   it('trie la prochaine session quand plusieurs dates futures existent', () => {
     const today = new Date()
     today.setUTCHours(0, 0, 0, 0)
-    // 45 et 75 jours : toujours au-delà du mois courant, quel que soit le jour
-    // (+30 depuis le 1er d'un mois de 31 jours resterait « ce mois-ci »).
-    const plus30 = new Date(today)
-    plus30.setUTCDate(plus30.getUTCDate() + 45)
-    const plus60 = new Date(today)
-    plus60.setUTCDate(plus60.getUTCDate() + 75)
+    const nextMonth = new Date(today)
+    nextMonth.setUTCDate(nextMonth.getUTCDate() + 45)
+    const inTwoMonths = new Date(today)
+    inTwoMonths.setUTCDate(inTwoMonths.getUTCDate() + 75)
     const session = (startDate: string) => ({
       id: startDate,
       startDate,
@@ -86,12 +84,12 @@ describe('useCatalog helpers', () => {
     const status = buildStatus({
       ...course,
       sessions: [
-        session(plus60.toISOString().slice(0, 10)),
-        session(plus30.toISOString().slice(0, 10))
+        session(inTwoMonths.toISOString().slice(0, 10)),
+        session(nextMonth.toISOString().slice(0, 10))
       ]
     })
     expect(status?.type).toBe('success')
-    expect(status?.label).toContain(plus30.getUTCDate().toString())
+    expect(status?.label).toContain(nextMonth.getUTCDate().toString())
   })
 
   it('ignores les sessions sans date de début dans les badges', () => {
@@ -211,7 +209,6 @@ describe('useCatalog helpers', () => {
     const past = new Date(today)
     past.setUTCDate(past.getUTCDate() - 10)
     const future = new Date(today)
-    // Au-delà du mois courant quel que soit le jour (voir ci-dessus).
     future.setUTCDate(future.getUTCDate() + 45)
 
     const session = (startDate: string) => ({

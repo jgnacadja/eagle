@@ -20,7 +20,7 @@ describe('SyncController', () => {
     })
       .overrideProvider(SyncService)
       .useValue({
-        run: vi.fn().mockResolvedValue(undefined),
+        trigger: vi.fn().mockResolvedValue(true),
         getLatestRun: vi.fn().mockResolvedValue({ status: 'success' })
       })
       .overrideProvider(ConfigService)
@@ -43,8 +43,15 @@ describe('SyncController', () => {
     await app.close()
   })
 
-  it('POST /admin/sync triggers sync', async () => {
-    await request(app.getHttpServer()).post('/admin/sync').expect(201).expect({ success: true })
+  it('POST /admin/sync accepts and returns immediately (202)', async () => {
+    await request(app.getHttpServer()).post('/admin/sync').expect(202).expect({ started: true })
+  })
+
+  it('POST /admin/sync reports a run already in progress', async () => {
+    const sync = app.get(SyncService)
+    vi.mocked(sync.trigger).mockResolvedValueOnce(false)
+
+    await request(app.getHttpServer()).post('/admin/sync').expect(202).expect({ started: false })
   })
 
   it('GET /admin/sync/status returns latest run', async () => {

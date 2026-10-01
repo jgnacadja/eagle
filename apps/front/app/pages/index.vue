@@ -62,8 +62,7 @@
               Besoin d'aide pour choisir votre formation&nbsp;?
             </h2>
             <p class="mx-auto mt-2 text-small md:text-sm text-ink-muted max-w-prose">
-              Décrivez votre besoin ou posez votre question. Nous vous guidons vers la solution
-              adaptée.
+              Décrivez votre besoin et nous pourrons vous recommander la solution la mieux adaptée
             </p>
           </div>
 
@@ -84,11 +83,6 @@
                 <IconSparkle :size="20" class="shrink-0 text-accent" />
               </template>
             </SearchInput>
-            <p
-              class="mt-3 text-xs md:text-small text-ink-muted whitespace-normal md:whitespace-nowrap"
-            >
-              Vous pouvez écrire comme vous le feriez à votre conseiller.
-            </p>
           </form>
 
           <!-- 3 Value propositions -->
@@ -214,23 +208,25 @@
          TICKER — barre de chiffres clés
     ════════════════════════════════════════════════════ -->
     <div class="bg-primary-dark">
-      <div
-        class="mx-auto grid grid-cols-2 gap-px md:grid-cols-3 divide-x-0 md:divide-x divide-rule-strong p-sm"
-      >
-        <div
-          v-for="item in tickerItems"
-          :key="item.key"
-          class="flex items-center gap-3 px-gutter-mobile md:px-lg py-md"
-        >
-          <!-- icône -->
-          <component :is="item.icon" :size="22" class="shrink-0 text-ink-inverse/50" />
-          <div>
-            <p class="font-display text-h4 md:text-h3 font-extrabold leading-none text-ink-inverse">
-              {{ item.value }}
-            </p>
-            <p class="text-xs md:text-small text-ink-inverse-muted leading-tight mt-0.5">
-              {{ item.label }}
-            </p>
+      <div class="mx-auto px-gutter-mobile md:px-gutter">
+        <div class="grid grid-cols-2 gap-px py-sm md:grid-cols-3 md:divide-x md:divide-rule-strong">
+          <div
+            v-for="item in tickerItems"
+            :key="item.key"
+            class="flex items-center justify-center gap-3 py-md"
+          >
+            <!-- icône -->
+            <component :is="item.icon" :size="22" class="shrink-0 text-ink-inverse/50" />
+            <div>
+              <p
+                class="font-display text-h4 font-extrabold leading-none text-ink-inverse md:text-h3"
+              >
+                {{ item.value }}
+              </p>
+              <p class="mt-xs text-xs leading-tight text-ink-inverse-muted md:text-small">
+                {{ item.label }}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -335,8 +331,7 @@
             Trouvez le centre de formation le plus proche de chez vous
           </h2>
           <p class="mt-sm max-w-prose font-sans text-sm text-ink-muted">
-            <span class="font-bold text-primary">+400 centres partenaires</span>
-            — en centre, sur votre site ou en intra-entreprise.
+            Notre réseau national pour vous accompagner partout en France
           </p>
         </div>
       </div>
@@ -697,9 +692,6 @@
               <IconSparkle :size="20" class="shrink-0 text-accent" />
             </template>
           </SearchInput>
-          <p class="mt-3 text-center text-xs md:text-small text-ink-inverse-muted">
-            Vous pouvez écrire comme vous le feriez à votre conseiller.
-          </p>
         </form>
 
         <div class="mt-lg flex justify-center">

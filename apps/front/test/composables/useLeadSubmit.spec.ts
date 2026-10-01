@@ -102,6 +102,21 @@ describe('useLeadSubmit', () => {
     expect(body).toMatchObject({ besoin: 'centre', siret: '12345678901234' })
   })
 
+  it('rappel : poste le payload à /leads/rappel', async () => {
+    const { submit } = useLeadSubmit()
+
+    const ok = await submit('rappel', {
+      telephone: '06 12 34 56 78',
+      creneau: 'Cet après-midi',
+      consentement: true
+    })
+
+    expect(ok).toBe(true)
+    const { url, body } = lastCall()
+    expect(url).toBe('http://localhost:3001/leads/rappel')
+    expect(body).toMatchObject({ telephone: '06 12 34 56 78', creneau: 'Cet après-midi' })
+  })
+
   it('échec réseau : expose l’erreur et retourne false', async () => {
     fetchMock.mockRejectedValue(new Error('network down'))
     const { submit, error } = useLeadSubmit()
@@ -112,15 +127,48 @@ describe('useLeadSubmit', () => {
     expect(error.value).toContain('échoué')
   })
 
+  it('400 de validation : expose les messages de l’API pour affichage sous le champ', async () => {
+    fetchMock.mockRejectedValue({
+      data: { message: ['Numéro incomplet — 10 chiffres attendus.'] }
+    })
+    const { submit, error, validationErrors } = useLeadSubmit()
+
+    const ok = await submit('rappel', {
+      telephone: '0612',
+      creneau: 'Dès que possible',
+      consentement: true
+    })
+
+    expect(ok).toBe(false)
+    expect(validationErrors.value).toEqual(['Numéro incomplet — 10 chiffres attendus.'])
+    expect(error.value).toContain('échoué')
+  })
+
+  it('400 sans message détaillé : validationErrors reste vide', async () => {
+    fetchMock.mockRejectedValue({ data: {} })
+    const { submit, validationErrors } = useLeadSubmit()
+
+    const ok = await submit('rappel', {
+      telephone: '0612',
+      creneau: 'Dès que possible',
+      consentement: true
+    })
+
+    expect(ok).toBe(false)
+    expect(validationErrors.value).toEqual([])
+  })
+
   it('reset : efface l’erreur exposée', async () => {
-    fetchMock.mockRejectedValue(new Error('down'))
-    const { submit, error, reset } = useLeadSubmit()
+    fetchMock.mockRejectedValue({ data: { message: 'bad' } })
+    const { submit, error, validationErrors, reset } = useLeadSubmit()
 
     await submit('newsletter', { email: 'a@b.fr' })
     expect(error.value).toBeTruthy()
+    expect(validationErrors.value).toEqual(['bad'])
 
     reset()
     expect(error.value).toBeNull()
+    expect(validationErrors.value).toEqual([])
   })
 
   it('refuse un double envoi tant que le premier est en cours', async () => {

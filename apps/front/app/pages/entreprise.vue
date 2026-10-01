@@ -67,19 +67,10 @@
             </SearchInput>
           </form>
 
-          <p class="mx-auto mt-lg max-w-prose text-small text-ink-muted">
-            <span class="hidden md:inline"
-              >Vous pouvez écrire comme vous le feriez à votre conseiller — ex. « Nous avons 12
-              agences en France et souhaitons centraliser nos formations réglementaires. »</span
-            ><span class="md:hidden"
-              >Vous pouvez écrire comme vous le feriez à votre conseiller.</span
-            >
-          </p>
-
           <NuxtLink
             v-hero="heroStagger(5)"
             to="/parler-a-votre-conseiller"
-            class="mt-sm inline-block text-small font-bold text-accent-text underline underline-offset-4 transition-colors hover:text-primary"
+            class="mt-lg inline-block text-small font-bold text-accent-text underline underline-offset-4 transition-colors hover:text-primary"
           >
             Vous préférez échanger ? Parler à votre conseiller <span class="link-arrow">→</span>
           </NuxtLink>
@@ -179,9 +170,10 @@
         <h2 v-reveal-soft class="mt-sm max-w-prose font-display text-h3 font-extrabold md:text-h2">
           Un seul partenaire pour coordonner vos formations partout en France
         </h2>
-        <p class="hidden md:block mt-sm max-w-prose text-small text-ink-inverse-muted md:text-body">
-          Vos demandes sont centralisées, qualifiées, puis déployées site par site avec les centres
-          du territoire — vous gardez un interlocuteur et une vision d'ensemble.
+        <p class="mt-sm max-w-prose text-small text-ink-inverse-muted md:text-body">
+          Retrouvez toutes vos demandes centralisées et qualifiées au même endroit. Vos déploiements
+          s'effectuent site par site en lien avec nos centres locaux, tout en vous garantissant un
+          interlocuteur unique et une vision globale.
         </p>
 
         <ol class="mt-xl flex flex-col gap-md lg:flex-row lg:items-stretch">
@@ -218,8 +210,8 @@
             Un réseau de centres au plus près de vos équipes
           </h2>
           <p class="mt-sm text-body text-ink-muted hidden md:block">
-            Accédez aux formations dont vous avez besoin, en centre, sur votre site ou en intra — la
-            carte matérialise la couverture du réseau.
+            Formez vos équipes en centre, sur votre site ou en intra-entreprise. Découvrez la
+            couverture complète de notre réseau à travers notre carte.
           </p>
           <Button
             as-child
@@ -420,10 +412,6 @@
             </template>
           </SearchInput>
         </form>
-
-        <p class="mt-md text-small text-ink-inverse-muted">
-          Vous pouvez écrire comme vous le feriez à votre conseiller.
-        </p>
 
         <Button as-child variant="accent" size="pill-lg" class="gap-xs mt-lg w-full sm:w-auto">
           <NuxtLink to="/parler-a-votre-conseiller">
@@ -707,7 +695,7 @@ const furtherLinks = [
   {
     title: 'Les partenaires du réseau',
     body: 'Centres et organismes du réseau.',
-    to: '/rejoindre-le-reseau'
+    to: '/partenaire-reseau'
   }
 ]
 

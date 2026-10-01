@@ -217,8 +217,9 @@ function toCourse(raw: DirectusFormation): Course {
   }
 }
 
-// Tokens normalis\u00e9s (sans accents), comme `searchText` \u2014 sinon \u00ab s\u00e9curit\u00e9 \u00bb
-// ne trouvait jamais \u00ab S\u00e9curit\u00e9 \u00bb.
+// Tokens normalisés (sans accents, sans mots vides — `FRENCH_STOP_WORDS` du
+// tokenizer partagé), comme `searchText` — sinon « sécurité » ne trouvait
+// jamais « Sécurité ».
 function toSearchTokens(raw: string | undefined): string[] | undefined {
   if (!raw) return undefined
   const tokens = tokenize(raw, 3)
@@ -229,16 +230,11 @@ const normalizeSearch = normalizeText
 
 function buildLocationText(
   locationsText: string | null | undefined,
-  locations: ResolvedSessionLocation[]
+  locations: (ResolvedSessionLocation | null)[]
 ): string {
-  const parts = locations.flatMap((loc) => [
-    loc.name,
-    loc.address,
-    loc.city,
-    loc.postalCode,
-    loc.department,
-    loc.region
-  ])
+  const parts = locations.flatMap((loc) =>
+    loc ? [loc.name, loc.address, loc.city, loc.postalCode, loc.department, loc.region] : []
+  )
   if (typeof locationsText === 'string' && locationsText.length > 0) {
     parts.push(locationsText)
   }
@@ -292,7 +288,8 @@ export interface CatalogRow {
   updatedAt: string
   searchText: string
   locationText: string
-  locations: ResolvedSessionLocation[]
+  /** Aligné sur `course.sessions` — null quand la session n'a pas de localisation. */
+  locations: (ResolvedSessionLocation | null)[]
 }
 
 function toCatalogRow(
@@ -300,9 +297,10 @@ function toCatalogRow(
   centresBySlug: Map<string, DirectusCentre>
 ): CatalogRow {
   const course = toListItem(raw)
-  const locations = (course.sessions ?? [])
-    .map((s) => resolveSessionLocation(s, centresBySlug))
-    .filter((l): l is ResolvedSessionLocation => l !== null)
+  // Aligné sur `course.sessions` (null quand la session n'a pas de
+  // localisation) : l'assistant indexe `locations` par numéro de session —
+  // filtrer les trous ici décalerait la correspondance.
+  const locations = (course.sessions ?? []).map((s) => resolveSessionLocation(s, centresBySlug))
 
   return {
     course,
@@ -415,11 +413,46 @@ function wordPrefixMatch(field: string | null | undefined, token: string): boole
 type SessionLocation = ResolvedSessionLocation
 
 /**
+ * Départements corses émis par le geosuggest (« 2A »/« 2B ») : ce ne sont ni
+ * des codes postaux ni des préfixes de nom. On les déplie sur le bloc postal
+ * « 20x » (2A = 200xx–201xx, 2B = 202xx–206xx) et le nom du département.
+ */
+const CORSICA_DEPARTMENTS: Record<string, { cpPrefixes: string[]; nameTokens: string[] }> = {
+  '2a': { cpPrefixes: ['200', '201'], nameTokens: ['corse', 'sud'] },
+  '2b': { cpPrefixes: ['202', '203', '204', '205', '206'], nameTokens: ['haute', 'corse'] }
+}
+
+function corsicaNameMatches(nameTokens: string[], fields: (string | null | undefined)[]): boolean {
+  return nameTokens.every((name) => fields.some((field) => wordPrefixMatch(field, name)))
+}
+
+/**
+ * Repli texte (aucune session géolocalisée, ou label de commune en mode géo) :
+ * mêmes règles de matching que par session, sur le `locationText` agrégé.
+ */
+function matchesLocationText(locationText: string, tokens: string[]): boolean {
+  return tokens.every((token) => {
+    const corsica = CORSICA_DEPARTMENTS[token]
+    return corsica
+      ? corsica.cpPrefixes.some((prefix) => wordPrefixMatch(locationText, prefix)) ||
+          corsicaNameMatches(corsica.nameTokens, [locationText])
+      : wordPrefixMatch(locationText, token)
+  })
+}
+
+/**
  * Numérique : code postal exact (5 chiffres), préfixe CP (3-4) ou code
  * département via préfixe CP (1-2 : « 69 » matche « 69003 »).
  * Alpha : préfixe de mot sur ville / département / région / adresse / nom du centre.
  */
 function locationTokenMatches(token: string, loc: SessionLocation): boolean {
+  const corsica = CORSICA_DEPARTMENTS[token]
+  if (corsica) {
+    return (
+      corsica.cpPrefixes.some((prefix) => (loc.postalCode ?? '').startsWith(prefix)) ||
+      corsicaNameMatches(corsica.nameTokens, [loc.name, loc.city, loc.department, loc.region])
+    )
+  }
   if (/^\d+$/.test(token)) {
     const cp = loc.postalCode ?? ''
     if (token.length === 5) return cp === token
@@ -435,10 +468,19 @@ function locationTokenMatches(token: string, loc: SessionLocation): boolean {
 // géographique (lat,lng — émis par le geosuggest communes).
 const GEO_SEARCH_RADIUS_KM = 50
 
-function parseGeoLocation(location: string | undefined): { lat: number; lng: number } | null {
-  const match = location?.trim().match(/^(-?\d{1,2}(?:\.\d+)?),\s*(-?\d{1,3}(?:\.\d+)?)$/)
+interface GeoPoint {
+  lat: number
+  lng: number
+  /** Nom de la commune transporté par le geosuggest (« lat,lng|Lyon »). */
+  label?: string
+}
+
+function parseGeoLocation(location: string | undefined): GeoPoint | null {
+  const match = location
+    ?.trim()
+    .match(/^(-?\d{1,2}(?:\.\d+)?),\s*(-?\d{1,3}(?:\.\d+)?)(?:\|(.*))?$/)
   if (!match) return null
-  return { lat: Number(match[1]), lng: Number(match[2]) }
+  return { lat: Number(match[1]), lng: Number(match[2]), label: match[3]?.trim() || undefined }
 }
 
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -451,8 +493,11 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 }
 
 /**
- * Mode géographique (`lat,lng` issu du geosuggest) : une session matche si
- * son centre est à moins de GEO_SEARCH_RADIUS_KM du point.
+ * Mode géographique (`lat,lng` issu du geosuggest, optionnellement suivi de
+ * « |Commune ») : une session matche si son centre est à moins de
+ * GEO_SEARCH_RADIUS_KM du point. Quand aucune session n'est géocodée
+ * (localisation Digiforma seule), repli sur `locationText` avec le nom de
+ * commune transporté par le geosuggest.
  * Mode texte : tous les tokens doivent matcher dans la MÊME session —
  * « lyon 13002 » ne matche pas une formation à Lyon 69003 + Marseille 13002.
  * Repli sur `locationText` quand aucune session n'est géolocalisée.
@@ -463,21 +508,30 @@ export function matchesLocation(
 ): boolean {
   const geo = parseGeoLocation(location)
   if (geo) {
-    return row.locations.some(
-      (loc) =>
-        loc.latitude != null &&
-        loc.longitude != null &&
-        haversineKm(geo.lat, geo.lng, loc.latitude, loc.longitude) <= GEO_SEARCH_RADIUS_KM
+    const geocoded = row.locations.filter(
+      (loc): loc is ResolvedSessionLocation =>
+        loc != null && loc.latitude != null && loc.longitude != null
     )
+    if (geocoded.length > 0) {
+      return geocoded.some(
+        (loc) =>
+          loc.latitude != null &&
+          loc.longitude != null &&
+          haversineKm(geo.lat, geo.lng, loc.latitude, loc.longitude) <= GEO_SEARCH_RADIUS_KM
+      )
+    }
+    const tokens = toLocationTokens(geo.label)
+    return tokens != null && matchesLocationText(row.locationText, tokens)
   }
 
   const tokens = toLocationTokens(location)
   if (!tokens) return true
 
-  if (row.locations.length === 0) {
-    return tokens.every((token) => wordPrefixMatch(row.locationText, token))
+  const resolved = row.locations.filter((loc): loc is ResolvedSessionLocation => loc !== null)
+  if (resolved.length === 0) {
+    return matchesLocationText(row.locationText, tokens)
   }
-  return row.locations.some((loc) => tokens.every((token) => locationTokenMatches(token, loc)))
+  return resolved.some((loc) => tokens.every((token) => locationTokenMatches(token, loc)))
 }
 
 function matchesSearchQuery(row: CatalogRow, search: string | undefined): boolean {
@@ -569,7 +623,7 @@ function computeCatalogFacets(rows: CatalogRow[], query: ListCoursesDto): Catalo
     // front propose les deux dimensions, la recherche plein-texte couvrant
     // déjà les villes.
     locations: countByKeys('location', (row) =>
-      row.locations.flatMap((loc) => [loc.department, loc.region])
+      row.locations.flatMap((loc) => (loc ? [loc.department, loc.region] : []))
     ),
     cpf: countWhere('cpf', (row) => row.course.cpf === true),
     certifying: countWhere(
@@ -606,7 +660,7 @@ function sortCatalogRows(
       if (ap !== bp) return direction * (ap - bp)
     }
 
-    return direction * b.updatedAt.localeCompare(a.updatedAt)
+    return direction * a.updatedAt.localeCompare(b.updatedAt)
   })
 }
 
@@ -629,6 +683,43 @@ function searchMissContext(query: ListCoursesDto): SearchMissContext {
   ) as SearchMissContext
 }
 
+/** Listes « a,b » insensibles à l'ordre côté filtre → triées dans la clé. */
+function canonicalCsv(value: string | undefined): string | undefined {
+  const items = value
+    ?.split(',')
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean)
+  return items?.length ? [...new Set(items)].sort().join(',') : undefined
+}
+
+/**
+ * Clé canonique pour `courses:list:*` : ordre des champs fixé ici, pas celui
+ * des params d'URL — deux requêtes équivalentes partagent la même entrée.
+ * L'encodage JSON évite les collisions de séparateur. `search`/`location`
+ * (texte libre) sont volontairement absents : ces requêtes ne sont jamais
+ * cachées (voir `list()`).
+ */
+function listCacheKey(query: ListCoursesDto): string {
+  return `courses:list:${JSON.stringify({
+    availability: query.availability,
+    center: query.center,
+    certifying: query.certifying,
+    cpf: query.cpf,
+    durationMax: query.durationMax,
+    durationMin: query.durationMin,
+    durations: canonicalCsv(query.durations),
+    family: query.family,
+    limit: query.limit,
+    modalities: canonicalCsv(query.modalities),
+    order: query.order,
+    page: query.page,
+    priceMax: query.priceMax,
+    priceMin: query.priceMin,
+    sort: query.sort,
+    subFamily: query.subFamily
+  })}`
+}
+
 @Injectable()
 export class CatalogService {
   private readonly logger = new Logger(CatalogService.name)
@@ -640,8 +731,11 @@ export class CatalogService {
   ) {}
 
   async list(query: ListCoursesDto): Promise<CoursePage> {
-    const cacheKey = `courses:list:${JSON.stringify(query)}`
-    const cached = await this.cache.get<CoursePage>(cacheKey)
+    // `search`/`location` sont du texte libre : jamais cachés — chaque saisie
+    // créerait une entrée Redis d'1 h, pollution exploitable depuis cet
+    // endpoint public. Le recalcul sur `courses:rows` (cachées) est peu coûteux.
+    const cacheKey = !query.search && !query.location ? listCacheKey(query) : undefined
+    const cached = cacheKey ? await this.cache.get<CoursePage>(cacheKey) : undefined
     // Une page vide en cache peut être un résidu dégradé (écrit avant la
     // garde anti-vide) : ignorée — le recalcul reste bon marché sur des
     // rows déjà cachées.
@@ -681,7 +775,7 @@ export class CatalogService {
     // Un résultat vide n'est jamais caché : dataset dégradé (Directus
     // indisponible ou sync incomplète) ou page filtrée sans correspondance —
     // dans les deux cas rien à figer pendant le TTL.
-    if (result.items.length > 0) {
+    if (result.items.length > 0 && cacheKey) {
       await this.cache.set(cacheKey, result)
     }
     return result

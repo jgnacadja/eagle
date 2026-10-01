@@ -80,7 +80,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     if (!this.client || !this.isReady) return null
 
     try {
-      const value = await this.client.get(this.key(key))
+      const value = await this.client.get(await this.versionedKey(key))
       if (value === null || value === '') {
         return null
       }
@@ -102,7 +102,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
 
     try {
       const serialized = JSON.stringify(value)
-      await this.client.setex(this.key(key), ttlSeconds, serialized)
+      await this.client.setex(await this.versionedKey(key), ttlSeconds, serialized)
     } catch (error) {
       this.logger.warn({ error, key }, 'Failed to set cached value')
     }
@@ -112,7 +112,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     if (!this.client || !this.isReady) return
 
     try {
-      await this.deleteByPattern(this.key(pattern))
+      await this.deleteByPattern(await this.versionedKey(pattern))
     } catch (error) {
       this.logger.warn({ error, pattern }, 'Failed to delete cached values')
     }
@@ -234,8 +234,54 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  // Verrou distribué de la sync catalogue (SET NX PX) : une seule instance
+  // exécute la sync à la fois, même en multi-instances/serverless.
+  // Fail-open quand Redis est absent ou en erreur : le run est idempotent,
+  // un doublon coûte moins qu'une sync manquée ; le flag `running` du
+  // service conserve l'exclusion au sein du process.
+  async acquireSyncLock(token: string, ttlMs: number): Promise<boolean> {
+    if (!this.client || !this.isReady) return true
+
+    try {
+      const result = await this.client.set('sync:lock', token, 'PX', ttlMs, 'NX')
+      return result === 'OK'
+    } catch (error) {
+      this.logger.warn({ error }, 'Failed to acquire sync lock — proceeding without it')
+      return true
+    }
+  }
+
+  // Compare-and-delete : le token évite de libérer le verrou posé par une
+  // autre instance si le nôtre a déjà expiré (TTL dépassé pendant le run).
+  async releaseSyncLock(token: string): Promise<void> {
+    if (!this.client || !this.isReady) return
+
+    try {
+      await this.client.eval(
+        'if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end',
+        1,
+        'sync:lock',
+        token
+      )
+    } catch (error) {
+      this.logger.warn({ error }, 'Failed to release sync lock')
+    }
+  }
+
   key(path: string): string {
     return `catalog:v${this.currentVersion}:${path}`
+  }
+
+  // Version lue dans Redis à chaque opération : une invalidation émise
+  // par une autre instance (multi-instances/serverless) est effective
+  // immédiatement au lieu d'attendre le TTL. Une écriture concurrente
+  // ne peut pas réintroduire du périmé : elle lit d'abord la version
+  // courante, donc elle atterrit sous le préfixe frais.
+  private async versionedKey(path: string): Promise<string> {
+    const raw = await this.client!.get(this.versionKey)
+    const version = Number.parseInt(raw ?? '0', 10) || 0
+    this.currentVersion = version
+    return `catalog:v${version}:${path}`
   }
 
   private async initializeClient(): Promise<void> {

@@ -101,6 +101,19 @@ services:
       QUERY_LIMIT_DEFAULT: '100'
       QUERY_LIMIT_MAX: '1000'
       PUBLIC_URL: ${DIRECTUS_PUBLIC_URL:-http://localhost:8055}
+      # Flows : les opérations request lisent {{ $env.* }} à l'exécution
+      # (schema/flows.mjs) — rien n'est cuit en base. Sans cette allow-list,
+      # $env est vide et les webhooks échouent.
+      FLOWS_ENV_ALLOW_LIST: 'API_INTERNAL_URL,FRONT_INTERNAL_URL,ADMIN_API_KEY,NUXT_CACHE_PURGE_SECRET'
+      # host.docker.internal atteint l'hôte en dev (`pnpm dev`) et reste
+      # valide en full-compose (ports 3000/3001 publiés sur l'hôte).
+      API_INTERNAL_URL: ${API_INTERNAL_URL:-http://host.docker.internal:3001}
+      FRONT_INTERNAL_URL: ${FRONT_INTERNAL_URL:-http://host.docker.internal:3000}
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+      NUXT_CACHE_PURGE_SECRET: ${NUXT_CACHE_PURGE_SECRET:-}
+    extra_hosts:
+      # host.docker.internal n'existe pas nativement sur les hôtes Linux.
+      - 'host.docker.internal:host-gateway'
     ports:
       - '8055:8055'
     depends_on:
@@ -127,14 +140,11 @@ services:
       DIRECTUS_URL: http://directus:8055
       DIRECTUS_ADMIN_EMAIL: ${DIRECTUS_ADMIN_EMAIL}
       DIRECTUS_ADMIN_PASSWORD: ${DIRECTUS_ADMIN_PASSWORD}
-      # Lus par flows.mjs au build : en full-compose les webhooks de purge
-      # ciblent les services internes, pas host.docker.internal.
-      API_INTERNAL_URL: http://api:3001
-      FRONT_INTERNAL_URL: http://front:3000
-      ADMIN_API_KEY: ${ADMIN_API_KEY}
-      NUXT_CACHE_PURGE_SECRET: ${NUXT_CACHE_PURGE_SECRET:-}
       # Sert à résoudre l'id du compte de sync (/users/me) pour que les flows
       # d'invalidation ignorent ses écritures de masse (voir flows.mjs).
+      # Les URLs/secrets des flows ne sont plus lus ici : les opérations
+      # référencent {{ $env.* }}, résolu à l'exécution sur le service
+      # `directus` (voir son bloc environment + FLOWS_ENV_ALLOW_LIST).
       DIRECTUS_TOKEN: ${DIRECTUS_TOKEN}
     volumes:
       - ./directus:/opt/directus:ro
@@ -172,9 +182,7 @@ services:
       ADMIN_API_KEY: ${ADMIN_API_KEY}
       DIGIFORMA_API_URL: ${DIGIFORMA_API_URL}
       DIGIFORMA_API_KEY: ${DIGIFORMA_API_KEY}
-      SYNC_CRON: ${SYNC_CRON}
       SEARCH_MISS_RETENTION_DAYS: ${SEARCH_MISS_RETENTION_DAYS:-180}
-      SEARCH_MISS_PURGE_CRON: ${SEARCH_MISS_PURGE_CRON:-15 3 * * *}
       EMBEDDINGS_PROVIDER: ${EMBEDDINGS_PROVIDER:-hashing}
       EMBEDDINGS_API_URL: ${EMBEDDINGS_API_URL:-}
       EMBEDDINGS_API_KEY: ${EMBEDDINGS_API_KEY:-}

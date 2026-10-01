@@ -1,14 +1,19 @@
 import { promises as fs } from 'node:fs'
+import { randomUUID } from 'node:crypto'
 import { resolve } from 'node:path'
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { CronJob, validateCronExpression } from 'cron'
-import { SchedulerRegistry } from '@nestjs/schedule'
+import { waitUntil } from '@vercel/functions'
 import { CacheService, type SyncRun } from '../common/cache/cache.service'
 import { DirectusCatalogService } from '../directus/directus.catalog.service'
 import { DigiformaClient, type Program } from '../digiforma/digiforma.client'
 import { mapProgramToCourse } from '../digiforma/digiforma.mapper'
 import { GeocodingService } from '../centres/geocoding.service'
+
+// TTL du verrou : borne la durée max d'un run (fetch Digiforma paginé +
+// upserts + géocodage). Si le process meurt en cours de route, le verrou
+// expire et le déclencheur suivant peut reprendre une sync.
+const SYNC_LOCK_TTL_MS = 10 * 60 * 1000
 
 @Injectable()
 export class SyncService {
@@ -19,38 +24,47 @@ export class SyncService {
     private readonly config: ConfigService,
     private readonly client: DigiformaClient,
     private readonly cache: CacheService,
-    private readonly scheduler: SchedulerRegistry,
     private readonly catalog: DirectusCatalogService,
     private readonly geocoding: GeocodingService
   ) {}
 
-  onModuleInit(): void {
-    const expression = this.config.get<string>('SYNC_CRON') ?? '0 * * * *'
-    const validation = validateCronExpression(expression)
-
-    if (!validation.valid) {
-      this.logger.error(`Invalid SYNC_CRON expression: ${expression}`)
-      return
-    }
-
-    const job = new CronJob(expression, () => {
-      void this.run().catch((error) => {
-        this.logger.error(error, 'Scheduled sync failed')
-      })
-    })
-
-    this.scheduler.addCronJob('digiforma-sync', job)
-    job.start()
-    this.logger.log(`Digiforma cron scheduled: ${expression}`)
-  }
-
-  async run(): Promise<void> {
+  // La planification est externe (workflow GitHub planifié → POST
+  // /admin/sync) : un cron in-process ne tournerait que tant qu'une
+  // instance serverless est chaude — déclenchement aléatoire.
+  // Renvoie true si le run démarre, false si un run est déjà en cours
+  // (local ou sur une autre instance via le verrou Redis).
+  async trigger(): Promise<boolean> {
     if (this.running) {
       this.logger.warn('Sync already in progress, skipping')
-      return
+      return false
     }
     this.running = true
 
+    const token = randomUUID()
+    if (!(await this.cache.acquireSyncLock(token, SYNC_LOCK_TTL_MS))) {
+      this.running = false
+      this.logger.warn('Sync already running on another instance, skipping')
+      return false
+    }
+
+    const tracked = this.execute()
+      .catch((error) => {
+        this.logger.error(error, 'Sync failed')
+      })
+      .finally(async () => {
+        await this.cache.releaseSyncLock(token)
+        this.running = false
+      })
+
+    // Sur Vercel, waitUntil maintient la fonction en vie après la réponse
+    // 202 jusqu'à la fin du run ; hors Vercel c'est un no-op — la promise
+    // tourne détachée dans le process.
+    waitUntil(tracked)
+
+    return true
+  }
+
+  private async execute(): Promise<void> {
     const startedAt = new Date().toISOString()
     const run: SyncRun = {
       status: 'running',
@@ -95,7 +109,6 @@ export class SyncService {
       run.error = error instanceof Error ? error.message : 'Unknown error'
       throw error
     } finally {
-      this.running = false
       await this.cache.setSyncRun(run)
     }
   }

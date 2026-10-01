@@ -182,8 +182,17 @@
                     v-model="precisions"
                     rows="3"
                     placeholder="Contraintes d'horaires, site concerné, niveau des salariés…"
-                    class="resize-none"
+                    class="resize-none aria-invalid:border-danger"
+                    :aria-invalid="showError('precisions') || undefined"
+                    :aria-describedby="showError('precisions') ? 'precisions-error' : undefined"
                   />
+                  <p
+                    v-if="showError('precisions')"
+                    id="precisions-error"
+                    class="mt-xs text-small font-semibold text-danger"
+                  >
+                    {{ errors.precisions }}
+                  </p>
                 </div>
               </fieldset>
             </Card>
@@ -373,7 +382,7 @@
                   J'accepte que ces informations soient utilisées pour le traitement de ma demande
                   de formation.
                   <NuxtLink
-                    to="#"
+                    to="/confidentialite"
                     class="font-medium text-primary transition-colors hover:text-accent-text"
                   >
                     Politique de confidentialité
@@ -495,6 +504,7 @@ import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
 import { leadFields } from '~/utils/leadFields'
+import { upcomingMonthLabelsFr } from '~/utils/date'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import IconMapPin from '~/components/icons/IconMapPin.vue'
 import IconBook from '~/components/icons/IconBook.vue'
@@ -545,6 +555,16 @@ const besoinChips = computed(() => {
   if (lieuParam.value) chips.push(lieuParam.value)
   return chips
 })
+
+// Borne API (@MaxLength) sur `precisions` : le besoin agrégé joint au texte
+// libre pouvait dépasser la limite en concaténation → 400 silencieux. On
+// tronque avec « … » plutôt que de rejeter la demande.
+const PRECISIONS_MAX = 5000
+const joinPrecisions = (besoin: string | null, extra?: string): string | undefined => {
+  const joined = [besoin ? `Besoin exprimé : ${besoin}` : null, extra].filter(Boolean).join('\n\n')
+  if (!joined) return undefined
+  return joined.length > PRECISIONS_MAX ? `${joined.slice(0, PRECISIONS_MAX - 1)}…` : joined
+}
 
 // Les CTA « Rejoindre le réseau » et la home arrivent avec ?sujet= : le sujet
 // est affiché dans le bloc contexte — le formulaire reste générique.
@@ -777,25 +797,39 @@ useContentSeo(
   'Demande de formation'
 )
 
-const echeanceOptions = ['Septembre 2026', 'Octobre 2026', 'Novembre 2026']
+// Échéances : les 3 prochains mois générés à la date du jour — jamais un mois
+// passé en option ni en défaut. « Dès que possible » couvre l'urgence,
+// « Pas de date précise » les demandes sans échéance (chaîne libre côté API).
+const ECHEANCE_ASAP = 'Dès que possible'
+const ECHEANCE_FLEXIBLE = 'Pas de date précise'
+const echeanceMonthOptions = upcomingMonthLabelsFr(3)
+const echeanceOptions = [ECHEANCE_ASAP, ...echeanceMonthOptions, ECHEANCE_FLEXIBLE]
 
 const { handleSubmit, errors, submitCount, defineField, setValues, values } = useForm({
   validationSchema: toTypedSchema(
     z
       .object({
         // Input émet string | number : la saisie reste une chaîne tant qu'on ne convertit pas.
+        // Les .int()/.max() calquent les bornes du DTO API (@IsInt, @MaxLength) :
+        // une valeur refusée côté serveur est bloquée ici avec un message de champ.
         salaries: z.coerce
           .number({ error: 'Indiquez le nombre de salariés à former.' })
+          .int('Le nombre de salariés doit être un entier.')
           .min(1, 'Indiquez le nombre de salariés à former.'),
         echeance: z
           .string({ error: 'Choisissez une échéance.' })
-          .min(1, 'Choisissez une échéance.'),
-        lieu: z.string().trim().optional(),
-        precisions: z.string().optional(),
+          .min(1, 'Choisissez une échéance.')
+          .max(200, 'Échéance trop longue — 200 caractères maximum.'),
+        lieu: z.string().trim().max(200, 'Lieu trop long — 200 caractères maximum.').optional(),
+        precisions: z
+          .string()
+          .max(5000, 'Précisions trop longues — 5000 caractères maximum.')
+          .optional(),
         raisonSociale: z
           .string({ error: "Indiquez la raison sociale de l'entreprise." })
           .trim()
-          .min(1, "Indiquez la raison sociale de l'entreprise."),
+          .min(1, "Indiquez la raison sociale de l'entreprise.")
+          .max(200, 'Raison sociale trop longue — 200 caractères maximum.'),
         siret: z
           .string({ error: 'Indiquez le SIRET de votre entreprise.' })
           .trim()
@@ -810,10 +844,12 @@ const { handleSubmit, errors, submitCount, defineField, setValues, values } = us
         fonction: z
           .string({ error: 'Indiquez votre fonction.' })
           .trim()
-          .min(1, 'Indiquez votre fonction.'),
+          .min(1, 'Indiquez votre fonction.')
+          .max(200, 'Fonction trop longue — 200 caractères maximum.'),
         telephonePro: z
           .string()
           .trim()
+          .max(30, 'Numéro de téléphone trop long — 30 caractères maximum.')
           .refine(
             (value) => !value || value.replace(/\D/g, '').length >= 10,
             'Numéro incomplet — 10 chiffres attendus.'
@@ -836,7 +872,7 @@ const { handleSubmit, errors, submitCount, defineField, setValues, values } = us
     // D1 : effectif et lieu de la recherche assistée appliqués au montage.
     salaries: 8,
     lieu: '',
-    echeance: 'Septembre 2026',
+    echeance: echeanceMonthOptions[0] ?? ECHEANCE_ASAP,
     precisions: '',
     consentement: false
   }
@@ -859,6 +895,7 @@ type DemandeField =
   | 'salaries'
   | 'lieu'
   | 'echeance'
+  | 'precisions'
   | 'raisonSociale'
   | 'siret'
   | 'nom'
@@ -873,7 +910,10 @@ const showError = (field: DemandeField) => submitCount.value > 0 && !!errors.val
 
 // Persistance de la saisie : le lien « Modifier » renvoie au point d'origine
 // sans perdre le formulaire déjà rempli (RG06).
-const DRAFT_KEY = 'demande-formation-draft'
+// Brouillon — RGPD : jamais `consentement` (la case doit être recochée par
+// une action explicite) ni données d'identité (nom, e-mail, téléphones).
+// Ne restent que le besoin et le contexte entreprise (données publiques).
+const DRAFT_KEY_BASE = 'demande-formation-draft'
 const DRAFT_FIELDS = new Set<string>([
   'salaries',
   'lieu',
@@ -881,18 +921,30 @@ const DRAFT_FIELDS = new Set<string>([
   'precisions',
   'raisonSociale',
   'siret',
-  'nom',
-  'fonction',
-  'email',
-  'telephone',
-  'telephonePro',
-  'consentement'
+  'fonction'
 ])
+
+// Clé suffixée par le contexte d'URL : un brouillon saisi sur une autre
+// formation/centre n'est pas restauré ici.
+const draftKey = computed(() => {
+  const context = [
+    centreSlug.value,
+    familleSlug.value,
+    formationSlug.value,
+    sessionSlug.value,
+    sujetSlug.value,
+    isIntra.value ? 'intra' : null
+  ]
+    .filter(Boolean)
+    .join(':')
+  return context ? `${DRAFT_KEY_BASE}:${context}` : DRAFT_KEY_BASE
+})
 
 function saveDraft() {
   /* v8 ignore next -- browser-only helper, guard unreachable in tests */
   if (typeof window === 'undefined') return
-  window.sessionStorage.setItem(DRAFT_KEY, JSON.stringify(values))
+  const draft = Object.fromEntries(Object.entries(values).filter(([key]) => DRAFT_FIELDS.has(key)))
+  window.sessionStorage.setItem(draftKey.value, JSON.stringify(draft))
 }
 
 // D1 — « Modifier » rouvre le panneau (la conversation est conservée) et le
@@ -914,7 +966,7 @@ onMounted(() => {
     })
   }
 
-  const raw = window.sessionStorage.getItem(DRAFT_KEY)
+  const raw = window.sessionStorage.getItem(draftKey.value)
   if (!raw) return
   try {
     const parsed: unknown = JSON.parse(raw)
@@ -923,10 +975,15 @@ onMounted(() => {
       const draft = Object.fromEntries(
         Object.entries(parsed as Record<string, unknown>).filter(([key]) => DRAFT_FIELDS.has(key))
       )
+      // Une échéance de brouillon peut désigner un mois depuis passé :
+      // hors liste, on retombe sur le défaut plutôt que l'envoyer.
+      if (typeof draft.echeance === 'string' && !echeanceOptions.includes(draft.echeance)) {
+        delete draft.echeance
+      }
       setValues(draft)
     }
   } catch {
-    window.sessionStorage.removeItem(DRAFT_KEY)
+    window.sessionStorage.removeItem(draftKey.value)
   }
 })
 
@@ -985,22 +1042,21 @@ const onSubmit = handleSubmit(async (v) => {
     lieu: v.lieu || undefined,
     echeance: v.echeance,
     // D1 : le besoin décrit dans la recherche assistée est joint à la demande.
-    precisions:
-      [besoinParam.value ? `Besoin exprimé : ${besoinParam.value}` : null, v.precisions]
-        .filter(Boolean)
-        .join('\n\n') || undefined,
+    precisions: joinPrecisions(besoinParam.value, v.precisions),
     // Libellés résolus — HubSpot reçoit du texte lisible, pas les slugs.
     centre: centreName.value || demandeCentreSlug.value || undefined,
     formation: formationName.value || undefined,
     session: sessionName.value || undefined,
     sujet: sujetSlug.value || undefined,
     consentement: true,
-    pageUri: window.location.href,
+    // pageUri sans query : elle porte du texte libre (?besoin=…) qui n'apporte
+    // rien à l'attribution HubSpot et pouvait dépasser MaxLength(2000) → 400.
+    pageUri: window.location.origin + window.location.pathname,
     pageName: 'Demande de formation'
   })
   if (ok) {
     submitted.value = true
-    window.sessionStorage.removeItem(DRAFT_KEY)
+    window.sessionStorage.removeItem(draftKey.value)
   }
 })
 </script>

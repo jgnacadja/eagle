@@ -15,19 +15,23 @@ ACADEMY).
   si absentes, puis les rôles, policies, permissions et les flows. Idempotent
   (sûr à ré-exécuter — vérifié sur plusieurs runs consécutifs). C'est le
   mécanisme de restauration automatique au démarrage.
-- `schema/flows.mjs` — définition du flow « Invalidate site cache » : sur
-  `items.create/update/delete` des collections de contenu, appelle
-  `POST {API_INTERNAL_URL}/admin/cache/invalidate` (purge catalogue Redis)
-  puis `POST {FRONT_INTERNAL_URL}/api/cache/invalidate` (purge ISR Nuxt).
-  Une opération `condition` en tête de chaîne ignore les écritures du compte
-  de service `DIRECTUS_TOKEN` (la sync purge le catalogue elle-même) —
-  l'id est résolu via `/users/me` au build.
-  URLs et secrets lus depuis `.env` (`API_INTERNAL_URL`, `FRONT_INTERNAL_URL`,
-  `ADMIN_API_KEY`, `NUXT_CACHE_PURGE_SECRET`, `DIRECTUS_TOKEN`) — jamais dans
-  le schéma.
-  En dev, Directus tourne dans Docker alors qu'API/front tournent sur l'hôte :
-  `host.docker.internal` est le bon hôte (services `api:`/`front:` en
-  full-compose).
+- `schema/flows.mjs` — définition des flows « Invalidate site cache »,
+  « Invalidate formation page » et « Geocode centre on address change » :
+  webhooks sortants vers l'API (`/admin/cache/invalidate`,
+  `/admin/centres/geocode`) et le front (`/api/cache/invalidate`, purge ISR).
+  Une opération `condition` en tête de chaîne des flows d'invalidation ignore
+  les écritures du compte de service `DIRECTUS_TOKEN` (la sync purge le
+  catalogue elle-même) — l'id est résolu via `/users/me` au build.
+  URLs et secrets **jamais cuits dans la config du flow** : les opérations
+  référencent `{{ $env.API_INTERNAL_URL }}`, `{{ $env.FRONT_INTERNAL_URL }}`,
+  `{{ $env.ADMIN_API_KEY }}`, `{{ $env.NUXT_CACHE_PURGE_SECRET }}`, résolus à
+  l'exécution depuis l'env du container Directus. L'instance doit donc porter
+  `FLOWS_ENV_ALLOW_LIST=API_INTERNAL_URL,FRONT_INTERNAL_URL,ADMIN_API_KEY,NUXT_CACHE_PURGE_SECRET`
+  - ces 4 variables (posées sur le service `directus` de docker-compose.yml ;
+    à déclarer aussi sur tout hébergement externe, ex. staging). En dev,
+    Directus tourne dans Docker alors qu'API/front tournent sur l'hôte :
+    `host.docker.internal` est le bon hôte (et reste valide en full-compose
+    via les ports publiés).
 - `seed/` — script de seed de contenu de démonstration (voir sa propre section
   dans le README racine).
 

@@ -342,7 +342,7 @@ describe('EntreprisePage', () => {
 
     expect(wrapper.find('a[href="#multisites"]').exists()).toBe(true)
     expect(wrapper.find('a[href="/entreprise-reseau"]').exists()).toBe(true)
-    expect(wrapper.find('a[href="/rejoindre-le-reseau"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/partenaire-reseau"]').exists()).toBe(true)
   })
 
   it('affiche le repli quand aucun centre n’est retourné', async () => {

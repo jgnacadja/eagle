@@ -54,7 +54,8 @@ export interface IndexedDocument {
   vector: number[]
   locationText: string
   /** Lieux résolus par session — le filtre de localisation raisonne par session. */
-  locations: ResolvedSessionLocation[]
+  // Alignées sur `course.sessions` — null pour une session sans lieu résolu.
+  locations: (ResolvedSessionLocation | null)[]
 }
 
 export interface RetrievalIndex {

@@ -46,10 +46,17 @@
           </NavigationMenuItem>
 
           <NavigationMenuItem value="apropos">
-            <NavigationMenuTrigger variant="header"> À propos </NavigationMenuTrigger>
-            <NavigationMenuContent>
-              <MegaMenuAPropos @close="close" />
-            </NavigationMenuContent>
+            <NuxtLink
+              to="/a-propos"
+              :class="
+                cn(
+                  navigationMenuTriggerStyle({ variant: 'header' }),
+                  '[&.router-link-active]:border-accent'
+                )
+              "
+            >
+              À propos
+            </NuxtLink>
           </NavigationMenuItem>
 
           <NavigationMenuItem value="actualites">
@@ -123,7 +130,6 @@ import { useMegaMenu, type MegaMenuKey } from '~/composables/useMegaMenu'
 import { useMenuPreload } from '~/composables/useMenuData'
 import MegaMenuFormations from '~/components/Menu/mega-menu/MegaMenuFormations.vue'
 import MegaMenuCentres from '~/components/Menu/mega-menu/MegaMenuCentres.vue'
-import MegaMenuAPropos from '~/components/Menu/mega-menu/MegaMenuAPropos.vue'
 import MegaMenuActualites from '~/components/Menu/mega-menu/MegaMenuActualites.vue'
 import MobileMenu from '~/components/Menu/MobileMenu.vue'
 

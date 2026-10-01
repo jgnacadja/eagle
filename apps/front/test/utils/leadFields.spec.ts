@@ -31,6 +31,18 @@ describe('leadFields', () => {
     expect(firstIssue({ ...valid, nom: '   ' })).toBe('Indiquez votre nom et prénom.')
   })
 
+  it('rejette un nom de plus de 200 caractères comme l’API', () => {
+    expect(firstIssue({ ...valid, nom: `Jean ${'D'.repeat(200)}` })).toBe(
+      'Nom trop long — 200 caractères maximum.'
+    )
+  })
+
+  it('rejette un e-mail de plus de 320 caractères comme l’API', () => {
+    expect(firstIssue({ ...valid, email: `${'a'.repeat(320)}@x.fr` })).toBe(
+      'E-mail trop long — 320 caractères maximum.'
+    )
+  })
+
   it('rejette un e-mail vide avec le message du formulaire', () => {
     expect(firstIssue({ ...valid, email: '' })).toBe('E-mail requis.')
   })
@@ -45,6 +57,23 @@ describe('leadFields', () => {
     )
     expect(firstIssue({ ...valid, telephone: 'abc' })).toBe(
       'Numéro incomplet — 10 chiffres attendus.'
+    )
+  })
+
+  it('accepte les formats espacés et internationaux comme l’API', () => {
+    for (const telephone of [
+      '+33 6 12 34 56 78',
+      '+33 (0)6 12 34 56 78',
+      '+32 470 12 34 56',
+      '+41 44 123 45 67'
+    ]) {
+      expect(schema().safeParse({ ...valid, telephone }).success).toBe(true)
+    }
+  })
+
+  it('rejette un téléphone de plus de 30 caractères comme l’API', () => {
+    expect(firstIssue({ ...valid, telephone: `06 ${'12 '.repeat(20)}` })).toBe(
+      'Numéro de téléphone trop long — 30 caractères maximum.'
     )
   })
 

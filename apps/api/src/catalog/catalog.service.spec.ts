@@ -231,6 +231,51 @@ describe('CatalogService', () => {
     expect(catalog.fetchAllFormations).toHaveBeenCalled()
   })
 
+  it('canonicalizes the list cache key regardless of query field order', async () => {
+    cache.get.mockResolvedValue(null)
+
+    await service.list({
+      page: 1,
+      limit: 10,
+      family: 'management',
+      durations: 'courte,longue'
+    } as ListCoursesDto)
+    await service.list({
+      limit: 10,
+      durations: 'longue,courte',
+      family: 'management',
+      page: 1
+    } as unknown as ListCoursesDto)
+
+    const keys = [...cache.get.mock.calls, ...cache.set.mock.calls]
+      .map((call) => String(call[0]))
+      .filter((key) => key.startsWith('courses:list:'))
+    expect(keys.length).toBeGreaterThan(0)
+    expect(new Set(keys).size).toBe(1)
+  })
+
+  it('never caches free-text search or location queries', async () => {
+    cache.get.mockResolvedValue(null)
+
+    const bySearch = await service.list({
+      search: 'pilotage',
+      page: 1,
+      limit: 10
+    } as ListCoursesDto)
+    const byLocation = await service.list({
+      location: '45.77,4.88|Lyon',
+      page: 1,
+      limit: 10
+    } as ListCoursesDto)
+    expect(bySearch.items.length).toBeGreaterThan(0)
+
+    const touchedKeys = [...cache.get.mock.calls, ...cache.set.mock.calls].map((call) =>
+      String(call[0])
+    )
+    expect(touchedKeys.some((key) => key.startsWith('courses:list:'))).toBe(false)
+    expect(byLocation.items).toHaveLength(0)
+  })
+
   it('filters by family, CPF and search', async () => {
     cache.get.mockResolvedValue(null)
 
@@ -243,6 +288,30 @@ describe('CatalogService', () => {
 
     expect(result.items).toHaveLength(1)
     expect(result.items[0].slug).toBe('pilotage-de-projet')
+  })
+
+  it('matches accented search terms against de-accented text', async () => {
+    cache.get.mockResolvedValue(null)
+
+    const result = await service.list({
+      search: 'sécurité',
+      page: 1,
+      limit: 10
+    } as ListCoursesDto)
+
+    expect(result.items.map((i) => i.slug)).toEqual(['securite'])
+  })
+
+  it('ignores accented stop words in search', async () => {
+    cache.get.mockResolvedValue(null)
+
+    const result = await service.list({
+      search: 'sécurité dès',
+      page: 1,
+      limit: 10
+    } as ListCoursesDto)
+
+    expect(result.items.map((i) => i.slug)).toEqual(['securite'])
   })
 
   it('filters by sub-family', async () => {
@@ -317,6 +386,7 @@ describe('CatalogService', () => {
       slug: 'pilotage-de-projet',
       title: 'Pilotage de projet',
       description: 'Apprendre à piloter.',
+      shortDescription: null,
       durationDays: 3,
       durationHours: 21,
       price: 1500,
@@ -759,6 +829,100 @@ describe('CatalogService', () => {
         limit: 10
       } as ListCoursesDto)
       expect(result.items).toHaveLength(1)
+    })
+
+    it('retombe sur locationText en mode géo (lat,lng|label) sans centre géocodé', async () => {
+      // geoFormation : sessions avec lieux Digiforma (pas de centreSlug) →
+      // aucune coordonnée ; le geosuggest transporte le nom de la commune.
+      expect(await listWithLocation('45.77,4.88|Lyon')).toBe(1)
+      expect(await listWithLocation('45.77,4.88|Brest')).toBe(0)
+    })
+
+    it('exclut en mode géo sans label quand aucun centre n’est géocodé', async () => {
+      expect(await listWithLocation('45.77,4.88')).toBe(0)
+    })
+
+    it('distingue les départements corses « 2A » et « 2B »', async () => {
+      const corsica = (slug: string, postalCode: string, department: string, city: string) =>
+        ({
+          ...baseFormation,
+          id: slug === 'ajaccio' ? 5 : 6,
+          digiforma_id: `prog-${slug}`,
+          slug,
+          sessions: [
+            {
+              id: 's1',
+              startDate: null,
+              endDate: null,
+              modality: 'presentiel',
+              seatsRemaining: null,
+              location: {
+                name: null,
+                city,
+                postalCode,
+                department,
+                region: 'Corse',
+                centreSlug: null
+              }
+            }
+          ]
+        }) as unknown as DirectusFormation
+      cache.get.mockResolvedValue(null)
+      catalog.fetchAllFormations.mockResolvedValue([
+        corsica('ajaccio', '20090', 'Corse-du-Sud', 'Ajaccio'),
+        corsica('bastia', '20200', 'Haute-Corse', 'Bastia')
+      ])
+
+      const sud = await service.list({ location: '2A', page: 1, limit: 10 } as ListCoursesDto)
+      expect(sud.items.map((i) => i.slug)).toEqual(['ajaccio'])
+      const nord = await service.list({ location: '2B', page: 1, limit: 10 } as ListCoursesDto)
+      expect(nord.items.map((i) => i.slug)).toEqual(['bastia'])
+    })
+
+    it('matche « 2A » via locations_text quand aucune session n’est structurée', async () => {
+      cache.get.mockResolvedValue(null)
+      catalog.fetchAllFormations.mockResolvedValue([
+        { ...geoFormation, sessions: null, locations_text: 'Ajaccio 20090 Corse-du-Sud' }
+      ])
+      const result = await service.list({ location: '2A', page: 1, limit: 10 } as ListCoursesDto)
+      expect(result.items).toHaveLength(1)
+    })
+
+    it('garde locations aligné sur sessions quand une session n’a pas de localisation', async () => {
+      const withHole = {
+        ...geoFormation,
+        id: 5,
+        digiforma_id: 'prog-hole',
+        slug: 'hole',
+        sessions: [
+          geoFormation.sessions?.[0],
+          {
+            id: 's-mid',
+            startDate: null,
+            endDate: null,
+            modality: 'presentiel',
+            seatsRemaining: null,
+            location: null
+          },
+          geoFormation.sessions?.[1]
+        ]
+      } as unknown as DirectusFormation
+      cache.get.mockResolvedValue(null)
+      catalog.fetchAllFormations.mockResolvedValue([withHole])
+
+      const rows = await service.allCourses()
+      // L'index de `locations` suit celui de `sessions` : trou en position 1.
+      expect(rows[0].locations).toHaveLength(3)
+      expect(rows[0].locations[1]).toBeNull()
+      expect(rows[0].locations[2]?.city).toBe('Marseille')
+
+      // Le trou ne fausse ni le matching ni le repli locationText.
+      const result = await service.list({
+        location: 'marseille',
+        page: 1,
+        limit: 10
+      } as ListCoursesDto)
+      expect(result.items.map((i) => i.slug)).toEqual(['hole'])
     })
   })
 
@@ -1403,14 +1567,43 @@ describe('branch coverage: fallbacks', () => {
     ] as unknown as DirectusFormation[])
 
     for (const sort of [CourseSortField.duration, CourseSortField.price]) {
-      const result = await service.list({
+      const asc = await service.list({
         sort,
         order: CourseSortOrder.asc,
         page: 1,
         limit: 10
       } as ListCoursesDto)
-      expect(result.items[0].slug).toBe('securite')
+      expect(asc.items[0].slug).toBe('pilotage-de-projet')
+
+      const desc = await service.list({
+        sort,
+        order: CourseSortOrder.desc,
+        page: 1,
+        limit: 10
+      } as ListCoursesDto)
+      expect(desc.items[0].slug).toBe('securite')
     }
+  })
+
+  it('orders by updatedAt desc by default and honors order=asc', async () => {
+    const desc = await service.list({
+      sort: CourseSortField.updatedAt,
+      order: CourseSortOrder.desc,
+      page: 1,
+      limit: 10
+    } as ListCoursesDto)
+    expect(desc.items.map((i) => i.slug)).toEqual(['securite', 'pilotage-de-projet'])
+
+    const implicit = await service.list({ page: 1, limit: 10 } as ListCoursesDto)
+    expect(implicit.items.map((i) => i.slug)).toEqual(['securite', 'pilotage-de-projet'])
+
+    const asc = await service.list({
+      sort: CourseSortField.updatedAt,
+      order: CourseSortOrder.asc,
+      page: 1,
+      limit: 10
+    } as ListCoursesDto)
+    expect(asc.items.map((i) => i.slug)).toEqual(['pilotage-de-projet', 'securite'])
   })
 
   it('recomputes rows when the cache entry is malformed', async () => {

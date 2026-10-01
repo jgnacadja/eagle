@@ -54,8 +54,9 @@ Lire d'abord `AGENTS.md` à la racine.
 - Client GraphQL `DigiformaClient` : `fetch` vers `app.digiforma.com/api/v1/graphql`, auth Bearer, pagination, retry/exponential backoff, timeout.
 - Mapping `Program` → payload Directus (`FormationDirectusPayload`, snake_case) ; en cas de doute, garder le payload brut dans `raw`.
 - La sync écrit / met à jour les formations dans Directus (`DirectusCatalogService.upsertMany`).
-- Cron `@nestjs/schedule` toutes les 1 h (env `SYNC_CRON`).
-- Endpoint admin : `POST /admin/sync` (forcer), `GET /admin/sync/status`.
+- Planification externe : workflow GitHub `.github/workflows/sync.yml` toutes les 1 h (`POST /admin/sync` avec `x-api-key`) — pas de cron in-process (serverless). Déclenchement manuel identique.
+- `POST /admin/sync` répond `202 { started }` immédiatement ; le run part en tâche de fond (`waitUntil` Vercel pour survivre à la réponse), suivi via `GET /admin/sync/status`.
+- Exécution unique : verrou distribué Redis `sync:lock` (`SET NX PX`, libération compare-and-delete par token) + flag `running` local.
 
 ## Catalogue
 
@@ -78,7 +79,7 @@ Lire d'abord `AGENTS.md` à la racine.
 
 - Journal des requêtes sans correspondance — « aucun résultat » (catalogue) et « hors catalogue » (moteur IA) — stocké dans la collection Directus `recherches_sans_resultat` via `DirectusItemsClient` (client REST générique `/items/*`, `src/directus`). Distinct des events analytics : on conserve le **contenu** de la requête pour la revue produit.
 - Capture : `SearchMissesService.record()` — jamais bloquant, jamais d'exception. `CatalogService.list()` l'appelle quand une recherche textuelle (`search`) renvoie 0 résultat ; la recherche assistée l'appelle avec `source: 'assistant'` et l'intention détectée (`DegradedModeService`).
-- RGPD : e-mail, téléphone, SIRET, IBAN, adresses postales et longues suites de chiffres masqués (`scrubPersonalData`, `src/common/utils/pii.util.ts`) ; localisation « autour de moi » arrondie à ~10 km ; texte tronqué à 500 caractères ; doublons ignorés pendant 60 s ; purge quotidienne après `SEARCH_MISS_RETENTION_DAYS` jours (`SEARCH_MISS_PURGE_CRON`, `0` désactive). **Limite assumée** : un nom ou une donnée personnelle sans motif reconnaissable n'est pas détecté — le texte journalisé est une donnée à accès restreint (rôles Directus internes, endpoints admin sous `x-api-key`, export réservé à la revue produit), jamais exposée au public ni réutilisée hors de cette revue.
+- RGPD : e-mail, téléphone, SIRET, IBAN, adresses postales et longues suites de chiffres masqués (`scrubPersonalData`, `src/common/utils/pii.util.ts`) ; localisation « autour de moi » arrondie à ~10 km ; texte tronqué à 500 caractères ; doublons ignorés pendant 60 s ; purge des entrées de plus de `SEARCH_MISS_RETENTION_DAYS` jours (`0` désactive), déclenchée chaque nuit par le workflow GitHub `search-misses-purge.yml` → `POST /admin/search-misses/purge` (pas de cron in-process : serverless). **Limite assumée** : un nom ou une donnée personnelle sans motif reconnaissable n'est pas détecté — le texte journalisé est une donnée à accès restreint (rôles Directus internes, endpoints admin sous `x-api-key`, export réservé à la revue produit), jamais exposée au public ni réutilisée hors de cette revue.
 - Endpoints admin (clé `x-api-key`) : `GET /admin/search-misses` (liste paginée), `GET /admin/search-misses/aggregate` (regroupement par requête normalisée), `GET /admin/search-misses/export` (CSV UTF-8 BOM, séparateur `;`), `POST /admin/search-misses/purge`.
 - La collection n'est jamais lisible publiquement ; elle est hors du flow Directus d'invalidation de cache.
 

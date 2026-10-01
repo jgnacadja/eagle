@@ -44,6 +44,7 @@ describe('LeadsController', () => {
     submitDemande: ReturnType<typeof vi.fn>
     submitCandidature: ReturnType<typeof vi.fn>
     submitConseiller: ReturnType<typeof vi.fn>
+    submitRappel: ReturnType<typeof vi.fn>
   }
 
   beforeEach(async () => {
@@ -51,7 +52,8 @@ describe('LeadsController', () => {
       submitNewsletter: vi.fn().mockResolvedValue({ submitted: true }),
       submitDemande: vi.fn().mockResolvedValue({ submitted: true }),
       submitCandidature: vi.fn().mockResolvedValue({ submitted: true }),
-      submitConseiller: vi.fn().mockResolvedValue({ submitted: true })
+      submitConseiller: vi.fn().mockResolvedValue({ submitted: true }),
+      submitRappel: vi.fn().mockResolvedValue({ submitted: true })
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -176,6 +178,65 @@ describe('LeadsController', () => {
       .expect(400)
 
     expect(service.submitConseiller).not.toHaveBeenCalled()
+  })
+
+  it('POST /leads/rappel accepte un payload valide', async () => {
+    await request(app.getHttpServer())
+      .post('/leads/rappel')
+      .send({ telephone: '06 12 34 56 78', creneau: 'Ce matin', consentement: true })
+      .expect(201)
+
+    expect(service.submitRappel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        telephone: '06 12 34 56 78',
+        creneau: 'Ce matin',
+        consentement: true
+      })
+    )
+  })
+
+  it('POST /leads/rappel accepte les formats espacés et internationaux', async () => {
+    // Même règle que LeadContactDto : au moins 10 chiffres, séparateurs
+    // et indicatif libres (la regex FR stricte rejetait +33 6 …, +33 (0)6…,
+    // +32, +41 alors que le front les laissait passer → 400 sans recours).
+    for (const telephone of [
+      '+33 6 12 34 56 78',
+      '+33 (0)6 12 34 56 78',
+      '+32 470 12 34 56',
+      '+41 44 123 45 67'
+    ]) {
+      await request(app.getHttpServer())
+        .post('/leads/rappel')
+        .send({ telephone, consentement: true })
+        .expect(201)
+    }
+  })
+
+  it('POST /leads/rappel rejette un numéro invalide', async () => {
+    await request(app.getHttpServer())
+      .post('/leads/rappel')
+      .send({ telephone: '123', consentement: true })
+      .expect(400)
+
+    expect(service.submitRappel).not.toHaveBeenCalled()
+  })
+
+  it('POST /leads/rappel rejette un numéro de plus de 30 caractères', async () => {
+    await request(app.getHttpServer())
+      .post('/leads/rappel')
+      .send({ telephone: `06 ${'12 '.repeat(20)}`, consentement: true })
+      .expect(400)
+
+    expect(service.submitRappel).not.toHaveBeenCalled()
+  })
+
+  it('POST /leads/rappel rejette sans consentement', async () => {
+    await request(app.getHttpServer())
+      .post('/leads/rappel')
+      .send({ telephone: '06 12 34 56 78', consentement: false })
+      .expect(400)
+
+    expect(service.submitRappel).not.toHaveBeenCalled()
   })
 
   it('rejette les propriétés non listées (forbidNonWhitelisted)', async () => {

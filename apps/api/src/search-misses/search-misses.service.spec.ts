@@ -1,7 +1,5 @@
 import { Test } from '@nestjs/testing'
 import { ConfigService } from '@nestjs/config'
-import { SchedulerRegistry } from '@nestjs/schedule'
-import type { CronJob } from 'cron'
 import type { RechercheSansResultat } from '@learnup/types'
 import { DirectusItemsClient } from '../directus/directus.items.client'
 import type { ListSearchMissesDto } from './search-misses.dto'
@@ -27,7 +25,6 @@ function row(overrides: Partial<RechercheSansResultat> = {}): RechercheSansResul
 describe('SearchMissesService', () => {
   let service: SearchMissesService
   let directus: { enabled: boolean; createOne: Mock; readMany: Mock; deleteMany: Mock }
-  let scheduler: { addCronJob: Mock }
   let env: Record<string, string | undefined>
 
   async function build(): Promise<void> {
@@ -35,8 +32,7 @@ describe('SearchMissesService', () => {
       providers: [
         SearchMissesService,
         { provide: ConfigService, useValue: { get: (key: string) => env[key] } },
-        { provide: DirectusItemsClient, useValue: directus },
-        { provide: SchedulerRegistry, useValue: scheduler }
+        { provide: DirectusItemsClient, useValue: directus }
       ]
     }).compile()
     service = module.get(SearchMissesService)
@@ -50,7 +46,6 @@ describe('SearchMissesService', () => {
       readMany: vi.fn().mockResolvedValue({ data: [] }),
       deleteMany: vi.fn().mockResolvedValue(undefined)
     }
-    scheduler = { addCronJob: vi.fn() }
     await build()
   })
 
@@ -370,50 +365,6 @@ describe('SearchMissesService', () => {
 
       expect(await service.purgeExpired()).toEqual({ deleted: 0, cutoff: null })
       expect(directus.readMany).not.toHaveBeenCalled()
-    })
-  })
-
-  describe('onModuleInit', () => {
-    function registeredJob(): CronJob {
-      return scheduler.addCronJob.mock.calls[0]![1] as CronJob
-    }
-
-    it('schedules the daily purge and runs it on tick', async () => {
-      const purge = vi
-        .spyOn(service, 'purgeExpired')
-        .mockResolvedValue({ deleted: 0, cutoff: null })
-
-      service.onModuleInit()
-      const job = registeredJob()
-      job.stop()
-      job.fireOnTick()
-      await new Promise((resolve) => setImmediate(resolve))
-
-      expect(scheduler.addCronJob).toHaveBeenCalledWith('search-misses-purge', job)
-      expect(purge).toHaveBeenCalledOnce()
-    })
-
-    it('logs and survives a failing scheduled purge', async () => {
-      vi.spyOn(service, 'purgeExpired').mockRejectedValue(new Error('directus down'))
-
-      service.onModuleInit()
-      const job = registeredJob()
-      job.stop()
-
-      expect(() => job.fireOnTick()).not.toThrow()
-      await new Promise((resolve) => setImmediate(resolve))
-    })
-
-    it('does not schedule anything with an invalid expression or disabled retention', async () => {
-      env = { SEARCH_MISS_PURGE_CRON: 'not-a-cron' }
-      await build()
-      service.onModuleInit()
-      expect(scheduler.addCronJob).not.toHaveBeenCalled()
-
-      env = { SEARCH_MISS_RETENTION_DAYS: '-1' }
-      await build()
-      service.onModuleInit()
-      expect(scheduler.addCronJob).not.toHaveBeenCalled()
     })
   })
 })

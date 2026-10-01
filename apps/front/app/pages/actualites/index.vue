@@ -605,7 +605,8 @@ const showEmailError = computed(
 const onSubscribe = handleSubmit(async (values) => {
   const ok = await submitLead('newsletter', {
     email: values.email,
-    pageUri: window.location.href,
+    // Pas de query : elle peut porter du texte libre et dépasser la borne API.
+    pageUri: window.location.origin + window.location.pathname,
     pageName: 'Actualités'
   })
   if (ok) {

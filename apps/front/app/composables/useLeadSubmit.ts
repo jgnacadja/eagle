@@ -2,14 +2,20 @@ import type {
   CandidatureLeadPayload,
   ConseillerLeadPayload,
   DemandeLeadPayload,
-  NewsletterLeadPayload
+  NewsletterLeadPayload,
+  RappelLeadPayload
 } from '@learnup/types'
 import { ref } from 'vue'
+import { logClientError } from '~/utils/logger'
 
-export type LeadFormName = 'newsletter' | 'demande' | 'candidature' | 'conseiller'
+export type LeadFormName = 'newsletter' | 'demande' | 'candidature' | 'conseiller' | 'rappel'
 
 type LeadPayload =
-  NewsletterLeadPayload | DemandeLeadPayload | CandidatureLeadPayload | ConseillerLeadPayload
+  | NewsletterLeadPayload
+  | DemandeLeadPayload
+  | CandidatureLeadPayload
+  | ConseillerLeadPayload
+  | RappelLeadPayload
 
 /**
  * Soumission des formulaires « lead » à l'API du site (`POST /leads/{form}`),
@@ -21,6 +27,9 @@ type LeadPayload =
 export function useLeadSubmit() {
   const sending = ref(false)
   const error = ref<string | null>(null)
+  // Messages de validation renvoyés par l'API (400) — affichables sous les
+  // champs concernés par le formulaire.
+  const validationErrors = ref<string[]>([])
 
   // Overloads : le couple form/payload est vérifié à l'appel — un mauvais
   // appariement ne compilerait pas au lieu de mapper silencieusement.
@@ -28,10 +37,12 @@ export function useLeadSubmit() {
   function submit(form: 'demande', payload: DemandeLeadPayload): Promise<boolean>
   function submit(form: 'candidature', payload: CandidatureLeadPayload): Promise<boolean>
   function submit(form: 'conseiller', payload: ConseillerLeadPayload): Promise<boolean>
+  function submit(form: 'rappel', payload: RappelLeadPayload): Promise<boolean>
   async function submit(form: LeadFormName, payload: LeadPayload): Promise<boolean> {
     if (sending.value) return false
     sending.value = true
     error.value = null
+    validationErrors.value = []
     try {
       const { apiBase } = useRuntimeConfig().public
       if (!apiBase) {
@@ -47,6 +58,8 @@ export function useLeadSubmit() {
       // submit() ne tourne que côté navigateur (les formulaires passent
       // window.location.href) — l'échec est loggé ici sinon il serait muet.
       logClientError('[useLeadSubmit] submit failed:', err)
+      const message = (err as { data?: { message?: string | string[] } }).data?.message
+      validationErrors.value = Array.isArray(message) ? message : message ? [message] : []
       error.value = 'L’envoi a échoué — réessayez dans un instant.'
       return false
       /* v8 ignore next 2 -- double entrée try/catch du finally : artefact v8 */
@@ -58,7 +71,8 @@ export function useLeadSubmit() {
   // Efface l'erreur affichée (ex : à la réouverture d'un dialog).
   function reset() {
     error.value = null
+    validationErrors.value = []
   }
 
-  return { submit, sending, error, reset }
+  return { submit, sending, error, validationErrors, reset }
 }

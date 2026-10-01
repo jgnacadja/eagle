@@ -82,6 +82,14 @@ export default defineNuxtConfig({
         'domhandler',
         'dom-serializer'
       ]
+    },
+    vercel: {
+      config: {
+        // Revalidation ISR à la demande : /api/cache/invalidate envoie une
+        // requête `x-prerender-revalidate` portant ce jeton sur un
+        // représentant de chaque groupe concerné.
+        bypassToken: process.env.NUXT_ISR_BYPASS_TOKEN
+      }
     }
   },
   routeRules: {
@@ -90,23 +98,27 @@ export default defineNuxtConfig({
     // filtré et la recherche/filtres/pagination ne feraient rien. Pas de
     // passQuery sur '/' : la home n'a pas de query, chaque paramètre
     // arbitraire (?utm_*, …) créerait une entrée ISR distincte.
-    '/': { isr: { expiration: 600 } },
-    '/formations': { isr: { expiration: 600, passQuery: true } },
-    '/formations/**': { isr: { expiration: 600, passQuery: true } },
-    '/centres': { isr: { expiration: 600, passQuery: true } },
-    '/centres/**': { isr: { expiration: 600, passQuery: true } },
-    '/actualites': { isr: { expiration: 600, passQuery: true } },
-    '/actualites/**': { isr: { expiration: 600, passQuery: true } },
+    // `group` : Vercel revalide ensemble les routes ISR d'un même groupe —
+    // une purge `x-prerender-revalidate` sur un représentant suffit.
+    '/': { isr: { expiration: 600, group: 4 } },
+    '/formations': { isr: { expiration: 600, passQuery: true, group: 1 } },
+    '/formations/**': { isr: { expiration: 600, passQuery: true, group: 1 } },
+    '/centres': { isr: { expiration: 600, passQuery: true, group: 2 } },
+    '/centres/**': { isr: { expiration: 600, passQuery: true, group: 2 } },
+    '/actualites': { isr: { expiration: 600, passQuery: true, group: 3 } },
+    '/actualites/**': { isr: { expiration: 600, passQuery: true, group: 3 } },
     // Ancienne page du moteur IA (arbitrage : panneau conservé) : les liens
     // partagés et favoris atterrissent sur la Home, qui porte le champ d'entrée.
     '/recherche-assistee': { redirect: { to: '/', statusCode: 301 } },
     '/rejoindre-le-reseau': { prerender: true },
     '/referencer-mon-organisme': { prerender: true },
     '/entreprise-reseau': { prerender: true },
+    '/partenaire-reseau': { prerender: true },
+    '/a-propos': { prerender: true },
     // Pages légales et tout slug racine ([slug]) — impossible à cibler par
     // préfixe. Une page fraîchement publiée apparaît grâce à la purge complète
     // déclenchée par le flow Directus (pages_legales non mappée côté front).
-    '/**': { isr: { expiration: 600 } },
+    '/**': { isr: { expiration: 600, group: 4 } },
     '/api/**': { isr: false }
   },
   runtimeConfig: {
@@ -116,6 +128,9 @@ export default defineNuxtConfig({
     internalApiToken: process.env.NUXT_INTERNAL_API_TOKEN ?? '',
     // Secret Directus → front : purge du cache ISR (x-cache-secret).
     cachePurgeSecret: process.env.NUXT_CACHE_PURGE_SECRET ?? '',
+    // Jeton de revalidation ISR à la demande Vercel (x-prerender-revalidate) —
+    // le même est lu au build (nitro.vercel.config.bypassToken).
+    isrBypassToken: process.env.NUXT_ISR_BYPASS_TOKEN ?? '',
     public: {
       apiBase: publicApiBase,
       siteUrl

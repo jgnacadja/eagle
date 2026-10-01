@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, ref } from 'vue'
+import QuickCallbackCard from '~/components/Cards/QuickCallbackCard.vue'
 import ConseillerPage from '~/pages/parler-a-votre-conseiller.vue'
 
 const seoMock = vi.fn()
@@ -45,7 +46,15 @@ const stubs = {
     template:
       '<button type="button" role="checkbox" :aria-checked="String(!!modelValue)" @click="$emit(\'update:modelValue\', !modelValue)" />'
   },
-  IconCheck: true
+  QuickCallbackCard,
+  IconCheck: true,
+  IconPhone: true,
+  IconClock: true,
+  Select: { template: '<div><slot /></div>' },
+  SelectTrigger: { template: '<div><slot /></div>' },
+  SelectValue: { template: '<div><slot /></div>' },
+  SelectContent: { template: '<div><slot /></div>' },
+  SelectItem: { template: '<div><slot /></div>' }
 }
 
 const Host = defineComponent({
@@ -91,7 +100,8 @@ describe('pages/parler-a-votre-conseiller', () => {
 
     expect(wrapper.text()).toContain('Parler à votre conseiller')
     expect(wrapper.text()).toContain('Ce qui se passe ensuite')
-    expect(wrapper.text()).toContain('Vous préférez téléphoner')
+    expect(wrapper.text()).toContain("Besoin d'un échange téléphonique direct")
+    expect(wrapper.text()).toContain('Me faire appeler')
     expect(wrapper.text()).toContain('politique de confidentialité')
   })
 
@@ -273,11 +283,11 @@ describe('pages/parler-a-votre-conseiller', () => {
     const spy = vi.spyOn(crypto, 'getRandomValues')
     spy
       .mockImplementationOnce((arr) => {
-        arr[0] = 4_294_967_295
+        ;(arr as Uint32Array)[0] = 4_294_967_295
         return arr
       })
       .mockImplementationOnce((arr) => {
-        arr[0] = 42
+        ;(arr as Uint32Array)[0] = 42
         return arr
       })
 
@@ -308,7 +318,7 @@ describe('pages/parler-a-votre-conseiller', () => {
     const spy = vi
       .spyOn(crypto, 'getRandomValues')
       .mockImplementationOnce((arr) => {
-        arr[0] = 4_294_967_295
+        ;(arr as Uint32Array)[0] = 4_294_967_295
         return arr
       })
       .mockImplementation(() => new Uint32Array(0) as Uint32Array<ArrayBuffer>)

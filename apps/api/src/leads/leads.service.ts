@@ -4,16 +4,18 @@ import type {
   CandidatureLeadPayload,
   ConseillerLeadPayload,
   DemandeLeadPayload,
-  NewsletterLeadPayload
+  NewsletterLeadPayload,
+  RappelLeadPayload
 } from '@learnup/types'
 import type {
   CandidatureLeadDto,
   ConseillerLeadDto,
   DemandeLeadDto,
-  NewsletterLeadDto
+  NewsletterLeadDto,
+  RappelLeadDto
 } from './leads.dto'
 
-export type LeadFormName = 'newsletter' | 'demande' | 'candidature' | 'conseiller'
+export type LeadFormName = 'newsletter' | 'demande' | 'candidature' | 'conseiller' | 'rappel'
 
 interface HubSpotField {
   objectTypeId: '0-1'
@@ -51,11 +53,17 @@ function mapSujet(sujet: string | undefined): string | undefined {
 }
 
 // Texte de consentement joint aux forms qui portent une case explicite
-// (demande, candidature). La newsletter n'en a pas : y joindre
+// (demande, candidature, conseiller). La newsletter n'en a pas : y joindre
 // legalConsentOptions ferait jeter la soumission par HubSpot (200 mais rien
 // d'enregistré).
 const CONSENT_TEXT =
   "J'accepte que ces informations soient utilisées pour le traitement de ma demande."
+
+// Libellé de la case de consentement du « rappel rapide » — repli pour les
+// clients qui ne transmettent pas `consentementTexte`. Doit rester identique
+// au texte affiché par QuickCallbackCard.
+const RAPPEL_CONSENT_TEXT =
+  "J'accepte d'être rappelé par un conseiller au sujet de mon projet de formation."
 
 const SUBMIT_TIMEOUT_MS = 15_000
 
@@ -79,7 +87,11 @@ export class LeadsService {
       newsletter: config.get<string>('HUBSPOT_FORM_NEWSLETTER'),
       demande: config.get<string>('HUBSPOT_FORM_DEMANDE'),
       candidature: config.get<string>('HUBSPOT_FORM_CANDIDATURE'),
-      conseiller: config.get<string>('HUBSPOT_FORM_CONSEILLER')
+      conseiller: config.get<string>('HUBSPOT_FORM_CONSEILLER'),
+      // Le rappel exige un formulaire HubSpot dédié (téléphone seul, sans
+      // e-mail requis) : replier sur le formulaire conseiller ferait rejeter
+      // la soumission par HubSpot. Configuration absente → 503 explicite.
+      rappel: config.get<string>('HUBSPOT_FORM_RAPPEL')
     }
   }
 
@@ -90,27 +102,39 @@ export class LeadsService {
 
   submitDemande(dto: DemandeLeadDto): Promise<{ submitted: true }> {
     const fields = this.buildFields('demande', dto)
-    return this.post('demande', fields, dto, true)
+    return this.post('demande', fields, dto, CONSENT_TEXT)
   }
 
   submitCandidature(dto: CandidatureLeadDto): Promise<{ submitted: true }> {
     const fields = this.buildFields('candidature', dto)
-    return this.post('candidature', fields, dto, true)
+    return this.post('candidature', fields, dto, CONSENT_TEXT)
   }
 
   submitConseiller(dto: ConseillerLeadDto): Promise<{ submitted: true }> {
     const fields = this.buildFields('conseiller', dto)
-    return this.post('conseiller', fields, dto, true)
+    return this.post('conseiller', fields, dto, CONSENT_TEXT)
+  }
+
+  submitRappel(dto: RappelLeadDto): Promise<{ submitted: true }> {
+    const fields = this.buildFields('rappel', dto)
+    // Le libellé affiché par la case front prime : HubSpot enregistre
+    // exactement ce que l'utilisateur a lu et coché.
+    return this.post('rappel', fields, dto, dto.consentementTexte || RAPPEL_CONSENT_TEXT)
   }
 
   private buildFields(form: 'newsletter', payload: NewsletterLeadPayload): HubSpotField[]
   private buildFields(form: 'demande', payload: DemandeLeadPayload): HubSpotField[]
   private buildFields(form: 'candidature', payload: CandidatureLeadPayload): HubSpotField[]
   private buildFields(form: 'conseiller', payload: ConseillerLeadPayload): HubSpotField[]
+  private buildFields(form: 'rappel', payload: RappelLeadPayload): HubSpotField[]
   private buildFields(
     form: LeadFormName,
     payload:
-      NewsletterLeadPayload | DemandeLeadPayload | CandidatureLeadPayload | ConseillerLeadPayload
+      | NewsletterLeadPayload
+      | DemandeLeadPayload
+      | CandidatureLeadPayload
+      | ConseillerLeadPayload
+      | RappelLeadPayload
   ): HubSpotField[] {
     switch (form) {
       case 'newsletter': {
@@ -174,6 +198,15 @@ export class LeadsService {
           field('learnup_type_projet', p.besoin)
         ])
       }
+      case 'rappel': {
+        const p = payload as RappelLeadPayload
+        const precisions = p.creneau ? `Créneau souhaité : ${p.creneau}` : 'Dès que possible'
+        return fields([
+          field('phone', p.telephone),
+          field('learnup_precisions', precisions),
+          field('learnup_type_projet', 'conseiller')
+        ])
+      }
     }
   }
 
@@ -181,7 +214,7 @@ export class LeadsService {
     form: LeadFormName,
     hubspotFields: HubSpotField[],
     context: { pageUri?: string; pageName?: string },
-    withConsent = false
+    consentText?: string
   ): Promise<{ submitted: true }> {
     const formGuid = this.formGuids[form]
     if (!this.portalId || !formGuid) {
@@ -195,9 +228,9 @@ export class LeadsService {
     if (context.pageUri || context.pageName) {
       body.context = { pageUri: context.pageUri, pageName: context.pageName }
     }
-    if (withConsent) {
+    if (consentText) {
       body.legalConsentOptions = {
-        consent: { consentToProcess: true, text: CONSENT_TEXT }
+        consent: { consentToProcess: true, text: consentText }
       }
     }
 

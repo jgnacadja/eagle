@@ -542,6 +542,16 @@ const besoinChips = computed(() => {
   return chips
 })
 
+// Borne API (@MaxLength) sur `precisions` : le besoin agrégé joint au texte
+// libre pouvait dépasser la limite en concaténation → 400 silencieux. On
+// tronque avec « … » plutôt que de rejeter la demande.
+const PRECISIONS_MAX = 5000
+const joinPrecisions = (besoin: string | null, extra?: string): string | undefined => {
+  const joined = [besoin ? `Besoin exprimé : ${besoin}` : null, extra].filter(Boolean).join('\n\n')
+  if (!joined) return undefined
+  return joined.length > PRECISIONS_MAX ? `${joined.slice(0, PRECISIONS_MAX - 1)}…` : joined
+}
+
 // Les CTA « Rejoindre le réseau » et la home arrivent avec ?sujet= : le sujet
 // est affiché dans le bloc contexte — le formulaire reste générique.
 const SUJETS: Record<string, { title: string; body: string }> = {
@@ -972,17 +982,16 @@ const onSubmit = handleSubmit(async (v) => {
     lieu: v.lieu || undefined,
     echeance: v.echeance,
     // D1 : le besoin décrit dans la recherche assistée est joint à la demande.
-    precisions:
-      [besoinParam.value ? `Besoin exprimé : ${besoinParam.value}` : null, v.precisions]
-        .filter(Boolean)
-        .join('\n\n') || undefined,
+    precisions: joinPrecisions(besoinParam.value, v.precisions),
     // Libellés résolus — HubSpot reçoit du texte lisible, pas les slugs.
     centre: centreName.value || demandeCentreSlug.value || undefined,
     formation: formationName.value || undefined,
     session: sessionName.value || undefined,
     sujet: sujetSlug.value || undefined,
     consentement: true,
-    pageUri: window.location.href,
+    // pageUri sans query : elle porte du texte libre (?besoin=…) qui n'apporte
+    // rien à l'attribution HubSpot et pouvait dépasser MaxLength(2000) → 400.
+    pageUri: window.location.origin + window.location.pathname,
     pageName: 'Demande de formation'
   })
   if (ok) {

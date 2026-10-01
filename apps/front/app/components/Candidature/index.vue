@@ -63,7 +63,8 @@ async function onSubmit(payload: CandidaturePayload) {
   const ok = await submitLead('candidature', {
     ...payload,
     consentement: true,
-    pageUri: window.location.href,
+    // Pas de query : elle peut porter du texte libre et dépasser la borne API.
+    pageUri: window.location.origin + window.location.pathname,
     pageName: 'Candidater pour rejoindre le réseau'
   })
   if (!ok) return

@@ -574,6 +574,35 @@ describe('pages/centres/demande-de-formation', () => {
     )
   })
 
+  it('poste pageUri sans query même avec un besoin long dans l’URL', async () => {
+    routeStub.query = { besoin: 'besoin très long '.repeat(200) }
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+    const { pageUri } = leadSubmitMock.mock.calls[0]![1] as { pageUri: string }
+    expect(pageUri).toBe(`${window.location.origin}${window.location.pathname}`)
+    expect(pageUri).not.toContain('?')
+    expect(pageUri.length).toBeLessThanOrEqual(2000)
+  })
+
+  it('borne precisions à 5000 caractères avec un besoin agrégé et un texte longs', async () => {
+    routeStub.query = { besoin: 'b'.repeat(500) }
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('#precisions').setValue('p'.repeat(5000))
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+    const { precisions } = leadSubmitMock.mock.calls[0]![1] as { precisions: string }
+    expect(precisions.length).toBeLessThanOrEqual(5000)
+    expect(precisions).toContain('Besoin exprimé :')
+    expect(precisions.endsWith('…')).toBe(true)
+  })
+
   it('affiche le panneau de confirmation après un envoi réussi', async () => {
     const wrapper = await mountPage()
     await fillValidForm(wrapper)

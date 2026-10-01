@@ -33,7 +33,12 @@ vi.mock('motion-v', async (importOriginal) => {
   }
 })
 
-function mountItem(props: { value: string; label: string; unit?: string; size?: 'lg' | 'sm' }) {
+function mountItem(props: {
+  value: string
+  label: string
+  unit?: string
+  size?: 'lg' | 'sm' | 'xs'
+}) {
   return mount(StatItem, { props })
 }
 
@@ -91,6 +96,13 @@ describe('StatItem', () => {
 
     expect(wrapper.text()).toContain('98')
     expect(wrapper.find('.text-h2').exists()).toBe(true)
+  })
+
+  it('applique la taille xs pour les stats en colonnes', () => {
+    const wrapper = mountItem({ value: '+400', label: 'centres', size: 'xs' })
+
+    expect(wrapper.find('.text-h3').exists()).toBe(true)
+    expect(wrapper.find('.text-meta').exists()).toBe(true)
   })
 
   it('affiche la valeur brute quand le préfixe est absent', () => {

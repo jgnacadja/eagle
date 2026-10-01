@@ -16,44 +16,24 @@
         <!-- Stats mobile (pleine largeur 3 colonnes) -->
         <div class="mt-lg grid grid-cols-3 divide-x divide-rule md:hidden">
           <StatItem
-            value="+400"
-            label="centres"
-            size="sm"
-            class="pr-sm [&_p:first-child]:text-h3 [&_p:last-child]:text-meta"
-          />
-          <StatItem
-            value="France entière"
-            label="couverte par le réseau"
-            size="sm"
-            class="px-sm [&_p:first-child]:text-small [&_p:last-child]:text-meta"
-          />
-          <StatItem
-            value="+250"
-            label="formations"
-            size="sm"
-            class="pl-sm [&_p:first-child]:text-h3 [&_p:last-child]:text-meta"
+            v-for="(stat, index) in networkStats"
+            :key="stat.value"
+            :value="stat.value"
+            :label="stat.shortLabel"
+            size="xs"
+            :class="statCellClass(index, 'mobile')"
           />
         </div>
 
         <!-- Stats desktop (inline non-full) -->
         <div class="mt-xl hidden md:flex flex-wrap gap-y-lg">
           <StatItem
-            value="+400"
-            label="centres partenaires"
+            v-for="(stat, index) in networkStats"
+            :key="stat.value"
+            :value="stat.value"
+            :label="stat.label"
             size="sm"
-            class="pr-lg whitespace-nowrap"
-          />
-          <StatItem
-            value="France entière"
-            label="couverte par le réseau"
-            size="sm"
-            class="border-l border-rule px-lg"
-          />
-          <StatItem
-            value="+250"
-            label="formations au catalogue"
-            size="sm"
-            class="border-l border-rule pl-lg"
+            :class="statCellClass(index, 'desktop')"
           />
         </div>
       </div>
@@ -163,7 +143,10 @@
           </NuxtLink>
         </div>
 
-        <div v-reveal class="mt-lg h-96 overflow-hidden rounded-md border border-rule bg-surface">
+        <div
+          v-reveal
+          class="mt-lg h-72 overflow-hidden rounded-md border border-rule bg-surface md:h-96"
+        >
           <CenterMap
             v-if="mapCenters.length"
             :centers="mapCenters"
@@ -253,6 +236,26 @@ useContentSeo(
   },
   'Le réseau et ses partenaires — LEARN UP ACADEMY'
 )
+
+const networkStats = [
+  { value: '+400', shortLabel: 'centres', label: 'centres partenaires' },
+  {
+    value: 'France entière',
+    shortLabel: 'couverte par le réseau',
+    label: 'couverte par le réseau'
+  },
+  { value: '+250', shortLabel: 'formations', label: 'formations au catalogue' }
+]
+
+function statCellClass(index: number, variant: 'mobile' | 'desktop') {
+  const last = networkStats.length - 1
+  if (variant === 'mobile') {
+    return index === 0 ? 'pr-sm' : index === last ? 'pl-sm' : 'px-sm'
+  }
+  return index === 0
+    ? 'pr-lg whitespace-nowrap'
+    : `border-l border-rule ${index === last ? 'pl-lg' : 'px-lg'}`
+}
 
 const networkMembers = [
   {

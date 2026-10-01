@@ -31,6 +31,18 @@ describe('leadFields', () => {
     expect(firstIssue({ ...valid, nom: '   ' })).toBe('Indiquez votre nom et prénom.')
   })
 
+  it('rejette un nom de plus de 200 caractères comme l’API', () => {
+    expect(firstIssue({ ...valid, nom: `Jean ${'D'.repeat(200)}` })).toBe(
+      'Nom trop long — 200 caractères maximum.'
+    )
+  })
+
+  it('rejette un e-mail de plus de 320 caractères comme l’API', () => {
+    expect(firstIssue({ ...valid, email: `${'a'.repeat(320)}@x.fr` })).toBe(
+      'E-mail trop long — 320 caractères maximum.'
+    )
+  })
+
   it('rejette un e-mail vide avec le message du formulaire', () => {
     expect(firstIssue({ ...valid, email: '' })).toBe('E-mail requis.')
   })

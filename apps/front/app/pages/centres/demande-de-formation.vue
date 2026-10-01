@@ -182,8 +182,17 @@
                     v-model="precisions"
                     rows="3"
                     placeholder="Contraintes d'horaires, site concerné, niveau des salariés…"
-                    class="resize-none"
+                    class="resize-none aria-invalid:border-danger"
+                    :aria-invalid="showError('precisions') || undefined"
+                    :aria-describedby="showError('precisions') ? 'precisions-error' : undefined"
                   />
+                  <p
+                    v-if="showError('precisions')"
+                    id="precisions-error"
+                    class="mt-xs text-small font-semibold text-danger"
+                  >
+                    {{ errors.precisions }}
+                  </p>
                 </div>
               </fieldset>
             </Card>
@@ -797,18 +806,26 @@ const { handleSubmit, errors, submitCount, defineField, setValues, values } = us
     z
       .object({
         // Input émet string | number : la saisie reste une chaîne tant qu'on ne convertit pas.
+        // Les .int()/.max() calquent les bornes du DTO API (@IsInt, @MaxLength) :
+        // une valeur refusée côté serveur est bloquée ici avec un message de champ.
         salaries: z.coerce
           .number({ error: 'Indiquez le nombre de salariés à former.' })
+          .int('Le nombre de salariés doit être un entier.')
           .min(1, 'Indiquez le nombre de salariés à former.'),
         echeance: z
           .string({ error: 'Choisissez une échéance.' })
-          .min(1, 'Choisissez une échéance.'),
-        lieu: z.string().trim().optional(),
-        precisions: z.string().optional(),
+          .min(1, 'Choisissez une échéance.')
+          .max(200, 'Échéance trop longue — 200 caractères maximum.'),
+        lieu: z.string().trim().max(200, 'Lieu trop long — 200 caractères maximum.').optional(),
+        precisions: z
+          .string()
+          .max(5000, 'Précisions trop longues — 5000 caractères maximum.')
+          .optional(),
         raisonSociale: z
           .string({ error: "Indiquez la raison sociale de l'entreprise." })
           .trim()
-          .min(1, "Indiquez la raison sociale de l'entreprise."),
+          .min(1, "Indiquez la raison sociale de l'entreprise.")
+          .max(200, 'Raison sociale trop longue — 200 caractères maximum.'),
         siret: z
           .string({ error: 'Indiquez le SIRET de votre entreprise.' })
           .trim()
@@ -823,7 +840,8 @@ const { handleSubmit, errors, submitCount, defineField, setValues, values } = us
         fonction: z
           .string({ error: 'Indiquez votre fonction.' })
           .trim()
-          .min(1, 'Indiquez votre fonction.'),
+          .min(1, 'Indiquez votre fonction.')
+          .max(200, 'Fonction trop longue — 200 caractères maximum.'),
         telephonePro: z
           .string()
           .trim()
@@ -873,6 +891,7 @@ type DemandeField =
   | 'salaries'
   | 'lieu'
   | 'echeance'
+  | 'precisions'
   | 'raisonSociale'
   | 'siret'
   | 'nom'

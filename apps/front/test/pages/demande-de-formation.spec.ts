@@ -429,6 +429,73 @@ describe('pages/centres/demande-de-formation', () => {
     expect(window.sessionStorage.getItem('demande-formation-draft')).toBeNull()
   })
 
+  it('ne restaure jamais le consentement ni les champs d’identité du brouillon', async () => {
+    window.sessionStorage.setItem(
+      'demande-formation-draft',
+      '{"salaries":5,"consentement":true,"nom":"Jean Dupont","email":"jean@acme.fr","telephone":"0612345678"}'
+    )
+    const wrapper = await mountPage()
+    await nextTick()
+
+    // RGPD : la case doit être recochée explicitement, jamais restaurée.
+    expect(wrapper.find('[role="checkbox"]').attributes('aria-checked')).not.toBe('true')
+    expect((wrapper.find('#nom').element as HTMLInputElement).value).toBe('')
+    expect((wrapper.find('#email').element as HTMLInputElement).value).toBe('')
+    // Le contexte non personnel est lui bien restauré.
+    expect((wrapper.find('form input').element as HTMLInputElement).value).toBe('5')
+  })
+
+  it('n’écrit ni consentement ni identité dans le brouillon', async () => {
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('aside a').trigger('click')
+
+    const raw = window.sessionStorage.getItem('demande-formation-draft')
+    const draft = JSON.parse(raw ?? '{}') as Record<string, unknown>
+    expect(draft.salaries).toBeDefined()
+    expect(draft.raisonSociale).toBeDefined()
+    for (const key of ['consentement', 'nom', 'email', 'telephone', 'telephonePro']) {
+      expect(draft[key]).toBeUndefined()
+    }
+  })
+
+  it('suffixe le brouillon par le contexte — pas de restauration croisée', async () => {
+    routeStub.query = { centre: 'creteil' }
+    const wrapper = await mountPage()
+    await wrapper.find('form input').setValue('12')
+    await wrapper.find('aside a').trigger('click')
+
+    expect(window.sessionStorage.getItem('demande-formation-draft:creteil')).toContain(
+      '"salaries":"12"'
+    )
+    expect(window.sessionStorage.getItem('demande-formation-draft')).toBeNull()
+
+    // Même session, autre contexte : le brouillon du premier n'est pas repris.
+    routeStub.query = { centre: 'autre' }
+    const wrapper2 = await mountPage()
+    await nextTick()
+    expect((wrapper2.find('form input').element as HTMLInputElement).value).not.toBe('12')
+  })
+
+  it('restaure le brouillon du même contexte', async () => {
+    routeStub.query = { centre: 'creteil' }
+    window.sessionStorage.setItem('demande-formation-draft:creteil', '{"salaries":7}')
+    const wrapper = await mountPage()
+    await nextTick()
+
+    expect((wrapper.find('form input').element as HTMLInputElement).value).toBe('7')
+  })
+
+  it('lie la politique de confidentialité à la page dédiée', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.find('a[href="/confidentialite"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/confidentialite"]').text()).toContain(
+      'Politique de confidentialité'
+    )
+  })
+
   it("affiche les erreurs sur les champs obligatoires à l'envoi", async () => {
     const wrapper = await mountPage()
 

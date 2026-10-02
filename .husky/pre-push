@@ -1,0 +1,7 @@
+# Sync automatique de la branche orpheline `agents` (outillage IA interne).
+# Restauré par `pnpm agents` — vit sur la branche `agents`, pas dans l'arbre livré.
+[ -n "$AGENTS_SYNC_PUSH" ] && exit 0
+if command -v node >/dev/null 2>&1 && [ -f scripts/agents.mjs ]; then
+  node scripts/agents.mjs status --local >/dev/null 2>&1 || node scripts/agents.mjs push || true
+fi
+exit 0

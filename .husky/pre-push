@@ -1,8 +1,10 @@
 # Sync automatique de la branche orpheline `agents` (outillage IA interne).
 # Restauré par `pnpm agents` — vit sur la branche `agents`, pas dans l'arbre livré.
-# Ne fait rien si l'outillage n'a pas été restauré (`.agents/` absent).
+# Inactif si : push interne (AGENTS_SYNC_PUSH), outillage non restauré (.agents absent),
+# ou fichiers encore trackés dans la branche courante (elles les versionnent déjà).
 [ -n "$AGENTS_SYNC_PUSH" ] && exit 0
 if command -v node >/dev/null 2>&1 && [ -f scripts/agents.mjs ] && [ -d .agents ]; then
+  git ls-files --error-unmatch AGENTS.md >/dev/null 2>&1 && exit 0
   node scripts/agents.mjs status --local >/dev/null 2>&1 || node scripts/agents.mjs push || true
 fi
 exit 0

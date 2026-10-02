@@ -714,6 +714,7 @@ import { useTagFilter } from '~/composables/useTagFilter'
 import { availabilityStatus, useCentreSessionDates } from '~/composables/useCentres'
 import { useGeolocation } from '~/composables/useGeolocation'
 import { useGeoSuggest } from '~/composables/useGeoSuggest'
+import { streetOnly } from '~/utils/centre'
 import { distanceKm, formatDistance } from '~/utils/geo'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { useAnimatedPlaceholder } from '~/composables/useAnimatedPlaceholder'
@@ -1049,13 +1050,20 @@ function distanceToUser(centre: Centre, pos: { lat: number; lng: number }): numb
 
 const homeMapCenters = computed<CenterResult[]>(() =>
   (derniersCentresData.value ?? []).map((centre) => {
-    const location = [centre.address, centre.postal_code, centre.city, centre.department]
+    const location = [
+      streetOnly(centre.address, centre.postal_code, centre.city),
+      centre.postal_code,
+      centre.city,
+      centre.department
+    ]
       .filter(Boolean)
       .join(', ')
     const tags = (centre.specialties ?? []).join(' · ')
     return {
       id: centre.slug,
       name: centre.name,
+      city: centre.city ?? undefined,
+      department: centre.department ?? undefined,
       cp: centre.postal_code ?? '',
       address: location,
       tags,

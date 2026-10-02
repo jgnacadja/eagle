@@ -281,6 +281,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { DESKTOP_QUERY, useGeolocation, useReverseGeocode } from '~/composables/useGeolocation'
+import { streetOnly } from '~/utils/centre'
 import { densestClusterCenter, distanceKm, normalizeDepartment } from '~/utils/geo'
 import type { CentresQuery } from '~/composables/useCentres'
 import { revealStagger } from '~/utils/reveal'
@@ -425,7 +426,12 @@ let loadMoreObserver: IntersectionObserver | null = null
 const filteredCenters = computed<CenterResult[]>(() => {
   const userPos = userPosition.value
   const mapped = (centres.value ?? []).map((centre) => {
-    const location = [centre.address, centre.postal_code, centre.city, centre.department]
+    const location = [
+      streetOnly(centre.address, centre.postal_code, centre.city),
+      centre.postal_code,
+      centre.city,
+      centre.department
+    ]
       .filter(Boolean)
       .join(', ')
     const tags = (centre.specialties ?? []).join(' · ')
@@ -438,6 +444,8 @@ const filteredCenters = computed<CenterResult[]>(() => {
     return {
       id: centre.slug,
       name: centre.name,
+      city: centre.city ?? undefined,
+      department: centre.department ?? undefined,
       cp: centre.postal_code ?? '',
       address: location,
       tags,

@@ -67,6 +67,7 @@ import { Button } from '@/components/ui/button'
 import IconPlus from '@/components/icons/IconPlus.vue'
 import IconMinus from '@/components/icons/IconMinus.vue'
 import CenterMapPopup from '@/components/Map/CenterMapPopup.vue'
+import { centreLocationLabel } from '~/utils/centre'
 import franceOutline from '~/assets/geo-france-outline.json'
 import domtomOutline from '~/assets/geo-domtom-outline.json'
 import type { CenterResult } from '~/types/center-result'
@@ -258,14 +259,6 @@ async function ensureLeaflet(): Promise<typeof import('leaflet')> {
   return Leaf
 }
 
-function locationLabel(center: CenterResult): string {
-  const parts = center.address.split('·')
-  const second = parts[1]
-  return parts.length > 1 && second
-    ? second.trim()
-    : (center.address.split(',').pop()?.trim() ?? '')
-}
-
 function closePopup() {
   if (pendingReveal && mapInstance.value) {
     mapInstance.value.off('moveend', pendingReveal)
@@ -284,7 +277,7 @@ function openPopup(center: CenterResult, marker: Leaflet.Marker) {
   popupApp = createApp(CenterMapPopup, {
     id: center.id,
     name: center.name,
-    locationLabel: locationLabel(center),
+    locationLabel: centreLocationLabel(center),
     tagsShort: center.tagsShort,
     onClose: () => emit('select', '')
   })

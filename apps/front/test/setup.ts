@@ -157,6 +157,7 @@ config.global.stubs = {
 // Auto-imports Nuxt absents sous Vitest : le header interne SSR n'a pas à
 // exister en environnement de test.
 vi.stubGlobal('internalSsrHeaders', () => undefined)
+vi.stubGlobal('defineNuxtPlugin', <T>(plugin: T): T => plugin)
 
 // useState (auto-import Nuxt) : store ref partagé par clé, nécessaire aux
 // composables d'état global (ex : useAssistantLauncher).

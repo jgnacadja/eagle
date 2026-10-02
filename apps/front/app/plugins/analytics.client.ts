@@ -1,5 +1,6 @@
 import { nextTick } from 'vue'
 import { useDataLayer } from '~/composables/useDataLayer'
+import { logClientWarning } from '~/utils/logger'
 
 export default defineNuxtPlugin((nuxtApp) => {
   // 1. Initialiser le dataLayer avant tout le reste (exigence stricte du plan)
@@ -15,6 +16,10 @@ export default defineNuxtPlugin((nuxtApp) => {
     script.async = true
     script.src = `https://www.googletagmanager.com/gtm.js?id=${gtmId}`
     document.head.appendChild(script)
+  } else if (!gtmId) {
+    logClientWarning(
+      '[Analytics] NUXT_PUBLIC_GTM_ID manquant : le script Google Tag Manager ne sera pas chargé.'
+    )
   }
 
   const { pushEvent } = useDataLayer()

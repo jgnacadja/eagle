@@ -776,8 +776,8 @@ useContentSeo(
 
 const HERO_SEARCH_PLACEHOLDERS = [
   'Je dois former 8 salariés au CACES près de Lyon avant septembre.',
-  'Nous devons renouveler 12 habilitations électriques sur 2 sites avant décembre.',
-  'Session SST initiale pour 6 collaborateurs à Nantes le mois prochain.'
+  'Votre besoin nécessite une précision pour vous orienter correctement.',
+  "Mes managers ont besoin d'apprendre à mieux gérer les conflits."
 ] as const
 
 const heroSearch = ref('')

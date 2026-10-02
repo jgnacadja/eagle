@@ -385,7 +385,7 @@
           />
 
           <div>
-            <Button as-child size="pill-lg" class="w-full sm:w-auto">
+            <Button as-child size="pill-lg" class="w-full lg:inline-flex gap-xs">
               <NuxtLink to="/centres">
                 Explorer la carte des centres <span class="link-arrow">→</span>
               </NuxtLink>

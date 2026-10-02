@@ -597,9 +597,12 @@
         <!-- Pied de section : Témoignages & CTA -->
         <div class="mt-xl flex flex-col gap-lg sm:flex-row sm:items-center sm:justify-between">
           <div class="shrink-0">
-            <Button as-child variant="outline" size="pill-lg" class="lg:inline-flex gap-xs">
-              <NuxtLink to="/formations"> Consulter <span class="link-arrow">→</span></NuxtLink>
-            </Button>
+            <NuxtLink
+              to="/formations"
+              class="inline-block text-small md:text-body font-bold hover:text-accent-text"
+            >
+              Consulter <span class="link-arrow">→</span></NuxtLink
+            >
           </div>
         </div>
       </div>
@@ -775,9 +778,9 @@ useContentSeo(
 )
 
 const HERO_SEARCH_PLACEHOLDERS = [
-  'Je dois former 8 salariés au CACES près de Lyon avant septembre.',
-  'Votre besoin nécessite une précision pour vous orienter correctement.',
-  "Mes managers ont besoin d'apprendre à mieux gérer les conflits."
+  'Je recherche une formation en gestion des incendies.',
+  'Nous recherchons une formation SST pour nos équipes à Paris.',
+  "Je recherche une formation en gestion des conflits au sein d'une équipe."
 ] as const
 
 const heroSearch = ref('')

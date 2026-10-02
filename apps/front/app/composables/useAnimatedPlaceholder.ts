@@ -67,8 +67,8 @@ export function useAnimatedPlaceholder(
 ): Ref<string> {
   const {
     holdDuration = 2600,
-    typingSpeed = 45,
-    deletingSpeed = 22,
+    typingSpeed = 20,
+    deletingSpeed = 12,
     pauseDuration = 400,
     preservePrefix = true
   } = options

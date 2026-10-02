@@ -348,9 +348,6 @@
           >
             Afficher plus de résultats
           </Button>
-
-          <!-- Porte de sortie « Être guidé » — mobile (la sidebar est masquée) -->
-          <AssistantGuidedCard class="mt-2xl lg:hidden" @open="openAssistant" />
         </div>
       </div>
 

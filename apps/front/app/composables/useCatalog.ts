@@ -1,4 +1,4 @@
-import type { CourseListItem, CoursePage, CourseSession } from '@learnup/types'
+import type { CourseListItem, CoursePage, CourseSession, DurationBucket } from '@learnup/types'
 import { toValue, type MaybeRefOrGetter } from 'vue'
 import { directusAssetUrl } from '~/utils/directusAsset'
 import { htmlToText } from '~/utils/sanitizeHtml'
@@ -35,25 +35,11 @@ export interface FormationItem {
   description: string
   meta: string
   days: number
-  duration: 'courte' | 'moyenne' | 'longue'
+  duration: DurationBucket
   certifications: string[]
   status?: { type: AvailabilityType; label: string; labelShort?: string }
   image: string | null
   to: string | null
-}
-
-export function buildDuration(course: CourseListItem): 'courte' | 'moyenne' | 'longue' {
-  const hours = course.durationHours ?? 0
-  if (hours > 0) {
-    if (hours <= 8) return 'courte'
-    if (hours <= 40) return 'moyenne'
-    return 'longue'
-  }
-
-  const days = course.durationDays ?? 1
-  if (days <= 1) return 'courte'
-  if (days <= 5) return 'moyenne'
-  return 'longue'
 }
 
 export function buildMeta(course: CourseListItem, withCertification = true): string {
@@ -168,7 +154,9 @@ export function mapCourse(course: CourseListItem, familyName?: string): Formatio
     description: course.shortDescription?.trim() || htmlToText(course.description),
     meta: buildMeta(course),
     days: course.durationDays ?? 0,
-    duration: buildDuration(course),
+    // Classifiée une seule fois par l'API (`durationBucket`) — jamais recalculée
+    // ici, sinon carte et filtre `durations` peuvent diverger.
+    duration: course.durationBucket,
     certifications: buildCertifications(course),
     image: directusAssetUrl(course.image) ?? course.imageUrl ?? null,
     status: buildStatus(course),

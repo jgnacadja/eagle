@@ -13,6 +13,7 @@ function makeCourse(overrides: Partial<CourseListItem> = {}): CourseListItem {
     shortDescription: null,
     durationDays: 2,
     durationHours: null,
+    durationBucket: 'moyenne',
     price: 220,
     cpf: false,
     cpfCode: null,

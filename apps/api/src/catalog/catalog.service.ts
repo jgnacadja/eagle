@@ -7,6 +7,7 @@ import type {
   CoursePedagogyItem,
   CourseSession,
   CourseSessionLocation,
+  DurationBucket,
   FamilyWithCount
 } from '@learnup/types'
 import { CacheService } from '../common/cache/cache.service'
@@ -169,14 +170,18 @@ function imageUrlFromRaw(raw: unknown): string | null {
 }
 
 function toListItem(raw: DirectusFormation): CourseListItem {
+  const durationDays = toNumber(raw.duration_days)
+  const durationHours = toNumber(raw.duration_hours)
+
   return {
     id: raw.id,
     slug: raw.slug,
     title: raw.title,
     description: raw.description,
     shortDescription: raw.short_description ?? null,
-    durationDays: toNumber(raw.duration_days),
-    durationHours: toNumber(raw.duration_hours),
+    durationDays,
+    durationHours,
+    durationBucket: durationBucket({ durationDays, durationHours }),
     price: toNumber(raw.price),
     cpf: raw.cpf,
     cpfCode: raw.cpf_code,
@@ -388,29 +393,43 @@ function parseModalities(value: string | undefined): string[] {
     .filter((m) => m.length > 0)
 }
 
-const DURATION_BUCKET_KEYS = new Set(['courte', 'moyenne', 'longue'])
+const DURATION_BUCKETS: DurationBucket[] = ['courte', 'moyenne', 'longue']
+const DURATION_BUCKET_KEYS = new Set<string>(DURATION_BUCKETS)
 
-function parseDurations(value: string | undefined): string[] {
+function parseDurations(value: string | undefined): DurationBucket[] {
   if (!value) return []
   return value
     .split(',')
     .map((d) => d.trim())
-    .filter((d) => DURATION_BUCKET_KEYS.has(d))
+    .filter((d): d is DurationBucket => DURATION_BUCKET_KEYS.has(d))
 }
 
-function matchesDurationBucket(course: CourseListItem, bucket: string): boolean {
+/**
+ * Tranche de durée — classifieur unique : le front affiche
+ * `course.durationBucket` sans recalculer. Bornes continues pour ne laisser
+ * aucun trou (8,5 h et 1,5 j tombent en « moyenne »).
+ * Recalculée depuis les durées brutes plutôt que lue du champ : les rows
+ * en cache écrites avant l'ajout du champ restent filtrables.
+ */
+function durationBucket(course: {
+  durationHours: number | null
+  durationDays: number | null
+}): DurationBucket {
   const hours = course.durationHours ?? 0
-  const days = course.durationDays ?? 1
-
   if (hours > 0) {
-    if (bucket === 'courte') return hours <= 8
-    if (bucket === 'moyenne') return hours >= 9 && hours <= 40
-    return hours > 40
+    if (hours <= 8) return 'courte'
+    if (hours <= 40) return 'moyenne'
+    return 'longue'
   }
 
-  if (bucket === 'courte') return days <= 1
-  if (bucket === 'moyenne') return days >= 2 && days <= 5
-  return days > 5
+  const days = course.durationDays ?? 1
+  if (days <= 1) return 'courte'
+  if (days <= 5) return 'moyenne'
+  return 'longue'
+}
+
+function matchesDurationBucket(course: CourseListItem, bucket: DurationBucket): boolean {
+  return durationBucket(course) === bucket
 }
 
 function matchesCertifying(course: CourseListItem, certifying: boolean | undefined): boolean {
@@ -683,7 +702,7 @@ function computeCatalogFacets(rows: CatalogRow[], query: ListCoursesDto): Catalo
     subFamilies: countByKeys('subFamily', (row) => [row.course.subFamilySlug]),
     modalities: countByKeys('modalities', (row) => row.course.modalities),
     durations: countByKeys('durations', (row) =>
-      DURATION_BUCKET_KEYS_LIST.filter((bucket) => matchesDurationBucket(row.course, bucket))
+      DURATION_BUCKETS.filter((bucket) => matchesDurationBucket(row.course, bucket))
     ),
     // Département ET région sont comptés : le sélecteur de localisation du
     // front propose les deux dimensions, la recherche plein-texte couvrant
@@ -699,8 +718,6 @@ function computeCatalogFacets(rows: CatalogRow[], query: ListCoursesDto): Catalo
     )
   }
 }
-
-const DURATION_BUCKET_KEYS_LIST = ['courte', 'moyenne', 'longue']
 
 function sortCatalogRows(
   rows: CatalogRow[],

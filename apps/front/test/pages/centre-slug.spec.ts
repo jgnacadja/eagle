@@ -95,6 +95,7 @@ const catalogueCourseFixture: CourseListItem = {
   shortDescription: null,
   durationDays: 2,
   durationHours: 14,
+  durationBucket: 'moyenne',
   price: 350,
   cpf: false,
   cpfCode: null,
@@ -248,7 +249,6 @@ vi.mock('~/composables/useCatalog', () => ({
     meta: `${course.durationDays} jours`,
     to: course.familySlug ? `/formations/${course.familySlug}/${course.slug}` : null
   }),
-  buildDuration: vi.fn(),
   buildMeta: vi.fn(),
   buildCertifications: vi.fn(),
   upcomingSessions: (course: { sessions?: { startDate?: string | null }[] | null }) => {

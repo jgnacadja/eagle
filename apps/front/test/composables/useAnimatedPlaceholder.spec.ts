@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, ref, nextTick, type MaybeRefOrGetter } from 'vue'
 import { mount } from '@vue/test-utils'
 import {
   findCommonPrefix,
@@ -42,7 +42,10 @@ describe('useAnimatedPlaceholder', () => {
     vi.restoreAllMocks()
   })
 
-  function mountHarness(texts: readonly string[], options: UseAnimatedPlaceholderOptions = {}) {
+  function mountHarness(
+    texts: MaybeRefOrGetter<readonly string[]>,
+    options: UseAnimatedPlaceholderOptions = {}
+  ) {
     let result: ReturnType<typeof useAnimatedPlaceholder> | null = null
 
     const Component = defineComponent({
@@ -64,6 +67,33 @@ describe('useAnimatedPlaceholder', () => {
     expect(single.value).toBe('Unique')
     vi.advanceTimersByTime(10000)
     expect(single.value).toBe('Unique')
+  })
+
+  it('returns static placeholder if all items are identical (duplicates)', () => {
+    const { placeholder } = mountHarness(['Same', 'Same'])
+    expect(placeholder.value).toBe('Same')
+    vi.advanceTimersByTime(10000)
+    expect(placeholder.value).toBe('Same')
+  })
+
+  it('reacts dynamically to changes in textsInput when provided as a ref', async () => {
+    const textsRef = ref(['Alpha 1', 'Alpha 2'])
+    const { placeholder } = mountHarness(textsRef, {
+      holdDuration: 1000,
+      deletingSpeed: 50,
+      preservePrefix: false
+    })
+
+    expect(placeholder.value).toBe('Alpha 1')
+
+    textsRef.value = ['Beta 1', 'Beta 2']
+    await nextTick()
+
+    expect(placeholder.value).toBe('Beta 1')
+
+    // Advance 1000ms: should start deleting Beta 1
+    vi.advanceTimersByTime(1000)
+    expect(placeholder.value).toBe('Beta ')
   })
 
   it('initializes with the first full text immediately for SSR safety', () => {

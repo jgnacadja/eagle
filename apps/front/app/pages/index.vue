@@ -76,7 +76,7 @@
               v-model="heroSearch"
               input-id="hero-search-input"
               sr-label="Besoin d'aide pour choisir votre formation"
-              placeholder="Ex. : Je dois former 8 salariés au CACES près de Lyon avant septembre."
+              :placeholder="heroPlaceholder"
               @submit="onHeroSearch"
             >
               <template #icon>
@@ -716,6 +716,7 @@ import { useGeolocation } from '~/composables/useGeolocation'
 import { useGeoSuggest } from '~/composables/useGeoSuggest'
 import { distanceKm, formatDistance } from '~/utils/geo'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
+import { useAnimatedPlaceholder } from '~/composables/useAnimatedPlaceholder'
 import { heroStagger, revealStagger } from '~/utils/reveal'
 import { articleAssetUrl, formatArticleDate } from '~/utils/article'
 import { mapAvis } from '~/utils/avis'
@@ -773,7 +774,14 @@ useContentSeo(
   }
 )
 
+const HERO_SEARCH_PLACEHOLDERS = [
+  'Je dois former 8 salariés au CACES près de Lyon avant septembre.',
+  'Nous devons renouveler 12 habilitations électriques sur 2 sites avant décembre.',
+  'Session SST initiale pour 6 collaborateurs à Nantes le mois prochain.'
+] as const
+
 const heroSearch = ref('')
+const heroPlaceholder = useAnimatedPlaceholder(HERO_SEARCH_PLACEHOLDERS)
 const assistant = useAssistantLauncher()
 
 // C1 — point d'entrée principal : le besoin saisi ouvre le panneau de

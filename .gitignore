@@ -63,3 +63,5 @@ docker-compose.override.yml
 /apps/api/AGENTS.md
 /apps/api/skills-lock.json
 /apps/front/AGENTS.md
+/.husky/pre-push
+/scripts/agents.mjs

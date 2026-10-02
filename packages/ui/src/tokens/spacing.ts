@@ -26,7 +26,7 @@ export const layout = {
   /** Marges latérales mobile (gabarit 390 px). */
   gutterMobile: '20px',
   /** Padding vertical des sections (52–62 px). */
-  sectionY: '56px',
+  sectionY: '39px',
   /** Gap des grilles de cartes (3–4 colonnes). */
   gridGap: '16px',
   /** Cible tactile minimale. */

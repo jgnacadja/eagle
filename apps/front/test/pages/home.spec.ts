@@ -617,6 +617,14 @@ describe('pages/index', () => {
     expect(navigateMock).not.toHaveBeenCalled()
   })
 
+  it('affiche le placeholder initial animé sur la recherche hero', async () => {
+    const wrapper = await mountPage()
+    const input = wrapper.find('#hero-search-input')
+    expect(input.attributes('placeholder')).toBe(
+      'Je dois former 8 salariés au CACES près de Lyon avant septembre.'
+    )
+  })
+
   it('ouvre la recherche assistée avec le message du CTA', async () => {
     const wrapper = await mountPage()
     const launcher = useAssistantLauncher()

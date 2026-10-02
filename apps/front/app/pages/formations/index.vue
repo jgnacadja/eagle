@@ -149,8 +149,6 @@
             @update:cpf="cpf = $event ?? false"
             @update:certifying="certifying = $event ?? false"
           />
-          <!-- C3 — porte de sortie « Être guidé » visible pendant le filtrage -->
-          <AssistantGuidedCard class="mt-xl" @open="openAssistant" />
         </aside>
 
         <!-- Résultats -->

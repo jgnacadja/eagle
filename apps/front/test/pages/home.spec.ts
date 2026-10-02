@@ -621,7 +621,7 @@ describe('pages/index', () => {
     const wrapper = await mountPage()
     const input = wrapper.find('#hero-search-input')
     expect(input.attributes('placeholder')).toBe(
-      'Je dois former 8 salariés au CACES près de Lyon avant septembre.'
+      'Je recherche une formation en gestion des incendies.'
     )
   })
 

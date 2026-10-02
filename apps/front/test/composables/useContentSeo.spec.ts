@@ -47,10 +47,35 @@ describe('useContentSeo', () => {
       expect.arrayContaining([
         { name: 'description', content: 'Chapô SEO' },
         { property: 'og:title', content: 'Titre éditorial' },
+        { property: 'og:description', content: 'Chapô SEO' },
+        { name: 'twitter:title', content: 'Titre éditorial' },
+        { name: 'twitter:description', content: 'Chapô SEO' },
         { name: 'robots', content: 'noindex' }
       ])
     )
     expect(head().link).toEqual([{ rel: 'canonical', href: 'https://learnup.fr/formations/x' }])
+  })
+
+  it('émet og:image et twitter:image quand seo_image est fourni', () => {
+    useContentSeo(
+      { seo_title: 'Fiche', seo_image: 'https://api.learnup.fr/directus/assets/abc' },
+      'Fallback'
+    )
+    expect(head().meta).toEqual(
+      expect.arrayContaining([
+        { property: 'og:image', content: 'https://api.learnup.fr/directus/assets/abc' },
+        { name: 'twitter:image', content: 'https://api.learnup.fr/directus/assets/abc' }
+      ])
+    )
+  })
+
+  it('n’émet ni og:image ni description OG sans seo_image/seo_description', () => {
+    useContentSeo({}, 'Fallback')
+    const keys = (head().meta ?? []).map((m) => m.property ?? m.name)
+    expect(keys).not.toContain('og:image')
+    expect(keys).not.toContain('twitter:image')
+    expect(keys).not.toContain('og:description')
+    expect(keys).not.toContain('twitter:description')
   })
 
   it('émet un script application/ld+json quand jsonLd est fourni', () => {

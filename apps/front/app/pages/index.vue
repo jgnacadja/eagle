@@ -385,7 +385,7 @@
           />
 
           <div>
-            <Button as-child size="pill-lg" class="w-full lg:inline-flex gap-xs">
+            <Button as-child size="pill-lg" class="w-full gap-xs">
               <NuxtLink to="/centres">
                 Explorer la carte des centres <span class="link-arrow">→</span>
               </NuxtLink>
@@ -597,12 +597,9 @@
         <!-- Pied de section : Témoignages & CTA -->
         <div class="mt-xl flex flex-col gap-lg sm:flex-row sm:items-center sm:justify-between">
           <div class="shrink-0">
-            <NuxtLink
-              to="/formations"
-              class="inline-block text-small md:text-body font-bold hover:text-accent-text"
-            >
-              Consulter <span class="link-arrow">→</span></NuxtLink
-            >
+            <Button as-child variant="link" size="inline" class="gap-xs">
+              <NuxtLink to="/formations"> Consulter <span class="link-arrow">→</span></NuxtLink>
+            </Button>
           </div>
         </div>
       </div>

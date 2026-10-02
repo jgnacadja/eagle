@@ -6,6 +6,11 @@ interface SeoSource {
   seo_canonical?: string | null
   /** Ajoute une meta robots noindex (pages d'erreur, contenus non indexables). */
   seo_noindex?: boolean | null
+  /**
+   * URL absolue de l'image OG/Twitter propre à la page (visuel Directus ou
+   * catalogue). Absente → image par défaut définie dans `app.vue`.
+   */
+  seo_image?: string | null
 }
 
 interface UseContentSeoOptions {
@@ -31,9 +36,20 @@ export function useContentSeo(
         title,
         meta: [
           ...(resolved.seo_description
-            ? [{ name: 'description', content: resolved.seo_description }]
+            ? [
+                { name: 'description', content: resolved.seo_description },
+                { property: 'og:description', content: resolved.seo_description },
+                { name: 'twitter:description', content: resolved.seo_description }
+              ]
             : []),
           { property: 'og:title', content: title },
+          { name: 'twitter:title', content: title },
+          ...(resolved.seo_image
+            ? [
+                { property: 'og:image', content: resolved.seo_image },
+                { name: 'twitter:image', content: resolved.seo_image }
+              ]
+            : []),
           ...(resolved.seo_noindex ? [{ name: 'robots', content: 'noindex' }] : [])
         ],
         link: resolved.seo_canonical

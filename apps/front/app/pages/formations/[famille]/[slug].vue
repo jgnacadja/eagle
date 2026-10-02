@@ -38,9 +38,18 @@
               <!-- CTA desktop -->
               <div class="mt-control-sm hidden flex-wrap items-center gap-md lg:flex">
                 <Button as-child variant="accent" size="pill">
-                  <NuxtLink :to="demandeTo">{{
-                    hasSessions ? 'Demander cette formation' : 'Demander une session'
-                  }}</NuxtLink>
+                  <NuxtLink
+                    :to="demandeTo"
+                    @click="
+                      onCtaClick(
+                        'hero',
+                        hasSessions ? 'Demander cette formation' : 'Demander une session'
+                      )
+                    "
+                    >{{
+                      hasSessions ? 'Demander cette formation' : 'Demander une session'
+                    }}</NuxtLink
+                  >
                 </Button>
                 <Button v-if="hasSessions" as-child variant="outline" size="pill">
                   <NuxtLink href="#sessionsList"> Voir les sessions </NuxtLink>
@@ -56,6 +65,7 @@
                     :to="course.generatedProgramUrl"
                     target="_blank"
                     rel="noopener noreferrer"
+                    @click="onDownloadProgram"
                   >
                     <IconDownload :size="16" class="inline" />
                     Programme (PDF)
@@ -463,7 +473,12 @@
                 formulaire conserve la formation et le besoin — le centre n'est pas imposé.
               </p>
               <Button as-child variant="paper" size="pill" class="mt-md w-full">
-                <NuxtLink :to="demandeIntraTo">
+                <NuxtLink
+                  :to="demandeIntraTo"
+                  @click="
+                    onCtaClick('sidebar_intra', 'Organiser cette formation dans mon entreprise')
+                  "
+                >
                   Organiser cette formation dans mon entreprise
                 </NuxtLink>
               </Button>
@@ -477,7 +492,12 @@
               size="control"
               class="w-full gap-sm"
             >
-              <NuxtLink :to="course.generatedProgramUrl" target="_blank" rel="noopener noreferrer">
+              <NuxtLink
+                :to="course.generatedProgramUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                @click="onDownloadProgram"
+              >
                 <IconDownload :size="16" />
                 Télécharger le programme détaillé (PDF)
               </NuxtLink>
@@ -544,7 +564,11 @@
             <p class="text-small text-ink-muted">Demander un devis ou une session</p>
           </div>
           <Button as-child variant="accent" size="pill" class="shrink-0">
-            <NuxtLink :to="demandeTo">Demander cette formation</NuxtLink>
+            <NuxtLink
+              :to="demandeTo"
+              @click="onCtaClick('sticky_mobile', 'Demander cette formation')"
+              >Demander cette formation</NuxtLink
+            >
           </Button>
         </div>
       </div>
@@ -609,6 +633,7 @@ import { sessionSeatType } from '~/utils/placesLabel'
 import { revealStagger } from '~/utils/reveal'
 import { availabilityStatus } from '~/composables/useCentres'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
+import { useDataLayer } from '~/composables/useDataLayer'
 
 interface ProgrammeModule {
   title: string
@@ -1162,6 +1187,45 @@ function formatPrice(value: number): string {
     currency: 'EUR',
     maximumFractionDigits: 0
   }).format(value)
+}
+
+const { pushEvent } = useDataLayer()
+
+onMounted(() => {
+  if (course.value) {
+    pushEvent({
+      event: 'view_formation_detail',
+      formation_id: course.value.slug,
+      formation_name: course.value.title,
+      formation_family: familyName.value,
+      formation_duration: durationLabel.value || undefined,
+      formation_modality: modalitiesTag.value || undefined,
+      formation_certification: course.value.certification || undefined,
+      formation_provider: course.value.certifierName || undefined,
+      page_path: typeof window !== 'undefined' ? window.location.pathname : '',
+      page_title: course.value.title
+    })
+  }
+})
+
+function onDownloadProgram() {
+  if (!course.value) return
+  pushEvent({
+    event: 'click_download_program',
+    formation_id: course.value.slug,
+    formation_name: course.value.title,
+    formation_family: familyName.value
+  })
+}
+
+function onCtaClick(location: string, label: string) {
+  pushEvent({
+    event: 'click_cta_confier_formation',
+    formation_id: course.value?.slug,
+    cta_location: location,
+    cta_label: label,
+    page_path: typeof window !== 'undefined' ? window.location.pathname : ''
+  })
 }
 </script>
 

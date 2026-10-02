@@ -40,8 +40,8 @@
           :need-summary="needSummary"
           :headcount="slots.headcount"
           :location="slots.location"
-          @send="send"
-          @edit="editAndSend"
+          @send="onSend"
+          @edit="onEditAndSend"
           @stop="stop"
           @retry="retry"
           @reset="onReset"
@@ -57,6 +57,7 @@ import { nextTick, ref, watch } from 'vue'
 import { Motion } from 'motion-v'
 import { useAssistant, type AssistantEntry } from '~/composables/useAssistant'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
+import { useDataLayer } from '~/composables/useDataLayer'
 import AssistantConversation from '~/components/Assistant/Conversation.vue'
 
 const { isOpen, context, pendingMessage, open, close } = useAssistantLauncher()
@@ -75,6 +76,33 @@ const {
   reset,
   stop
 } = useAssistant(context)
+
+const { pushEvent } = useDataLayer()
+const conversationId = ref('chat_' + Date.now())
+const chatStartTime = ref<number | null>(null)
+const userMessagesCount = ref(0)
+
+function onSend(message: string) {
+  userMessagesCount.value++
+  pushEvent({
+    event: 'chatbot_message_sent',
+    conversation_id: conversationId.value,
+    message_index: userMessagesCount.value,
+    page_path: typeof window !== 'undefined' ? window.location.pathname : ''
+  })
+  send(message)
+}
+
+function onEditAndSend(message: string, index: number) {
+  userMessagesCount.value++
+  pushEvent({
+    event: 'chatbot_message_sent',
+    conversation_id: conversationId.value,
+    message_index: userMessagesCount.value,
+    page_path: typeof window !== 'undefined' ? window.location.pathname : ''
+  })
+  editAndSend(message, index)
+}
 
 const GREETING: AssistantEntry = {
   role: 'assistant',
@@ -105,11 +133,32 @@ watch(
   (open) => {
     if (typeof document === 'undefined') return // SSR
     if (open) {
+      chatStartTime.value = Date.now()
+      pushEvent({
+        event: 'chatbot_open',
+        page_path: typeof window !== 'undefined' ? window.location.pathname : '',
+        trigger_type: pendingMessage.value ? 'auto' : 'manuel',
+        conversation_id: conversationId.value
+      })
       previousFocus = document.activeElement
       nextTick(() => {
         if (panelEl.value && !panelEl.value.open) panelEl.value.showModal?.()
       })
     } else {
+      if (chatStartTime.value) {
+        const duration = Math.round((Date.now() - chatStartTime.value) / 1000)
+        const hasResults = entries.value.some(
+          (e) => e.reply?.kind === 'recommendations' || e.reply?.kind === 'course_card'
+        )
+        pushEvent({
+          event: 'chatbot_conversation_end',
+          conversation_id: conversationId.value,
+          messages_count: entries.value.length,
+          resolved: hasResults,
+          duration_seconds: duration
+        })
+        chatStartTime.value = null
+      }
       nextTick(() => (previousFocus as HTMLElement | null)?.focus?.())
     }
   },
@@ -127,7 +176,7 @@ watch(
     const message = pendingMessage.value
     if (message) {
       pendingMessage.value = null
-      send(message)
+      onSend(message)
       return
     }
     // Pas de message en file : accueil, sauf si un envoi est déjà en cours
@@ -156,6 +205,8 @@ function onPanelClick(event: MouseEvent) {
 
 function onReset() {
   reset()
+  conversationId.value = 'chat_' + Date.now()
+  userMessagesCount.value = 0
   greet()
 }
 </script>

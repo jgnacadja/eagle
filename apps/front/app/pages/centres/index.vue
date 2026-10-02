@@ -286,6 +286,7 @@ import type { CentresQuery } from '~/composables/useCentres'
 import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
 import { availabilityStatus, useCentreSessionDates } from '~/composables/useCentres'
+import { useDataLayer } from '~/composables/useDataLayer'
 
 const route = useRoute()
 
@@ -553,7 +554,14 @@ function onResize() {
   measureListOverflow()
 }
 
+const { pushEvent } = useDataLayer()
+
 onMounted(() => {
+  pushEvent({
+    event: 'view_centres_list',
+    page_path: typeof window !== 'undefined' ? window.location.pathname : ''
+  })
+
   loadMoreObserver = new IntersectionObserver(
     (entries) => {
       if (entries.some((entry) => entry.isIntersecting)) loadMoreCenters()
@@ -567,6 +575,17 @@ onMounted(() => {
   // dialog de consentement s'ouvre une fois le badge monté — le watch sur
   // la query, non immédiat, ne couvre que les changements ultérieurs.
   if (route.query.geo === '1') geoNearMe.value?.activate()
+})
+
+watch(selectedDept, (dept) => {
+  if (dept && dept !== 'all') {
+    pushEvent({
+      event: 'filter_centres_department',
+      department_code: dept,
+      department_name: dept,
+      results_count: filteredCenters.value.length
+    })
+  }
 })
 
 watch(sentinelEl, (el, prev) => {
@@ -602,6 +621,19 @@ function selectCenter(id: string) {
     activeCenterId.value = null
     return
   }
+
+  const center = filteredCenters.value.find((c) => c.id === id)
+  if (center) {
+    pushEvent({
+      event: 'select_centre_card',
+      center_id: center.id,
+      center_name: center.name,
+      center_city: center.address?.split(',')[2]?.trim() || undefined,
+      center_department: center.address?.split(',')[3]?.trim() || undefined,
+      list_name: 'centres_liste'
+    })
+  }
+
   hasUserSelection.value = true
   activeCenterId.value = id === activeCenterId.value ? null : id
   const index = filteredCenters.value.findIndex((c) => c.id === id)
@@ -617,6 +649,13 @@ function selectCenter(id: string) {
 function onSearch(value: string) {
   // La recherche n'est appliquée qu'à la soumission (bouton ou touche Entrée).
   appliedSearch.value = value
+  if (value.trim()) {
+    pushEvent({
+      event: 'search_centres',
+      search_term: value.trim(),
+      results_count: filteredCenters.value.length
+    })
+  }
 }
 
 function resetFilters() {
@@ -628,9 +667,17 @@ function resetFilters() {
 
 function openMobileMap() {
   isMobileMapOpen.value = true
+  pushEvent({
+    event: 'toggle_map_view',
+    view_type: 'carte'
+  })
 }
 
 function closeMobileMap() {
   isMobileMapOpen.value = false
+  pushEvent({
+    event: 'toggle_map_view',
+    view_type: 'liste'
+  })
 }
 </script>

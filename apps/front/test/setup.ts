@@ -1,5 +1,108 @@
 import { config } from '@vue/test-utils'
-import { reactive, ref, type Component } from 'vue'
+import {
+  computed,
+  customRef,
+  defineAsyncComponent,
+  defineComponent,
+  getCurrentInstance,
+  h,
+  inject,
+  isProxy,
+  isReactive,
+  isReadonly,
+  isRef,
+  markRaw,
+  nextTick,
+  onActivated,
+  onBeforeMount,
+  onBeforeUnmount,
+  onBeforeUpdate,
+  onDeactivated,
+  onErrorCaptured,
+  onMounted,
+  onRenderTracked,
+  onRenderTriggered,
+  onServerPrefetch,
+  onUnmounted,
+  onUpdated,
+  provide,
+  reactive,
+  readonly,
+  ref,
+  shallowReactive,
+  shallowReadonly,
+  shallowRef,
+  toRaw,
+  toRef,
+  toRefs,
+  toValue,
+  triggerRef,
+  unref,
+  useAttrs,
+  useId,
+  useModel,
+  useSlots,
+  useTemplateRef,
+  watch,
+  watchEffect,
+  watchPostEffect,
+  watchSyncEffect,
+  type Component
+} from 'vue'
+
+const vueAutoImports: Record<string, unknown> = {
+  computed,
+  customRef,
+  defineAsyncComponent,
+  defineComponent,
+  getCurrentInstance,
+  h,
+  inject,
+  isProxy,
+  isReactive,
+  isReadonly,
+  isRef,
+  markRaw,
+  nextTick,
+  onActivated,
+  onBeforeMount,
+  onBeforeUnmount,
+  onBeforeUpdate,
+  onDeactivated,
+  onErrorCaptured,
+  onMounted,
+  onRenderTracked,
+  onRenderTriggered,
+  onServerPrefetch,
+  onUnmounted,
+  onUpdated,
+  provide,
+  reactive,
+  readonly,
+  ref,
+  shallowReactive,
+  shallowReadonly,
+  shallowRef,
+  toRaw,
+  toRef,
+  toRefs,
+  toValue,
+  triggerRef,
+  unref,
+  useAttrs,
+  useId,
+  useModel,
+  useSlots,
+  useTemplateRef,
+  watch,
+  watchEffect,
+  watchPostEffect,
+  watchSyncEffect
+}
+
+for (const [name, fn] of Object.entries(vueAutoImports)) {
+  vi.stubGlobal(name, fn)
+}
 
 function registerByName(modules: Record<string, unknown>) {
   for (const [path, component] of Object.entries(modules)) {
@@ -54,6 +157,7 @@ config.global.stubs = {
 // Auto-imports Nuxt absents sous Vitest : le header interne SSR n'a pas à
 // exister en environnement de test.
 vi.stubGlobal('internalSsrHeaders', () => undefined)
+vi.stubGlobal('defineNuxtPlugin', <T>(plugin: T): T => plugin)
 
 // useState (auto-import Nuxt) : store ref partagé par clé, nécessaire aux
 // composables d'état global (ex : useAssistantLauncher).

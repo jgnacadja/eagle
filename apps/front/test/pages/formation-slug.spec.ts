@@ -12,6 +12,8 @@ const family: FamilleFormation = {
   name: "CACES & conduite d'engins",
   status: 'published',
   subnav_title: "Parcourir par type d'engin",
+  audience_text: null,
+  validity_text: null,
   intro: null,
   icon: null,
   image: null,
@@ -286,12 +288,14 @@ vi.mock('~/composables/useDirectus', () => ({
   useDirectusClient: () => ({ request: directusRequest })
 }))
 
+type AsyncDataOptions = {
+  getCachedData?: (key: string, nuxtApp: unknown, ctx: { cause?: string }) => unknown
+}
+
 const defaultUseAsyncData = async (
   key: string,
   handler: () => Promise<unknown>,
-  options?: {
-    getCachedData?: (key: string, nuxtApp: unknown, ctx: { cause?: string }) => unknown
-  }
+  options?: AsyncDataOptions
 ) => {
   const nuxtApp = { isHydrating: true, payload: { data: {} }, static: { data: {} } }
   options?.getCachedData?.(key, nuxtApp, { cause: 'initial' })
@@ -417,7 +421,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     }
     vi.stubGlobal(
       'useAsyncData',
-      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+      async (key: string, handler: () => Promise<unknown>, options?: AsyncDataOptions) => {
         if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
           return { data: ref(richCourse), pending: ref(false), error: ref(null), refresh: vi.fn() }
         }
@@ -457,7 +461,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     const intraCourse: Course = { ...course, modalities: ['inter', 'intra'] }
     vi.stubGlobal(
       'useAsyncData',
-      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+      async (key: string, handler: () => Promise<unknown>, options?: AsyncDataOptions) => {
         if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
           return { data: ref(intraCourse), pending: ref(false), error: ref(null), refresh: vi.fn() }
         }
@@ -482,7 +486,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     }
     vi.stubGlobal(
       'useAsyncData',
-      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+      async (key: string, handler: () => Promise<unknown>, options?: AsyncDataOptions) => {
         if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
           return { data: ref(withImage), pending: ref(false), error: ref(null), refresh: vi.fn() }
         }
@@ -501,7 +505,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     const withoutFile: Course = { ...course, image: null, imageUrl: 'https://cdn.example/v.jpg' }
     vi.stubGlobal(
       'useAsyncData',
-      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+      async (key: string, handler: () => Promise<unknown>, options?: AsyncDataOptions) => {
         if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
           return { data: ref(withoutFile), pending: ref(false), error: ref(null), refresh: vi.fn() }
         }
@@ -518,7 +522,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     const emptyCourse: Course = { ...course, sessions: null }
     vi.stubGlobal(
       'useAsyncData',
-      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+      async (key: string, _handler?: () => Promise<unknown>, _options?: unknown) => {
         if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
           return { data: ref(emptyCourse), pending: ref(false), error: ref(null), refresh: vi.fn() }
         }
@@ -559,7 +563,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     }
     vi.stubGlobal(
       'useAsyncData',
-      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+      async (key: string, handler: () => Promise<unknown>, options?: AsyncDataOptions) => {
         if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
           return {
             data: ref(multiSessionCourse),
@@ -636,7 +640,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     }
     vi.stubGlobal(
       'useAsyncData',
-      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+      async (key: string, handler: () => Promise<unknown>, options?: AsyncDataOptions) => {
         if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
           return {
             data: ref(canonicalCourse),
@@ -797,7 +801,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     }
     vi.stubGlobal(
       'useAsyncData',
-      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+      async (key: string, handler: () => Promise<unknown>, options?: AsyncDataOptions) => {
         if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
           return {
             data: ref(manySessions),
@@ -926,7 +930,7 @@ describe('pages/formations/[famille]/[slug]', () => {
       validity: null,
       centerSlug: null,
       centerSlugs: [],
-      modalities: null,
+      modalities: null as unknown as string[],
       sessions: null,
       image: null,
       imageUrl: null,
@@ -941,7 +945,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     }
     vi.stubGlobal(
       'useAsyncData',
-      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+      async (key: string, handler: () => Promise<unknown>, options?: AsyncDataOptions) => {
         if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
           return { data: ref(minimal), pending: ref(false), error: ref(null), refresh: vi.fn() }
         }
@@ -986,7 +990,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     }
     vi.stubGlobal(
       'useAsyncData',
-      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+      async (key: string, handler: () => Promise<unknown>, options?: AsyncDataOptions) => {
         if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
           return { data: ref(withModules), pending: ref(false), error: ref(null), refresh: vi.fn() }
         }
@@ -1050,7 +1054,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     }
     vi.stubGlobal(
       'useAsyncData',
-      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+      async (key: string, handler: () => Promise<unknown>, options?: AsyncDataOptions) => {
         if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
           return {
             data: ref(withSessions),
@@ -1084,7 +1088,7 @@ describe('pages/formations/[famille]/[slug]', () => {
       cpfCode: null,
       certifierName: null,
       validity: null,
-      modalities: null,
+      modalities: null as unknown as string[],
       evaluation: null,
       prerequisites: null,
       blocks: [
@@ -1156,7 +1160,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     }
     vi.stubGlobal(
       'useAsyncData',
-      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+      async (key: string, handler: () => Promise<unknown>, options?: AsyncDataOptions) => {
         if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
           return { data: ref(variant), pending: ref(false), error: ref(null), refresh: vi.fn() }
         }
@@ -1181,7 +1185,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     }
     vi.stubGlobal(
       'useAsyncData',
-      async (key: string, handler?: () => Promise<unknown>, options?: unknown) => {
+      async (key: string, handler: () => Promise<unknown>, options?: AsyncDataOptions) => {
         if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
           return { data: ref(variant), pending: ref(false), error: ref(null), refresh: vi.fn() }
         }
@@ -1197,7 +1201,7 @@ describe('pages/formations/[famille]/[slug]', () => {
 
   it('retombe sur une liste vide quand le catalogue similaire renvoie null', async () => {
     catalogMocks.useCatalog.mockImplementationOnce(() => ({
-      data: ref(null),
+      data: ref(null) as never,
       pending: ref(false),
       error: ref(null),
       refresh: vi.fn()

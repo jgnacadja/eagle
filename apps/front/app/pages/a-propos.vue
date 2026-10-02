@@ -544,7 +544,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import type { Centre } from '@learnup/types'
 import IconBadgeCheck from '~/components/icons/IconBadgeCheck.vue'
 import IconClock from '~/components/icons/IconClock.vue'

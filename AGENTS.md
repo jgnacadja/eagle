@@ -11,8 +11,8 @@ Ces fichiers (ce fichier, `apps/*/AGENTS.md`, `.agents/`, `.vscode/`, `.mcp.json
 
 - Après **toute** modification de ces fichiers : `pnpm agents:push` — autorisé sans demande préalable, la branche `agents` n'est pas livrée (dérogation à la règle « ne jamais pousser sans permission »).
 - En cas de doute ou en début de session : `pnpm agents:status` (exit 1 = drift à corriger par `pull` ou `push`).
-- `pnpm agents` restaure les fichiers **et** le hook `.husky/pre-push` qui synchronise automatiquement `origin/agents` à chaque `git push` (inactif si `.agents/` absent).
-- Le script (`scripts/agents.mjs` + entrées npm) se cherry-pick depuis `chore/869f9qxkf-agents-tooling` — commit strictement local, jamais poussé sur une branche livrée.
+- `pnpm agents` (ou `node scripts/agents.mjs pull`) restaure les fichiers **et** le hook `.husky/pre-push` qui synchronise automatiquement `origin/agents` à chaque `git push` (inactif si `.agents/` absent).
+- Le script (`scripts/agents.mjs` + entrées npm) se récupère via cherry-pick de `chore/869f9qxkf-agents-tooling` — commit strictement local, jamais poussé sur une branche livrée.
 
 ## Consignes générales
 

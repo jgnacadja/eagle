@@ -21,10 +21,10 @@ pnpm install
 pnpm dev
 ```
 
-| App               | URL                   | Rôle                              |
-| ------------------ | --------------------- | ---------------------------------- |
-| `apps/api`         | http://localhost:3001 | NestJS — squelette (`/health`, `/docs`) |
-| `apps/front`       | http://localhost:3000 | Nuxt 4 SSR                         |
+| App          | URL                   | Rôle                                    |
+| ------------ | --------------------- | --------------------------------------- |
+| `apps/api`   | http://localhost:3001 | NestJS — squelette (`/health`, `/docs`) |
+| `apps/front` | http://localhost:3000 | Nuxt 4 SSR                              |
 
 `pnpm dev` construit d'abord les packages partagés (`@learnup/ui`,
 `@learnup/types`) avant de démarrer les apps — aucune étape manuelle
@@ -39,14 +39,14 @@ supplémentaire n'est nécessaire.
 > pnpm seed
 > ```
 
-| Service           | URL                            | Rôle                                  |
-| ------------------ | ------------------------------- | -------------------------------------- |
-| `postgres`         | —                                | PostgreSQL 16, healthcheck              |
-| `redis`            | —                                | Cache Directus                          |
-| `minio`            | http://localhost:9001 (console) | Stockage média S3-compatible            |
-| `directus`         | http://localhost:8055           | Back-office (admin bootstrap via `.env`) |
-| `api`              | http://localhost:3001           | NestJS                                  |
-| `front`            | http://localhost:3000           | Nuxt 4                                  |
+| Service    | URL                             | Rôle                                     |
+| ---------- | ------------------------------- | ---------------------------------------- |
+| `postgres` | —                               | PostgreSQL 16, healthcheck               |
+| `redis`    | —                               | Cache Directus                           |
+| `minio`    | http://localhost:9001 (console) | Stockage média S3-compatible             |
+| `directus` | http://localhost:8055           | Back-office (admin bootstrap via `.env`) |
+| `api`      | http://localhost:3001           | NestJS                                   |
+| `front`    | http://localhost:3000           | Nuxt 4                                   |
 
 `docker compose up` démarre toute la stack en une seule commande — chaque
 service attend que ses dépendances soient healthy (`depends_on` +
@@ -89,15 +89,15 @@ une fois la direction artistique validée par LEARN UP PRIME.
 
 ## Scripts (racine, via Turborepo)
 
-| Script                | Effet                                     |
-| ---------------------- | ------------------------------------------ |
-| `pnpm dev`             | Démarre api + front en watch (build des packages d'abord) |
-| `pnpm build`           | Build tous les apps/packages                |
-| `pnpm lint`            | ESLint sur tout le monorepo                 |
-| `pnpm format`          | Prettier `--write` sur tout le repo         |
-| `pnpm test`            | Tests unitaires Vitest                      |
-| `pnpm test:coverage`   | Tests unitaires + couverture v8             |
-| `pnpm test:e2e`        | Tests Playwright E2E (front)                |
+| Script               | Effet                                                     |
+| -------------------- | --------------------------------------------------------- |
+| `pnpm dev`           | Démarre api + front en watch (build des packages d'abord) |
+| `pnpm build`         | Build tous les apps/packages                              |
+| `pnpm lint`          | ESLint sur tout le monorepo                               |
+| `pnpm format`        | Prettier `--write` sur tout le repo                       |
+| `pnpm test`          | Tests unitaires Vitest                                    |
+| `pnpm test:coverage` | Tests unitaires + couverture v8                           |
+| `pnpm test:e2e`      | Tests Playwright E2E (front)                              |
 
 ---
 

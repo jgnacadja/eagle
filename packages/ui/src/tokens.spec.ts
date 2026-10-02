@@ -1,7 +1,16 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { breakpoints, colors, layout, radii, shadows, spacing, typography } from './tokens/index.js'
+import {
+  breakpoints,
+  colors,
+  layout,
+  motion,
+  radii,
+  shadows,
+  spacing,
+  typography
+} from './tokens/index.js'
 
 /**
  * tokens.css mirrors the TS tokens by hand (no build-time generator yet).
@@ -52,6 +61,7 @@ const expected: Record<string, string> = {
   ...flatten('layout', layout),
   ...flatten('radius', radii),
   ...flatten('shadow', shadows),
+  ...flatten('motion', motion),
   ...flatten('breakpoint', breakpoints)
 }
 

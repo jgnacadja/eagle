@@ -10,6 +10,9 @@ build
 .nuxtrc
 .turbo
 
+# Generated code
+apps/api/prisma/generated
+
 # Tests / coverage
 coverage
 playwright-report
@@ -31,11 +34,34 @@ lerna-debug.log*
 .env.production
 .env.local
 
+# docker compose local overrides (ports, env spécifiques machine)
+docker-compose.override.yml
+
 # temp directory
 .temp
 .tmp
 /tmp
 
+# Directus data backups (contiennent des données réelles — jamais versionnés)
+/backups
+
 # OS / editor
 .DS_Store
 .scannerwork
+
+# Vercel project link (CLI)
+.vercel
+
+# Outillage agents/IA interne — versionné sur la branche orpheline `agents`
+# (restauration locale : cherry-pick `chore/869f9qxkf-agents-tooling` puis `pnpm agents`)
+/AGENTS.md
+/CLAUDE.md
+/.mcp.json
+/eagle.code-workspace
+/.agents/
+/.vscode/
+/apps/api/AGENTS.md
+/apps/api/skills-lock.json
+/apps/front/AGENTS.md
+/.husky/pre-push
+/scripts/agents.mjs

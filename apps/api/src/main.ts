@@ -15,7 +15,7 @@ async function bootstrap(): Promise<void> {
 
   configureApp(app)
 
-  const port = parseInt(process.env.API_PORT ?? '3001', 10)
+  const port = Number.parseInt(process.env.API_PORT ?? '3001', 10)
   await app.listen(port, '0.0.0.0')
 }
 

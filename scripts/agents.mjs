@@ -134,13 +134,10 @@ const status = (preferLocal) => {
     process.exit(1)
   }
   const remote = new Map(
-    git(['ls-tree', '-r', ref, '--format', '%(objectname) %(path)'])
+    git(['ls-tree', '-r', '-l', ref])
       .split('\n')
       .filter(Boolean)
-      .map((line) => {
-        const sep = line.indexOf(' ')
-        return [line.slice(sep + 1), line.slice(0, sep)]
-      })
+      .map((line) => [line.slice(line.indexOf('\t') + 1), line.split(' ')[2]])
   )
   let drift = 0
   for (const f of expandFiles()) {

@@ -13,6 +13,7 @@ Ces fichiers (ce fichier, `apps/*/AGENTS.md`, `.agents/`, `.vscode/`, `.mcp.json
 - En cas de doute ou en début de session : `pnpm agents:status` (exit 1 = drift à corriger par `pull` ou `push`).
 - `pnpm agents` (ou `node scripts/agents.mjs pull`) restaure les fichiers **et** le hook `.husky/pre-push` qui synchronise automatiquement `origin/agents` à chaque `git push` (inactif si `.agents/` absent ou si les fichiers sont encore trackés sur la branche courante).
 - Le script (`scripts/agents.mjs` + entrées npm) se récupère via cherry-pick de `chore/869f9qxkf-agents-tooling` — commit strictement local, jamais poussé sur une branche livrée.
+- Checkout vers une branche où ces fichiers sont encore trackés (pré-merge) : git refusera (« untracked would be overwritten ») — supprimer les copies locales ou `git checkout -f`, puis relancer `pnpm agents` au retour.
 
 ## Consignes générales
 

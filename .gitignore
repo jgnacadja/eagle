@@ -52,8 +52,8 @@ docker-compose.override.yml
 # Vercel project link (CLI)
 .vercel
 
-# Outillage agents/IA interne — versionné sur la branche orpheline `agents`,
-# restauré localement via `pnpm agents` (voir scripts/agents.mjs)
+# Outillage agents/IA interne — versionné sur la branche orpheline `agents`
+# (restauration locale : cherry-pick `chore/869f9qxkf-agents-tooling` puis `pnpm agents`)
 /AGENTS.md
 /CLAUDE.md
 /.mcp.json

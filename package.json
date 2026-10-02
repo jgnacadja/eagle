@@ -23,7 +23,10 @@
     "directus:snapshot": "docker compose exec -T directus npx directus schema snapshot /directus/uploads/snapshot.yaml --yes && docker compose cp directus:/directus/uploads/snapshot.yaml directus/schema/snapshot.yaml",
     "seed": "node --env-file=.env directus/seed/seed.mjs",
     "directus:backup": "node --env-file=.env directus/backup/backup.mjs",
-    "directus:restore": "node --env-file=.env directus/backup/restore.mjs"
+    "directus:restore": "node --env-file=.env directus/backup/restore.mjs",
+    "agents": "node scripts/agents.mjs pull",
+    "agents:push": "node scripts/agents.mjs push",
+    "agents:status": "node scripts/agents.mjs status"
   },
   "lint-staged": {
     "*.{ts,vue,js,mjs,json,md,yml,yaml}": "prettier --write",

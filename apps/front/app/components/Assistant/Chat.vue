@@ -46,6 +46,8 @@
           @retry="retry"
           @reset="onReset"
           @close="close"
+          @suggested-action-click="onSuggestedActionClick"
+          @handoff="onHandoff"
         />
       </dialog>
     </Transition>
@@ -102,6 +104,24 @@ function onEditAndSend(message: string, index: number) {
     page_path: typeof window !== 'undefined' ? window.location.pathname : ''
   })
   editAndSend(message, index)
+}
+
+function onSuggestedActionClick(payload: { action_type: string; action_label: string }) {
+  pushEvent({
+    event: 'chatbot_suggested_action_click',
+    conversation_id: conversationId.value,
+    action_type: payload.action_type,
+    action_label: payload.action_label
+  })
+}
+
+function onHandoff(payload?: { reason?: string }) {
+  pushEvent({
+    event: 'chatbot_handoff_to_advisor',
+    conversation_id: conversationId.value,
+    reason: payload?.reason,
+    messages_count: userMessagesCount.value
+  })
 }
 
 const GREETING: AssistantEntry = {

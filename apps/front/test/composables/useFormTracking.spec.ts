@@ -107,4 +107,26 @@ describe('useFormTracking', () => {
     })
     vi.useRealTimers()
   })
+
+  it('supports reactive/getter options for formId and formName', () => {
+    let currentId = 'demande_franchise' as const
+    let currentName = 'Ouvrir un centre'
+
+    const { trackFormSubmit } = useFormTracking({
+      formId: () => currentId,
+      formName: () => currentName
+    })
+
+    currentId = 'demande_organisme'
+    currentName = 'Référencer mon organisme'
+
+    trackFormSubmit('demande_organisme')
+
+    const submitEvent = window.dataLayer?.find((e) => e.event === 'form_submit')
+    expect(submitEvent).toMatchObject({
+      event: 'form_submit',
+      form_id: 'demande_organisme',
+      form_name: 'Référencer mon organisme'
+    })
+  })
 })

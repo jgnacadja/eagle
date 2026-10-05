@@ -19,16 +19,18 @@ export interface ViewRejoindreReseauEvent extends BasePageAttributes {
   event: 'view_rejoindre_reseau_page'
 }
 
+export type NetworkProfileType = 'franchise' | 'organisme' | 'formateur'
+
 export interface SelectNetworkProfileEvent {
   event: 'select_network_profile'
-  profile_type: 'franchise' | 'organisme' | 'formateur' | string
+  profile_type: NetworkProfileType
   cta_location: string
   page_path: string
 }
 
 export interface SubmitNetworkInterestEvent {
   event: 'submit_network_interest'
-  profile_type: 'franchise' | 'organisme' | 'formateur' | string
+  profile_type: NetworkProfileType
   form_id: string
   region?: string
 }
@@ -52,7 +54,7 @@ export interface FilterFormationsEvent {
   event: 'filter_formations'
   filter_type: string
   filter_value: string
-  filter_action: 'ajout' | 'retrait' | string
+  filter_action: 'ajout' | 'retrait'
   results_count: number
 }
 
@@ -64,6 +66,18 @@ export interface SortFormationsEvent {
 
 export interface SelectFormationCardEvent {
   event: 'select_formation_card'
+  formation_id: string
+  formation_name: string
+  formation_family: string
+  list_name: string
+  position?: number
+}
+
+export interface SelectFormationCentreEvent {
+  event: 'select_formation_centre'
+  center_id: string
+  center_name: string
+  center_city?: string
   formation_id: string
   formation_name: string
   formation_family: string
@@ -102,7 +116,7 @@ export interface ClickDownloadProgramEvent {
 export interface ChatbotOpenEvent {
   event: 'chatbot_open'
   page_path: string
-  trigger_type: 'manuel' | 'auto' | string
+  trigger_type: 'manuel' | 'auto'
   conversation_id?: string
 }
 
@@ -177,7 +191,7 @@ export interface ViewCentreDetailEvent {
 
 export interface ToggleMapViewEvent {
   event: 'toggle_map_view'
-  view_type: 'liste' | 'carte' | string
+  view_type: 'liste' | 'carte'
 }
 
 export interface ClickCtaDemandeFormationFromCentreEvent {
@@ -185,6 +199,12 @@ export interface ClickCtaDemandeFormationFromCentreEvent {
   center_id: string
   cta_location: string
   page_path: string
+}
+
+export interface ClickDownloadQualiopiEvent {
+  event: 'click_download_qualiopi'
+  center_id: string
+  center_name: string
 }
 
 // ── 5. Événements Actualités ────────────────────────────────────────────────
@@ -228,7 +248,7 @@ export interface ShareArticleEvent {
 // ── 6. Événements Formulaires ───────────────────────────────────────────────
 
 export type FormId =
-  'demande_formation' | 'demande_franchise' | 'demande_organisme' | 'demande_formateur' | string
+  'demande_formation' | 'demande_franchise' | 'demande_organisme' | 'demande_formateur'
 
 export interface FormViewEvent {
   event: 'form_view'
@@ -295,6 +315,7 @@ export type TrackingEvent =
   | FilterFormationsEvent
   | SortFormationsEvent
   | SelectFormationCardEvent
+  | SelectFormationCentreEvent
   | ViewFormationDetailEvent
   | ClickCtaConfierFormationEvent
   | ClickDownloadProgramEvent
@@ -310,6 +331,7 @@ export type TrackingEvent =
   | ViewCentreDetailEvent
   | ToggleMapViewEvent
   | ClickCtaDemandeFormationFromCentreEvent
+  | ClickDownloadQualiopiEvent
   | ViewBlogListEvent
   | FilterBlogCategoryEvent
   | SelectArticleCardEvent

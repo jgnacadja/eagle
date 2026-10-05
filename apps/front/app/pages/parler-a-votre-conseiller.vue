@@ -377,25 +377,6 @@ function makeReference(): string {
   return `LU-${now.getFullYear()}-${pad(now.getMonth() + 1)}${pad(now.getDate())}-${suffix}`
 }
 
-const onSubmit = handleSubmit(async (v) => {
-  const ref = makeReference()
-  const ok = await submitLead('conseiller', {
-    besoin: besoin.value,
-    nom: v.nom,
-    email: v.email,
-    telephone: v.telephone,
-    siret: v.siret || undefined,
-    message: [v.message, `Référence : ${ref}`].filter(Boolean).join('\n\n'),
-    consentement: v.consentement,
-    // Pas de query : elle peut porter du texte libre et dépasser la borne API.
-    pageUri: window.location.origin + window.location.pathname,
-    pageName: 'Parler à votre conseiller'
-  })
-  if (ok) {
-    reference.value = ref
-    submitted.value = true
-  }
-
 const { trackFormView, trackFieldInteraction, trackFormError, trackFormSubmit } = useFormTracking({
   formId: 'demande_formation',
   formName: 'Parler à votre conseiller',
@@ -426,7 +407,8 @@ const onSubmit = handleSubmit(
       siret: v.siret || undefined,
       message: [v.message, `Référence : ${ref}`].filter(Boolean).join('\n\n'),
       consentement: v.consentement,
-      pageUri: window.location.href,
+      // Pas de query : elle peut porter du texte libre et dépasser la borne API.
+      pageUri: window.location.origin + window.location.pathname,
       pageName: 'Parler à votre conseiller'
     })
     if (ok) {

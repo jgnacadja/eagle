@@ -941,14 +941,6 @@ onMounted(() => {
 })
 
 function removeFilter(filter: ActiveFilter) {
-  pushEvent({
-    event: 'filter_formations',
-    filter_type: filter.group,
-    filter_value: filter.label,
-    filter_action: 'retrait',
-    results_count: catalog.data.value?.total ?? 0
-  })
-
   if (filter.group === 'families') {
     selectedFamilies.value = selectedFamilies.value.filter((key) => key !== filter.key)
   } else if (filter.group === 'modalities') {
@@ -964,19 +956,58 @@ function removeFilter(filter: ActiveFilter) {
   }
 }
 
-watch(activeFilters, (current, prev) => {
+interface PendingFilterEvent {
+  type: string
+  value: string
+  action: 'ajout' | 'retrait'
+}
+
+const pendingFilterEvents = ref<PendingFilterEvent[]>([])
+
+function emitPendingFilterEvents(count: number) {
+  if (pendingFilterEvents.value.length === 0) return
+  const events = [...pendingFilterEvents.value]
+  pendingFilterEvents.value = []
+  for (const item of events) {
+    pushEvent({
+      event: 'filter_formations',
+      filter_type: item.type,
+      filter_value: item.value,
+      filter_action: item.action,
+      results_count: count
+    })
+  }
+}
+
+watch(activeFilters, async (current, prev) => {
   if (!prev) return
-  if (current.length > prev.length) {
-    const added = current.find((c) => !prev.some((p) => p.group === c.group && p.key === c.key))
-    if (added) {
-      pushEvent({
-        event: 'filter_formations',
-        filter_type: added.group,
-        filter_value: added.label,
-        filter_action: 'ajout',
-        results_count: catalog.data.value?.total ?? 0
-      })
-    }
+  const added = current.filter((c) => !prev.some((p) => p.group === c.group && p.key === c.key))
+  const removed = prev.filter((p) => !current.some((c) => c.group === p.group && c.key === p.key))
+
+  for (const a of added) {
+    pendingFilterEvents.value.push({
+      type: a.group,
+      value: a.label,
+      action: 'ajout'
+    })
+  }
+  for (const r of removed) {
+    pendingFilterEvents.value.push({
+      type: r.group,
+      value: r.label,
+      action: 'retrait'
+    })
+  }
+
+  await nextTick()
+  if (!catalog.pending.value) {
+    emitPendingFilterEvents(catalog.data.value?.total ?? 0)
+  }
+})
+
+watch([() => catalog.data.value?.total, () => catalog.pending.value], ([total, pending]) => {
+  if (!pending && pendingFilterEvents.value.length > 0) {
+    emitPendingFilterEvents(total ?? 0)
   }
 })
 

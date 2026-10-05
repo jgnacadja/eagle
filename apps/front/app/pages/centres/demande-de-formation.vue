@@ -1019,36 +1019,6 @@ const confirmationBackLabel = computed(() => {
   return "Retour à l'accueil"
 })
 
-// `v` = valeurs parsées zod (siret normalisé, salaries coercé) — pas le brut.
-const onSubmit = handleSubmit(async (v) => {
-  const ok = await submitLead('demande', {
-    nom: v.nom,
-    email: v.email,
-    telephone: v.telephone,
-    telephonePro: v.telephonePro || undefined,
-    raisonSociale: v.raisonSociale,
-    siret: v.siret,
-    fonction: v.fonction,
-    salaries: v.salaries,
-    lieu: v.lieu || undefined,
-    echeance: v.echeance,
-    // D1 : le besoin décrit dans la recherche assistée est joint à la demande.
-    precisions: joinPrecisions(besoinParam.value, v.precisions),
-    // Libellés résolus — HubSpot reçoit du texte lisible, pas les slugs.
-    centre: centreName.value || demandeCentreSlug.value || undefined,
-    formation: formationName.value || undefined,
-    session: sessionName.value || undefined,
-    sujet: sujetSlug.value || undefined,
-    consentement: true,
-    // pageUri sans query : elle porte du texte libre (?besoin=…) qui n'apporte
-    // rien à l'attribution HubSpot et pouvait dépasser MaxLength(2000) → 400.
-    pageUri: window.location.origin + window.location.pathname,
-    pageName: 'Demande de formation'
-  })
-  if (ok) {
-    submitted.value = true
-    window.sessionStorage.removeItem(draftKey.value)
-  }
 const { trackFormView, trackFieldInteraction, trackFormError, trackFormSubmit } = useFormTracking({
   formId: 'demande_formation',
   formName: 'Demande de formation',
@@ -1082,23 +1052,22 @@ const onSubmit = handleSubmit(
       lieu: v.lieu || undefined,
       echeance: v.echeance,
       // D1 : le besoin décrit dans la recherche assistée est joint à la demande.
-      precisions:
-        [besoinParam.value ? `Besoin exprimé : ${besoinParam.value}` : null, v.precisions]
-          .filter(Boolean)
-          .join('\n\n') || undefined,
+      precisions: joinPrecisions(besoinParam.value, v.precisions),
       // Libellés résolus — HubSpot reçoit du texte lisible, pas les slugs.
       centre: centreName.value || demandeCentreSlug.value || undefined,
       formation: formationName.value || undefined,
       session: sessionName.value || undefined,
       sujet: sujetSlug.value || undefined,
       consentement: true,
-      pageUri: window.location.href,
+      // pageUri sans query : elle porte du texte libre (?besoin=…) qui n'apporte
+      // rien à l'attribution HubSpot et pouvait dépasser MaxLength(2000) → 400.
+      pageUri: window.location.origin + window.location.pathname,
       pageName: 'Demande de formation'
     })
     if (ok) {
       submitted.value = true
       trackFormSubmit('demande_formation')
-      window.sessionStorage.removeItem(DRAFT_KEY)
+      window.sessionStorage.removeItem(draftKey.value)
     }
   },
   ({ errors }) => {

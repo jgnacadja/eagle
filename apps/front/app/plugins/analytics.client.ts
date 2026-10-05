@@ -6,6 +6,10 @@ export default defineNuxtPlugin((nuxtApp) => {
   // 1. Initialiser le dataLayer avant tout le reste (exigence stricte du plan)
   window.dataLayer = window.dataLayer || []
 
+  // Note CMP / Consent Mode : en l'absence de solution CMP dédiée dans le repo,
+  // la conformité cookies / Consent Mode v2 est orchestrée côté conteneur GTM
+  // via les déclencheurs de consentement (Consent Initialization / Tags Consent Settings).
+
   const config = useRuntimeConfig()
   const gtmId = config.public?.gtmId as string | undefined
 

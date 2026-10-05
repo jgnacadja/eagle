@@ -3,15 +3,15 @@ import { useDataLayer } from '~/composables/useDataLayer'
 import type { FormId } from '~/types/analytics'
 
 export interface FormTrackingOptions {
-  formId: FormId
-  formName: string
+  formId: FormId | (() => FormId)
+  formName: string | (() => string)
   totalSteps?: number
   totalFields?: number
 }
 
 /**
  * Composable pour orchestrer le cycle de vie de tracking d'un formulaire :
- * - form_view (à l'affichage de chaque étape)
+ * - form_view (à l'affichage de chaque étape via trackFormView)
  * - form_start (au premier focus / interaction)
  * - form_error (en cas d'erreur de validation)
  * - form_submit (lors de la soumission réussie)
@@ -28,6 +28,12 @@ export function useFormTracking(options: FormTrackingOptions) {
   const lastFieldFilled = ref<string | undefined>()
   const completedFields = ref<Set<string>>(new Set())
 
+  const getFormId = (): FormId =>
+    typeof options.formId === 'function' ? options.formId() : options.formId
+
+  const getFormName = (): string =>
+    typeof options.formName === 'function' ? options.formName() : options.formName
+
   /**
    * Événement form_view : appelé lors de l'affichage du formulaire ou d'une étape
    */
@@ -37,8 +43,8 @@ export function useFormTracking(options: FormTrackingOptions) {
 
     pushEvent({
       event: 'form_view',
-      form_id: options.formId,
-      form_name: options.formName,
+      form_id: getFormId(),
+      form_name: getFormName(),
       form_step: step,
       form_step_name: stepName,
       page_path: typeof window !== 'undefined' ? window.location.pathname : ''
@@ -58,8 +64,8 @@ export function useFormTracking(options: FormTrackingOptions) {
 
     pushEvent({
       event: 'form_start',
-      form_id: options.formId,
-      form_name: options.formName,
+      form_id: getFormId(),
+      form_name: getFormName(),
       form_step: step,
       field_name: fieldName
     })
@@ -83,8 +89,8 @@ export function useFormTracking(options: FormTrackingOptions) {
   function trackFormError(fieldName: string, errorMessage: string, errorType = 'validation') {
     pushEvent({
       event: 'form_error',
-      form_id: options.formId,
-      form_name: options.formName,
+      form_id: getFormId(),
+      form_name: getFormName(),
       form_step: currentStep.value,
       field_name: fieldName,
       error_type: errorType,
@@ -101,8 +107,8 @@ export function useFormTracking(options: FormTrackingOptions) {
 
     pushEvent({
       event: 'form_submit',
-      form_id: options.formId,
-      form_name: options.formName,
+      form_id: getFormId(),
+      form_name: getFormName(),
       form_type: formType,
       steps_count: options.totalSteps,
       completion_time_seconds: durationSeconds
@@ -119,8 +125,8 @@ export function useFormTracking(options: FormTrackingOptions) {
 
     pushEvent({
       event: 'form_abandon',
-      form_id: options.formId,
-      form_name: options.formName,
+      form_id: getFormId(),
+      form_name: getFormName(),
       form_step_reached: currentStep.value,
       last_field_filled: lastFieldFilled.value,
       fields_completed_count: completedFields.value.size,
@@ -131,9 +137,7 @@ export function useFormTracking(options: FormTrackingOptions) {
 
   if (getCurrentInstance()) {
     onMounted(() => {
-      // Vue initiale du formulaire
-      trackFormView(1)
-
+      // Pas de double émission : chaque composant appelant déclenche trackFormView avec son étape et libellé
       if (typeof window !== 'undefined') {
         window.addEventListener('beforeunload', trackFormAbandon)
       }

@@ -271,6 +271,10 @@
             :image-bottom="item.meta"
             :image="item.image"
             :to="item.to"
+            :formation-id="item.slug"
+            :formation-family="item.family"
+            :list-name="'dernieres_formations'"
+            :position="i + 1"
           />
         </div>
         <div v-else class="mt-2xl rounded-xl border border-dashed border-rule p-xl text-center">

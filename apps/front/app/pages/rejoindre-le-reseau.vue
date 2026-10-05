@@ -126,6 +126,7 @@ import IconBuilding from '~/components/icons/IconBuilding.vue'
 import type { CandidatureVoie } from '~/types/candidature'
 import { heroStagger, revealStagger } from '~/utils/reveal'
 import { useDataLayer } from '~/composables/useDataLayer'
+import type { NetworkProfileType } from '~/types/analytics'
 import { onMounted } from 'vue'
 
 useContentSeo(
@@ -149,7 +150,13 @@ onMounted(() => {
   })
 })
 
-function onProfileClick(profileType: string) {
+const profileTypeMap: Record<CandidatureVoie, NetworkProfileType> = {
+  centre: 'franchise',
+  organisme: 'organisme',
+  formateur: 'formateur'
+}
+
+function onProfileClick(profileType: NetworkProfileType) {
   pushEvent({
     event: 'select_network_profile',
     profile_type: profileType,
@@ -159,7 +166,7 @@ function onProfileClick(profileType: string) {
 }
 
 function openCandidature(voie: CandidatureVoie) {
-  onProfileClick(voie)
+  onProfileClick(profileTypeMap[voie] ?? 'franchise')
   candidatureVoie.value = voie
   candidatureOpen.value = true
 }

@@ -51,15 +51,15 @@ const props = defineProps<{
 const { pushEvent } = useDataLayer()
 
 function onClick() {
-  if (props.formationId) {
-    pushEvent({
-      event: 'select_formation_card',
-      formation_id: props.formationId,
-      formation_name: props.title,
-      formation_family: props.formationFamily ?? '',
-      list_name: props.listName ?? 'catalogue',
-      position: props.position
-    })
-  }
+  const formationId =
+    props.formationId || (props.to ? props.to.split('/').pop() || props.title : props.title)
+  pushEvent({
+    event: 'select_formation_card',
+    formation_id: formationId,
+    formation_name: props.title,
+    formation_family: props.formationFamily ?? props.imageTop ?? '',
+    list_name: props.listName ?? 'catalogue',
+    position: props.position
+  })
 }
 </script>

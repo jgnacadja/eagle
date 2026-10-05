@@ -15,7 +15,12 @@
             </DialogDescription>
           </DialogHeader>
 
-          <CandidatureForm v-model:voie="voie" :sending="sending" @submit="onSubmit" />
+          <CandidatureForm
+            ref="formRef"
+            v-model:voie="voie"
+            :sending="sending"
+            @submit="onSubmit"
+          />
           <p v-if="submitError" class="text-small font-semibold text-danger" role="alert">
             {{ submitError }}
           </p>
@@ -30,6 +35,7 @@ import { ref, watch } from 'vue'
 import CandidatureForm from './Form.vue'
 import Confirmation from './Confirmation.vue'
 import { VOIE_LABELS, type CandidaturePayload, type CandidatureVoie } from '~/types/candidature'
+import type { FormId, NetworkProfileType } from '~/types/analytics'
 
 import { useDataLayer } from '~/composables/useDataLayer'
 
@@ -45,6 +51,7 @@ const emit = defineEmits<{
   'update:open': [value: boolean]
 }>()
 
+const formRef = ref<InstanceType<typeof CandidatureForm> | null>(null)
 const voie = ref<CandidatureVoie>(props.voie)
 const submitted = ref(false)
 const projet = ref('')
@@ -71,11 +78,13 @@ async function onSubmit(payload: CandidaturePayload) {
     pageName: 'Candidater pour rejoindre le réseau'
   })
   if (!ok) return
+  formRef.value?.trackFormSubmit()
   // ville est requise par le schéma (min 1) : toujours renseignée ici.
   projet.value = `${VOIE_LABELS[payload.voie]} — ${payload.ville}`
   submitted.value = true
 
-  const formId =
+  const profileType: NetworkProfileType = payload.voie === 'centre' ? 'franchise' : payload.voie
+  const formId: FormId =
     payload.voie === 'centre'
       ? 'demande_franchise'
       : payload.voie === 'organisme'
@@ -84,9 +93,8 @@ async function onSubmit(payload: CandidaturePayload) {
 
   pushEvent({
     event: 'submit_network_interest',
-    profile_type: payload.voie,
-    form_id: formId,
-    region: payload.ville
+    profile_type: profileType,
+    form_id: formId
   })
 }
 </script>

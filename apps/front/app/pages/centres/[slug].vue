@@ -243,7 +243,12 @@
                     size="pill-sm"
                     class="mt-md w-full"
                   >
-                    <a :href="qualiopiCertificateUrl" target="_blank" rel="noopener">
+                    <a
+                      :href="qualiopiCertificateUrl"
+                      target="_blank"
+                      rel="noopener"
+                      @click="onDownloadQualiopi"
+                    >
                       <IconDownload :size="14" class="mr-xs" aria-hidden="true" />
                       Télécharger le certificat Qualiopi
                     </a>
@@ -338,6 +343,11 @@
                   :meta="formation.meta"
                   :status="formation.status"
                   :to="formation.to ?? undefined"
+                  :center-id="centre.slug || centre.id"
+                  :center-name="centre.name"
+                  :center-city="centre.city ?? undefined"
+                  :position="i + 1"
+                  list-name="formations_centre"
                 />
               </div>
               <p v-else class="mt-md text-small text-ink-muted">
@@ -1103,5 +1113,15 @@ function onDemandeFormationClick(location = 'cta_banner') {
     cta_location: location,
     page_path: typeof window !== 'undefined' ? window.location.pathname : ''
   })
+}
+
+function onDownloadQualiopi() {
+  if (centre.value) {
+    pushEvent({
+      event: 'click_download_qualiopi',
+      center_id: centre.value.slug || centre.value.id,
+      center_name: centre.value.name
+    })
+  }
 }
 </script>

@@ -236,8 +236,8 @@ const formIdMap: Record<CandidatureVoie, FormId> = {
 const currentFormId = computed(() => formIdMap[voie.value] ?? 'demande_franchise')
 
 const { trackFormView, trackFieldInteraction, trackFormError, trackFormSubmit } = useFormTracking({
-  formId: currentFormId.value,
-  formName: VOIE_LABELS[voie.value] ?? 'Candidature',
+  formId: () => currentFormId.value,
+  formName: () => VOIE_LABELS[voie.value] ?? 'Candidature',
   totalSteps: 1,
   totalFields: 6
 })
@@ -257,7 +257,6 @@ function onFieldFocus(event: FocusEvent) {
 const onSubmit = handleSubmit(
   (values) => {
     if (props.sending) return
-    trackFormSubmit(currentFormId.value)
     emit('submit', {
       voie: voie.value,
       nom: values.nom,
@@ -274,4 +273,8 @@ const onSubmit = handleSubmit(
     }
   }
 )
+
+defineExpose({
+  trackFormSubmit: () => trackFormSubmit(currentFormId.value)
+})
 </script>

@@ -27,7 +27,7 @@
             :target="channel.external ? '_blank' : undefined"
             :rel="channel.external ? 'noopener noreferrer' : undefined"
             class="flex cursor-pointer items-center gap-sm px-sm py-sm text-small text-ink-body"
-            @click="onChannelClick(channel.label)"
+            @click="onChannelClick(channel.channel)"
           >
             <component :is="channel.icon" :size="16" class="shrink-0 text-ink-subtle" />
             {{ channel.label }}
@@ -75,12 +75,12 @@ const props = defineProps<{
 
 const { pushEvent } = useDataLayer()
 
-function onChannelClick(channelLabel: string) {
+function onChannelClick(channel: string) {
   const id = props.articleId || props.url.split('/').pop() || ''
   pushEvent({
     event: 'share_article',
     article_id: id,
-    share_channel: channelLabel.toLowerCase()
+    share_channel: channel
   })
 }
 
@@ -96,30 +96,35 @@ const channels = computed(() => {
   const summary = encodeURIComponent([props.title, props.url].filter(Boolean).join(' '))
   return [
     {
+      channel: 'linkedin',
       label: 'LinkedIn',
       icon: IconLinkedin,
       href: `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
       external: true
     },
     {
+      channel: 'x_twitter',
       label: 'X (Twitter)',
       icon: IconX,
       href: `https://twitter.com/intent/tweet?url=${url}&text=${title}`,
       external: true
     },
     {
+      channel: 'facebook',
       label: 'Facebook',
       icon: IconFacebook,
       href: `https://www.facebook.com/sharer/sharer.php?u=${url}`,
       external: true
     },
     {
+      channel: 'whatsapp',
       label: 'WhatsApp',
       icon: IconWhatsapp,
       href: `https://wa.me/?text=${summary}`,
       external: true
     },
     {
+      channel: 'email',
       label: 'E-mail',
       icon: IconMail,
       href: `mailto:?subject=${title}&body=${url}`,
@@ -129,7 +134,7 @@ const channels = computed(() => {
 })
 
 function onNativeShare() {
-  onChannelClick('native')
+  onChannelClick('partage_natif')
   navigator.share({ title: props.title, text: props.text, url: props.url }).catch(() => {})
 }
 </script>

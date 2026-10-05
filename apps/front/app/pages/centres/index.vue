@@ -288,6 +288,7 @@ import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
 import { availabilityStatus, useCentreSessionDates } from '~/composables/useCentres'
 import { useDataLayer } from '~/composables/useDataLayer'
+import { resolveDepartment } from '~/utils/departments'
 
 const route = useRoute()
 
@@ -587,10 +588,11 @@ onMounted(() => {
 
 watch(selectedDept, (dept) => {
   if (dept && dept !== 'all') {
+    const { code, name } = resolveDepartment(dept)
     pushEvent({
       event: 'filter_centres_department',
-      department_code: dept,
-      department_name: dept,
+      department_code: code || dept,
+      department_name: name || dept,
       results_count: filteredCenters.value.length
     })
   }
@@ -630,21 +632,25 @@ function selectCenter(id: string) {
     return
   }
 
-  const center = filteredCenters.value.find((c) => c.id === id)
-  if (center) {
+  const isDeselection = id === activeCenterId.value
+  const index = filteredCenters.value.findIndex((c) => c.id === id)
+  const center = index >= 0 ? filteredCenters.value[index] : undefined
+
+  // L'événement ne part que lors d'une sélection (pas lors d'une désélection)
+  if (center && !isDeselection) {
     pushEvent({
       event: 'select_centre_card',
       center_id: center.id,
       center_name: center.name,
-      center_city: center.address?.split(',')[2]?.trim() || undefined,
-      center_department: center.address?.split(',')[3]?.trim() || undefined,
-      list_name: 'centres_liste'
+      center_city: center.city ?? undefined,
+      center_department: center.department ?? undefined,
+      list_name: 'centres_liste',
+      position: index >= 0 ? index + 1 : undefined
     })
   }
 
   hasUserSelection.value = true
-  activeCenterId.value = id === activeCenterId.value ? null : id
-  const index = filteredCenters.value.findIndex((c) => c.id === id)
+  activeCenterId.value = isDeselection ? null : id
   if (index >= visibleCount.value) {
     visibleCount.value = Math.min(index + LIST_CHUNK_SIZE, filteredCenters.value.length)
   }

@@ -68,6 +68,11 @@ const props = withDefaults(
     variant?: 'default' | 'button' | 'similar'
     /** Famille affichée en surtitre pour la variante `similar`. */
     family?: string
+    centerId?: string
+    centerName?: string
+    centerCity?: string
+    listName?: string
+    position?: number
   }>(),
   {
     to: undefined,
@@ -75,7 +80,12 @@ const props = withDefaults(
     status: undefined,
     eyebrow: '',
     variant: 'default',
-    family: ''
+    family: '',
+    centerId: undefined,
+    centerName: undefined,
+    centerCity: undefined,
+    listName: undefined,
+    position: undefined
   }
 )
 
@@ -83,13 +93,33 @@ const { pushEvent } = useDataLayer()
 
 function onClick() {
   const formationId = props.to ? props.to.split('/').pop() || props.title : props.title
-  pushEvent({
-    event: 'select_formation_card',
-    formation_id: formationId,
-    formation_name: props.title,
-    formation_family: props.family || props.subFamily || '',
-    list_name: props.variant === 'similar' ? 'formations_similaires' : 'formations_centre'
-  })
+  const formationFamily = props.family || props.subFamily || ''
+
+  if (props.centerId && props.centerName) {
+    pushEvent({
+      event: 'select_formation_centre',
+      center_id: props.centerId,
+      center_name: props.centerName,
+      center_city: props.centerCity,
+      formation_id: formationId,
+      formation_name: props.title,
+      formation_family: formationFamily,
+      list_name: props.listName || 'formations_centre',
+      position: props.position
+    })
+  } else {
+    pushEvent({
+      event: 'select_formation_card',
+      formation_id: formationId,
+      formation_name: props.title,
+      formation_family: formationFamily,
+      list_name:
+        props.variant === 'similar'
+          ? 'formations_similaires'
+          : props.listName || 'formations_centre',
+      position: props.position
+    })
+  }
 }
 
 const overline = computed(() => (props.variant === 'similar' ? props.family : props.subFamily))

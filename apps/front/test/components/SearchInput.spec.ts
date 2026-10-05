@@ -144,22 +144,11 @@ describe('SearchInput', () => {
     expect(wrapper.emitted('submit')).toEqual([['']])
   })
 
-  it('décline la pilule en taille hero (56/64 px, bordure marine, loupe 48 px) sans perdre l’anneau de focus', () => {
-    const wrapper = mountInput({ size: 'hero' })
-    const pill = wrapper.find('.rounded-full')
-
-    expect(pill.classes()).toContain('md:h-16')
-    expect(pill.classes()).toContain('border-2')
-    expect(pill.classes()).toContain('border-primary/75')
-    expect(pill.classes()).not.toContain('h-control')
-    expect(pill.classes()).toContain('focus-within:ring-primary/20')
-    expect(wrapper.find('button[aria-label="Rechercher"]').classes()).toContain('md:h-12')
-  })
-
   it('laisse les bordures de chargement et d’erreur primer sur la bordure normale et celle du consommateur', () => {
-    const loading = mountInput({ size: 'hero', loading: true }).find('.rounded-full')
+    const loading = mountInput({ loading: true }, { class: 'border-paper' }).find('.rounded-full')
     expect(loading.classes()).toContain('border-outline-soft')
-    expect(loading.classes()).not.toContain('border-primary/75')
+    expect(loading.classes()).not.toContain('border-paper')
+    expect(loading.classes()).not.toContain('border-outline')
 
     const error = mountInput({ errorMessage: 'Champ requis' }, { class: 'border-paper' }).find(
       '.rounded-full'

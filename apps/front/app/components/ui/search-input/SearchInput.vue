@@ -3,16 +3,14 @@
     <div
       :class="
         cn(
-          'relative flex h-control items-center gap-sm rounded-full border bg-paper pl-md pr-sm shadow-sm transition-colors',
-          sizeClasses.pill,
-          sizeClasses.border,
+          'relative flex h-control items-center gap-sm rounded-full border border-outline bg-paper pl-md pr-sm shadow-sm transition-colors',
           $attrs.class as string,
           // États en dernier : `cn()` garde la dernière classe en conflit —
           // la bordure de chargement puis d'erreur priment sur la bordure
           // normale et sur celle passée par le consommateur.
           isLoading ? 'border-outline-soft bg-surface-soft' : '',
           hasError ? 'border-danger' : '',
-          !isLoading && !hasError ? sizeClasses.focus : ''
+          !isLoading && !hasError ? 'focus-within:ring-2 focus-within:ring-accent' : ''
         )
       "
     >
@@ -32,12 +30,7 @@
         :disabled="isLoading"
         :aria-invalid="hasError ? 'true' : undefined"
         :aria-describedby="hasError ? errorId : undefined"
-        :class="
-          cn(
-            'h-auto flex-1 border-0 bg-transparent px-0 text-small text-ink shadow-none placeholder:text-ink-placeholder focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-70',
-            sizeClasses.input
-          )
-        "
+        class="h-auto flex-1 border-0 bg-transparent px-0 text-small text-ink shadow-none placeholder:text-ink-placeholder focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-70"
         @update:model-value="onInput"
         @keydown="onKeydown"
         @focus="open"
@@ -58,7 +51,7 @@
         size="icon-sm"
         :aria-label="isLoading ? loadingLabel : buttonLabel"
         :disabled="isLoading"
-        :class="cn('shrink-0 disabled:cursor-not-allowed', sizeClasses.button)"
+        class="shrink-0 disabled:cursor-not-allowed"
         @click="submit"
       >
         <span
@@ -66,7 +59,7 @@
           class="block h-4 w-4 animate-spin rounded-full border-2 border-paper/40 border-t-paper"
           aria-hidden="true"
         />
-        <IconSearch v-else :size="sizeClasses.iconSize" />
+        <IconSearch v-else :size="16" />
       </Button>
 
       <SuggestList
@@ -96,38 +89,6 @@ import { ref, computed, watch } from 'vue'
 import { cn } from '@/lib/utils'
 import SuggestList from '~/components/ui/search-input/SuggestList.vue'
 import { useSuggestDropdown } from '~/composables/useSuggestDropdown'
-import type { SearchInputSize } from '~/components/ui/search-input'
-
-interface SizeClasses {
-  pill: string
-  border: string
-  focus: string
-  input: string
-  button: string
-  iconSize: number
-}
-
-// Une seule anatomie déclinée en deux tailles (§3) : `default` (pilule
-// 44 px — catalogue, header) et `hero` (pilule 56 px, 64 px dès md, bordure
-// marine épaisse, bouton loupe 48 px — Home et page moteur, composant validé 9a).
-const SIZE_CLASSES: Record<SearchInputSize, SizeClasses> = {
-  default: {
-    pill: '',
-    border: 'border-outline',
-    focus: 'focus-within:ring-2 focus-within:ring-accent',
-    input: '',
-    button: '',
-    iconSize: 16
-  },
-  hero: {
-    pill: 'h-14 gap-md border-2 pl-md md:h-16 md:pl-lg',
-    border: 'border-primary/75',
-    focus: 'focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20',
-    input: 'md:text-body',
-    button: 'md:h-12 md:w-12',
-    iconSize: 18
-  }
-}
 
 const props = withDefaults(
   defineProps<{
@@ -141,7 +102,6 @@ const props = withDefaults(
     type?: string
     loading?: boolean
     errorMessage?: string
-    size?: SearchInputSize
     /** Libellés d'autocomplétion (liste stylée) — ex. ville, CP, département. */
     suggestions?: string[]
     /** Message affiché (et soumission bloquée) quand le champ est vide. */
@@ -156,7 +116,6 @@ const props = withDefaults(
     type: 'text',
     loading: false,
     errorMessage: '',
-    size: 'default',
     suggestions: undefined,
     emptyErrorMessage: ''
   }
@@ -179,7 +138,6 @@ const listId = `${props.inputId}-suggestions`
 const isLoading = computed(() => props.loading)
 const visibleError = computed(() => props.errorMessage || localError.value)
 const hasError = computed(() => !!visibleError.value)
-const sizeClasses = computed(() => SIZE_CLASSES[props.size])
 
 const suggestionList = computed(() => props.suggestions ?? [])
 const {

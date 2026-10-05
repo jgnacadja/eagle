@@ -61,6 +61,29 @@ describe('sanitizeJustification', () => {
     expect(text).toContain('vise à vous apporter')
   })
 
+  it('sees the end of a word that finishes with an accented letter', () => {
+    // `\b` est ASCII : « conformité. » et « adapté, » lui échappaient.
+    const promise = sanitizeJustification('Cette formation semble adaptée et assure la conformité.')
+    expect(promise.text).not.toContain('assure la conformité')
+    expect(promise.issues).toContain('regulatory-promise')
+
+    expect(
+      sanitizeJustification('Elle semble utile et assure votre conformité, selon nous.').text
+    ).not.toContain('assure votre conformité')
+
+    expect(sanitizeJustification('Ce parcours est adapté, selon votre demande.').text).toBe(
+      'Ce parcours semble adapté, selon votre demande.'
+    )
+    expect(sanitizeJustification('Ce module est indiqué.').text).toBe('Ce module semble indiqué.')
+    expect(sanitizeJustification('Ce module est recommandé !').text).toBe(
+      'Ce module semble recommandé !'
+    )
+
+    const certified = sanitizeJustification('Elle semble utile et vous serez certifié.')
+    expect(certified.text).not.toContain('serez certifié')
+    expect(certified.text).toContain('viser la certification')
+  })
+
   it('keeps two sentences at most and frames a bare statement in the conditional', () => {
     const { text, issues } = sanitizeJustification('Phrase une. Phrase deux. Phrase trois.')
     expect(text).toBe('Cette formation semble adaptée à votre besoin : phrase une. Phrase deux.')

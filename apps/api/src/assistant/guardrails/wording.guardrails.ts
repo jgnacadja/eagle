@@ -26,6 +26,10 @@ export const FALLBACK_JUSTIFICATION =
 const CONDITIONAL_MARKERS =
   /\b(semble|semblent|devrait|devraient|devriez|pourrait|pourraient|pourriez|parait|paraît|serait|seraient|peut|peuvent)\b/i
 
+// Fin de mot Unicode : `\b` ne connaît que l'ASCII et ne détecte donc pas la
+// frontière après une lettre accentuée (« conformité. », « adapté, »).
+const WORD_END = '(?![\\p{L}\\p{N}_])'
+
 // Formulations assertives (§14) → équivalent au conditionnel.
 const ASSERTIVE_REWRITES: Array<[RegExp, string]> = [
   [
@@ -33,7 +37,10 @@ const ASSERTIVE_REWRITES: Array<[RegExp, string]> = [
     'cette formation semble correspondre à votre besoin'
   ],
   [
-    /\b(est|sera)\s+(parfaitement\s+|exactement\s+|tout à fait\s+|idéalement\s+)?(adaptée?|idéale?|faite?|parfaite?|pertinente?|indiquée?|recommandée?)\b/gi,
+    new RegExp(
+      `\\b(est|sera)\\s+(parfaitement\\s+|exactement\\s+|tout à fait\\s+|idéalement\\s+)?(adaptée?|idéale?|faite?|parfaite?|pertinente?|indiquée?|recommandée?)${WORD_END}`,
+      'giu'
+    ),
     'semble $3'
   ],
   [/\b(répond|répondra|répondent)\b/gi, 'semble répondre'],
@@ -49,11 +56,11 @@ const REGULATORY_REWRITES: Array<[RegExp, string]> = [
   [/\b(garantit|garantissent)\b/gi, 'vise'],
   [/\b(une )?garantie\b/gi, 'un objectif'],
   [
-    /\bvous serez (certifiée?s?|habilitée?s?|en règle|conformes?)\b/gi,
+    new RegExp(`\\bvous serez (certifiée?s?|habilitée?s?|en règle|conformes?)${WORD_END}`, 'giu'),
     'vous pourrez viser la certification'
   ],
   [
-    /\bassure (la |votre )?conformité\b/gi,
+    new RegExp(`\\bassure (la |votre )?conformité${WORD_END}`, 'giu'),
     "s'inscrit dans le cadre réglementaire, à vérifier selon votre situation"
   ],
   [

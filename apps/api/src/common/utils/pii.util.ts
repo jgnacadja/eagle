@@ -27,10 +27,15 @@ const SIRET_PATTERN = /\b\d{3}\s?\d{3}\s?\d{3}\s?\d{5}\b/g
 const LONG_DIGITS_PATTERN = /\b\d{10,}\b/g
 
 // Adresse postale : numéro (bis/ter facultatif), type de voie puis libellé
-// jusqu'à la ponctuation suivante — « 12 rue des Lilas ». Le code postal et
-// la ville, utiles à la revue (où cherche-t-on ?), sont conservés.
+// jusqu'à la ponctuation suivante — « 12 rue des Lilas », « 4 av. Foch ». Le
+// code postal et la ville, utiles à la revue (où cherche-t-on ?), sont
+// conservés. La fin du type de voie est testée par un lookahead Unicode :
+// `\b` (ASCII) ne voit aucune frontière entre « av. » et l'espace qui suit.
+// « cours » et « place » sont volontairement absents : dans un catalogue de
+// formations ils désignent d'abord des cours et des places (« 2 cours de
+// management », « 1 place en SST ») — les masquer détruirait le besoin.
 const FR_ADDRESS_PATTERN =
-  /\b\d{1,4}\s?(?:bis|ter|quater)?\s*,?\s*(?:rue|avenue|av\.|boulevard|bd|chemin|impasse|all[ée]e|place|route|quai|cours|square|voie|chauss[ée]e|faubourg|r[ée]sidence|lotissement)\b[^,;.\n]*/giu
+  /\b\d{1,4}\s?(?:bis|ter|quater)?\s*,?\s*(?:rue|avenue|av\.?|boulevard|bd\.?|blvd\.?|chemin|impasse|all[ée]e|route|quai|square|voie|chauss[ée]e|faubourg|r[ée]sidence|lotissement)(?![\p{L}\p{N}_])[^,;.\n]*/giu
 
 export const PII_PLACEHOLDERS = {
   email: '[email]',

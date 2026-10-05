@@ -1,7 +1,10 @@
 import type { SearchMissContext } from '@learnup/types'
 import { scrubPersonalData } from '../common/utils/pii.util'
 
-const GEO_POINT_PATTERN = /^(-?\d{1,2}(?:\.\d+)?),\s*(-?\d{1,3}(?:\.\d+)?)$/
+// « lat,lng » (autour de moi) ou « lat,lng|Commune » (suggestion de
+// localisation du front, `useGeoSuggest`) : le libellé de commune, déjà
+// grossier, est conservé.
+const GEO_POINT_PATTERN = /^(-?\d{1,2}(?:\.\d+)?),\s*(-?\d{1,3}(?:\.\d+)?)\s*(?:\|(.*))?$/s
 
 /** Clé de regroupement : minuscules, sans accents, ponctuation réduite à des espaces. */
 export function normalizeQuery(text: string): string {
@@ -21,7 +24,9 @@ export function normalizeQuery(text: string): string {
 export function coarseLocation(value: string): string {
   const match = GEO_POINT_PATTERN.exec(value.trim())
   if (!match) return value
-  return `${Number(match[1]).toFixed(1)},${Number(match[2]).toFixed(1)}`
+  const point = `${Number(match[1]).toFixed(1)},${Number(match[2]).toFixed(1)}`
+  const label = match[3]?.trim()
+  return label ? `${point}|${label}` : point
 }
 
 function isContextValue(value: unknown): value is string | number | boolean | null {
@@ -35,9 +40,10 @@ function isContextValue(value: unknown): value is string | number | boolean | nu
 
 function sanitizeContextValue(key: string, value: string): string {
   // Les valeurs viennent de paramètres de requête ou de la conversation :
-  // elles sont masquées comme le texte saisi, puis la position est dégradée.
-  const scrubbed = scrubPersonalData(value)
-  return key === 'location' ? coarseLocation(scrubbed) : scrubbed
+  // elles sont masquées comme le texte saisi. La position est dégradée
+  // d'abord — une longue partie décimale peut ressembler à un numéro, et le
+  // masquage empêcherait alors de reconnaître le point à arrondir.
+  return scrubPersonalData(key === 'location' ? coarseLocation(value) : value)
 }
 
 /**

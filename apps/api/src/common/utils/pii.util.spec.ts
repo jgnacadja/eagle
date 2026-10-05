@@ -45,6 +45,29 @@ describe('scrubPersonalData', () => {
     expect(scrubPersonalData(business)).toBe(business)
   })
 
+  it('masks abbreviated street types, whose final dot defeats an ASCII word boundary', () => {
+    expect(scrubPersonalData('12 av. des Lilas, 69003 Lyon')).toBe(
+      `${PII_PLACEHOLDERS.address}, 69003 Lyon`
+    )
+    expect(scrubPersonalData('rdv 3 bd Voltaire; merci')).toBe(
+      `rdv ${PII_PLACEHOLDERS.address}; merci`
+    )
+    expect(scrubPersonalData('7 allée des Tilleuls')).toBe(PII_PLACEHOLDERS.address)
+  })
+
+  it('never mistakes courses and seats for a street', () => {
+    // « cours » et « place » sont d'abord du vocabulaire métier.
+    for (const need of [
+      '2 cours de management pour 5 personnes',
+      'réserver 1 place en formation SST',
+      '12 places disponibles avant le 3 mars',
+      '3 avantages du CACES',
+      '2 routes de formation possibles'
+    ]) {
+      expect(scrubPersonalData(need)).toBe(need)
+    }
+  })
+
   it('leaves short numbers (dates, headcounts, budgets) alone', () => {
     const text = 'budget 15 000 € pour 12 personnes le 15 mars 2026 à 14h30'
     expect(scrubPersonalData(text)).toBe(text)

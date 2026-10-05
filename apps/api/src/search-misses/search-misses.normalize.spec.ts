@@ -14,6 +14,13 @@ describe('coarseLocation', () => {
     expect(coarseLocation('-12.3456,178.9')).toBe('-12.3,178.9')
     expect(coarseLocation('Lyon (69)')).toBe('Lyon (69)')
   })
+
+  it('rounds labelled points too and keeps the commune label', () => {
+    // Format des suggestions de localisation du front (`lat,lng|Commune`).
+    expect(coarseLocation('48.856613,2.352222|Paris')).toBe('48.9,2.4|Paris')
+    expect(coarseLocation(' 43.296482, 5.36978 | Marseille ')).toBe('43.3,5.4|Marseille')
+    expect(coarseLocation('48.856613,2.352222|')).toBe('48.9,2.4')
+  })
 })
 
 describe('sanitizeContext', () => {
@@ -33,6 +40,17 @@ describe('sanitizeContext', () => {
         location: '48.85,2.35'
       })
     ).toEqual({ family: 'securite', cpf: true, page: 2, none: null, location: '48.9,2.4' })
+  })
+
+  it('degrades a labelled position and a position whose decimals look like a number', () => {
+    expect(sanitizeContext({ location: '48.856613,2.352222|Paris' })).toEqual({
+      location: '48.9,2.4|Paris'
+    })
+    // Sans arrondi préalable, « 0612345678 » serait masqué comme un téléphone
+    // et la latitude resterait stockée en pleine précision.
+    expect(sanitizeContext({ location: '48.85661,2.0612345678' })).toEqual({
+      location: '48.9,2.1'
+    })
   })
 
   it('masks personal data typed into any context value', () => {

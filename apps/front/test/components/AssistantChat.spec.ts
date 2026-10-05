@@ -27,8 +27,9 @@ const conversationStub = {
     '<button class="reset" @click="$emit(\'reset\')" />' +
     '<button class="close" @click="$emit(\'close\')" />' +
     '<a class="link" href="/centres/demande-de-formation?formation=sst" data-assistant-handoff>Demander</a>' +
-    '<a class="advisor" href="/parler-a-votre-conseiller" data-advisor-escalation="out_of_catalog">Conseiller</a>' +
-    '<a class="advisor-unavailable" href="/parler-a-votre-conseiller" data-advisor-escalation="unavailable">Conseiller</a>' +
+    '<a class="advisor" href="/parler-a-votre-conseiller" data-advisor-escalation="out_of_catalog" data-assistant-handoff>Conseiller</a>' +
+    '<a class="advisor-unavailable" href="/parler-a-votre-conseiller" data-advisor-escalation="unavailable" data-assistant-handoff>Conseiller</a>' +
+    '<a class="plain" href="/formations">Catalogue</a>' +
     '</div>'
 }
 
@@ -408,11 +409,34 @@ describe('AssistantChat', () => {
       }
     })
 
+    it('hands the need over when the assistant was opened from the adviser page itself', async () => {
+      // Le lien conseiller vise l'URL déjà affichée : navigation dupliquée,
+      // ignorée par le routeur — le besoin passe par le canal et par
+      // l'entrée d'historique courante.
+      routeMock().fullPath = '/parler-a-votre-conseiller'
+      try {
+        useAssistantLauncher().open()
+        const wrapper = mountChat()
+        conversation(wrapper).vm.$emit('send', 'former au SST', 'text')
+        await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+        await wrapper.find('.conversation .advisor').trigger('click')
+
+        expect(useAssistantHandoffChannel().channel.value).toEqual({
+          value: { need: 'former au SST' },
+          revision: 1
+        })
+        expect(window.history.state).toEqual({ assistantHandoff: { need: 'former au SST' } })
+      } finally {
+        routeMock().fullPath = '/'
+      }
+    })
+
     it('publishes nothing for a plain link', async () => {
       useAssistantLauncher().open()
       const wrapper = mountChat()
 
-      await wrapper.find('.conversation .advisor').trigger('click')
+      await wrapper.find('.conversation .plain').trigger('click')
 
       expect(useAssistantHandoffChannel().channel.value.revision).toBe(0)
     })

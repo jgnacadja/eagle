@@ -294,9 +294,14 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
 
   private async doInitialize(): Promise<void> {
     try {
+      // Génération d'abord, version ensuite : l'invalidateur écrit la version
+      // puis la génération. Une invalidation intercalée entre ces deux
+      // lectures laisse alors une génération connue en retard, que le
+      // prochain `syncInvalidations()` rattrape ; l'ordre inverse la
+      // marquerait consommée avec l'ancienne version.
+      const generation = await this.client!.get(this.generationKey)
       const version = await this.client!.get(this.versionKey)
       this.currentVersion = version ? Number.parseInt(version, 10) : 0
-      const generation = await this.client!.get(this.generationKey)
       this.knownGeneration = generation ? Number.parseInt(generation, 10) : 0
       this.isReady = true
     } catch (error) {

@@ -213,6 +213,30 @@ describe('CacheService', () => {
     expect(service.key('x')).toBe('catalog:v4:x')
   })
 
+  it('reads the generation before the version at startup, so an interleaved invalidation is caught up', async () => {
+    const client = Reflect.get(service, 'client') as {
+      get: ReturnType<typeof vi.fn>
+      set: (key: string, value: string) => Promise<unknown>
+    }
+    await client.set('catalog:generation', '1')
+    await client.set('catalog:version', '1')
+
+    // Une autre instance invalide juste après la première lecture de
+    // l'initialisation (version puis génération, comme invalidateCatalog).
+    client.get.mockImplementationOnce(async (key: string) => {
+      const value = sharedStore.get(key) ?? null
+      await client.set('catalog:version', '2')
+      await client.set('catalog:generation', '2')
+      return value
+    })
+    await (Reflect.get(service, 'doInitialize') as () => Promise<void>).call(service)
+
+    // La génération connue est en retard, jamais en avance : le passage
+    // suivant détecte l'invalidation au lieu de la croire déjà consommée.
+    await expect(service.syncInvalidations()).resolves.toBe(true)
+    expect(service.version).toBe(2)
+  })
+
   it('announces a new version to other instances even when the old keys cannot be purged', async () => {
     const client = Reflect.get(service, 'client') as {
       get: (key: string) => Promise<string | null>

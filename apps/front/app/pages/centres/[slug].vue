@@ -479,7 +479,9 @@
                   :title="article.title"
                   :date="formatArticleDate(article.publish_at)"
                   :excerpt="article.excerpt ?? ''"
-                  :image-url="directusAssetUrl(article.cover_image) ?? undefined"
+                  :image-url="
+                    directusAssetUrl(article.cover_image, config.public.apiBase) ?? undefined
+                  "
                   :to="`/actualites/${article.slug}`"
                   class="h-full"
                 />
@@ -623,6 +625,10 @@ const route = useRoute()
 const slug = route.params.slug as string
 
 const directus = useDirectusClient()
+// Config capturée au setup : les appels `directusAssetUrl` passés à des
+// getters résolus hors contexte Nuxt (useContentSeo) ne peuvent pas
+// appeler useRuntimeConfig eux-mêmes (NUXT_E1001).
+const config = useRuntimeConfig()
 
 const {
   data: centre,
@@ -763,7 +769,7 @@ function onMapSelect(id: string) {
 const specialties = computed(() => centre.value!.specialties ?? [])
 
 const qualiopiCertificateUrl = computed(
-  () => directusAssetUrl(centre.value!.qualiopi_certificate) ?? undefined
+  () => directusAssetUrl(centre.value!.qualiopi_certificate, config.public.apiBase) ?? undefined
 )
 
 // « valide jusqu'au 14 mars 2027 » — date de fin de validité Qualiopi
@@ -783,7 +789,7 @@ const qualiopiValidUntilLabel = computed(() => {
   }).format(date)
 })
 
-const imageSrc = computed(() => directusAssetUrl(centre.value!.image))
+const imageSrc = computed(() => directusAssetUrl(centre.value!.image, config.public.apiBase))
 
 // « Franchisé depuis 19 mai 2017 » sous le nom du responsable — repli
 // sur le rôle du contact quand la date de franchise n'est pas renseignée.
@@ -892,7 +898,8 @@ const formations = computed<FormationItem[]>(
     centreCatalog.data.value?.items.slice(0, 4).map((course) => ({
       ...mapCourse(
         course,
-        course.familySlug ? familyLabel.value.get(course.familySlug) : undefined
+        course.familySlug ? familyLabel.value.get(course.familySlug) : undefined,
+        config.public.apiBase
       ),
       meta: centreFormationMeta(course),
       status: centreFormationStatus(course)

@@ -445,6 +445,7 @@ import {
 } from '~/utils/catalog-filters'
 import { useDirectusClient } from '~/composables/useDirectus'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
+import { useDataLayer } from '~/composables/useDataLayer'
 import { revealStagger } from '~/utils/reveal'
 import { readItems } from '@directus/sdk'
 
@@ -929,6 +930,16 @@ const hasActiveCriteria = computed(
   () => activeFilters.value.length > 0 || searchQuery.value.trim().length > 0
 )
 
+const { pushEvent } = useDataLayer()
+
+onMounted(() => {
+  pushEvent({
+    event: 'view_formations_catalog',
+    results_count: catalog.data.value?.total ?? 0,
+    filters_active_count: activeFilters.value.length
+  })
+})
+
 function removeFilter(filter: ActiveFilter) {
   if (filter.group === 'families') {
     selectedFamilies.value = selectedFamilies.value.filter((key) => key !== filter.key)
@@ -944,6 +955,71 @@ function removeFilter(filter: ActiveFilter) {
     certifying.value = false
   }
 }
+
+interface PendingFilterEvent {
+  type: string
+  value: string
+  action: 'ajout' | 'retrait'
+}
+
+const pendingFilterEvents = ref<PendingFilterEvent[]>([])
+
+function emitPendingFilterEvents(count: number) {
+  if (pendingFilterEvents.value.length === 0) return
+  const events = [...pendingFilterEvents.value]
+  pendingFilterEvents.value = []
+  for (const item of events) {
+    pushEvent({
+      event: 'filter_formations',
+      filter_type: item.type,
+      filter_value: item.value,
+      filter_action: item.action,
+      results_count: count
+    })
+  }
+}
+
+watch(activeFilters, async (current, prev) => {
+  if (!prev) return
+  const added = current.filter((c) => !prev.some((p) => p.group === c.group && p.key === c.key))
+  const removed = prev.filter((p) => !current.some((c) => c.group === p.group && c.key === p.key))
+
+  for (const a of added) {
+    pendingFilterEvents.value.push({
+      type: a.group,
+      value: a.label,
+      action: 'ajout'
+    })
+  }
+  for (const r of removed) {
+    pendingFilterEvents.value.push({
+      type: r.group,
+      value: r.label,
+      action: 'retrait'
+    })
+  }
+
+  await nextTick()
+  if (!catalog.pending.value) {
+    emitPendingFilterEvents(catalog.data.value?.total ?? 0)
+  }
+})
+
+watch([() => catalog.data.value?.total, () => catalog.pending.value], ([total, pending]) => {
+  if (!pending && pendingFilterEvents.value.length > 0) {
+    emitPendingFilterEvents(total ?? 0)
+  }
+})
+
+watch(sortBy, (newSort, oldSort) => {
+  if (newSort !== oldSort) {
+    pushEvent({
+      event: 'sort_formations',
+      sort_type: newSort,
+      results_count: catalog.data.value?.total ?? 0
+    })
+  }
+})
 
 function resetFilters() {
   searchQuery.value = ''
@@ -974,6 +1050,15 @@ function triggerSearch() {
   searchQuery.value = searchQuery.value.trim()
   sortBy.value = searchQuery.value ? 'pertinence' : 'editorial'
   currentPage.value = 1
+
+  if (searchQuery.value) {
+    pushEvent({
+      event: 'search_formations',
+      search_term: searchQuery.value,
+      results_count: catalog.data.value?.total ?? 0,
+      page_path: window.location.pathname
+    })
+  }
 }
 
 // La page ne se remonte plus sur changement de query (page-key = path) :

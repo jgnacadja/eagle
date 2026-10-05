@@ -169,7 +169,7 @@
                                   <Button
                                     variant="outline"
                                     class="rounded-full border-rule px-md py-sm text-meta font-medium text-ink-muted hover:border-primary hover:text-primary"
-                                    @click="$emit('send', suggestion)"
+                                    @click="onSuggestionClick(suggestion)"
                                   >
                                     {{ suggestion }}
                                   </Button>
@@ -238,6 +238,7 @@
                               <NuxtLink
                                 :to="advisorTo"
                                 class="font-semibold text-primary underline underline-offset-2 transition-colors hover:text-accent-text"
+                                @click="emit('handoff', { reason: 'compare_advisor' })"
                               >
                                 Être accompagné par votre conseiller
                               </NuxtLink>
@@ -294,7 +295,10 @@
                                   variant="outline"
                                   class="w-full gap-sm rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary"
                                 >
-                                  <NuxtLink :to="advisorTo">
+                                  <NuxtLink
+                                    :to="advisorTo"
+                                    @click="emit('handoff', { reason: 'no_results' })"
+                                  >
                                     <IconMessages
                                       :size="14"
                                       class="shrink-0 text-primary"
@@ -324,7 +328,9 @@
                                 as-child
                                 class="rounded-full bg-accent px-md py-sm text-meta font-semibold text-ink hover:bg-accent-text hover:text-paper"
                               >
-                                <NuxtLink :to="advisorTo"
+                                <NuxtLink
+                                  :to="advisorTo"
+                                  @click="emit('handoff', { reason: 'out_of_catalog' })"
                                   >Décrire mon besoin à votre conseiller</NuxtLink
                                 >
                               </Button>
@@ -426,7 +432,11 @@
                           variant="outline"
                           class="h-control flex-1 rounded-full border-rule px-md text-meta font-semibold text-ink hover:border-primary"
                         >
-                          <NuxtLink :to="advisorTo">Parler à votre conseiller</NuxtLink>
+                          <NuxtLink
+                            :to="advisorTo"
+                            @click="emit('handoff', { reason: 'error_advisor' })"
+                            >Parler à votre conseiller</NuxtLink
+                          >
                         </Button>
                       </div>
                     </div>
@@ -528,6 +538,8 @@ const emit = defineEmits<{
   retry: []
   reset: []
   close: []
+  'suggested-action-click': [payload: { action_type: string; action_label: string }]
+  handoff: [payload: { reason?: string }]
 }>()
 
 const inputId = useId()
@@ -553,6 +565,14 @@ onBeforeUnmount(() => {
 
 const advisorTo = '/centres/demande-de-formation?sujet=conseiller'
 const demandeBaseTo = '/centres/demande-de-formation'
+
+function onSuggestionClick(suggestion: string) {
+  emit('suggested-action-click', {
+    action_type: 'suggestion',
+    action_label: suggestion
+  })
+  emit('send', suggestion)
+}
 
 function entryId(entry: AssistantEntry, index: number): string {
   return entry.id ?? `entry-${index}`

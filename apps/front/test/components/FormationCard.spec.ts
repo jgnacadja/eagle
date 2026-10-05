@@ -73,4 +73,29 @@ describe('FormationCard', () => {
     })
     expect(withoutBody.find('p').exists()).toBe(false)
   })
+
+  it('pushes select_formation_card when clicking link', async () => {
+    window.dataLayer = []
+    const wrapper = mount(FormationCard, {
+      props: {
+        title: 'SST',
+        imageTop: 'Sécurité',
+        imageBottom: 'secours',
+        to: '/formations/sante/sst'
+      },
+      global: { stubs }
+    })
+
+    const link = wrapper.find('a')
+    await link.trigger('click')
+
+    const event = window.dataLayer?.find((e) => e.event === 'select_formation_card')
+    expect(event).toMatchObject({
+      event: 'select_formation_card',
+      formation_id: 'sst',
+      formation_name: 'SST',
+      formation_family: 'Sécurité',
+      list_name: 'catalogue'
+    })
+  })
 })

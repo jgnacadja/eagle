@@ -30,7 +30,9 @@
         size="pill-sm"
         class="mt-md w-full px-lg font-bold"
       >
-        <NuxtLink :to="to" class="after:absolute after:inset-0">Voir la formation</NuxtLink>
+        <NuxtLink :to="to" class="after:absolute after:inset-0" @click="onClick"
+          >Voir la formation</NuxtLink
+        >
       </Button>
       <Button
         v-else-if="to"
@@ -40,7 +42,7 @@
         class="gap-xs font-bold"
         :class="variant === 'similar' ? 'mt-0 self-start' : 'mt-md self-end'"
       >
-        <NuxtLink :to="to" class="after:absolute after:inset-0"
+        <NuxtLink :to="to" class="after:absolute after:inset-0" @click="onClick"
           >Consulter <span class="link-arrow">→</span></NuxtLink
         >
       </Button>
@@ -50,6 +52,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useDataLayer } from '~/composables/useDataLayer'
 
 const props = withDefaults(
   defineProps<{
@@ -65,6 +68,11 @@ const props = withDefaults(
     variant?: 'default' | 'button' | 'similar'
     /** Famille affichée en surtitre pour la variante `similar`. */
     family?: string
+    centerId?: string
+    centerName?: string
+    centerCity?: string
+    listName?: string
+    position?: number
   }>(),
   {
     to: undefined,
@@ -72,9 +80,47 @@ const props = withDefaults(
     status: undefined,
     eyebrow: '',
     variant: 'default',
-    family: ''
+    family: '',
+    centerId: undefined,
+    centerName: undefined,
+    centerCity: undefined,
+    listName: undefined,
+    position: undefined
   }
 )
+
+const { pushEvent } = useDataLayer()
+
+function onClick() {
+  const formationId = props.to ? props.to.split('/').pop() || props.title : props.title
+  const formationFamily = props.family || props.subFamily || ''
+
+  if (props.centerId && props.centerName) {
+    pushEvent({
+      event: 'select_formation_centre',
+      center_id: props.centerId,
+      center_name: props.centerName,
+      center_city: props.centerCity,
+      formation_id: formationId,
+      formation_name: props.title,
+      formation_family: formationFamily,
+      list_name: props.listName || 'formations_centre',
+      position: props.position
+    })
+  } else {
+    pushEvent({
+      event: 'select_formation_card',
+      formation_id: formationId,
+      formation_name: props.title,
+      formation_family: formationFamily,
+      list_name:
+        props.variant === 'similar'
+          ? 'formations_similaires'
+          : props.listName || 'formations_centre',
+      position: props.position
+    })
+  }
+}
 
 const overline = computed(() => (props.variant === 'similar' ? props.family : props.subFamily))
 </script>

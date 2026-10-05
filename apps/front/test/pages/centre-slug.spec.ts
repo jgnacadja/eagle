@@ -730,6 +730,13 @@ describe('pages/centres/[slug]', () => {
       .find((a) => a.text().includes('Télécharger le certificat Qualiopi'))
     expect(link).toBeTruthy()
     expect(link!.attributes('href')).toContain('cert-file-uuid')
+
+    await link!.trigger('click')
+    const qualiopiEvent = window.dataLayer?.find((e) => e.event === 'click_download_qualiopi')
+    expect(qualiopiEvent).toMatchObject({
+      event: 'click_download_qualiopi',
+      center_name: centreCreteil.name
+    })
   })
 
   it('affiche le message quand aucune session n’est programmée', async () => {

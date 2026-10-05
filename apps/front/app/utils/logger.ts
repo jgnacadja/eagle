@@ -8,3 +8,8 @@ export function logServerError(message: string, ...args: unknown[]): void {
 export function logClientError(message: string, ...args: unknown[]): void {
   console.error(message, ...args)
 }
+
+// Avertissements côté navigateur (ex : configuration manquante non bloquante)
+export function logClientWarning(message: string, ...args: unknown[]): void {
+  console.warn(message, ...args)
+}

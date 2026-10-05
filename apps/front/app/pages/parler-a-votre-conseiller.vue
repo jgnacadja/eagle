@@ -49,7 +49,7 @@
           </Card>
 
           <!-- Formulaire (v-show : jamais démonté — cf. demande-de-formation) -->
-          <form v-show="!submitted" novalidate @submit.prevent="onSubmit">
+          <form v-show="!submitted" novalidate @focusin="onFieldFocus" @submit.prevent="onSubmit">
             <Card v-reveal class="space-y-lg p-lg sm:px-xl sm:py-lg">
               <fieldset>
                 <legend class="mb-md text-small font-semibold text-ink">
@@ -270,11 +270,13 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import type { ConseillerBesoin } from '@learnup/types'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
 import { leadFields } from '~/utils/leadFields'
+import { useFormTracking } from '~/composables/useFormTracking'
 
 definePageMeta({
   layout: 'with-breadcrumb',
@@ -375,23 +377,51 @@ function makeReference(): string {
   return `LU-${now.getFullYear()}-${pad(now.getMonth() + 1)}${pad(now.getDate())}-${suffix}`
 }
 
-const onSubmit = handleSubmit(async (v) => {
-  const ref = makeReference()
-  const ok = await submitLead('conseiller', {
-    besoin: besoin.value,
-    nom: v.nom,
-    email: v.email,
-    telephone: v.telephone,
-    siret: v.siret || undefined,
-    message: [v.message, `Référence : ${ref}`].filter(Boolean).join('\n\n'),
-    consentement: v.consentement,
-    // Pas de query : elle peut porter du texte libre et dépasser la borne API.
-    pageUri: window.location.origin + window.location.pathname,
-    pageName: 'Parler à votre conseiller'
-  })
-  if (ok) {
-    reference.value = ref
-    submitted.value = true
-  }
+const { trackFormView, trackFieldInteraction, trackFormError, trackFormSubmit } = useFormTracking({
+  formId: 'demande_formation',
+  formName: 'Parler à votre conseiller',
+  totalSteps: 1,
+  totalFields: 6
 })
+
+onMounted(() => {
+  trackFormView(1, 'Parler à votre conseiller')
+})
+
+function onFieldFocus(event: FocusEvent) {
+  const target = event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null
+  const fieldName = target?.name || target?.id
+  if (fieldName) {
+    trackFieldInteraction(fieldName)
+  }
+}
+
+const onSubmit = handleSubmit(
+  async (v) => {
+    const ref = makeReference()
+    const ok = await submitLead('conseiller', {
+      besoin: besoin.value,
+      nom: v.nom,
+      email: v.email,
+      telephone: v.telephone,
+      siret: v.siret || undefined,
+      message: [v.message, `Référence : ${ref}`].filter(Boolean).join('\n\n'),
+      consentement: v.consentement,
+      // Pas de query : elle peut porter du texte libre et dépasser la borne API.
+      pageUri: window.location.origin + window.location.pathname,
+      pageName: 'Parler à votre conseiller'
+    })
+    if (ok) {
+      reference.value = ref
+      submitted.value = true
+      trackFormSubmit('demande_formation')
+    }
+  },
+  ({ errors }) => {
+    const [firstField, firstError] = Object.entries(errors)[0] ?? []
+    if (firstField) {
+      trackFormError(firstField, firstError || 'Erreur de validation')
+    }
+  }
+)
 </script>

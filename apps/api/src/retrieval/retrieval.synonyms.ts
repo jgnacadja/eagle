@@ -55,6 +55,15 @@ export const QUERY_SYNONYMS: Readonly<Record<string, readonly string[]>> = {
 }
 
 /** Mots trop génériques dans un besoin de formation pour porter du sens. */
+/**
+ * Synonymes d'un token. La table est un objet littéral : sans ce garde, un
+ * token valide comme « constructor » ou « toString » résoudrait une propriété
+ * héritée de `Object.prototype` au lieu d'une liste vide.
+ */
+export function synonymsOf(token: string): readonly string[] {
+  return Object.hasOwn(QUERY_SYNONYMS, token) ? (QUERY_SYNONYMS[token] ?? []) : []
+}
+
 export const QUERY_NOISE: ReadonlySet<string> = new Set([
   'formation',
   'formations',

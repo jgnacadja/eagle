@@ -7,7 +7,7 @@ import {
   type RetrievalIndex
 } from './catalog-index.service'
 import { cosine } from './embeddings/hashing-embeddings.provider'
-import { QUERY_NOISE, QUERY_SYNONYMS } from './retrieval.synonyms'
+import { QUERY_NOISE, synonymsOf } from './retrieval.synonyms'
 import type { RetrievalCandidate, RetrievalQuery, RetrievalResult } from './retrieval.types'
 
 const DEFAULT_LIMIT = 5
@@ -61,7 +61,7 @@ export function analyzeQuery(text: string): QueryTerm[] {
     if (QUERY_NOISE.has(token) || NUMERIC.test(token)) continue
     const term = stemToken(token)
     addQueryTerm(seen, term, true, term)
-    for (const synonym of QUERY_SYNONYMS[token] ?? []) {
+    for (const synonym of synonymsOf(token)) {
       addQueryTerm(seen, stemToken(synonym), false, term)
     }
   }

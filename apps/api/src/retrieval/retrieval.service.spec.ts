@@ -91,6 +91,20 @@ describe('analyzeQuery', () => {
   })
 })
 
+describe('analyzeQuery — tokens homonymes de propriétés héritées', () => {
+  it('traite « constructor », « toString » et « hasOwnProperty » comme des mots ordinaires', () => {
+    // La table de synonymes est un objet : ces tokens ne doivent pas résoudre
+    // Object.prototype (itérer une fonction lèverait un TypeError).
+    expect(() => analyzeQuery('constructor toString hasOwnProperty valueOf')).not.toThrow()
+
+    const terms = analyzeQuery('formation constructor')
+    expect(terms.every((term) => typeof term.term === 'string')).toBe(true)
+    expect(terms.filter((term) => !term.typed)).toEqual(
+      analyzeQuery('formation').filter((term) => !term.typed)
+    )
+  })
+})
+
 describe('RetrievalService', () => {
   it('ranks the course whose title matches the need first, with scores and matched terms', async () => {
     const service = makeService()

@@ -47,7 +47,7 @@
                 <ShareMenu
                   :url="shareUrl"
                   :title="article?.title"
-                  :text="article.excerpt ?? undefined"
+                  :text="article?.excerpt ?? undefined"
                 />
                 <Button
                   type="button"
@@ -383,7 +383,7 @@ const relatedFormationCard = computed<FormationItem | null>(() => {
   // Méta courte (durée + modalités), sans certification — comme les
   // cartes « formations similaires » de la fiche formation.
   return {
-    ...mapCourse(related.course, related.familyName ?? undefined),
+    ...mapCourse(related.course, related.familyName ?? undefined, config.public.apiBase),
     meta: buildMeta(related.course, false)
   }
 })

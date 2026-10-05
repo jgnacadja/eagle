@@ -140,7 +140,14 @@ export function buildStatus(
   }
 }
 
-export function mapCourse(course: CourseListItem, familyName?: string): FormationItem {
+// `apiBase` obligatoire : runtime config capturée au setup par l'appelant —
+// mapCourse est résolu dans des computeds qui ne doivent pas dépendre du
+// contexte Nuxt (NUXT_E1001 si useRuntimeConfig était appelé ici).
+export function mapCourse(
+  course: CourseListItem,
+  familyName: string | undefined,
+  apiBase: string
+): FormationItem {
   const familySlug = course.familySlug
   const familyKey = familySlug ?? 'autre'
 
@@ -158,7 +165,7 @@ export function mapCourse(course: CourseListItem, familyName?: string): Formatio
     // ici, sinon carte et filtre `durations` peuvent diverger.
     duration: course.durationBucket,
     certifications: buildCertifications(course),
-    image: directusAssetUrl(course.image) ?? course.imageUrl ?? null,
+    image: directusAssetUrl(course.image, apiBase) ?? course.imageUrl ?? null,
     status: buildStatus(course),
     to: familySlug ? `/formations/${familySlug}/${course.slug}` : null
   }

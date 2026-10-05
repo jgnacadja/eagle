@@ -628,9 +628,18 @@ watch(
   { immediate: true }
 )
 
+// Config capturée au setup : `mapCourse`/`directusAssetUrl` reçoivent
+// `apiBase` explicitement — les getters résolus hors contexte Nuxt ne
+// peuvent pas appeler useRuntimeConfig eux-mêmes (NUXT_E1001).
+const config = useRuntimeConfig()
+
 const formations = computed<FormationItem[]>(() =>
   loadedItems.value.map((course) =>
-    mapCourse(course, course.familySlug ? familyNames.value.get(course.familySlug) : undefined)
+    mapCourse(
+      course,
+      course.familySlug ? familyNames.value.get(course.familySlug) : undefined,
+      config.public.apiBase
+    )
   )
 )
 const resultCount = computed(() => catalog.data.value?.total ?? 0)
@@ -681,7 +690,6 @@ const { data: directusFamilies } = await useAsyncData<FamilleFormation[]>(
 const { data: familyCounts } = await useAsyncData<FamilyWithCount[]>(
   'family-counts',
   async () => {
-    const config = useRuntimeConfig()
     /* v8 ignore next -- branche SSR */
     const apiBase = import.meta.server ? config.apiBase : config.public.apiBase
     try {
@@ -806,7 +814,7 @@ const familyShortcuts = computed<
   }
 
   const top = familyOptions.value.slice(0, 3).map((family) => {
-    const count = family.count
+    const count = family.count ?? 0
     return {
       slug: family.key,
       label: family.label,

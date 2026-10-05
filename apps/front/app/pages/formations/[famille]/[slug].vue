@@ -759,7 +759,7 @@ useContentSeo(
         course: course.value!,
         familyName: familyName.value,
         // Aligné sur la canonical : un surchargement éditorial doit primer.
-        url: course.value.seoCanonical ?? `${config.public.siteUrl}/formations/${famille}/${slug}`,
+        url: course.value!.seoCanonical ?? `${config.public.siteUrl}/formations/${famille}/${slug}`,
         siteUrl: config.public.siteUrl,
         imageUrl: imageSrc.value
       })
@@ -940,9 +940,10 @@ function toProgrammeModule(block: ProgrammeBlock): ProgrammeModule | null {
 }
 
 const programme = computed<ProgrammeModule[]>(() => {
-  if (!course.value!.blocks || !Array.isArray(course.value!.blocks)) return []
+  const blocks = course.value!.blocks
+  if (!blocks || !Array.isArray(blocks)) return []
 
-  return course.value.blocks
+  return blocks
     .filter((block): block is ProgrammeBlock => Boolean(block) && typeof block === 'object')
     .map(toProgrammeModule)
     .filter((module): module is ProgrammeModule => module !== null)
@@ -1153,7 +1154,7 @@ const similaires = computed<FormationItem[]>(
   () =>
     similarCatalog.data.value?.items
       .map((course) => ({
-        ...mapCourse(course, familyName.value),
+        ...mapCourse(course, familyName.value, config.public.apiBase),
         meta: buildMeta(course, false)
       }))
       .filter((f) => f.slug !== slug) ?? []

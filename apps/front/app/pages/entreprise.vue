@@ -599,6 +599,11 @@ const REGULATORY_FAMILIES = [
   'securite-prevention'
 ]
 
+// Config capturée au setup : `mapCourse`/`directusAssetUrl` reçoivent
+// `apiBase` explicitement — les getters résolus hors contexte Nuxt ne
+// peuvent pas appeler useRuntimeConfig eux-mêmes (NUXT_E1001).
+const config = useRuntimeConfig()
+
 const { data: catalogue } = await useCatalog({ limit: 50, sort: 'updatedAt', order: 'desc' })
 
 const { selectedTag, apiTagResults, formationTags, toggleTag, matchesTag } = useTagFilter(
@@ -613,7 +618,7 @@ const formations = computed(() => {
     const fromApi = apiTagResults.value[tag]
     if (fromApi?.length) {
       return fromApi.slice(0, 4).map((c) => {
-        const mapped = mapCourse(c)
+        const mapped = mapCourse(c, undefined, config.public.apiBase)
         return {
           title: mapped.title,
           body: mapped.description,
@@ -624,7 +629,7 @@ const formations = computed(() => {
     const filtered = items.filter((c) => matchesTag(c, tag))
     if (filtered.length) {
       return filtered.slice(0, 4).map((c) => {
-        const mapped = mapCourse(c)
+        const mapped = mapCourse(c, undefined, config.public.apiBase)
         return {
           title: mapped.title,
           body: mapped.description,
@@ -644,7 +649,7 @@ const formations = computed(() => {
   const listToUse = regulatoryItems.length >= 2 ? regulatoryItems : items
   if (listToUse.length) {
     return listToUse.slice(0, 4).map((c) => {
-      const mapped = mapCourse(c)
+      const mapped = mapCourse(c, undefined, config.public.apiBase)
       return {
         title: mapped.title,
         body: mapped.description,

@@ -925,12 +925,12 @@ const dernieresFormations = computed(() => {
     const tag = selectedTag.value
     const fromApi = apiTagResults.value[tag]
     if (fromApi?.length) {
-      return fromApi.slice(0, 4).map((c) => mapCourse(c))
+      return fromApi.slice(0, 4).map((c) => mapCourse(c, undefined, config.public.apiBase))
     }
     const filtered = all.filter((c) => matchesTag(c, tag))
-    return filtered.slice(0, 4).map((c) => mapCourse(c))
+    return filtered.slice(0, 4).map((c) => mapCourse(c, undefined, config.public.apiBase))
   }
-  return all.slice(0, 4).map((c) => mapCourse(c))
+  return all.slice(0, 4).map((c) => mapCourse(c, undefined, config.public.apiBase))
 })
 
 // ── Sessions à venir ────────────────────────────────────────────────────────
@@ -987,7 +987,7 @@ const displayUpcomingSessions = computed(() => {
     const date = new Date(`${s.startDate}T00:00:00Z`)
     const day = String(date.getUTCDate()).padStart(2, '0')
     const month = MONTH_ABBR_FR[date.getUTCMonth()]!
-    const mapped = mapCourse(course)
+    const mapped = mapCourse(course, undefined, config.public.apiBase)
     const seats = s.seatsRemaining
     const badgeVariant = sessionSeatType(seats ?? undefined) ?? 'success'
     const badgeText = seats != null ? placesLabel(seats, true) : 'Places disponibles'

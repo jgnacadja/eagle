@@ -380,6 +380,10 @@ const route = useRoute()
 const famille = route.params.famille as string
 
 const directus = useDirectusClient()
+// Config capturée au setup : les appels `directusAssetUrl` passés à des
+// getters résolus hors contexte Nuxt (useContentSeo) ne peuvent pas
+// appeler useRuntimeConfig eux-mêmes (NUXT_E1001).
+const config = useRuntimeConfig()
 
 const {
   data: familleData,
@@ -469,7 +473,9 @@ useContentSeo(
       seo_canonical: isFound ? familleData.value?.seo_canonical : undefined,
       seo_noindex: !isFound,
       // Visuel OG/Twitter : visuel éditorial de la famille, sinon défaut.
-      seo_image: isFound ? directusAssetUrl(familleData.value?.image) : undefined
+      seo_image: isFound
+        ? directusAssetUrl(familleData.value?.image, config.public.apiBase)
+        : undefined
     }
   },
   () => {
@@ -635,14 +641,17 @@ const catalog = await useCatalog(catalogQuery)
 const familyName = computed(() => familleData.value!.name)
 
 const formations = computed<FormationItem[]>(
-  () => catalog.data.value?.items.map((course) => mapCourse(course, familyName.value)) ?? []
+  () =>
+    catalog.data.value?.items.map((course) =>
+      mapCourse(course, familyName.value, config.public.apiBase)
+    ) ?? []
 )
 const resultCount = computed(() => catalog.data.value?.total ?? 0)
 const familyTotal = computed(() => facets.data.value?.total ?? 0)
 
 // Visuel éditorial de la famille — champ `image` (fichier Directus).
 // Repli : placeholder avec le nom.
-const heroImage = computed(() => directusAssetUrl(familleData.value?.image))
+const heroImage = computed(() => directusAssetUrl(familleData.value?.image, config.public.apiBase))
 
 // Tags du hero : modalités présentes dans la famille, lues dans
 // `facets.modalities` (toute la famille, pas seulement les `limit` items

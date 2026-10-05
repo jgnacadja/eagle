@@ -1,7 +1,7 @@
 <template>
   <figure
     :class="[
-      'motion-surface flex flex-col justify-between rounded-2xl p-lg',
+      'testimonial-card motion-surface flex flex-col justify-between rounded-2xl p-lg',
       variant === 'surface' ? 'bg-surface' : 'bg-paper'
     ]"
   >
@@ -28,3 +28,17 @@ withDefaults(
   }
 )
 </script>
+
+<style scoped>
+/* Élévation plus légère que le shadow-md de .motion-surface : la carte
+   n'est pas cliquable, un hover trop marqué suggère une interaction. */
+@media (hover: hover) {
+  .testimonial-card:hover {
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+.testimonial-card:focus-within {
+  box-shadow: var(--shadow-sm);
+}
+</style>

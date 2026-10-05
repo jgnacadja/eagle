@@ -897,13 +897,12 @@ const stats = [
   { value: '4,7', unit: '/5', label: 'satisfaction stagiaires' }
 ]
 
+// Avis publiés toutes implantations confondues (marque + centres), les plus
+// récents d'abord — la home ne filtre plus sur `centre`.
 const homeAvisData = await useDirectusList<Avis>('avis', 'home-avis', {
   fields: ['slug', 'author', 'quote', 'stars', 'published_at'],
-  filter: {
-    status: { _eq: 'published' },
-    centre: { _null: true }
-  },
-  sort: ['sort', '-published_at'],
+  filter: { status: { _eq: 'published' } },
+  sort: ['-published_at'],
   limit: 3
 })
 

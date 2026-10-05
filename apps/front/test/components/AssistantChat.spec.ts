@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import AssistantChat from '~/components/Assistant/Chat.vue'
+import { useAssistantHandoffChannel } from '~/composables/useAssistantHandoff'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 
 const routeMock = (globalThis as Record<string, unknown>).useRoute as () => {
@@ -25,7 +26,7 @@ const conversationStub = {
     '<button class="stop" @click="$emit(\'stop\')" />' +
     '<button class="reset" @click="$emit(\'reset\')" />' +
     '<button class="close" @click="$emit(\'close\')" />' +
-    '<a class="link" href="/centres/demande-de-formation?formation=sst">Demander</a>' +
+    '<a class="link" href="/centres/demande-de-formation?formation=sst" data-assistant-handoff>Demander</a>' +
     '<a class="advisor" href="/parler-a-votre-conseiller" data-advisor-escalation="out_of_catalog">Conseiller</a>' +
     '<a class="advisor-unavailable" href="/parler-a-votre-conseiller" data-advisor-escalation="unavailable">Conseiller</a>' +
     '</div>'
@@ -59,6 +60,8 @@ function events(): string[] {
 beforeEach(() => {
   fetchMock.mockReset().mockResolvedValue({ kind: 'clarify', text: 'ok' })
   window.dataLayer = []
+  window.history.replaceState(null, '')
+  useAssistantHandoffChannel().channel.value = { value: null, revision: 0 }
   const launcher = useAssistantLauncher()
   launcher.isOpen.value = false
   launcher.pendingMessage.value = null
@@ -309,6 +312,57 @@ describe('AssistantChat', () => {
       ).toHaveLength(1)
     })
 
+    it('keeps the source of the ongoing search when the panel is reopened from elsewhere', async () => {
+      const launcher = useAssistantLauncher()
+      launcher.open({ context: { source: 'home' } })
+      const wrapper = mountChat()
+      conversation(wrapper).vm.$emit('send', 'former au SST', 'text')
+      await vi.waitFor(() => expect(events()).toContain('ai_clarification_requested'))
+
+      launcher.close()
+      await nextTick()
+      launcher.open({ context: { source: 'header' } })
+      await nextTick()
+      conversation(wrapper).vm.$emit('select', {
+        slug: 'sst',
+        rank: 'primary',
+        action: 'formation'
+      })
+
+      // Pas de nouvelle recherche : la sélection reste attribuée à « home ».
+      expect(window.dataLayer?.at(-1)).toMatchObject({
+        event: 'ai_recommendation_select',
+        source: 'home'
+      })
+    })
+
+    it('numbers queued entry-point messages by the turn they actually take', async () => {
+      let resolveFirst: ((reply: unknown) => void) | undefined
+      fetchMock.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveFirst = resolve
+          })
+      )
+      const launcher = useAssistantLauncher()
+      launcher.open({ context: { source: 'home' }, message: 'premier' })
+      mountChat()
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+      // Deux besoins transmis par des points d'entrée pendant l'analyse du premier.
+      launcher.open({ context: { source: 'home' }, message: 'deuxième' })
+      await nextTick()
+      launcher.open({ context: { source: 'home' }, message: 'troisième' })
+      await nextTick()
+      resolveFirst?.({ kind: 'clarify', text: 'ok' })
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+
+      const submits = (window.dataLayer as { event: string; turn?: number }[])
+        .filter((e) => e.event === 'ai_search_submit')
+        .map((e) => e.turn)
+      expect(submits).toEqual([1, 2, 3])
+    })
+
     it('does not track nor send an edit whose message is unknown', async () => {
       useAssistantLauncher().open()
       const wrapper = mountChat()
@@ -318,6 +372,49 @@ describe('AssistantChat', () => {
 
       expect(fetchMock).not.toHaveBeenCalled()
       expect(events()).toEqual(['ai_search_start'])
+    })
+  })
+
+  describe('handoff', () => {
+    it('publishes the need to mounted destinations when a handoff link is clicked', async () => {
+      useAssistantLauncher().open()
+      const wrapper = mountChat()
+      conversation(wrapper).vm.$emit('send', 'former 8 salariés au SST', 'text')
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+      const { channel } = useAssistantHandoffChannel()
+
+      await wrapper.find('.conversation .link').trigger('click')
+
+      expect(channel.value).toEqual({ value: { need: 'former 8 salariés au SST' }, revision: 1 })
+      // Navigation vers une autre URL : l'entrée courante n'est pas touchée,
+      // le routeur porte le besoin dans l'état de la nouvelle entrée.
+      expect(window.history.state).toBeNull()
+    })
+
+    it('writes the need into the current history entry when the link targets the displayed URL', async () => {
+      routeMock().fullPath = '/centres/demande-de-formation?formation=sst'
+      try {
+        useAssistantLauncher().open()
+        const wrapper = mountChat()
+        conversation(wrapper).vm.$emit('send', 'former au SST', 'text')
+        await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+
+        // Même URL : la navigation est un no-op, aucune entrée n'est poussée.
+        await wrapper.find('.conversation .link').trigger('click')
+
+        expect(window.history.state).toEqual({ assistantHandoff: { need: 'former au SST' } })
+      } finally {
+        routeMock().fullPath = '/'
+      }
+    })
+
+    it('publishes nothing for a plain link', async () => {
+      useAssistantLauncher().open()
+      const wrapper = mountChat()
+
+      await wrapper.find('.conversation .advisor').trigger('click')
+
+      expect(useAssistantHandoffChannel().channel.value.revision).toBe(0)
     })
   })
 

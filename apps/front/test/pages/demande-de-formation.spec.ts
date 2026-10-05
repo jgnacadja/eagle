@@ -12,6 +12,7 @@ import {
   watchEffect
 } from 'vue'
 import DemandePage from '~/pages/centres/demande-de-formation.vue'
+import { useAssistantHandoffChannel } from '~/composables/useAssistantHandoff'
 import { upcomingMonthLabelsFr } from '~/utils/date'
 
 const seoMock = vi.fn()
@@ -180,6 +181,7 @@ describe('pages/centres/demande-de-formation', () => {
     centresBySlug.set(centreCreteil.slug, centreCreteil)
     window.sessionStorage.clear()
     window.history.replaceState(null, '')
+    useAssistantHandoffChannel().channel.value = { value: null, revision: 0 }
     fetchMock.mockImplementation(async () => courseSst)
     leadSubmitMock.mockReset().mockResolvedValue(true)
     sendingState.value = false
@@ -240,6 +242,41 @@ describe('pages/centres/demande-de-formation', () => {
     expect(wrapper.text()).toContain('former 12 salariés au SST à Créteil')
     expect(wrapper.text()).toContain('12 salariés')
     expect((wrapper.find('#lieu').element as HTMLInputElement).value).toBe('Créteil')
+  })
+
+  it('applique un besoin publié pendant que le formulaire est monté, sans écraser la saisie', async () => {
+    routeStub.query = { intra: '1' }
+    window.history.replaceState(
+      { assistantHandoff: { need: 'former au SST', headcount: 12, location: 'Créteil' } },
+      ''
+    )
+    const wrapper = await mountPage()
+    await flushPromises()
+    expect((wrapper.find('#lieu').element as HTMLInputElement).value).toBe('Créteil')
+
+    // « Modifier » rouvre l'assistant sans démonter le formulaire (clé de
+    // page = route.path) : le visiteur corrige le lieu, puis choisit une
+    // autre recommandation depuis le panneau.
+    await wrapper.find('#lieu').setValue('Lyon 69003')
+    useAssistantHandoffChannel().publish({
+      need: 'former des caristes',
+      headcount: 20,
+      location: 'Marseille'
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('former des caristes')
+    expect(wrapper.text()).not.toContain('former au SST')
+    expect(wrapper.text()).toContain('20 salariés')
+    // La saisie du visiteur est conservée ; l'effectif, intact, suit.
+    expect((wrapper.find('#lieu').element as HTMLInputElement).value).toBe('Lyon 69003')
+
+    await fillValidForm(wrapper)
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+    const payload = leadSubmitMock.mock.calls[0]![1] as { precisions: string; lieu: string }
+    expect(payload.precisions).toContain('Besoin exprimé : former des caristes')
+    expect(payload.lieu).toBe('Lyon 69003')
   })
 
   it("n'affiche pas le bloc besoin sans transmission", async () => {

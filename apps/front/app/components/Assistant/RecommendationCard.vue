@@ -99,7 +99,7 @@
             variant="outline"
             class="h-control rounded-full border-outline px-md text-small font-semibold text-ink transition hover:border-primary hover:text-accent-text"
           >
-            <NuxtLink :to="demandeTo" @click="$emit('select', 'demande')">
+            <NuxtLink :to="demandeTo" data-assistant-handoff @click="$emit('select', 'demande')">
               Demander cette formation
             </NuxtLink>
           </Button>
@@ -117,7 +117,7 @@
             as-child
             class="h-control rounded-full bg-accent px-md text-small font-semibold text-ink transition hover:bg-accent-text hover:text-paper"
           >
-            <NuxtLink :to="demandeTo" @click="$emit('select', 'demande')">
+            <NuxtLink :to="demandeTo" data-assistant-handoff @click="$emit('select', 'demande')">
               Demander une session
             </NuxtLink>
           </Button>
@@ -127,7 +127,7 @@
             variant="outline"
             class="h-control rounded-full border-outline px-md text-small font-semibold text-ink transition hover:border-primary hover:text-accent-text"
           >
-            <NuxtLink :to="advisorTo" data-advisor-escalation="no_session"
+            <NuxtLink :to="advisorTo" data-assistant-handoff data-advisor-escalation="no_session"
               >Être accompagné</NuxtLink
             >
           </Button>

@@ -8,6 +8,9 @@ export const DEMANDE_PATH = '/centres/demande-de-formation'
 /** Clé du besoin dans `history.state` de l'entrée de navigation cible. */
 export const HANDOFF_STATE_KEY = 'assistantHandoff'
 
+/** Attribut des liens du panneau qui transmettent le besoin à leur destination. */
+export const HANDOFF_LINK_ATTR = 'data-assistant-handoff'
+
 /** Longueur maximale du besoin transmis (le fil complet reste dans le panneau). */
 export const NEED_MAX_LENGTH = 500
 
@@ -17,7 +20,8 @@ export const NEED_MAX_LENGTH = 500
  * doit apparaître ni dans `page_location` côté analytics, ni dans le
  * `Referer`, ni dans les journaux. Il voyage dans l'état d'historique de la
  * navigation (`router.push({ state })`), conservé au rechargement et au
- * retour arrière, propre à cette entrée d'historique.
+ * retour arrière, propre à cette entrée d'historique — et par le canal
+ * `useAssistantHandoffChannel` pour les pages déjà montées.
  */
 export type AssistantHandoff = {
   need: string
@@ -30,13 +34,23 @@ export function truncateNeed(need: string): string {
   return Array.from(need.trim()).slice(0, NEED_MAX_LENGTH).join('')
 }
 
+/** Besoin normalisé — tronqué, champs vides retirés ; `null` sans besoin. */
+export function toHandoff(
+  need: string | null | undefined,
+  headcount?: number | null,
+  location?: string | null
+): AssistantHandoff | null {
+  const text = truncateNeed(need ?? '')
+  if (!text) return null
+  const handoff: AssistantHandoff = { need: text }
+  if (headcount) handoff.headcount = headcount
+  if (location) handoff.location = location
+  return handoff
+}
+
 function stateOf(handoff: AssistantHandoff | null | undefined): Record<string, AssistantHandoff> {
-  const need = handoff ? truncateNeed(handoff.need) : ''
-  if (!need) return {}
-  const value: AssistantHandoff = { need }
-  if (handoff?.headcount) value.headcount = handoff.headcount
-  if (handoff?.location) value.location = handoff.location
-  return { [HANDOFF_STATE_KEY]: value }
+  const value = toHandoff(handoff?.need, handoff?.headcount, handoff?.location)
+  return value ? { [HANDOFF_STATE_KEY]: value } : {}
 }
 
 /** Lien vers la page conseiller, besoin transmis hors URL s'il existe. */
@@ -81,6 +95,20 @@ export function readHandoff(): AssistantHandoff | null {
   if (typeof state !== 'object' || state === null) return null
   const value = (state as Record<string, unknown>)[HANDOFF_STATE_KEY]
   if (!isHandoff(value)) return null
-  const need = truncateNeed(value.need)
-  return need ? { ...value, need } : null
+  return toHandoff(value.need, value.headcount, value.location)
+}
+
+/**
+ * Inscrit (ou retire) le besoin dans l'entrée d'historique **courante** — pour
+ * un lien vers l'URL déjà affichée : le routeur n'y pousse aucune entrée, son
+ * état ne porterait donc jamais le nouveau besoin au rechargement.
+ */
+export function persistHandoff(handoff: AssistantHandoff | null): void {
+  if (typeof window === 'undefined') return
+  const current: unknown = window.history.state
+  const state: Record<string, unknown> =
+    typeof current === 'object' && current !== null ? { ...current } : {}
+  if (handoff) state[HANDOFF_STATE_KEY] = handoff
+  else delete state[HANDOFF_STATE_KEY]
+  window.history.replaceState(state, '')
 }

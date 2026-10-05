@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, ref } from 'vue'
 import QuickCallbackCard from '~/components/Cards/QuickCallbackCard.vue'
 import ConseillerPage from '~/pages/parler-a-votre-conseiller.vue'
+import { useAssistantHandoffChannel } from '~/composables/useAssistantHandoff'
 
 const seoMock = vi.fn()
 
@@ -246,6 +247,30 @@ describe('pages/parler-a-votre-conseiller', () => {
       expect((textarea.element as HTMLTextAreaElement).value).toBe(
         'Former 8 salariés au SST à Créteil'
       )
+    } finally {
+      window.history.replaceState(null, '')
+    }
+  })
+
+  it('suit un besoin publié pendant que la page est ouverte, sans écraser une saisie', async () => {
+    useAssistantHandoffChannel().channel.value = { value: null, revision: 0 }
+    window.history.replaceState({ assistantHandoff: { need: 'Former au SST' } }, '')
+    try {
+      const wrapper = await mountPage()
+      await flushPromises()
+      const textarea = () => wrapper.find('#message').element as HTMLTextAreaElement
+      expect(textarea().value).toBe('Former au SST')
+
+      // Besoin modifié dans le panneau : le pré-remplissage intact suit.
+      useAssistantHandoffChannel().publish({ need: 'Former des caristes' })
+      await flushPromises()
+      expect(textarea().value).toBe('Former des caristes')
+
+      // Le visiteur a repris le texte : une nouvelle transmission ne l'écrase pas.
+      await wrapper.find('#message').setValue('Mon texte')
+      useAssistantHandoffChannel().publish({ need: 'Autre besoin' })
+      await flushPromises()
+      expect(textarea().value).toBe('Mon texte')
     } finally {
       window.history.replaceState(null, '')
     }

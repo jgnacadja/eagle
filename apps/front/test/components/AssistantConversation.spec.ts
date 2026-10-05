@@ -341,6 +341,7 @@ describe('AssistantConversation', () => {
     ])
     for (const link of advisorLinks) {
       expect(link.attributes('data-state')).toBe(JSON.stringify(state))
+      expect(link.attributes('data-assistant-handoff')).toBeDefined()
     }
     expect(
       wrapper

@@ -73,6 +73,7 @@
         </span>
         <NuxtLink
           :to="advisorTo"
+          data-assistant-handoff
           data-advisor-escalation="degraded"
           class="font-semibold text-primary underline underline-offset-2 transition-colors hover:text-accent-text"
         >
@@ -284,6 +285,7 @@
                               </template>
                               <NuxtLink
                                 :to="advisorTo"
+                                data-assistant-handoff
                                 data-advisor-escalation="recommend"
                                 class="font-semibold text-primary underline underline-offset-2 transition-colors hover:text-accent-text"
                               >
@@ -343,7 +345,11 @@
                                   variant="outline"
                                   class="w-full gap-sm rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary max-md:min-h-touch"
                                 >
-                                  <NuxtLink :to="advisorTo" data-advisor-escalation="no_results">
+                                  <NuxtLink
+                                    :to="advisorTo"
+                                    data-assistant-handoff
+                                    data-advisor-escalation="no_results"
+                                  >
                                     <IconMessages
                                       :size="14"
                                       class="shrink-0 text-primary"
@@ -358,7 +364,7 @@
                                   as-child
                                   class="w-full gap-sm rounded-full bg-accent px-md py-sm text-meta font-semibold text-ink hover:bg-accent-text hover:text-paper max-md:min-h-touch"
                                 >
-                                  <NuxtLink :to="demandeBaseTo">
+                                  <NuxtLink :to="demandeBaseTo" data-assistant-handoff>
                                     <IconPlus :size="14" class="shrink-0" aria-hidden="true" />
                                     Faire une demande personnalisée
                                   </NuxtLink>
@@ -373,7 +379,10 @@
                                 as-child
                                 class="rounded-full bg-accent px-md py-sm text-meta font-semibold text-ink hover:bg-accent-text hover:text-paper max-md:min-h-touch"
                               >
-                                <NuxtLink :to="advisorTo" data-advisor-escalation="out_of_catalog"
+                                <NuxtLink
+                                  :to="advisorTo"
+                                  data-assistant-handoff
+                                  data-advisor-escalation="out_of_catalog"
                                   >Décrire mon besoin à votre conseiller</NuxtLink
                                 >
                               </Button>
@@ -475,7 +484,10 @@
                           variant="outline"
                           class="h-control flex-1 rounded-full border-rule px-md text-meta font-semibold text-ink hover:border-primary"
                         >
-                          <NuxtLink :to="advisorTo" data-advisor-escalation="unavailable"
+                          <NuxtLink
+                            :to="advisorTo"
+                            data-assistant-handoff
+                            data-advisor-escalation="unavailable"
                             >Parler à votre conseiller</NuxtLink
                           >
                         </Button>
@@ -553,7 +565,7 @@ import type {
   AssistantSelection,
   AssistantSubmitVia
 } from '~/composables/useAssistantAnalytics'
-import { advisorLink, demandeLink, type AssistantHandoff } from '~/utils/assistant-handoff'
+import { advisorLink, demandeLink, toHandoff } from '~/utils/assistant-handoff'
 import AssistantCompareTable from '~/components/Assistant/CompareTable.vue'
 import AssistantRecommendationCard from '~/components/Assistant/RecommendationCard.vue'
 import {
@@ -628,11 +640,7 @@ onBeforeUnmount(() => {
 // demande et à la page conseiller — hors URL (RGPD, voir
 // utils/assistant-handoff) : aucune ressaisie, aucun texte libre dans
 // `page_location`.
-const handoff = computed<AssistantHandoff | null>(() =>
-  props.needSummary.trim()
-    ? { need: props.needSummary, headcount: props.headcount, location: props.location }
-    : null
-)
+const handoff = computed(() => toHandoff(props.needSummary, props.headcount, props.location))
 
 // Escalade conseiller : toutes les impasses et le pied des recommandations.
 const advisorTo = computed(() => advisorLink(handoff.value))

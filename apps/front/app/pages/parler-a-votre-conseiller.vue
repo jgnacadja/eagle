@@ -270,12 +270,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
 import type { ConseillerBesoin } from '@learnup/types'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
-import { readHandoff } from '~/utils/assistant-handoff'
+import { useReceivedHandoff } from '~/composables/useAssistantHandoff'
 import { leadFields } from '~/utils/leadFields'
 
 definePageMeta({
@@ -347,12 +346,17 @@ const [siret] = defineField('siret')
 const [message] = defineField('message')
 const [consentement] = defineField('consentement')
 
-// Besoin décrit dans la recherche assistée, transmis hors URL
-// (`history.state`, voir utils/assistant-handoff) : pré-remplit « Votre
-// besoin en quelques mots » au montage, sans écraser une saisie.
-onMounted(() => {
-  const need = readHandoff()?.need
-  if (need && !message.value) setFieldValue('message', need.slice(0, 2000))
+// Besoin décrit dans la recherche assistée, transmis hors URL (voir
+// utils/assistant-handoff) : pré-remplit « Votre besoin en quelques mots » au
+// montage puis à chaque publication du panneau (page déjà ouverte), sans
+// jamais écraser une saisie du visiteur.
+let appliedNeed = ''
+useReceivedHandoff((next) => {
+  const need = next?.need.slice(0, 2000)
+  if (!need) return
+  if (message.value && message.value !== appliedNeed) return
+  setFieldValue('message', need)
+  appliedNeed = need
 })
 
 type ConseillerField = 'nom' | 'email' | 'telephone' | 'siret' | 'consentement'

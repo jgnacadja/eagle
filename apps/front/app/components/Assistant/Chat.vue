@@ -61,9 +61,11 @@ import { nextTick, ref, watch } from 'vue'
 import { Motion } from 'motion-v'
 import { useAssistant, type AssistantEntry } from '~/composables/useAssistant'
 import { ADVISOR_ESCALATION_ATTR } from '~/composables/useAssistantAnalytics'
+import { useAssistantHandoffChannel } from '~/composables/useAssistantHandoff'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { useAssistantTracking } from '~/composables/useAssistantTracking'
 import AssistantConversation from '~/components/Assistant/Conversation.vue'
+import { HANDOFF_LINK_ATTR, persistHandoff, toHandoff } from '~/utils/assistant-handoff'
 
 const { isOpen, context, pendingMessage, open, close } = useAssistantLauncher()
 
@@ -86,6 +88,7 @@ const {
 
 // Jalons analytics du parcours : le widget relaie, le composable classe.
 const tracking = useAssistantTracking(assistant, context)
+const { publish: publishHandoff } = useAssistantHandoffChannel()
 
 const GREETING: AssistantEntry = {
   role: 'assistant',
@@ -170,6 +173,15 @@ function onPanelClick(event: MouseEvent) {
   // Sortie conseiller : le lien porte l'état d'où il part.
   const from = anchor.getAttribute(ADVISOR_ESCALATION_ATTR)
   if (from) tracking.escalate(from)
+  // Lien de transmission : le besoin est publié aux pages déjà montées — la
+  // destination peut être la page courante (« Modifier » depuis le formulaire,
+  // autre recommandation sur la même page). Vers l'URL déjà affichée, la
+  // navigation est un no-op : le besoin est inscrit dans l'entrée courante.
+  if (anchor.hasAttribute(HANDOFF_LINK_ATTR)) {
+    const handoff = toHandoff(needSummary.value, slots.value.headcount, slots.value.location)
+    publishHandoff(handoff)
+    if (anchor.getAttribute('href') === route.fullPath) persistHandoff(handoff)
+  }
   close()
 }
 

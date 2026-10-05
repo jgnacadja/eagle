@@ -211,21 +211,23 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async setSyncRun(run: SyncRun): Promise<void> {
+  // `key` permet à plusieurs jobs de partager le même mécanisme
+  // (`sync:last_run` catalogue, `sync:reviews:last_run` avis Google).
+  async setSyncRun(run: SyncRun, key = 'sync:last_run'): Promise<void> {
     if (!this.client || !this.isReady) return
 
     try {
-      await this.client.setex('sync:last_run', 86_400, JSON.stringify(run))
+      await this.client.setex(key, 86_400, JSON.stringify(run))
     } catch (error) {
       this.logger.warn({ error, run }, 'Failed to set sync run status')
     }
   }
 
-  async getSyncRun(): Promise<SyncRun | null> {
+  async getSyncRun(key = 'sync:last_run'): Promise<SyncRun | null> {
     if (!this.client || !this.isReady) return null
 
     try {
-      const value = await this.client.get('sync:last_run')
+      const value = await this.client.get(key)
       if (!value) return null
       return JSON.parse(value) as SyncRun
     } catch (error) {
@@ -234,37 +236,37 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  // Verrou distribué de la sync catalogue (SET NX PX) : une seule instance
-  // exécute la sync à la fois, même en multi-instances/serverless.
-  // Fail-open quand Redis est absent ou en erreur : le run est idempotent,
-  // un doublon coûte moins qu'une sync manquée ; le flag `running` du
-  // service conserve l'exclusion au sein du process.
-  async acquireSyncLock(token: string, ttlMs: number): Promise<boolean> {
+  // Verrou distribué des jobs de synchro (SET NX PX) : une seule instance
+  // exécute le run à la fois, même en multi-instances/serverless.
+  // Fail-open quand Redis est absent ou en erreur : les runs sont
+  // idempotents, un doublon coûte moins qu'une sync manquée ; le flag
+  // `running` du service conserve l'exclusion au sein du process.
+  async acquireSyncLock(token: string, ttlMs: number, lockKey = 'sync:lock'): Promise<boolean> {
     if (!this.client || !this.isReady) return true
 
     try {
-      const result = await this.client.set('sync:lock', token, 'PX', ttlMs, 'NX')
+      const result = await this.client.set(lockKey, token, 'PX', ttlMs, 'NX')
       return result === 'OK'
     } catch (error) {
-      this.logger.warn({ error }, 'Failed to acquire sync lock — proceeding without it')
+      this.logger.warn({ error, lockKey }, 'Failed to acquire sync lock — proceeding without it')
       return true
     }
   }
 
   // Compare-and-delete : le token évite de libérer le verrou posé par une
   // autre instance si le nôtre a déjà expiré (TTL dépassé pendant le run).
-  async releaseSyncLock(token: string): Promise<void> {
+  async releaseSyncLock(token: string, lockKey = 'sync:lock'): Promise<void> {
     if (!this.client || !this.isReady) return
 
     try {
       await this.client.eval(
         'if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end',
         1,
-        'sync:lock',
+        lockKey,
         token
       )
     } catch (error) {
-      this.logger.warn({ error }, 'Failed to release sync lock')
+      this.logger.warn({ error, lockKey }, 'Failed to release sync lock')
     }
   }
 

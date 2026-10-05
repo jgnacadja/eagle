@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import type { CentreListItem } from '@learnup/types'
 import type { FormationDirectusPayload } from '../digiforma/digiforma.mapper'
+import type { GoogleAvisPayload } from '../reviews/reviews.mapper'
 
 export interface FamilyApplyResult {
   assigned: number
@@ -50,6 +51,24 @@ export interface CentreGeodata {
   latitude: number
   longitude: number
   geocoded_address: string | null
+}
+
+/** Centre candidat à la synchro des avis — `google_place_id` requis. */
+export interface CentreForReviews {
+  id: number
+  slug: string
+  google_place_id: string | null
+}
+
+/** Agrégat Google Places écrit sur le centre par la synchro des avis. */
+export interface CentreGoogleAggregate {
+  google_rating: number | null
+  google_reviews_count: number | null
+}
+
+interface ExistingAvis {
+  id: number
+  google_review_id: string
 }
 
 interface FetchLikeResponse {
@@ -337,6 +356,98 @@ export class DirectusCatalogService {
       throw new Error('Directus catalog disabled: missing DIRECTUS_TOKEN or DIRECTUS_INTERNAL_URL')
     }
     await this.request(`${this.baseUrl}/items/centres/${id}`, 'PATCH', patch)
+  }
+
+  /**
+   * Centres portant un `google_place_id` — tous statuts confondus, comme le
+   * géocodage : un brouillon peut être synchronisé avant sa publication.
+   */
+  async fetchCentresForReviews(): Promise<CentreForReviews[]> {
+    if (!this.enabled) {
+      return []
+    }
+
+    const url = new URL(`${this.baseUrl}/items/centres`)
+    url.searchParams.set('filter[google_place_id][_nnull]', 'true')
+    url.searchParams.set('limit', '-1')
+    for (const field of ['id', 'slug', 'google_place_id']) {
+      url.searchParams.append('fields[]', field)
+    }
+
+    const response = await this.request<{ data: CentreForReviews[] }>(url.toString())
+    return response.data ?? []
+  }
+
+  /**
+   * Upsert des avis Google par `google_review_id` (idempotent) :
+   * - création → `status: published` ;
+   * - mise à jour → contenu seul (auteur, texte, note, date, avatar,
+   *   rattachement) : `status`/`sort`/`slug` restent éditoriaux — un avis
+   *   archivé par un modérateur n'est jamais republié par le job.
+   */
+  async upsertGoogleAvis(
+    reviews: GoogleAvisPayload[]
+  ): Promise<{ inserted: number; updated: number }> {
+    if (reviews.length === 0 || !this.enabled) {
+      return { inserted: 0, updated: 0 }
+    }
+
+    const existing = await this.fetchExistingAvis(reviews.map((r) => r.google_review_id))
+    const creates: Array<GoogleAvisPayload & { status: 'published' }> = []
+    const updates: Array<Partial<GoogleAvisPayload> & { id: number }> = []
+
+    for (const review of reviews) {
+      const found = existing.get(review.google_review_id)
+      if (found) {
+        const { slug: _slug, google_review_id: _key, ...patch } = review
+        updates.push({ id: found.id, ...patch })
+      } else {
+        creates.push({ ...review, status: 'published' })
+      }
+    }
+
+    if (creates.length) {
+      await this.request(`${this.baseUrl}/items/avis`, 'POST', creates)
+    }
+    for (let i = 0; i < updates.length; i += this.updateConcurrency) {
+      const slice = updates.slice(i, i + this.updateConcurrency)
+      await Promise.all(
+        slice.map((row) => {
+          const { id, ...patch } = row
+          return this.request(`${this.baseUrl}/items/avis/${id}`, 'PATCH', patch)
+        })
+      )
+    }
+
+    return { inserted: creates.length, updated: updates.length }
+  }
+
+  /** Agrégat Places sur la fiche centre (note globale + volume d'avis). */
+  async updateCentreGoogleAggregate(id: number, aggregate: CentreGoogleAggregate): Promise<void> {
+    if (!this.enabled) {
+      throw new Error('Directus catalog disabled: missing DIRECTUS_TOKEN or DIRECTUS_INTERNAL_URL')
+    }
+    await this.request(`${this.baseUrl}/items/centres/${id}`, 'PATCH', aggregate)
+  }
+
+  private async fetchExistingAvis(reviewIds: string[]): Promise<Map<string, ExistingAvis>> {
+    const map = new Map<string, ExistingAvis>()
+
+    for (let i = 0; i < reviewIds.length; i += 100) {
+      const slice = reviewIds.slice(i, i + 100)
+      const url = new URL(`${this.baseUrl}/items/avis`)
+      url.searchParams.append('fields[]', 'id')
+      url.searchParams.append('fields[]', 'google_review_id')
+      url.searchParams.set('filter[google_review_id][_in]', slice.join(','))
+      url.searchParams.set('limit', '-1')
+
+      const response = await this.request<{ data: ExistingAvis[] }>(url.toString())
+      for (const row of response.data ?? []) {
+        map.set(row.google_review_id, row)
+      }
+    }
+
+    return map
   }
 
   /**

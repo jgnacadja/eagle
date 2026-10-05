@@ -14,6 +14,7 @@ import { timingSafeEqual } from 'node:crypto'
 import { HealthController } from './health/health.controller'
 import { DigiformaModule } from './digiforma/digiforma.module'
 import { SyncModule } from './sync/sync.module'
+import { ReviewsModule } from './reviews/reviews.module'
 import { CatalogModule } from './catalog/catalog.module'
 import { CentresModule } from './centres/centres.module'
 import { LeadsModule } from './leads/leads.module'
@@ -243,6 +244,7 @@ export function buildThrottlers(
     CacheModule,
     DigiformaModule,
     SyncModule,
+    ReviewsModule,
     CatalogModule,
     CentresModule,
     DirectusModule,

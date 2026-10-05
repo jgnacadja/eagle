@@ -806,4 +806,136 @@ describe('DirectusCatalogService', () => {
       true
     )
   })
+
+  it('fetchCentresForReviews ne retourne que les centres avec place_id', async () => {
+    fetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ data: [{ id: 7, slug: 'creteil', google_place_id: 'ChIJ_x' }] }),
+        { status: 200 }
+      )
+    )
+
+    const rows = await service.fetchCentresForReviews()
+
+    expect(rows).toEqual([{ id: 7, slug: 'creteil', google_place_id: 'ChIJ_x' }])
+    const url = String(fetch.mock.calls[0][0])
+    expect(url).toContain('/items/centres')
+    expect(url).toContain('filter%5Bgoogle_place_id%5D%5B_nnull%5D=true')
+  })
+
+  it('upsertGoogleAvis crée les avis inconnus et patche ceux existants sans toucher status/slug', async () => {
+    fetch
+      // fetchExistingAvis : rev-2 déjà présent
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 21, google_review_id: 'rev-2' }] }), {
+          status: 200
+        })
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [{ id: 22 }] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+
+    const result = await service.upsertGoogleAvis([
+      {
+        slug: 'google-creteil-rev-1',
+        author: 'Marie D.',
+        published_at: '2026-01-15T10:00:00Z',
+        stars: 5,
+        quote: 'Top.',
+        source: 'google',
+        avatar: null,
+        google_review_id: 'rev-1',
+        centre: 7
+      },
+      {
+        slug: 'google-creteil-rev-2',
+        author: 'Bob',
+        published_at: null,
+        stars: 4,
+        quote: 'Bien.',
+        source: 'google',
+        avatar: 'https://photo',
+        google_review_id: 'rev-2',
+        centre: 7
+      }
+    ])
+
+    expect(result).toEqual({ inserted: 1, updated: 1 })
+
+    const createCall = fetch.mock.calls.find(
+      (call) => call[1]?.method === 'POST' && String(call[0]).endsWith('/items/avis')
+    )
+    expect(createCall).toBeDefined()
+    const created = JSON.parse(createCall![1].body)
+    expect(created).toHaveLength(1)
+    expect(created[0]).toMatchObject({
+      slug: 'google-creteil-rev-1',
+      status: 'published',
+      source: 'google',
+      google_review_id: 'rev-1',
+      centre: 7
+    })
+
+    const patchCall = fetch.mock.calls.find(
+      (call) => call[1]?.method === 'PATCH' && String(call[0]).endsWith('/items/avis/21')
+    )
+    expect(patchCall).toBeDefined()
+    const patched = JSON.parse(patchCall![1].body)
+    // Le contenu est resynchronisé ; status/slug/google_review_id jamais réécrits.
+    expect(patched).toMatchObject({ quote: 'Bien.', stars: 4, source: 'google' })
+    expect(patched).not.toHaveProperty('status')
+    expect(patched).not.toHaveProperty('slug')
+    expect(patched).not.toHaveProperty('google_review_id')
+  })
+
+  it('upsertGoogleAvis est idempotent : un second run ne fait que patcher', async () => {
+    const reviews = [
+      {
+        slug: 'google-creteil-rev-1',
+        author: 'Marie D.',
+        published_at: null,
+        stars: 5,
+        quote: 'Top.',
+        source: 'google' as const,
+        avatar: null,
+        google_review_id: 'rev-1',
+        centre: 7
+      }
+    ]
+
+    fetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [{ id: 22 }] }), { status: 200 }))
+    const first = await service.upsertGoogleAvis(reviews)
+    expect(first).toEqual({ inserted: 1, updated: 0 })
+
+    fetch.mockClear()
+    fetch
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 22, google_review_id: 'rev-1' }] }), {
+          status: 200
+        })
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+    const second = await service.upsertGoogleAvis(reviews)
+
+    expect(second).toEqual({ inserted: 0, updated: 1 })
+    expect(
+      fetch.mock.calls.some(
+        (call) => call[1]?.method === 'POST' && String(call[0]).endsWith('/items/avis')
+      )
+    ).toBe(false)
+  })
+
+  it('updateCentreGoogleAggregate patche rating et count', async () => {
+    fetch.mockResolvedValueOnce(new Response(JSON.stringify({ data: {} }), { status: 200 }))
+
+    await service.updateCentreGoogleAggregate(7, { google_rating: 4.7, google_reviews_count: 214 })
+
+    expect(fetch.mock.calls[0][0]).toBe('http://directus:8055/items/centres/7')
+    expect(fetch.mock.calls[0][1]?.method).toBe('PATCH')
+    expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({
+      google_rating: 4.7,
+      google_reviews_count: 214
+    })
+  })
 })

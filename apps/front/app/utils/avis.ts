@@ -1,9 +1,11 @@
-import type { Avis } from '@learnup/types'
+import type { Avis, AvisSource } from '@learnup/types'
 import { formatMonthYearFr } from '~/utils/date'
 
 /** Forme plate d'un avis prête à être passée aux composants UI. */
 export interface MappedAvis {
   slug: string
+  /** Origine de l'avis — `google` affiche le badge « Avis certifiés Google ». */
+  source: AvisSource | null
   /** Étoiles Unicode clampées 0–5 (ex. « ★★★★☆ »). */
   stars: string
   /** Citation de `avis.quote` encadrée automatiquement par «\u202f…\u202f». */
@@ -26,6 +28,7 @@ export function mapAvis(avis: Avis): MappedAvis {
   const date = formatMonthYearFr(avis.published_at)
   return {
     slug: avis.slug,
+    source: avis.source ?? null,
     stars: '★'.repeat(stars) + '☆'.repeat(5 - stars),
     quote: `«\u202f${avis.quote}\u202f»`,
     author: date ? `${avis.author} · ${date}` : avis.author

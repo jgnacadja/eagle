@@ -203,6 +203,10 @@ const PUBLIC_FIELDS = {
     'qualiopi_valid_until',
     'qualiopi_certificate',
     'image',
+    'google_place_id',
+    'google_maps_url',
+    'google_rating',
+    'google_reviews_count',
     'seo_title',
     'seo_description',
     'seo_canonical'
@@ -244,7 +248,20 @@ const PUBLIC_FIELDS = {
     'seo_description',
     'seo_canonical'
   ],
-  avis: ['id', 'status', 'sort', 'slug', 'author', 'published_at', 'stars', 'quote', 'centre'],
+  // `google_review_id` resté hors allowlist : clé technique de la synchro.
+  avis: [
+    'id',
+    'status',
+    'sort',
+    'slug',
+    'author',
+    'published_at',
+    'stars',
+    'quote',
+    'centre',
+    'source',
+    'avatar'
+  ],
   pages: ['id', 'status', 'slug', 'title', 'seo_title', 'seo_description', 'seo_canonical'],
   pages_legales: [
     'id',

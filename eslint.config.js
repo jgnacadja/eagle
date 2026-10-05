@@ -151,6 +151,9 @@ export default defineConfig(
     ],
     languageOptions: {
       globals: vitestGlobals
+    },
+    rules: {
+      'vue/one-component-per-file': 'off'
     }
   },
   {

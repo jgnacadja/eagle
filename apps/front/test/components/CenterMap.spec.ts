@@ -137,6 +137,21 @@ vi.stubGlobal(
   }
 )
 
+// Les callbacks ResizeObserver sont capturés pour rejouer un resize du
+// conteneur (le recadrage métropole après layout en dépend).
+const resizeCallbacks: (() => void)[] = []
+vi.stubGlobal(
+  'ResizeObserver',
+  class {
+    constructor(cb: () => void) {
+      resizeCallbacks.push(cb)
+    }
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+)
+
 interface CenterMapProps {
   centers: CenterResult[]
   activeId: string | null
@@ -155,6 +170,7 @@ function mountWithStubs(props: CenterMapProps) {
   mapMockState.markers.length = 0
   mapMockState.distance.value = 10
   mapMockState.fireOnce.value = true
+  resizeCallbacks.length = 0
 
   return mount(CenterMap, {
     props,
@@ -190,11 +206,13 @@ describe('CenterMap', () => {
     await flushPromises()
 
     const options = vi.mocked(Leaflet.map).mock.calls[0]?.[1] as Record<string, unknown>
-    expect(options.minZoom).toBe(5)
+    expect(options.minZoom).toBe(2)
     expect(options.maxBoundsViscosity).toBe(1)
+    // Métropole + DOM-TOM à leur position réelle, avec marge pour que la
+    // vue fittée reste dans maxBounds (sinon `setView` épingle le centre).
     expect(Leaflet.latLngBounds).toHaveBeenCalledWith([
-      [41.3, -5.2],
-      [51.2, 9.7]
+      [-25, -70],
+      [60, 70]
     ])
     expect(Leaflet.svg).toHaveBeenCalledWith({ padding: 1 })
     expect(options.renderer).toBeDefined()
@@ -204,6 +222,82 @@ describe('CenterMap', () => {
     const maskOptions = vi.mocked(Leaflet.polygon).mock.calls[0]?.[1] as Record<string, unknown>
     expect(maskOptions.fillOpacity).toBe(1)
     expect(maskOptions.interactive).toBe(false)
+
+    // Le masque perce un trou par territoire : monde + métropole (12 rings)
+    // + DOM-TOM (13 rings).
+    const maskRings = vi.mocked(Leaflet.polygon).mock.calls[0]?.[0] as unknown[][]
+    expect(maskRings).toHaveLength(1 + 12 + 13)
+  })
+
+  it('keeps the initial frame on metropolitan France despite DOM-TOM centres', async () => {
+    vi.mocked(Leaflet.latLngBounds).mockClear()
+    mountWithStubs({
+      centers: [...centers, { ...centers[0]!, id: 'fort-de-france', lat: 14.61, lng: -61.05 }],
+      activeId: null,
+      caption: 'Tous les départements'
+    })
+    await flushPromises()
+
+    // Le fit initial cale la vue sur le rectangle métropole : les centres
+    // DOM-TOM n'influencent pas le cadrage (découverte au dézoom).
+    const boundsArgs = vi
+      .mocked(Leaflet.latLngBounds)
+      .mock.calls.map((c) => c[0] as unknown as [number, number][])
+    expect(
+      boundsArgs.some(
+        (pts) =>
+          Array.isArray(pts) &&
+          pts.some((p) => p[0] === 41.3 && p[1] === -5.2) &&
+          pts.some((p) => p[0] === 51.2 && p[1] === 9.7)
+      )
+    ).toBe(true)
+    expect(boundsArgs.some((pts) => Array.isArray(pts) && pts.some((p) => p[0] === 14.61))).toBe(
+      false
+    )
+  })
+
+  it('refits the metropolitan frame on container resize until the user moves the map', async () => {
+    mountWithStubs({
+      centers,
+      activeId: null,
+      caption: 'Tous les départements'
+    })
+    await flushPromises()
+
+    const map = vi.mocked(Leaflet.map).mock.results[0]?.value as unknown as {
+      fitBounds: ReturnType<typeof vi.fn>
+      invalidateSize: ReturnType<typeof vi.fn>
+      on: ReturnType<typeof vi.fn>
+    }
+    const fitCalls = map.fitBounds.mock.calls.length
+    expect(fitCalls).toBeGreaterThan(0)
+
+    // Un fit calculé sur une taille transitoire est recalé sur la taille
+    // réelle dès que l'observer notifie (init avant la fin du layout).
+    resizeCallbacks.forEach((cb) => cb())
+    expect(map.invalidateSize).toHaveBeenCalled()
+    expect(map.fitBounds.mock.calls.length).toBeGreaterThan(fitCalls)
+
+    // Après un geste utilisateur (drag), le resize ne reprend plus le cadrage.
+    map.on.mock.calls.filter((c) => c[0] === 'dragstart').forEach((c) => (c[1] as () => void)())
+    const afterDrag = map.fitBounds.mock.calls.length
+    resizeCallbacks.forEach((cb) => cb())
+    expect(map.fitBounds.mock.calls.length).toBe(afterDrag)
+  })
+
+  it('falls back to all points when every centre is overseas', async () => {
+    vi.mocked(Leaflet.latLngBounds).mockClear()
+    mountWithStubs({
+      centers: [{ ...centers[0]!, id: 'fort-de-france', lat: 14.61, lng: -61.05 }],
+      activeId: null,
+      caption: 'Tous les départements'
+    })
+    await flushPromises()
+
+    const map = vi.mocked(Leaflet.map).mock.results[0]?.value as unknown as {
+      setView: ReturnType<typeof vi.fn>
+    }
+    expect(map.setView).toHaveBeenCalledWith([14.61, -61.05], 13)
   })
 
   it('shows the empty message when no centers', () => {

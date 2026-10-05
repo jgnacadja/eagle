@@ -76,7 +76,7 @@
               v-model="heroSearch"
               input-id="hero-search-input"
               sr-label="Besoin d'aide pour choisir votre formation"
-              placeholder="Ex. : Je dois former 8 salariés au CACES près de Lyon avant septembre."
+              :placeholder="heroPlaceholder"
               @submit="onHeroSearch"
             >
               <template #icon>
@@ -385,7 +385,7 @@
           />
 
           <div>
-            <Button as-child size="pill-lg" class="w-full sm:w-auto">
+            <Button as-child size="pill-lg" class="w-full gap-xs">
               <NuxtLink to="/centres">
                 Explorer la carte des centres <span class="link-arrow">→</span>
               </NuxtLink>
@@ -597,7 +597,7 @@
         <!-- Pied de section : Témoignages & CTA -->
         <div class="mt-xl flex flex-col gap-lg sm:flex-row sm:items-center sm:justify-between">
           <div class="shrink-0">
-            <Button as-child variant="outline" size="pill-lg" class="lg:inline-flex gap-xs">
+            <Button as-child variant="link" size="inline" class="gap-xs">
               <NuxtLink to="/formations"> Consulter <span class="link-arrow">→</span></NuxtLink>
             </Button>
           </div>
@@ -714,8 +714,10 @@ import { useTagFilter } from '~/composables/useTagFilter'
 import { availabilityStatus, useCentreSessionDates } from '~/composables/useCentres'
 import { useGeolocation } from '~/composables/useGeolocation'
 import { useGeoSuggest } from '~/composables/useGeoSuggest'
+import { streetOnly } from '~/utils/centre'
 import { distanceKm, formatDistance } from '~/utils/geo'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
+import { useAnimatedPlaceholder } from '~/composables/useAnimatedPlaceholder'
 import { heroStagger, revealStagger } from '~/utils/reveal'
 import { articleAssetUrl, formatArticleDate } from '~/utils/article'
 import { mapAvis } from '~/utils/avis'
@@ -773,7 +775,14 @@ useContentSeo(
   }
 )
 
+const HERO_SEARCH_PLACEHOLDERS = [
+  'Je recherche une formation en gestion des incendies.',
+  'Nous recherchons une formation SST pour nos équipes à Paris.',
+  "Je recherche une formation en gestion des conflits au sein d'une équipe."
+] as const
+
 const heroSearch = ref('')
+const heroPlaceholder = useAnimatedPlaceholder(HERO_SEARCH_PLACEHOLDERS)
 const assistant = useAssistantLauncher()
 
 // C1 — point d'entrée principal : le besoin saisi ouvre le panneau de
@@ -1041,13 +1050,20 @@ function distanceToUser(centre: Centre, pos: { lat: number; lng: number }): numb
 
 const homeMapCenters = computed<CenterResult[]>(() =>
   (derniersCentresData.value ?? []).map((centre) => {
-    const location = [centre.address, centre.postal_code, centre.city, centre.department]
+    const location = [
+      streetOnly(centre.address, centre.postal_code, centre.city),
+      centre.postal_code,
+      centre.city,
+      centre.department
+    ]
       .filter(Boolean)
       .join(', ')
     const tags = (centre.specialties ?? []).join(' · ')
     return {
       id: centre.slug,
       name: centre.name,
+      city: centre.city ?? undefined,
+      department: centre.department ?? undefined,
       cp: centre.postal_code ?? '',
       address: location,
       tags,

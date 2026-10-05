@@ -604,6 +604,7 @@ import {
 import { availabilityStatus } from '~/composables/useCentres'
 import { useGeolocation } from '~/composables/useGeolocation'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
+import { streetOnly } from '~/utils/centre'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
 import { directusAssetUrl } from '~/utils/directusAsset'
 import { departmentCodeFromPostalCode, distanceKm, formatDistance } from '~/utils/geo'
@@ -712,6 +713,8 @@ const singleMapCenters = computed<CenterResult[]>(() => {
     {
       id: c.slug,
       name: c.name,
+      city: c.city ?? undefined,
+      department: c.department ?? undefined,
       cp: c.postal_code ?? '',
       address: mapAddress.value,
       tags: '',
@@ -738,14 +741,9 @@ const addressLocality = computed(() =>
   [centre.value!.postal_code, centre.value!.city].filter(Boolean).join(' ')
 )
 
-const streetAddress = computed(() => {
-  const address = centre.value!.address ?? ''
-  const locality = addressLocality.value
-  if (locality && address.endsWith(locality)) {
-    return address.slice(0, -locality.length).replace(/,\s*$/, '')
-  }
-  return address
-})
+const streetAddress = computed(() =>
+  streetOnly(centre.value!.address, centre.value!.postal_code, centre.value!.city)
+)
 
 // Adresse courte du pied de carte : rue + « code postal ville » (sans
 // département/région — contrairement à `heroAddress`).
@@ -841,7 +839,9 @@ useContentSeo(
         ? (centre.value!.seo_description ??
           `Centre de formation ${centre.value!.city ?? ''} — LEARN UP ACADEMY.`)
         : undefined,
-      seo_noindex: !isFound
+      seo_noindex: !isFound,
+      // Visuel OG/Twitter : visuel éditorial du centre, sinon défaut.
+      seo_image: isFound ? imageSrc.value : undefined
     }
   },
   () => {

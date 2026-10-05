@@ -30,6 +30,7 @@ export function makeCourse(seed: CourseSeed): CourseListItem {
     shortDescription: seed.shortDescription ?? null,
     durationDays: 2,
     durationHours: 14,
+    durationBucket: 'moyenne',
     price: null,
     cpf: null,
     cpfCode: null,

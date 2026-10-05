@@ -20,7 +20,7 @@
         size="icon-box"
         aria-label="Zoomer"
         class="shadow-sm"
-        @click="mapInstance?.zoomIn()"
+        @click="zoomIn"
       >
         <IconPlus :size="16" />
       </Button>
@@ -30,7 +30,7 @@
         size="icon-box"
         aria-label="Dézoomer"
         class="shadow-sm"
-        @click="mapInstance?.zoomOut()"
+        @click="zoomOut"
       >
         <IconMinus :size="16" />
       </Button>
@@ -67,7 +67,9 @@ import { Button } from '@/components/ui/button'
 import IconPlus from '@/components/icons/IconPlus.vue'
 import IconMinus from '@/components/icons/IconMinus.vue'
 import CenterMapPopup from '@/components/Map/CenterMapPopup.vue'
+import { centreLocationLabel } from '~/utils/centre'
 import franceOutline from '~/assets/geo-france-outline.json'
+import domtomOutline from '~/assets/geo-domtom-outline.json'
 import type { CenterResult } from '~/types/center-result'
 import type * as Leaflet from 'leaflet'
 
@@ -87,7 +89,9 @@ const props = withDefaults(
   }>(),
   {
     mode: 'network',
-    minZoom: 5,
+    // Zoom monde autorisé : les DOM-TOM ne sont visibles qu'en dézoomant
+    // (la vue initiale reste cadrée sur les centres présents).
+    minZoom: 2,
     popup: true,
     userPosition: null,
     focusCenter: null,
@@ -113,15 +117,36 @@ let visibilityObserver: IntersectionObserver | null = null
 // Dernier focus appliqué : un changement de `centers`/`userPosition` ne doit
 // pas re-cadrer la carte si l'utilisateur l'a déjà déplacée.
 let lastFocus: { lat: number; lng: number } | null = null
+// Vrai dès que l'utilisateur déplace la carte lui-même (drag, molette,
+// double-clic, boutons +/−) : un resize du conteneur ne recadre plus.
+let userMoved = false
+
+function markUserMoved() {
+  userMoved = true
+}
+
+function zoomIn() {
+  markUserMoved()
+  mapInstance.value?.zoomIn()
+}
+
+function zoomOut() {
+  markUserMoved()
+  mapInstance.value?.zoomOut()
+}
 
 const hasVisibleCenters = computed(() => props.centers.some((c) => c.lat != null && c.lng != null))
 
-// France métropolitaine + Corse, au plus juste : le réseau est national,
+// France entière — métropole, Corse et DOM-TOM à leur position réelle
+// (rectangle union de tous les territoires) : le réseau est national,
 // l'utilisateur ne doit ni sortir du territoire ni voir les pays voisins
-// (le tileLayer ne charge pas de tuiles hors de ces limites).
+// (le tileLayer ne charge pas de tuiles hors de ces limites). Les bords
+// dépassent l'union exacte : `setView` borne le centre pour que la vue
+// reste dans maxBounds — un rectangle trop juste épinglerait le fit
+// métropole sur un bord (vue plus grande que la bbox à petit zoom).
 const FRANCE_MAX_BOUNDS: [[number, number], [number, number]] = [
-  [41.3, -5.2],
-  [51.2, 9.7]
+  [-25, -70],
+  [60, 70]
 ]
 
 const WORLD_RING: [number, number][] = [
@@ -135,6 +160,25 @@ const WORLD_RING: [number, number][] = [
 // l'init de la carte, sinon le monde entier apparaît brièvement au premier
 // drag avant que le masque n'arrive.
 const FRANCE_OUTLINE = franceOutline as [number, number][][]
+
+// Contours simplifiés des DOM-TOM (gregoiredavid/france-geojson,
+// « departements-avec-outre-mer », Ramer-Douglas-Peucker ε=0.0025°) :
+// autant de trous supplémentaires dans le masque, pour que les
+// territoires restent visibles et navigables à leur position réelle.
+const DOMTOM_OUTLINE = domtomOutline as [number, number][][]
+
+// Rectangle métropole + Corse (l'ancienne maxBounds) : sert à exclure les
+// points DOM-TOM du cadrage automatique — la vue reste centrée sur la
+// métropole, les territoires se découvrent en dézoomant.
+const METRO_BOUNDS: [[number, number], [number, number]] = [
+  [41.3, -5.2],
+  [51.2, 9.7]
+]
+
+function inMetro([lat, lng]: [number, number]): boolean {
+  const [[s, w], [n, e]] = METRO_BOUNDS
+  return lat >= s && lat <= n && lng >= w && lng <= e
+}
 
 const directionsUrl = computed(() => {
   // Lu uniquement quand le v-if du lien itinéraire est vrai → coords garanties.
@@ -215,14 +259,6 @@ async function ensureLeaflet(): Promise<typeof import('leaflet')> {
   return Leaf
 }
 
-function locationLabel(center: CenterResult): string {
-  const parts = center.address.split('·')
-  const second = parts[1]
-  return parts.length > 1 && second
-    ? second.trim()
-    : (center.address.split(',').pop()?.trim() ?? '')
-}
-
 function closePopup() {
   if (pendingReveal && mapInstance.value) {
     mapInstance.value.off('moveend', pendingReveal)
@@ -241,7 +277,7 @@ function openPopup(center: CenterResult, marker: Leaflet.Marker) {
   popupApp = createApp(CenterMapPopup, {
     id: center.id,
     name: center.name,
-    locationLabel: locationLabel(center),
+    locationLabel: centreLocationLabel(center),
     tagsShort: center.tagsShort,
     onClose: () => emit('select', '')
   })
@@ -319,12 +355,27 @@ function fitToMarkers(L: typeof import('leaflet')) {
     coords.push([props.userPosition.lat, props.userPosition.lng])
   }
 
-  const first = coords[0]
+  // Cadrage « comme avant » : centré sur la métropole. Les centres DOM-TOM
+  // n'influencent pas le fit — ils apparaissent en dézoomant, avec leurs
+  // pastilles de cluster. Repli sur tous les points quand rien n'est en
+  // métropole (réseau 100 % outre-mer, fiche DOM en mode single).
+  const metroCoords = props.mode === 'network' ? coords.filter(inMetro) : coords
+  const fitCoords = metroCoords.length ? metroCoords : coords
+
+  const first = fitCoords[0]
   if (!first || !mapInstance.value) return
-  if (coords.length === 1) {
+  if (fitCoords.length === 1) {
     mapInstance.value.setView(first, props.mode === 'single' ? 15 : 13)
   } else {
-    mapInstance.value.fitBounds(L.latLngBounds(coords), { padding: [40, 40] })
+    // L'ancienne maxBounds (= bbox métropole) forçait le centrage sur la
+    // France entière. Pour garder ce cadrage alors que maxBounds couvre
+    // désormais le monde français, le fit inclut les coins du rectangle
+    // métropole — la vue ne dépend plus de la répartition des centres.
+    const frame =
+      props.mode === 'network' && metroCoords.length
+        ? [...fitCoords, METRO_BOUNDS[0], METRO_BOUNDS[1]]
+        : fitCoords
+    mapInstance.value.fitBounds(L.latLngBounds(frame), { padding: [40, 40] })
   }
 }
 
@@ -364,6 +415,7 @@ function syncActive(L: typeof import('leaflet'), id: string | null) {
       openPopup(center, marker)
     }
     map.once('moveend', pendingReveal)
+    userMoved = true
     map.panTo(target)
   }
 
@@ -401,11 +453,12 @@ async function initMap(el: HTMLElement) {
 
   // Masque opaque hors de France : à petit zoom les tuiles OSM couvrent des
   // pays entiers, `bounds` ne suffit pas — on couvre le reste du monde de la
-  // couleur de fond, avec un trou à la forme réelle du territoire. Appliqué
+  // couleur de fond, avec des trous à la forme réelle des territoires
+  // (métropole + DOM-TOM). Appliqué
   // de façon synchrone à l'init (import statique) pour ne jamais laisser
   // apparaître les pays voisins. Le polygone va dans l'overlayPane
   // (z < markerPane) : les pins et clusters restent visibles au-dessus.
-  L.polygon([WORLD_RING, ...FRANCE_OUTLINE], {
+  L.polygon([WORLD_RING, ...FRANCE_OUTLINE, ...DOMTOM_OUTLINE], {
     stroke: false,
     fillColor: cssColor('--color-surface-alt', '#edf2fa'),
     fillOpacity: 1,
@@ -432,6 +485,10 @@ async function initMap(el: HTMLElement) {
 
   mapInstance.value?.on?.('dragstart', closePopup)
   mapInstance.value?.on?.('zoomstart', closePopup)
+  mapInstance.value?.on?.('dragstart', markUserMoved)
+  el.addEventListener('wheel', markUserMoved, { passive: true })
+  el.addEventListener('touchstart', markUserMoved, { passive: true })
+  el.addEventListener('dblclick', markUserMoved)
 
   // Leaflet fige la taille du conteneur à l'init : un resize ultérieur
   // (panneau mobile, breakpoint hidden lg:block, fontes) laissait des
@@ -439,7 +496,14 @@ async function initMap(el: HTMLElement) {
   // déclenche un invalidateSize qui couvre aussi un init avant la fin
   // du layout.
   if (typeof ResizeObserver !== 'undefined') {
-    resizeObserver = new ResizeObserver(() => mapInstance.value?.invalidateSize())
+    resizeObserver = new ResizeObserver(() => {
+      mapInstance.value?.invalidateSize()
+      // invalidateSize conserve centre+zoom : un fit calculé sur une taille
+      // transitoire (init avant la fin du layout) laisse les bornes déborder
+      // — Corse coupée en bas, aucune marge en haut. On recadre tant que
+      // l'utilisateur n'a pas déplacé la carte lui-même.
+      if (!userMoved) fitToMarkers(L)
+    })
     resizeObserver.observe(el)
   }
 }

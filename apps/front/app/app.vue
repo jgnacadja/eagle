@@ -25,9 +25,13 @@ const ogImage = `${origin}/images/learnup-preview-card.png`
 // Métadonnées OG/Twitter par défaut — les pages de contenu surchargent
 // title/description/canonical via useContentSeo ; les clés non définies
 // (type, site_name, image…) héritent de ces valeurs.
+const defaultDescription =
+  'La plateforme B2B qui comprend, localise et orchestre la formation professionnelle réglementaire.'
+
 useSeoMeta({
-  description:
-    'La plateforme B2B qui comprend, localise et orchestre la formation professionnelle réglementaire.',
+  description: defaultDescription,
+  ogDescription: defaultDescription,
+  twitterDescription: defaultDescription,
   ogType: 'website',
   ogSiteName: 'LEARN UP ACADEMY',
   ogLocale: 'fr_FR',

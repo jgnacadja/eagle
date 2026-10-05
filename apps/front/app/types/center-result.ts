@@ -1,6 +1,8 @@
 export interface CenterResult {
   id: string
   name: string
+  city?: string
+  department?: string
   cp: string
   address: string
   tags: string

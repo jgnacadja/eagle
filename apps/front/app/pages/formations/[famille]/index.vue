@@ -467,7 +467,9 @@ useContentSeo(
           `Formations ${familleData.value!.name} en centre ou sur site.`)
         : undefined,
       seo_canonical: isFound ? familleData.value?.seo_canonical : undefined,
-      seo_noindex: !isFound
+      seo_noindex: !isFound,
+      // Visuel OG/Twitter : visuel éditorial de la famille, sinon défaut.
+      seo_image: isFound ? directusAssetUrl(familleData.value?.image) : undefined
     }
   },
   () => {

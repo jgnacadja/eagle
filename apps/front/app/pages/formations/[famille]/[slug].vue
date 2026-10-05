@@ -740,7 +740,10 @@ useContentSeo(
         ? (course.value!.seoDescription ?? htmlToText(course.value!.description))
         : undefined,
       seo_canonical: isFound ? course.value!.seoCanonical : undefined,
-      seo_noindex: !isFound
+      seo_noindex: !isFound,
+      // Visuel OG/Twitter : fichier Directus éditorial, sinon image
+      // synchronisée Digiforma (imageSrc gère déjà cette priorité).
+      seo_image: isFound ? imageSrc.value : undefined
     }
   },
   () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Centre } from '@learnup/types'
-import { toCenterResults } from '~/utils/centre'
+import { centreLocationLabel, toCenterResults } from '~/utils/centre'
 
 const centre = (overrides: Partial<Centre> = {}): Centre =>
   ({
@@ -22,6 +22,8 @@ describe('toCenterResults', () => {
       {
         id: 'creteil',
         name: 'Centre de Créteil',
+        city: 'Créteil',
+        department: 'Val-de-Marne',
         cp: '94000',
         address: '12 rue de Paris, 94000, Créteil, Val-de-Marne',
         tags: 'CACES · SST',
@@ -44,16 +46,48 @@ describe('toCenterResults', () => {
         longitude: null
       })
     ])
-    expect(result.address).toBe('')
-    expect(result.cp).toBe('')
-    expect(result.tags).toBe('')
-    expect(result.lat).toBeUndefined()
-    expect(result.lng).toBeUndefined()
+    expect(result!.address).toBe('')
+    expect(result!.cp).toBe('')
+    expect(result!.tags).toBe('')
+    expect(result!.lat).toBeUndefined()
+    expect(result!.lng).toBeUndefined()
   })
 
   it('renvoie un tableau vide sans données', () => {
     expect(toCenterResults(null)).toEqual([])
     expect(toCenterResults(undefined)).toEqual([])
     expect(toCenterResults([])).toEqual([])
+  })
+
+  it('retire la localité collée dans le champ address', () => {
+    const [result] = toCenterResults([
+      centre({ address: '12 rue de Paris, 94000, Créteil, France' })
+    ])
+    expect(result!.address).toBe('12 rue de Paris, 94000, Créteil, Val-de-Marne')
+  })
+})
+
+describe('centreLocationLabel', () => {
+  it('compose « Ville · Département (code) » depuis les champs structurés', () => {
+    const [center] = toCenterResults([centre()])
+    expect(centreLocationLabel(center!)).toBe('Créteil · Val-de-Marne (94)')
+  })
+
+  it('omet le code si le code postal est absent', () => {
+    const [center] = toCenterResults([centre({ postal_code: null })])
+    expect(centreLocationLabel(center!)).toBe('Créteil · Val-de-Marne')
+  })
+
+  it('retombe sur le dernier segment de address sans champs structurés', () => {
+    expect(
+      centreLocationLabel({
+        id: 'x',
+        name: 'x',
+        cp: '',
+        address: '14 rue des Refuzniks, Créteil · Val-de-Marne',
+        tags: '',
+        tagsShort: ''
+      })
+    ).toBe('Val-de-Marne')
   })
 })

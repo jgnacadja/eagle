@@ -16,7 +16,7 @@ export const MODALITY_OPTIONS: FilterOption[] = [
 
 export const DURATION_OPTIONS: FilterOption[] = [
   { key: 'courte', label: 'Courte (≤ 8 h)' },
-  { key: 'moyenne', label: 'Moyenne (9 à 40 h)' },
+  { key: 'moyenne', label: 'Moyenne (> 8 à 40 h)' },
   { key: 'longue', label: 'Longue (> 40 h)' }
 ]
 
@@ -37,7 +37,7 @@ export const MODALITY_LABELS: Record<string, string> = {
 
 export const DURATION_LABELS: Record<string, string> = {
   courte: 'Courte (≤ 8 h)',
-  moyenne: 'Moyenne (9 à 40 h)',
+  moyenne: 'Moyenne (> 8 à 40 h)',
   longue: 'Longue (> 40 h)'
 }
 

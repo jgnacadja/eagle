@@ -149,8 +149,6 @@
             @update:cpf="cpf = $event ?? false"
             @update:certifying="certifying = $event ?? false"
           />
-          <!-- C3 — porte de sortie « Être guidé » visible pendant le filtrage -->
-          <AssistantGuidedCard class="mt-xl" @open="openAssistant" />
         </aside>
 
         <!-- Résultats -->
@@ -348,9 +346,6 @@
           >
             Afficher plus de résultats
           </Button>
-
-          <!-- Porte de sortie « Être guidé » — mobile (la sidebar est masquée) -->
-          <AssistantGuidedCard class="mt-2xl lg:hidden" @open="openAssistant" />
         </div>
       </div>
 

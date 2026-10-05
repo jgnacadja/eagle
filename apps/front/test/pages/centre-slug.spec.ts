@@ -50,6 +50,7 @@ const centreCreteil: Centre = {
   department: 'Val-de-Marne',
   region: 'Île-de-France',
   description: '<p>Centre de Créteil.</p>',
+  short_description: null,
   specialties: ['CACES', 'SST'],
   opening_hours: 'Lundi–vendredi · 8h30–17h30',
   transport: 'Métro 8',
@@ -95,6 +96,7 @@ const catalogueCourseFixture: CourseListItem = {
   shortDescription: null,
   durationDays: 2,
   durationHours: 14,
+  durationBucket: 'moyenne',
   price: 350,
   cpf: false,
   cpfCode: null,
@@ -248,7 +250,6 @@ vi.mock('~/composables/useCatalog', () => ({
     meta: `${course.durationDays} jours`,
     to: course.familySlug ? `/formations/${course.familySlug}/${course.slug}` : null
   }),
-  buildDuration: vi.fn(),
   buildMeta: vi.fn(),
   buildCertifications: vi.fn(),
   upcomingSessions: (course: { sessions?: { startDate?: string | null }[] | null }) => {
@@ -525,6 +526,17 @@ describe('pages/centres/[slug]', () => {
 
     // Le pied de carte ne doit pas répéter « 94000 Créteil » en double.
     expect(wrapper.text()).not.toContain('94000 Créteil, 94000')
+    expect(wrapper.text()).toContain('14 rue des Refuzniks, 94000 Créteil')
+  })
+
+  it('déduplique la localité collée depuis Google Maps (« CP, ville, France »)', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      { ...centreCreteil, address: '14 rue des Refuzniks, 94000, Créteil, France' }
+    ])
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).not.toContain('94000, Créteil, 94000')
+    expect(wrapper.text()).not.toContain('Créteil, France')
     expect(wrapper.text()).toContain('14 rue des Refuzniks, 94000 Créteil')
   })
 

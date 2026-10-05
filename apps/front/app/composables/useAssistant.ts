@@ -12,6 +12,15 @@ export interface AssistantEntry {
   reply?: AssistantReply
 }
 
+export interface AssistantSendOptions {
+  /**
+   * Appelé quand l'envoi quitte la file d'attente et part réellement — jamais
+   * pour un envoi abandonné (stop, nouvelle recherche). Le message n'est pas
+   * encore dans le fil : `entries` reflète l'état juste avant ce tour.
+   */
+  onStart?: () => void
+}
+
 export interface AssistantReplyMeta {
   /** Rang du tour utilisateur ayant produit la réponse (1 = premier message). */
   turn: number
@@ -243,22 +252,30 @@ export function useAssistant(
     queuedSends.value = 0
   }
 
-  function send(message: string): Promise<void> {
+  function send(message: string, options: AssistantSendOptions = {}): Promise<void> {
     const text = message.trim()
     if (!text) return Promise.resolve()
-    return enqueueSend(() =>
+    return enqueueSend(() => {
+      options.onStart?.()
       // `parts` complet : `{ text }` passerait par la conversion de fichiers
       // (await) avant `pushMessage`/`makeRequest`, ouvrant une fenêtre où un
       // `reset()` laisserait l'envoi hors de portée de `stop()`.
-      sendMessage({ parts: [{ type: 'text', text }] })
-    )
+      return sendMessage({ parts: [{ type: 'text', text }] })
+    })
   }
 
   /** Édite un message utilisateur, tronque la suite et relance la réponse. */
-  function editAndSend(messageId: string, message: string): Promise<void> {
+  function editAndSend(
+    messageId: string,
+    message: string,
+    options: AssistantSendOptions = {}
+  ): Promise<void> {
     const text = message.trim()
     if (!text) return Promise.resolve()
-    return enqueueSend(() => sendMessage({ messageId, parts: [{ type: 'text', text }] }))
+    return enqueueSend(() => {
+      options.onStart?.()
+      return sendMessage({ messageId, parts: [{ type: 'text', text }] })
+    })
   }
 
   /** Renvoie le dernier message après une indisponibilité (E9 → Réessayer). */

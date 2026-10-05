@@ -1,18 +1,29 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, nextTick, ref } from 'vue'
 import type { AssistantContext, AssistantReply } from '@learnup/types'
-import type { AssistantEntry } from '~/composables/useAssistant'
+import type { AssistantEntry, AssistantSendOptions } from '~/composables/useAssistant'
 import { useAssistantTracking } from '~/composables/useAssistantTracking'
 
-/** Conversation factice : seuls les signaux observés par le suivi existent. */
-function fakeAssistant(entries: AssistantEntry[] = []) {
+/**
+ * Conversation factice : seuls les signaux observés par le suivi existent.
+ * Par défaut un envoi démarre aussitôt (`onStart`) ; `deferStarts` le laisse
+ * en file pour simuler des messages qui attendent leur tour.
+ */
+function fakeAssistant(entries: AssistantEntry[] = [], options: { deferStarts?: boolean } = {}) {
   const list = ref(entries)
   const pending = ref(false)
   const unavailable = ref(false)
   const awaiting = ref(false)
   const lastReply = ref<AssistantReply>()
+  const starts: (() => void)[] = []
+  const start = (sendOptions?: AssistantSendOptions) => {
+    if (options.deferStarts) starts.push(() => sendOptions?.onStart?.())
+    else sendOptions?.onStart?.()
+    return Promise.resolve()
+  }
   return {
     list,
+    starts,
     pendingState: pending,
     unavailableState: unavailable,
     awaitingState: awaiting,
@@ -23,8 +34,10 @@ function fakeAssistant(entries: AssistantEntry[] = []) {
       unavailable: computed(() => unavailable.value),
       lastReply: computed(() => lastReply.value),
       awaitingClarification: computed(() => awaiting.value),
-      send: vi.fn().mockResolvedValue(undefined),
-      editAndSend: vi.fn().mockResolvedValue(undefined)
+      send: vi.fn((_message: string, sendOptions?: AssistantSendOptions) => start(sendOptions)),
+      editAndSend: vi.fn((_id: string, _message: string, sendOptions?: AssistantSendOptions) =>
+        start(sendOptions)
+      )
     }
   }
 }
@@ -71,7 +84,7 @@ describe('useAssistantTracking', () => {
     expect(events()).toEqual([
       { event: 'ai_search_submit', source: 'catalogue', turn: 2, via: 'entry' }
     ])
-    expect(assistant.send).toHaveBeenCalledWith('un autre besoin')
+    expect(assistant.send).toHaveBeenCalledWith('un autre besoin', expect.any(Object))
   })
 
   it("ignore les envois vides et ceux du panneau pendant l'analyse", async () => {
@@ -85,6 +98,40 @@ describe('useAssistantTracking', () => {
 
     expect(events()).toEqual([])
     expect(assistant.send).not.toHaveBeenCalled()
+  })
+
+  it('numérote les messages en file par le tour qu’ils prennent réellement', async () => {
+    // Un tour est en cours ; deux besoins arrivent de points d'entrée.
+    const { assistant, list, starts, pendingState } = fakeAssistant([userTurn('u1', 'premier')], {
+      deferStarts: true
+    })
+    const tracking = useAssistantTracking(assistant, ref<AssistantContext>({ source: 'home' }))
+    pendingState.value = true
+
+    void tracking.submit('deuxième', 'entry')
+    void tracking.submit('troisième', 'entry')
+    // Rien n'est compté tant que les envois attendent en file.
+    expect(events()).toEqual([])
+
+    starts[0]!()
+    list.value = [...list.value, userTurn('u2', 'deuxième')]
+    starts[1]!()
+
+    expect(events()).toEqual([
+      { event: 'ai_search_submit', source: 'home', turn: 2, via: 'entry' },
+      { event: 'ai_search_submit', source: 'home', turn: 3, via: 'entry' }
+    ])
+  })
+
+  it('ne compte pas un envoi abandonné avant son départ', async () => {
+    // `onStart` n'est jamais appelé pour un envoi retiré de la file (stop, reset).
+    const { assistant } = fakeAssistant([], { deferStarts: true })
+    const tracking = useAssistantTracking(assistant, ref<AssistantContext>({ source: 'home' }))
+
+    await tracking.submit('abandonné', 'text')
+
+    expect(assistant.send).toHaveBeenCalledOnce()
+    expect(events()).toEqual([])
   })
 
   it("ne compte un début de recherche qu'à l'ouverture d'une conversation vierge ou sur message d'entrée", () => {
@@ -102,6 +149,45 @@ describe('useAssistantTracking', () => {
     ])
   })
 
+  it('garde la source de la recherche en cours quand le panneau est rouvert ailleurs', async () => {
+    const { assistant, list } = fakeAssistant()
+    const context = ref<AssistantContext>({ source: 'home' })
+    const tracking = useAssistantTracking(assistant, context)
+
+    tracking.onOpen()
+    await tracking.submit('former au SST', 'text')
+    list.value = [userTurn('u1', 'former au SST')]
+
+    // Le lanceur remplace le contexte : la recherche commencée reste « home ».
+    context.value = { source: 'header' }
+    tracking.onOpen()
+    tracking.onReply({ kind: 'recommend', text: 'ok', recommendations: [] }, { turn: 1 })
+    tracking.select({ slug: 'sst', rank: 'primary', action: 'formation' })
+    tracking.escalate('recommend')
+
+    expect(events().slice(2)).toEqual([
+      { event: 'ai_recommendation_display', source: 'home', turn: 1, count: 0 },
+      {
+        event: 'ai_recommendation_select',
+        slug: 'sst',
+        rank: 'primary',
+        action: 'formation',
+        source: 'home'
+      },
+      { event: 'ai_advisor_escalation', source: 'home', from: 'recommend' }
+    ])
+
+    // Un nouveau besoin transmis par un point d'entrée ouvre une recherche : la source suit.
+    context.value = { source: 'catalogue' }
+    tracking.onOpen({ entryMessage: true })
+    await tracking.submit('autre besoin', 'entry')
+
+    expect(events().slice(-2)).toEqual([
+      { event: 'ai_search_start', source: 'catalogue' },
+      { event: 'ai_search_submit', source: 'catalogue', turn: 2, via: 'entry' }
+    ])
+  })
+
   it('attribue une édition au rang du message modifié et ignore un identifiant inconnu', async () => {
     const { assistant } = fakeAssistant([userTurn('u1', 'sst'), userTurn('u2', '8 salariés')])
     const tracking = useAssistantTracking(assistant, ref<AssistantContext>({ source: 'home' }))
@@ -112,7 +198,11 @@ describe('useAssistantTracking', () => {
 
     expect(events()).toEqual([{ event: 'ai_search_submit', source: 'home', turn: 1, via: 'edit' }])
     expect(assistant.editAndSend).toHaveBeenCalledTimes(1)
-    expect(assistant.editAndSend).toHaveBeenCalledWith('u1', 'sst pour 8 salariés')
+    expect(assistant.editAndSend).toHaveBeenCalledWith(
+      'u1',
+      'sst pour 8 salariés',
+      expect.any(Object)
+    )
   })
 
   it('relaie les réponses et les sélections avec la source', () => {

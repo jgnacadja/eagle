@@ -16,14 +16,17 @@ export type AssistantSubmitVia = 'suggestion' | 'text' | 'entry' | 'edit'
 /** CTA cliqué sur une recommandation. */
 export type AssistantSelectAction = 'formation' | 'sessions' | 'demande'
 
-export interface AssistantSelection {
+// Alias de type, pas interfaces : ces formes partent telles quelles dans
+// `trackEvent`, dont le paramètre est un `Record` — seule une forme
+// littérale porte la signature d'index implicite qui la rend assignable.
+export type AssistantSelection = {
   slug: string
   rank: AssistantRecommendation['rank']
   action: AssistantSelectAction
 }
 
-export interface AssistantTurnParams {
-  /** Point d'entrée de la conversation. */
+export type AssistantTurnParams = {
+  /** Point d'entrée de la recherche en cours. */
   source?: AssistantSource
   /** Rang du tour utilisateur concerné (1 = premier message). */
   turn: number

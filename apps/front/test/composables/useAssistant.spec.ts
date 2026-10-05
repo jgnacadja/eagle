@@ -346,6 +346,46 @@ describe('useAssistant', () => {
     expect(onReply).toHaveBeenNthCalledWith(2, recommend, { turn: 2 })
   })
 
+  it('signals when a queued send actually starts, with the thread as it was before that turn', async () => {
+    let resolveFirst: ((reply: unknown) => void) | undefined
+    fetchMock
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveFirst = resolve
+          })
+      )
+      .mockResolvedValue({ kind: 'clarify', text: 'ok' })
+    const assistant = useAssistant()
+    const turnsAtStart: number[] = []
+    const onStart = () =>
+      turnsAtStart.push(assistant.entries.value.filter((e) => e.role === 'user').length)
+
+    const first = assistant.send('un', { onStart })
+    const second = assistant.send('deux', { onStart })
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+    // Le second envoi attend en file : il n'a pas encore démarré.
+    expect(turnsAtStart).toEqual([0])
+
+    resolveFirst?.({ kind: 'clarify', text: 'réponse un' })
+    await Promise.all([first, second])
+    expect(turnsAtStart).toEqual([0, 1])
+  })
+
+  it('never signals the start of a send dropped by a reset, nor of an edit that is', async () => {
+    fetchMock.mockResolvedValue({ kind: 'clarify', text: 'x' })
+    const assistant = useAssistant()
+    const onStart = vi.fn()
+
+    const sent = assistant.send('un', { onStart })
+    const edited = assistant.editAndSend('unknown', 'deux', { onStart })
+    assistant.reset()
+    await Promise.all([sent, edited])
+
+    expect(onStart).not.toHaveBeenCalled()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   it('exposes the last API reply and whether a clarification is awaited', async () => {
     const clarify = { kind: 'clarify', text: 'Précisez.', mode: 'ai' }
     fetchMock

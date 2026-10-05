@@ -44,6 +44,13 @@ export interface Centre extends SeoFields {
   image: string | null
   latitude: number | null
   longitude: number | null
+  /** Place ID Google — active la synchro des avis et le bouton « Voir tous les avis ». */
+  google_place_id: string | null
+  /** Lien de partage Google Maps — prioritaire sur l'URL construite depuis google_place_id. */
+  google_maps_url: string | null
+  /** Agrégats écrits par la synchro des avis (POST /admin/sync-reviews). */
+  google_rating: number | null
+  google_reviews_count: number | null
 }
 
 /**
@@ -154,6 +161,9 @@ export interface Article extends SeoFields {
   cover_image: string | null
 }
 
+/** Origine d'un avis — `google` = importé par la synchro Places. */
+export type AvisSource = 'google' | 'manuel'
+
 export interface Avis {
   id: number
   status: ContentStatus
@@ -168,4 +178,9 @@ export interface Avis {
   quote: string
   /** Relation M2O vers `centres` — null = avis marque (toutes implantations). */
   centre: number | null
+  source: AvisSource | null
+  /** Photo de profil de l'auteur (URL) — renseignée par la synchro Google. */
+  avatar: string | null
+  /** Clé d'idempotence de la synchro — interne, hors allowlist publique. */
+  google_review_id?: string | null
 }

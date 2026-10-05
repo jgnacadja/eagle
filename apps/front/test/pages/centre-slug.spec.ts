@@ -71,6 +71,10 @@ const centreCreteil: Centre = {
   qualiopi_valid_until: '2027-03-14T00:00:00Z',
   latitude: 48.7909,
   longitude: 2.4534,
+  google_place_id: 'ChIJ_creteil',
+  google_maps_url: null,
+  google_rating: 4.7,
+  google_reviews_count: 214,
   image: null,
   seo_title: null,
   seo_description: null,
@@ -201,7 +205,17 @@ const centreAvisFixture = [
     quote: 'Suivi des échéances impeccable, équipe très réactive.',
     stars: 4,
     published_at: '2026-04-20T09:00:00+00:00',
-    centre: null
+    centre: null,
+    source: 'manuel'
+  },
+  {
+    slug: 'google-creteil-rev-1',
+    author: 'Marie D.',
+    quote: 'Équipe très réactive.',
+    stars: 5,
+    published_at: '2026-01-15T10:00:00+00:00',
+    centre: 1,
+    source: 'google'
   }
 ]
 // Mutable pour tester le masquage de la section quand la collection est vide.
@@ -270,7 +284,7 @@ const stubs = {
     template:
       '<div><button class="search-stub" @click="$emit(\'submit\', \'caces\')" /><button class="search-empty" @click="$emit(\'submit\', \'\')" /></div>'
   },
-  Badge: true,
+  Badge: { template: '<span><slot /></span>' },
   // Slots rendus : sans ça le contenu des cartes (infos pratiques,
   // qualité) est absent du DOM de test.
   Card: { template: '<div><slot /></div>' },
@@ -562,7 +576,7 @@ describe('pages/centres/[slug]', () => {
 
     expect(wrapper.text()).toContain('Avis')
     expect(wrapper.findAll('.testimonial-card').length).toBeGreaterThan(0)
-    expect(wrapper.text()).toContain('Consulter')
+    expect(wrapper.text()).toContain('Voir tous les avis')
     expect(wrapper.text()).toContain('Actualités de votre centre')
     expect(wrapper.findAll('.article-card')).toHaveLength(1)
     expect(wrapper.text()).toContain('Actualité du centre de Créteil')
@@ -572,8 +586,73 @@ describe('pages/centres/[slug]', () => {
     const wrapper = await mountPage()
 
     const cards = wrapper.findAll('.testimonial-card')
-    expect(cards).toHaveLength(1)
+    expect(cards).toHaveLength(2)
     expect(cards[0]!.text()).toContain('Suivi des échéances impeccable')
+  })
+
+  it('affiche l’agrégat Google du centre (note et volume)', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('4,7')
+    expect(wrapper.text()).toContain('214 avis Google')
+  })
+
+  it('masque l’agrégat quand la synchro n’a encore rien écrit', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      { ...centreCreteil, google_rating: null, google_reviews_count: null }
+    ])
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).not.toContain('avis Google')
+  })
+
+  it('affiche le badge « Avis certifiés Google » si un avis est synchronisé', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Avis certifiés Google')
+  })
+
+  it('masque le badge quand aucun avis ne vient de Google', async () => {
+    avisFixture.splice(
+      0,
+      avisFixture.length,
+      ...centreAvisFixture.filter((avis) => avis.source !== 'google')
+    )
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).not.toContain('Avis certifiés Google')
+  })
+
+  it('le bouton « Voir tous les avis » pointe sur Google Maps via le place_id', async () => {
+    const wrapper = await mountPage()
+
+    const link = wrapper.find('a[target="_blank"]')
+    expect(link.exists()).toBe(true)
+    expect(link.attributes('href')).toBe(
+      'https://www.google.com/maps/search/?api=1&query_place_id=ChIJ_creteil'
+    )
+    expect(link.attributes('rel')).toBe('noopener')
+  })
+
+  it('google_maps_url est prioritaire sur l’URL reconstruite', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      { ...centreCreteil, google_maps_url: 'https://maps.app.goo.gl/xyz' }
+    ])
+    const wrapper = await mountPage()
+
+    const link = wrapper.find('a[target="_blank"]')
+    expect(link.attributes('href')).toBe('https://maps.app.goo.gl/xyz')
+  })
+
+  it('rend le bouton inerte sans place_id ni maps_url', async () => {
+    directusRequestMock.mockImplementation(async () => [
+      { ...centreCreteil, google_place_id: null, google_maps_url: null }
+    ])
+    const wrapper = await mountPage()
+
+    expect(wrapper.find('a[target="_blank"]').exists()).toBe(false)
+    const disabled = wrapper.findAll('button').find((b) => b.text().includes('Voir tous les avis'))
+    expect(disabled?.attributes('disabled')).toBeDefined()
   })
 
   it('masque la section avis quand la collection est vide', async () => {

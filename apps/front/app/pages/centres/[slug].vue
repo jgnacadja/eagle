@@ -414,20 +414,27 @@
               aria-labelledby="avis-title"
               class="order-7 lg:order-0 lg:px-0"
             >
-              <h2
-                id="avis-title"
-                v-reveal-soft
-                class="font-display text-h2 font-extrabold text-ink"
-              >
-                Avis
-              </h2>
-              <p class="mt-xs flex flex-wrap items-baseline gap-x-sm">
-                <span class="font-display text-h3 font-extrabold text-ink"
-                  >4,7<span class="font-sans text-body font-medium text-ink-muted">/5</span></span
+              <div class="flex flex-wrap items-center justify-between gap-sm">
+                <h2
+                  id="avis-title"
+                  v-reveal-soft
+                  class="font-display text-h2 font-extrabold text-ink"
+                >
+                  Avis
+                </h2>
+                <Badge v-if="hasGoogleAvis" variant="success">
+                  <IconBadgeCheck :size="14" class="shrink-0" />
+                  Avis certifiés Google
+                </Badge>
+              </div>
+              <p v-if="hasGoogleAggregate" class="mt-xs flex flex-wrap items-baseline gap-x-sm">
+                <span v-if="googleRatingLabel" class="font-display text-h3 font-extrabold text-ink"
+                  >{{ googleRatingLabel
+                  }}<span class="font-sans text-body font-medium text-ink-muted">/5</span></span
                 >
                 <span class="text-small font-semibold text-accent" aria-hidden="true">★★★★★</span>
-                <span class="text-small text-ink-muted"
-                  >214 avis Google — marque LEARN UP ACADEMY</span
+                <span v-if="googleReviewsCount != null" class="text-small text-ink-muted"
+                  >{{ googleReviewsCount }} avis Google — marque LEARN UP ACADEMY</span
                 >
               </p>
               <p class="mt-sm text-small text-ink-muted">
@@ -444,8 +451,19 @@
                 />
               </div>
               <div class="mt-lg">
-                <Button as-child variant="outline" size="pill" class="gap-xs">
-                  <NuxtLink to="/formations">Consulter <span class="link-arrow">→</span></NuxtLink>
+                <Button
+                  v-if="googleReviewsUrl"
+                  as-child
+                  variant="outline"
+                  size="pill"
+                  class="gap-xs"
+                >
+                  <a :href="googleReviewsUrl" target="_blank" rel="noopener"
+                    >Voir tous les avis <span class="link-arrow">→</span></a
+                  >
+                </Button>
+                <Button v-else variant="outline" size="pill" class="gap-xs" disabled>
+                  Voir tous les avis <span class="link-arrow">→</span>
                 </Button>
               </div>
             </section>
@@ -1033,7 +1051,7 @@ function nearbyDistance(c: Centre): string {
 const centreAvisData = await useDirectusList<Avis>('avis', `centre-${slug}-avis`, () =>
   centre.value
     ? {
-        fields: ['slug', 'author', 'quote', 'stars', 'published_at', 'centre'],
+        fields: ['slug', 'author', 'quote', 'stars', 'published_at', 'centre', 'source'],
         filter: {
           status: { _eq: 'published' },
           _or: [{ centre: { _eq: centre.value.id } }, { centre: { _null: true } }]
@@ -1045,6 +1063,37 @@ const centreAvisData = await useDirectusList<Avis>('avis', `centre-${slug}-avis`
 )
 
 const centreAvis = computed(() => (centreAvisData.value ?? []).map(mapAvis))
+
+// Badge « Avis certifiés Google » : affiché dès qu'un avis synchronisé via
+// Places est visible (les avis saisis à la main ne le portent pas).
+const hasGoogleAvis = computed(() => centreAvis.value.some((avis) => avis.source === 'google'))
+
+// Agrégat Google Places du centre (écrit par POST /admin/sync-reviews) —
+// affiché seulement si la synchro a déjà produit des données.
+const googleRating = computed(() => centre.value?.google_rating ?? null)
+const googleReviewsCount = computed(() => centre.value?.google_reviews_count ?? null)
+const hasGoogleAggregate = computed(
+  () => googleRating.value != null || googleReviewsCount.value != null
+)
+const googleRatingLabel = computed(() =>
+  googleRating.value == null
+    ? null
+    : googleRating.value.toLocaleString('fr-FR', { maximumFractionDigits: 1 })
+)
+
+// Lien « Voir tous les avis » : l'URL de partage saisie dans Directus est
+// prioritaire ; à défaut on reconstruit depuis le Place ID Google. Sans
+// l'un ni l'autre le bouton est rendu désactivé (lien inerte).
+const googleReviewsUrl = computed(() => {
+  // google_maps_url vient du CMS : seuls les liens http(s) sont acceptés
+  // comme href externe (jamais un schéma javascript: collé par mégarde).
+  const mapsUrl = centre.value?.google_maps_url
+  if (mapsUrl && /^https?:\/\//.test(mapsUrl)) return mapsUrl
+  if (centre.value?.google_place_id) {
+    return `https://www.google.com/maps/search/?api=1&query_place_id=${encodeURIComponent(centre.value.google_place_id)}`
+  }
+  return null
+})
 
 // Actualités rattachées au centre via la relation M2O `articles.centre` —
 // la section se masque si aucune n'est publiée.

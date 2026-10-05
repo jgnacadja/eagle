@@ -349,7 +349,53 @@ export const collections = [
           ...fr('Certificat Qualiopi')
         }
       },
-      ...seoFields()
+      ...seoFields(),
+      // Intégration Google Places (avis) : place_id active la synchro et le
+      // bouton « Voir tous les avis » ; google_maps_url (lien de partage
+      // éditorial) est prioritaire pour le lien sortant. Les agrégats sont
+      // écrits par POST /admin/sync-reviews — jamais à la main.
+      {
+        field: 'google_place_id',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          note: 'Identifiant Google Places (Place ID) — active la synchro des avis et le bouton « Voir tous les avis »',
+          ...fr('Google Place ID')
+        }
+      },
+      {
+        field: 'google_maps_url',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          note: 'Lien de partage Google Maps — utilisé par « Voir tous les avis » à la place de l’URL construite depuis le Place ID',
+          ...fr('URL Google Maps')
+        }
+      },
+      {
+        field: 'google_rating',
+        type: 'float',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          readonly: true,
+          note: 'Note globale Google — mise à jour par la synchro des avis',
+          ...fr('Note Google')
+        }
+      },
+      {
+        field: 'google_reviews_count',
+        type: 'integer',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          readonly: true,
+          note: 'Nombre d’avis Google — mis à jour par la synchro des avis',
+          ...fr('Nombre d’avis Google')
+        }
+      }
     ]
   },
   {
@@ -1235,6 +1281,44 @@ export const collections = [
           required: true,
           ...fr('Témoignage')
         }
+      },
+      {
+        field: 'source',
+        type: 'string',
+        meta: {
+          interface: 'select-dropdown',
+          options: {
+            choices: [
+              { text: 'Google', value: 'google' },
+              { text: 'Manuel', value: 'manuel' }
+            ]
+          },
+          width: 'half',
+          note: '« google » = importé par la synchro (badge certifié au front) — les avis google ne sont jamais dépubliés par le job, les archiver pour les masquer',
+          ...fr('Source')
+        },
+        schema: { default_value: 'manuel' }
+      },
+      {
+        field: 'avatar',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          note: 'Photo de profil de l’auteur (URL) — renseignée par la synchro Google',
+          ...fr('Avatar')
+        }
+      },
+      {
+        field: 'google_review_id',
+        type: 'string',
+        meta: {
+          hidden: true,
+          readonly: true,
+          note: 'Identifiant Google de l’avis — clé d’idempotence de la synchro',
+          ...fr('ID Google')
+        },
+        schema: { is_unique: true }
       }
       // centre = relation M2O vers centres (voir relations) — vide = avis marque.
     ]

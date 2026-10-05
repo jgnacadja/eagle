@@ -1438,6 +1438,141 @@ fields:
       foreign_key_table: null
       foreign_key_column: null
   - collection: avis
+    field: source
+    type: string
+    meta:
+      collection: avis
+      conditions: null
+      display: null
+      display_options: null
+      field: source
+      group: null
+      hidden: false
+      interface: select-dropdown
+      note: >-
+        « google » = importé par la synchro (badge certifié au front) — les
+        avis google ne sont jamais dépubliés par le job, les archiver pour les
+        masquer
+      options:
+        choices:
+          - text: Google
+            value: google
+          - text: Manuel
+            value: manuel
+      readonly: false
+      required: false
+      searchable: true
+      sort: 9
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Source
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: source
+      table: avis
+      data_type: character varying
+      default_value: manuel
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: avis
+    field: avatar
+    type: string
+    meta:
+      collection: avis
+      conditions: null
+      display: null
+      display_options: null
+      field: avatar
+      group: null
+      hidden: false
+      interface: input
+      note: >-
+        Photo de profil de l’auteur (URL) — renseignée par la synchro Google
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 10
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Avatar
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: avatar
+      table: avis
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: avis
+    field: google_review_id
+    type: string
+    meta:
+      collection: avis
+      conditions: null
+      display: null
+      display_options: null
+      field: google_review_id
+      group: null
+      hidden: true
+      interface: null
+      note: Identifiant Google de l’avis — clé d’idempotence de la synchro
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 11
+      special: null
+      translations:
+        - language: fr-FR
+          translation: ID Google
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: google_review_id
+      table: avis
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: true
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: avis
     field: centre
     type: integer
     meta:
@@ -1456,7 +1591,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 9
+      sort: 12
       special: null
       translations:
         - language: fr-FR
@@ -2965,6 +3100,178 @@ fields:
       foreign_key_table: null
       foreign_key_column: null
   - collection: centres
+    field: google_place_id
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: google_place_id
+      group: null
+      hidden: false
+      interface: input
+      note: >-
+        Identifiant Google Places (Place ID) — active la synchro des avis et
+        le bouton « Voir tous les avis »
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 37
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Google Place ID
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: google_place_id
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: google_maps_url
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: google_maps_url
+      group: null
+      hidden: false
+      interface: input
+      note: >-
+        Lien de partage Google Maps — utilisé par « Voir tous les avis » à la
+        place de l’URL construite depuis le Place ID
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 38
+      special: null
+      translations:
+        - language: fr-FR
+          translation: URL Google Maps
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: google_maps_url
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: google_rating
+    type: float
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: google_rating
+      group: null
+      hidden: false
+      interface: input
+      note: Note globale Google — mise à jour par la synchro des avis
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 39
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Note Google
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: google_rating
+      table: centres
+      data_type: real
+      default_value: null
+      max_length: null
+      numeric_precision: 24
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: google_reviews_count
+    type: integer
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: google_reviews_count
+      group: null
+      hidden: false
+      interface: input
+      note: Nombre d’avis Google — mis à jour par la synchro des avis
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 40
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Nombre d’avis Google
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: google_reviews_count
+      table: centres
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
     field: image
     type: uuid
     meta:
@@ -2983,7 +3290,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 37
+      sort: 41
       special: null
       translations:
         - language: fr-FR

@@ -4,6 +4,7 @@ import type { AssistantReplyMeta, useAssistant } from '~/composables/useAssistan
 import {
   isEscalationFrom,
   useAssistantAnalytics,
+  type AssistantEscalationFrom,
   type AssistantSelection,
   type AssistantSubmitVia
 } from '~/composables/useAssistantAnalytics'
@@ -20,11 +21,25 @@ export type TrackedAssistant = Pick<
   | 'editAndSend'
 >
 
+/** Déclencheur de l'ouverture du panneau (module Chatbot). */
+export type PanelTrigger = 'manuel' | 'auto'
+
+// Motifs de passage au conseiller du module Chatbot : les libellés que le
+// plan de tracking nomme déjà sont repris, les autres états gardent leur nom.
+const HANDOFF_REASONS: Partial<Record<AssistantEscalationFrom, string>> = {
+  compare: 'compare_advisor',
+  unavailable: 'error_advisor'
+}
+
+function newConversationId(): string {
+  return `chat_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
+}
+
 /**
- * Classification analytics du parcours (DEV-CORE) et des états limites
- * (DEV-EDGE), séparée du widget : le composant ne fait que relayer les
- * actions, le composable décide du jalon. Testable sans monter
- * `AssistantChat`.
+ * Classification analytics du parcours (DEV-CORE), des états limites
+ * (DEV-EDGE) et du module Chatbot du plan de tracking, séparée du widget :
+ * le composant ne fait que relayer les actions, le composable décide du
+ * jalon. Testable sans monter `AssistantChat`.
  */
 export function useAssistantTracking(assistant: TrackedAssistant, context: Ref<AssistantContext>) {
   const analytics = useAssistantAnalytics()
@@ -36,6 +51,39 @@ export function useAssistantTracking(assistant: TrackedAssistant, context: Ref<A
   // sélections seraient attribuées à une seconde source.
   let activeSource: AssistantSource | undefined = context.value.source
   const source = () => activeSource
+
+  // Module Chatbot : une conversation = un identifiant, renouvelé par
+  // « Nouvelle recherche » ; sa durée court depuis l'ouverture du panneau.
+  let conversationId = newConversationId()
+  let openedAt: number | null = null
+
+  /** Le panneau s'ouvre : à la main, ou de lui-même sur un message d'entrée. */
+  function panelOpened(trigger: PanelTrigger): void {
+    openedAt = Date.now()
+    analytics.chatbotOpen({ trigger_type: trigger, conversation_id: conversationId })
+  }
+
+  /** Le panneau se ferme : fin de conversation pour le module Chatbot. */
+  function panelClosed(): void {
+    if (openedAt === null) return
+    const entries = assistant.entries.value
+    analytics.chatbotConversationEnd({
+      conversation_id: conversationId,
+      messages_count: entries.length,
+      resolved: entries.some((e) => e.reply?.kind === 'recommend'),
+      duration_seconds: Math.round((Date.now() - openedAt) / 1000)
+    })
+    openedAt = null
+  }
+
+  /** « Nouvelle recherche » : la conversation suivante a son propre identifiant. */
+  function newConversation(): void {
+    conversationId = newConversationId()
+  }
+
+  function messageSent(turn: number): void {
+    analytics.chatbotMessageSent({ conversation_id: conversationId, message_index: turn })
+  }
 
   /**
    * Ouverture du panneau : début de recherche seulement pour une conversation
@@ -91,12 +139,23 @@ export function useAssistantTracking(assistant: TrackedAssistant, context: Ref<A
     if (assistant.pending.value && via !== 'entry') return Promise.resolve()
     return assistant.send(message, {
       onStart: () => {
-        const params = { source: source(), turn: userTurns() + 1, via }
+        const turn = userTurns() + 1
+        const params = { source: source(), turn, via }
         if (via !== 'entry' && assistant.awaitingClarification.value) {
           analytics.clarificationAnswer(params)
         } else {
           analytics.searchSubmit(params)
         }
+        // Le libellé d'une réponse rapide est un texte proposé par
+        // l'assistant, jamais une saisie du visiteur.
+        if (via === 'suggestion') {
+          analytics.chatbotSuggestedActionClick({
+            conversation_id: conversationId,
+            action_type: 'suggestion',
+            action_label: message
+          })
+        }
+        messageSent(turn)
       }
     })
   }
@@ -110,12 +169,20 @@ export function useAssistantTracking(assistant: TrackedAssistant, context: Ref<A
     // Tour introuvable : rien à modifier ni à attribuer.
     if (index < 0) return Promise.resolve()
     return assistant.editAndSend(id, message, {
-      onStart: () => analytics.searchSubmit({ source: source(), turn: index + 1, via: 'edit' })
+      onStart: () => {
+        analytics.searchSubmit({ source: source(), turn: index + 1, via: 'edit' })
+        messageSent(index + 1)
+      }
     })
   }
 
   function select(selection: AssistantSelection): void {
     analytics.recommendationSelect({ ...selection, source: source() })
+    analytics.chatbotSuggestedActionClick({
+      conversation_id: conversationId,
+      action_type: `recommendation_${selection.action}`,
+      action_label: selection.slug
+    })
   }
 
   /** Tableau comparatif ouvert (nombre de formations comparées). */
@@ -128,12 +195,29 @@ export function useAssistantTracking(assistant: TrackedAssistant, context: Ref<A
    * (`data-advisor-escalation`), le mode celui de la dernière réponse.
    */
   function escalate(from: string): void {
+    const origin = isEscalationFrom(from) ? from : undefined
     analytics.advisorEscalation({
       source: source(),
-      from: isEscalationFrom(from) ? from : undefined,
+      from: origin,
       mode: assistant.lastReply.value?.mode
+    })
+    analytics.chatbotHandoffToAdvisor({
+      conversation_id: conversationId,
+      reason: origin && (HANDOFF_REASONS[origin] ?? origin),
+      messages_count: assistant.entries.value.length
     })
   }
 
-  return { onOpen, onReply, submit, edit, select, compare, escalate }
+  return {
+    panelOpened,
+    panelClosed,
+    newConversation,
+    onOpen,
+    onReply,
+    submit,
+    edit,
+    select,
+    compare,
+    escalate
+  }
 }

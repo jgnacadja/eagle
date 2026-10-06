@@ -1,36 +1,45 @@
+import type { AssistantRecommendation } from '@learnup/types'
 import type {
-  AssistantMode,
-  AssistantRecommendation,
-  AssistantReplyKind,
-  AssistantSource
-} from '@learnup/types'
-import { trackEvent, type AnalyticsEvent } from '~/utils/analytics'
+  AiAdvisorEscalationEvent,
+  AiClarificationAnswerEvent,
+  AiClarificationRequestedEvent,
+  AiFallbackModeEvent,
+  AiNoResultsEvent,
+  AiRecommendationCompareEvent,
+  AiRecommendationDisplayEvent,
+  AiRecommendationSelectEvent,
+  AiSearchStartEvent,
+  AiSearchSubmitEvent,
+  AiUnavailableEvent,
+  AssistantEscalationFrom,
+  AssistantSelectAction,
+  AssistantSubmitVia,
+  ChatbotConversationEndEvent,
+  ChatbotHandoffToAdvisorEvent,
+  ChatbotMessageSentEvent,
+  ChatbotOpenEvent,
+  ChatbotSuggestedActionClickEvent,
+  TrackingEvent
+} from '~/types/analytics'
+import { useDataLayer } from '~/composables/useDataLayer'
 
-/**
- * Comment un message utilisateur est parti : réponse rapide (chip), saisie
- * libre, message transmis par le point d'entrée (champ Home, catalogue) ou
- * modification d'un message précédent.
- */
-export type AssistantSubmitVia = 'suggestion' | 'text' | 'entry' | 'edit'
+// Les formes des jalons vivent dans le plan de tracking ; ré-exportées pour
+// le widget et ses specs.
+export type { AssistantEscalationFrom, AssistantSelectAction, AssistantSubmitVia }
 
-/** CTA cliqué sur une recommandation. */
-export type AssistantSelectAction = 'formation' | 'sessions' | 'demande'
+/** Paramètres d'un jalon sans son nom d'événement. */
+type Params<E extends TrackingEvent> = Omit<E, 'event'>
 
-// Alias de type, pas interfaces : ces formes partent telles quelles dans
-// `trackEvent`, dont le paramètre est un `Record` — seule une forme
-// littérale porte la signature d'index implicite qui la rend assignable.
+/** Idem, sans le chemin de page : le dataLayer le fournit. */
+type PageParams<E extends TrackingEvent> = Omit<Params<E>, 'page_path'>
+
 export type AssistantSelection = {
   slug: string
   rank: AssistantRecommendation['rank']
   action: AssistantSelectAction
 }
 
-export type AssistantTurnParams = {
-  /** Point d'entrée de la recherche en cours. */
-  source?: AssistantSource
-  /** Rang du tour utilisateur concerné (1 = premier message). */
-  turn: number
-}
+export type AssistantTurnParams = Params<AiClarificationRequestedEvent>
 
 /**
  * Attribut porté par chaque lien de sortie conseiller du panneau : l'état
@@ -49,9 +58,7 @@ export const ESCALATION_ORIGINS = [
   'no_session',
   'compare',
   'degraded'
-] as const satisfies readonly (AssistantReplyKind | string)[]
-
-export type AssistantEscalationFrom = (typeof ESCALATION_ORIGINS)[number]
+] as const satisfies readonly AssistantEscalationFrom[]
 
 export function isEscalationFrom(value: string): value is AssistantEscalationFrom {
   return (ESCALATION_ORIGINS as readonly string[]).includes(value)
@@ -60,59 +67,83 @@ export function isEscalationFrom(value: string): value is AssistantEscalationFro
 /** Jalons du moteur IA — contrat public, documenté dans `AGENTS.md`. */
 export interface AssistantAnalytics {
   /** Le panneau s'ouvre depuis un point d'entrée. */
-  searchStart(source?: AssistantSource): AnalyticsEvent | null
+  searchStart(source?: AiSearchStartEvent['source']): void
   /** Un besoin est exprimé (premier message ou nouveau besoin). */
-  searchSubmit(params: AssistantTurnParams & { via: AssistantSubmitVia }): AnalyticsEvent | null
+  searchSubmit(params: Params<AiSearchSubmitEvent>): void
   /** L'assistant demande une précision. */
-  clarificationRequested(params: AssistantTurnParams): AnalyticsEvent | null
+  clarificationRequested(params: Params<AiClarificationRequestedEvent>): void
   /** Le visiteur répond à la précision demandée (chip ou saisie libre). */
-  clarificationAnswer(
-    params: AssistantTurnParams & { via: AssistantSubmitVia }
-  ): AnalyticsEvent | null
+  clarificationAnswer(params: Params<AiClarificationAnswerEvent>): void
   /** Des recommandations sont affichées. */
-  recommendationDisplay(
-    params: AssistantTurnParams & { count: number; mode?: AssistantMode }
-  ): AnalyticsEvent | null
+  recommendationDisplay(params: Params<AiRecommendationDisplayEvent>): void
   /** Un CTA d'une recommandation est cliqué (fiche, sessions, demande). */
-  recommendationSelect(
-    params: AssistantSelection & { source?: AssistantSource }
-  ): AnalyticsEvent | null
+  recommendationSelect(params: Params<AiRecommendationSelectEvent>): void
   /** Le tableau comparatif des recommandations est ouvert. */
-  recommendationCompare(params: { source?: AssistantSource; count: number }): AnalyticsEvent | null
+  recommendationCompare(params: Params<AiRecommendationCompareEvent>): void
   /** Impasse : aucun résultat assez pertinent, ou besoin hors catalogue. */
-  noResults(
-    params: AssistantTurnParams & { kind: 'no_results' | 'out_of_catalog'; mode?: AssistantMode }
-  ): AnalyticsEvent | null
+  noResults(params: Params<AiNoResultsEvent>): void
   /** Le moteur ne répond pas (erreur API) : état indisponible affiché. */
-  unavailable(params: AssistantTurnParams): AnalyticsEvent | null
+  unavailable(params: Params<AiUnavailableEvent>): void
   /** Réponse produite par la recherche déterministe (IA indisponible). */
-  fallbackMode(params: AssistantTurnParams & { kind: AssistantReplyKind }): AnalyticsEvent | null
+  fallbackMode(params: Params<AiFallbackModeEvent>): void
   /** Sortie « conseiller » cliquée depuis un état du panneau. */
-  advisorEscalation(params: {
-    source?: AssistantSource
-    from?: AssistantEscalationFrom
-    mode?: AssistantMode
-  }): AnalyticsEvent | null
+  advisorEscalation(params: Params<AiAdvisorEscalationEvent>): void
+  /** Module Chatbot du plan : ouverture du panneau. */
+  chatbotOpen(params: PageParams<ChatbotOpenEvent>): void
+  /** Module Chatbot : message envoyé (rang du message utilisateur). */
+  chatbotMessageSent(params: PageParams<ChatbotMessageSentEvent>): void
+  /** Module Chatbot : réponse rapide ou CTA de recommandation cliqué. */
+  chatbotSuggestedActionClick(params: Params<ChatbotSuggestedActionClickEvent>): void
+  /** Module Chatbot : passage au conseiller. */
+  chatbotHandoffToAdvisor(params: Params<ChatbotHandoffToAdvisorEvent>): void
+  /** Module Chatbot : fin de conversation (fermeture du panneau). */
+  chatbotConversationEnd(params: Params<ChatbotConversationEndEvent>): void
 }
 
 /**
- * Jalons analytics du moteur IA : parcours nominal (DEV-CORE — ouverture,
- * envoi, clarification, recommandation, sélection) et états limites
- * (DEV-EDGE — impasses, indisponibilité, mode dégradé, comparaison, sortie
- * conseiller). Jamais le contenu des messages.
+ * Jalons analytics du moteur IA, poussés dans le dataLayer par `useDataLayer`
+ * (plan de tracking GA4 / GTM : `page_path` et `page_title` ajoutés, valeurs
+ * vides et clés personnelles retirées). Deux familles : le parcours propre au
+ * moteur (`ai_*` — DEV-CORE : ouverture, envoi, clarification, recommandation,
+ * sélection ; DEV-EDGE : impasses, indisponibilité, mode dégradé, comparaison,
+ * sortie conseiller) et le module Chatbot du plan (`chatbot_*`). Jamais le
+ * contenu des messages. Un dataLayer défaillant (surchargé par un script
+ * tiers) ne remonte jamais : l'analytics ne doit pas pouvoir casser la
+ * conversation.
  */
 export function useAssistantAnalytics(): AssistantAnalytics {
+  const { pushEvent, getPageAttributes } = useDataLayer()
+
+  function track(event: TrackingEvent): void {
+    try {
+      pushEvent(event)
+    } catch {
+      // no-op : l'analytics ne doit jamais casser l'UX.
+    }
+  }
+
+  // Chemin de page exigé par certains jalons Chatbot : la même valeur que
+  // l'attribut de base posé par `pushEvent`, jamais une seconde convention.
+  const pagePath = () => getPageAttributes().page_path
+
   return {
-    searchStart: (source) => trackEvent('ai_search_start', { source }),
-    searchSubmit: (params) => trackEvent('ai_search_submit', params),
-    clarificationRequested: (params) => trackEvent('ai_clarification_requested', params),
-    clarificationAnswer: (params) => trackEvent('ai_clarification_answer', params),
-    recommendationDisplay: (params) => trackEvent('ai_recommendation_display', params),
-    recommendationSelect: (params) => trackEvent('ai_recommendation_select', params),
-    recommendationCompare: (params) => trackEvent('ai_recommendation_compare', params),
-    noResults: (params) => trackEvent('ai_no_results', params),
-    unavailable: (params) => trackEvent('ai_unavailable', params),
-    fallbackMode: (params) => trackEvent('ai_fallback_mode', params),
-    advisorEscalation: (params) => trackEvent('ai_advisor_escalation', params)
+    searchStart: (source) => track({ event: 'ai_search_start', source }),
+    searchSubmit: (params) => track({ event: 'ai_search_submit', ...params }),
+    clarificationRequested: (params) => track({ event: 'ai_clarification_requested', ...params }),
+    clarificationAnswer: (params) => track({ event: 'ai_clarification_answer', ...params }),
+    recommendationDisplay: (params) => track({ event: 'ai_recommendation_display', ...params }),
+    recommendationSelect: (params) => track({ event: 'ai_recommendation_select', ...params }),
+    recommendationCompare: (params) => track({ event: 'ai_recommendation_compare', ...params }),
+    noResults: (params) => track({ event: 'ai_no_results', ...params }),
+    unavailable: (params) => track({ event: 'ai_unavailable', ...params }),
+    fallbackMode: (params) => track({ event: 'ai_fallback_mode', ...params }),
+    advisorEscalation: (params) => track({ event: 'ai_advisor_escalation', ...params }),
+    chatbotOpen: (params) => track({ event: 'chatbot_open', page_path: pagePath(), ...params }),
+    chatbotMessageSent: (params) =>
+      track({ event: 'chatbot_message_sent', page_path: pagePath(), ...params }),
+    chatbotSuggestedActionClick: (params) =>
+      track({ event: 'chatbot_suggested_action_click', ...params }),
+    chatbotHandoffToAdvisor: (params) => track({ event: 'chatbot_handoff_to_advisor', ...params }),
+    chatbotConversationEnd: (params) => track({ event: 'chatbot_conversation_end', ...params })
   }
 }

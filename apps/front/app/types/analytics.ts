@@ -6,7 +6,10 @@
  * - 3_Formulaires
  * - 4_Parcours_Conversion
  * - 5_Pages_Interactions
+ * Le module Chatbot est complété par les jalons du moteur IA (`ai_*`,
+ * épopée MOTEUR-IA — section 3b).
  */
+import type { AssistantMode, AssistantReplyKind, AssistantSource } from '@learnup/types'
 
 export interface BasePageAttributes {
   page_path: string
@@ -147,6 +150,100 @@ export interface ChatbotConversationEndEvent {
   messages_count: number
   resolved: boolean
   duration_seconds: number
+}
+
+// ── 3b. Moteur IA (recherche assistée) ───────────────────────────────────────
+// Parcours propre au moteur, en plus du module Chatbot : jamais le texte
+// saisi — uniquement le point d'entrée, le rang du tour, le type de réponse,
+// le slug de la formation.
+
+/**
+ * Comment un message utilisateur est parti : réponse rapide (chip), saisie
+ * libre, message transmis par le point d'entrée (champ Home, catalogue) ou
+ * modification d'un message précédent.
+ */
+export type AssistantSubmitVia = 'suggestion' | 'text' | 'entry' | 'edit'
+
+/** CTA cliqué sur une recommandation. */
+export type AssistantSelectAction = 'formation' | 'sessions' | 'demande'
+
+/** État du panneau d'où part une sortie conseiller. */
+export type AssistantEscalationFrom =
+  AssistantReplyKind | 'unavailable' | 'no_session' | 'compare' | 'degraded'
+
+export interface AiSearchStartEvent {
+  event: 'ai_search_start'
+  source?: AssistantSource
+}
+
+export interface AiSearchSubmitEvent {
+  event: 'ai_search_submit'
+  source?: AssistantSource
+  turn: number
+  via: AssistantSubmitVia
+}
+
+export interface AiClarificationRequestedEvent {
+  event: 'ai_clarification_requested'
+  source?: AssistantSource
+  turn: number
+}
+
+export interface AiClarificationAnswerEvent {
+  event: 'ai_clarification_answer'
+  source?: AssistantSource
+  turn: number
+  via: AssistantSubmitVia
+}
+
+export interface AiRecommendationDisplayEvent {
+  event: 'ai_recommendation_display'
+  source?: AssistantSource
+  turn: number
+  count: number
+  mode?: AssistantMode
+}
+
+export interface AiRecommendationSelectEvent {
+  event: 'ai_recommendation_select'
+  source?: AssistantSource
+  slug: string
+  rank: 'primary' | 'alternative'
+  action: AssistantSelectAction
+}
+
+export interface AiRecommendationCompareEvent {
+  event: 'ai_recommendation_compare'
+  source?: AssistantSource
+  count: number
+}
+
+export interface AiNoResultsEvent {
+  event: 'ai_no_results'
+  source?: AssistantSource
+  turn: number
+  kind: 'no_results' | 'out_of_catalog'
+  mode?: AssistantMode
+}
+
+export interface AiUnavailableEvent {
+  event: 'ai_unavailable'
+  source?: AssistantSource
+  turn: number
+}
+
+export interface AiFallbackModeEvent {
+  event: 'ai_fallback_mode'
+  source?: AssistantSource
+  turn: number
+  kind: AssistantReplyKind
+}
+
+export interface AiAdvisorEscalationEvent {
+  event: 'ai_advisor_escalation'
+  source?: AssistantSource
+  from?: AssistantEscalationFrom
+  mode?: AssistantMode
 }
 
 // ── 4. Événements Centres ───────────────────────────────────────────────────
@@ -324,6 +421,17 @@ export type TrackingEvent =
   | ChatbotSuggestedActionClickEvent
   | ChatbotHandoffToAdvisorEvent
   | ChatbotConversationEndEvent
+  | AiSearchStartEvent
+  | AiSearchSubmitEvent
+  | AiClarificationRequestedEvent
+  | AiClarificationAnswerEvent
+  | AiRecommendationDisplayEvent
+  | AiRecommendationSelectEvent
+  | AiRecommendationCompareEvent
+  | AiNoResultsEvent
+  | AiUnavailableEvent
+  | AiFallbackModeEvent
+  | AiAdvisorEscalationEvent
   | ViewCentresListEvent
   | FilterCentresDepartmentEvent
   | SearchCentresEvent

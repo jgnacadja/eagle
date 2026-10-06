@@ -119,11 +119,13 @@ watch(
   (open) => {
     if (typeof document === 'undefined') return // SSR
     if (open) {
+      tracking.panelOpened(pendingMessage.value ? 'auto' : 'manuel')
       previousFocus = document.activeElement
       nextTick(() => {
         if (panelEl.value && !panelEl.value.open) panelEl.value.showModal?.()
       })
     } else {
+      tracking.panelClosed()
       nextTick(() => (previousFocus as HTMLElement | null)?.focus?.())
     }
   },
@@ -187,6 +189,7 @@ function onPanelClick(event: MouseEvent) {
 
 function onReset() {
   reset()
+  tracking.newConversation()
   greet()
 }
 </script>

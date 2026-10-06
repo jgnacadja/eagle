@@ -1,2 +1,6 @@
 export * from './api.js'
+export * from './assistant.js'
+export * from './catalog.js'
 export * from './directus.js'
+export * from './leads.js'
+export * from './search-misses.js'

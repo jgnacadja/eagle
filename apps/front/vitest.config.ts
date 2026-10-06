@@ -14,11 +14,13 @@ export default defineConfig({
     globals: true,
     environment: 'happy-dom',
     include: ['test/**/*.spec.ts'],
+    setupFiles: ['./test/setup.ts'],
     coverage: {
       provider: 'v8',
       reportsDirectory: './coverage',
       all: true,
-      include: ['app/components/**/*.vue'],
+      include: ['app/**/*.{ts,vue}', 'server/**/*.ts'],
+      exclude: ['app/types/**', 'app/components/ui/search-input/index.ts'],
       reporter: ['text', ['lcov', { file: 'lcov.info' }]],
       thresholds: {
         lines: 90,

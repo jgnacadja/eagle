@@ -1,6 +1,7 @@
 export const radii = {
-  sm: '6px',
-  md: '10px',
-  lg: '16px',
+  xs: '8px',
+  sm: '10px',
+  md: '16px',
+  lg: '28px',
   full: '999px'
 } as const

@@ -17,6 +17,7 @@
         v-if="recommendation.url"
         :to="recommendation.url"
         class="transition-colors hover:text-accent-text"
+        @click="$emit('select', 'formation')"
       >
         {{ recommendation.title }}
       </NuxtLink>
@@ -36,6 +37,7 @@
       v-if="compact && recommendation.url"
       :to="recommendation.url"
       class="mt-sm inline-block text-small font-semibold text-primary underline underline-offset-2 transition-colors hover:text-accent-text"
+      @click="$emit('select', 'formation')"
     >
       Voir la formation
     </NuxtLink>
@@ -88,19 +90,24 @@
             as-child
             class="h-control rounded-full bg-accent px-md text-small font-semibold text-ink transition hover:bg-accent-text hover:text-paper"
           >
-            <NuxtLink :to="sessionsTo">Voir les sessions</NuxtLink>
+            <NuxtLink :to="sessionsTo" @click="$emit('select', 'sessions')">
+              Voir les sessions
+            </NuxtLink>
           </Button>
           <Button
             as-child
             variant="outline"
             class="h-control rounded-full border-outline px-md text-small font-semibold text-ink transition hover:border-primary hover:text-accent-text"
           >
-            <NuxtLink :to="demandeTo">Demander cette formation</NuxtLink>
+            <NuxtLink :to="demandeTo" data-assistant-handoff @click="$emit('select', 'demande')">
+              Demander cette formation
+            </NuxtLink>
           </Button>
           <NuxtLink
             v-if="recommendation.url"
             :to="recommendation.url"
             class="text-small font-semibold text-primary underline underline-offset-2 transition-colors hover:text-accent-text"
+            @click="$emit('select', 'formation')"
           >
             Voir la formation
           </NuxtLink>
@@ -110,7 +117,9 @@
             as-child
             class="h-control rounded-full bg-accent px-md text-small font-semibold text-ink transition hover:bg-accent-text hover:text-paper"
           >
-            <NuxtLink :to="demandeTo">Demander une session</NuxtLink>
+            <NuxtLink :to="demandeTo" data-assistant-handoff @click="$emit('select', 'demande')">
+              Demander une session
+            </NuxtLink>
           </Button>
           <Button
             v-if="advisorTo"
@@ -118,7 +127,9 @@
             variant="outline"
             class="h-control rounded-full border-outline px-md text-small font-semibold text-ink transition hover:border-primary hover:text-accent-text"
           >
-            <NuxtLink :to="advisorTo">Être accompagné</NuxtLink>
+            <NuxtLink :to="advisorTo" data-assistant-handoff data-advisor-escalation="no_session"
+              >Être accompagné</NuxtLink
+            >
           </Button>
         </template>
       </div>
@@ -130,6 +141,7 @@
           v-if="recommendation.url"
           :to="recommendation.url"
           class="font-semibold text-primary underline underline-offset-2 transition-colors hover:text-accent-text"
+          @click="$emit('select', 'formation')"
         >
           Voir la formation
         </NuxtLink>
@@ -140,22 +152,27 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { RouteLocationRaw } from 'vue-router'
 import type { AssistantRecommendation } from '@learnup/types'
+import type { AssistantSelectAction } from '~/composables/useAssistantAnalytics'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { placesLabel, sessionSeatType } from '~/utils/placesLabel'
 
 const props = withDefaults(
   defineProps<{
     recommendation: AssistantRecommendation
-    /** Chemin de la demande de formation pré-remplie (famille, session, besoin). */
-    demandeTo: string
+    /** Demande de formation pré-remplie (famille, session en query ; besoin hors URL). */
+    demandeTo: RouteLocationRaw
     /** Alternative compacte (E4) : label + titre + justification + lien fiche. */
     compact?: boolean
     /** Lien « parler à votre conseiller » (variante sans session, É6). */
-    advisorTo?: string
+    advisorTo?: RouteLocationRaw
   }>(),
   { compact: false, advisorTo: undefined }
 )
+
+/** CTA cliqué : fiche formation, sessions ou demande (jalon analytics). */
+defineEmits<{ select: [action: AssistantSelectAction] }>()
 
 const primary = computed(() => props.recommendation.rank === 'primary')
 const availability = computed(() => props.recommendation.availability)

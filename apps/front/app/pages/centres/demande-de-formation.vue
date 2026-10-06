@@ -514,6 +514,7 @@ import IconMapPin from '~/components/icons/IconMapPin.vue'
 import IconBook from '~/components/icons/IconBook.vue'
 import IconCalendar from '~/components/icons/IconCalendar.vue'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
+import { useReceivedHandoff } from '~/composables/useAssistantHandoff'
 import { useFormTracking } from '~/composables/useFormTracking'
 
 definePageMeta({
@@ -546,9 +547,28 @@ if (sujetSlug.value === 'conseiller') {
 
 // D1 — contexte transmis par le moteur de recherche assistée : besoin brut,
 // effectif et localisation extraits de la conversation (aucune ressaisie).
-const besoinParam = computed(() => queryValue(route.query.besoin))
-const salariesParam = computed(() => queryValue(route.query.salaries))
-const lieuParam = computed(() => queryValue(route.query.lieu))
+// Transmis hors URL (voir utils/assistant-handoff) : reçu au montage (état
+// d'historique) puis à chaque publication du panneau tant que la page reste
+// montée — « Modifier » rouvre l'assistant sans démonter le formulaire, et
+// choisir une autre recommandation réutilise la page (clé = route.path).
+// Jamais rendu côté serveur, absent du `page_location` analytics.
+const appliedHandoff: { salaries?: number; lieu?: string } = {}
+const handoff = useReceivedHandoff((next) => {
+  if (!next) return
+  // Effectif et lieu : pré-remplis tant que le visiteur n'y a pas touché
+  // (champ intact, ou encore égal à la valeur posée par la transmission
+  // précédente) — sa saisie et le brouillon restauré priment.
+  const untouched = (field: 'salaries' | 'lieu') =>
+    !isFieldDirty(field) || values[field] === appliedHandoff[field]
+  const patch: { salaries?: number; lieu?: string } = {}
+  if (next.headcount && untouched('salaries')) patch.salaries = next.headcount
+  if (next.location && untouched('lieu')) patch.lieu = next.location
+  Object.assign(appliedHandoff, patch)
+  if (Object.keys(patch).length) setValues(patch)
+})
+const besoinParam = computed(() => handoff.value?.need ?? null)
+const salariesParam = computed(() => handoff.value?.headcount ?? null)
+const lieuParam = computed(() => handoff.value?.location ?? null)
 
 const besoinChips = computed(() => {
   const chips: string[] = []
@@ -806,78 +826,80 @@ const ECHEANCE_FLEXIBLE = 'Pas de date précise'
 const echeanceMonthOptions = upcomingMonthLabelsFr(3)
 const echeanceOptions = [ECHEANCE_ASAP, ...echeanceMonthOptions, ECHEANCE_FLEXIBLE]
 
-const { handleSubmit, errors, submitCount, defineField, setValues, values } = useForm({
-  validationSchema: toTypedSchema(
-    z
-      .object({
-        // Input émet string | number : la saisie reste une chaîne tant qu'on ne convertit pas.
-        // Les .int()/.max() calquent les bornes du DTO API (@IsInt, @MaxLength) :
-        // une valeur refusée côté serveur est bloquée ici avec un message de champ.
-        salaries: z.coerce
-          .number({ error: 'Indiquez le nombre de salariés à former.' })
-          .int('Le nombre de salariés doit être un entier.')
-          .min(1, 'Indiquez le nombre de salariés à former.'),
-        echeance: z
-          .string({ error: 'Choisissez une échéance.' })
-          .min(1, 'Choisissez une échéance.')
-          .max(200, 'Échéance trop longue — 200 caractères maximum.'),
-        lieu: z.string().trim().max(200, 'Lieu trop long — 200 caractères maximum.').optional(),
-        precisions: z
-          .string()
-          .max(5000, 'Précisions trop longues — 5000 caractères maximum.')
-          .optional(),
-        raisonSociale: z
-          .string({ error: "Indiquez la raison sociale de l'entreprise." })
-          .trim()
-          .min(1, "Indiquez la raison sociale de l'entreprise.")
-          .max(200, 'Raison sociale trop longue — 200 caractères maximum.'),
-        siret: z
-          .string({ error: 'Indiquez le SIRET de votre entreprise.' })
-          .trim()
-          .min(1, 'Indiquez le SIRET de votre entreprise.')
-          // Espaces tolérés à la saisie, supprimés avant envoi à HubSpot.
-          .transform((value) => value.replace(/\s/g, ''))
-          .refine((value) => /^\d{14}$/.test(value), 'SIRET invalide — 14 chiffres attendus.'),
-        ...leadFields({
-          email: 'Indiquez votre e-mail professionnel.',
-          consentement: 'Consentement requis pour envoyer la demande.'
-        }),
-        fonction: z
-          .string({ error: 'Indiquez votre fonction.' })
-          .trim()
-          .min(1, 'Indiquez votre fonction.')
-          .max(200, 'Fonction trop longue — 200 caractères maximum.'),
-        telephonePro: z
-          .string()
-          .trim()
-          .max(30, 'Numéro de téléphone trop long — 30 caractères maximum.')
-          .refine(
-            (value) => !value || value.replace(/\D/g, '').length >= 10,
-            'Numéro incomplet — 10 chiffres attendus.'
-          )
-          .optional()
-      })
-      // Le lieu n'est requis qu'en intra : la session se déroule sur le site
-      // du client, sans centre pour le localiser.
-      .superRefine((data, ctx) => {
-        if (isIntra.value && !data.lieu) {
-          ctx.addIssue({
-            code: 'custom',
-            path: ['lieu'],
-            message: 'Indiquez le lieu de la formation (code postal ou ville).'
-          })
-        }
-      })
-  ),
-  initialValues: {
-    // D1 : effectif et lieu pré-remplis depuis la recherche assistée.
-    salaries: salariesParam.value ?? 8,
-    lieu: lieuParam.value ?? '',
-    echeance: echeanceMonthOptions[0] ?? ECHEANCE_ASAP,
-    precisions: '',
-    consentement: false
+const { handleSubmit, errors, submitCount, defineField, setValues, values, isFieldDirty } = useForm(
+  {
+    validationSchema: toTypedSchema(
+      z
+        .object({
+          // Input émet string | number : la saisie reste une chaîne tant qu'on ne convertit pas.
+          // Les .int()/.max() calquent les bornes du DTO API (@IsInt, @MaxLength) :
+          // une valeur refusée côté serveur est bloquée ici avec un message de champ.
+          salaries: z.coerce
+            .number({ error: 'Indiquez le nombre de salariés à former.' })
+            .int('Le nombre de salariés doit être un entier.')
+            .min(1, 'Indiquez le nombre de salariés à former.'),
+          echeance: z
+            .string({ error: 'Choisissez une échéance.' })
+            .min(1, 'Choisissez une échéance.')
+            .max(200, 'Échéance trop longue — 200 caractères maximum.'),
+          lieu: z.string().trim().max(200, 'Lieu trop long — 200 caractères maximum.').optional(),
+          precisions: z
+            .string()
+            .max(5000, 'Précisions trop longues — 5000 caractères maximum.')
+            .optional(),
+          raisonSociale: z
+            .string({ error: "Indiquez la raison sociale de l'entreprise." })
+            .trim()
+            .min(1, "Indiquez la raison sociale de l'entreprise.")
+            .max(200, 'Raison sociale trop longue — 200 caractères maximum.'),
+          siret: z
+            .string({ error: 'Indiquez le SIRET de votre entreprise.' })
+            .trim()
+            .min(1, 'Indiquez le SIRET de votre entreprise.')
+            // Espaces tolérés à la saisie, supprimés avant envoi à HubSpot.
+            .transform((value) => value.replace(/\s/g, ''))
+            .refine((value) => /^\d{14}$/.test(value), 'SIRET invalide — 14 chiffres attendus.'),
+          ...leadFields({
+            email: 'Indiquez votre e-mail professionnel.',
+            consentement: 'Consentement requis pour envoyer la demande.'
+          }),
+          fonction: z
+            .string({ error: 'Indiquez votre fonction.' })
+            .trim()
+            .min(1, 'Indiquez votre fonction.')
+            .max(200, 'Fonction trop longue — 200 caractères maximum.'),
+          telephonePro: z
+            .string()
+            .trim()
+            .max(30, 'Numéro de téléphone trop long — 30 caractères maximum.')
+            .refine(
+              (value) => !value || value.replace(/\D/g, '').length >= 10,
+              'Numéro incomplet — 10 chiffres attendus.'
+            )
+            .optional()
+        })
+        // Le lieu n'est requis qu'en intra : la session se déroule sur le site
+        // du client, sans centre pour le localiser.
+        .superRefine((data, ctx) => {
+          if (isIntra.value && !data.lieu) {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['lieu'],
+              message: 'Indiquez le lieu de la formation (code postal ou ville).'
+            })
+          }
+        })
+    ),
+    initialValues: {
+      // D1 : effectif et lieu de la recherche assistée appliqués au montage.
+      salaries: 8,
+      lieu: '',
+      echeance: echeanceMonthOptions[0] ?? ECHEANCE_ASAP,
+      precisions: '',
+      consentement: false
+    }
   }
-})
+)
 
 const [salaries] = defineField<'salaries', string | number>('salaries')
 const [lieu] = defineField('lieu')
@@ -957,6 +979,9 @@ function reopenAssistant() {
 }
 
 onMounted(() => {
+  // D1 : le besoin transmis est déjà appliqué (`useReceivedHandoff`, hook
+  // enregistré plus haut) ; le brouillon éventuel (retour depuis « Modifier »)
+  // reprend ici la main sur les champs saisis.
   const raw = window.sessionStorage.getItem(draftKey.value)
   if (!raw) return
   try {

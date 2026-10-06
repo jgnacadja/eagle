@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, ref } from 'vue'
 import QuickCallbackCard from '~/components/Cards/QuickCallbackCard.vue'
 import ConseillerPage from '~/pages/parler-a-votre-conseiller.vue'
+import { useAssistantHandoffChannel } from '~/composables/useAssistantHandoff'
 
 const seoMock = vi.fn()
 
@@ -231,6 +232,63 @@ describe('pages/parler-a-votre-conseiller', () => {
     expect((textarea.element as HTMLTextAreaElement).value).toBe(
       'Former 8 salariés au CACES près de Lyon'
     )
+  })
+
+  it('pré-remplit le message depuis le besoin transmis hors URL par la recherche assistée', async () => {
+    window.history.replaceState(
+      { assistantHandoff: { need: 'Former 8 salariés au SST à Créteil' } },
+      ''
+    )
+    try {
+      const wrapper = await mountPage()
+      await flushPromises()
+
+      const textarea = wrapper.find('#message')
+      expect((textarea.element as HTMLTextAreaElement).value).toBe(
+        'Former 8 salariés au SST à Créteil'
+      )
+    } finally {
+      window.history.replaceState(null, '')
+    }
+  })
+
+  it('remplit le champ vide quand l’assistant est ouvert depuis la page conseiller elle-même', async () => {
+    useAssistantHandoffChannel().channel.value = { value: null, revision: 0 }
+    const wrapper = await mountPage()
+    await flushPromises()
+    const textarea = () => wrapper.find('#message').element as HTMLTextAreaElement
+    expect(textarea().value).toBe('')
+
+    // Lien conseiller du panneau vers l'URL courante : aucune navigation, la
+    // page n'est pas remontée — le besoin arrive par le canal.
+    useAssistantHandoffChannel().publish({ need: 'Former 8 salariés au SST' })
+    await flushPromises()
+
+    expect(textarea().value).toBe('Former 8 salariés au SST')
+  })
+
+  it('suit un besoin publié pendant que la page est ouverte, sans écraser une saisie', async () => {
+    useAssistantHandoffChannel().channel.value = { value: null, revision: 0 }
+    window.history.replaceState({ assistantHandoff: { need: 'Former au SST' } }, '')
+    try {
+      const wrapper = await mountPage()
+      await flushPromises()
+      const textarea = () => wrapper.find('#message').element as HTMLTextAreaElement
+      expect(textarea().value).toBe('Former au SST')
+
+      // Besoin modifié dans le panneau : le pré-remplissage intact suit.
+      useAssistantHandoffChannel().publish({ need: 'Former des caristes' })
+      await flushPromises()
+      expect(textarea().value).toBe('Former des caristes')
+
+      // Le visiteur a repris le texte : une nouvelle transmission ne l'écrase pas.
+      await wrapper.find('#message').setValue('Mon texte')
+      useAssistantHandoffChannel().publish({ need: 'Autre besoin' })
+      await flushPromises()
+      expect(textarea().value).toBe('Mon texte')
+    } finally {
+      window.history.replaceState(null, '')
+    }
   })
 
   it('applique le SEO noindex de la page', async () => {

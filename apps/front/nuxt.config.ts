@@ -39,8 +39,8 @@ export default defineNuxtConfig({
   site: { url: siteUrl },
   sitemap: {
     // Pages noindex (formulaires) hors sitemap ; les routes dynamiques
-    // (fiches, familles, centres, articles, pages légales) sont fournies
-    // par le endpoint ci-dessous, les pages statiques auto-découvertes.
+    // (fiches, familles, centres, articles, pages légales) sont fournies par
+    // le endpoint ci-dessous, les pages statiques auto-découvertes.
     exclude: ['/parler-a-votre-conseiller', '/centres/demande-de-formation'],
     sources: ['/api/__sitemap__/urls']
   },
@@ -107,6 +107,9 @@ export default defineNuxtConfig({
     '/centres/**': { isr: { expiration: 600, passQuery: true, group: 2 } },
     '/actualites': { isr: { expiration: 600, passQuery: true, group: 3 } },
     '/actualites/**': { isr: { expiration: 600, passQuery: true, group: 3 } },
+    // Ancienne page du moteur IA (arbitrage : panneau conservé) : les liens
+    // partagés et favoris atterrissent sur la Home, qui porte le champ d'entrée.
+    '/recherche-assistee': { redirect: { to: '/', statusCode: 301 } },
     '/rejoindre-le-reseau': { prerender: true },
     '/referencer-mon-organisme': { prerender: true },
     '/entreprise-reseau': { prerender: true },

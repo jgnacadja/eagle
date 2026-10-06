@@ -6,6 +6,23 @@ import LoadError from '~/components/ErrorState/LoadError.vue'
 import NotFound from '~/components/ErrorState/NotFound.vue'
 import FormationPage from '~/pages/formations/[famille]/[slug].vue'
 
+// Session future calculée (+45 jours) : au-delà du mois courant quel que soit
+// le jour d'exécution — une date fixe devenait « ce mois-ci » puis passée.
+const NEXT_SESSION = (() => {
+  const start = new Date()
+  start.setUTCHours(0, 0, 0, 0)
+  start.setUTCDate(start.getUTCDate() + 45)
+  const end = new Date(start)
+  end.setUTCDate(end.getUTCDate() + 2)
+  const iso = (date: Date) => date.toISOString().slice(0, 10)
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return {
+    start: iso(start),
+    end: iso(end),
+    short: `${pad(start.getUTCDate())}/${pad(start.getUTCMonth() + 1)}`
+  }
+})()
+
 const family: FamilleFormation = {
   id: 1,
   slug: 'caces-conduite-engins',
@@ -46,8 +63,8 @@ const course: Course = {
   sessions: [
     {
       id: 'sess-1',
-      startDate: '2026-10-12',
-      endDate: '2026-10-14',
+      startDate: NEXT_SESSION.start,
+      endDate: NEXT_SESSION.end,
       modality: 'presentiel',
       seatsRemaining: 5,
       location: {
@@ -447,7 +464,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     expect(wrapper.find('a[href="/centres/creteil"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Centre de Créteil')
     expect(wrapper.text()).toContain('Val-de-Marne')
-    expect(wrapper.text()).toContain('Prochaine session le 12/10')
+    expect(wrapper.text()).toContain(`Prochaine session le ${NEXT_SESSION.short}`)
     expect(wrapper.text()).toContain('Modalités pédagogiques')
     expect(wrapper.text()).toContain('Inter, en centre.')
     expect(wrapper.text()).toContain('Évaluation')
@@ -895,8 +912,8 @@ describe('pages/formations/[famille]/[slug]', () => {
         sessions: [
           {
             id: 'sess-1',
-            startDate: '2026-10-12',
-            endDate: '2026-10-14',
+            startDate: NEXT_SESSION.start,
+            endDate: NEXT_SESSION.end,
             modality: null,
             seatsRemaining: 5,
             location: {

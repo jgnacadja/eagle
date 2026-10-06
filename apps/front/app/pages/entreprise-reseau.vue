@@ -228,8 +228,8 @@
             <Button as-child variant="dark" size="pill" class="w-full sm:w-auto">
               <NuxtLink to="/formations">Parcourir le catalogue</NuxtLink>
             </Button>
-            <Button as-child variant="outline" size="pill" class="w-full sm:w-auto">
-              <NuxtLink to="/parler-a-votre-conseiller"> Être guidé dans mon choix </NuxtLink>
+            <Button variant="outline" size="pill" class="w-full sm:w-auto" @click="openAssistant">
+              Être guidé dans mon choix
             </Button>
           </div>
         </div>
@@ -240,7 +240,15 @@
 
 <script setup lang="ts">
 import IconCheck from '~/components/icons/IconCheck.vue'
+import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { revealStagger } from '~/utils/reveal'
+
+const assistant = useAssistantLauncher()
+
+// « Être guidé dans mon choix » ouvre le panneau de recherche assistée.
+function openAssistant() {
+  assistant.open({ context: { source: 'editorial' } })
+}
 
 definePageMeta({
   layout: 'with-breadcrumb',

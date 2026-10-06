@@ -12,6 +12,7 @@ import {
   watchEffect
 } from 'vue'
 import DemandePage from '~/pages/centres/demande-de-formation.vue'
+import { useAssistantHandoffChannel } from '~/composables/useAssistantHandoff'
 import { upcomingMonthLabelsFr } from '~/utils/date'
 
 const seoMock = vi.fn()
@@ -179,6 +180,8 @@ describe('pages/centres/demande-de-formation', () => {
     centresBySlug.clear()
     centresBySlug.set(centreCreteil.slug, centreCreteil)
     window.sessionStorage.clear()
+    window.history.replaceState(null, '')
+    useAssistantHandoffChannel().channel.value = { value: null, revision: 0 }
     fetchMock.mockImplementation(async () => courseSst)
     leadSubmitMock.mockReset().mockResolvedValue(true)
     sendingState.value = false
@@ -216,6 +219,69 @@ describe('pages/centres/demande-de-formation', () => {
 
     expect(wrapper.text()).toContain('Ouvrir un centre LEARN UP ACADEMY')
     expect(wrapper.text()).not.toContain('Votre projet de formation')
+  })
+
+  it('reprend le besoin transmis hors URL par la recherche assistée (D1)', async () => {
+    // Variante intra : le champ lieu est visible. Le besoin voyage dans
+    // l'état d'historique, jamais en query (RGPD).
+    routeStub.query = { intra: '1' }
+    window.history.replaceState(
+      {
+        assistantHandoff: {
+          need: 'former 12 salariés au SST à Créteil',
+          headcount: 12,
+          location: 'Créteil'
+        }
+      },
+      ''
+    )
+    const wrapper = await mountPage()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain("Votre besoin, tel que vous l'avez décrit")
+    expect(wrapper.text()).toContain('former 12 salariés au SST à Créteil')
+    expect(wrapper.text()).toContain('12 salariés')
+    expect((wrapper.find('#lieu').element as HTMLInputElement).value).toBe('Créteil')
+  })
+
+  it('applique un besoin publié pendant que le formulaire est monté, sans écraser la saisie', async () => {
+    routeStub.query = { intra: '1' }
+    window.history.replaceState(
+      { assistantHandoff: { need: 'former au SST', headcount: 12, location: 'Créteil' } },
+      ''
+    )
+    const wrapper = await mountPage()
+    await flushPromises()
+    expect((wrapper.find('#lieu').element as HTMLInputElement).value).toBe('Créteil')
+
+    // « Modifier » rouvre l'assistant sans démonter le formulaire (clé de
+    // page = route.path) : le visiteur corrige le lieu, puis choisit une
+    // autre recommandation depuis le panneau.
+    await wrapper.find('#lieu').setValue('Lyon 69003')
+    useAssistantHandoffChannel().publish({
+      need: 'former des caristes',
+      headcount: 20,
+      location: 'Marseille'
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('former des caristes')
+    expect(wrapper.text()).not.toContain('former au SST')
+    expect(wrapper.text()).toContain('20 salariés')
+    // La saisie du visiteur est conservée ; l'effectif, intact, suit.
+    expect((wrapper.find('#lieu').element as HTMLInputElement).value).toBe('Lyon 69003')
+
+    await fillValidForm(wrapper)
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+    const payload = leadSubmitMock.mock.calls[0]![1] as { precisions: string; lieu: string }
+    expect(payload.precisions).toContain('Besoin exprimé : former des caristes')
+    expect(payload.lieu).toBe('Lyon 69003')
+  })
+
+  it("n'affiche pas le bloc besoin sans transmission", async () => {
+    const wrapper = await mountPage()
+    expect(wrapper.text()).not.toContain("tel que vous l'avez décrit")
   })
 
   it('retombe sur le contexte générique pour un sujet inconnu', async () => {
@@ -708,7 +774,8 @@ describe('pages/centres/demande-de-formation', () => {
   })
 
   it('borne precisions à 5000 caractères avec un besoin agrégé et un texte longs', async () => {
-    routeStub.query = { besoin: 'b'.repeat(500) }
+    // Le besoin arrive hors URL (état d'historique de la recherche assistée).
+    window.history.replaceState({ assistantHandoff: { need: 'b'.repeat(500) } }, '')
     const wrapper = await mountPage()
     await fillValidForm(wrapper)
 

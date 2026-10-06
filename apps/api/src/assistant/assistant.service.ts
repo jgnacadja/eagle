@@ -124,7 +124,7 @@ function sessionMatchesLocation(row: CatalogRow, sessionIndex: number, tokens: s
   return tokens.some((token) => haystack.includes(token))
 }
 
-function buildAvailability(
+export function buildAvailability(
   row: CatalogRow,
   location: string | undefined
 ): AssistantAvailability | null {
@@ -160,6 +160,34 @@ function buildAvailability(
 }
 
 /**
+ * Recommandation ancrée sur le référentiel : titre, attributs et
+ * disponibilité viennent exclusivement du catalogue. Partagé par la
+ * décision du modèle et le repli déterministe (mode dégradé).
+ */
+export function toRecommendation(
+  row: CatalogRow,
+  rank: AssistantRecommendation['rank'],
+  justification: string,
+  location: string | undefined
+): AssistantRecommendation {
+  const course = row.course
+  return {
+    slug: course.slug,
+    familySlug: course.familySlug,
+    title: course.title,
+    description: course.description,
+    durationDays: course.durationDays,
+    durationHours: course.durationHours,
+    modalities: course.modalities,
+    certification: course.certification,
+    rank,
+    justification,
+    availability: buildAvailability(row, location),
+    url: course.familySlug ? `/formations/${course.familySlug}/${course.slug}` : null
+  }
+}
+
+/**
  * La sortie du modèle est du texte : on extrait le premier bloc JSON et on
  * le re-valide contre le schéma (le prompt exige du JSON seul, mais les
  * modèles ajoutent parfois du texte parasite ou des fences markdown).
@@ -182,18 +210,26 @@ export class AssistantService {
     private readonly model: AssistantModelClient
   ) {}
 
-  async reply(request: AssistantRequest): Promise<AssistantReply> {
+  /** `signal` annule l'appel modèle en vol (budget de temps du mode dégradé). */
+  async reply(
+    request: AssistantRequest,
+    options: { signal?: AbortSignal } = {}
+  ): Promise<AssistantReply> {
     const rows = await this.catalog.allCourses()
     if (rows.length === 0) {
       // Catalogue indisponible : pas de repli approximatif possible.
       throw new ServiceUnavailableException('assistant unavailable')
     }
 
-    const decision = await this.decide(request, rows)
+    const decision = await this.decide(request, rows, options.signal)
     return this.resolve(decision, rows, request)
   }
 
-  private async decide(request: AssistantRequest, rows: CatalogRow[]): Promise<AssistantDecision> {
+  private async decide(
+    request: AssistantRequest,
+    rows: CatalogRow[],
+    signal?: AbortSignal
+  ): Promise<AssistantDecision> {
     const contextLines = [
       request.context?.location ? `Localisation transmise : ${request.context.location}` : null,
       request.context?.formationSlug
@@ -244,7 +280,7 @@ export class AssistantService {
     else normalizedHistory.push({ role: 'user', content: userContent })
 
     try {
-      const raw = await this.model.complete(instructions, normalizedHistory)
+      const raw = await this.model.complete(instructions, normalizedHistory, { signal })
       return parseDecision(raw)
     } catch (error) {
       this.logger.warn({ error }, 'assistant model call failed')
@@ -281,23 +317,16 @@ export class AssistantService {
     for (const [index, item] of (decision.recommendations ?? []).entries()) {
       const row = bySlug.get(item.slug)
       if (!row) continue
-      const course = row.course
-      recommendations.push({
-        slug: course.slug,
-        familySlug: course.familySlug,
-        title: course.title,
-        description: course.description,
-        durationDays: course.durationDays,
-        durationHours: course.durationHours,
-        modalities: course.modalities,
-        certification: course.certification,
-        rank: index === 0 ? 'primary' : 'alternative',
-        justification: item.justification,
-        // Le lieu extrait de la conversation (slot) prime sur le lieu du
-        // contexte d'entrée : l'utilisateur peut avoir précisé autre chose.
-        availability: buildAvailability(row, decision.slots?.location ?? request.context?.location),
-        url: course.familySlug ? `/formations/${course.familySlug}/${course.slug}` : null
-      })
+      recommendations.push(
+        toRecommendation(
+          row,
+          index === 0 ? 'primary' : 'alternative',
+          item.justification,
+          // Le lieu extrait de la conversation (slot) prime sur le lieu du
+          // contexte d'entrée : l'utilisateur peut avoir précisé autre chose.
+          decision.slots?.location ?? request.context?.location
+        )
+      )
     }
 
     // Slugs hallucinés ou catalogue désynchronisé : jamais de « recommandation » vide.

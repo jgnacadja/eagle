@@ -272,6 +272,32 @@ collections:
       versioning: false
     schema:
       name: pages_legales_subsections
+  - collection: recherches_sans_resultat
+    meta:
+      accountability: all
+      archive_app_filter: true
+      archive_field: null
+      archive_value: null
+      collapse: open
+      collection: recherches_sans_resultat
+      color: null
+      display_template: null
+      group: null
+      hidden: false
+      icon: search_off
+      item_duplication_fields: null
+      note: 'Journal des recherches sans correspondance — catalogue « aucun résultat », moteur IA « hors catalogue ». Alimenté automatiquement par l’API : identifiants masqués (e-mail, téléphone, SIRET, IBAN, adresse), mais le texte libre peut encore contenir des données personnelles saisies par le visiteur — accès réservé aux rôles internes, purge après SEARCH_MISS_RETENTION_DAYS jours ; consultation et export pour la revue produit.'
+      preview_url: null
+      singleton: false
+      sort: null
+      sort_field: null
+      translations:
+        - language: fr-FR
+          translation: Recherches sans résultat
+      unarchive_value: null
+      versioning: false
+    schema:
+      name: recherches_sans_resultat
   - collection: sous_familles_formation
     meta:
       accountability: all
@@ -7067,6 +7093,397 @@ fields:
       has_auto_increment: false
       foreign_key_table: pages_legales_sections
       foreign_key_column: id
+  - collection: recherches_sans_resultat
+    field: id
+    type: integer
+    meta:
+      collection: recherches_sans_resultat
+      conditions: null
+      display: null
+      display_options: null
+      field: id
+      group: null
+      hidden: true
+      interface: input
+      note: null
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 1
+      special: null
+      translations:
+        - language: fr-FR
+          translation: ID
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: id
+      table: recherches_sans_resultat
+      data_type: integer
+      default_value: nextval('recherches_sans_resultat_id_seq'::regclass)
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: false
+      is_unique: true
+      is_indexed: false
+      is_primary_key: true
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: true
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: recherches_sans_resultat
+    field: date_created
+    type: timestamp
+    meta:
+      collection: recherches_sans_resultat
+      conditions: null
+      display: null
+      display_options: null
+      field: date_created
+      group: null
+      hidden: false
+      interface: datetime
+      note: null
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 2
+      special:
+        - date-created
+      translations:
+        - language: fr-FR
+          translation: Date
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: date_created
+      table: recherches_sans_resultat
+      data_type: timestamp with time zone
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: recherches_sans_resultat
+    field: outcome
+    type: string
+    meta:
+      collection: recherches_sans_resultat
+      conditions: null
+      display: null
+      display_options: null
+      field: outcome
+      group: null
+      hidden: false
+      interface: select-dropdown
+      note: null
+      options:
+        choices:
+          - text: Aucun résultat
+            value: no_result
+          - text: Hors catalogue
+            value: out_of_catalog
+      readonly: true
+      required: false
+      searchable: true
+      sort: 3
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Cas atteint
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: outcome
+      table: recherches_sans_resultat
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: recherches_sans_resultat
+    field: source
+    type: string
+    meta:
+      collection: recherches_sans_resultat
+      conditions: null
+      display: null
+      display_options: null
+      field: source
+      group: null
+      hidden: false
+      interface: select-dropdown
+      note: null
+      options:
+        choices:
+          - text: Catalogue
+            value: catalog
+          - text: Moteur IA
+            value: assistant
+      readonly: true
+      required: false
+      searchable: true
+      sort: 4
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Source
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: source
+      table: recherches_sans_resultat
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: recherches_sans_resultat
+    field: query_text
+    type: text
+    meta:
+      collection: recherches_sans_resultat
+      conditions: null
+      display: null
+      display_options: null
+      field: query_text
+      group: null
+      hidden: false
+      interface: input-multiline
+      note: 'Texte saisi par le visiteur — e-mail, téléphone, SIRET, IBAN et adresse masqués avant enregistrement ; peut contenir d’autres données personnelles saisies librement (accès restreint, purge automatique)'
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 5
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Requête
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: query_text
+      table: recherches_sans_resultat
+      data_type: text
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: recherches_sans_resultat
+    field: query_normalized
+    type: text
+    meta:
+      collection: recherches_sans_resultat
+      conditions: null
+      display: null
+      display_options: null
+      field: query_normalized
+      group: null
+      hidden: true
+      interface: input
+      note: 'Clé de regroupement (minuscules, sans accents ni ponctuation)'
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 6
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Requête normalisée
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: query_normalized
+      table: recherches_sans_resultat
+      data_type: text
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: recherches_sans_resultat
+    field: intent
+    type: string
+    meta:
+      collection: recherches_sans_resultat
+      conditions: null
+      display: null
+      display_options: null
+      field: intent
+      group: null
+      hidden: false
+      interface: input
+      note: 'Intention détectée par le moteur IA — vide pour le catalogue'
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 7
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Intention
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: intent
+      table: recherches_sans_resultat
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: recherches_sans_resultat
+    field: context
+    type: json
+    meta:
+      collection: recherches_sans_resultat
+      conditions: null
+      display: null
+      display_options: null
+      field: context
+      group: null
+      hidden: false
+      interface: input-code
+      note: 'Filtres actifs au moment de la recherche — jamais de donnée personnelle'
+      options:
+        language: json
+      readonly: true
+      required: false
+      searchable: true
+      sort: 8
+      special:
+        - cast-json
+      translations:
+        - language: fr-FR
+          translation: Contexte
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: context
+      table: recherches_sans_resultat
+      data_type: json
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: recherches_sans_resultat
+    field: reviewed
+    type: boolean
+    meta:
+      collection: recherches_sans_resultat
+      conditions: null
+      display: null
+      display_options: null
+      field: reviewed
+      group: null
+      hidden: false
+      interface: boolean
+      note: 'À cocher une fois la requête traitée en revue produit'
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 9
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Traité
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: reviewed
+      table: recherches_sans_resultat
+      data_type: boolean
+      default_value: false
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
   - collection: sous_familles_formation
     field: id
     type: integer

@@ -1,13 +1,18 @@
 <template>
   <div>
     <div
-      :class="[
-        'relative flex h-control items-center gap-sm rounded-full border bg-paper pl-md pr-sm shadow-sm transition-colors',
-        isLoading ? 'border-outline-soft bg-surface-soft' : '',
-        hasError ? 'border-danger' : 'border-outline',
-        !isLoading && !hasError ? 'focus-within:ring-2 focus-within:ring-accent' : '',
-        $attrs.class as string
-      ]"
+      :class="
+        cn(
+          'relative flex h-control items-center gap-sm rounded-full border border-outline bg-paper pl-md pr-sm shadow-sm transition-colors',
+          $attrs.class as string,
+          // États en dernier : `cn()` garde la dernière classe en conflit —
+          // la bordure de chargement puis d'erreur priment sur la bordure
+          // normale et sur celle passée par le consommateur.
+          isLoading ? 'border-outline-soft bg-surface-soft' : '',
+          hasError ? 'border-danger' : '',
+          !isLoading && !hasError ? 'focus-within:ring-2 focus-within:ring-accent' : ''
+        )
+      "
     >
       <slot name="icon" />
       <label :for="inputId" class="sr-only">{{ srLabel }}</label>
@@ -81,6 +86,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { cn } from '@/lib/utils'
 import SuggestList from '~/components/ui/search-input/SuggestList.vue'
 import { useSuggestDropdown } from '~/composables/useSuggestDropdown'
 

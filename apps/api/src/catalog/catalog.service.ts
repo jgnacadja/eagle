@@ -8,9 +8,12 @@ import type {
   CourseSession,
   CourseSessionLocation,
   DurationBucket,
-  FamilyWithCount
+  FamilyWithCount,
+  SearchMissContext
 } from '@learnup/types'
 import { CacheService } from '../common/cache/cache.service'
+import { normalizeText, tokenize } from '../common/utils/text.util'
+import { SearchMissesService } from '../search-misses/search-misses.service'
 import {
   DirectusCatalogService,
   type AssignmentProposal,
@@ -219,88 +222,16 @@ function toCourse(raw: DirectusFormation): Course {
   }
 }
 
-const STOP_WORDS = new Set(
-  [
-    'a',
-    'à',
-    'au',
-    'aux',
-    'avec',
-    'ce',
-    'cet',
-    'cette',
-    'ces',
-    'dans',
-    'de',
-    'des',
-    'du',
-    'elle',
-    'en',
-    'est',
-    'et',
-    'eux',
-    'il',
-    'ils',
-    'je',
-    'la',
-    'le',
-    'les',
-    'leur',
-    'leurs',
-    'lui',
-    'ma',
-    'mais',
-    'me',
-    'mes',
-    'mon',
-    'ne',
-    'nos',
-    'notre',
-    'nous',
-    'on',
-    'ou',
-    'par',
-    'pas',
-    'pour',
-    'qu',
-    'que',
-    'qui',
-    'quoi',
-    'sa',
-    'se',
-    'ses',
-    'son',
-    'sur',
-    'ta',
-    'te',
-    'tes',
-    'ton',
-    'tu',
-    'un',
-    'une',
-    'vos',
-    'votre',
-    'vous',
-    'y'
-  ].map(normalizeSearch)
-)
-
+// Tokens normalisés (sans accents, sans mots vides — `FRENCH_STOP_WORDS` du
+// tokenizer partagé), comme `searchText` — sinon « sécurité » ne trouvait
+// jamais « Sécurité ».
 function toSearchTokens(raw: string | undefined): string[] | undefined {
   if (!raw) return undefined
-
-  const tokens = normalizeSearch(raw)
-    .match(/[a-z0-9]+/g)
-    ?.filter((token) => token.length > 2 && !STOP_WORDS.has(token))
-
-  return tokens && tokens.length > 0 ? tokens : undefined
+  const tokens = tokenize(raw, 3)
+  return tokens.length > 0 ? tokens : undefined
 }
 
-function normalizeSearch(text: string | null | undefined): string {
-  return (text ?? '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-}
+const normalizeSearch = normalizeText
 
 function buildLocationText(
   locationsText: string | null | undefined,
@@ -590,7 +521,10 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
  * « lyon 13002 » ne matche pas une formation à Lyon 69003 + Marseille 13002.
  * Repli sur `locationText` quand aucune session n'est géolocalisée.
  */
-function matchesLocation(row: CatalogRow, location: string | undefined): boolean {
+export function matchesLocation(
+  row: Pick<CatalogRow, 'locations' | 'locationText'>,
+  location: string | undefined
+): boolean {
   const geo = parseGeoLocation(location)
   if (geo) {
     const geocoded = row.locations.filter(
@@ -749,6 +683,23 @@ function sortCatalogRows(
 
 const ROWS_CACHE_KEY = 'courses:rows'
 
+// Filtres actifs conservés avec une recherche sans résultat — jamais de
+// donnée personnelle (la localisation « autour de moi » est dégradée par le
+// service de journalisation).
+function searchMissContext(query: ListCoursesDto): SearchMissContext {
+  const {
+    search: _search,
+    page: _page,
+    limit: _limit,
+    sort: _sort,
+    order: _order,
+    ...filters
+  } = query
+  return Object.fromEntries(
+    Object.entries(filters).filter(([, value]) => value !== undefined)
+  ) as SearchMissContext
+}
+
 /** Listes « a,b » insensibles à l'ordre côté filtre → triées dans la clé. */
 function canonicalCsv(value: string | undefined): string | undefined {
   const items = value
@@ -792,7 +743,8 @@ export class CatalogService {
 
   constructor(
     private readonly cache: CacheService,
-    private readonly catalog: DirectusCatalogService
+    private readonly catalog: DirectusCatalogService,
+    private readonly searchMisses: SearchMissesService
   ) {}
 
   async list(query: ListCoursesDto): Promise<CoursePage> {
@@ -822,6 +774,19 @@ export class CatalogService {
       page: query.page,
       pageSize: query.limit,
       facets: computeCatalogFacets(rows, query)
+    }
+
+    // Recherche textuelle sans aucune correspondance : journalisée pour la
+    // revue produit (manques catalogue). Non bloquant — le service n'échoue
+    // jamais et ne doit pas retarder la réponse. Un catalogue vide (Directus
+    // indisponible, sync incomplète) n'est pas un manque : rien n'est journalisé.
+    if (query.search && total === 0 && rows.length > 0) {
+      void this.searchMisses.record({
+        query: query.search,
+        outcome: 'no_result',
+        source: 'catalog',
+        context: searchMissContext(query)
+      })
     }
 
     // Un résultat vide n'est jamais caché : dataset dégradé (Directus

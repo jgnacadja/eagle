@@ -106,17 +106,25 @@ Un seul CTA ambre visible par écran. Vert et orangé réservés aux états.
 
 ### Espacements, mise en page, breakpoints
 
-| Charte / Figma                       | Token TS                      | CSS                       | Tailwind                        | Usage                                         |
-| ------------------------------------ | ----------------------------- | ------------------------- | ------------------------------- | --------------------------------------------- |
-| `item spacing/*` (base 4 px)         | `spacing.xs`…`spacing.4xl`    | `--spacing-*`             | `p-xs`… `gap-4xl`               | Échelle 4 · 8 · 16 · 24 · 32 · 48 · 56 · 64   |
-| Gabarit desktop 1280 px              | `layout.containerMax`         | `--layout-container-max`  | `max-w-container`               | Conteneur principal                           |
-| `width/640`                          | `layout.proseMax`             | `--layout-prose-max`      | `max-w-prose`                   | Colonne de lecture                            |
-| Marges latérales 48 px / 20 px       | `layout.gutterDesktop/Mobile` | `--layout-gutter-*`       | `px-gutter`, `px-gutter-mobile` | Marges de page                                |
-| Padding vertical de section 52–62 px | `layout.sectionY`             | `--layout-section-y`      | `py-section`                    | Sections (alternance blanc / bleuté / marine) |
-| Gap des grilles 16 px                | `layout.gridGap`              | `--layout-grid-gap`       | `gap-grid`                      | Grilles de cartes 3–4 colonnes                |
-| Cible tactile 44 px                  | `layout.touchTarget`          | `--layout-touch-target`   | `min-h-touch`, `min-w-touch`    | Tout élément interactif                       |
-| Hauteur de bouton 48–52 px           | `layout.controlHeight`        | `--layout-control-height` | `h-control`                     | Boutons, bouton icône recherche               |
-| Mobile 390 px → desktop 1280 px      | `breakpoints.sm/md/lg/xl`     | `--breakpoint-*`          | `sm:` `md:` `lg:` `xl:`         | 640 · 768 · 1024 · 1280                       |
+| Charte / Figma                       | Token TS                      | CSS                          | Tailwind                        | Usage                                             |
+| ------------------------------------ | ----------------------------- | ---------------------------- | ------------------------------- | ------------------------------------------------- |
+| `item spacing/*` (base 4 px)         | `spacing.xs`…`spacing.4xl`    | `--spacing-*`                | `p-xs`… `gap-4xl`               | Échelle 4 · 8 · 16 · 24 · 32 · 48 · 56 · 64       |
+| Gabarit desktop 1280 px              | `layout.containerMax`         | `--layout-container-max`     | `max-w-container`               | Conteneur principal                               |
+| `width/640`                          | `layout.proseMax`             | `--layout-prose-max`         | `max-w-prose`                   | Colonne de lecture                                |
+| `width/400`                          | `layout.calloutMax`           | `--layout-callout-max`       | `max-w-callout`                 | Textes secondaires, encadrés                      |
+| Marges latérales 48 px / 20 px       | `layout.gutterDesktop/Mobile` | `--layout-gutter-*`          | `px-gutter`, `px-gutter-mobile` | Marges de page                                    |
+| Padding vertical de section 52–62 px | `layout.sectionY`             | `--layout-section-y`         | `py-section`                    | Sections (alternance blanc / bleuté / marine)     |
+| Gap des grilles 16 px                | `layout.gridGap`              | `--layout-grid-gap`          | `gap-grid`                      | Grilles de cartes 3–4 colonnes                    |
+| Cible tactile 44 px                  | `layout.touchTarget`          | `--layout-touch-target`      | `min-h-touch`, `min-w-touch`    | Tout élément interactif                           |
+| Hauteur de bouton 48–52 px           | `layout.controlHeight`        | `--layout-control-height`    | `h-control`                     | Boutons, bouton icône recherche                   |
+| Pastille d'étape 36 px               | `layout.controlHeightSm`      | `--layout-control-height-sm` | `h-control-sm`, `w-control-sm`  | Petites pastilles (étapes numérotées)             |
+| —                                    | `layout.logoHeight`           | `--layout-logo-height`       | `h-logo-height`                 | Hauteur du logo marque, variante blanche (footer) |
+| —                                    | `layout.logoWidth`            | `--layout-logo-width`        | `w-logo-width`                  | Largeur du logo marque, variante blanche (footer) |
+| Mobile 390 px → desktop 1280 px      | `breakpoints.sm/md/lg/xl`     | `--breakpoint-*`             | `sm:` `md:` `lg:` `xl:`         | 640 · 768 · 1024 · 1280                           |
+
+La charte livre deux gabarits : mobile 390 px (marges 20 px) et desktop 1280 px
+(marges 48 px). Les paliers intermédiaires suivent l'échelle Tailwind pour la
+déclinaison tablette (à venir).
 
 ### Rayons et ombres
 
@@ -130,6 +138,10 @@ Un seul CTA ambre visible par écran. Vert et orangé réservés aux états.
 | —                        | `shadows.sm` | `--shadow-sm`   | `shadow-sm`    | Cartes au repos                      |
 | —                        | `shadows.md` | `--shadow-md`   | `shadow-md`    | Cartes au survol                     |
 | Charte §05 (0 16 34 .13) | `shadows.lg` | `--shadow-lg`   | `shadow-lg`    | Recherche IA, éléments flottants     |
+
+Les ombres sont toujours teintées marine (`rgb(20 42 82)`), jamais noires. La
+charte (§05) ne définit qu'une ombre forte, celle de la recherche IA
+(`0 16 34 rgba(20,42,82,.13)`) : `shadows.sm` et `shadows.md` en dérivent.
 
 ### Recettes de composants (charte §04–05)
 

@@ -40,14 +40,16 @@
           :need-summary="needSummary"
           :headcount="slots.headcount"
           :location="slots.location"
-          @send="onSend"
-          @edit="onEditAndSend"
+          :degraded="lastReply?.mode === 'fallback'"
+          :notice="lastReply?.notice"
+          @send="tracking.submit"
+          @edit="tracking.edit"
           @stop="stop"
           @retry="retry"
           @reset="onReset"
           @close="close"
-          @suggested-action-click="onSuggestedActionClick"
-          @handoff="onHandoff"
+          @select="tracking.select"
+          @compare="tracking.compare"
         />
       </dialog>
     </Transition>
@@ -58,71 +60,35 @@
 import { nextTick, ref, watch } from 'vue'
 import { Motion } from 'motion-v'
 import { useAssistant, type AssistantEntry } from '~/composables/useAssistant'
+import { ADVISOR_ESCALATION_ATTR } from '~/composables/useAssistantAnalytics'
+import { useAssistantHandoffChannel } from '~/composables/useAssistantHandoff'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
-import { useDataLayer } from '~/composables/useDataLayer'
+import { useAssistantTracking } from '~/composables/useAssistantTracking'
 import AssistantConversation from '~/components/Assistant/Conversation.vue'
+import { HANDOFF_LINK_ATTR, persistHandoff, toHandoff } from '~/utils/assistant-handoff'
 
 const { isOpen, context, pendingMessage, open, close } = useAssistantLauncher()
 
+const assistant = useAssistant(context, {
+  onReply: (reply, meta) => tracking.onReply(reply, meta)
+})
 const {
   entries,
   pending,
   unavailable,
   contextChips,
   slots,
+  lastReply,
   needSummary,
   append,
-  send,
-  editAndSend,
   retry,
   reset,
   stop
-} = useAssistant(context)
+} = assistant
 
-const { pushEvent } = useDataLayer()
-const conversationId = ref('chat_' + Date.now())
-const chatStartTime = ref<number | null>(null)
-const userMessagesCount = ref(0)
-
-function onSend(message: string) {
-  userMessagesCount.value++
-  pushEvent({
-    event: 'chatbot_message_sent',
-    conversation_id: conversationId.value,
-    message_index: userMessagesCount.value,
-    page_path: typeof window !== 'undefined' ? window.location.pathname : ''
-  })
-  send(message)
-}
-
-function onEditAndSend(message: string, index: number) {
-  userMessagesCount.value++
-  pushEvent({
-    event: 'chatbot_message_sent',
-    conversation_id: conversationId.value,
-    message_index: userMessagesCount.value,
-    page_path: typeof window !== 'undefined' ? window.location.pathname : ''
-  })
-  editAndSend(message, index)
-}
-
-function onSuggestedActionClick(payload: { action_type: string; action_label: string }) {
-  pushEvent({
-    event: 'chatbot_suggested_action_click',
-    conversation_id: conversationId.value,
-    action_type: payload.action_type,
-    action_label: payload.action_label
-  })
-}
-
-function onHandoff(payload?: { reason?: string }) {
-  pushEvent({
-    event: 'chatbot_handoff_to_advisor',
-    conversation_id: conversationId.value,
-    reason: payload?.reason,
-    messages_count: userMessagesCount.value
-  })
-}
+// Jalons analytics du parcours : le widget relaie, le composable classe.
+const tracking = useAssistantTracking(assistant, context)
+const { publish: publishHandoff } = useAssistantHandoffChannel()
 
 const GREETING: AssistantEntry = {
   role: 'assistant',
@@ -153,32 +119,13 @@ watch(
   (open) => {
     if (typeof document === 'undefined') return // SSR
     if (open) {
-      chatStartTime.value = Date.now()
-      pushEvent({
-        event: 'chatbot_open',
-        page_path: typeof window !== 'undefined' ? window.location.pathname : '',
-        trigger_type: pendingMessage.value ? 'auto' : 'manuel',
-        conversation_id: conversationId.value
-      })
+      tracking.panelOpened(pendingMessage.value ? 'auto' : 'manuel')
       previousFocus = document.activeElement
       nextTick(() => {
         if (panelEl.value && !panelEl.value.open) panelEl.value.showModal?.()
       })
     } else {
-      if (chatStartTime.value) {
-        const duration = Math.round((Date.now() - chatStartTime.value) / 1000)
-        const hasResults = entries.value.some(
-          (e) => e.reply?.kind === 'recommendations' || e.reply?.kind === 'course_card'
-        )
-        pushEvent({
-          event: 'chatbot_conversation_end',
-          conversation_id: conversationId.value,
-          messages_count: entries.value.length,
-          resolved: hasResults,
-          duration_seconds: duration
-        })
-        chatStartTime.value = null
-      }
+      tracking.panelClosed()
       nextTick(() => (previousFocus as HTMLElement | null)?.focus?.())
     }
   },
@@ -191,14 +138,17 @@ watch(
 // `immediate` couvre le cas où open() a été appelé avant le mount du widget.
 watch(
   [isOpen, pendingMessage],
-  ([open]) => {
+  ([open], [wasOpen]) => {
     if (!open) return
     const message = pendingMessage.value
     if (message) {
       pendingMessage.value = null
-      onSend(message)
+      // Nouveau besoin transmis par un point d'entrée : début de recherche.
+      tracking.onOpen({ entryMessage: true })
+      tracking.submit(message, 'entry')
       return
     }
+    if (!wasOpen) tracking.onOpen()
     // Pas de message en file : accueil, sauf si un envoi est déjà en cours
     // (send() est asynchrone — le tour user n'est pas encore dans entries).
     if (entries.value.length === 0 && !pending.value) greet()
@@ -220,13 +170,26 @@ watch(
 )
 
 function onPanelClick(event: MouseEvent) {
-  if ((event.target as HTMLElement | null)?.closest?.('a')) close()
+  const anchor = (event.target as HTMLElement | null)?.closest?.('a')
+  if (!anchor) return
+  // Sortie conseiller : le lien porte l'état d'où il part.
+  const from = anchor.getAttribute(ADVISOR_ESCALATION_ATTR)
+  if (from) tracking.escalate(from)
+  // Lien de transmission : le besoin est publié aux pages déjà montées — la
+  // destination peut être la page courante (« Modifier » depuis le formulaire,
+  // autre recommandation sur la même page). Vers l'URL déjà affichée, la
+  // navigation est un no-op : le besoin est inscrit dans l'entrée courante.
+  if (anchor.hasAttribute(HANDOFF_LINK_ATTR)) {
+    const handoff = toHandoff(needSummary.value, slots.value.headcount, slots.value.location)
+    publishHandoff(handoff)
+    if (anchor.getAttribute('href') === route.fullPath) persistHandoff(handoff)
+  }
+  close()
 }
 
 function onReset() {
   reset()
-  conversationId.value = 'chat_' + Date.now()
-  userMessagesCount.value = 0
+  tracking.newConversation()
   greet()
 }
 </script>

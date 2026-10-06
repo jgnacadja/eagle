@@ -243,7 +243,12 @@
                     size="pill-sm"
                     class="mt-md w-full"
                   >
-                    <a :href="qualiopiCertificateUrl" target="_blank" rel="noopener">
+                    <a
+                      :href="qualiopiCertificateUrl"
+                      target="_blank"
+                      rel="noopener"
+                      @click="onDownloadQualiopi"
+                    >
                       <IconDownload :size="14" class="mr-xs" aria-hidden="true" />
                       Télécharger le certificat Qualiopi
                     </a>
@@ -338,6 +343,11 @@
                   :meta="formation.meta"
                   :status="formation.status"
                   :to="formation.to ?? undefined"
+                  :center-id="centre.slug || centre.id"
+                  :center-name="centre.name"
+                  :center-city="centre.city ?? undefined"
+                  :position="i + 1"
+                  list-name="formations_centre"
                 />
               </div>
               <p v-else class="mt-md text-small text-ink-muted">
@@ -479,7 +489,9 @@
                   :title="article.title"
                   :date="formatArticleDate(article.publish_at)"
                   :excerpt="article.excerpt ?? ''"
-                  :image-url="directusAssetUrl(article.cover_image) ?? undefined"
+                  :image-url="
+                    directusAssetUrl(article.cover_image, config.public.apiBase) ?? undefined
+                  "
                   :to="`/actualites/${article.slug}`"
                   class="h-full"
                 />
@@ -501,7 +513,9 @@
           text="La demande transmet automatiquement le centre, la ville et la formation concernée — sans ressaisie."
         >
           <Button as-child variant="paper" size="pill-lg" class="w-full sm:w-auto">
-            <NuxtLink :to="`/centres/demande-de-formation?centre=${slug}`"
+            <NuxtLink
+              :to="`/centres/demande-de-formation?centre=${slug}`"
+              @click="onDemandeFormationClick('cta_banner')"
               >Demander une formation</NuxtLink
             >
           </Button>
@@ -614,6 +628,7 @@ import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
 import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
+import { useDataLayer } from '~/composables/useDataLayer'
 
 definePageMeta({
   layout: 'with-breadcrumb'
@@ -623,6 +638,10 @@ const route = useRoute()
 const slug = route.params.slug as string
 
 const directus = useDirectusClient()
+// Config capturée au setup : les appels `directusAssetUrl` passés à des
+// getters résolus hors contexte Nuxt (useContentSeo) ne peuvent pas
+// appeler useRuntimeConfig eux-mêmes (NUXT_E1001).
+const config = useRuntimeConfig()
 
 const {
   data: centre,
@@ -763,7 +782,7 @@ function onMapSelect(id: string) {
 const specialties = computed(() => centre.value!.specialties ?? [])
 
 const qualiopiCertificateUrl = computed(
-  () => directusAssetUrl(centre.value!.qualiopi_certificate) ?? undefined
+  () => directusAssetUrl(centre.value!.qualiopi_certificate, config.public.apiBase) ?? undefined
 )
 
 // « valide jusqu'au 14 mars 2027 » — date de fin de validité Qualiopi
@@ -783,7 +802,7 @@ const qualiopiValidUntilLabel = computed(() => {
   }).format(date)
 })
 
-const imageSrc = computed(() => directusAssetUrl(centre.value!.image))
+const imageSrc = computed(() => directusAssetUrl(centre.value!.image, config.public.apiBase))
 
 // « Franchisé depuis 19 mai 2017 » sous le nom du responsable — repli
 // sur le rôle du contact quand la date de franchise n'est pas renseignée.
@@ -892,7 +911,8 @@ const formations = computed<FormationItem[]>(
     centreCatalog.data.value?.items.slice(0, 4).map((course) => ({
       ...mapCourse(
         course,
-        course.familySlug ? familyLabel.value.get(course.familySlug) : undefined
+        course.familySlug ? familyLabel.value.get(course.familySlug) : undefined,
+        config.public.apiBase
       ),
       meta: centreFormationMeta(course),
       status: centreFormationStatus(course)
@@ -1068,5 +1088,40 @@ function retry() {
 
 function onErrorSearch(query: string) {
   navigateTo({ path: '/formations', query: query ? { q: query } : {} })
+}
+
+const { pushEvent } = useDataLayer()
+
+onMounted(() => {
+  if (centre.value) {
+    pushEvent({
+      event: 'view_centre_detail',
+      center_id: centre.value.slug,
+      center_name: centre.value.name,
+      center_city: centre.value.city ?? undefined,
+      center_department: centre.value.department ?? undefined,
+      center_specialties: centre.value.specialties?.length ? centre.value.specialties : undefined,
+      page_path: typeof window !== 'undefined' ? window.location.pathname : ''
+    })
+  }
+})
+
+function onDemandeFormationClick(location = 'cta_banner') {
+  pushEvent({
+    event: 'click_cta_demande_formation_from_centre',
+    center_id: slug,
+    cta_location: location,
+    page_path: typeof window !== 'undefined' ? window.location.pathname : ''
+  })
+}
+
+function onDownloadQualiopi() {
+  if (centre.value) {
+    pushEvent({
+      event: 'click_download_qualiopi',
+      center_id: centre.value.slug || centre.value.id,
+      center_name: centre.value.name
+    })
+  }
 }
 </script>

@@ -84,9 +84,13 @@
             </div>
           </Card>
 
-          <!-- Formulaire (v-show : jamais démonté — le swap v-if/v-else casse le
-             retrait de fragment sous happy-dom en test) -->
-          <form v-show="!submitted" novalidate class="space-y-lg" @submit.prevent="onSubmit">
+          <form
+            v-show="!submitted"
+            novalidate
+            class="space-y-lg"
+            @focusin="onFieldFocus"
+            @submit.prevent="onSubmit"
+          >
             <!-- Votre besoin -->
             <Card v-reveal class="p-lg sm:py-lg sm:px-xl">
               <fieldset class="space-y-md">
@@ -511,6 +515,7 @@ import IconBook from '~/components/icons/IconBook.vue'
 import IconCalendar from '~/components/icons/IconCalendar.vue'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { useReceivedHandoff } from '~/composables/useAssistantHandoff'
+import { useFormTracking } from '~/composables/useFormTracking'
 
 definePageMeta({
   layout: 'with-breadcrumb'
@@ -1039,35 +1044,62 @@ const confirmationBackLabel = computed(() => {
   return "Retour à l'accueil"
 })
 
-// `v` = valeurs parsées zod (siret normalisé, salaries coercé) — pas le brut.
-const onSubmit = handleSubmit(async (v) => {
-  const ok = await submitLead('demande', {
-    nom: v.nom,
-    email: v.email,
-    telephone: v.telephone,
-    telephonePro: v.telephonePro || undefined,
-    raisonSociale: v.raisonSociale,
-    siret: v.siret,
-    fonction: v.fonction,
-    salaries: v.salaries,
-    lieu: v.lieu || undefined,
-    echeance: v.echeance,
-    // D1 : le besoin décrit dans la recherche assistée est joint à la demande.
-    precisions: joinPrecisions(besoinParam.value, v.precisions),
-    // Libellés résolus — HubSpot reçoit du texte lisible, pas les slugs.
-    centre: centreName.value || demandeCentreSlug.value || undefined,
-    formation: formationName.value || undefined,
-    session: sessionName.value || undefined,
-    sujet: sujetSlug.value || undefined,
-    consentement: true,
-    // pageUri sans query : elle porte du texte libre (?besoin=…) qui n'apporte
-    // rien à l'attribution HubSpot et pouvait dépasser MaxLength(2000) → 400.
-    pageUri: window.location.origin + window.location.pathname,
-    pageName: 'Demande de formation'
-  })
-  if (ok) {
-    submitted.value = true
-    window.sessionStorage.removeItem(draftKey.value)
-  }
+const { trackFormView, trackFieldInteraction, trackFormError, trackFormSubmit } = useFormTracking({
+  formId: 'demande_formation',
+  formName: 'Demande de formation',
+  totalSteps: 2,
+  totalFields: 10
 })
+
+onMounted(() => {
+  trackFormView(1, 'Votre besoin')
+})
+
+function onFieldFocus(event: FocusEvent) {
+  const target = event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null
+  if (target?.name) {
+    trackFieldInteraction(target.name)
+  }
+}
+
+// `v` = valeurs parsées zod (siret normalisé, salaries coercé) — pas le brut.
+const onSubmit = handleSubmit(
+  async (v) => {
+    const ok = await submitLead('demande', {
+      nom: v.nom,
+      email: v.email,
+      telephone: v.telephone,
+      telephonePro: v.telephonePro || undefined,
+      raisonSociale: v.raisonSociale,
+      siret: v.siret,
+      fonction: v.fonction,
+      salaries: v.salaries,
+      lieu: v.lieu || undefined,
+      echeance: v.echeance,
+      // D1 : le besoin décrit dans la recherche assistée est joint à la demande.
+      precisions: joinPrecisions(besoinParam.value, v.precisions),
+      // Libellés résolus — HubSpot reçoit du texte lisible, pas les slugs.
+      centre: centreName.value || demandeCentreSlug.value || undefined,
+      formation: formationName.value || undefined,
+      session: sessionName.value || undefined,
+      sujet: sujetSlug.value || undefined,
+      consentement: true,
+      // pageUri sans query : elle porte du texte libre (?besoin=…) qui n'apporte
+      // rien à l'attribution HubSpot et pouvait dépasser MaxLength(2000) → 400.
+      pageUri: window.location.origin + window.location.pathname,
+      pageName: 'Demande de formation'
+    })
+    if (ok) {
+      submitted.value = true
+      trackFormSubmit('demande_formation')
+      window.sessionStorage.removeItem(draftKey.value)
+    }
+  },
+  ({ errors }) => {
+    const [firstField, firstError] = Object.entries(errors)[0] ?? []
+    if (firstField) {
+      trackFormError(firstField, firstError || 'Erreur de validation')
+    }
+  }
+)
 </script>

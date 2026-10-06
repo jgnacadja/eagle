@@ -1,32 +1,16 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { directusAssetUrl } from '~/utils/directusAsset'
-
-afterEach(() => {
-  vi.unstubAllGlobals()
-})
 
 describe('directusAssetUrl', () => {
   it('retourne null sans fileId', () => {
-    expect(directusAssetUrl(null)).toBeNull()
-    expect(directusAssetUrl(undefined)).toBeNull()
-    expect(directusAssetUrl('')).toBeNull()
+    expect(directusAssetUrl(null, 'http://api.test')).toBeNull()
+    expect(directusAssetUrl(undefined, 'http://api.test')).toBeNull()
+    expect(directusAssetUrl('', 'http://api.test')).toBeNull()
   })
 
-  it('construit l’URL du proxy avec un apiBase explicite', () => {
+  it('construit l’URL du proxy avec l’apiBase fourni', () => {
     expect(directusAssetUrl('file-123', 'http://api.test')).toBe(
       'http://api.test/directus/assets/file-123'
     )
-  })
-
-  it('résout apiBase via la runtime config en contexte Nuxt', () => {
-    vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://cfg.test' } }))
-
-    expect(directusAssetUrl('file-123')).toBe('http://cfg.test/directus/assets/file-123')
-  })
-
-  it('retourne null hors contexte Nuxt et sans apiBase', () => {
-    vi.stubGlobal('useRuntimeConfig', undefined)
-
-    expect(directusAssetUrl('file-123')).toBeNull()
   })
 })

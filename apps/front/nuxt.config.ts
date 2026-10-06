@@ -133,7 +133,8 @@ export default defineNuxtConfig({
     isrBypassToken: process.env.NUXT_ISR_BYPASS_TOKEN ?? '',
     public: {
       apiBase: publicApiBase,
-      siteUrl
+      siteUrl,
+      gtmId: process.env.NUXT_PUBLIC_GTM_ID ?? ''
     }
   }
 })

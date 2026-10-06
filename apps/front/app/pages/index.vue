@@ -271,6 +271,10 @@
             :image-bottom="item.meta"
             :image="item.image"
             :to="item.to"
+            :formation-id="item.slug"
+            :formation-family="item.family"
+            :list-name="'dernieres_formations'"
+            :position="i + 1"
           />
         </div>
         <div v-else class="mt-2xl rounded-xl border border-dashed border-rule p-xl text-center">
@@ -897,13 +901,12 @@ const stats = [
   { value: '4,7', unit: '/5', label: 'satisfaction stagiaires' }
 ]
 
+// Avis publiés toutes implantations confondues (marque + centres), les plus
+// récents d'abord — la home ne filtre plus sur `centre`.
 const homeAvisData = await useDirectusList<Avis>('avis', 'home-avis', {
   fields: ['slug', 'author', 'quote', 'stars', 'published_at'],
-  filter: {
-    status: { _eq: 'published' },
-    centre: { _null: true }
-  },
-  sort: ['sort', '-published_at'],
+  filter: { status: { _eq: 'published' } },
+  sort: ['-published_at'],
   limit: 3
 })
 
@@ -925,12 +928,12 @@ const dernieresFormations = computed(() => {
     const tag = selectedTag.value
     const fromApi = apiTagResults.value[tag]
     if (fromApi?.length) {
-      return fromApi.slice(0, 4).map((c) => mapCourse(c))
+      return fromApi.slice(0, 4).map((c) => mapCourse(c, undefined, config.public.apiBase))
     }
     const filtered = all.filter((c) => matchesTag(c, tag))
-    return filtered.slice(0, 4).map((c) => mapCourse(c))
+    return filtered.slice(0, 4).map((c) => mapCourse(c, undefined, config.public.apiBase))
   }
-  return all.slice(0, 4).map((c) => mapCourse(c))
+  return all.slice(0, 4).map((c) => mapCourse(c, undefined, config.public.apiBase))
 })
 
 // ── Sessions à venir ────────────────────────────────────────────────────────
@@ -987,7 +990,7 @@ const displayUpcomingSessions = computed(() => {
     const date = new Date(`${s.startDate}T00:00:00Z`)
     const day = String(date.getUTCDate()).padStart(2, '0')
     const month = MONTH_ABBR_FR[date.getUTCMonth()]!
-    const mapped = mapCourse(course)
+    const mapped = mapCourse(course, undefined, config.public.apiBase)
     const seats = s.seatsRemaining
     const badgeVariant = sessionSeatType(seats ?? undefined) ?? 'success'
     const badgeText = seats != null ? placesLabel(seats, true) : 'Places disponibles'

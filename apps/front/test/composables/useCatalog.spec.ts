@@ -41,13 +41,19 @@ const course: CourseListItem = {
   seoCanonical: null
 }
 
+const apiBase = 'http://api.test'
+
 describe('useCatalog helpers', () => {
   it('maps the API duration bucket without reclassifying', () => {
-    expect(mapCourse({ ...course, durationBucket: 'longue' }).duration).toBe('longue')
-    expect(mapCourse({ ...course, durationDays: null, modalities: null }).days).toBe(0)
-    expect(mapCourse({ ...course, durationDays: null, modalities: null }).meta).toBe(
-      'Certification CACES · Opérateur réglementaire'
+    expect(mapCourse({ ...course, durationBucket: 'longue' }, undefined, apiBase).duration).toBe(
+      'longue'
     )
+    expect(
+      mapCourse({ ...course, durationDays: null, modalities: [] }, undefined, apiBase).days
+    ).toBe(0)
+    expect(
+      mapCourse({ ...course, durationDays: null, modalities: [] }, undefined, apiBase).meta
+    ).toBe('Certification CACES · Opérateur réglementaire')
   })
 
   it('trie la prochaine session quand plusieurs dates futures existent', () => {
@@ -107,7 +113,7 @@ describe('useCatalog helpers', () => {
     expect(buildMeta({ ...course, modalities: ['format-exotique'] }, false)).toBe(
       '3 jours · format-exotique'
     )
-    expect(buildMeta({ ...course, modalities: null }, false)).toBe('3 jours')
+    expect(buildMeta({ ...course, modalities: [] }, false)).toBe('3 jours')
   })
 
   it('builds certifications from course data', () => {
@@ -133,7 +139,7 @@ describe('useCatalog helpers', () => {
   })
 
   it('maps a course to a FormationItem using the provided family name', () => {
-    const mapped = mapCourse(course, "CACES & conduite d'engins")
+    const mapped = mapCourse(course, "CACES & conduite d'engins", apiBase)
 
     expect(mapped.slug).toBe(course.slug)
     expect(mapped.title).toBe(course.title)
@@ -146,43 +152,71 @@ describe('useCatalog helpers', () => {
   })
 
   it('falls back to the slug when family name is not provided', () => {
-    const mapped = mapCourse(course)
+    const mapped = mapCourse(course, undefined, apiBase)
 
     expect(mapped.family).toBe(course.familySlug)
     expect(mapped.familyKey).toBe(course.familySlug)
   })
 
+  it('builds the card image via the provided apiBase', () => {
+    const mapped = mapCourse({ ...course, image: 'file-1' }, undefined, apiBase)
+
+    expect(mapped.image).toBe('http://api.test/directus/assets/file-1')
+  })
+
+  it('falls back to the synced imageUrl without a Directus file', () => {
+    const mapped = mapCourse(
+      { ...course, imageUrl: 'https://cdn.test/img.jpg' },
+      undefined,
+      apiBase
+    )
+
+    expect(mapped.image).toBe('https://cdn.test/img.jpg')
+  })
+
   it('strips WYSIWYG HTML from the card description', () => {
-    const mapped = mapCourse({
-      ...course,
-      description: '<p>Initiez-vous au march&eacute; du cloud.</p>'
-    })
+    const mapped = mapCourse(
+      {
+        ...course,
+        description: '<p>Initiez-vous au march&eacute; du cloud.</p>'
+      },
+      undefined,
+      apiBase
+    )
 
     expect(mapped.description).toBe('Initiez-vous au marché du cloud.')
   })
 
   it('prefers the editorial short description on cards', () => {
-    const mapped = mapCourse({
-      ...course,
-      description: '<p>Description longue.</p>',
-      shortDescription: 'Accroche éditoriale courte.'
-    })
+    const mapped = mapCourse(
+      {
+        ...course,
+        description: '<p>Description longue.</p>',
+        shortDescription: 'Accroche éditoriale courte.'
+      },
+      undefined,
+      apiBase
+    )
 
     expect(mapped.description).toBe('Accroche éditoriale courte.')
   })
 
   it('falls back to the WYSIWYG excerpt when the short description is blank', () => {
-    const mapped = mapCourse({
-      ...course,
-      description: '<p>Repli texte brut.</p>',
-      shortDescription: '   '
-    })
+    const mapped = mapCourse(
+      {
+        ...course,
+        description: '<p>Repli texte brut.</p>',
+        shortDescription: '   '
+      },
+      undefined,
+      apiBase
+    )
 
     expect(mapped.description).toBe('Repli texte brut.')
   })
 
   it('renders family-less courses without a link', () => {
-    const mapped = mapCourse({ ...course, familySlug: null })
+    const mapped = mapCourse({ ...course, familySlug: null }, undefined, apiBase)
 
     expect(mapped.family).toBe('Autre')
     expect(mapped.familyKey).toBe('autre')
@@ -391,8 +425,8 @@ describe('useCatalog composable', () => {
         modalities: ['presentiel'],
         location: ' Lyon ',
         center: 'creteil',
-        availability: 'cette-semaine',
-        sort: 'pertinence',
+        availability: 'neutral',
+        sort: 'relevance',
         order: 'desc',
         page: 2,
         limit: 12
@@ -409,8 +443,8 @@ describe('useCatalog composable', () => {
       modalities: 'presentiel',
       location: 'Lyon',
       center: 'creteil',
-      availability: 'cette-semaine',
-      sort: 'pertinence',
+      availability: 'neutral',
+      sort: 'relevance',
       order: 'desc',
       page: 2,
       limit: 12

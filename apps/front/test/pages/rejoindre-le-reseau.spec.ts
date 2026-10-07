@@ -1,12 +1,22 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import RejoindreLeReseauPage from '~/pages/rejoindre-le-reseau.vue'
 
 vi.stubGlobal('ref', ref)
 vi.stubGlobal('useHead', vi.fn())
 vi.stubGlobal('useContentSeo', vi.fn())
 vi.stubGlobal('useRuntimeConfig', () => ({ public: { siteUrl: 'https://learnup.fr' } }))
+
+const routeStub = {
+  path: '/rejoindre-le-reseau',
+  fullPath: '/rejoindre-le-reseau',
+  hash: '',
+  params: {},
+  query: {} as Record<string, string>,
+  meta: {}
+}
+vi.stubGlobal('useRoute', () => routeStub)
 
 const CandidatureStub = {
   name: 'Candidature',
@@ -32,6 +42,10 @@ function mountPage() {
 }
 
 describe('Rejoindre le réseau page', () => {
+  beforeEach(() => {
+    routeStub.query = {}
+  })
+
   it('présente les parcours, bénéfices et étapes du réseau', () => {
     const wrapper = mountPage()
 
@@ -73,6 +87,27 @@ describe('Rejoindre le réseau page', () => {
 
     expect(dialog().attributes('data-open')).toBe('true')
     expect(dialog().attributes('data-voie')).toBe(voie)
+  })
+
+  it.each([
+    ['centre', 'centre'],
+    ['organisme', 'organisme'],
+    ['formateur', 'formateur']
+  ])('ouvre le dialog sur la voie « %s » demandée par ?voie=', async (query, voie) => {
+    routeStub.query = { voie: query }
+    const wrapper = mountPage()
+    await nextTick()
+
+    const dialog = wrapper.find('.candidature-dialog')
+    expect(dialog.attributes('data-open')).toBe('true')
+    expect(dialog.attributes('data-voie')).toBe(voie)
+  })
+
+  it('ignore un paramètre ?voie= inconnu', () => {
+    routeStub.query = { voie: 'inconnu' }
+    const wrapper = mountPage()
+
+    expect(wrapper.find('.candidature-dialog').attributes('data-open')).toBe('false')
   })
 
   it('referme le dialog quand Candidature émet update:open false', async () => {

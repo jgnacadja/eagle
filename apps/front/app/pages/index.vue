@@ -434,7 +434,7 @@
             <!-- Boutons d'action -->
             <div class="mt-lg flex w-full flex-col gap-sm sm:w-auto sm:flex-row sm:items-center">
               <Button as-child variant="accent" size="pill" class="w-full sm:w-auto">
-                <NuxtLink to="/centres/demande-de-formation">
+                <NuxtLink to="/entreprise">
                   Découvrir nos solutions entreprises <span class="link-arrow">→</span>
                 </NuxtLink>
               </Button>
@@ -840,21 +840,23 @@ const tickerItems = [
 
 // ── Données statiques ───────────────────────────────────────────────────────
 
+// Cartes réseau : chaque lien mène au formulaire de candidature dédié —
+// `?voie=` ouvre le dialog avec le bon projet présélectionné.
 const networkCards = [
   {
     title: 'Devenir franchisé',
     subtitle: "Ouvrez votre centre avec l'appui du réseau",
-    to: '/centres/demande-de-formation?sujet=franchise'
+    to: '/rejoindre-le-reseau?voie=centre'
   },
   {
     title: 'Organisme partenaire',
     subtitle: 'Référencez vos centres et vos sessions',
-    to: '/referencer-mon-organisme'
+    to: '/referencer-mon-organisme#candidater'
   },
   {
     title: 'Formateur indépendant',
     subtitle: 'Intervenez sur les sessions du réseau',
-    to: '/centres/demande-de-formation?sujet=formateur'
+    to: '/rejoindre-le-reseau?voie=formateur'
   }
 ]
 

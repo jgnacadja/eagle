@@ -4,7 +4,13 @@ import { SwaggerModule } from '@nestjs/swagger'
 import { configureApp } from './index'
 
 function makeApp() {
-  return { enableCors: vi.fn() } as unknown as INestApplication
+  const expressApp = { set: vi.fn() }
+  const app = {
+    enableCors: vi.fn(),
+    use: vi.fn(),
+    getHttpAdapter: () => ({ getInstance: () => expressApp })
+  } as unknown as INestApplication
+  return Object.assign(app, { expressApp })
 }
 
 function getCorsOrigin(app: INestApplication): CustomOrigin {
@@ -71,6 +77,31 @@ describe('configureApp', () => {
     const callback = vi.fn()
     getCorsOrigin(app)('https://evil.example.com', callback)
     expect(callback).toHaveBeenCalledWith(null, false)
+  })
+
+  it('allows wildcard subdomains in CORS_ORIGIN', () => {
+    process.env.CORS_ORIGIN = 'https://*.vercel.app'
+    const app = makeApp()
+
+    configureApp(app)
+
+    const allow = vi.fn()
+    getCorsOrigin(app)('https://my-project-abc.vercel.app', allow)
+    expect(allow).toHaveBeenCalledWith(null, true)
+
+    const reject = vi.fn()
+    getCorsOrigin(app)('https://evil.vercel.app.other.com', reject)
+    expect(reject).toHaveBeenCalledWith(null, false)
+  })
+
+  it('enables trust proxy so req.ip reflects the client IP behind a proxy', () => {
+    const app = makeApp() as INestApplication & {
+      expressApp: { set: ReturnType<typeof vi.fn> }
+    }
+
+    configureApp(app)
+
+    expect(app.expressApp.set).toHaveBeenCalledWith('trust proxy', 1)
   })
 
   it('exposes Swagger docs outside production', () => {

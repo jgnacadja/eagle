@@ -30,6 +30,7 @@ const CONTENT_COLLECTIONS = [
   'pages_legales_subsections',
   'stats',
   'formations',
+  'formations_centres',
   'recherches_sans_resultat'
 ]
 
@@ -63,6 +64,9 @@ export function permissionsFor(roleName) {
           'stats',
           'recherches_sans_resultat'
         ].flatMap((c) => grants(c, ['read'])),
+        // Jonction M2M : éditer le champ « Centres » d'une formation écrit
+        // des lignes ici — la suppression permet de retirer un lien.
+        ...grants('formations_centres', ['create', 'read', 'update', 'delete']),
         ...grants('directus_files', ['create', 'read']),
         { collection: 'formations', action: 'read' },
         {
@@ -87,6 +91,7 @@ export function permissionsFor(roleName) {
             'modalities',
             'center_slug',
             'center_slugs',
+            'centres',
             'sessions',
             'locations_text',
             'blocks',
@@ -121,6 +126,7 @@ export function permissionsFor(roleName) {
           'pages_legales',
           'stats',
           'directus_files',
+          'formations_centres',
           'recherches_sans_resultat'
         ].flatMap((c) => grants(c, ['read'])),
         { collection: 'formations', action: 'read' },

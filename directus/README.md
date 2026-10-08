@@ -35,6 +35,31 @@ ACADEMY).
 - `seed/` — script de seed de contenu de démonstration (voir sa propre section
   dans le README racine).
 
+## Multi-sources (Digiforma + HubSpot par franchise)
+
+- Collection `sources` : une ligne par compte Digiforma (nom, `code` unique,
+  `is_hq`, `status` active/inactive, URL + clé API Digiforma, portail HubSpot,
+  5 GUIDs de formulaires, `hubspot_token` optionnel, `last_sync_*`). Les clés
+  (`digiforma_api_key`, `hubspot_token`) sont masquées dans l'admin et lisibles
+  par le seul rôle `admin` (+ Administrator natif et compte de service) ; les
+  autres rôles internes ne lisent que `id, name, code, is_hq, status`. Le
+  chiffrement à l'enregistrement arrive avec le hook `sources-encrypt`.
+- `centres.source` (M2O nullable, vide = HQ), `formations.source` (M2O NOT NULL)
+  et `formations.archived_by_source` (booléen).
+- **Migration** (`build.mjs`, idempotent) : crée la source `hq` depuis l'env
+  (`DIGIFORMA_API_URL`, `HUBSPOT_PORTAL_ID`, `HUBSPOT_FORM_*` — jamais la clé
+  API, à saisir dans l'admin ; vide = repli env), rattache les formations
+  existantes à la HQ, puis passe `formations.source` en NOT NULL avec la HQ pour
+  valeur par défaut (la sync actuelle, qui n'envoie pas `source`, reste valide).
+- **Index** (`schema/indexes.mjs`, lancé par `directus-init` après `build.mjs`) :
+  unique `(source, digiforma_id)` à la place de l'unique `digiforma_id`, et une
+  seule source HQ (index unique partiel). Retour arrière :
+  `node --env-file=.env directus/schema/indexes.mjs down` (échoue s'il existe
+  des doublons `digiforma_id` entre sources). Hors Docker : `pnpm directus:indexes`
+  avec `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USER`, `DB_PASSWORD` dans `.env`.
+- `pnpm test:directus` couvre la migration, les index (knex simulé) et les
+  permissions.
+
 ## Modèle de rôles (Directus 11)
 
 Directus 11 sépare le rôle de ses permissions : `role` → `directus_access` →

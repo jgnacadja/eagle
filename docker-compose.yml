@@ -146,11 +146,27 @@ services:
       # référencent {{ $env.* }}, résolu à l'exécution sur le service
       # `directus` (voir son bloc environment + FLOWS_ENV_ALLOW_LIST).
       DIRECTUS_TOKEN: ${DIRECTUS_TOKEN}
+      # indexes.mjs (index composites que l'API Directus ne sait pas créer)
+      # se connecte directement à la base.
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      # Valeurs reprises par la migration de la source HQ (schema/sources.mjs).
+      DIGIFORMA_API_URL: ${DIGIFORMA_API_URL:-}
+      HUBSPOT_PORTAL_ID: ${HUBSPOT_PORTAL_ID:-}
+      HUBSPOT_FORM_NEWSLETTER: ${HUBSPOT_FORM_NEWSLETTER:-}
+      HUBSPOT_FORM_DEMANDE: ${HUBSPOT_FORM_DEMANDE:-}
+      HUBSPOT_FORM_CANDIDATURE: ${HUBSPOT_FORM_CANDIDATURE:-}
+      HUBSPOT_FORM_CONSEILLER: ${HUBSPOT_FORM_CONSEILLER:-}
+      HUBSPOT_FORM_RAPPEL: ${HUBSPOT_FORM_RAPPEL:-}
     volumes:
       - ./directus:/opt/directus:ro
     entrypoint:
-      - node
-      - /opt/directus/schema/build.mjs
+      - sh
+      - -c
+      - node /opt/directus/schema/build.mjs && node /opt/directus/schema/indexes.mjs up
 
   directus-seed:
     image: directus/directus:11

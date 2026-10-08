@@ -11,7 +11,7 @@ import { DigiformaClientFactory } from '../digiforma/digiforma-client.factory'
 import type { Program } from '../digiforma/digiforma.client'
 import { mapProgramToCourse } from '../digiforma/digiforma.mapper'
 import { GeocodingService } from '../centres/geocoding.service'
-import type { SourceConfig } from '../sources/source.types'
+import type { SourceConfig, UnreadableSource } from '../sources/source.types'
 import { SourcesService } from '../sources/sources.service'
 
 // TTL du verrou d'UNE source : borne la durée max de son run (fetch
@@ -32,8 +32,10 @@ export interface TriggerResult {
   runs: SourceRunAck[]
 }
 
+type RunSource = Pick<SourceConfig, 'id' | 'code' | 'status' | 'fromEnv'>
+
 interface PendingRun {
-  source: SourceConfig
+  source: RunSource
   run: SyncRun
 }
 
@@ -120,11 +122,18 @@ export class SyncService {
     return this.cache.getSyncRun()
   }
 
-  /** Dernier run de chaque source active, par code. */
+  /** Dernier run de chaque source active, par code (écartées comprises : leur échec y figure). */
   async getRunsBySource(): Promise<Record<string, SyncRun | null>> {
-    const active = await this.sources.listActive()
+    const [active, unreadable] = await Promise.all([
+      this.sources.listActive(),
+      this.sources.listUnreadable()
+    ])
+    const codes = [
+      ...active.map((source) => source.code),
+      ...unreadable.filter((source) => source.status === 'active').map((source) => source.code)
+    ]
     const entries = await Promise.all(
-      active.map(async (source) => [source.code, await this.cache.getSyncRun(source.code)] as const)
+      codes.map(async (code) => [code, await this.cache.getSyncRun(code)] as const)
     )
     return Object.fromEntries(entries)
   }
@@ -133,7 +142,13 @@ export class SyncService {
     if (sourceCode === undefined) return this.sources.listActive()
 
     const source = await this.sources.getByCode(sourceCode)
-    if (!source) throw new NotFoundException(`Unknown source "${sourceCode}"`)
+    if (!source) {
+      const skipped = (await this.sources.listUnreadable()).find((row) => row.code === sourceCode)
+      if (skipped) {
+        throw new ConflictException(`Source "${sourceCode}" is unreadable: ${skipped.reason}`)
+      }
+      throw new NotFoundException(`Unknown source "${sourceCode}"`)
+    }
     if (source.status !== 'active') {
       throw new ConflictException(`Source "${sourceCode}" is inactive`)
     }
@@ -143,11 +158,15 @@ export class SyncService {
   // Séquentiel : l'échec d'une source n'interrompt pas les suivantes. Le
   // géocodage et l'invalidation du cache, communs à toutes les sources,
   // s'exécutent une fois à la fin ; un run n'est « success » qu'après eux.
+  // Un run global (`includeInactive`) publie en plus un statut agrégé — le
+  // pire de ses sources — dans `sync:last_run` ; un run ciblé ne l'écrase pas.
   private async executeAll(
     sources: SourceConfig[],
     locks: Map<string, string>,
     includeInactive: boolean
   ): Promise<void> {
+    const startedAt = new Date().toISOString()
+    const runs: SyncRun[] = []
     const released = new Set<string>()
     const release = async (code: string): Promise<void> => {
       const token = locks.get(code)
@@ -158,13 +177,17 @@ export class SyncService {
 
     const pending: PendingRun[] = []
     try {
+      if (includeInactive) await this.cache.setSyncRun(this.summarize(startedAt, runs))
+
       for (const source of sources) {
-        const outcome = await this.syncSource(source)
+        const outcome = await this.syncSource(source, runs)
         if (outcome) pending.push(outcome)
         else await release(source.code)
       }
 
       const archivedRuns = includeInactive ? await this.archiveInactiveSources() : []
+      runs.push(...archivedRuns.map((entry) => entry.run))
+      if (includeInactive) await this.failUnreadableSources(runs)
       if (pending.length === 0 && archivedRuns.length === 0) return
 
       try {
@@ -191,12 +214,69 @@ export class SyncService {
       }
     } finally {
       await Promise.allSettled(sources.map((source) => release(source.code)))
+      if (includeInactive) await this.cache.setSyncRun(this.summarize(startedAt, runs))
+    }
+  }
+
+  // Statut global d'un run : « failed » dès qu'une source a échoué, « running »
+  // tant que l'une n'est pas terminée, sinon « success ». Les compteurs sont
+  // cumulés ; chaque erreur est préfixée du code de sa source.
+  private summarize(startedAt: string, runs: SyncRun[]): SyncRun {
+    const failed = runs.some((run) => run.status === 'failed')
+    const running = runs.length === 0 || runs.some((run) => run.status === 'running')
+    const sum = (pick: (run: SyncRun) => number | undefined) =>
+      runs.reduce((total, run) => total + (pick(run) ?? 0), 0)
+    const errors = runs
+      .filter((run) => run.error)
+      .map((run) => (run.source ? `${run.source}: ${run.error}` : run.error))
+
+    return {
+      status: failed ? 'failed' : running ? 'running' : 'success',
+      startedAt,
+      finishedAt: running && !failed ? null : new Date().toISOString(),
+      inserted: sum((run) => run.inserted),
+      updated: sum((run) => run.updated),
+      failed: sum((run) => run.failed),
+      archived: sum((run) => run.archived),
+      republished: sum((run) => run.republished),
+      error: errors.length > 0 ? errors.join(' | ') : null
+    }
+  }
+
+  // Une source active écartée faute de secret lisible n'est jamais
+  // synchronisée : sans trace, elle disparaîtrait des runs et le statut global
+  // resterait « success ». Son échec est enregistré comme celui de toute source.
+  private async failUnreadableSources(runs: SyncRun[]): Promise<void> {
+    let skipped: UnreadableSource[]
+    try {
+      skipped = (await this.sources.listUnreadable()).filter((row) => row.status === 'active')
+    } catch (error) {
+      this.logger.warn({ error }, 'Unreadable sources could not be listed')
+      return
+    }
+
+    for (const source of skipped) {
+      const now = new Date().toISOString()
+      const run: SyncRun = {
+        status: 'failed',
+        startedAt: now,
+        finishedAt: now,
+        inserted: 0,
+        updated: 0,
+        failed: 0,
+        archived: 0,
+        error: source.reason,
+        source: source.code
+      }
+      runs.push(run)
+      await this.cache.setSyncRun(run, source.code)
+      await this.recordOnSource(source, run)
     }
   }
 
   // Fetch + mapping + upsert d'une source. Renvoie le run en attente de
   // finalisation, ou null si la source a échoué (run déjà enregistré en erreur).
-  private async syncSource(source: SourceConfig): Promise<PendingRun | null> {
+  private async syncSource(source: SourceConfig, runs: SyncRun[]): Promise<PendingRun | null> {
     const run: SyncRun = {
       status: 'running',
       startedAt: new Date().toISOString(),
@@ -208,6 +288,7 @@ export class SyncService {
       error: null,
       source: source.code
     }
+    runs.push(run)
     await this.cache.setSyncRun(run, source.code)
 
     try {
@@ -310,7 +391,7 @@ export class SyncService {
     await this.recordOnSource(source, run)
   }
 
-  private async recordOnSource(source: SourceConfig, run: SyncRun): Promise<void> {
+  private async recordOnSource(source: RunSource, run: SyncRun): Promise<void> {
     // `last_sync_*` décrit la dernière sync Digiforma : ni la source « env »
     // (pas de ligne) ni une dépublication (aucun appel Digiforma) ne l'écrivent.
     if (source.fromEnv || source.status !== 'active') return
@@ -328,7 +409,11 @@ export class SyncService {
     try {
       return await this.clients.for(source).fetchAllPrograms()
     } catch (error) {
-      if (this.config.get<string>('NODE_ENV') === 'production') {
+      // Repli fixture : développement local sur la source HQ uniquement (le
+      // mono-source sans clé Digiforma). Une franchise sans clé ou en échec
+      // échoue franchement — sinon des formations de démonstration prendraient
+      // la place de son catalogue.
+      if (this.config.get<string>('NODE_ENV') === 'production' || !source.isHq) {
         throw error
       }
       this.logger.warn(

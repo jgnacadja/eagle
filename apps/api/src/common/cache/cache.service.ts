@@ -1,8 +1,7 @@
 import { createHash } from 'node:crypto'
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit, Optional } from '@nestjs/common'
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import Redis, { RedisOptions } from 'ioredis'
-import { SourcesService } from '../../sources/sources.service'
 
 // retryStrategy borné : une coupure Redis transitoire (restart container,
 // réseau) ne doit pas désactiver le cache jusqu'au prochain restart de
@@ -15,6 +14,18 @@ const REDIS_OPTIONS: RedisOptions = {
   maxRetriesPerRequest: 0,
   /* v8 ignore next -- callback interne ioredis, exercé uniquement sur Redis réel */
   retryStrategy: (attempt) => Math.min(attempt * 500, 5000)
+}
+
+/**
+ * Port par lequel une feature précise au cache la portée de ses clés
+ * catalogue. `common/cache` ne connaît aucune feature : c'est la feature qui
+ * s'y enregistre au démarrage (`CacheService.setScopeProvider`).
+ */
+export interface CacheScopeProvider {
+  /** Codes des sources actives : leurs versions entrent dans toutes les clés catalogue. */
+  activeCodes(): Promise<string[]>
+  /** Relâche la copie mémoire du fournisseur (sa config vient de changer en admin). */
+  invalidate(): void
 }
 
 export interface SyncRun {
@@ -47,11 +58,9 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private initPromise?: Promise<void>
   private connectionErrorLogged = false
   private readonly catalogListeners = new Set<() => void>()
+  private scopeProvider?: CacheScopeProvider
 
-  constructor(
-    config: ConfigService,
-    @Optional() private readonly sources?: SourcesService
-  ) {
+  constructor(config: ConfigService) {
     const url = config.get<string>('REDIS_URL')
     if (!url) {
       this.logger.warn('REDIS_URL missing: cache disabled')
@@ -127,6 +136,19 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     } catch (error) {
       this.logger.warn({ error, pattern }, 'Failed to delete cached values')
     }
+  }
+
+  /**
+   * Enregistre le fournisseur de portée des clés catalogue (les sources
+   * actives). Sans fournisseur, les clés ne portent que la version globale.
+   */
+  setScopeProvider(provider: CacheScopeProvider): void {
+    this.scopeProvider = provider
+  }
+
+  /** La config du fournisseur de portée a changé : il doit la relire. */
+  invalidateScope(): void {
+    this.scopeProvider?.invalidate()
   }
 
   /**
@@ -238,15 +260,16 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  // `sync:last_run` garde le dernier run toutes sources confondues (statut
-  // historique) ; `sync:last_run:{code}` le dernier run de chaque source.
+  // `sync:last_run:{code}` garde le dernier run de chaque source ;
+  // `sync:last_run` (sans code) le dernier run global, que l'appelant agrège
+  // lui-même : un run de source ne l'écrase pas, sinon l'échec d'une source
+  // serait masqué par la réussite de la suivante.
   async setSyncRun(run: SyncRun, sourceCode?: string): Promise<void> {
     if (!this.client || !this.isReady) return
 
     try {
-      const payload = JSON.stringify(run)
-      await this.client.setex('sync:last_run', 86_400, payload)
-      if (sourceCode) await this.client.setex(`sync:last_run:${sourceCode}`, 86_400, payload)
+      const key = sourceCode ? `sync:last_run:${sourceCode}` : 'sync:last_run'
+      await this.client.setex(key, 86_400, JSON.stringify(run))
     } catch (error) {
       this.logger.warn({ error, run }, 'Failed to set sync run status')
     }
@@ -313,30 +336,40 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   // immédiatement au lieu d'attendre le TTL. Une écriture concurrente
   // ne peut pas réintroduire du périmé : elle lit d'abord la version
   // courante, donc elle atterrit sous le préfixe frais.
+  //
+  // Version globale et versions par source partagent un seul MGET.
   private async versionedKey(path: string): Promise<string> {
-    const raw = await this.client!.get(this.versionKey)
-    const version = Number.parseInt(raw ?? '0', 10) || 0
+    const codes = await this.scopeCodes()
+    const [rawVersion, ...sourceVersions] = await this.client!.mget([
+      this.versionKey,
+      ...codes.map((code) => `catalog:ver:${code}`)
+    ])
+    const version = Number.parseInt(rawVersion ?? '0', 10) || 0
     this.currentVersion = version
-    return `catalog:v${version}:${await this.sourcesScope()}${path}`
+    return `catalog:v${version}:${this.scopeOf(codes, sourceVersions)}${path}`
   }
 
-  // Portée « sources actives » des clés : hash de leurs versions. Vide sans
-  // service de sources ou en cas d'erreur — le cache retombe alors sur la
-  // seule version globale (jamais d'échec de lecture pour autant).
-  private async sourcesScope(): Promise<string> {
-    if (!this.sources) return ''
+  // Codes de la portée des clés, triés. Vide sans fournisseur ou en cas
+  // d'erreur — le cache retombe alors sur la seule version globale (jamais
+  // d'échec de lecture pour autant).
+  private async scopeCodes(): Promise<string[]> {
+    if (!this.scopeProvider) return []
     try {
-      const codes = (await this.sources.listActive()).map((source) => source.code).sort()
-      const versions = await this.client!.mget(codes.map((code) => `catalog:ver:${code}`))
-      const digest = createHash('sha1')
-        .update(codes.map((code, i) => `${code}=${versions[i] ?? 0}`).join('|'))
-        .digest('hex')
-        .slice(0, 8)
-      return `s${digest}:`
+      return [...(await this.scopeProvider.activeCodes())].sort()
     } catch (error) {
       this.logger.warn({ error }, 'Failed to compute the sources cache scope')
-      return ''
+      return []
     }
+  }
+
+  // Portée « sources actives » des clés : hash de leurs versions.
+  private scopeOf(codes: string[], versions: Array<string | null>): string {
+    if (codes.length === 0) return ''
+    const digest = createHash('sha1')
+      .update(codes.map((code, i) => `${code}=${versions[i] ?? 0}`).join('|'))
+      .digest('hex')
+      .slice(0, 8)
+    return `s${digest}:`
   }
 
   private async initializeClient(): Promise<void> {

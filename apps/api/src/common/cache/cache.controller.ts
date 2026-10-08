@@ -1,7 +1,6 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common'
 import { ApiSecurity, ApiTags } from '@nestjs/swagger'
 import { SkipThrottle } from '@nestjs/throttler'
-import { SourcesService } from '../../sources/sources.service'
 import { AdminApiKeyGuard } from '../guards/admin-api-key.guard'
 import { InvalidateCacheDto } from './cache.dto'
 import { CacheService } from './cache.service'
@@ -22,10 +21,7 @@ const COLLECTION_KEYS: Record<string, string[]> = {
 @UseGuards(AdminApiKeyGuard)
 @ApiSecurity('x-api-key')
 export class CacheController {
-  constructor(
-    private readonly cache: CacheService,
-    private readonly sources: SourcesService
-  ) {}
+  constructor(private readonly cache: CacheService) {}
 
   // Appelé par le flow Directus « Invalidate site cache » à chaque écriture
   // (items.*) sur les collections de contenu. `{ collection }` ne purge que
@@ -40,9 +36,9 @@ export class CacheController {
   ): Promise<{ success: boolean; purged: boolean }> {
     const collection = body?.collection
     // La config des sources (secrets déchiffrés, 60 s de cache mémoire) ne
-    // vit pas dans Redis : on la relit à la prochaine requête.
+    // vit pas dans Redis : son fournisseur la relit à la prochaine requête.
     if (collection === 'sources') {
-      this.sources.invalidate()
+      this.cache.invalidateScope()
       return { success: true, purged: true }
     }
     if (collection && !Object.hasOwn(COLLECTION_KEYS, collection)) {

@@ -8,7 +8,7 @@ import { CacheService } from '../common/cache/cache.service'
 import { DirectusCatalogService } from '../directus/directus.catalog.service'
 import { DirectusItemsClient } from '../directus/directus.items.client'
 import { GeocodingService } from '../centres/geocoding.service'
-import { SourceSecrets, type SourceConfig } from '../sources/source.types'
+import { SourceSecrets, type SourceConfig, type UnreadableSource } from '../sources/source.types'
 import { SourcesService } from '../sources/sources.service'
 
 const sampleProgram = {
@@ -22,6 +22,14 @@ const sampleProgram = {
   certifierName: 'LEARN UP',
   category: { id: 'cat-1', name: 'Management' },
   costsInter: [{ cost: 1800, vat: 20, type: 'inter' }]
+}
+
+function unreadable(
+  code: string,
+  status: 'active' | 'inactive',
+  reason = 'Secret could not be decrypted (wrong key or altered data)'
+): UnreadableSource {
+  return { id: `uuid-${code}`, code, status, fromEnv: false, reason }
 }
 
 function makeSource(overrides: Partial<SourceConfig> = {}): SourceConfig {
@@ -56,6 +64,18 @@ describe('SyncService', () => {
   let lyon: SourceConfig
 
   const releasedCount = () => vi.mocked(cache.releaseSyncLock).mock.calls.length
+  // Dernier état enregistré pour une source (`setSyncRun(run, code)`).
+  const lastRun = (code: string) =>
+    vi
+      .mocked(cache.setSyncRun)
+      .mock.calls.filter(([, runCode]) => runCode === code)
+      .at(-1)?.[0]
+  // Statuts globaux (`setSyncRun(run)` sans code), dans l'ordre d'écriture.
+  const globalRuns = () =>
+    vi
+      .mocked(cache.setSyncRun)
+      .mock.calls.filter(([, runCode]) => runCode === undefined)
+      .map(([run]) => run)
   // Le release de verrou est le dernier maillon de la chaîne
   // trigger → executeAll : attendre dessus garantit que le run est terminé.
   const waitForRelease = (count: number) =>
@@ -88,7 +108,8 @@ describe('SyncService', () => {
       listActive: vi.fn().mockResolvedValue([hq]),
       listAll: vi.fn().mockResolvedValue([hq]),
       getByCode: vi.fn(async (code: string) => [hq, lyon].find((s) => s.code === code) ?? null),
-      getHq: vi.fn().mockResolvedValue(hq)
+      getHq: vi.fn().mockResolvedValue(hq),
+      listUnreadable: vi.fn().mockResolvedValue([])
     } as unknown as SourcesService
     directus = { updateOne: vi.fn().mockResolvedValue(undefined) } as unknown as DirectusItemsClient
     geocoding = {
@@ -126,10 +147,7 @@ describe('SyncService', () => {
     await waitForRelease(1)
 
     expect(clients['uuid-hq'].fetchAllPrograms).toHaveBeenCalledTimes(1)
-    expect(cache.setSyncRun).toHaveBeenLastCalledWith(
-      expect.objectContaining({ status: 'success', source: 'hq' }),
-      'hq'
-    )
+    expect(lastRun('hq')).toMatchObject({ status: 'success', source: 'hq' })
   })
 
   it('trigger() refuses a second run while one is in progress', async () => {
@@ -211,6 +229,19 @@ describe('SyncService', () => {
 
       expect(clients['uuid-hq'].fetchAllPrograms).not.toHaveBeenCalled()
       expect(catalog.upsertMany).toHaveBeenCalledWith(expect.any(Array), 'uuid-lyon')
+    })
+
+    it('409s on an unreadable source and says why, without leaking the secret', async () => {
+      vi.mocked(sources.listUnreadable).mockResolvedValue([
+        unreadable('nice', 'active', 'Secret could not be decrypted (wrong key or altered data)')
+      ])
+      vi.mocked(sources.getByCode).mockResolvedValue(null)
+
+      const error = await service.trigger({ sourceCode: 'nice' }).catch((e: unknown) => e)
+
+      expect(error).toBeInstanceOf(ConflictException)
+      expect((error as Error).message).toContain('could not be decrypted')
+      expect(cache.acquireSyncLock).not.toHaveBeenCalled()
     })
 
     it('404s on an unknown code and leaves the service usable', async () => {
@@ -357,10 +388,7 @@ describe('SyncService', () => {
       'uuid-hq'
     )
     expect(cache.invalidateCatalog).toHaveBeenCalled()
-    expect(cache.setSyncRun).toHaveBeenLastCalledWith(
-      expect.objectContaining({ status: 'success', inserted: 1, updated: 0 }),
-      'hq'
-    )
+    expect(lastRun('hq')).toMatchObject({ status: 'success', inserted: 1, updated: 0 })
   })
 
   it('falls back to fixture when Digiforma fails', async () => {
@@ -381,10 +409,7 @@ describe('SyncService', () => {
     await service.trigger()
     await waitForRelease(1)
 
-    expect(cache.setSyncRun).toHaveBeenLastCalledWith(
-      expect.objectContaining({ status: 'failed', error: 'network' }),
-      'hq'
-    )
+    expect(lastRun('hq')).toMatchObject({ status: 'failed', error: 'network' })
     expect(cache.invalidateCatalog).not.toHaveBeenCalled()
   })
 
@@ -397,10 +422,7 @@ describe('SyncService', () => {
     await service.trigger()
     await waitForRelease(1)
 
-    expect(cache.setSyncRun).toHaveBeenLastCalledWith(
-      expect.objectContaining({ status: 'success', failed: 1 }),
-      'hq'
-    )
+    expect(lastRun('hq')).toMatchObject({ status: 'success', failed: 1 })
   })
 
   it('returns the latest sync run', async () => {
@@ -425,16 +447,29 @@ describe('SyncService', () => {
     })
   })
 
+  it('also reports the active sources dropped for an unreadable secret', async () => {
+    vi.mocked(sources.listActive).mockResolvedValue([hq])
+    vi.mocked(sources.listUnreadable).mockResolvedValue([
+      unreadable('nice', 'active'),
+      unreadable('paris', 'inactive')
+    ])
+    vi.mocked(cache.getSyncRun).mockImplementation(
+      async (code) => ({ status: code === 'nice' ? 'failed' : 'success' }) as never
+    )
+
+    await expect(service.getRunsBySource()).resolves.toEqual({
+      hq: { status: 'success' },
+      nice: { status: 'failed' }
+    })
+  })
+
   it('records a failed sync run and releases the lock when upsert fails', async () => {
     vi.mocked(catalog.upsertMany).mockRejectedValue(new Error('directus down'))
 
     await service.trigger()
     await waitForRelease(1)
 
-    expect(cache.setSyncRun).toHaveBeenLastCalledWith(
-      expect.objectContaining({ status: 'failed' }),
-      'hq'
-    )
+    expect(lastRun('hq')).toMatchObject({ status: 'failed' })
   })
 
   it('records unknown errors thrown as non-Error values', async () => {
@@ -443,10 +478,7 @@ describe('SyncService', () => {
     await service.trigger()
     await waitForRelease(1)
 
-    expect(cache.setSyncRun).toHaveBeenLastCalledWith(
-      expect.objectContaining({ status: 'failed', error: 'Unknown error' }),
-      'hq'
-    )
+    expect(lastRun('hq')).toMatchObject({ status: 'failed', error: 'Unknown error' })
   })
 
   it('does not fail a run when recording on the source row fails', async () => {
@@ -455,10 +487,7 @@ describe('SyncService', () => {
     await service.trigger()
     await waitForRelease(1)
 
-    expect(cache.setSyncRun).toHaveBeenLastCalledWith(
-      expect.objectContaining({ status: 'success' }),
-      'hq'
-    )
+    expect(lastRun('hq')).toMatchObject({ status: 'success' })
   })
 
   describe('source lifecycle', () => {
@@ -588,6 +617,205 @@ describe('SyncService', () => {
       await waitForRelease(1)
 
       expect(catalog.republishArchivedBySource).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('global run status (sync:last_run)', () => {
+    beforeEach(() => {
+      vi.mocked(sources.listActive).mockResolvedValue([hq, lyon])
+    })
+
+    it('publishes a running state, then the aggregate of every source', async () => {
+      vi.mocked(catalog.upsertMany)
+        .mockResolvedValueOnce({ inserted: 2, updated: 1 })
+        .mockResolvedValueOnce({ inserted: 0, updated: 4 })
+
+      await service.trigger()
+      await waitForRelease(2)
+
+      const runs = globalRuns()
+      expect(runs).toHaveLength(2)
+      expect(runs[0]).toMatchObject({ status: 'running', finishedAt: null, inserted: 0 })
+      expect(runs[1]).toMatchObject({
+        status: 'success',
+        inserted: 2,
+        updated: 5,
+        failed: 0,
+        error: null,
+        finishedAt: expect.any(String)
+      })
+      expect(runs[1]).not.toHaveProperty('source')
+    })
+
+    it('reports « failed » when one source fails and another succeeds', async () => {
+      vi.mocked(config.get).mockImplementation((key: string) =>
+        key === 'NODE_ENV' ? 'production' : undefined
+      )
+      vi.mocked(clients['uuid-hq'].fetchAllPrograms).mockRejectedValue(new Error('hq 500'))
+
+      await service.trigger()
+      await waitForRelease(2)
+
+      // La réussite de Lyon, écrite après l'échec de la HQ, ne le masque pas.
+      expect(globalRuns().at(-1)).toMatchObject({
+        status: 'failed',
+        inserted: 1,
+        error: 'hq: hq 500'
+      })
+      expect(lastRun('lyon')).toMatchObject({ status: 'success' })
+    })
+
+    it('includes the unpublished sources in the aggregate', async () => {
+      const nice = makeSource({ id: 'uuid-nice', code: 'nice', isHq: false })
+      nice.status = 'inactive'
+      vi.mocked(sources.listAll).mockResolvedValue([hq, lyon, nice])
+      vi.mocked(catalog.archivePublishedBySource).mockResolvedValue(3)
+
+      await service.trigger()
+      await waitForRelease(2)
+
+      expect(globalRuns().at(-1)).toMatchObject({ status: 'success', archived: 3 })
+    })
+
+    it('reports « failed » when the shared steps fail', async () => {
+      vi.mocked(geocoding.syncMissing).mockRejectedValue(new Error('geocoder down'))
+
+      await service.trigger()
+      await waitForRelease(2)
+
+      expect(globalRuns().at(-1)).toMatchObject({
+        status: 'failed',
+        error: 'hq: geocoder down | lyon: geocoder down'
+      })
+    })
+
+    it('does not overwrite it when a single source is synced', async () => {
+      await service.trigger({ sourceCode: 'lyon' })
+      await waitForRelease(1)
+
+      expect(globalRuns()).toHaveLength(0)
+      expect(lastRun('lyon')).toMatchObject({ status: 'success' })
+    })
+  })
+
+  describe('unreadable sources', () => {
+    beforeEach(() => {
+      vi.mocked(sources.listActive).mockResolvedValue([hq])
+    })
+
+    it('records an active source dropped for its secret as a failed run, and still syncs the others', async () => {
+      vi.mocked(sources.listUnreadable).mockResolvedValue([unreadable('nice', 'active')])
+
+      await service.trigger()
+      await waitForRelease(1)
+
+      expect(clients['uuid-hq'].fetchAllPrograms).toHaveBeenCalledTimes(1)
+      expect(lastRun('hq')).toMatchObject({ status: 'success' })
+      expect(lastRun('nice')).toMatchObject({
+        status: 'failed',
+        source: 'nice',
+        error: 'Secret could not be decrypted (wrong key or altered data)',
+        inserted: 0
+      })
+      expect(directus.updateOne).toHaveBeenCalledWith(
+        'sources',
+        'uuid-nice',
+        expect.objectContaining({ last_sync_status: 'failed' })
+      )
+      expect(globalRuns().at(-1)).toMatchObject({
+        status: 'failed',
+        error: 'nice: Secret could not be decrypted (wrong key or altered data)'
+      })
+    })
+
+    it('reports the failure even when nothing else has to be done', async () => {
+      vi.mocked(config.get).mockImplementation((key: string) =>
+        key === 'NODE_ENV' ? 'production' : undefined
+      )
+      vi.mocked(clients['uuid-hq'].fetchAllPrograms).mockRejectedValue(new Error('hq 500'))
+      vi.mocked(sources.listUnreadable).mockResolvedValue([unreadable('nice', 'active')])
+
+      await service.trigger()
+      await waitForRelease(1)
+
+      expect(globalRuns().at(-1)).toMatchObject({ status: 'failed' })
+      expect(globalRuns().at(-1)?.error).toContain('nice:')
+    })
+
+    it('ignores an unreadable source that is inactive', async () => {
+      vi.mocked(sources.listUnreadable).mockResolvedValue([unreadable('nice', 'inactive')])
+
+      await service.trigger()
+      await waitForRelease(1)
+
+      expect(cache.setSyncRun).not.toHaveBeenCalledWith(expect.anything(), 'nice')
+      expect(globalRuns().at(-1)).toMatchObject({ status: 'success' })
+    })
+
+    it('does not mark unreadable sources on a single-source run', async () => {
+      vi.mocked(sources.listUnreadable).mockResolvedValue([unreadable('nice', 'active')])
+
+      await service.trigger({ sourceCode: 'hq' })
+      await waitForRelease(1)
+
+      expect(cache.setSyncRun).not.toHaveBeenCalledWith(expect.anything(), 'nice')
+    })
+
+    it('does not fail the run when unreadable sources cannot be listed', async () => {
+      vi.mocked(sources.listUnreadable).mockRejectedValue(new Error('sources down'))
+
+      await service.trigger()
+      await waitForRelease(1)
+
+      expect(lastRun('hq')).toMatchObject({ status: 'success' })
+      expect(globalRuns().at(-1)).toMatchObject({ status: 'success' })
+    })
+  })
+
+  describe('development fixture fallback', () => {
+    it('applies to the HQ source without a Digiforma key', async () => {
+      vi.mocked(factory.for).mockImplementation(() => {
+        throw new Error('Source "hq": Digiforma API URL or key missing')
+      })
+
+      await service.trigger()
+      await waitForRelease(1)
+
+      expect(catalog.upsertMany).toHaveBeenCalledWith(
+        expect.arrayContaining([expect.objectContaining({ digiforma_id: 'prog-001' })]),
+        'uuid-hq'
+      )
+      expect(lastRun('hq')).toMatchObject({ status: 'success' })
+    })
+
+    it('never replaces a franchise catalogue with demo formations (call error)', async () => {
+      vi.mocked(sources.listActive).mockResolvedValue([hq, lyon])
+      vi.mocked(clients['uuid-lyon'].fetchAllPrograms).mockRejectedValue(new Error('lyon 500'))
+
+      await service.trigger()
+      await waitForRelease(2)
+
+      expect(lastRun('lyon')).toMatchObject({ status: 'failed', error: 'lyon 500' })
+      expect(catalog.upsertMany).toHaveBeenCalledTimes(1)
+      expect(catalog.upsertMany).toHaveBeenCalledWith(expect.any(Array), 'uuid-hq')
+    })
+
+    it('never replaces a franchise catalogue with demo formations (key missing)', async () => {
+      vi.mocked(sources.listActive).mockResolvedValue([hq, lyon])
+      vi.mocked(factory.for).mockImplementation((source: SourceConfig) => {
+        if (source.code === 'lyon')
+          throw new Error('Source "lyon": Digiforma API URL or key missing')
+        return clients[source.id]
+      })
+
+      await service.trigger()
+      await waitForRelease(2)
+
+      expect(lastRun('lyon')).toMatchObject({
+        status: 'failed',
+        error: 'Source "lyon": Digiforma API URL or key missing'
+      })
+      expect(catalog.upsertMany).toHaveBeenCalledTimes(1)
     })
   })
 })

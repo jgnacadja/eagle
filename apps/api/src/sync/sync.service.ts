@@ -94,7 +94,9 @@ export class SyncService {
       }
 
       const toRun = targets.filter((source) => acquired.has(source.code))
-      const tracked = this.executeAll(toRun, acquired)
+      // Le cycle de vie des sources inactives (dépublication) ne suit que les
+      // runs globaux : synchroniser une seule source n'archive pas les autres.
+      const tracked = this.executeAll(toRun, acquired, !single)
         .catch((error) => {
           this.logger.error(error, 'Sync failed')
         })
@@ -141,7 +143,11 @@ export class SyncService {
   // Séquentiel : l'échec d'une source n'interrompt pas les suivantes. Le
   // géocodage et l'invalidation du cache, communs à toutes les sources,
   // s'exécutent une fois à la fin ; un run n'est « success » qu'après eux.
-  private async executeAll(sources: SourceConfig[], locks: Map<string, string>): Promise<void> {
+  private async executeAll(
+    sources: SourceConfig[],
+    locks: Map<string, string>,
+    includeInactive: boolean
+  ): Promise<void> {
     const released = new Set<string>()
     const release = async (code: string): Promise<void> => {
       const token = locks.get(code)
@@ -158,17 +164,29 @@ export class SyncService {
         else await release(source.code)
       }
 
-      if (pending.length === 0) return
+      const archivedRuns = includeInactive ? await this.archiveInactiveSources() : []
+      if (pending.length === 0 && archivedRuns.length === 0) return
 
       try {
-        // Les localisations de session viennent des centres : on (re)géocode
-        // celles dont l'adresse a changé avant d'invalider le cache.
-        await this.geocoding.syncMissing({ force: true })
+        if (pending.length > 0) {
+          // Les localisations de session viennent des centres : on (re)géocode
+          // celles dont l'adresse a changé avant d'invalider le cache.
+          await this.geocoding.syncMissing({ force: true })
+        }
+        // Version par source bumpée à chaque sync réussi, désactivation et
+        // réactivation, puis invalidation globale (index en mémoire, ISR…).
+        const changed = new Set([
+          ...pending.map((entry) => entry.source.code),
+          ...archivedRuns.map((entry) => entry.source.code)
+        ])
+        for (const code of changed) await this.cache.bumpSourceVersion(code)
         await this.cache.invalidateCatalog()
         for (const entry of pending) await this.finish(entry, 'success')
+        for (const entry of archivedRuns) await this.finish(entry, 'success')
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error'
-        for (const entry of pending) await this.finish(entry, 'failed', message)
+        for (const entry of [...pending, ...archivedRuns])
+          await this.finish(entry, 'failed', message)
         throw error
       }
     } finally {
@@ -211,7 +229,20 @@ export class SyncService {
       const result = await this.catalog.upsertMany(payloads, await this.sourceIdFor(source))
       run.inserted = result.inserted
       run.updated = result.updated
-      this.logger.log({ source: source.code, ...result }, 'Source synced')
+
+      // Réactivation : republie les formations dépubliées par la désactivation
+      // que Digiforma renvoie toujours (jamais celles archivées à la main).
+      const sourceId = await this.sourceIdFor(source)
+      if (sourceId) {
+        run.republished = await this.catalog.republishArchivedBySource(
+          sourceId,
+          payloads.map((payload) => payload.digiforma_id)
+        )
+      }
+      this.logger.log(
+        { source: source.code, ...result, republished: run.republished },
+        'Source synced'
+      )
       return { source, run }
     } catch (error) {
       this.logger.error({ error, source: source.code }, 'Source sync failed')
@@ -222,6 +253,41 @@ export class SyncService {
       )
       return null
     }
+  }
+
+  // Désactivation : les formations publiées d'une source inactive passent en
+  // `archived` (réversible, rien n'est supprimé ni demandé à Digiforma). Une
+  // source en échec ne bloque pas les autres. Ne retourne que les sources
+  // dont au moins une formation a été dépubliée.
+  private async archiveInactiveSources(): Promise<PendingRun[]> {
+    const archivedRuns: PendingRun[] = []
+    const inactive = (await this.sources.listAll()).filter((source) => source.status !== 'active')
+
+    for (const source of inactive) {
+      try {
+        const archived = await this.catalog.archivePublishedBySource(source.id)
+        if (archived === 0) continue
+        const now = new Date().toISOString()
+        archivedRuns.push({
+          source,
+          run: {
+            status: 'running',
+            startedAt: now,
+            finishedAt: null,
+            inserted: 0,
+            updated: 0,
+            failed: 0,
+            archived,
+            error: null,
+            source: source.code
+          }
+        })
+        this.logger.log({ source: source.code, archived }, 'Inactive source unpublished')
+      } catch (error) {
+        this.logger.error({ error, source: source.code }, 'Failed to unpublish inactive source')
+      }
+    }
+    return archivedRuns
   }
 
   // Id Directus à écrire sur les formations : jamais celui de la source
@@ -245,7 +311,9 @@ export class SyncService {
   }
 
   private async recordOnSource(source: SourceConfig, run: SyncRun): Promise<void> {
-    if (source.fromEnv) return
+    // `last_sync_*` décrit la dernière sync Digiforma : ni la source « env »
+    // (pas de ligne) ni une dépublication (aucun appel Digiforma) ne l'écrivent.
+    if (source.fromEnv || source.status !== 'active') return
     try {
       await this.directus.updateOne('sources', source.id, {
         last_sync_at: run.finishedAt,

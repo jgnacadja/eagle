@@ -68,6 +68,11 @@ export class SourcesService {
     return active.length > 0 ? active : [this.envHq()]
   }
 
+  /** Toutes les sources lues en base, actives ou non (hors repli env). */
+  async listAll(): Promise<SourceConfig[]> {
+    return this.all()
+  }
+
   async getHq(): Promise<SourceConfig> {
     const sources = await this.all()
     return sources.find((source) => source.isHq) ?? this.envHq()

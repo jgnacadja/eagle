@@ -43,7 +43,12 @@ ACADEMY).
   (`digiforma_api_key`, `hubspot_token`) sont masquées dans l'admin et lisibles
   par le seul rôle `admin` (+ Administrator natif et compte de service) ; les
   autres rôles internes ne lisent que `id, name, code, is_hq, status`. Le
-  chiffrement à l'enregistrement arrive avec le hook `sources-encrypt`.
+  chiffrement est assuré par le hook `extensions/sources-encrypt` (monté dans
+  le conteneur Directus) : `digiforma_api_key` et `hubspot_token` sont chiffrés
+  en AES-256-GCM avant écriture, stockés `enc:v1:<base64(iv|tag|ciphertext)>`.
+  Clé : `SOURCES_ENC_KEY` (32 octets base64, `openssl rand -base64 32`),
+  identique côté Directus et API ; absente, l'écriture d'un secret est
+  refusée. Une valeur déjà préfixée n'est pas rechiffrée.
 - `centres.source` (M2O nullable, vide = HQ), `formations.source` (M2O NOT NULL)
   et `formations.archived_by_source` (booléen).
 - **Migration** (`build.mjs`, idempotent) : crée la source `hq` depuis l'env

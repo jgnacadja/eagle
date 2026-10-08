@@ -10,6 +10,7 @@
 import {
   articles,
   avis,
+  categories,
   centres,
   famillesFormation,
   formations,
@@ -60,12 +61,17 @@ const DATASETS = [
       { key: 'sousFamilleSlug', collection: 'sous_familles_formation', field: 'sous_famille' }
     ]
   },
+  { collection: 'categories', items: categories },
   {
     collection: 'articles',
     items: articles,
-    // `relatedFormationSlug` résolu en id de formations — la collection
-    // doit donc être seedée avant les articles.
-    refs: [{ key: 'relatedFormationSlug', collection: 'formations', field: 'related_formation' }]
+    // `categorySlug` résolu en id de categories, `relatedFormationSlug` en
+    // id de formations — les deux collections doivent être seedées avant
+    // les articles.
+    refs: [
+      { key: 'categorySlug', collection: 'categories', field: 'category' },
+      { key: 'relatedFormationSlug', collection: 'formations', field: 'related_formation' }
+    ]
   },
   {
     collection: 'avis',

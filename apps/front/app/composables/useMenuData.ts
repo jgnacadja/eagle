@@ -414,8 +414,10 @@ export function useMenuActualites() {
         const regionArticles = new Map<string, { label: string; articles: MenuActualite[] }>()
 
         for (const article of articles) {
-          if (article.category?.name?.trim() && article.category.slug?.trim()) {
-            categoryLabels.set(article.category.slug, article.category.name.trim())
+          const categorySlug = article.category?.slug?.trim()
+          const categoryName = article.category?.name?.trim()
+          if (categorySlug && categoryName) {
+            categoryLabels.set(categorySlug, categoryName)
           }
 
           if (!article.region?.trim()) continue

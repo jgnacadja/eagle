@@ -51,6 +51,7 @@ export function permissionsFor(roleName) {
       return [
         ...[
           'articles',
+          'categories',
           'avis',
           'page_blocks',
           'pages_legales_sections',
@@ -121,6 +122,7 @@ export function permissionsFor(roleName) {
         ].flatMap((c) => grants(c, ['read', 'update'])),
         ...[
           'centres',
+          'categories',
           'familles_formation',
           'sous_familles_formation',
           'pages',

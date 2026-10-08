@@ -344,11 +344,20 @@ const directus = useDirectusClient()
 
 // Filtres portés par l'URL : partageables, rendus côté serveur et cachés
 // par variante grâce à l'ISR `passQuery`.
-const selectedCategory = computed(() =>
-  typeof route.query.category === 'string' && route.query.category
-    ? route.query.category
-    : CATEGORY_ALL
-)
+// `?category=` porte le slug ; un libellé d'ancienne URL est résolu vers le
+// slug correspondant, une valeur inconnue retombe sur « Tout ».
+const selectedCategory = computed(() => {
+  const raw =
+    typeof route.query.category === 'string' && route.query.category
+      ? route.query.category
+      : CATEGORY_ALL
+  if (raw === CATEGORY_ALL) return raw
+  if (categoryOptions.value.some((option) => option.value === raw)) return raw
+  const byLabel = categoryOptions.value.find(
+    (option) => option.label.trim().toLowerCase() === raw.trim().toLowerCase()
+  )
+  return byLabel?.value ?? CATEGORY_ALL
+})
 const selectedRegion = computed(() =>
   typeof route.query.region === 'string' && route.query.region ? route.query.region : REGION_ALL
 )
@@ -497,7 +506,7 @@ const { data: categoriesData } = await useAsyncData<ArticleCategory[]>(
           fields: ['id', 'slug', 'name'],
           filter: { status: { _eq: 'published' } },
           sort: ['sort'],
-          limit: -1
+          limit: 100
         })
       )
     } catch (error) {

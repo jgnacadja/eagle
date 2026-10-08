@@ -145,8 +145,8 @@ export interface Article extends SeoFields {
   title: string
   excerpt: string | null
   content: string | null
-  /** Relation M2O vers `categories` — toujours lue expansée (`category.name`, `category.slug`). */
-  category: { slug: string; name: string } | null
+  /** Relation M2O vers `categories` — expansée selon les champs demandés (`category.name` et/ou `category.slug`). */
+  category: { slug?: string; name?: string } | null
   author_name: string | null
   author_image: string | null
   region: string | null

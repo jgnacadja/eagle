@@ -346,6 +346,15 @@ describe('pages/actualites/index', () => {
     expect(wrapper.text()).not.toContain('Nouveau plateau technique nacelles PEMP')
   })
 
+  it('résout un ancien libellé `?category=` vers le slug de la rubrique', async () => {
+    route.query = { category: 'Vie du réseau' }
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Un nouveau centre ouvre à Cergy-Pontoise')
+    expect(wrapper.text()).toContain('Renouvellement Qualiopi')
+    expect(wrapper.text()).not.toContain('Habilitations électriques')
+  })
+
   it('affiche la pagination quand le total dépasse la page', async () => {
     const wrapper = await mountPage()
 
@@ -460,7 +469,7 @@ describe('pages/actualites/index', () => {
   })
 
   it('affiche l’état vide quand aucun article ne correspond', async () => {
-    route.query = { category: 'Catégorie inexistante' }
+    route.query = { region: 'pays-basque' }
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain('Aucun article ne correspond à ces filtres')

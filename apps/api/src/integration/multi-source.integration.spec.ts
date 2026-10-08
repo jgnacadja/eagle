@@ -1,4 +1,6 @@
+import { ServiceUnavailableException } from '@nestjs/common'
 import type { LeadFormName } from '../sources/source.types'
+import { encryptSecret } from '../sources/sources.crypto'
 import type {
   CandidatureLeadDto,
   ConseillerLeadDto,
@@ -167,6 +169,12 @@ describe('multi-source integration', () => {
         error: 'Digiforma HTTP 500'
       })
       expect(h.cache.runs.get('hq')).not.toBe(h.cache.runs.get('lyon'))
+      // Le dernier run global garde l'échec, malgré la réussite de la HQ.
+      expect(h.cache.runs.get('default')).toMatchObject({
+        status: 'failed',
+        inserted: 1,
+        error: 'lyon: Digiforma HTTP 500'
+      })
       expect(h.cache.versions.get('hq')).toBe(1)
       expect(h.cache.versions.has('lyon')).toBe(false)
       expect(h.directus.rows('sources').map((s) => [s.code, s.last_sync_status])).toEqual([
@@ -282,12 +290,51 @@ describe('multi-source integration', () => {
       expect(lastTarget(h)).toMatchObject({ portalId: '1111111', formGuid: 'hq-form-demande' })
     })
 
-    it('ne joint le cookie de tracking qu’au portail HQ', async () => {
+    it('ne joint le cookie de tracking et l’URL de page qu’au portail HQ', async () => {
       await h.leads.submitDemande(demande)
-      expect(lastTarget(h).context?.hutk).toBe('tracking-cookie-1')
+      expect(lastTarget(h).context).toEqual({
+        pageUri: pageContext.pageUri,
+        pageName: pageContext.pageName,
+        hutk: 'tracking-cookie-1'
+      })
 
       await h.leads.submitDemande({ ...demande, formationId: lyonFormationId })
-      expect(lastTarget(h).context?.hutk).toBeUndefined()
+      expect(lastTarget(h).context).toEqual({ pageName: pageContext.pageName })
+    })
+
+    it('rejoue le lead sur le portail HQ quand le portail franchise le refuse', async () => {
+      h.network.setHubspotStatus('2222222', 401)
+
+      await expect(
+        h.leads.submitDemande({ ...demande, formationId: lyonFormationId })
+      ).resolves.toEqual({ submitted: true })
+
+      const [first, second] = h.network.hubspotCalls.map(target)
+      expect(first).toMatchObject({ portalId: '2222222', secure: true })
+      expect(second).toMatchObject({ portalId: '1111111', formGuid: 'hq-form-demande' })
+      expect(second.context?.hutk).toBe('tracking-cookie-1')
+    })
+
+    it('rejoue aussi un conseiller sur centre franchise dont le formulaire est introuvable', async () => {
+      h.network.setHubspotStatus('2222222', 404)
+
+      await h.leads.submitConseiller({ ...conseiller, centreId: 1 })
+
+      expect(h.network.hubspotCalls.map(target).map((t) => t.portalId)).toEqual([
+        '2222222',
+        '1111111'
+      ])
+      expect(lastTarget(h)).toMatchObject({ formGuid: 'hq-form-conseiller' })
+    })
+
+    it('ne bascule pas sur la HQ pour une panne passagère du portail franchise', async () => {
+      h.network.setHubspotStatus('2222222', 500)
+
+      await expect(
+        h.leads.submitDemande({ ...demande, formationId: lyonFormationId })
+      ).rejects.toBeInstanceOf(ServiceUnavailableException)
+
+      expect(h.network.hubspotCalls).toHaveLength(1)
     })
 
     it('replie sur la HQ quand la source de la formation est désactivée', async () => {
@@ -304,6 +351,105 @@ describe('multi-source integration', () => {
       await h.leads.submitDemande({ ...demande, formationId: lyonFormationId })
 
       expect(lastTarget(h)).toMatchObject({ portalId: '1111111', formGuid: 'hq-form-demande' })
+    })
+  })
+
+  describe('configuration des sources illisible', () => {
+    it('ne synchronise pas le compte de l’env quand Directus ne répond pas, et ne touche pas aux formations franchise', async () => {
+      const h = await createHarness({ sources: twoSources(), env: ENV_MONO_SOURCE })
+      h.network.addDigiforma(ENV_URL, ENV_MONO_SOURCE.DIGIFORMA_API_KEY, {
+        response: programsHq()
+      })
+      const franchise = {
+        id: 900,
+        digiforma_id: 'prog-001',
+        title: 'Habilitation électrique Lyon',
+        source: 'uuid-lyon',
+        status: 'published',
+        archived_by_source: false
+      }
+      h.directus.rows('formations').push({ ...franchise })
+      h.directus.failReads('sources')
+
+      await expect(h.sync.trigger()).rejects.toBeInstanceOf(ServiceUnavailableException)
+
+      expect(h.network.digiformaCalls).toHaveLength(0)
+      expect(h.directus.calls.filter((call) => call.method !== 'GET')).toHaveLength(0)
+      expect(h.directus.rows('formations')).toEqual([franchise])
+    })
+
+    it('reprend normalement quand Directus répond de nouveau', async () => {
+      const h = await twoSourcesHarness()
+      h.directus.failReads('sources')
+      await expect(h.sync.trigger()).rejects.toBeInstanceOf(ServiceUnavailableException)
+      h.directus.restoreReads('sources')
+
+      await h.runSync()
+
+      expect(h.cache.runs.get('default')).toMatchObject({ status: 'success', inserted: 3 })
+    })
+
+    it('garde les leads sur la HQ de l’env pendant l’indisponibilité', async () => {
+      const h = await createHarness({ sources: twoSources(), env: ENV_MONO_SOURCE })
+      h.directus.rows('formations').push({ id: 900, source: 'uuid-lyon', status: 'published' })
+      h.directus.failReads('sources')
+
+      await h.leads.submitDemande({ ...demande, formationId: 900 })
+
+      expect(lastTarget(h)).toMatchObject({
+        portalId: ENV_MONO_SOURCE.HUBSPOT_PORTAL_ID,
+        formGuid: ENV_MONO_SOURCE.HUBSPOT_FORM_DEMANDE
+      })
+    })
+
+    describe('secret altéré d’une franchise', () => {
+      async function alteredHarness(): Promise<Harness> {
+        const rows = twoSources()
+        rows[1] = {
+          ...rows[1],
+          digiforma_api_key: encryptSecret(PLAIN_SECRETS.digiformaLyon, Buffer.alloc(32, 9))
+        }
+        const h = await createHarness({ sources: rows })
+        h.network.addDigiforma(HQ_URL, PLAIN_SECRETS.digiformaHq, { response: programsHq() })
+        h.network.addDigiforma(LYON_URL, PLAIN_SECRETS.digiformaLyon, {
+          response: programsLyon()
+        })
+        return h
+      }
+
+      it('est tracé comme un échec de la source, sans bloquer les autres', async () => {
+        const h = await alteredHarness()
+
+        await h.runSync()
+
+        expect(h.directus.formation('uuid-hq', 'prog-001')).toBeDefined()
+        expect(h.directus.rows('formations').filter((f) => f.source === 'uuid-lyon')).toHaveLength(
+          0
+        )
+        expect(h.network.digiformaCallsTo(LYON_URL)).toHaveLength(0)
+        expect(h.cache.runs.get('lyon')).toMatchObject({
+          status: 'failed',
+          source: 'lyon',
+          error: expect.stringContaining('could not be decrypted')
+        })
+        expect(h.cache.runs.get('hq')).toMatchObject({ status: 'success' })
+        expect(h.cache.runs.get('default')).toMatchObject({ status: 'failed' })
+        expect(h.directus.rows('sources').map((s) => [s.code, s.last_sync_status])).toEqual([
+          ['hq', 'success'],
+          ['lyon', 'failed']
+        ])
+      })
+
+      it('apparaît dans le statut par source et refuse une sync ciblée', async () => {
+        const h = await alteredHarness()
+        await h.runSync()
+
+        await expect(h.sync.getRunsBySource()).resolves.toMatchObject({
+          hq: { status: 'success' },
+          lyon: { status: 'failed' }
+        })
+        await expect(h.sync.trigger({ sourceCode: 'lyon' })).rejects.toThrow(/unreadable/)
+      })
     })
   })
 
@@ -393,11 +539,15 @@ describe('multi-source integration', () => {
       await h.leads.submitDemande({ ...demande, formationId: lyonFormationId })
       h.updateSource('uuid-lyon', { hubspot_form_demande: null })
       await h.leads.submitDemande({ ...demande, formationId: lyonFormationId })
+      h.updateSource('uuid-lyon', { hubspot_form_demande: 'lyon-form-demande' })
+      h.network.setHubspotStatus('2222222', 401)
+      await h.leads.submitDemande({ ...demande, formationId: lyonFormationId })
 
       const output = logs.text()
       expect(logs.count()).toBeGreaterThan(0)
       expect(output).toContain('rogue')
       expect(output).toContain('lyon')
+      expect(output).toContain('resubmitting to the HQ portal')
       for (const secret of [
         ...Object.values(PLAIN_SECRETS),
         'plaintext-secret-0006',

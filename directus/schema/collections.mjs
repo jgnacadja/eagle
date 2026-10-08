@@ -449,6 +449,33 @@ export const collections = [
     ]
   },
   {
+    collection: 'categories',
+    icon: 'sell',
+    note: 'Catégories des articles de blog.',
+    ...fr('Catégories'),
+    fields: [
+      primaryKey(),
+      statusField(),
+      sortField(),
+      slugField(),
+      {
+        field: 'name',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', required: true, ...fr('Nom') }
+      },
+      {
+        field: 'description',
+        type: 'text',
+        meta: {
+          interface: 'input-multiline',
+          width: 'full',
+          note: 'Accroche éditoriale de la rubrique',
+          ...fr('Description')
+        }
+      }
+    ]
+  },
+  {
     collection: 'articles',
     icon: 'article',
     note: 'Articles de blog.',
@@ -473,16 +500,7 @@ export const collections = [
         type: 'text',
         meta: { interface: 'input-rich-text-html', width: 'full', ...fr('Contenu') }
       },
-      {
-        field: 'category',
-        type: 'string',
-        meta: {
-          interface: 'input',
-          width: 'half',
-          note: 'Catégorie thématique',
-          ...fr('Catégorie')
-        }
-      },
+      // category = relation M2O vers categories (voir relations)
       {
         field: 'author_name',
         type: 'string',
@@ -1366,6 +1384,16 @@ export const collections = [
 // Relations M2O résolues après création des collections (les deux côtés
 // doivent exister avant de créer la relation).
 export const relations = [
+  {
+    collection: 'articles',
+    field: 'category',
+    related_collection: 'categories',
+    meta: m2o('{{name}}', {
+      width: 'half',
+      note: 'Catégorie éditoriale de l’article',
+      ...fr('Catégorie')
+    })
+  },
   {
     collection: 'articles',
     field: 'centre',

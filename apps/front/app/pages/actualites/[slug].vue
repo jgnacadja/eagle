@@ -6,7 +6,7 @@
           <article class="lg:col-span-8">
             <header v-hero class="max-w-prose">
               <p class="text-overline text-accent-text">
-                <span class="font-bold uppercase">{{ article?.category }}</span>
+                <span class="font-bold uppercase">{{ article?.category?.name }}</span>
                 <span class="font-medium text-ink-subtle">
                   <span class="mx-xs">·</span>{{ formatArticleDate(article?.publish_at) }}
                   <span class="mx-xs">· <span class="md:inline hidden">lecture</span> </span
@@ -199,7 +199,9 @@
             >
               <article>
                 <p class="text-overline text-accent-text">
-                  <span class="font-bold uppercase">{{ related.category ?? 'Actualité' }}</span>
+                  <span class="font-bold uppercase">{{
+                    related.category?.name ?? 'Actualité'
+                  }}</span>
                   <span class="font-medium text-ink-subtle">
                     <span class="mx-xs">·</span>{{ formatArticleDate(related.publish_at) }}
                   </span>
@@ -289,7 +291,7 @@ const {
             'title',
             'excerpt',
             'content',
-            'category',
+            'category.name',
             'author_name',
             'author_image',
             'region',
@@ -334,7 +336,7 @@ function openAssistant() {
   assistant.open({
     context: {
       source: 'editorial',
-      theme: article.value?.category ?? article.value?.title ?? undefined,
+      theme: article.value?.category?.name ?? article.value?.title ?? undefined,
       formationSlug: typeof related === 'object' && related ? related.slug : undefined
     }
   })
@@ -401,7 +403,7 @@ const sanitizedArticle = computed(() => sanitizeHtmlWithHeadings(article.value!.
 const articleHeadings = computed(() => sanitizedArticle.value.headings)
 
 const relatedArticles = await useDirectusList<Article>('articles', `actualites-related-${slug}`, {
-  fields: ['id', 'slug', 'title', 'category', 'publish_at'],
+  fields: ['id', 'slug', 'title', 'category.name', 'publish_at'],
   filter: { status: { _eq: 'published' }, slug: { _neq: slug } },
   sort: ['-publish_at'],
   limit: 3
@@ -445,7 +447,7 @@ const defaultBreadcrumb = computed(() => {
   const category =
     (typeof route.query.category === 'string' && route.query.category.length > 0
       ? route.query.category
-      : article.value?.category) ?? 'Article'
+      : article.value?.category?.name) ?? 'Article'
 
   return [
     { label: 'Accueil', to: '/' },
@@ -535,7 +537,7 @@ onMounted(() => {
       event: 'view_article_detail',
       article_id: article.value.slug,
       article_title: article.value.title,
-      article_category: article.value.category ?? undefined,
+      article_category: article.value.category?.name ?? undefined,
       publish_date: article.value.publish_at ?? undefined,
       page_path: typeof window !== 'undefined' ? window.location.pathname : ''
     })

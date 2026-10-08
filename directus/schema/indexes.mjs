@@ -10,7 +10,9 @@
 //          entre sources — à nettoyer avant).
 //
 // `up` / `down` reçoivent une instance knex : Directus en embarque une, que
-// ce script charge depuis l'image (voir `loadKnex`).
+// ce script charge depuis l'image (voir `loadKnex`). Il ne tourne donc que
+// dans le conteneur `directus-init` — `pnpm directus:indexes [up|down]` l'y
+// lance, y compris pour le retour arrière.
 
 import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
@@ -24,8 +26,12 @@ export async function up(knex) {
   await knex.raw(`CREATE UNIQUE INDEX IF NOT EXISTS ?? ON formations (source, digiforma_id)`, [
     COMPOSITE_INDEX
   ])
-  await knex.raw(`DROP INDEX IF EXISTS ??`, [LEGACY_UNIQUE])
+  // L'unique historique est une contrainte (le DDL knex d'`is_unique`) :
+  // Postgres refuse de supprimer l'index qui la porte tant qu'elle existe.
+  // La contrainte part donc d'abord (avec son index), puis un éventuel index
+  // nu du même nom.
   await knex.raw(`ALTER TABLE formations DROP CONSTRAINT IF EXISTS ??`, [LEGACY_UNIQUE])
+  await knex.raw(`DROP INDEX IF EXISTS ??`, [LEGACY_UNIQUE])
   await knex.raw(`CREATE UNIQUE INDEX IF NOT EXISTS ?? ON sources (is_hq) WHERE is_hq`, [
     SINGLE_HQ_INDEX
   ])

@@ -112,6 +112,52 @@ describe('DirectusCatalogService', () => {
     expect(patchCall[0]).toBe('http://directus:8055/items/formations/1')
   })
 
+  it('scopes the existing lookup to the source and stamps it on created rows', async () => {
+    fetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 7, digiforma_id: 'prog-001' }] }), {
+          status: 200
+        })
+      )
+
+    await service.upsertMany([samplePayloads[0]], 'source-lyon')
+
+    const lookup = new URL(fetch.mock.calls[0][0] as string)
+    expect(lookup.searchParams.get('filter[source][_eq]')).toBe('source-lyon')
+    expect(lookup.searchParams.get('filter[digiforma_id][_in]')).toBe('prog-001')
+    const createCall = fetch.mock.calls.find((call) => call[1]?.method === 'POST')
+    expect(JSON.parse(createCall?.[1].body)).toEqual([
+      expect.objectContaining({ digiforma_id: 'prog-001', source: 'source-lyon' })
+    ])
+  })
+
+  it('does not touch a same-id formation of another source (no collision)', async () => {
+    // Le filtre `source` ne remonte rien pour cette source : création, pas de PATCH.
+    fetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+
+    await service.upsertMany([samplePayloads[0]], 'source-b')
+
+    expect(fetch.mock.calls.some((call) => call[1]?.method === 'PATCH')).toBe(false)
+    expect(fetch.mock.calls.some((call) => call[1]?.method === 'POST')).toBe(true)
+  })
+
+  it('leaves source unset and unfiltered without a sourceId (env mono-source)', async () => {
+    fetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+
+    await service.upsertMany([samplePayloads[0]])
+
+    expect(new URL(fetch.mock.calls[0][0] as string).searchParams.has('filter[source][_eq]')).toBe(
+      false
+    )
+    const createCall = fetch.mock.calls.find((call) => call[1]?.method === 'POST')
+    expect(JSON.parse(createCall?.[1].body)[0]).not.toHaveProperty('source')
+  })
+
   it('does not overwrite editorial pedagogy/evaluation on update', async () => {
     fetch
       .mockResolvedValueOnce(

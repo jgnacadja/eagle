@@ -1,5 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing'
-import { ConfigService } from '@nestjs/config'
 import { DigiformaClient, type Program } from './digiforma.client'
 
 const apiUrl = 'https://app.digiforma.com/api/v1/graphql'
@@ -38,20 +36,8 @@ function fullPage(): Program[] {
 describe('DigiformaClient', () => {
   let client: DigiformaClient
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        DigiformaClient,
-        {
-          provide: ConfigService,
-          useValue: {
-            getOrThrow: (key: string) => (key === 'DIGIFORMA_API_URL' ? apiUrl : apiKey)
-          }
-        }
-      ]
-    }).compile()
-
-    client = module.get<DigiformaClient>(DigiformaClient)
+  beforeEach(() => {
+    client = new DigiformaClient({ url: apiUrl, token: apiKey })
     vi.stubGlobal('fetch', vi.fn())
   })
 

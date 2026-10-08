@@ -1,5 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import { Logger } from '@nestjs/common'
 
 export interface DigiformaImage {
   id?: string | null
@@ -84,16 +83,24 @@ interface FetchLikeResponse {
   text(): Promise<string>
 }
 
-@Injectable()
+export interface DigiformaClientOptions {
+  url: string
+  token: string
+}
+
+/**
+ * Client d'UN compte Digiforma. Instancié par source via
+ * `DigiformaClientFactory.for(source)` — plus de singleton lié à l'env.
+ */
 export class DigiformaClient {
   private readonly logger = new Logger(DigiformaClient.name)
   private readonly url: string
   private readonly token: string
   private readonly maxRetries = 3
 
-  constructor(config: ConfigService) {
-    this.url = config.getOrThrow<string>('DIGIFORMA_API_URL')
-    this.token = config.getOrThrow<string>('DIGIFORMA_API_KEY')
+  constructor({ url, token }: DigiformaClientOptions) {
+    this.url = url
+    this.token = token
   }
 
   async fetchAllPrograms(): Promise<Program[]> {

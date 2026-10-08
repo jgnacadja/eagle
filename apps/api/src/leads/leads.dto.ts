@@ -37,6 +37,14 @@ class LeadContextDto {
   @IsString()
   @MaxLength(200)
   pageName?: string
+
+  @ApiPropertyOptional({
+    description: 'HubSpot tracking cookie (hubspotutk) — only forwarded to the HQ portal'
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  hutk?: string
 }
 
 export class NewsletterLeadDto extends LeadContextDto {
@@ -70,6 +78,23 @@ class LeadContactDto extends LeadContextDto {
 }
 
 export class DemandeLeadDto extends LeadContactDto {
+  @ApiPropertyOptional({
+    description: 'Directus id of the formation the lead is about',
+    minimum: 1
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  formationId?: number
+
+  @ApiPropertyOptional({ description: 'Directus id of the centre the lead is about', minimum: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  centreId?: number
+
   @ApiPropertyOptional({ description: 'Professional phone — at least 10 digits' })
   @IsOptional()
   @Matches(PHONE_PATTERN, {
@@ -178,6 +203,23 @@ export class CandidatureLeadDto extends LeadContactDto {
 }
 
 export class ConseillerLeadDto extends LeadContactDto {
+  @ApiPropertyOptional({
+    description: 'Directus id of the formation the lead is about',
+    minimum: 1
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  formationId?: number
+
+  @ApiPropertyOptional({ description: 'Directus id of the centre the lead is about', minimum: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  centreId?: number
+
   @ApiProperty({ description: 'Nature of the need', enum: BESOINS })
   @IsIn(BESOINS)
   besoin!: (typeof BESOINS)[number]
@@ -204,6 +246,23 @@ export class ConseillerLeadDto extends LeadContactDto {
 }
 
 export class RappelLeadDto extends LeadContextDto {
+  @ApiPropertyOptional({
+    description: 'Directus id of the formation the lead is about',
+    minimum: 1
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  formationId?: number
+
+  @ApiPropertyOptional({ description: 'Directus id of the centre the lead is about', minimum: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  centreId?: number
+
   @ApiProperty({ description: 'Phone number — at least 10 digits' })
   @IsString()
   @IsNotEmpty()

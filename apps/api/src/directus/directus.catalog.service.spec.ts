@@ -852,4 +852,80 @@ describe('DirectusCatalogService', () => {
       true
     )
   })
+
+  describe('source lifecycle', () => {
+    const json = (data: unknown) => new Response(JSON.stringify({ data }), { status: 200 })
+
+    it('archives the published formations of a source, flagging them', async () => {
+      fetch
+        .mockResolvedValueOnce(
+          json([
+            { id: 1, digiforma_id: 'a' },
+            { id: 2, digiforma_id: 'b' }
+          ])
+        )
+        .mockResolvedValueOnce(new Response(null, { status: 204 }))
+
+      await expect(service.archivePublishedBySource('source-nice')).resolves.toBe(2)
+
+      const read = new URL(fetch.mock.calls[0][0] as string)
+      expect(read.searchParams.get('filter[source][_eq]')).toBe('source-nice')
+      expect(read.searchParams.get('filter[status][_eq]')).toBe('published')
+      const [url, init] = fetch.mock.calls[1]
+      expect(url).toBe('http://directus:8055/items/formations')
+      expect(init.method).toBe('PATCH')
+      expect(JSON.parse(init.body)).toEqual({
+        keys: [1, 2],
+        data: { status: 'archived', archived_by_source: true }
+      })
+    })
+
+    it('does not write when there is nothing to archive', async () => {
+      fetch.mockResolvedValueOnce(json([]))
+
+      await expect(service.archivePublishedBySource('source-nice')).resolves.toBe(0)
+      expect(fetch).toHaveBeenCalledTimes(1)
+    })
+
+    it('republishes only flagged formations that Digiforma still returns', async () => {
+      fetch
+        .mockResolvedValueOnce(
+          json([
+            { id: 1, digiforma_id: 'a' },
+            { id: 2, digiforma_id: 'gone' },
+            { id: 3, digiforma_id: 'c' }
+          ])
+        )
+        .mockResolvedValueOnce(new Response(null, { status: 204 }))
+
+      await expect(service.republishArchivedBySource('source-nice', ['a', 'c', 'z'])).resolves.toBe(
+        2
+      )
+
+      const read = new URL(fetch.mock.calls[0][0] as string)
+      expect(read.searchParams.get('filter[archived_by_source][_eq]')).toBe('true')
+      expect(read.searchParams.get('filter[source][_eq]')).toBe('source-nice')
+      expect(JSON.parse(fetch.mock.calls[1][1].body)).toEqual({
+        keys: [1, 3],
+        data: { status: 'published', archived_by_source: false }
+      })
+    })
+
+    it('leaves manually archived formations alone (flag filter, nothing returned)', async () => {
+      fetch.mockResolvedValueOnce(json([]))
+
+      await expect(service.republishArchivedBySource('source-nice', ['a'])).resolves.toBe(0)
+      expect(fetch).toHaveBeenCalledTimes(1)
+    })
+
+    it('writes in batches of 100 keys', async () => {
+      const rows = Array.from({ length: 250 }, (_, i) => ({ id: i + 1, digiforma_id: `d${i}` }))
+      fetch.mockResolvedValueOnce(json(rows)).mockResolvedValue(new Response(null, { status: 204 }))
+
+      await expect(service.archivePublishedBySource('s')).resolves.toBe(250)
+
+      const patches = fetch.mock.calls.filter((call) => call[1]?.method === 'PATCH')
+      expect(patches.map((call) => JSON.parse(call[1].body).keys.length)).toEqual([100, 100, 50])
+    })
+  })
 })

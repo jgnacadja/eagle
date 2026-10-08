@@ -152,6 +152,10 @@ describe('SourcesService', () => {
       })
     })
 
+    it('listAll() returns every source from Directus, inactive included', async () => {
+      expect((await service.listAll()).map((s) => s.code)).toEqual(['hq', 'lyon', 'nice'])
+    })
+
     it('resolves by id and code, inactive included', async () => {
       expect((await service.getById('uuid-nice'))?.status).toBe('inactive')
       expect((await service.getByCode('lyon'))?.id).toBe('uuid-lyon')

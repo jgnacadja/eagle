@@ -1,0 +1,16 @@
+[
+  {
+    "id": "prog-001",
+    "code": "HQ-001",
+    "name": "Pilotage de projet HQ",
+    "description": "Piloter des projets complexes, de la planification à la livraison.",
+    "durationInDays": 3,
+    "durationInHours": 21,
+    "cpf": true,
+    "cpfCode": "CPF-HQ-001",
+    "certificationType": "Certificat",
+    "certifierName": "LEARN UP",
+    "category": { "id": "cat-1", "name": "Management" },
+    "costsInter": [{ "cost": 1800, "vat": 20, "type": "inter" }]
+  }
+]

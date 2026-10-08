@@ -1,20 +1,19 @@
 import { describe, expect, it, vi } from 'vitest'
 import { CacheController } from './cache.controller'
-import type { SourcesService } from '../../sources/sources.service'
 import type { CacheService } from './cache.service'
 
 describe('CacheController', () => {
   const cache = {
     invalidateCatalog: vi.fn().mockResolvedValue(undefined),
-    invalidatePatterns: vi.fn().mockResolvedValue(undefined)
+    invalidatePatterns: vi.fn().mockResolvedValue(undefined),
+    invalidateScope: vi.fn()
   } as unknown as CacheService
-  const sources = { invalidate: vi.fn() } as unknown as SourcesService
-  const controller = new CacheController(cache, sources)
+  const controller = new CacheController(cache)
 
   beforeEach(() => {
     vi.mocked(cache.invalidateCatalog).mockClear()
     vi.mocked(cache.invalidatePatterns).mockClear()
-    vi.mocked(sources.invalidate).mockClear()
+    vi.mocked(cache.invalidateScope).mockClear()
   })
 
   it('relit la config des sources sans toucher au cache catalogue', async () => {
@@ -22,7 +21,7 @@ describe('CacheController', () => {
       success: true,
       purged: true
     })
-    expect(sources.invalidate).toHaveBeenCalledOnce()
+    expect(cache.invalidateScope).toHaveBeenCalledOnce()
     expect(cache.invalidateCatalog).not.toHaveBeenCalled()
     expect(cache.invalidatePatterns).not.toHaveBeenCalled()
   })

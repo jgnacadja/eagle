@@ -92,6 +92,20 @@ describe('sanitizeJustification', () => {
     expect(sanitizeJustification('').text).toBe('')
   })
 
+  it('drops a justification corrupted by a leaked identifier or template variable', () => {
+    for (const corrupted of [
+      'Cette formation S.S.T semble adaptée si vous souhaitez_uidocation aux questions de santé.',
+      'Elle semble adaptée à votre besoin en ${location}.',
+      'Elle semble adaptée à votre besoin {{ville}}.',
+      'Elle semble adaptée à votreSanté au travail.'
+    ]) {
+      expect(sanitizeJustification(corrupted)).toEqual({
+        text: '',
+        issues: ['corrupted-justification']
+      })
+    }
+  })
+
   it('softens future-tense promises even next to a conditional marker', () => {
     expect(
       sanitizeJustification('Cette formation semble adaptée, et vous obtiendrez la certification.')
@@ -134,6 +148,19 @@ describe('applyWordingGuardrails', () => {
     expect(recommendations[0].justification).toBe(FALLBACK_JUSTIFICATION)
     expect(recommendations[1].justification).toBe('Semble utile en complément.')
     expect(issues).toEqual(['missing-justification'])
+  })
+
+  it('replaces a corrupted justification with the fallback wording', () => {
+    const { recommendations, issues } = applyWordingGuardrails([
+      recommendation(
+        'a',
+        'Cette formation S.S.T semble adaptée si vous souhaitez_uidocation aux questions de santé.',
+        'primary'
+      )
+    ])
+
+    expect(recommendations[0].justification).toBe(FALLBACK_JUSTIFICATION)
+    expect(issues).toEqual(['corrupted-justification'])
   })
 
   it('always promotes the first kept recommendation to primary', () => {

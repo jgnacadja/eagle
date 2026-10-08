@@ -32,6 +32,7 @@ const baseFormation: DirectusFormation = {
   category_name: 'Management',
   center_slug: null,
   center_slugs: [],
+  centres: null,
   modalities: [],
   sessions: null,
   locations_text: null,
@@ -1220,6 +1221,29 @@ describe('list filters and field normalization', () => {
 
     const paris = await service.list({ center: 'paris', page: 1, limit: 20 } as ListCoursesDto)
     expect(paris.items).toHaveLength(0)
+  })
+
+  it('filters by center on the M2M centres selection, which wins over center_slugs', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      {
+        ...baseFormation,
+        center_slugs: ['creteil'],
+        centres: [{ centre: { slug: 'lyon' } }, { centre: { slug: 'paris' } }]
+      },
+      // M2M vide → repli sur la liste legacy `center_slugs`.
+      { ...secondFormation, center_slugs: ['creteil'], centres: [] }
+    ] as unknown as DirectusFormation[])
+
+    const lyon = await service.list({ center: 'lyon', page: 1, limit: 20 } as ListCoursesDto)
+    expect(lyon.items.map((i) => i.slug)).toEqual(['pilotage-de-projet'])
+
+    const paris = await service.list({ center: 'paris', page: 1, limit: 20 } as ListCoursesDto)
+    expect(paris.items.map((i) => i.slug)).toEqual(['pilotage-de-projet'])
+
+    // La sélection éditoriale remplace la liste legacy : 'creteil' ne matche
+    // plus la formation une fois le M2M renseigné.
+    const creteil = await service.list({ center: 'creteil', page: 1, limit: 20 } as ListCoursesDto)
+    expect(creteil.items.map((i) => i.slug)).toEqual(['securite'])
   })
 
   it('filters by certifying flag', async () => {

@@ -187,14 +187,23 @@ export class DirectusCatalogService {
    * L'affectation famille n'est jamais écrite : elle reste éditoriale.
    */
   async upsertMany(
-    courses: FormationDirectusPayload[]
+    courses: FormationDirectusPayload[],
+    sourceId?: string
   ): Promise<{ inserted: number; updated: number }> {
     if (courses.length === 0 || !this.enabled) {
       return { inserted: 0, updated: 0 }
     }
 
-    const existing = await this.fetchExisting(courses.map((c) => c.digiforma_id))
+    // Clé d'upsert composite (source, digiforma_id) : deux comptes Digiforma
+    // peuvent partager un même id sans se marcher dessus. Sans `sourceId`
+    // (config mono-source issue de l'env), la colonne `source` retombe sur la
+    // HQ via son défaut en base.
+    const existing = await this.fetchExisting(
+      courses.map((c) => c.digiforma_id),
+      sourceId
+    )
     const batch = this.buildBatch(courses, existing)
+    if (sourceId) batch.create = batch.create.map((course) => ({ ...course, source: sourceId }))
 
     const [created] = await Promise.all([
       this.createMany(batch.create),
@@ -482,7 +491,10 @@ export class DirectusCatalogService {
     return map
   }
 
-  private async fetchExisting(digiformaIds: string[]): Promise<Map<string, ExistingFormation>> {
+  private async fetchExisting(
+    digiformaIds: string[],
+    sourceId?: string
+  ): Promise<Map<string, ExistingFormation>> {
     const map = new Map<string, ExistingFormation>()
 
     for (let i = 0; i < digiformaIds.length; i += 100) {
@@ -496,6 +508,7 @@ export class DirectusCatalogService {
       url.searchParams.append('fields[]', 'image.id')
       url.searchParams.append('fields[]', 'image.description')
       url.searchParams.set('filter[digiforma_id][_in]', slice.join(','))
+      if (sourceId) url.searchParams.set('filter[source][_eq]', sourceId)
       url.searchParams.set('limit', '-1')
 
       const response = await this.request<{ data: ExistingFormation[] }>(url.toString())

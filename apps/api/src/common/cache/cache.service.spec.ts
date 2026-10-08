@@ -352,6 +352,41 @@ describe('CacheService', () => {
     await expect(service.getSyncRun()).resolves.toEqual(run)
   })
 
+  it('stores the run per source and keeps the overall latest', async () => {
+    const base = {
+      status: 'success' as const,
+      startedAt: '2025-01-01T00:00:00Z',
+      finishedAt: '2025-01-01T00:01:00Z',
+      inserted: 1,
+      updated: 0,
+      failed: 0,
+      error: null
+    }
+    const hq = { ...base, source: 'hq' }
+    const lyon = { ...base, source: 'lyon', inserted: 5 }
+
+    await service.setSyncRun(hq, 'hq')
+    await service.setSyncRun(lyon, 'lyon')
+
+    await expect(service.getSyncRun('hq')).resolves.toEqual(hq)
+    await expect(service.getSyncRun('lyon')).resolves.toEqual(lyon)
+    await expect(service.getSyncRun('nice')).resolves.toBeNull()
+    await expect(service.getSyncRun()).resolves.toEqual(lyon)
+  })
+
+  it('locks each source independently', async () => {
+    const other = await buildService()
+
+    await expect(service.acquireSyncLock('a', 60_000, 'hq')).resolves.toBe(true)
+    await expect(other.acquireSyncLock('b', 60_000, 'hq')).resolves.toBe(false)
+    await expect(other.acquireSyncLock('b', 60_000, 'lyon')).resolves.toBe(true)
+
+    await service.releaseSyncLock('a', 'hq')
+    await expect(other.acquireSyncLock('b', 60_000, 'hq')).resolves.toBe(true)
+    await other.releaseSyncLock('b', 'lyon')
+    await other.onModuleDestroy()
+  })
+
   it('returns null when the sync run store is unreadable', async () => {
     const redis = Reflect.get(service, 'client') as { get: ReturnType<typeof vi.fn> }
     redis.get = vi.fn().mockRejectedValue(new Error('redis down'))

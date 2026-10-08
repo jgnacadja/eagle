@@ -23,6 +23,10 @@ export interface SyncRun {
   updated: number
   failed: number
   error: string | null
+  /** Code de la source synchronisée (absent des runs antérieurs au multi-sources). */
+  source?: string
+  /** Formations dépubliées par la désactivation d'une source (cycle de vie). */
+  archived?: number
 }
 
 @Injectable()
@@ -211,21 +215,27 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async setSyncRun(run: SyncRun): Promise<void> {
+  // `sync:last_run` garde le dernier run toutes sources confondues (statut
+  // historique) ; `sync:last_run:{code}` le dernier run de chaque source.
+  async setSyncRun(run: SyncRun, sourceCode?: string): Promise<void> {
     if (!this.client || !this.isReady) return
 
     try {
-      await this.client.setex('sync:last_run', 86_400, JSON.stringify(run))
+      const payload = JSON.stringify(run)
+      await this.client.setex('sync:last_run', 86_400, payload)
+      if (sourceCode) await this.client.setex(`sync:last_run:${sourceCode}`, 86_400, payload)
     } catch (error) {
       this.logger.warn({ error, run }, 'Failed to set sync run status')
     }
   }
 
-  async getSyncRun(): Promise<SyncRun | null> {
+  async getSyncRun(sourceCode?: string): Promise<SyncRun | null> {
     if (!this.client || !this.isReady) return null
 
     try {
-      const value = await this.client.get('sync:last_run')
+      const value = await this.client.get(
+        sourceCode ? `sync:last_run:${sourceCode}` : 'sync:last_run'
+      )
       if (!value) return null
       return JSON.parse(value) as SyncRun
     } catch (error) {
@@ -239,11 +249,14 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   // Fail-open quand Redis est absent ou en erreur : le run est idempotent,
   // un doublon coûte moins qu'une sync manquée ; le flag `running` du
   // service conserve l'exclusion au sein du process.
-  async acquireSyncLock(token: string, ttlMs: number): Promise<boolean> {
+  // Un verrou par source (`sync:lock:{code}`) : deux sources se
+  // synchronisent en parallèle sur des instances différentes, jamais deux
+  // fois la même.
+  async acquireSyncLock(token: string, ttlMs: number, sourceCode = 'default'): Promise<boolean> {
     if (!this.client || !this.isReady) return true
 
     try {
-      const result = await this.client.set('sync:lock', token, 'PX', ttlMs, 'NX')
+      const result = await this.client.set(`sync:lock:${sourceCode}`, token, 'PX', ttlMs, 'NX')
       return result === 'OK'
     } catch (error) {
       this.logger.warn({ error }, 'Failed to acquire sync lock — proceeding without it')
@@ -253,14 +266,14 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
 
   // Compare-and-delete : le token évite de libérer le verrou posé par une
   // autre instance si le nôtre a déjà expiré (TTL dépassé pendant le run).
-  async releaseSyncLock(token: string): Promise<void> {
+  async releaseSyncLock(token: string, sourceCode = 'default'): Promise<void> {
     if (!this.client || !this.isReady) return
 
     try {
       await this.client.eval(
         'if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end',
         1,
-        'sync:lock',
+        `sync:lock:${sourceCode}`,
         token
       )
     } catch (error) {

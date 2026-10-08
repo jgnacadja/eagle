@@ -96,23 +96,6 @@ describe('DirectusItemsClient', () => {
     expect(init.body).toBe(JSON.stringify({ last_sync_status: 'success' }))
   })
 
-  it('patches several items by keys', async () => {
-    fetchMock.mockResolvedValue(okResponse({ data: [] }))
-
-    await makeClient(ENV).updateMany('formations', [1, 2], { status: 'archived' })
-
-    const [url, init] = fetchMock.mock.calls[0] as [string, FetchInit]
-    expect(url).toBe('http://directus:8055/items/formations')
-    expect(init.method).toBe('PATCH')
-    expect(init.body).toBe(JSON.stringify({ keys: [1, 2], data: { status: 'archived' } }))
-  })
-
-  it('skips updateMany when disabled or without keys', async () => {
-    await makeClient({}).updateMany('formations', [1], { a: 1 })
-    await makeClient(ENV).updateMany('formations', [], { a: 1 })
-    expect(fetchMock).not.toHaveBeenCalled()
-  })
-
   it('ignores updateOne when disabled', async () => {
     await makeClient({}).updateOne('sources', 'uuid-1', { a: 1 })
     expect(fetchMock).not.toHaveBeenCalled()

@@ -235,9 +235,10 @@ export class DirectusCatalogService {
 
   /**
    * Réactivation d'une source : republie uniquement les formations
-   * `archived_by_source=true` que Digiforma renvoie encore, puis remet le
-   * drapeau à false. Une formation archivée à la main (drapeau false) n'est
-   * jamais republiée. Renvoie le nombre de formations republiées.
+   * `archived_by_source=true` et toujours `archived` que Digiforma renvoie
+   * encore, puis remet le drapeau à false. Une formation dont un éditeur a
+   * changé le statut n'est jamais republiée. Renvoie le nombre de formations
+   * republiées.
    */
   async republishArchivedBySource(
     sourceId: string,
@@ -245,7 +246,10 @@ export class DirectusCatalogService {
   ): Promise<number> {
     if (!this.enabled) return 0
     const wanted = new Set(digiformaIds)
-    const rows = await this.fetchFormationKeys(sourceId, { archived_by_source: true })
+    const rows = await this.fetchFormationKeys(sourceId, {
+      archived_by_source: true,
+      status: 'archived'
+    })
     const ids = rows.filter((row) => wanted.has(row.digiforma_id)).map((row) => row.id)
     await this.patchFormations(ids, { status: 'published', archived_by_source: false })
     return ids.length

@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { CacheController } from './cache.controller'
 import type { SourcesService } from '../../sources/sources.service'
-import type { SourcesService } from '../../sources/sources.service'
 import type { CacheService } from './cache.service'
 
 describe('CacheController', () => {

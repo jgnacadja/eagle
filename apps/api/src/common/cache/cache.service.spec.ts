@@ -356,7 +356,7 @@ describe('CacheService', () => {
     await expect(service.getSyncRun()).resolves.toEqual(run)
   })
 
-  it('stores the run per source without touching the overall latest', async () => {
+  it('stores the run per source and keeps the overall latest', async () => {
     const base = {
       status: 'success' as const,
       startedAt: '2025-01-01T00:00:00Z',
@@ -375,14 +375,7 @@ describe('CacheService', () => {
     await expect(service.getSyncRun('hq')).resolves.toEqual(hq)
     await expect(service.getSyncRun('lyon')).resolves.toEqual(lyon)
     await expect(service.getSyncRun('nice')).resolves.toBeNull()
-    // Le dernier run global est écrit par l'appelant (statut agrégé) : un run
-    // de source ne l'écrase pas, sinon l'échec d'une source serait masqué.
-    await expect(service.getSyncRun()).resolves.toBeNull()
-
-    const overall = { ...base, status: 'failed' as const, error: 'lyon: boom' }
-    await service.setSyncRun(overall)
-    await expect(service.getSyncRun()).resolves.toEqual(overall)
-    await expect(service.getSyncRun('lyon')).resolves.toEqual(lyon)
+    await expect(service.getSyncRun()).resolves.toEqual(lyon)
   })
 
   it('locks each source independently', async () => {

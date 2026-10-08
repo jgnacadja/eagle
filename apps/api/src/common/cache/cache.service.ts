@@ -40,8 +40,6 @@ export interface SyncRun {
   source?: string
   /** Formations dépubliées par la désactivation d'une source (cycle de vie). */
   archived?: number
-  /** Formations republiées à la réactivation d'une source. */
-  republished?: number
 }
 
 @Injectable()
@@ -260,16 +258,15 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  // `sync:last_run:{code}` garde le dernier run de chaque source ;
-  // `sync:last_run` (sans code) le dernier run global, que l'appelant agrège
-  // lui-même : un run de source ne l'écrase pas, sinon l'échec d'une source
-  // serait masqué par la réussite de la suivante.
+  // `sync:last_run` garde le dernier run toutes sources confondues (statut
+  // historique) ; `sync:last_run:{code}` le dernier run de chaque source.
   async setSyncRun(run: SyncRun, sourceCode?: string): Promise<void> {
     if (!this.client || !this.isReady) return
 
     try {
-      const key = sourceCode ? `sync:last_run:${sourceCode}` : 'sync:last_run'
-      await this.client.setex(key, 86_400, JSON.stringify(run))
+      const payload = JSON.stringify(run)
+      await this.client.setex('sync:last_run', 86_400, payload)
+      if (sourceCode) await this.client.setex(`sync:last_run:${sourceCode}`, 86_400, payload)
     } catch (error) {
       this.logger.warn({ error, run }, 'Failed to set sync run status')
     }

@@ -1,6 +1,8 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
+import { createHash } from 'node:crypto'
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit, Optional } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import Redis, { RedisOptions } from 'ioredis'
+import { SourcesService } from '../../sources/sources.service'
 
 // retryStrategy borné : une coupure Redis transitoire (restart container,
 // réseau) ne doit pas désactiver le cache jusqu'au prochain restart de
@@ -27,6 +29,8 @@ export interface SyncRun {
   source?: string
   /** Formations dépubliées par la désactivation d'une source (cycle de vie). */
   archived?: number
+  /** Formations republiées à la réactivation d'une source. */
+  republished?: number
 }
 
 @Injectable()
@@ -44,7 +48,10 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private connectionErrorLogged = false
   private readonly catalogListeners = new Set<() => void>()
 
-  constructor(config: ConfigService) {
+  constructor(
+    config: ConfigService,
+    @Optional() private readonly sources?: SourcesService
+  ) {
     const url = config.get<string>('REDIS_URL')
     if (!url) {
       this.logger.warn('REDIS_URL missing: cache disabled')
@@ -119,6 +126,22 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       await this.deleteByPattern(await this.versionedKey(pattern))
     } catch (error) {
       this.logger.warn({ error, pattern }, 'Failed to delete cached values')
+    }
+  }
+
+  /**
+   * Version propre à une source (`catalog:ver:{code}`) : incrémentée à chaque
+   * sync réussi, désactivation et réactivation. Le hash des versions des
+   * sources actives entre dans toutes les clés catalogue : activer ou
+   * désactiver une source change la portée du cache sur toutes les instances,
+   * sans attendre le TTL.
+   */
+  async bumpSourceVersion(sourceCode: string): Promise<void> {
+    if (!this.client || !this.isReady) return
+    try {
+      await this.client.incr(`catalog:ver:${sourceCode}`)
+    } catch (error) {
+      this.logger.warn({ error, source: sourceCode }, 'Failed to bump the source cache version')
     }
   }
 
@@ -294,7 +317,26 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     const raw = await this.client!.get(this.versionKey)
     const version = Number.parseInt(raw ?? '0', 10) || 0
     this.currentVersion = version
-    return `catalog:v${version}:${path}`
+    return `catalog:v${version}:${await this.sourcesScope()}${path}`
+  }
+
+  // Portée « sources actives » des clés : hash de leurs versions. Vide sans
+  // service de sources ou en cas d'erreur — le cache retombe alors sur la
+  // seule version globale (jamais d'échec de lecture pour autant).
+  private async sourcesScope(): Promise<string> {
+    if (!this.sources) return ''
+    try {
+      const codes = (await this.sources.listActive()).map((source) => source.code).sort()
+      const versions = await this.client!.mget(codes.map((code) => `catalog:ver:${code}`))
+      const digest = createHash('sha1')
+        .update(codes.map((code, i) => `${code}=${versions[i] ?? 0}`).join('|'))
+        .digest('hex')
+        .slice(0, 8)
+      return `s${digest}:`
+    } catch (error) {
+      this.logger.warn({ error }, 'Failed to compute the sources cache scope')
+      return ''
+    }
   }
 
   private async initializeClient(): Promise<void> {

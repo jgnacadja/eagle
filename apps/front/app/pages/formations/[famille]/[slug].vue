@@ -1002,7 +1002,7 @@ const demandeTo = computed(() => demandeUrl())
 // parte dans le HubSpot de la franchise qui la dispense.
 const advisorTo = computed(() => ({
   path: '/parler-a-votre-conseiller',
-  query: { formationId: String(course.value!.id) }
+  query: course.value ? { formationId: String(course.value.id) } : {}
 }))
 
 // La carte intra n'est proposée que si la formation déclare la modalité.

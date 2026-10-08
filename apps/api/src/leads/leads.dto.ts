@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { ApiProperty, ApiPropertyOptional, IntersectionType } from '@nestjs/swagger'
 import { Transform, Type } from 'class-transformer'
 import {
   Equals,
@@ -47,6 +47,39 @@ class LeadContextDto {
   hutk?: string
 }
 
+// Un identifiant de rattachement n'est qu'une indication de routage : mal
+// formé (« abc », 0, 1.5…), il est ignoré et le lead part sur la HQ, au lieu
+// de faire rejeter — donc perdre — la soumission.
+const toRoutingId = ({ value }: { value: unknown }): number | undefined => {
+  const id = typeof value === 'string' && /^\d+$/.test(value.trim()) ? Number(value) : value
+  return typeof id === 'number' && Number.isSafeInteger(id) && id > 0 ? id : undefined
+}
+
+// Rattachement du lead à une formation / un centre : détermine le portail
+// HubSpot de leur source (`HubspotTargetResolver`). Composé par
+// `IntersectionType` dans les formulaires routés (demande, conseiller, rappel).
+class LeadRoutingDto {
+  @ApiPropertyOptional({
+    description: 'Directus id of the formation the lead is about (ignored when invalid)',
+    minimum: 1
+  })
+  @IsOptional()
+  @Transform(toRoutingId)
+  @IsInt()
+  @Min(1)
+  formationId?: number
+
+  @ApiPropertyOptional({
+    description: 'Directus id of the centre the lead is about (ignored when invalid)',
+    minimum: 1
+  })
+  @IsOptional()
+  @Transform(toRoutingId)
+  @IsInt()
+  @Min(1)
+  centreId?: number
+}
+
 export class NewsletterLeadDto extends LeadContextDto {
   @ApiProperty({ description: 'Professional email' })
   @IsEmail()
@@ -77,24 +110,7 @@ class LeadContactDto extends LeadContextDto {
   telephone!: string
 }
 
-export class DemandeLeadDto extends LeadContactDto {
-  @ApiPropertyOptional({
-    description: 'Directus id of the formation the lead is about',
-    minimum: 1
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  formationId?: number
-
-  @ApiPropertyOptional({ description: 'Directus id of the centre the lead is about', minimum: 1 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  centreId?: number
-
+export class DemandeLeadDto extends IntersectionType(LeadContactDto, LeadRoutingDto) {
   @ApiPropertyOptional({ description: 'Professional phone — at least 10 digits' })
   @IsOptional()
   @Matches(PHONE_PATTERN, {
@@ -202,24 +218,7 @@ export class CandidatureLeadDto extends LeadContactDto {
   consentement!: boolean
 }
 
-export class ConseillerLeadDto extends LeadContactDto {
-  @ApiPropertyOptional({
-    description: 'Directus id of the formation the lead is about',
-    minimum: 1
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  formationId?: number
-
-  @ApiPropertyOptional({ description: 'Directus id of the centre the lead is about', minimum: 1 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  centreId?: number
-
+export class ConseillerLeadDto extends IntersectionType(LeadContactDto, LeadRoutingDto) {
   @ApiProperty({ description: 'Nature of the need', enum: BESOINS })
   @IsIn(BESOINS)
   besoin!: (typeof BESOINS)[number]
@@ -245,24 +244,7 @@ export class ConseillerLeadDto extends LeadContactDto {
   consentement!: boolean
 }
 
-export class RappelLeadDto extends LeadContextDto {
-  @ApiPropertyOptional({
-    description: 'Directus id of the formation the lead is about',
-    minimum: 1
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  formationId?: number
-
-  @ApiPropertyOptional({ description: 'Directus id of the centre the lead is about', minimum: 1 })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  centreId?: number
-
+export class RappelLeadDto extends IntersectionType(LeadContextDto, LeadRoutingDto) {
   @ApiProperty({ description: 'Phone number — at least 10 digits' })
   @IsString()
   @IsNotEmpty()

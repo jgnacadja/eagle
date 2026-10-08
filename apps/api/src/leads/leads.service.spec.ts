@@ -463,3 +463,174 @@ describe('LeadsService — routage par portail', () => {
     expect(logged.join(' ')).not.toContain('jean@acme.fr')
   })
 })
+
+describe('LeadsService — repli HQ sur refus du portail franchise', () => {
+  const franchise: HubspotTarget = {
+    portalId: 'portal-lyon',
+    formGuid: 'guid-lyon-demande',
+    token: 'pat-lyon',
+    isHq: false,
+    sourceCode: 'lyon'
+  }
+  const hq: HubspotTarget = {
+    portalId: 'portal-hq',
+    formGuid: 'guid-hq-demande',
+    token: null,
+    isHq: true,
+    sourceCode: 'hq'
+  }
+
+  function serviceWith(first: HubspotTarget, fallback: HubspotTarget = hq) {
+    const resolver = {
+      resolve: vi.fn().mockResolvedValueOnce(first).mockResolvedValue(fallback)
+    }
+    const service = new LeadsService(mockConfig(), resolver as unknown as HubspotTargetResolver)
+    return { service, resolver }
+  }
+
+  const urlOf = (call: unknown[]) => call[0] as string
+
+  beforeEach(() => {
+    fetchMock.mockReset().mockResolvedValue({ ok: true, status: 200 })
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it.each([400, 401, 403, 404])(
+    'rejoue la soumission sur la HQ quand le portail franchise répond %i',
+    async (status) => {
+      fetchMock.mockResolvedValueOnce({ ok: false, status })
+      const warn = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
+      const { service, resolver } = serviceWith(franchise)
+
+      await expect(service.submitDemande({ ...demande, formationId: 12 })).resolves.toEqual({
+        submitted: true
+      })
+
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+      expect(urlOf(fetchMock.mock.calls[0])).toContain(
+        '/secure/submit/portal-lyon/guid-lyon-demande'
+      )
+      expect(urlOf(fetchMock.mock.calls[1])).toBe(
+        'https://api-eu1.hsforms.com/submissions/v3/integration/submit/portal-hq/guid-hq-demande'
+      )
+      // La HQ est résolue sans rattachement : jamais de nouvelle lecture Directus.
+      expect(resolver.resolve).toHaveBeenNthCalledWith(2, 'demande')
+      expect(warn).toHaveBeenCalledWith(
+        { leadType: 'demande', sourceCode: 'lyon', status },
+        expect.stringContaining('resubmitting to the HQ portal')
+      )
+    }
+  )
+
+  it('joint à la soumission HQ le contexte de page complet (pageUri, hutk)', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 401 })
+    vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
+    const { service } = serviceWith(franchise)
+
+    await service.submitDemande({ ...demande, hutk: 'cookie-123' })
+
+    const first = JSON.parse((fetchMock.mock.calls[0][1] as { body: string }).body)
+    const second = JSON.parse((fetchMock.mock.calls[1][1] as { body: string }).body)
+    expect(first.context).toEqual({ pageName: demande.pageName })
+    expect(second.context).toEqual({
+      pageUri: demande.pageUri,
+      pageName: demande.pageName,
+      hutk: 'cookie-123'
+    })
+  })
+
+  it.each([408, 429, 500, 502, 503])(
+    'ne change pas de portail sur une panne passagère (%i) : 503 sans rejeu',
+    async (status) => {
+      fetchMock.mockResolvedValue({ ok: false, status })
+      const { service, resolver } = serviceWith(franchise)
+
+      await expect(service.submitDemande(demande)).rejects.toBeInstanceOf(
+        ServiceUnavailableException
+      )
+
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+      expect(resolver.resolve).toHaveBeenCalledTimes(1)
+    }
+  )
+
+  it('ne change pas de portail sur une erreur réseau', async () => {
+    fetchMock.mockRejectedValue(new Error('socket hang up'))
+    vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined)
+    const { service } = serviceWith(franchise)
+
+    await expect(service.submitDemande(demande)).rejects.toBeInstanceOf(ServiceUnavailableException)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('lève 503 quand la HQ refuse à son tour, après un seul rejeu', async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 401 })
+    vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
+    vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined)
+    const { service } = serviceWith(franchise)
+
+    await expect(service.submitDemande(demande)).rejects.toBeInstanceOf(ServiceUnavailableException)
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('lève 503 quand la HQ n’est pas configurée pour le rejeu', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 404 })
+    vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
+    vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined)
+    const { service } = serviceWith(franchise, { ...hq, formGuid: null })
+
+    await expect(service.submitDemande(demande)).rejects.toBeInstanceOf(ServiceUnavailableException)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('ne rejoue pas un refus de la HQ : il n’y a pas de portail de repli', async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 401 })
+    vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined)
+    const { service, resolver } = serviceWith(hq)
+
+    await expect(service.submitDemande(demande)).rejects.toBeInstanceOf(ServiceUnavailableException)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(resolver.resolve).toHaveBeenCalledTimes(1)
+  })
+
+  it('ne logge ni jeton ni donnée personnelle lors du rejeu', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 401 })
+    const logged: string[] = []
+    const capture = (...args: unknown[]) => void logged.push(JSON.stringify(args))
+    vi.spyOn(Logger.prototype, 'warn').mockImplementation(capture)
+    vi.spyOn(Logger.prototype, 'error').mockImplementation(capture)
+    const { service } = serviceWith(franchise)
+
+    await service.submitDemande({ ...demande, hutk: 'cookie-123' })
+
+    expect(logged.length).toBeGreaterThan(0)
+    for (const secret of ['pat-lyon', 'jean@acme.fr', 'cookie-123']) {
+      expect(logged.join(' ')).not.toContain(secret)
+    }
+  })
+
+  it('n’envoie pas pageUri à un portail franchise, mais garde pageName', async () => {
+    const { service } = serviceWith(franchise)
+
+    await service.submitDemande({ ...demande, hutk: 'cookie-123' })
+
+    const body = JSON.parse((fetchMock.mock.calls[0][1] as { body: string }).body)
+    expect(body.context).toEqual({ pageName: demande.pageName })
+  })
+
+  it('n’ajoute aucun contexte à un portail franchise quand seul pageUri est fourni', async () => {
+    const { service } = serviceWith(franchise)
+
+    await service.submitDemande({ ...demande, pageName: undefined })
+
+    const body = JSON.parse((fetchMock.mock.calls[0][1] as { body: string }).body)
+    expect(body.context).toBeUndefined()
+  })
+})

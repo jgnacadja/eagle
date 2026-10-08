@@ -328,7 +328,10 @@ const defaultUseAsyncData = async (
 vi.stubGlobal('useAsyncData', defaultUseAsyncData)
 
 const stubs = {
-  NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
+  NuxtLink: {
+    props: ['to'],
+    template: '<a :href="typeof to === \'string\' ? to : JSON.stringify(to)"><slot /></a>'
+  },
   Button: { template: '<button><slot /></button>' },
   Badge: { template: '<span><slot /></span>' },
   Card: { template: '<div><slot /></div>' },
@@ -415,6 +418,19 @@ describe('pages/formations/[famille]/[slug]', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  it('joint l’id de la formation aux liens « Parler à votre conseiller » (routage HubSpot)', async () => {
+    const wrapper = await mountPage()
+
+    const links = wrapper.findAll('a').filter((a) => a.text().includes('Parler à votre conseiller'))
+    expect(links.length).toBeGreaterThan(0)
+    for (const link of links) {
+      expect(JSON.parse(link.attributes('href')!)).toEqual({
+        path: '/parler-a-votre-conseiller',
+        query: { formationId: String(course.id) }
+      })
+    }
   })
 
   it('affiche la fiche formation', async () => {

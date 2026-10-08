@@ -106,6 +106,46 @@ describe('pages/parler-a-votre-conseiller', () => {
     expect(wrapper.text()).toContain('politique de confidentialité')
   })
 
+  describe('rattachement à la source (routage HubSpot)', () => {
+    const lastPayload = (form: string) =>
+      leadSubmitMock.mock.calls.filter(([endpoint]) => endpoint === form).at(-1)?.[1] as Record<
+        string,
+        unknown
+      >
+
+    it('joint formationId et centreId lus dans la query au conseiller', async () => {
+      routeStub.query = { formationId: '12', centreId: '3' }
+      const wrapper = await mountPage()
+      await fillValidForm(wrapper)
+
+      await wrapper.find('form').trigger('submit.prevent')
+      await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+      expect(lastPayload('conseiller')).toMatchObject({ formationId: 12, centreId: 3 })
+    })
+
+    it('n’envoie aucun id hors contexte ou avec une query invalide', async () => {
+      routeStub.query = { formationId: 'abc', centreId: '-1' }
+      const wrapper = await mountPage()
+      await fillValidForm(wrapper)
+
+      await wrapper.find('form').trigger('submit.prevent')
+      await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+      expect(lastPayload('conseiller')).not.toHaveProperty('formationId')
+      expect(lastPayload('conseiller')).not.toHaveProperty('centreId')
+    })
+
+    it('transmet le contexte au rappel rapide', async () => {
+      routeStub.query = { centreId: '3' }
+      const wrapper = await mountPage()
+
+      const card = wrapper.findComponent(QuickCallbackCard)
+      expect(card.props()).toMatchObject({ centreId: 3 })
+      expect(card.props('formationId')).toBeUndefined()
+    })
+  })
+
   it('affiche les quatre natures de besoin, sans terme « franchise »', async () => {
     const wrapper = await mountPage()
 

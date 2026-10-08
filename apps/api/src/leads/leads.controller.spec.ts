@@ -247,4 +247,47 @@ describe('LeadsController', () => {
 
     expect(service.submitNewsletter).not.toHaveBeenCalled()
   })
+
+  it('POST /leads/demande accepte formationId et centreId (entiers, chaînes numériques)', async () => {
+    await request(app.getHttpServer())
+      .post('/leads/demande')
+      .send({ ...validDemande, formationId: '12', centreId: 3, hutk: 'abc' })
+      .expect(201)
+
+    expect(service.submitDemande).toHaveBeenCalledWith(
+      expect.objectContaining({ formationId: 12, centreId: 3, hutk: 'abc' })
+    )
+  })
+
+  it('POST /leads/demande rejette un identifiant de rattachement invalide', async () => {
+    for (const bad of [{ formationId: 'abc' }, { centreId: 0 }, { formationId: 1.5 }]) {
+      await request(app.getHttpServer())
+        .post('/leads/demande')
+        .send({ ...validDemande, ...bad })
+        .expect(400)
+    }
+    expect(service.submitDemande).not.toHaveBeenCalled()
+  })
+
+  it('POST /leads/conseiller et /leads/rappel acceptent le rattachement', async () => {
+    await request(app.getHttpServer())
+      .post('/leads/conseiller')
+      .send({ ...validConseiller, centreId: 5 })
+      .expect(201)
+    await request(app.getHttpServer())
+      .post('/leads/rappel')
+      .send({ telephone: '0612345678', consentement: true, formationId: 7 })
+      .expect(201)
+
+    expect(service.submitConseiller).toHaveBeenCalledWith(expect.objectContaining({ centreId: 5 }))
+    expect(service.submitRappel).toHaveBeenCalledWith(expect.objectContaining({ formationId: 7 }))
+  })
+
+  it('POST /leads/newsletter rejette un rattachement (hors périmètre du formulaire)', async () => {
+    await request(app.getHttpServer())
+      .post('/leads/newsletter')
+      .send({ email: 'abonne@site.fr', formationId: 1 })
+      .expect(400)
+    expect(service.submitNewsletter).not.toHaveBeenCalled()
+  })
 })

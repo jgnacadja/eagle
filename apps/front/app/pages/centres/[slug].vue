@@ -126,7 +126,9 @@
                     <li class="flex gap-sm">
                       <IconMapPin :size="20" class="shrink-0 text-primary" />
                       <span class="text-ink-body">
-                        {{ streetAddress }}<br />{{ centre.postal_code }} {{ centre.city
+                        <!-- Rue masquée pour le moment (demande métier) :
+                             `streetAddress` reste utilisé par `mapAddress`. -->
+                        {{ centre.postal_code }} {{ centre.city
                         }}<template v-if="centre.department"> · {{ centre.department }}</template
                         ><template v-if="centre.region"> · {{ centre.region }}</template>
                       </span>
@@ -699,10 +701,10 @@ if (requestEvent) {
   }
 }
 
+// Rue masquée pour le moment (demande métier) : le héro n'affiche que la
+// localité « CP, ville, région ». Réintroduire `streetAddress` pour rétablir.
 const heroAddress = computed(() =>
-  [streetAddress.value, centre.value!.postal_code, centre.value!.city, centre.value!.region]
-    .filter(Boolean)
-    .join(', ')
+  [centre.value!.postal_code, centre.value!.city, centre.value!.region].filter(Boolean).join(', ')
 )
 
 // Adresse de contact du centre : règle réseau « contact{dept}@learnup-academy.com »

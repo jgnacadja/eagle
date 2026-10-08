@@ -14,7 +14,8 @@
         center.cp
       }}</span>
     </div>
-    <p class="mt-xs text-small text-ink-muted">{{ center.address }}</p>
+    <!-- Adresse masquée pour le moment (demande métier) — décommenter pour rétablir. -->
+    <!-- <p class="mt-xs text-small text-ink-muted">{{ center.address }}</p> -->
     <p
       v-if="center.distanceKm != null"
       data-testid="center-distance"

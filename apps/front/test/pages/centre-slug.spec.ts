@@ -4,15 +4,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, ref, Suspense, watchEffect } from 'vue'
 import LoadError from '~/components/ErrorState/LoadError.vue'
 import NotFound from '~/components/ErrorState/NotFound.vue'
-// Stub local : reproduit le pied « adresse + itinéraire » du mode single
-// (contrat du composant) et expose des boutons pour émettre `select`.
+// Stub local : reproduit le pied « itinéraire » du mode single (contrat du
+// composant — l'adresse est masquée pour le moment) et expose des boutons
+// pour émettre `select`.
 const CenterMapStub = {
   name: 'CenterMap',
   props: ['centers', 'activeId', 'caption', 'mode'],
   emits: ['select'],
   template: `<div class="center-map">
     <template v-if="mode === 'single' && centers.length">
-      <span>{{ centers[0].address }}</span>
       <a v-if="centers[0].lat != null">Ouvrir l'itinéraire →</a>
     </template>
     <button class="select-vitry" @click="$emit('select', 'vitry')" />
@@ -398,7 +398,8 @@ describe('pages/centres/[slug]', () => {
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain('Centre LEARN UP ACADEMY de Créteil')
-    expect(wrapper.text()).toContain('14 rue des Refuzniks')
+    // Rue masquée pour le moment (demande métier) — la localité reste.
+    expect(wrapper.text()).not.toContain('14 rue des Refuzniks')
     expect(wrapper.text()).toContain('Île-de-France')
     expect(routeMock.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
@@ -510,10 +511,12 @@ describe('pages/centres/[slug]', () => {
     expect(wrapper.text()).toContain("valide jusqu'au 14 mars 2027")
   })
 
-  it('affiche l’adresse et le lien itinéraire dans le pied de la carte d’accès', async () => {
+  it('affiche le lien itinéraire dans le pied de la carte d’accès, sans la rue', async () => {
     const wrapper = await mountPage()
 
-    expect(wrapper.text()).toContain('14 rue des Refuzniks, 94000 Créteil')
+    // Rue masquée pour le moment (demande métier) : la localité reste visible.
+    expect(wrapper.text()).not.toContain('rue des Refuzniks')
+    expect(wrapper.text()).toContain('94000 Créteil')
     const link = wrapper.findAll('a').find((a) => a.text().includes("Ouvrir l'itinéraire"))
     expect(link).toBeTruthy()
   })
@@ -524,9 +527,9 @@ describe('pages/centres/[slug]', () => {
     ])
     const wrapper = await mountPage()
 
-    // Le pied de carte ne doit pas répéter « 94000 Créteil » en double.
-    expect(wrapper.text()).not.toContain('94000 Créteil, 94000')
-    expect(wrapper.text()).toContain('14 rue des Refuzniks, 94000 Créteil')
+    // Adresse transmise à la carte (masquée à l'affichage) sans doublon.
+    const map = wrapper.findComponent(CenterMapStub)
+    expect(map.props('centers')[0].address).toBe('14 rue des Refuzniks, 94000 Créteil')
   })
 
   it('déduplique la localité collée depuis Google Maps (« CP, ville, France »)', async () => {
@@ -535,9 +538,8 @@ describe('pages/centres/[slug]', () => {
     ])
     const wrapper = await mountPage()
 
-    expect(wrapper.text()).not.toContain('94000, Créteil, 94000')
-    expect(wrapper.text()).not.toContain('Créteil, France')
-    expect(wrapper.text()).toContain('14 rue des Refuzniks, 94000 Créteil')
+    const map = wrapper.findComponent(CenterMapStub)
+    expect(map.props('centers')[0].address).toBe('14 rue des Refuzniks, 94000 Créteil')
   })
 
   it('affiche la ville par défaut sur les cartes des autres centres', async () => {

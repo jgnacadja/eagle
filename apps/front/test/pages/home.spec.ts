@@ -145,6 +145,19 @@ const initialAvis = [
     stars: 5,
     quote: 'Toutes nos habilitations CACES renouvelées sans interruption de production.',
     centre: null
+  },
+  // Avis rattaché à un centre (synchro Google) : la home ne montre que les
+  // avis marque — cet item ne doit jamais être rendu.
+  {
+    id: 4,
+    status: 'published',
+    sort: null,
+    slug: 'avis-google-creteil',
+    author: 'Marie D.',
+    published_at: '2026-01-15T00:00:00.000Z',
+    stars: 5,
+    quote: 'Avis Google du centre de Créteil.',
+    centre: 7
   }
 ]
 
@@ -198,11 +211,23 @@ const directusArticles = ref<ArticleFixture[] | null>([...initialArticles])
 
 vi.stubGlobal(
   'useDirectusList',
-  vi.fn(async (_collection: string) => {
-    if (_collection === 'articles') return directusArticles
-    if (_collection === 'avis') return directusAvis
-    return directusCentres
-  })
+  vi.fn(
+    async (
+      _collection: string,
+      _key?: string,
+      query?: { filter?: { centre?: { _null?: boolean } } } | null
+    ) => {
+      if (_collection === 'articles') return directusArticles
+      if (_collection === 'avis') {
+        // Émule le filtre `centre._null` (avis marque) appliqué côté Directus.
+        if (query?.filter?.centre?._null) {
+          return ref((directusAvis.value ?? []).filter((a) => a.centre == null))
+        }
+        return directusAvis
+      }
+      return directusCentres
+    }
+  )
 )
 
 const stubs = {
@@ -288,7 +313,8 @@ describe('pages/index', () => {
     // La fixture contient 3 centres : l'affichage est plafonné à 2.
     expect(wrapper.findAll('.center-card')).toHaveLength(2)
     expect(wrapper.findAll('.stat')).toHaveLength(4)
-    // 3 avis dans la fixture → 3 TestimonialCard rendues.
+    // 3 avis marque dans la fixture → 3 TestimonialCard ; l'avis rattaché
+    // au centre 7 (synchro Google) est exclu par le filtre `centre._null`.
     const testimonials = wrapper.findAll('.testimonial')
     expect(testimonials).toHaveLength(3)
     // Vérification du contenu : mapAvis formate correctement author + quote.
@@ -525,6 +551,7 @@ describe('pages/index', () => {
             shortDescription: null,
             durationDays: null,
             durationHours: null,
+            durationBucket: 'courte',
             price: null,
             cpf: null,
             cpfCode: null,
@@ -702,6 +729,7 @@ describe('pages/index', () => {
       shortDescription: null,
       durationDays: null,
       durationHours: null,
+      durationBucket: 'courte' as const,
       price: null,
       cpf: null,
       cpfCode: null,

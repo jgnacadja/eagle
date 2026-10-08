@@ -31,4 +31,10 @@ describe('mapPlaceReview', () => {
     expect(mapped.slug).toBe('google-vitry-ChdDSUhNMG9n')
     expect(mapped.centre).toBe(8)
   })
+
+  it('centre null = avis marque (fiche Google LEARN UP)', () => {
+    const mapped = mapPlaceReview(null, review)
+    expect(mapped.slug).toBe('google-marque-ChdDSUhNMG9n')
+    expect(mapped.centre).toBeNull()
+  })
 })

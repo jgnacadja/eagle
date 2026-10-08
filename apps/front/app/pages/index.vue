@@ -901,11 +901,12 @@ const stats = [
   { value: '4,7', unit: '/5', label: 'satisfaction stagiaires' }
 ]
 
-// Avis publiés toutes implantations confondues (marque + centres), les plus
-// récents d'abord — la home ne filtre plus sur `centre`.
+// Avis marque uniquement (`centre` vide) — synchronisés depuis la fiche
+// Google LEARN UP ou saisis à la main ; les avis des centres restent sur
+// leurs fiches. Même filtre que la page /entreprise.
 const homeAvisData = await useDirectusList<Avis>('avis', 'home-avis', {
   fields: ['slug', 'author', 'quote', 'stars', 'published_at'],
-  filter: { status: { _eq: 'published' } },
+  filter: { status: { _eq: 'published' }, centre: { _null: true } },
   sort: ['-published_at'],
   limit: 3
 })

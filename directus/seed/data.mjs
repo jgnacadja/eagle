@@ -1061,7 +1061,7 @@ export const avis = [
     published_at: '2026-06-15T09:00:00+00:00',
     stars: 5,
     quote:
-      '« Organisation de la session CACES en moins de deux semaines pour nos 6 caristes. Convocations et attestations transmises dans les délais. »'
+      'Organisation de la session CACES en moins de deux semaines pour nos 6 caristes. Convocations et attestations transmises dans les délais.'
   },
   {
     slug: 'avis-habilitation-qhse',
@@ -1072,6 +1072,6 @@ export const avis = [
     published_at: '2026-04-20T09:00:00+00:00',
     stars: 4,
     quote:
-      '« Recyclages d’habilitation planifiés sur deux sites. Suivi des échéances par l’équipe LEARN UP. »'
+      'Recyclages d’habilitation planifiés sur deux sites. Suivi des échéances par l’équipe LEARN UP.'
   }
 ]

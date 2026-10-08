@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config'
 import { Test, TestingModule } from '@nestjs/testing'
 import { CacheService } from '../common/cache/cache.service'
 import { DirectusCatalogService } from '../directus/directus.catalog.service'
@@ -47,6 +48,7 @@ describe('ReviewsService', () => {
   let cache: CacheService
   let catalog: DirectusCatalogService
   let provider: ReviewsProvider
+  let brandPlaceId: string | undefined
 
   async function build(p: ReviewsProvider = provider) {
     const module: TestingModule = await Test.createTestingModule({
@@ -54,6 +56,12 @@ describe('ReviewsService', () => {
         ReviewsService,
         { provide: CacheService, useValue: cache },
         { provide: DirectusCatalogService, useValue: catalog },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: (key: string) => (key === 'GOOGLE_LEARNUP_PLACE_ID' ? brandPlaceId : undefined)
+          }
+        },
         { provide: REVIEWS_PROVIDER, useValue: p }
       ]
     }).compile()
@@ -61,6 +69,7 @@ describe('ReviewsService', () => {
   }
 
   beforeEach(async () => {
+    brandPlaceId = undefined
     cache = {
       setSyncRun: vi.fn(),
       getSyncRun: vi.fn(),
@@ -150,6 +159,48 @@ describe('ReviewsService', () => {
     })
     expect(cache.setSyncRun).toHaveBeenLastCalledWith(
       expect.objectContaining({ status: 'success', inserted: 1, updated: 0 }),
+      'sync:reviews:last_run'
+    )
+  })
+
+  it('syncs the brand listing (GOOGLE_LEARNUP_PLACE_ID) into avis marque', async () => {
+    brandPlaceId = 'ChIJ_marque'
+    await build()
+
+    await runAndWait(service, cache)
+
+    // Fiche marque en premier, puis le centre.
+    expect(provider.fetchPlaceReviews).toHaveBeenNthCalledWith(1, 'ChIJ_marque')
+    expect(provider.fetchPlaceReviews).toHaveBeenNthCalledWith(2, 'ChIJ_place')
+    expect(catalog.upsertGoogleAvis).toHaveBeenCalledWith([
+      expect.objectContaining({
+        slug: 'google-marque-rev-1',
+        source: 'google',
+        google_review_id: 'rev-1',
+        centre: null
+      })
+    ])
+    // L'agrégat reste un champ centre : rien à écrire pour la marque.
+    expect(catalog.updateCentreGoogleAggregate).toHaveBeenCalledTimes(1)
+    expect(cache.setSyncRun).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: 'success', inserted: 2, updated: 0 }),
+      'sync:reviews:last_run'
+    )
+  })
+
+  it('keeps going when the brand listing fetch fails', async () => {
+    brandPlaceId = 'ChIJ_marque'
+    await build()
+    vi.mocked(provider.fetchPlaceReviews).mockResolvedValueOnce(null).mockResolvedValue(snapshot)
+
+    await runAndWait(service, cache)
+
+    expect(catalog.updateCentreGoogleAggregate).toHaveBeenCalledWith(7, {
+      google_rating: 4.7,
+      google_reviews_count: 214
+    })
+    expect(cache.setSyncRun).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: 'success', failed: 1, inserted: 1 }),
       'sync:reviews:last_run'
     )
   })

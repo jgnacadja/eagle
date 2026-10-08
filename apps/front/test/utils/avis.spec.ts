@@ -11,7 +11,9 @@ const base: Avis = {
   quote: 'Une équipe très réactive.',
   author: 'Marie D.',
   published_at: '2026-01-15T10:00:00.000Z',
-  centre: null
+  centre: null,
+  source: null,
+  avatar: null
 }
 
 describe('mapAvis', () => {
@@ -20,6 +22,12 @@ describe('mapAvis', () => {
     expect(mapped.stars).toBe('★★★★☆')
     expect(mapped.quote).toBe('« Une équipe très réactive. »')
     expect(mapped.author).toMatch(/^Marie D\. · /)
+  })
+
+  it("retire les guillemets déjà présents avant d'encadrer la citation", () => {
+    expect(mapAvis({ ...base, quote: '« Une équipe très réactive. »' }).quote).toBe(
+      '« Une équipe très réactive. »'
+    )
   })
 
   it('retombe sur 0 étoile quand stars est absent', () => {

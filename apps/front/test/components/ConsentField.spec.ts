@@ -59,4 +59,18 @@ describe('components/ConsentField', () => {
     const wrapper = mountField({ labelClass: 'text-ink-inverse-muted' })
     expect(wrapper.find('label').classes()).toContain('text-ink-inverse-muted')
   })
+
+  it('variante sombre : contour clair du checkbox et erreur atténuée', () => {
+    const wrapper = mountField({ variant: 'dark', invalid: true, error: 'Requis.' })
+    const checkboxClasses = wrapper.find('[role="checkbox"]').classes()
+    expect(checkboxClasses).toContain('border-outline-inverse')
+    expect(checkboxClasses).toContain('aria-invalid:border-danger-inverse')
+    expect(wrapper.find('#consentement-error').classes()).toContain('text-danger-inverse')
+  })
+
+  it('variante par défaut : erreur en danger standard', () => {
+    const wrapper = mountField({ invalid: true, error: 'Requis.' })
+    expect(wrapper.find('[role="checkbox"]').classes()).toContain('aria-invalid:border-danger')
+    expect(wrapper.find('#consentement-error').classes()).toContain('text-danger')
+  })
 })

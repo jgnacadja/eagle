@@ -16,6 +16,7 @@ export type GuardrailIssue =
   | 'regulatory-promise'
   | 'too-long'
   | 'missing-justification'
+  | 'corrupted-justification'
   | 'duplicate-course'
   | 'too-many-alternatives'
 
@@ -29,6 +30,13 @@ const CONDITIONAL_MARKERS =
 // Fin de mot Unicode : `\b` ne connaît que l'ASCII et ne détecte donc pas la
 // frontière après une lettre accentuée (« conformité. », « adapté, »).
 const WORD_END = '(?![\\p{L}\\p{N}_])'
+
+// Fuite d'identifiant ou de variable de template dans le texte généré :
+// token snake_case interne (« souhaitez_uidocation »), interpolation
+// « ${lieu} » / « {{ lieu }} » ou mot collé en camelCase (« votreSanté »).
+// Aucune de ces formes n'existe en prose française : la phrase est
+// irrécupérable, le texte est vidé pour déclencher le repli.
+const CORRUPTED_TOKEN = /[\p{L}\p{N}]+(?:_[\p{L}\p{N}]+)+|\$\{[^}]*\}|\{\{[^}]*\}\}|\p{Ll}\p{Lu}/u
 
 // Formulations assertives (§14) → équivalent au conditionnel.
 const ASSERTIVE_REWRITES: Array<[RegExp, string]> = [
@@ -125,6 +133,12 @@ export function sanitizeJustification(text: string): { text: string; issues: Gua
   const issues: GuardrailIssue[] = []
   let result = text.trim()
 
+  // Chaîne corrompue (identifiant/variable collée au texte) : aucune
+  // reformulation n'est fiable, on force le texte de secours.
+  if (CORRUPTED_TOKEN.test(result)) {
+    return { text: '', issues: ['corrupted-justification'] }
+  }
+
   const softened = applyRewrites(result, REGULATORY_REWRITES)
   if (softened !== result) issues.push('regulatory-promise')
   result = softened
@@ -176,7 +190,9 @@ export function applyWordingGuardrails(recommendations: AssistantRecommendation[
     found.forEach((issue) => issues.add(issue))
     // Une recommandation sans explication ne sort jamais telle quelle (1 à 2
     // phrases attendues) : texte de secours conditionnel, écart signalé.
-    if (!text) issues.add('missing-justification')
+    if (!text && !found.includes('corrupted-justification')) {
+      issues.add('missing-justification')
+    }
     kept.push({
       ...recommendation,
       justification: text || FALLBACK_JUSTIFICATION,

@@ -2,7 +2,6 @@ import { Body, Controller, Post, UseGuards } from '@nestjs/common'
 import { ApiSecurity, ApiTags } from '@nestjs/swagger'
 import { SkipThrottle } from '@nestjs/throttler'
 import { SourcesService } from '../../sources/sources.service'
-import { SourcesService } from '../../sources/sources.service'
 import { AdminApiKeyGuard } from '../guards/admin-api-key.guard'
 import { InvalidateCacheDto } from './cache.dto'
 import { CacheService } from './cache.service'
@@ -40,12 +39,6 @@ export class CacheController {
     @Body() body?: InvalidateCacheDto
   ): Promise<{ success: boolean; purged: boolean }> {
     const collection = body?.collection
-    // La config des sources (secrets déchiffrés, 60 s de cache mémoire) ne
-    // vit pas dans Redis : on la relit à la prochaine requête.
-    if (collection === 'sources') {
-      this.sources.invalidate()
-      return { success: true, purged: true }
-    }
     // La config des sources (secrets déchiffrés, 60 s de cache mémoire) ne
     // vit pas dans Redis : on la relit à la prochaine requête.
     if (collection === 'sources') {

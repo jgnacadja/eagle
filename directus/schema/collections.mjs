@@ -1459,7 +1459,7 @@ export const collections = [
         meta: {
           interface: 'input',
           width: 'full',
-          options: { masked: true },
+          hidden: true,
           note: 'Chiffrée à l’enregistrement (AES-256-GCM, préfixe enc:v1:) — laisser vide = repli sur DIGIFORMA_API_KEY',
           ...fr('Clé API Digiforma')
         }
@@ -1485,7 +1485,7 @@ export const collections = [
         meta: {
           interface: 'input',
           width: 'full',
-          options: { masked: true },
+          hidden: true,
           note: 'Optionnel — token d’app privée du portail, chiffré à l’enregistrement',
           ...fr('Token HubSpot')
         }

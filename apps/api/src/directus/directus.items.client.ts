@@ -79,16 +79,6 @@ export class DirectusItemsClient {
     await this.request(new URL(`${this.itemsUrl(collection).toString()}/${id}`), 'PATCH', payload)
   }
 
-  /** Applique `data` à plusieurs items désignés par leurs clés primaires. */
-  async updateMany(
-    collection: string,
-    keys: Array<string | number>,
-    data: Record<string, unknown>
-  ): Promise<void> {
-    if (!this.enabled || keys.length === 0) return
-    await this.request(this.itemsUrl(collection), 'PATCH', { keys, data })
-  }
-
   async readMany<T>(collection: string, query: DirectusItemsQuery): Promise<DirectusListResult<T>> {
     if (!this.enabled) return { data: [] }
 

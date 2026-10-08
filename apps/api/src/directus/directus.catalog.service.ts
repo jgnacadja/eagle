@@ -23,6 +23,8 @@ export type DirectusFormation = Omit<FormationDirectusPayload, 'image_url'> & {
   sous_famille: { id: number; slug: string; name: string } | null
   /** Champ éditorial — hors payload de sync, jamais écrit par upsertMany. */
   short_description: string | null
+  /** Alias M2M `formations_centres` — lignes de jonction (`centre.slug`). */
+  centres: Array<number | { centre: { slug: string } | null }> | null
   validity: string | null
   image: string | null
   created_at: string | null
@@ -135,6 +137,7 @@ const ALL_FORMATION_FIELDS = [
   'modalities',
   'center_slug',
   'center_slugs',
+  'centres.centre.slug',
   'sessions',
   'locations_text',
   'blocks',

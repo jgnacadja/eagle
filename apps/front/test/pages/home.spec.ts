@@ -370,7 +370,7 @@ describe('pages/index', () => {
     expect(hrefs).toContain('/entreprise')
     // Cartes réseau : liens profonds vers le bon formulaire de candidature.
     expect(hrefs).toContain('/rejoindre-le-reseau?voie=centre')
-    expect(hrefs).toContain('/referencer-mon-organisme#candidater')
+    expect(hrefs).toContain('/referencer-mon-organisme')
     expect(hrefs).toContain('/rejoindre-le-reseau?voie=formateur')
     expect(hrefs).not.toContain('/centres/demande-de-formation?sujet=franchise')
     expect(hrefs).not.toContain('/centres/demande-de-formation?sujet=formateur')

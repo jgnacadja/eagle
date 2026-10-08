@@ -22,6 +22,7 @@ const CONTENT_COLLECTIONS = [
   'familles_formation',
   'sous_familles_formation',
   'articles',
+  'categories',
   'avis',
   'pages',
   'page_blocks',
@@ -156,6 +157,7 @@ const PUBLIC_STATUS_FILTERED = [
   'familles_formation',
   'sous_familles_formation',
   'articles',
+  'categories',
   'avis',
   'pages',
   'pages_legales',
@@ -250,6 +252,7 @@ const PUBLIC_FIELDS = {
     'seo_description',
     'seo_canonical'
   ],
+  categories: ['id', 'status', 'sort', 'slug', 'name', 'description'],
   avis: ['id', 'status', 'sort', 'slug', 'author', 'published_at', 'stars', 'quote', 'centre'],
   pages: ['id', 'status', 'slug', 'title', 'seo_title', 'seo_description', 'seo_canonical'],
   pages_legales: [

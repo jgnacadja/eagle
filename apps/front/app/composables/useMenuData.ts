@@ -403,7 +403,7 @@ export function useMenuActualites() {
       try {
         const articles = await directus.request<Article[]>(
           readItems('articles', {
-            fields: ['slug', 'title', 'category', 'region', 'publish_at'],
+            fields: ['slug', 'title', 'category.slug', 'category.name', 'region', 'publish_at'],
             filter: { status: { _eq: 'published' } },
             sort: ['-publish_at'],
             limit: MAX_ACTUALITES
@@ -414,9 +414,8 @@ export function useMenuActualites() {
         const regionArticles = new Map<string, { label: string; articles: MenuActualite[] }>()
 
         for (const article of articles) {
-          if (article.category?.trim()) {
-            const slug = slugify(article.category)
-            categoryLabels.set(slug, article.category.trim())
+          if (article.category?.name?.trim() && article.category.slug?.trim()) {
+            categoryLabels.set(article.category.slug, article.category.name.trim())
           }
 
           if (!article.region?.trim()) continue
@@ -426,8 +425,8 @@ export function useMenuActualites() {
 
           entry.articles.push({
             slug: article.slug,
-            categorySlug: article.category?.trim() ? slugify(article.category) : '',
-            tag: article.category?.trim() || 'Actualité',
+            categorySlug: article.category?.slug?.trim() ?? '',
+            tag: article.category?.name?.trim() || 'Actualité',
             date: formatArticleDate(article.publish_at),
             title: article.title
           })

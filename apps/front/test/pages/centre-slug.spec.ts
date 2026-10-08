@@ -189,7 +189,7 @@ const articleFixtureBase: Pick<
   slug: 'actu-creteil',
   title: 'Actualité du centre de Créteil',
   excerpt: 'Résumé de l’actualité.',
-  category: 'SST & sécurité',
+  category: { slug: 'sst-securite', name: 'SST & sécurité' },
   publish_at: '2026-09-01T09:00:00+00:00',
   cover_image: null
 }

@@ -654,7 +654,7 @@
           :key="article.slug"
           v-reveal="revealStagger(i)"
           variant="card"
-          :category="article.category ?? 'Conseil'"
+          :category="article.category?.name ?? 'Conseil'"
           :title="article.title"
           :date="formatArticleDate(article.publish_at)"
           :excerpt="article.excerpt ?? ''"
@@ -1122,7 +1122,16 @@ function onMapSearch(value: string) {
 // ── Actualités ──────────────────────────────────────────────────────────────
 
 const homeArticlesData = await useDirectusList<Article>('articles', 'home-actualites-list', {
-  fields: ['id', 'status', 'slug', 'title', 'excerpt', 'category', 'publish_at', 'cover_image'],
+  fields: [
+    'id',
+    'status',
+    'slug',
+    'title',
+    'excerpt',
+    'category.name',
+    'publish_at',
+    'cover_image'
+  ],
   filter: { status: { _eq: 'published' } },
   sort: ['-publish_at'],
   limit: 3

@@ -265,12 +265,17 @@ function availableCreneaux(now = new Date()): string[] {
     : CRENEAU_OPTIONS.filter((option) => option !== CRENEAU_MATIN)
 }
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     variant?: 'dark' | 'light'
+    /** Ids Directus du contexte (fiche formation / page centre) — routent le rappel vers la bonne source. */
+    formationId?: number
+    centreId?: number
   }>(),
   {
-    variant: 'dark'
+    variant: 'dark',
+    formationId: undefined,
+    centreId: undefined
   }
 )
 
@@ -367,7 +372,9 @@ const handleSubmit = validateAndSubmit(
       telephone: tel,
       creneau: cr,
       consentement: values.consentement,
-      consentementTexte: RAPPEL_CONSENT_TEXT
+      consentementTexte: RAPPEL_CONSENT_TEXT,
+      ...(props.formationId === undefined ? {} : { formationId: props.formationId }),
+      ...(props.centreId === undefined ? {} : { centreId: props.centreId })
     })
 
     if (success) {

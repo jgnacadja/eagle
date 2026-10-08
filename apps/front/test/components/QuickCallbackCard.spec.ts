@@ -166,6 +166,34 @@ describe('QuickCallbackCard', () => {
     expect(wrapper.emitted('submit')).toBeUndefined()
   })
 
+  it('joint formationId et centreId au rappel quand le contexte est connu', async () => {
+    const wrapper = mount(QuickCallbackCard, {
+      props: { formationId: 12, centreId: 3 },
+      global: { stubs }
+    })
+    await openCard(wrapper)
+    await fillValidForm(wrapper)
+    await wrapper.find('form').trigger('submit')
+
+    await vi.waitFor(() => expect(leadSubmitMock).toHaveBeenCalledTimes(1))
+    expect(leadSubmitMock).toHaveBeenCalledWith(
+      'rappel',
+      expect.objectContaining({ formationId: 12, centreId: 3 })
+    )
+  })
+
+  it('ne joint que l’id fourni, jamais de clé vide', async () => {
+    const wrapper = mount(QuickCallbackCard, { props: { centreId: 3 }, global: { stubs } })
+    await openCard(wrapper)
+    await fillValidForm(wrapper)
+    await wrapper.find('form').trigger('submit')
+
+    await vi.waitFor(() => expect(leadSubmitMock).toHaveBeenCalledTimes(1))
+    const payload = leadSubmitMock.mock.calls[0][1] as Record<string, unknown>
+    expect(payload).toMatchObject({ centreId: 3 })
+    expect(payload).not.toHaveProperty('formationId')
+  })
+
   it('poste la demande au module leads et émet « submit » avec succès puis affiche l’état confirmé avec live region', async () => {
     const wrapper = mount(QuickCallbackCard, { global: { stubs } })
     await openCard(wrapper)

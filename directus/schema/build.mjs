@@ -66,9 +66,14 @@ async function ensureCollections(token) {
     if (await collectionExists(token, def.collection)) {
       log(`↷  collection ${def.collection} déjà présente`)
       // Convergent aussi sur le meta de collection (note, traductions
-      // de nom) — sinon un renommage déclaré ici resterait invisible.
+      // de nom, visibilité) — sinon un renommage ou un masquage déclaré ici
+      // resterait invisible.
       await api(token, 'PATCH', `/collections/${def.collection}`, {
-        meta: { note: def.note ?? null, translations: def.translations ?? null }
+        meta: {
+          note: def.note ?? null,
+          translations: def.translations ?? null,
+          hidden: def.hidden ?? false
+        }
       })
       // Collection existante : créer les champs déclarés mais absents —
       // le fichier collections.mjs reste la source de vérité du schéma.
@@ -95,7 +100,11 @@ async function ensureCollections(token) {
     await api(token, 'POST', '/collections', {
       collection: def.collection,
       icon: def.icon,
-      meta: { note: def.note, translations: def.translations ?? null },
+      meta: {
+        note: def.note,
+        translations: def.translations ?? null,
+        hidden: def.hidden ?? false
+      },
       schema: {},
       fields: def.fields
     })
@@ -140,6 +149,8 @@ async function convergeRelation(token, rel) {
     metaPatch.one_field = rel.one_field
   if (rel.sort_field && current.meta?.sort_field !== rel.sort_field)
     metaPatch.sort_field = rel.sort_field
+  if (rel.junction_field && current.meta?.junction_field !== rel.junction_field)
+    metaPatch.junction_field = rel.junction_field
   if (Object.keys(metaPatch).length) {
     await api(token, 'PATCH', `/relations/${rel.collection}/${rel.field}`, {
       meta: metaPatch
@@ -152,6 +163,7 @@ async function createRelation(token, rel) {
   const meta = {}
   if (rel.one_field) meta.one_field = rel.one_field
   if (rel.sort_field) meta.sort_field = rel.sort_field
+  if (rel.junction_field) meta.junction_field = rel.junction_field
   await api(token, 'POST', '/relations', {
     collection: rel.collection,
     field: rel.field,

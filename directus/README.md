@@ -16,8 +16,8 @@ ACADEMY).
   (sûr à ré-exécuter — vérifié sur plusieurs runs consécutifs). C'est le
   mécanisme de restauration automatique au démarrage.
 - `schema/flows.mjs` — définition des flows « Invalidate site cache »,
-  « Invalidate formation page » et « Geocode centre on address change » :
-  webhooks sortants vers l'API (`/admin/cache/invalidate`,
+  « Invalidate formation page », « Invalidate sources config » et « Geocode
+  centre on address change » : webhooks sortants vers l'API (`/admin/cache/invalidate`,
   `/admin/centres/geocode`) et le front (`/api/cache/invalidate`, purge ISR).
   Une opération `condition` en tête de chaîne des flows d'invalidation ignore
   les écritures du compte de service `DIRECTUS_TOKEN` (la sync purge le
@@ -40,8 +40,9 @@ ACADEMY).
 - Collection `sources` : une ligne par compte Digiforma (nom, `code` unique,
   `is_hq`, `status` active/inactive, URL + clé API Digiforma, portail HubSpot,
   5 GUIDs de formulaires, `hubspot_token` optionnel, `last_sync_*`). Les clés
-  (`digiforma_api_key`, `hubspot_token`) sont masquées dans l'admin et lisibles
-  par le seul rôle `admin` (+ Administrator natif et compte de service) ; les
+  (`digiforma_api_key`, `hubspot_token`) se saisissent dans l'admin (champ
+  masqué, type mot de passe) et sont lisibles par le seul rôle `admin`
+  (+ Administrator natif et compte de service) ; les
   autres rôles internes ne lisent que `id, name, code, is_hq, status`. Le
   chiffrement est assuré par le hook `extensions/sources-encrypt` (monté dans
   le conteneur Directus) : `digiforma_api_key` et `hubspot_token` sont chiffrés
@@ -58,12 +59,16 @@ ACADEMY).
   valeur par défaut (la sync actuelle, qui n'envoie pas `source`, reste valide).
 - **Index** (`schema/indexes.mjs`, lancé par `directus-init` après `build.mjs`) :
   unique `(source, digiforma_id)` à la place de l'unique `digiforma_id`, et une
-  seule source HQ (index unique partiel). Retour arrière :
-  `node --env-file=.env directus/schema/indexes.mjs down` (échoue s'il existe
-  des doublons `digiforma_id` entre sources). Hors Docker : `pnpm directus:indexes`
-  avec `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USER`, `DB_PASSWORD` dans `.env`.
-- `pnpm test:directus` couvre la migration, les index (knex simulé) et les
-  permissions.
+  seule source HQ (index unique partiel). Le script charge le `knex` de
+  l'image Directus : il ne tourne que dans le conteneur `directus-init`, où
+  `pnpm directus:indexes [up|down]` le lance. Retour arrière :
+  `pnpm directus:indexes down` (échoue s'il existe des doublons `digiforma_id`
+  entre sources).
+- `pnpm test:directus` couvre la migration, les index (ordre des instructions
+  sur un knex simulé), les flows et les permissions.
+- Modifier une source dans l'admin déclenche le flow « Invalidate sources
+  config » : l'API relit la config au prochain appel au lieu d'attendre le
+  TTL de 60 s.
 
 ## Modèle de rôles (Directus 11)
 

@@ -17,7 +17,7 @@
     "lint": "turbo run lint && eslint \"directus/**/*.mjs\"",
     "format": "prettier --write \"**/*.{ts,vue,js,json,md,yml,yaml}\"",
     "test": "turbo run test -- --passWithNoTests && pnpm test:directus",
-    "test:directus": "node --test directus/schema/sources.test.mjs",
+    "test:directus": "node --test directus/schema/sources.test.mjs directus/extensions/sources-encrypt/crypto.test.mjs",
     "test:coverage": "turbo run test:coverage -- --passWithNoTests",
     "test:e2e": "turbo run test:e2e",
     "directus:build": "node --env-file=.env directus/schema/build.mjs",

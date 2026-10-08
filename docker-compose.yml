@@ -104,6 +104,9 @@ services:
       # Flows : les opérations request lisent {{ $env.* }} à l'exécution
       # (schema/flows.mjs) — rien n'est cuit en base. Sans cette allow-list,
       # $env est vide et les webhooks échouent.
+      # Clé AES-256-GCM (32 octets en base64) du hook sources-encrypt — partagée
+      # avec l'API qui déchiffre. Absente : l'écriture d'un secret est refusée.
+      SOURCES_ENC_KEY: ${SOURCES_ENC_KEY:-}
       FLOWS_ENV_ALLOW_LIST: 'API_INTERNAL_URL,FRONT_INTERNAL_URL,ADMIN_API_KEY,NUXT_CACHE_PURGE_SECRET'
       # host.docker.internal atteint l'hôte en dev (`pnpm dev`) et reste
       # valide en full-compose (ports 3000/3001 publiés sur l'hôte).
@@ -111,6 +114,8 @@ services:
       FRONT_INTERNAL_URL: ${FRONT_INTERNAL_URL:-http://host.docker.internal:3000}
       ADMIN_API_KEY: ${ADMIN_API_KEY}
       NUXT_CACHE_PURGE_SECRET: ${NUXT_CACHE_PURGE_SECRET:-}
+    volumes:
+      - ./directus/extensions:/directus/extensions:ro
     extra_hosts:
       # host.docker.internal n'existe pas nativement sur les hôtes Linux.
       - 'host.docker.internal:host-gateway'
@@ -207,6 +212,7 @@ services:
       REDIS_URL: redis://redis:6379
       DIRECTUS_INTERNAL_URL: http://directus:8055
       DIRECTUS_TOKEN: ${DIRECTUS_TOKEN}
+      SOURCES_ENC_KEY: ${SOURCES_ENC_KEY:-}
       INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
       HUBSPOT_PORTAL_ID: ${HUBSPOT_PORTAL_ID}
       HUBSPOT_FORM_NEWSLETTER: ${HUBSPOT_FORM_NEWSLETTER}

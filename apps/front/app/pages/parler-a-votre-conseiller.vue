@@ -252,7 +252,11 @@
             </ol>
           </Card>
 
-          <QuickCallbackCard v-reveal />
+          <QuickCallbackCard
+            v-reveal
+            :formation-id="leadRouting.formationId"
+            :centre-id="leadRouting.centreId"
+          />
 
           <p class="text-meta leading-relaxed text-ink-subtle">
             Les informations recueillies servent uniquement au traitement de la demande conformément
@@ -278,6 +282,7 @@ import { z } from 'zod'
 import { useReceivedHandoff } from '~/composables/useAssistantHandoff'
 import { leadFields } from '~/utils/leadFields'
 import { useFormTracking } from '~/composables/useFormTracking'
+import { leadRoutingFromQuery } from '~/utils/leadRouting'
 
 definePageMeta({
   layout: 'with-breadcrumb',
@@ -317,6 +322,8 @@ const nextSteps = [
 // Pré-remplit « Votre besoin en quelques mots » depuis ?q= — la recherche
 // libre de la home ou de la page entreprise bascule ici avec son texte.
 const route = useRoute()
+// Rattachement transmis par les CTA des fiches formation / pages centre.
+const leadRouting = leadRoutingFromQuery(route.query)
 const initialMessage = typeof route.query.q === 'string' ? route.query.q.trim().slice(0, 2000) : ''
 
 const { handleSubmit, errors, submitCount, defineField, setFieldValue } = useForm({
@@ -420,6 +427,7 @@ const onSubmit = handleSubmit(
       telephone: v.telephone,
       siret: v.siret || undefined,
       message: [v.message, `Référence : ${ref}`].filter(Boolean).join('\n\n'),
+      ...leadRouting,
       consentement: v.consentement,
       // Pas de query : elle peut porter du texte libre et dépasser la borne API.
       pageUri: window.location.origin + window.location.pathname,

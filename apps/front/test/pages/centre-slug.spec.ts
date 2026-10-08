@@ -262,7 +262,10 @@ vi.mock('~/composables/useCatalog', () => ({
 }))
 
 const stubs = {
-  NuxtLink: { template: '<a><slot /></a>' },
+  NuxtLink: {
+    props: ['to'],
+    template: '<a :data-to="typeof to === \'string\' ? to : JSON.stringify(to)"><slot /></a>'
+  },
   Button: { template: '<button><slot /></button>' },
   SearchInput: {
     props: ['modelValue'],
@@ -392,6 +395,19 @@ describe('pages/centres/[slug]', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  it('joint l’id du centre aux liens « Parler à votre conseiller » (routage HubSpot)', async () => {
+    const wrapper = await mountPage()
+
+    const links = wrapper.findAll('a').filter((a) => a.text().includes('Parler à votre conseiller'))
+    expect(links.length).toBeGreaterThan(0)
+    for (const link of links) {
+      expect(JSON.parse(link.attributes('data-to')!)).toEqual({
+        path: '/parler-a-votre-conseiller',
+        query: { centreId: String(centreCreteil.id) }
+      })
+    }
   })
 
   it('affiche le centre et le breadcrumb par défaut pour un slug connu', async () => {

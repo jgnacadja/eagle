@@ -47,7 +47,7 @@
                     size="pill"
                     class="flex-1 justify-center text-center max-sm:px-sm max-sm:text-badge sm:flex-initial"
                   >
-                    <NuxtLink to="/parler-a-votre-conseiller">
+                    <NuxtLink :to="advisorTo">
                       <span class="sm:hidden">Parler à votre conseiller</span>
                       <span class="hidden sm:inline">Parler à votre conseiller</span>
                     </NuxtLink>
@@ -520,7 +520,7 @@
             >
           </Button>
           <Button as-child variant="outline-inverse" size="pill-lg" class="w-full sm:w-auto">
-            <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
+            <NuxtLink :to="advisorTo">Parler à votre conseiller</NuxtLink>
           </Button>
         </CtaBanner>
 
@@ -682,6 +682,13 @@ function openAssistant(message?: string) {
 function onAssistantSearch(query: string) {
   openAssistant(query)
 }
+
+// « Parler à votre conseiller » : l'id du centre est joint pour que le lead
+// parte dans le HubSpot de sa franchise.
+const advisorTo = computed(() => ({
+  path: '/parler-a-votre-conseiller',
+  query: centre.value ? { centreId: String(centre.value.id) } : {}
+}))
 
 type PageState = 'found' | 'not-found' | 'error'
 const pageState = computed<PageState>(() => {

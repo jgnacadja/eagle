@@ -259,14 +259,58 @@ describe('LeadsController', () => {
     )
   })
 
-  it('POST /leads/demande rejette un identifiant de rattachement invalide', async () => {
-    for (const bad of [{ formationId: 'abc' }, { centreId: 0 }, { formationId: 1.5 }]) {
+  it('POST /leads/demande ignore un identifiant de rattachement invalide au lieu de perdre le lead', async () => {
+    const invalid: Array<Record<string, unknown>> = [
+      { formationId: 'abc' },
+      { centreId: 0 },
+      { formationId: 1.5 },
+      { centreId: -4 },
+      { formationId: '' },
+      { centreId: true },
+      { formationId: null },
+      { centreId: '12abc' }
+    ]
+    for (const bad of invalid) {
+      service.submitDemande.mockClear()
       await request(app.getHttpServer())
         .post('/leads/demande')
-        .send({ ...validDemande, ...bad })
-        .expect(400)
+        .send({ ...validDemande, centreId: 3, ...bad })
+        .expect(201)
+
+      const [dto] = service.submitDemande.mock.calls[0] as [Record<string, unknown>]
+      const [field] = Object.keys(bad)
+      expect(dto[field]).toBeUndefined()
+      expect(dto.nom).toBe('Jean Dupont')
     }
-    expect(service.submitDemande).not.toHaveBeenCalled()
+  })
+
+  it('POST /leads/demande garde l’identifiant valide quand l’autre est invalide', async () => {
+    await request(app.getHttpServer())
+      .post('/leads/demande')
+      .send({ ...validDemande, formationId: 'abc', centreId: '7' })
+      .expect(201)
+
+    const [dto] = service.submitDemande.mock.calls[0] as [Record<string, unknown>]
+    expect(dto.formationId).toBeUndefined()
+    expect(dto.centreId).toBe(7)
+  })
+
+  it('POST /leads/conseiller et /leads/rappel ignorent aussi un rattachement invalide', async () => {
+    await request(app.getHttpServer())
+      .post('/leads/conseiller')
+      .send({ ...validConseiller, formationId: 'abc', centreId: 0 })
+      .expect(201)
+    await request(app.getHttpServer())
+      .post('/leads/rappel')
+      .send({ telephone: '0612345678', consentement: true, formationId: 1.5, centreId: 'x' })
+      .expect(201)
+
+    expect(service.submitConseiller).toHaveBeenCalledWith(
+      expect.objectContaining({ formationId: undefined, centreId: undefined })
+    )
+    expect(service.submitRappel).toHaveBeenCalledWith(
+      expect.objectContaining({ formationId: undefined, centreId: undefined })
+    )
   })
 
   it('POST /leads/conseiller et /leads/rappel acceptent le rattachement', async () => {
@@ -289,5 +333,13 @@ describe('LeadsController', () => {
       .send({ email: 'abonne@site.fr', formationId: 1 })
       .expect(400)
     expect(service.submitNewsletter).not.toHaveBeenCalled()
+  })
+
+  it('POST /leads/candidature rejette un rattachement (toujours routée sur la HQ)', async () => {
+    await request(app.getHttpServer())
+      .post('/leads/candidature')
+      .send({ ...validCandidature, centreId: 1 })
+      .expect(400)
+    expect(service.submitCandidature).not.toHaveBeenCalled()
   })
 })

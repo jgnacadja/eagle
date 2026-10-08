@@ -128,6 +128,17 @@ async function relationExists(token, collection, field) {
   return res.ok
 }
 
+// Le meta déclaré (interface, gabarit, traductions) reste la source de
+// vérité du champ relation — ré-appliqué partout, sinon une colonne créée
+// hors script (admin, migration) garderait l'interface `input` par défaut
+// et l'admin n'afficherait que l'id brut au lieu du dropdown M2O.
+async function convergeRelationFieldMeta(token, rel) {
+  if (!rel.meta) return
+  await api(token, 'PATCH', `/fields/${rel.collection}/${rel.field}`, {
+    meta: { readonly: false, hidden: false, ...rel.meta }
+  })
+}
+
 // Collections cibles à clé primaire uuid (les autres ont un id entier).
 const UUID_TARGETS = new Set(['directus_files', 'sources'])
 

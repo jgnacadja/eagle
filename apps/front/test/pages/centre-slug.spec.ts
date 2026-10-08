@@ -442,7 +442,7 @@ describe('pages/centres/[slug]', () => {
     // Le lien doit rester sur le périmètre du centre (filtre `centre`),
     // pas sur la ville — les deux comptages diffèrent sinon.
     const link = wrapper.findAll('a').find((a) => a.text().includes('formations du centre'))
-    expect(link?.attributes('href')).toBe('/formations?centre=creteil')
+    expect(link?.attributes('data-to')).toBe('/formations?centre=creteil')
     expect(wrapper.text()).toContain('Prochaines sessions')
   })
 

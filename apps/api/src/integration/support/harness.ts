@@ -45,7 +45,10 @@ export function encryptedRow(row: SourceRow): SourceRow {
   }
 }
 
-/** Mémoire de `CacheService` : verrous, derniers runs et versions par source. */
+/**
+ * Mémoire de `CacheService` : verrous, derniers runs et versions par source.
+ * Le dernier run global (`sync:last_run`) est rangé sous la clé `default`.
+ */
 export class FakeCache {
   readonly runs = new Map<string, SyncRun>()
   readonly versions = new Map<string, number>()
@@ -70,6 +73,7 @@ export class FakeCache {
   invalidateCatalog = async (): Promise<void> => {
     this.invalidations += 1
   }
+  setScopeProvider = (): void => undefined
 }
 
 export interface HarnessOptions {

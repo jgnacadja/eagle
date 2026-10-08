@@ -19,11 +19,9 @@
               >
                 {{ course.title }}
               </h1>
-              <div
-                v-if="course.description"
-                class="mt-md max-w-prose text-body text-ink-body"
-                v-html="sanitizeHtml(course.description)"
-              />
+              <p v-if="course.shortDescription" class="mt-md max-w-prose text-body text-ink-body">
+                {{ course.shortDescription }}
+              </p>
 
               <ul class="mt-md flex flex-wrap gap-sm">
                 <Badge v-if="durationTag" as="li" variant="chip">{{ durationTag }}</Badge>

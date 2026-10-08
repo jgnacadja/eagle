@@ -10,6 +10,19 @@ export const LEAD_FORM_NAMES: readonly LeadFormName[] = [
   'rappel'
 ]
 
+/** Un champ par formulaire : le compilateur signale l'oubli d'un formulaire ajouté. */
+export function mapForms(
+  pick: (form: LeadFormName) => string | null
+): Record<LeadFormName, string | null> {
+  return {
+    newsletter: pick('newsletter'),
+    demande: pick('demande'),
+    candidature: pick('candidature'),
+    conseiller: pick('conseiller'),
+    rappel: pick('rappel')
+  }
+}
+
 export type SourceStatus = 'active' | 'inactive'
 
 /**
@@ -51,4 +64,18 @@ export interface SourceConfig {
     forms: Record<LeadFormName, string | null>
   }
   secrets: SourceSecrets
+}
+
+/**
+ * Ligne `sources` écartée faute de secret lisible (clé de chiffrement
+ * erronée, valeur altérée, secret resté en clair). Une source écartée n'est
+ * jamais synchronisée : elle doit apparaître comme un échec, pas disparaître.
+ */
+export interface UnreadableSource {
+  id: string
+  code: string
+  status: SourceStatus
+  fromEnv: false
+  /** Cause de l'écart — ne cite jamais la valeur du secret. */
+  reason: string
 }

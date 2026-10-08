@@ -91,7 +91,7 @@
           <ul class="mt-md space-y-sm text-small">
             <li>
               <NuxtLink
-                to="/"
+                to="/a-propos"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Qui sommes-nous</NuxtLink
               >

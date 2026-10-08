@@ -20,6 +20,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { collections, relations } from './collections.mjs'
 import { buildFlows } from './flows.mjs'
 import { permissionsFor, publicPermissions, roles } from './roles.mjs'
+import { buildHqSource, planHqSource } from './sources.mjs'
 import { legalSectionToHtml, stripSectionNumber } from '../legalContent.mjs'
 import { log, logError } from '../logger.mjs'
 
@@ -127,16 +128,8 @@ async function relationExists(token, collection, field) {
   return res.ok
 }
 
-// Le meta déclaré (interface, gabarit, traductions) reste la source de
-// vérité du champ relation — ré-appliqué partout, sinon une colonne créée
-// hors script (admin, migration) garderait l'interface `input` par défaut
-// et l'admin n'afficherait que l'id brut au lieu du dropdown M2O.
-async function convergeRelationFieldMeta(token, rel) {
-  if (!rel.meta) return
-  await api(token, 'PATCH', `/fields/${rel.collection}/${rel.field}`, {
-    meta: { readonly: false, hidden: false, ...rel.meta }
-  })
-}
+// Collections cibles à clé primaire uuid (les autres ont un id entier).
+const UUID_TARGETS = new Set(['directus_files', 'sources'])
 
 // Phase 1 : les colonnes M2O sont créées avant la migration de contenu —
 // une colonne suffit pour écrire des items, la relation n'est pas requise.
@@ -149,7 +142,7 @@ async function ensureRelationFields(token) {
     }
     await api(token, 'POST', `/fields/${rel.collection}`, {
       field: rel.field,
-      type: rel.related_collection === 'directus_files' ? 'uuid' : 'integer',
+      type: UUID_TARGETS.has(rel.related_collection) ? 'uuid' : 'integer',
       meta: rel.meta
     })
     log(`✔  champ ${rel.collection}.${rel.field} créé`)
@@ -212,6 +205,42 @@ async function ensureRelations(token) {
       })
     }
   }
+}
+
+// Migration multi-sources : ligne source HQ reprise de l'env, rattachement
+// des formations existantes, puis `formations.source` NOT NULL avec la HQ
+// pour défaut — la sync mono-source actuelle (qui n'envoie pas `source`)
+// continue d'écrire sans erreur jusqu'à sa mise à jour. Idempotent : sans
+// formation orpheline, no-op.
+async function ensureHqSource(token) {
+  const { data: existing } = await api(token, 'GET', '/items/sources?fields=id,code,is_hq&limit=-1')
+  const plan = planHqSource(existing ?? [])
+  let hqId = plan.id
+  if (plan.action === 'create') {
+    const { data } = await api(token, 'POST', '/items/sources', buildHqSource(process.env))
+    hqId = data.id
+    log('✔  source HQ créée depuis l’env')
+  }
+
+  const orphans = await api(
+    token,
+    'GET',
+    '/items/formations?filter[source][_null]=true&aggregate[count]=id'
+  )
+  const orphanCount = Number(orphans.data?.[0]?.count?.id ?? 0)
+  if (orphanCount > 0) {
+    await api(token, 'PATCH', '/items/formations', {
+      query: { filter: { source: { _null: true } }, limit: -1 },
+      data: { source: hqId }
+    })
+    log(`✔  ${orphanCount} formation(s) rattachée(s) à la source HQ`)
+  }
+
+  await api(token, 'PATCH', '/fields/formations/source', {
+    schema: { is_nullable: false, default_value: hqId },
+    meta: { required: false }
+  })
+  return hqId
 }
 
 // Migration « pages légales » : le champ JSON `pages_legales.sections`
@@ -697,6 +726,7 @@ async function main() {
   await migrateLegalSections(token)
   await migrateArticleCategories(token)
   await ensureRelations(token)
+  await ensureHqSource(token)
   const roleIds = await ensureRoles(token)
   const policyIds = await ensurePolicies(token)
   await ensureAccess(token, roleIds, policyIds)

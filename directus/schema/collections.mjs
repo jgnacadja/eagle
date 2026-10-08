@@ -798,10 +798,21 @@ export const collections = [
           interface: 'input',
           width: 'half',
           readonly: true,
-          note: 'ID Digiforma',
+          note: 'ID Digiforma — unique par source (index composite source + digiforma_id)',
           ...fr('ID Digiforma')
+        }
+      },
+      {
+        field: 'archived_by_source',
+        type: 'boolean',
+        meta: {
+          interface: 'boolean',
+          width: 'half',
+          readonly: true,
+          note: 'Dépubliée automatiquement par la désactivation de sa source — seules ces formations sont republiées à la réactivation',
+          ...fr('Archivée par la source')
         },
-        schema: { is_unique: true }
+        schema: { default_value: false }
       },
       {
         field: 'slug',
@@ -1349,12 +1360,143 @@ export const collections = [
         schema: { default_value: false }
       }
     ]
+  },
+  {
+    collection: 'sources',
+    icon: 'hub',
+    note: 'Comptes Digiforma (un par franchise) et portail HubSpot associé. Une seule source tête de réseau (HQ). Les clés sont chiffrées à l’enregistrement — accès réservé à l’administration.',
+    ...fr('Sources'),
+    fields: [
+      {
+        field: 'id',
+        type: 'uuid',
+        meta: { special: ['uuid'], hidden: true, interface: 'input', readonly: true, ...fr('ID') },
+        schema: { is_primary_key: true, has_auto_increment: false }
+      },
+      {
+        field: 'name',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', required: true, ...fr('Nom') }
+      },
+      {
+        field: 'code',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          required: true,
+          note: 'Identifiant court (slug) — sert aux clés Redis et à POST /admin/sync?source={code}',
+          options: { slug: true },
+          ...fr('Code')
+        },
+        schema: { is_unique: true }
+      },
+      {
+        field: 'is_hq',
+        type: 'boolean',
+        meta: {
+          interface: 'boolean',
+          width: 'half',
+          note: 'Tête de réseau — une seule source peut l’être (index unique partiel)',
+          ...fr('Tête de réseau (HQ)')
+        },
+        schema: { default_value: false }
+      },
+      {
+        field: 'status',
+        type: 'string',
+        meta: {
+          interface: 'select-dropdown',
+          width: 'half',
+          options: {
+            choices: [
+              { text: 'Active', value: 'active' },
+              { text: 'Inactive', value: 'inactive' }
+            ]
+          },
+          note: 'Inactive : ses formations sont dépubliées au prochain sync (réversible)',
+          ...fr('Statut')
+        },
+        schema: { default_value: 'active' }
+      },
+      {
+        field: 'digiforma_api_url',
+        type: 'string',
+        meta: { interface: 'input', width: 'full', ...fr('URL API Digiforma') }
+      },
+      {
+        field: 'digiforma_api_key',
+        type: 'text',
+        meta: {
+          interface: 'input',
+          width: 'full',
+          hidden: true,
+          note: 'Chiffrée à l’enregistrement (AES-256-GCM, préfixe enc:v1:) — laisser vide = repli sur DIGIFORMA_API_KEY',
+          ...fr('Clé API Digiforma')
+        }
+      },
+      {
+        field: 'hubspot_portal_id',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', ...fr('Portail HubSpot (Hub ID)') }
+      },
+      ...['newsletter', 'demande', 'candidature', 'conseiller', 'rappel'].map((form) => ({
+        field: `hubspot_form_${form}`,
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          note: 'GUID du formulaire HubSpot',
+          ...fr(`Formulaire HubSpot « ${form} »`)
+        }
+      })),
+      {
+        field: 'hubspot_token',
+        type: 'text',
+        meta: {
+          interface: 'input',
+          width: 'full',
+          hidden: true,
+          note: 'Optionnel — token d’app privée du portail, chiffré à l’enregistrement',
+          ...fr('Token HubSpot')
+        }
+      },
+      {
+        field: 'last_sync_at',
+        type: 'timestamp',
+        meta: { interface: 'datetime', width: 'half', readonly: true, ...fr('Dernière sync') }
+      },
+      {
+        field: 'last_sync_status',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', readonly: true, ...fr('Statut dernière sync') }
+      }
+    ]
   }
 ]
 
 // Relations M2O résolues après création des collections (les deux côtés
 // doivent exister avant de créer la relation).
 export const relations = [
+  {
+    collection: 'centres',
+    field: 'source',
+    related_collection: 'sources',
+    meta: m2o('{{name}}', {
+      note: 'Vide = tête de réseau (HQ) — détermine le portail HubSpot des leads du centre',
+      ...fr('Source')
+    })
+  },
+  {
+    collection: 'formations',
+    field: 'source',
+    related_collection: 'sources',
+    meta: m2o('{{name}}', {
+      readonly: true,
+      note: 'Compte Digiforma d’origine — renseignée par la sync',
+      ...fr('Source')
+    })
+  },
   {
     collection: 'articles',
     field: 'centre',

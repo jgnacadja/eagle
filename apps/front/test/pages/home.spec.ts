@@ -366,10 +366,14 @@ describe('pages/index', () => {
     const links = wrapper.findAll('a')
     const hrefs = links.map((l) => l.attributes('href'))
 
-    expect(hrefs).toContain('/centres/demande-de-formation')
-    expect(hrefs).toContain('/centres/demande-de-formation?sujet=franchise')
+    // Section entreprise : « Découvrir » mène à la page dédiée.
+    expect(hrefs).toContain('/entreprise')
+    // Cartes réseau : liens profonds vers le bon formulaire de candidature.
+    expect(hrefs).toContain('/rejoindre-le-reseau?voie=centre')
     expect(hrefs).toContain('/referencer-mon-organisme')
-    expect(hrefs).toContain('/centres/demande-de-formation?sujet=formateur')
+    expect(hrefs).toContain('/rejoindre-le-reseau?voie=formateur')
+    expect(hrefs).not.toContain('/centres/demande-de-formation?sujet=franchise')
+    expect(hrefs).not.toContain('/centres/demande-de-formation?sujet=formateur')
     expect(hrefs).toContain('/parler-a-votre-conseiller')
     expect(hrefs).toContain('/formations')
     expect(hrefs).toContain('/centres')
@@ -525,6 +529,7 @@ describe('pages/index', () => {
             shortDescription: null,
             durationDays: null,
             durationHours: null,
+            durationBucket: 'moyenne',
             price: null,
             cpf: null,
             cpfCode: null,
@@ -702,6 +707,7 @@ describe('pages/index', () => {
       shortDescription: null,
       durationDays: null,
       durationHours: null,
+      durationBucket: 'moyenne' as const,
       price: null,
       cpf: null,
       cpfCode: null,

@@ -141,6 +141,7 @@ useContentSeo(
 const candidatureOpen = ref(false)
 const candidatureVoie = ref<CandidatureVoie>('centre')
 const { pushEvent } = useDataLayer()
+const route = useRoute()
 
 onMounted(() => {
   pushEvent({
@@ -148,6 +149,12 @@ onMounted(() => {
     page_path: typeof window !== 'undefined' ? window.location.pathname : '',
     page_title: 'Rejoindre le réseau — LEARN UP ACADEMY'
   })
+  // Lien profond (« ?voie=formateur ») : le dialog s'ouvre directement sur
+  // le bon projet — utilisé par les cartes réseau de l'accueil.
+  const voie = route.query.voie
+  if (voie === 'centre' || voie === 'organisme' || voie === 'formateur') {
+    openCandidature(voie)
+  }
 })
 
 const profileTypeMap: Record<CandidatureVoie, NetworkProfileType> = {

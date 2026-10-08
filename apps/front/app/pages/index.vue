@@ -851,7 +851,7 @@ const networkCards = [
   {
     title: 'Organisme partenaire',
     subtitle: 'Référencez vos centres et vos sessions',
-    to: '/referencer-mon-organisme#candidater'
+    to: '/referencer-mon-organisme'
   },
   {
     title: 'Formateur indépendant',

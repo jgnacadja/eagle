@@ -73,16 +73,20 @@ describe('SyncService', () => {
     } as unknown as DigiformaClientFactory
     cache = {
       invalidateCatalog: vi.fn(),
+      bumpSourceVersion: vi.fn().mockResolvedValue(undefined),
       setSyncRun: vi.fn(),
       getSyncRun: vi.fn(),
       acquireSyncLock: vi.fn().mockResolvedValue(true),
       releaseSyncLock: vi.fn().mockResolvedValue(undefined)
     } as unknown as CacheService
     catalog = {
-      upsertMany: vi.fn().mockResolvedValue({ inserted: 1, updated: 0 })
+      upsertMany: vi.fn().mockResolvedValue({ inserted: 1, updated: 0 }),
+      republishArchivedBySource: vi.fn().mockResolvedValue(0),
+      archivePublishedBySource: vi.fn().mockResolvedValue(0)
     } as unknown as DirectusCatalogService
     sources = {
       listActive: vi.fn().mockResolvedValue([hq]),
+      listAll: vi.fn().mockResolvedValue([hq]),
       getByCode: vi.fn(async (code: string) => [hq, lyon].find((s) => s.code === code) ?? null),
       getHq: vi.fn().mockResolvedValue(hq)
     } as unknown as SourcesService
@@ -455,5 +459,135 @@ describe('SyncService', () => {
       expect.objectContaining({ status: 'success' }),
       'hq'
     )
+  })
+
+  describe('source lifecycle', () => {
+    let nice: SourceConfig
+
+    beforeEach(() => {
+      nice = makeSource({ id: 'uuid-nice', code: 'nice', name: 'Nice', isHq: false })
+      nice.status = 'inactive'
+      vi.mocked(sources.listActive).mockResolvedValue([hq, lyon])
+      vi.mocked(sources.listAll).mockResolvedValue([hq, lyon, nice])
+    })
+
+    it('unpublishes the formations of an inactive source and records the count', async () => {
+      vi.mocked(catalog.archivePublishedBySource).mockResolvedValue(4)
+
+      await service.trigger()
+      await waitForRelease(2)
+
+      expect(catalog.archivePublishedBySource).toHaveBeenCalledWith('uuid-nice')
+      expect(clients['uuid-nice']).toBeUndefined()
+      expect(cache.setSyncRun).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'success', source: 'nice', archived: 4 }),
+        'nice'
+      )
+      // Pas d'appel Digiforma ni de dernière-sync écrite pour une dépublication.
+      expect(directus.updateOne).not.toHaveBeenCalledWith('sources', 'uuid-nice', expect.anything())
+    })
+
+    it('bumps the version of every synced source and of the unpublished one, then invalidates', async () => {
+      vi.mocked(catalog.archivePublishedBySource).mockResolvedValue(2)
+
+      await service.trigger()
+      await waitForRelease(2)
+
+      const bumped = vi.mocked(cache.bumpSourceVersion).mock.calls.map(([code]) => code)
+      expect(bumped.sort()).toEqual(['hq', 'lyon', 'nice'])
+      expect(cache.invalidateCatalog).toHaveBeenCalledTimes(1)
+    })
+
+    it('does not touch the run state of an inactive source with nothing to unpublish', async () => {
+      await service.trigger()
+      await waitForRelease(2)
+
+      expect(cache.setSyncRun).not.toHaveBeenCalledWith(expect.anything(), 'nice')
+      expect(cache.bumpSourceVersion).not.toHaveBeenCalledWith('nice')
+    })
+
+    it('does not unpublish other sources when a single source is synced', async () => {
+      await service.trigger({ sourceCode: 'lyon' })
+      await waitForRelease(1)
+
+      expect(sources.listAll).not.toHaveBeenCalled()
+      expect(catalog.archivePublishedBySource).not.toHaveBeenCalled()
+    })
+
+    it('unpublishes even when every active source failed to sync', async () => {
+      vi.mocked(catalog.archivePublishedBySource).mockResolvedValue(3)
+      vi.mocked(config.get).mockImplementation((key: string) =>
+        key === 'NODE_ENV' ? 'production' : undefined
+      )
+      vi.mocked(clients['uuid-hq'].fetchAllPrograms).mockRejectedValue(new Error('hq down'))
+      vi.mocked(clients['uuid-lyon'].fetchAllPrograms).mockRejectedValue(new Error('lyon down'))
+
+      await service.trigger()
+      await waitForRelease(2)
+
+      expect(cache.setSyncRun).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'success', source: 'nice', archived: 3 }),
+        'nice'
+      )
+      expect(geocoding.syncMissing).not.toHaveBeenCalled()
+      expect(cache.invalidateCatalog).toHaveBeenCalledTimes(1)
+    })
+
+    it('keeps going when unpublishing one source fails', async () => {
+      const other = makeSource({ id: 'uuid-old', code: 'old', isHq: false })
+      other.status = 'inactive'
+      vi.mocked(sources.listAll).mockResolvedValue([hq, lyon, nice, other])
+      vi.mocked(catalog.archivePublishedBySource)
+        .mockRejectedValueOnce(new Error('directus 500'))
+        .mockResolvedValueOnce(1)
+
+      await service.trigger()
+      await waitForRelease(2)
+
+      expect(cache.setSyncRun).toHaveBeenCalledWith(
+        expect.objectContaining({ source: 'old', archived: 1 }),
+        'old'
+      )
+      expect(cache.setSyncRun).not.toHaveBeenCalledWith(expect.anything(), 'nice')
+    })
+
+    it('marks unpublish runs failed when the shared steps fail', async () => {
+      vi.mocked(catalog.archivePublishedBySource).mockResolvedValue(2)
+      vi.mocked(geocoding.syncMissing).mockRejectedValue(new Error('geocoder down'))
+
+      await service.trigger()
+      await waitForRelease(2)
+
+      expect(cache.setSyncRun).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'failed', source: 'nice', error: 'geocoder down' }),
+        'nice'
+      )
+    })
+
+    it('republishes only what Digiforma still returns for a reactivated source', async () => {
+      vi.mocked(catalog.republishArchivedBySource).mockResolvedValueOnce(5)
+
+      await service.trigger({ sourceCode: 'lyon' })
+      await waitForRelease(1)
+
+      expect(catalog.republishArchivedBySource).toHaveBeenCalledWith('uuid-lyon', ['prog-001'])
+      expect(cache.setSyncRun).toHaveBeenLastCalledWith(
+        expect.objectContaining({ status: 'success', republished: 5 }),
+        'lyon'
+      )
+    })
+
+    it('does not republish for the env source without a HQ row', async () => {
+      const envHq = makeSource({ id: 'env', fromEnv: true })
+      vi.mocked(sources.listActive).mockResolvedValue([envHq])
+      vi.mocked(sources.listAll).mockResolvedValue([])
+      vi.mocked(sources.getHq).mockResolvedValue(envHq)
+      clients.env = { fetchAllPrograms: vi.fn().mockResolvedValue([sampleProgram]) } as never
+
+      await service.trigger()
+      await waitForRelease(1)
+
+      expect(catalog.republishArchivedBySource).not.toHaveBeenCalled()
+    })
   })
 })

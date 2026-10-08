@@ -218,6 +218,67 @@ export class DirectusCatalogService {
   }
 
   /**
+   * Désactivation d'une source : dépublie ses formations publiées
+   * (`status=archived` + `archived_by_source=true`) sans rien supprimer ni
+   * appeler Digiforma. Les formations déjà brouillon / archivées à la main
+   * ne sont pas touchées. Renvoie le nombre de formations dépubliées.
+   */
+  async archivePublishedBySource(sourceId: string): Promise<number> {
+    if (!this.enabled) return 0
+    const ids = await this.fetchFormationKeys(sourceId, { status: 'published' })
+    await this.patchFormations(
+      ids.map((row) => row.id),
+      { status: 'archived', archived_by_source: true }
+    )
+    return ids.length
+  }
+
+  /**
+   * Réactivation d'une source : republie uniquement les formations
+   * `archived_by_source=true` que Digiforma renvoie encore, puis remet le
+   * drapeau à false. Une formation archivée à la main (drapeau false) n'est
+   * jamais republiée. Renvoie le nombre de formations republiées.
+   */
+  async republishArchivedBySource(
+    sourceId: string,
+    digiformaIds: Iterable<string>
+  ): Promise<number> {
+    if (!this.enabled) return 0
+    const wanted = new Set(digiformaIds)
+    const rows = await this.fetchFormationKeys(sourceId, { archived_by_source: true })
+    const ids = rows.filter((row) => wanted.has(row.digiforma_id)).map((row) => row.id)
+    await this.patchFormations(ids, { status: 'published', archived_by_source: false })
+    return ids.length
+  }
+
+  private async fetchFormationKeys(
+    sourceId: string,
+    filter: Record<string, string | boolean>
+  ): Promise<Array<{ id: number; digiforma_id: string }>> {
+    const url = new URL(`${this.baseUrl}/items/formations`)
+    url.searchParams.append('fields[]', 'id')
+    url.searchParams.append('fields[]', 'digiforma_id')
+    url.searchParams.set('filter[source][_eq]', sourceId)
+    for (const [field, value] of Object.entries(filter)) {
+      url.searchParams.set(`filter[${field}][_eq]`, String(value))
+    }
+    url.searchParams.set('limit', '-1')
+    const response = await this.request<{ data: Array<{ id: number; digiforma_id: string }> }>(
+      url.toString()
+    )
+    return response?.data ?? []
+  }
+
+  private async patchFormations(ids: number[], data: Record<string, unknown>): Promise<void> {
+    for (let i = 0; i < ids.length; i += 100) {
+      await this.request(`${this.baseUrl}/items/formations`, 'PATCH', {
+        keys: ids.slice(i, i + 100),
+        data
+      })
+    }
+  }
+
+  /**
    * Importe le visuel Digiforma dans la librairie de fichiers et le lie au
    * champ `image` — un seul champ image, avec preview/remplacement dans
    * Directus. Règles :

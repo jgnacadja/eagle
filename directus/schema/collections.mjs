@@ -1531,6 +1531,7 @@ export const relations = [
     field: 'formation',
     related_collection: 'formations',
     meta: m2o('{{title}}', { required: true, width: 'half', ...fr('Formation') }),
+    junction_field: 'centre',
     one_field: 'centres',
     sort_field: 'sort',
     one_meta: {

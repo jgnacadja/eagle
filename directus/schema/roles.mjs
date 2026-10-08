@@ -81,6 +81,7 @@ export function permissionsFor(roleName) {
             'sort',
             'slug',
             'title',
+            'short_description',
             'description',
             'duration_days',
             'duration_hours',

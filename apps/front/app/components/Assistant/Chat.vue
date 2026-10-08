@@ -98,8 +98,8 @@ const GREETING: AssistantEntry = {
     text: 'Bonjour, comment puis-je vous aider aujourd’hui ?',
     suggestions: [
       'Je veux former mes salariés au SST',
-      'Je recherche une formation CACES R486 en sécurité pour mon équipe',
-      'Je veux former mes équipes au ATEX en zone industrielle'
+      'Je cherche une formation CACES R486',
+      'Je veux former mes équipes au ATEX'
     ]
   }
 }

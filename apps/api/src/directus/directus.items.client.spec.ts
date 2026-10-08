@@ -84,6 +84,23 @@ describe('DirectusItemsClient', () => {
     })
   })
 
+  it('patches one item by id', async () => {
+    fetchMock.mockResolvedValue(okResponse({ data: { id: 'uuid-1' } }))
+    const client = makeClient(ENV)
+
+    await client.updateOne('sources', 'uuid-1', { last_sync_status: 'success' })
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, FetchInit]
+    expect(url).toBe('http://directus:8055/items/sources/uuid-1')
+    expect(init.method).toBe('PATCH')
+    expect(init.body).toBe(JSON.stringify({ last_sync_status: 'success' }))
+  })
+
+  it('ignores updateOne when disabled', async () => {
+    await makeClient({}).updateOne('sources', 'uuid-1', { a: 1 })
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   it('deletes by query without a limit and tolerates a 204', async () => {
     const response = okResponse(null, 204)
     fetchMock.mockResolvedValue(response)

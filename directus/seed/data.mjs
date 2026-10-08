@@ -753,6 +753,29 @@ export const formations = [
   }
 ]
 
+export const categories = [
+  {
+    slug: 'sst-securite',
+    name: 'SST & sécurité',
+    status: 'published',
+    description:
+      'Sauvetage secourisme, gestes et postures, travail en hauteur : les bases du métier de la prévention.'
+  },
+  {
+    slug: 'management',
+    name: 'Management',
+    status: 'published',
+    description:
+      'Pilotage d’équipe, organisation et posture managériale dans les environnements à exigence.'
+  },
+  {
+    slug: 'informatique-digital',
+    name: 'Informatique & Digital',
+    status: 'published',
+    description: 'Usages numériques, données et IA appliqués aux pratiques professionnelles.'
+  }
+]
+
 export const articles = [
   {
     slug: 'formation-sst-sensibilisation-risque',
@@ -762,7 +785,7 @@ export const articles = [
       'Découvrez comment la sensibilisation aux risques transforme la culture sécurité dans les équipes opérationnelles.',
     content:
       '<p>La formation SST permet aux équipes de mieux comprendre les risques professionnels, repérer les situations à vigilance et agir avant qu’un incident ne survienne.</p><p>Au-delà de la conformité, l’objectif est de faire grandir une culture de prévention partagée par tous.</p>',
-    category: 'SST & sécurité',
+    categorySlug: 'sst-securite',
     author_name: 'Claire Martin',
     author_imageUrl:
       'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=600&q=80',
@@ -785,7 +808,7 @@ export const articles = [
       'Le management de proximité s’appuie sur des repères clairs, une cadence de suivi et une culture de confiance.',
     content:
       '<p>Les managers modernes doivent articuler objectifs, qualité de service et bien-être au travail.</p><p>Une équipe performante part d’un cadre partagé, de feedbacks réguliers et d’une pédagogie adaptée aux situations rencontrées.</p>',
-    category: 'Management',
+    categorySlug: 'management',
     author_name: 'Lucie Bernard',
     author_imageUrl:
       'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=600&q=80',
@@ -808,7 +831,7 @@ export const articles = [
       'La transformation digitale s’appuie sur la qualité des usages, la capacité d’analyse et la confiance des équipes.',
     content:
       '<p>Les organisations qui réussissent leur transition numérique donnent du sens aux usages de la donnée et de l’intelligence artificielle.</p><p>Pour aller plus loin, il faut résoudre les compétences, organiser les processus et sécuriser les usages.</p>',
-    category: 'Informatique & Digital',
+    categorySlug: 'informatique-digital',
     author_name: 'Nicolas Fabre',
     author_imageUrl:
       'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80',

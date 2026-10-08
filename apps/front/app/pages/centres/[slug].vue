@@ -485,7 +485,7 @@
                   v-for="(article, i) in centreArticles"
                   :key="article.slug"
                   v-reveal="revealStagger(i)"
-                  :category="article.category ?? 'Actualité'"
+                  :category="article.category?.name ?? 'Actualité'"
                   :title="article.title"
                   :date="formatArticleDate(article.publish_at)"
                   :excerpt="article.excerpt ?? ''"
@@ -1067,7 +1067,7 @@ const centreArticlesData = await useDirectusList<Article>(
   () =>
     centre.value
       ? {
-          fields: ['slug', 'title', 'excerpt', 'category', 'publish_at', 'cover_image'],
+          fields: ['slug', 'title', 'excerpt', 'category.name', 'publish_at', 'cover_image'],
           filter: { centre: { _eq: centre.value.id }, status: { _eq: 'published' } },
           sort: ['-publish_at'],
           limit: 3

@@ -274,6 +274,80 @@ async function migrateLegalSections(token) {
   )
 }
 
+// Migration « catégorie d'article » : le champ `articles.category` était un
+// varchar libre (chaque rubrique retapée à la main) — il devient un M2O
+// vers la collection `categories`. Pour chaque libellé distinct on crée la
+// catégorie (slug dérivé), puis la colonne est recréée en `integer` et les
+// articles rattachés — la relation FK est posée ensuite par
+// ensureRelations. Idempotent : `category` déjà `integer` → no-op ; une
+// catégorie existante (même slug) est réutilisée.
+function slugifyCategory(label) {
+  return label
+    .trim()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+}
+
+async function migrateArticleCategories(token) {
+  const { data: fields } = await api(token, 'GET', '/fields/articles?limit=-1')
+  const field = (fields ?? []).find((f) => f.field === 'category')
+  if (field?.type !== 'string') return // absent ou déjà un M2O integer
+
+  const { data: articles } = await api(token, 'GET', '/items/articles?limit=-1&fields=id,category')
+  const labelsBySlug = new Map()
+  const articleLabel = new Map()
+  for (const article of articles ?? []) {
+    const label = article.category?.trim().replace(/\s+/g, ' ')
+    if (!label) continue
+    const slug = slugifyCategory(label)
+    labelsBySlug.set(slug, label)
+    articleLabel.set(article.id, slug)
+  }
+
+  const { data: existingCats } = await api(
+    token,
+    'GET',
+    '/items/categories?limit=-1&fields=id,slug'
+  )
+  const slugToId = new Map((existingCats ?? []).map((cat) => [cat.slug, cat.id]))
+
+  let sort = 1
+  for (const [slug, name] of labelsBySlug) {
+    if (slugToId.has(slug)) continue
+    const { data: created } = await api(token, 'POST', '/items/categories', {
+      status: 'published',
+      slug,
+      name,
+      sort: sort++
+    })
+    slugToId.set(slug, created.id)
+  }
+
+  // La colonne varchar ne peut pas porter la contrainte FK ni être castée
+  // proprement : on la supprime puis la recrée en integer (Directus gère le
+  // DROP/ADD COLUMN), les ids sont réécrits depuis le mapping en mémoire.
+  await api(token, 'DELETE', '/fields/articles/category')
+  const rel = relations.find((r) => r.collection === 'articles' && r.field === 'category')
+  await api(token, 'POST', '/fields/articles', {
+    field: 'category',
+    type: 'integer',
+    meta: rel?.meta
+  })
+
+  for (const [articleId, slug] of articleLabel) {
+    const categoryId = slugToId.get(slug)
+    if (!categoryId) continue
+    await api(token, 'PATCH', `/items/articles/${articleId}`, { category: categoryId })
+  }
+
+  log(
+    `✔  articles.category migré — ${labelsBySlug.size} catégorie(s), ${articleLabel.size} article(s) rattaché(s)`
+  )
+}
+
 async function fetchByName(token, endpoint) {
   const { data } = await api(token, 'GET', `${endpoint}?limit=-1`)
   return new Map(data.map((r) => [r.name, r.id]))
@@ -519,6 +593,7 @@ async function main() {
   // `pages_legales.sections` (encore JSON), écrit via la colonne `page`,
   // puis supprime le champ pour libérer le nom de l'alias O2M.
   await migrateLegalSections(token)
+  await migrateArticleCategories(token)
   await ensureRelations(token)
   const roleIds = await ensureRoles(token)
   const policyIds = await ensurePolicies(token)

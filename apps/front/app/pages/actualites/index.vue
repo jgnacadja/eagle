@@ -39,19 +39,19 @@
           class="-mx-gutter-mobile md:mt-xl hide-scrollbar overflow-x-auto px-gutter-mobile lg:mx-0 lg:px-0 mt-lg"
         >
           <ul class="flex gap-sm whitespace-nowrap">
-            <li v-for="category in categoryOptions" :key="category">
+            <li v-for="category in categoryOptions" :key="category.value">
               <Button
                 type="button"
-                :variant="category === selectedCategory ? 'paper' : 'outline-inverse'"
+                :variant="category.value === selectedCategory ? 'paper' : 'outline-inverse'"
                 size="chip"
                 :class="[
                   'px-lg py-3 text-meta capitalize',
-                  category === selectedCategory ? 'font-semibold' : 'font-medium'
+                  category.value === selectedCategory ? 'font-semibold' : 'font-medium'
                 ]"
-                :aria-current="category === selectedCategory ? 'true' : undefined"
-                @click="setCategory(category)"
+                :aria-current="category.value === selectedCategory ? 'true' : undefined"
+                @click="setCategory(category.value)"
               >
-                {{ category }}
+                {{ category.label }}
               </Button>
             </li>
           </ul>
@@ -111,7 +111,7 @@
               </div>
               <div class="flex flex-1 flex-col gap-md bg-paper p-lg 2xl:mt-lg">
                 <p class="text-overline text-accent-text">
-                  <span class="font-bold uppercase">{{ featuredArticle.category }}</span>
+                  <span class="font-bold uppercase">{{ featuredArticle.category?.name }}</span>
                   <span class="font-medium text-ink-subtle">
                     <span class="mx-xs">·</span>{{ formatArticleDate(featuredArticle.publish_at) }}
                     <span class="mx-xs">·</span> {{ readingTime }} min
@@ -151,7 +151,7 @@
                 v-reveal="revealStagger(index % 3)"
               >
                 <ArticleCard
-                  :category="article.category ?? 'Actualité'"
+                  :category="article.category?.name ?? 'Actualité'"
                   :title="article.title"
                   :date="formatArticleDate(article.publish_at)"
                   :excerpt="article.excerpt ?? ''"
@@ -312,7 +312,7 @@
 <script setup lang="ts">
 import { aggregate, readItems } from '@directus/sdk'
 import { toTypedSchema } from '@vee-validate/zod'
-import type { Article } from '@learnup/types'
+import type { Article, ArticleCategory } from '@learnup/types'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
 import { articleAssetUrl, articleReadingTime, formatArticleDate } from '~/utils/article'
@@ -344,11 +344,20 @@ const directus = useDirectusClient()
 
 // Filtres portés par l'URL : partageables, rendus côté serveur et cachés
 // par variante grâce à l'ISR `passQuery`.
-const selectedCategory = computed(() =>
-  typeof route.query.category === 'string' && route.query.category
-    ? route.query.category
-    : CATEGORY_ALL
-)
+// `?category=` porte le slug ; un libellé d'ancienne URL est résolu vers le
+// slug correspondant, une valeur inconnue retombe sur « Tout ».
+const selectedCategory = computed(() => {
+  const raw =
+    typeof route.query.category === 'string' && route.query.category
+      ? route.query.category
+      : CATEGORY_ALL
+  if (raw === CATEGORY_ALL) return raw
+  if (categoryOptions.value.some((option) => option.value === raw)) return raw
+  const byLabel = categoryOptions.value.find(
+    (option) => option.label.trim().toLowerCase() === raw.trim().toLowerCase()
+  )
+  return byLabel?.value ?? CATEGORY_ALL
+})
 const selectedRegion = computed(() =>
   typeof route.query.region === 'string' && route.query.region ? route.query.region : REGION_ALL
 )
@@ -382,7 +391,8 @@ function setCategory(category: string) {
   if (category !== selectedCategory.value) {
     pushEvent({
       event: 'filter_blog_category',
-      category_name: category,
+      category_name:
+        categoryOptions.value.find((option) => option.value === category)?.label ?? category,
       results_count: listData.value?.total ?? 0
     })
     navigateTo({ path: '/actualites', query: filtersQuery({ category }) })
@@ -433,7 +443,7 @@ const { data: featuredArticle } = await useAsyncData<Article | null>(
             'slug',
             'title',
             'excerpt',
-            'category',
+            'category.name',
             'publish_at',
             'cover_image',
             'content'
@@ -456,13 +466,13 @@ const { data: featuredArticle } = await useAsyncData<Article | null>(
 )
 
 interface ArticleFacet {
-  category: string | null
+  category: number | null
   region: string | null
   count: string | null
 }
 
-// Options de filtres : une seule agrégation donne les catégories et les
-// régions réellement utilisées, sans charger tous les articles.
+// Options de filtres : une seule agrégation donne les catégories (id M2O) et
+// les régions réellement utilisées, sans charger tous les articles.
 const { data: facets } = await useAsyncData<ArticleFacet[]>(
   'actualites-facets',
   async () => {
@@ -485,14 +495,42 @@ const { data: facets } = await useAsyncData<ArticleFacet[]>(
   { getCachedData: hydrationCache<ArticleFacet[]> }
 )
 
+// Libellés des catégories : la collection `categories` fait foi (le faceting
+// ne remonte que les ids). Seules les catégories utilisées sont listées.
+const { data: categoriesData } = await useAsyncData<ArticleCategory[]>(
+  'actualites-categories',
+  async () => {
+    try {
+      return await directus.request<ArticleCategory[]>(
+        readItems('categories', {
+          fields: ['id', 'slug', 'name'],
+          filter: { status: { _eq: 'published' } },
+          sort: ['sort'],
+          limit: 100
+        })
+      )
+    } catch (error) {
+      /* v8 ignore next 3 */
+      if (import.meta.server) {
+        logServerError('[actualites] categories fetch failed:', error)
+      }
+      return []
+    }
+  },
+  { getCachedData: hydrationCache<ArticleCategory[]> }
+)
+
 const categoryOptions = computed(() => {
-  const categories = new Set(
+  const usedIds = new Set(
     (facets.value ?? [])
       .map((facet) => facet.category)
-      .filter((category): category is string => Boolean(category?.trim()))
+      .filter((id): id is number => typeof id === 'number')
   )
+  const options = (categoriesData.value ?? [])
+    .filter((category) => usedIds.has(category.id))
+    .map((category) => ({ value: category.slug, label: category.name }))
 
-  return [CATEGORY_ALL, ...Array.from(categories)]
+  return [{ value: CATEGORY_ALL, label: 'Tout' }, ...options]
 })
 
 const regionOptions = computed(() => {
@@ -520,7 +558,7 @@ const articlesFilter = computed(() => ({
     ...(featuredArticle.value ? [{ slug: { _neq: featuredArticle.value.slug } }] : []),
     ...(selectedCategory.value === CATEGORY_ALL
       ? []
-      : [{ category: { _eq: selectedCategory.value } }]),
+      : [{ category: { slug: { _eq: selectedCategory.value } } }]),
     ...(selectedRegion.value === REGION_ALL ? [] : [{ region: { _eq: selectedRegion.value } }])
   ]
 }))
@@ -557,7 +595,7 @@ const {
               'slug',
               'title',
               'excerpt',
-              'category',
+              'category.name',
               'region',
               'publish_at',
               'cover_image'

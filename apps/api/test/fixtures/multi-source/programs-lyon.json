@@ -1,0 +1,28 @@
+[
+  {
+    "id": "prog-001",
+    "code": "LYON-001",
+    "name": "Habilitation électrique Lyon",
+    "description": "Préparation à l'habilitation électrique B0/H0.",
+    "durationInDays": 2,
+    "durationInHours": 14,
+    "cpf": false,
+    "certificationType": "Attestation",
+    "certifierName": "LEARN UP Lyon",
+    "category": { "id": "cat-9", "name": "Sécurité" },
+    "costsInter": [{ "cost": 950, "vat": 20, "type": "inter" }]
+  },
+  {
+    "id": "prog-002",
+    "code": "LYON-002",
+    "name": "Gestes et postures Lyon",
+    "description": "Prévention des TMS.",
+    "durationInDays": 1,
+    "durationInHours": 7,
+    "cpf": false,
+    "certificationType": "Attestation",
+    "certifierName": "LEARN UP Lyon",
+    "category": { "id": "cat-9", "name": "Sécurité" },
+    "costsInter": [{ "cost": 480, "vat": 20, "type": "inter" }]
+  }
+]

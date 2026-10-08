@@ -887,7 +887,7 @@ describe('DirectusCatalogService', () => {
       expect(fetch).toHaveBeenCalledTimes(1)
     })
 
-    it('republishes only flagged, still archived formations that Digiforma returns', async () => {
+    it('republishes only flagged formations that Digiforma still returns', async () => {
       fetch
         .mockResolvedValueOnce(
           json([
@@ -904,7 +904,6 @@ describe('DirectusCatalogService', () => {
 
       const read = new URL(fetch.mock.calls[0][0] as string)
       expect(read.searchParams.get('filter[archived_by_source][_eq]')).toBe('true')
-      expect(read.searchParams.get('filter[status][_eq]')).toBe('archived')
       expect(read.searchParams.get('filter[source][_eq]')).toBe('source-nice')
       expect(JSON.parse(fetch.mock.calls[1][1].body)).toEqual({
         keys: [1, 3],
@@ -912,7 +911,7 @@ describe('DirectusCatalogService', () => {
       })
     })
 
-    it('leaves manually changed statuses alone (filters to still archived rows)', async () => {
+    it('leaves manually archived formations alone (flag filter, nothing returned)', async () => {
       fetch.mockResolvedValueOnce(json([]))
 
       await expect(service.republishArchivedBySource('source-nice', ['a'])).resolves.toBe(0)

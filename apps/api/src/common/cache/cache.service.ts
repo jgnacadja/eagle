@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto'
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit, Optional } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import Redis, { RedisOptions } from 'ioredis'
+import { SourcesService } from '../../sources/sources.service'
 
 // retryStrategy borné : une coupure Redis transitoire (restart container,
 // réseau) ne doit pas désactiver le cache jusqu'au prochain restart de
@@ -40,6 +41,8 @@ export interface SyncRun {
   source?: string
   /** Formations dépubliées par la désactivation d'une source (cycle de vie). */
   archived?: number
+  /** Formations republiées à la réactivation d'une source. */
+  republished?: number
 }
 
 @Injectable()
@@ -58,7 +61,10 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private readonly catalogListeners = new Set<() => void>()
   private scopeProvider?: CacheScopeProvider
 
-  constructor(config: ConfigService) {
+  constructor(
+    config: ConfigService,
+    @Optional() private readonly sources?: SourcesService
+  ) {
     const url = config.get<string>('REDIS_URL')
     if (!url) {
       this.logger.warn('REDIS_URL missing: cache disabled')
@@ -134,19 +140,6 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     } catch (error) {
       this.logger.warn({ error, pattern }, 'Failed to delete cached values')
     }
-  }
-
-  /**
-   * Enregistre le fournisseur de portée des clés catalogue (les sources
-   * actives). Sans fournisseur, les clés ne portent que la version globale.
-   */
-  setScopeProvider(provider: CacheScopeProvider): void {
-    this.scopeProvider = provider
-  }
-
-  /** La config du fournisseur de portée a changé : il doit la relire. */
-  invalidateScope(): void {
-    this.scopeProvider?.invalidate()
   }
 
   /**
@@ -343,30 +336,26 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     ])
     const version = Number.parseInt(rawVersion ?? '0', 10) || 0
     this.currentVersion = version
-    return `catalog:v${version}:${this.scopeOf(codes, sourceVersions)}${path}`
+    return `catalog:v${version}:${await this.sourcesScope()}${path}`
   }
 
-  // Codes de la portée des clés, triés. Vide sans fournisseur ou en cas
-  // d'erreur — le cache retombe alors sur la seule version globale (jamais
-  // d'échec de lecture pour autant).
-  private async scopeCodes(): Promise<string[]> {
-    if (!this.scopeProvider) return []
+  // Portée « sources actives » des clés : hash de leurs versions. Vide sans
+  // service de sources ou en cas d'erreur — le cache retombe alors sur la
+  // seule version globale (jamais d'échec de lecture pour autant).
+  private async sourcesScope(): Promise<string> {
+    if (!this.sources) return ''
     try {
-      return [...(await this.scopeProvider.activeCodes())].sort()
+      const codes = (await this.sources.listActive()).map((source) => source.code).sort()
+      const versions = await this.client!.mget(codes.map((code) => `catalog:ver:${code}`))
+      const digest = createHash('sha1')
+        .update(codes.map((code, i) => `${code}=${versions[i] ?? 0}`).join('|'))
+        .digest('hex')
+        .slice(0, 8)
+      return `s${digest}:`
     } catch (error) {
       this.logger.warn({ error }, 'Failed to compute the sources cache scope')
-      return []
+      return ''
     }
-  }
-
-  // Portée « sources actives » des clés : hash de leurs versions.
-  private scopeOf(codes: string[], versions: Array<string | null>): string {
-    if (codes.length === 0) return ''
-    const digest = createHash('sha1')
-      .update(codes.map((code, i) => `${code}=${versions[i] ?? 0}`).join('|'))
-      .digest('hex')
-      .slice(0, 8)
-    return `s${digest}:`
   }
 
   private async initializeClient(): Promise<void> {

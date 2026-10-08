@@ -1,7 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { ConfigService } from '@nestjs/config'
 import { EventEmitter } from 'node:events'
-import { CacheService, type CacheScopeProvider } from './cache.service'
+import { SourcesService } from '../../sources/sources.service'
+import { CacheService } from './cache.service'
 
 // Store partagé entre toutes les instances MockRedis : permet de simuler
 // plusieurs instances CacheService derrière un seul Redis (multi-instances).
@@ -633,17 +634,17 @@ describe('CacheService', () => {
 
 describe('CacheService — portée par source', () => {
   let activeCodes: string[]
-  let provider: { activeCodes: ReturnType<typeof vi.fn>; invalidate: ReturnType<typeof vi.fn> }
+  let listActive: ReturnType<typeof vi.fn>
 
   const buildScoped = async (): Promise<CacheService> => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CacheService,
-        { provide: ConfigService, useValue: { get: () => 'redis://localhost:6379' } }
+        { provide: ConfigService, useValue: { get: () => 'redis://localhost:6379' } },
+        { provide: SourcesService, useValue: { listActive } }
       ]
     }).compile()
     const instance = module.get<CacheService>(CacheService)
-    instance.setScopeProvider(provider as CacheScopeProvider)
     const client = Reflect.get(instance, 'client') as { status?: string }
     client.status = 'ready'
     await instance.onModuleInit()
@@ -658,10 +659,7 @@ describe('CacheService — portée par source', () => {
   beforeEach(() => {
     sharedStore.clear()
     activeCodes = ['hq', 'lyon']
-    provider = {
-      activeCodes: vi.fn(async () => [...activeCodes]),
-      invalidate: vi.fn()
-    }
+    listActive = vi.fn(async () => activeCodes.map((code) => ({ code })))
   })
 
   it('prefixes catalog keys with a hash of the active sources versions', async () => {
@@ -723,66 +721,8 @@ describe('CacheService — portée par source', () => {
     await service.onModuleDestroy()
   })
 
-  it('reads the global and per-source versions with a single MGET', async () => {
-    const service = await buildScoped()
-    const redis = Reflect.get(service, 'client') as { mget: ReturnType<typeof vi.fn> }
-
-    await service.set('courses', { id: 1 })
-    redis.mget.mockClear()
-    await service.get('courses')
-
-    expect(redis.mget).toHaveBeenCalledTimes(1)
-    expect(redis.mget).toHaveBeenCalledWith([
-      'catalog:version',
-      'catalog:ver:hq',
-      'catalog:ver:lyon'
-    ])
-    await service.onModuleDestroy()
-  })
-
-  it('does not mutate the codes returned by the scope provider', async () => {
-    const service = await buildScoped()
-    const codes = ['lyon', 'hq']
-    provider.activeCodes.mockResolvedValue(codes)
-
-    await service.set('courses', { id: 1 })
-
-    expect(codes).toEqual(['lyon', 'hq'])
-    await service.onModuleDestroy()
-  })
-
-  it('relays invalidateScope() to the scope provider, and ignores it without one', async () => {
-    const service = await buildScoped()
-    service.invalidateScope()
-    expect(provider.invalidate).toHaveBeenCalledOnce()
-    await service.onModuleDestroy()
-
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [CacheService, { provide: ConfigService, useValue: { get: () => undefined } }]
-    }).compile()
-    expect(() => module.get<CacheService>(CacheService).invalidateScope()).not.toThrow()
-  })
-
-  it('keeps unscoped keys without a scope provider', async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        CacheService,
-        { provide: ConfigService, useValue: { get: () => 'redis://localhost:6379' } }
-      ]
-    }).compile()
-    const bare = module.get<CacheService>(CacheService)
-    const client = Reflect.get(bare, 'client') as { status?: string }
-    client.status = 'ready'
-    await bare.onModuleInit()
-
-    await bare.set('courses', { id: 1 })
-
-    expect(sharedStore.has('catalog:v0:courses')).toBe(true)
-    await bare.onModuleDestroy()
-  })
-
   it('falls back to unscoped keys when the sources lookup fails', async () => {
-    provider.activeCodes.mockRejectedValue(new Error('directus down'))
+    listActive.mockRejectedValue(new Error('directus down'))
     const service = await buildScoped()
 
     await service.set('courses', { id: 1 })

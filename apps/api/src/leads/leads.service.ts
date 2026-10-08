@@ -15,11 +15,7 @@ import type {
   RappelLeadDto
 } from './leads.dto'
 import type { LeadFormName } from '../sources/source.types'
-import {
-  HubspotTargetResolver,
-  type HubspotTarget,
-  type LeadTargetContext
-} from './hubspot-target.resolver'
+import { HubspotTargetResolver, type LeadTargetContext } from './hubspot-target.resolver'
 
 export type { LeadFormName }
 
@@ -91,10 +87,6 @@ interface PageContext {
  * soumission n'est pas authentifié (portalId + formGuid suffisent) ; seul un
  * token d'app privée renseigné sur une source bascule sur l'endpoint
  * `secure`. La clé de service d'administration n'est jamais utilisée ici.
- *
- * Un lead n'est jamais perdu faute de configuration franchise : le résolveur
- * replie sur la HQ quand la config manque, et la HQ reprend la soumission
- * quand le portail franchise la refuse (4xx hors 408 / 429).
  */
 @Injectable()
 export class LeadsService {
@@ -226,7 +218,7 @@ export class LeadsService {
   private async post(
     form: LeadFormName,
     hubspotFields: HubSpotField[],
-    context: PageContext,
+    context: { pageUri?: string; pageName?: string; hutk?: string },
     consentText?: string,
     routing: LeadTargetContext = {}
   ): Promise<{ submitted: true }> {
@@ -234,44 +226,27 @@ export class LeadsService {
       formationId: routing.formationId,
       centreId: routing.centreId
     })
-    let outcome = await this.send(target, form, hubspotFields, context, consentText)
-
-    // Les pannes passagères (429, 5xx, réseau) ne sont pas rejouées ailleurs :
-    // un lead franchise ne doit pas atterrir chez la HQ pour un incident court.
-    if (!outcome.ok && this.refusedByFranchise(target, outcome.status)) {
-      this.logger.warn(
-        { leadType: form, sourceCode: target.sourceCode, status: outcome.status },
-        'Franchise portal refused the lead — resubmitting to the HQ portal'
-      )
-      const hq = await this.targets.resolve(form)
-      outcome = await this.send(hq, form, hubspotFields, context, consentText)
-    }
-
-    if (!outcome.ok) {
-      this.logger.error(`HubSpot Forms HTTP ${outcome.status} (form: ${form})`)
-      throw new ServiceUnavailableException('The submission service is unavailable.')
-    }
-    return { submitted: true }
-  }
-
-  private refusedByFranchise(target: HubspotTarget, status: number): boolean {
-    return !target.isHq && status >= 400 && status < 500 && !TRANSIENT_CLIENT_ERRORS.has(status)
-  }
-
-  private async send(
-    target: HubspotTarget,
-    form: LeadFormName,
-    hubspotFields: HubSpotField[],
-    context: PageContext,
-    consentText?: string
-  ): Promise<{ ok: boolean; status: number }> {
     const { portalId, formGuid } = target
     if (!portalId || !formGuid) {
       this.logger.error(`Missing HubSpot configuration (form: ${form})`)
       throw new ServiceUnavailableException('The submission service is unavailable.')
     }
 
-    const body = this.buildBody(target, hubspotFields, context, consentText)
+    const body: Record<string, unknown> = { fields: hubspotFields }
+    // Contexte seulement si la page le fournit : un pageUri dont le domaine
+    // n'est pas tracké par le portail fait jeter la soumission par HubSpot.
+    // `hutk` (cookie de tracking) n'appartient qu'au portail HQ, dont le
+    // script est celui du site : sur un portail franchise il serait rejeté
+    // ou rattaché au mauvais contact.
+    const hutk = target.isHq ? context.hutk : undefined
+    if (context.pageUri || context.pageName || hutk) {
+      body.context = { pageUri: context.pageUri, pageName: context.pageName, hutk }
+    }
+    if (consentText) {
+      body.legalConsentOptions = {
+        consent: { consentToProcess: true, text: consentText }
+      }
+    }
 
     try {
       const endpoint = target.token ? 'secure/submit' : 'submit'

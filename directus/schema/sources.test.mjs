@@ -3,6 +3,7 @@ import { describe, it } from 'node:test'
 import { permissionsFor, publicPermissions } from './roles.mjs'
 import { collections, relations } from './collections.mjs'
 import { buildHqSource, planHqSource } from './sources.mjs'
+import { buildFlows } from './flows.mjs'
 import { COMPOSITE_INDEX, down, LEGACY_UNIQUE, SINGLE_HQ_INDEX, up } from './indexes.mjs'
 
 const SECRET_FIELDS = ['digiforma_api_key', 'hubspot_token']
@@ -87,6 +88,20 @@ describe('index SQL', () => {
     assert.ok(sql.indexOf('(source, digiforma_id)') < sql.indexOf('DROP INDEX'))
   })
 
+  it('up : la contrainte historique est supprimée avant son index', async () => {
+    // knex émet l'unique de `digiforma_id` comme une contrainte, et Postgres
+    // refuse de supprimer l'index qui la porte (« constraint … requires it »).
+    const knex = fakeKnex()
+    await up(knex)
+    const statements = knex.calls.map((c) => c.sql)
+    const dropConstraint = statements.findIndex((s) => /DROP CONSTRAINT IF EXISTS/.test(s))
+    const dropIndex = statements.findIndex((s) => /DROP INDEX IF EXISTS/.test(s))
+    assert.ok(dropConstraint >= 0 && dropIndex >= 0)
+    assert.ok(dropConstraint < dropIndex)
+    assert.deepEqual(knex.calls[dropConstraint].bindings, [LEGACY_UNIQUE])
+    assert.deepEqual(knex.calls[dropIndex].bindings, [LEGACY_UNIQUE])
+  })
+
   it('down : rétablit l’unique digiforma_id', async () => {
     const knex = fakeKnex()
     await down(knex)
@@ -129,8 +144,15 @@ describe('schéma sources', () => {
     assert.equal(field('last_sync_status').meta.readonly, true)
   })
 
-  it('masque les secrets', () => {
-    for (const name of SECRET_FIELDS) assert.equal(field(name).meta.hidden, true)
+  it('affiche les secrets masqués, saisissables par l’administrateur', () => {
+    // `hidden` retire le champ du formulaire : impossible alors de saisir une
+    // clé dans l'admin. Le champ reste visible mais masqué (type mot de passe) ;
+    // la lecture est réservée à l'admin par les permissions ci-dessous.
+    for (const name of SECRET_FIELDS) {
+      assert.notEqual(field(name).meta.hidden, true, name)
+      assert.equal(field(name).meta.interface, 'input', name)
+      assert.equal(field(name).meta.options?.masked, true, name)
+    }
   })
 
   it('relie centres et formations à sources, et retire l’unique simple', () => {
@@ -175,5 +197,34 @@ describe('permissions sources', () => {
     const formations = publics.find((p) => p.collection === 'formations')
     assert.ok(!formations.fields.includes('source'))
     assert.ok(!formations.fields.includes('archived_by_source'))
+  })
+})
+
+describe('flows d’invalidation', () => {
+  const flowNamed = (flows, name) => flows.find((f) => f.name === name)
+
+  it('une écriture sur sources purge la config côté API, sans purge front', () => {
+    const flow = flowNamed(buildFlows({ syncUserId: 'sync-user' }), 'Invalidate sources config')
+    assert.ok(flow, 'flow manquant')
+    assert.deepEqual(flow.options.collections, ['sources'])
+    assert.deepEqual(flow.options.scope, ['items.create', 'items.update', 'items.delete'])
+    const requests = flow.operations.filter((op) => op.type === 'request')
+    assert.equal(requests.length, 1)
+    assert.match(requests[0].options.url, /\/admin\/cache\/invalidate$/)
+    assert.equal(requests[0].options.body, '{"collection":"sources"}')
+    assert.ok(requests[0].options.headers.some((h) => h.header === 'x-api-key'))
+  })
+
+  it('ignore les écritures de la sync (last_sync_* à chaque run)', () => {
+    const flow = flowNamed(buildFlows({ syncUserId: 'sync-user' }), 'Invalidate sources config')
+    assert.equal(flow.operations[0].type, 'condition')
+    assert.deepEqual(flow.operations[0].options.filter, {
+      $accountability: { user: { _neq: 'sync-user' } }
+    })
+  })
+
+  it('sources n’alimente pas le flow de contenu (ISR front)', () => {
+    const content = flowNamed(buildFlows(), 'Invalidate site cache')
+    assert.ok(!content.options.collections.includes('sources'))
   })
 })

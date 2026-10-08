@@ -55,8 +55,18 @@ export class FakeDirectus {
   readonly calls: RecordedCall[] = []
   private nextId = 1
   private nextFileId = 1
+  private readonly unreadable = new Set<string>()
 
   constructor(private readonly defaultSourceId: string | null) {}
+
+  /** Les lectures de cette collection répondent 503 (Directus indisponible). */
+  failReads(collection: string): void {
+    this.unreadable.add(collection)
+  }
+
+  restoreReads(collection: string): void {
+    this.unreadable.delete(collection)
+  }
 
   rows(collection: string): Row[] {
     return this.tables[collection]
@@ -78,6 +88,10 @@ export class FakeDirectus {
     const [, collection, id] = items
     const table = this.tables[collection]
     if (!table) return jsonResponse(404, { errors: [{ message: `Unknown ${collection}` }] })
+
+    if (method === 'GET' && this.unreadable.has(collection)) {
+      return jsonResponse(503, { errors: [{ message: `${collection} unavailable` }] })
+    }
 
     if (method === 'GET') {
       const filters = filtersOf(url)
@@ -131,8 +145,14 @@ export class FakeNetwork {
   readonly digiformaCalls: RecordedCall[] = []
   readonly hubspotCalls: RecordedCall[] = []
   private readonly accounts = new Map<string, { token: string; account: DigiformaAccount }>()
+  private readonly hubspotStatuses = new Map<string, number>()
 
   constructor(private readonly directus: FakeDirectus) {}
+
+  /** Statut HTTP renvoyé par la Forms API d'un portail (200 par défaut). */
+  setHubspotStatus(portalId: string, status: number): void {
+    this.hubspotStatuses.set(portalId, status)
+  }
 
   addDigiforma(url: string, token: string, account: DigiformaAccount): void {
     this.accounts.set(url, { token, account })
@@ -167,7 +187,8 @@ export class FakeNetwork {
 
     if (url.origin === HUBSPOT_FORMS_URL) {
       this.hubspotCalls.push(call)
-      return jsonResponse(200, {})
+      const portalId = url.pathname.split('/').at(-2) ?? ''
+      return jsonResponse(this.hubspotStatuses.get(portalId) ?? 200, {})
     }
 
     const entry = this.accounts.get(url.toString())

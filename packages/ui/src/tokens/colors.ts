@@ -47,7 +47,8 @@ export const colors = {
   },
   danger: {
     default: '#b03a2e',
-    soft: 'rgb(176 58 46 / 10%)'
+    soft: 'rgb(176 58 46 / 10%)',
+    inverse: '#ffb4ab'
   },
   info: {
     default: '#1e3a6e',

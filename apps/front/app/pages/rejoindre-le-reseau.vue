@@ -149,12 +149,6 @@ onMounted(() => {
     page_path: typeof window !== 'undefined' ? window.location.pathname : '',
     page_title: 'Rejoindre le réseau — LEARN UP ACADEMY'
   })
-  // Lien profond (« ?voie=formateur ») : le dialog s'ouvre directement sur
-  // le bon projet — utilisé par les cartes réseau de l'accueil.
-  const voie = route.query.voie
-  if (voie === 'centre' || voie === 'organisme' || voie === 'formateur') {
-    openCandidature(voie)
-  }
 })
 
 const profileTypeMap: Record<CandidatureVoie, NetworkProfileType> = {
@@ -177,6 +171,20 @@ function openCandidature(voie: CandidatureVoie) {
   candidatureVoie.value = voie
   candidatureOpen.value = true
 }
+
+// Lien profond (« ?voie=formateur ») : le dialog s'ouvre directement sur
+// le bon projet — utilisé par les cartes réseau de l'accueil et le footer.
+// watch car la clé de page est route.path : un changement de query seul
+// ne remonte pas la page.
+watch(
+  () => route.query.voie,
+  (voie) => {
+    if (voie === 'centre' || voie === 'organisme' || voie === 'formateur') {
+      openCandidature(voie)
+    }
+  },
+  { immediate: true }
+)
 
 const joinOptions: {
   icon: Component

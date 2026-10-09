@@ -165,6 +165,7 @@
   --color-warning-soft: var(--color-warning-soft);
   --color-danger: var(--color-danger);
   --color-danger-soft: var(--color-danger-soft);
+  --color-danger-inverse: var(--color-danger-inverse);
   --color-info: var(--color-info);
   --color-info-soft: var(--color-info-soft);
 

@@ -56,7 +56,12 @@
               variant === 'dark' ? 'text-paper' : 'text-ink'
             ]"
           >
-            Votre numéro de téléphone <span class="text-danger" aria-hidden="true">*</span>
+            Votre numéro de téléphone
+            <span
+              :class="variant === 'dark' ? 'text-danger-inverse' : 'text-danger'"
+              aria-hidden="true"
+              >*</span
+            >
           </Label>
           <Input
             id="rappel-telephone"
@@ -73,7 +78,10 @@
           <p
             v-if="showError"
             id="rappel-tel-error"
-            class="mt-xs text-meta font-semibold text-danger"
+            :class="[
+              'mt-xs text-meta font-semibold',
+              variant === 'dark' ? 'text-danger-inverse' : 'text-danger'
+            ]"
             role="alert"
           >
             {{ errorMessage }}
@@ -122,6 +130,7 @@
           :invalid="showConsentError"
           :error="errors.consentement"
           :label-class="variant === 'dark' ? 'text-ink-inverse-muted' : undefined"
+          :variant="variant === 'dark' ? 'dark' : 'default'"
         >
           {{ RAPPEL_CONSENT_TEXT }}
           <NuxtLink
@@ -155,7 +164,10 @@
 
           <p
             v-if="submitError"
-            class="mt-xs text-meta font-semibold text-danger text-center"
+            :class="[
+              'mt-xs text-meta font-semibold text-center',
+              variant === 'dark' ? 'text-danger-inverse' : 'text-danger'
+            ]"
             role="alert"
           >
             {{ submitError }}

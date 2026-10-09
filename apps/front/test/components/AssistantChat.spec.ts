@@ -112,7 +112,12 @@ describe('AssistantChat', () => {
     const entries = wrapper.findComponent(conversationStub).props('entries')
     expect(entries).toHaveLength(1)
     expect(entries[0].role).toBe('assistant')
-    expect(entries[0].content).toContain('Bonjour')
+    expect(entries[0].content).toBe('Bonjour, comment puis-je vous aider aujourd’hui ?')
+    expect(entries[0].reply?.suggestions).toEqual([
+      'Je veux former mes salariés au SST',
+      'Je cherche une formation CACES R486',
+      'Je veux former mes équipes au ATEX'
+    ])
   })
 
   it('sends the queued entry-point message on open', async () => {
@@ -458,7 +463,7 @@ describe('AssistantChat', () => {
     it('labels suggestion clicks and starts a new conversation after a reset', async () => {
       useAssistantLauncher().open()
       const wrapper = mountChat()
-      conversation(wrapper).vm.$emit('send', 'Former des salariés au SST', 'suggestion')
+      conversation(wrapper).vm.$emit('send', 'Je veux former mes salariés au SST', 'suggestion')
       await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
       const first = chatbotEvents()[0]!.conversation_id
 
@@ -470,7 +475,7 @@ describe('AssistantChat', () => {
         event: 'chatbot_suggested_action_click',
         conversation_id: first,
         action_type: 'suggestion',
-        action_label: 'Former des salariés au SST'
+        action_label: 'Je veux former mes salariés au SST'
       })
       const last = chatbotEvents().at(-1)
       expect(last).toMatchObject({ event: 'chatbot_message_sent', message_index: 1 })

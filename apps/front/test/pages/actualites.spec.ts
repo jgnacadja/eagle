@@ -12,7 +12,7 @@ const articles = [
     title: 'Recyclage CACES : échéance en 2027',
     excerpt: 'Les échéances de recyclage se rapprochent.',
     content: '<h2>Échéances</h2><p>À retenir.</p>',
-    category: 'Réglementation & obligations',
+    category: { id: 1, slug: 'reglementation-obligations', name: 'Réglementation & obligations' },
     region: 'ile-de-france',
     publish_at: '2026-09-02T00:00:00.000Z',
     cover_image: null as string | null
@@ -24,7 +24,7 @@ const articles = [
     title: 'Nouveau plateau technique nacelles PEMP à Créteil',
     excerpt: 'Un nouveau plateau.',
     content: null,
-    category: 'Nouvelles formations',
+    category: { id: 2, slug: 'nouvelles-formations', name: 'Nouvelles formations' },
     region: null,
     publish_at: '2026-09-01T00:00:00.000Z',
     cover_image: null as string | null
@@ -36,7 +36,7 @@ const articles = [
     title: 'Un nouveau centre ouvre à Cergy-Pontoise',
     excerpt: 'Un nouveau centre.',
     content: null,
-    category: 'Vie du réseau',
+    category: { id: 3, slug: 'vie-du-reseau', name: 'Vie du réseau' },
     region: null,
     publish_at: '2026-08-31T00:00:00.000Z',
     cover_image: null as string | null
@@ -48,7 +48,7 @@ const articles = [
     title: 'Habilitations électriques',
     excerpt: 'Habilitations.',
     content: null,
-    category: 'Réglementation & obligations',
+    category: { id: 1, slug: 'reglementation-obligations', name: 'Réglementation & obligations' },
     region: null,
     publish_at: '2026-08-30T00:00:00.000Z',
     cover_image: null as string | null
@@ -60,7 +60,7 @@ const articles = [
     title: 'MAC SST',
     excerpt: 'MAC SST.',
     content: null,
-    category: 'Nouvelles formations',
+    category: { id: 2, slug: 'nouvelles-formations', name: 'Nouvelles formations' },
     region: null,
     publish_at: '2026-08-29T00:00:00.000Z',
     cover_image: null as string | null
@@ -72,7 +72,7 @@ const articles = [
     title: 'AIPR',
     excerpt: 'Portes ouvertes.',
     content: null,
-    category: 'Réglementation & obligations',
+    category: { id: 1, slug: 'reglementation-obligations', name: 'Réglementation & obligations' },
     region: null,
     publish_at: '2026-08-28T00:00:00.000Z',
     cover_image: null as string | null
@@ -84,7 +84,7 @@ const articles = [
     title: 'Renouvellement Qualiopi',
     excerpt: 'Audit de renouvellement.',
     content: null,
-    category: 'Vie du réseau',
+    category: { id: 3, slug: 'vie-du-reseau', name: 'Vie du réseau' },
     region: 'bretagne',
     publish_at: '2026-08-27T00:00:00.000Z',
     cover_image: null as string | null
@@ -96,11 +96,17 @@ const articles = [
     title: 'Nouvelle session travaux en hauteur',
     excerpt: 'Une session supplémentaire.',
     content: null,
-    category: 'Nouvelles formations',
+    category: { id: 2, slug: 'nouvelles-formations', name: 'Nouvelles formations' },
     region: null,
     publish_at: '2026-08-26T00:00:00.000Z',
     cover_image: null as string | null
   }
+]
+
+const categories = [
+  { id: 1, slug: 'reglementation-obligations', name: 'Réglementation & obligations' },
+  { id: 2, slug: 'nouvelles-formations', name: 'Nouvelles formations' },
+  { id: 3, slug: 'vie-du-reseau', name: 'Vie du réseau' }
 ]
 
 interface MockCommand {
@@ -123,7 +129,7 @@ function applyFilter(items: Article[], filter: ArticleFilter | undefined): Artic
     (filter?._and ?? []).every((condition) => {
       if (condition.status) return item.status === condition.status._eq
       if (condition.slug) return item.slug !== condition.slug._neq
-      if (condition.category) return item.category === condition.category._eq
+      if (condition.category) return item.category?.slug === condition.category.slug._eq
       if (condition.region) return item.region === condition.region._eq
       return true
     })
@@ -133,11 +139,12 @@ function applyFilter(items: Article[], filter: ArticleFilter | undefined): Artic
 const route = reactive({ path: '/actualites', query: {} as Record<string, string> })
 
 const directusRequestMock = vi.fn(async (command: () => MockCommand) => {
-  const { params } = command()
+  const { path, params } = command()
+  if (path?.includes('/categories')) return categories
   if (params?.aggregate) {
     if (params.groupBy) {
       return articles.map((article) => ({
-        category: article.category,
+        category: article.category?.id ?? null,
         region: article.region,
         count: '1'
       }))
@@ -271,11 +278,12 @@ describe('pages/actualites/index', () => {
     asyncState.pending = false
     asyncState.error = null
     directusRequestMock.mockImplementation(async (command: () => MockCommand) => {
-      const { params } = command()
+      const { path, params } = command()
+      if (path?.includes('/categories')) return categories
       if (params?.aggregate) {
         if (params.groupBy) {
           return articles.map((article) => ({
-            category: article.category,
+            category: article.category?.id ?? null,
             region: article.region,
             count: '1'
           }))
@@ -332,10 +340,19 @@ describe('pages/actualites/index', () => {
     await reglementation!.trigger('click')
     await flushPromises()
 
-    expect(route.query.category).toBe('Réglementation & obligations')
+    expect(route.query.category).toBe('reglementation-obligations')
     expect(wrapper.text()).toContain('Habilitations électriques')
     expect(wrapper.text()).toContain('AIPR')
     expect(wrapper.text()).not.toContain('Nouveau plateau technique nacelles PEMP')
+  })
+
+  it('résout un ancien libellé `?category=` vers le slug de la rubrique', async () => {
+    route.query = { category: 'Vie du réseau' }
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Un nouveau centre ouvre à Cergy-Pontoise')
+    expect(wrapper.text()).toContain('Renouvellement Qualiopi')
+    expect(wrapper.text()).not.toContain('Habilitations électriques')
   })
 
   it('affiche la pagination quand le total dépasse la page', async () => {
@@ -430,7 +447,8 @@ describe('pages/actualites/index', () => {
 
   it('dégrade les filtres quand l’agrégation échoue', async () => {
     directusRequestMock.mockImplementation(async (command: () => MockCommand) => {
-      const { params } = command()
+      const { path, params } = command()
+      if (path?.includes('/categories')) return categories
       if (params?.aggregate && params.groupBy) throw new Error('down')
       if (params?.aggregate) return [{ count: String(articles.length) }]
       if (params?.limit === 1) return [articles[0]]
@@ -451,7 +469,7 @@ describe('pages/actualites/index', () => {
   })
 
   it('affiche l’état vide quand aucun article ne correspond', async () => {
-    route.query = { category: 'Catégorie inexistante' }
+    route.query = { region: 'pays-basque' }
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain('Aucun article ne correspond à ces filtres')
@@ -502,11 +520,12 @@ describe('pages/actualites/index', () => {
 
   it('se passe d’article à la une quand la requête est vide', async () => {
     directusRequestMock.mockImplementation(async (command: () => MockCommand) => {
-      const { params } = command()
+      const { path, params } = command()
+      if (path?.includes('/categories')) return categories
       if (params?.aggregate) {
         if (params.groupBy) {
           return articles.map((article) => ({
-            category: article.category,
+            category: article.category?.id ?? null,
             region: article.region,
             count: '1'
           }))
@@ -545,11 +564,12 @@ describe('pages/actualites/index', () => {
 
   it('retombe sur un total nul quand le comptage renvoie vide', async () => {
     directusRequestMock.mockImplementation(async (command: () => MockCommand) => {
-      const { params } = command()
+      const { path, params } = command()
+      if (path?.includes('/categories')) return categories
       if (params?.aggregate) {
         if (params.groupBy) {
           return articles.map((article) => ({
-            category: article.category,
+            category: article.category?.id ?? null,
             region: article.region,
             count: '1'
           }))

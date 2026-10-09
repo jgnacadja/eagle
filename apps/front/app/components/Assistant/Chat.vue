@@ -92,15 +92,14 @@ const { publish: publishHandoff } = useAssistantHandoffChannel()
 
 const GREETING: AssistantEntry = {
   role: 'assistant',
-  content:
-    'Bonjour ! Décrivez votre besoin de formation — métier, population, obligation réglementaire, ville, effectif — et je vous oriente vers les formations du catalogue.',
+  content: 'Bonjour, comment puis-je vous aider aujourd’hui ?',
   reply: {
     kind: 'clarify',
-    text: 'Bonjour ! Décrivez votre besoin de formation — métier, population, obligation réglementaire, ville, effectif — et je vous oriente vers les formations du catalogue.',
+    text: 'Bonjour, comment puis-je vous aider aujourd’hui ?',
     suggestions: [
-      'Former des salariés au SST',
-      'Mettre à jour une habilitation obligatoire',
-      'Aider des managers à gérer leur équipe'
+      'Je veux former mes salariés au SST',
+      'Je cherche une formation CACES R486',
+      'Je veux former mes équipes au ATEX'
     ]
   }
 }

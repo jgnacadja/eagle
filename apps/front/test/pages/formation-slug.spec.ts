@@ -44,7 +44,7 @@ const course: Course = {
   slug: 'caces-r489-chariots-elevateurs',
   title: 'CACES R489 — chariots élévateurs',
   description: 'Conduite de chariots élévateurs.',
-  shortDescription: null,
+  shortDescription: 'Accroche courte éditoriale.',
   durationDays: 3,
   durationHours: 21,
   durationBucket: 'moyenne',
@@ -452,6 +452,28 @@ describe('pages/formations/[famille]/[slug]', () => {
     expect(wrapper.text()).not.toContain('&eacute;')
     expect(wrapper.html()).not.toContain('&lt;p&gt;')
     expect(wrapper.html()).toContain('<strong>cloud</strong>')
+  })
+
+  it('affiche la description courte sous le titre, en texte brut', async () => {
+    const wrapper = await mountPage()
+
+    const accroche = wrapper.find('#formation-title + p')
+    expect(accroche.exists()).toBe(true)
+    expect(accroche.text()).toContain('Accroche courte éditoriale.')
+
+    const htmlCourse: Course = { ...course, shortDescription: 'Accroche <em>pas</em> HTML.' }
+    vi.stubGlobal(
+      'useAsyncData',
+      async (key: string, handler: () => Promise<unknown>, options?: AsyncDataOptions) => {
+        if (key === 'course-caces-conduite-engins-caces-r489-chariots-elevateurs') {
+          return { data: ref(htmlCourse), pending: ref(false), error: ref(null), refresh: vi.fn() }
+        }
+        return defaultUseAsyncData(key, handler, options)
+      }
+    )
+    const htmlWrapper = await mountPage()
+    expect(htmlWrapper.find('#formation-title + p em').exists()).toBe(false)
+    expect(htmlWrapper.text()).toContain('Accroche <em>pas</em> HTML.')
   })
 
   it('restaure les sections sessions, lieux et modalités/évaluation', async () => {
@@ -937,6 +959,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     const minimal: Course = {
       ...course,
       description: null,
+      shortDescription: null,
       durationDays: null,
       durationHours: null,
       price: null,

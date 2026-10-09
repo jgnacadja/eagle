@@ -434,7 +434,7 @@
             <!-- Boutons d'action -->
             <div class="mt-lg flex w-full flex-col gap-sm sm:w-auto sm:flex-row sm:items-center">
               <Button as-child variant="accent" size="pill" class="w-full sm:w-auto">
-                <NuxtLink to="/centres/demande-de-formation">
+                <NuxtLink to="/entreprise">
                   Découvrir nos solutions entreprises <span class="link-arrow">→</span>
                 </NuxtLink>
               </Button>
@@ -654,7 +654,7 @@
           :key="article.slug"
           v-reveal="revealStagger(i)"
           variant="card"
-          :category="article.category ?? 'Conseil'"
+          :category="article.category?.name ?? 'Conseil'"
           :title="article.title"
           :date="formatArticleDate(article.publish_at)"
           :excerpt="article.excerpt ?? ''"
@@ -840,11 +840,13 @@ const tickerItems = [
 
 // ── Données statiques ───────────────────────────────────────────────────────
 
+// Cartes réseau : chaque lien mène au formulaire de candidature dédié —
+// `?voie=` ouvre le dialog avec le bon projet présélectionné.
 const networkCards = [
   {
     title: 'Devenir franchisé',
     subtitle: "Ouvrez votre centre avec l'appui du réseau",
-    to: '/centres/demande-de-formation?sujet=franchise'
+    to: '/rejoindre-le-reseau?voie=centre'
   },
   {
     title: 'Organisme partenaire',
@@ -854,7 +856,7 @@ const networkCards = [
   {
     title: 'Formateur indépendant',
     subtitle: 'Intervenez sur les sessions du réseau',
-    to: '/centres/demande-de-formation?sujet=formateur'
+    to: '/rejoindre-le-reseau?voie=formateur'
   }
 ]
 
@@ -1120,7 +1122,16 @@ function onMapSearch(value: string) {
 // ── Actualités ──────────────────────────────────────────────────────────────
 
 const homeArticlesData = await useDirectusList<Article>('articles', 'home-actualites-list', {
-  fields: ['id', 'status', 'slug', 'title', 'excerpt', 'category', 'publish_at', 'cover_image'],
+  fields: [
+    'id',
+    'status',
+    'slug',
+    'title',
+    'excerpt',
+    'category.name',
+    'publish_at',
+    'cover_image'
+  ],
   filter: { status: { _eq: 'published' } },
   sort: ['-publish_at'],
   limit: 3

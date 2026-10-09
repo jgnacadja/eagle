@@ -56,6 +56,32 @@ collections:
       versioning: false
     schema:
       name: avis
+  - collection: categories
+    meta:
+      accountability: all
+      archive_app_filter: true
+      archive_field: null
+      archive_value: null
+      collapse: open
+      collection: categories
+      color: null
+      display_template: null
+      group: null
+      hidden: false
+      icon: sell
+      item_duplication_fields: null
+      note: Catégories des articles de blog.
+      preview_url: null
+      singleton: false
+      sort: null
+      sort_field: sort
+      translations:
+        - language: fr-FR
+          translation: Catégories
+      unarchive_value: null
+      versioning: false
+    schema:
+      name: categories
   - collection: centres
     meta:
       accountability: all
@@ -136,6 +162,34 @@ collections:
       versioning: false
     schema:
       name: formations
+  - collection: formations_centres
+    meta:
+      accountability: all
+      archive_app_filter: true
+      archive_field: null
+      archive_value: null
+      collapse: open
+      collection: formations_centres
+      color: null
+      display_template: null
+      group: null
+      hidden: true
+      icon: null
+      item_duplication_fields: null
+      note: >-
+        Jonction formations ↔ centres — lignes créées via le champ « Centres »
+        de la fiche formation. La sync n'y touche pas.
+      preview_url: null
+      singleton: false
+      sort: null
+      sort_field: null
+      translations:
+        - language: fr-FR
+          translation: Formations × centres
+      unarchive_value: null
+      versioning: false
+    schema:
+      name: formations_centres
   - collection: page_blocks
     meta:
       accountability: all
@@ -284,9 +338,16 @@ collections:
       display_template: null
       group: null
       hidden: false
-      icon: search_off
+      icon: null
       item_duplication_fields: null
-      note: 'Journal des recherches sans correspondance — catalogue « aucun résultat », moteur IA « hors catalogue ». Alimenté automatiquement par l’API : identifiants masqués (e-mail, téléphone, SIRET, IBAN, adresse), mais le texte libre peut encore contenir des données personnelles saisies par le visiteur — accès réservé aux rôles internes, purge après SEARCH_MISS_RETENTION_DAYS jours ; consultation et export pour la revue produit.'
+      note: >-
+        Journal des recherches sans correspondance — catalogue « aucun résultat
+        », moteur IA « hors catalogue ». Alimenté automatiquement par l’API :
+        identifiants masqués (e-mail, téléphone, SIRET, IBAN, adresse), mais le
+        texte libre peut encore contenir des données personnelles saisies par le
+        visiteur — accès réservé aux rôles internes, purge après
+        SEARCH_MISS_RETENTION_DAYS jours ; consultation et export pour la revue
+        produit.
       preview_url: null
       singleton: false
       sort: null
@@ -655,174 +716,6 @@ fields:
       foreign_key_table: null
       foreign_key_column: null
   - collection: articles
-    field: category
-    type: string
-    meta:
-      collection: articles
-      conditions: null
-      display: null
-      display_options: null
-      field: category
-      group: null
-      hidden: false
-      interface: input
-      note: Catégorie thématique
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 8
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Catégorie
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: category
-      table: articles
-      data_type: character varying
-      default_value: null
-      max_length: 255
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: articles
-    field: author_name
-    type: string
-    meta:
-      collection: articles
-      conditions: null
-      display: null
-      display_options: null
-      field: author_name
-      group: null
-      hidden: false
-      interface: input
-      note: Auteur identifié de l’article
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 9
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Nom de l’auteur
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: author_name
-      table: articles
-      data_type: character varying
-      default_value: null
-      max_length: 255
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: articles
-    field: author_image
-    type: uuid
-    meta:
-      collection: articles
-      conditions: null
-      display: null
-      display_options: null
-      field: author_image
-      group: null
-      hidden: false
-      interface: file-image
-      note: Image auteur
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 10
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Photo de l’auteur
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: author_image
-      table: articles
-      data_type: uuid
-      default_value: null
-      max_length: null
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: directus_files
-      foreign_key_column: id
-  - collection: articles
-    field: region
-    type: string
-    meta:
-      collection: articles
-      conditions: null
-      display: null
-      display_options: null
-      field: region
-      group: null
-      hidden: false
-      interface: input
-      note: Région concernée
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 11
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Région
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: region
-      table: articles
-      data_type: character varying
-      default_value: null
-      max_length: 255
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: articles
     field: publish_at
     type: timestamp
     meta:
@@ -839,7 +732,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 12
+      sort: 9
       special: null
       translations:
         - language: fr-FR
@@ -881,7 +774,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 13
+      sort: 10
       special: null
       translations:
         - language: fr-FR
@@ -923,7 +816,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 14
+      sort: 11
       special: null
       translations:
         - language: fr-FR
@@ -965,7 +858,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 15
+      sort: 12
       special: null
       translations:
         - language: fr-FR
@@ -1009,7 +902,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 16
+      sort: 13
       special: null
       translations:
         - language: fr-FR
@@ -1035,6 +928,174 @@ fields:
       foreign_key_table: centres
       foreign_key_column: id
   - collection: articles
+    field: cover_image
+    type: uuid
+    meta:
+      collection: articles
+      conditions: null
+      display: null
+      display_options: null
+      field: cover_image
+      group: null
+      hidden: false
+      interface: file-image
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 14
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Image de couverture
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: cover_image
+      table: articles
+      data_type: uuid
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: directus_files
+      foreign_key_column: id
+  - collection: articles
+    field: author_name
+    type: string
+    meta:
+      collection: articles
+      conditions: null
+      display: null
+      display_options: null
+      field: author_name
+      group: null
+      hidden: false
+      interface: input
+      note: Auteur identifié de l’article
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 15
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Nom de l’auteur
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: author_name
+      table: articles
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: articles
+    field: region
+    type: string
+    meta:
+      collection: articles
+      conditions: null
+      display: null
+      display_options: null
+      field: region
+      group: null
+      hidden: false
+      interface: input
+      note: Région concernée
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 17
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Région
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: region
+      table: articles
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: articles
+    field: author_image
+    type: uuid
+    meta:
+      collection: articles
+      conditions: null
+      display: null
+      display_options: null
+      field: author_image
+      group: null
+      hidden: false
+      interface: file-image
+      note: Image auteur
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 16
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Photo de l’auteur
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: author_image
+      table: articles
+      data_type: uuid
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: directus_files
+      foreign_key_column: id
+  - collection: articles
     field: related_formation
     type: integer
     meta:
@@ -1053,7 +1114,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 17
+      sort: 18
       special: null
       translations:
         - language: fr-FR
@@ -1079,38 +1140,40 @@ fields:
       foreign_key_table: formations
       foreign_key_column: id
   - collection: articles
-    field: cover_image
-    type: uuid
+    field: category
+    type: integer
     meta:
       collection: articles
       conditions: null
-      display: null
-      display_options: null
-      field: cover_image
+      display: related-values
+      display_options:
+        template: '{{name}}'
+      field: category
       group: null
       hidden: false
-      interface: file-image
-      note: null
-      options: null
+      interface: select-dropdown-m2o
+      note: Catégorie éditoriale de l’article
+      options:
+        template: '{{name}}'
       readonly: false
       required: false
       searchable: true
-      sort: 18
+      sort: null
       special: null
       translations:
         - language: fr-FR
-          translation: Image de couverture
+          translation: Catégorie
       validation: null
       validation_message: null
-      width: full
+      width: half
     schema:
-      name: cover_image
+      name: category
       table: articles
-      data_type: uuid
+      data_type: integer
       default_value: null
       max_length: null
-      numeric_precision: null
-      numeric_scale: null
+      numeric_precision: 32
+      numeric_scale: 0
       is_nullable: true
       is_unique: false
       is_indexed: false
@@ -1118,7 +1181,7 @@ fields:
       is_generated: false
       generation_expression: null
       has_auto_increment: false
-      foreign_key_table: directus_files
+      foreign_key_table: categories
       foreign_key_column: id
   - collection: avis
     field: id
@@ -1482,7 +1545,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 9
+      sort: 12
       special: null
       translations:
         - language: fr-FR
@@ -1507,6 +1570,395 @@ fields:
       has_auto_increment: false
       foreign_key_table: centres
       foreign_key_column: id
+  - collection: avis
+    field: source
+    type: string
+    meta:
+      collection: avis
+      conditions: null
+      display: null
+      display_options: null
+      field: source
+      group: null
+      hidden: false
+      interface: select-dropdown
+      note: >-
+        « google » = importé par la synchro (badge certifié au front) — les avis
+        google ne sont jamais dépubliés par le job, les archiver pour les
+        masquer
+      options:
+        choices:
+          - text: Google
+            value: google
+          - text: Manuel
+            value: manuel
+      readonly: false
+      required: false
+      searchable: true
+      sort: 9
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Source
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: source
+      table: avis
+      data_type: character varying
+      default_value: manuel
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: avis
+    field: avatar
+    type: string
+    meta:
+      collection: avis
+      conditions: null
+      display: null
+      display_options: null
+      field: avatar
+      group: null
+      hidden: false
+      interface: input
+      note: Photo de profil de l’auteur (URL) — renseignée par la synchro Google
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 10
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Avatar
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: avatar
+      table: avis
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: avis
+    field: google_review_id
+    type: string
+    meta:
+      collection: avis
+      conditions: null
+      display: null
+      display_options: null
+      field: google_review_id
+      group: null
+      hidden: true
+      interface: null
+      note: Identifiant Google de l’avis — clé d’idempotence de la synchro
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 11
+      special: null
+      translations:
+        - language: fr-FR
+          translation: ID Google
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: google_review_id
+      table: avis
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: true
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: categories
+    field: id
+    type: integer
+    meta:
+      collection: categories
+      conditions: null
+      display: null
+      display_options: null
+      field: id
+      group: null
+      hidden: true
+      interface: input
+      note: null
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 1
+      special: null
+      translations: null
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: id
+      table: categories
+      data_type: integer
+      default_value: nextval('categories_id_seq'::regclass)
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: false
+      is_unique: true
+      is_indexed: false
+      is_primary_key: true
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: true
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: categories
+    field: status
+    type: string
+    meta:
+      collection: categories
+      conditions: null
+      display: null
+      display_options: null
+      field: status
+      group: null
+      hidden: false
+      interface: select-dropdown
+      note: null
+      options:
+        choices:
+          - text: Brouillon
+            value: draft
+          - text: Publié
+            value: published
+          - text: Archivé
+            value: archived
+      readonly: false
+      required: false
+      searchable: true
+      sort: 2
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Statut
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: status
+      table: categories
+      data_type: character varying
+      default_value: draft
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: categories
+    field: sort
+    type: integer
+    meta:
+      collection: categories
+      conditions: null
+      display: null
+      display_options: null
+      field: sort
+      group: null
+      hidden: true
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 3
+      special: null
+      translations: null
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: sort
+      table: categories
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: categories
+    field: slug
+    type: string
+    meta:
+      collection: categories
+      conditions: null
+      display: null
+      display_options: null
+      field: slug
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: true
+      searchable: true
+      sort: 4
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Slug
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: slug
+      table: categories
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: true
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: categories
+    field: name
+    type: string
+    meta:
+      collection: categories
+      conditions: null
+      display: null
+      display_options: null
+      field: name
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: true
+      searchable: true
+      sort: 5
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Nom
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: name
+      table: categories
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: categories
+    field: description
+    type: text
+    meta:
+      collection: categories
+      conditions: null
+      display: null
+      display_options: null
+      field: description
+      group: null
+      hidden: false
+      interface: input-multiline
+      note: Accroche éditoriale de la rubrique
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 6
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Description
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: description
+      table: categories
+      data_type: text
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
   - collection: centres
     field: id
     type: integer
@@ -1573,7 +2025,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 2
+      sort: 1
       special: null
       translations:
         - language: fr-FR
@@ -1657,7 +2109,7 @@ fields:
       readonly: false
       required: true
       searchable: true
-      sort: 4
+      sort: 2
       special: null
       translations:
         - language: fr-FR
@@ -1697,9 +2149,9 @@ fields:
       note: Calculé depuis le département (« Centre LEARN UP de … »)
       options: null
       readonly: true
-      required: false
+      required: true
       searchable: true
-      sort: 5
+      sort: 3
       special: null
       translations:
         - language: fr-FR
@@ -1743,7 +2195,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 6
+      sort: 7
       special: null
       translations:
         - language: fr-FR
@@ -1785,7 +2237,7 @@ fields:
       readonly: true
       required: false
       searchable: true
-      sort: 7
+      sort: 8
       special: null
       translations:
         - language: fr-FR
@@ -1827,7 +2279,7 @@ fields:
       readonly: true
       required: false
       searchable: true
-      sort: 8
+      sort: 9
       special: null
       translations:
         - language: fr-FR
@@ -1841,469 +2293,6 @@ fields:
       data_type: character varying
       default_value: null
       max_length: 255
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: centres
-    field: department
-    type: string
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: department
-      group: null
-      hidden: false
-      interface: input
-      note: Calculé depuis l’adresse
-      options: null
-      readonly: true
-      required: false
-      searchable: true
-      sort: 9
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Département
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: department
-      table: centres
-      data_type: character varying
-      default_value: null
-      max_length: 255
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: centres
-    field: region
-    type: string
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: region
-      group: null
-      hidden: false
-      interface: input
-      note: Calculé depuis l’adresse
-      options: null
-      readonly: true
-      required: false
-      searchable: true
-      sort: 10
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Région
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: region
-      table: centres
-      data_type: character varying
-      default_value: null
-      max_length: 255
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: centres
-    field: latitude
-    type: float
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: latitude
-      group: null
-      hidden: false
-      interface: input
-      note: Calculée depuis l’adresse (WGS84)
-      options: null
-      readonly: true
-      required: false
-      searchable: true
-      sort: 11
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Latitude
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: latitude
-      table: centres
-      data_type: real
-      default_value: null
-      max_length: null
-      numeric_precision: 24
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: centres
-    field: longitude
-    type: float
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: longitude
-      group: null
-      hidden: false
-      interface: input
-      note: Calculée depuis l’adresse (WGS84)
-      options: null
-      readonly: true
-      required: false
-      searchable: true
-      sort: 12
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Longitude
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: longitude
-      table: centres
-      data_type: real
-      default_value: null
-      max_length: null
-      numeric_precision: 24
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: centres
-    field: geocoded_address
-    type: string
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: geocoded_address
-      group: null
-      hidden: true
-      interface: null
-      note: Adresse utilisée pour le dernier géocodage
-      options: null
-      readonly: true
-      required: false
-      searchable: true
-      sort: 13
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Adresse géocodée
-      validation: null
-      validation_message: null
-      width: full
-    schema:
-      name: geocoded_address
-      table: centres
-      data_type: character varying
-      default_value: null
-      max_length: 255
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: centres
-    field: description
-    type: text
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: description
-      group: null
-      hidden: false
-      interface: input-rich-text-html
-      note: Présentation du centre
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 15
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Description
-      validation: null
-      validation_message: null
-      width: full
-    schema:
-      name: description
-      table: centres
-      data_type: text
-      default_value: null
-      max_length: null
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: centres
-    field: specialties
-    type: json
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: specialties
-      group: null
-      hidden: false
-      interface: tags
-      note: Spécialités du centre (badges)
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 16
-      special:
-        - cast-json
-      translations:
-        - language: fr-FR
-          translation: Spécialités
-      validation: null
-      validation_message: null
-      width: full
-    schema:
-      name: specialties
-      table: centres
-      data_type: json
-      default_value: null
-      max_length: null
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: centres
-    field: opening_hours
-    type: string
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: opening_hours
-      group: null
-      hidden: false
-      interface: input
-      note: null
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 17
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Horaires d'ouverture
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: opening_hours
-      table: centres
-      data_type: character varying
-      default_value: null
-      max_length: 255
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: centres
-    field: transport
-    type: string
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: transport
-      group: null
-      hidden: false
-      interface: input
-      note: Accès transports
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 18
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Transports
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: transport
-      table: centres
-      data_type: character varying
-      default_value: null
-      max_length: 255
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: centres
-    field: parking
-    type: string
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: parking
-      group: null
-      hidden: false
-      interface: input
-      note: null
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 19
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Parking
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: parking
-      table: centres
-      data_type: character varying
-      default_value: null
-      max_length: 255
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: centres
-    field: pmr_accessible
-    type: boolean
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: pmr_accessible
-      group: null
-      hidden: false
-      interface: boolean
-      note: Locaux accessibles PMR
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 20
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Accessible PMR
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: pmr_accessible
-      table: centres
-      data_type: boolean
-      default_value: null
-      max_length: null
       numeric_precision: null
       numeric_scale: null
       is_nullable: true
@@ -2332,7 +2321,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 21
+      sort: 14
       special: null
       translations:
         - language: fr-FR
@@ -2342,48 +2331,6 @@ fields:
       width: half
     schema:
       name: phone
-      table: centres
-      data_type: character varying
-      default_value: null
-      max_length: 255
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: centres
-    field: mobile
-    type: string
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: mobile
-      group: null
-      hidden: false
-      interface: input
-      note: null
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 22
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Mobile
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: mobile
       table: centres
       data_type: character varying
       default_value: null
@@ -2416,7 +2363,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 23
+      sort: 16
       special: null
       translations:
         - language: fr-FR
@@ -2458,7 +2405,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 24
+      sort: 17
       special: null
       translations:
         - language: fr-FR
@@ -2500,7 +2447,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 25
+      sort: 18
       special: null
       translations:
         - language: fr-FR
@@ -2514,50 +2461,6 @@ fields:
       data_type: character varying
       default_value: null
       max_length: 255
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: centres
-    field: franchise_since
-    type: date
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: franchise_since
-      group: null
-      hidden: false
-      interface: datetime
-      note: >-
-        Date d’entrée dans le réseau — affichée « Franchisé depuis … » sous le
-        nom du responsable sur la fiche
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 26
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Franchisé depuis
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: franchise_since
-      table: centres
-      data_type: date
-      default_value: null
-      max_length: null
       numeric_precision: null
       numeric_scale: null
       is_nullable: true
@@ -2586,7 +2489,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 27
+      sort: 24
       special:
         - cast-json
       translations:
@@ -2629,7 +2532,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 28
+      sort: 38
       special: null
       translations:
         - language: fr-FR
@@ -2671,7 +2574,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 29
+      sort: 25
       special: null
       translations:
         - language: fr-FR
@@ -2713,7 +2616,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 30
+      sort: 27
       special: null
       translations:
         - language: fr-FR
@@ -2739,132 +2642,6 @@ fields:
       foreign_key_table: null
       foreign_key_column: null
   - collection: centres
-    field: qualiopi_certifier
-    type: string
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: qualiopi_certifier
-      group: null
-      hidden: false
-      interface: input
-      note: Organisme certificateur (ex. AFNOR)
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 31
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Certificateur Qualiopi
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: qualiopi_certifier
-      table: centres
-      data_type: character varying
-      default_value: null
-      max_length: 255
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: centres
-    field: qualiopi_valid_until
-    type: timestamp
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: qualiopi_valid_until
-      group: null
-      hidden: false
-      interface: datetime
-      note: Date de fin de validité du certificat
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 32
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Validité Qualiopi
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: qualiopi_valid_until
-      table: centres
-      data_type: timestamp with time zone
-      default_value: null
-      max_length: null
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: centres
-    field: qualiopi_certificate
-    type: uuid
-    meta:
-      collection: centres
-      conditions: null
-      display: null
-      display_options: null
-      field: qualiopi_certificate
-      group: null
-      hidden: false
-      interface: file
-      note: Certificat Qualiopi (PDF)
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 33
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Certificat Qualiopi
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: qualiopi_certificate
-      table: centres
-      data_type: uuid
-      default_value: null
-      max_length: null
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: directus_files
-      foreign_key_column: id
-  - collection: centres
     field: seo_title
     type: string
     meta:
@@ -2881,7 +2658,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 34
+      sort: 35
       special: null
       translations:
         - language: fr-FR
@@ -2923,7 +2700,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 35
+      sort: 36
       special: null
       translations:
         - language: fr-FR
@@ -2965,7 +2742,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 36
+      sort: 37
       special: null
       translations:
         - language: fr-FR
@@ -3009,7 +2786,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 37
+      sort: 4
       special: null
       translations:
         - language: fr-FR
@@ -3035,6 +2812,681 @@ fields:
       foreign_key_table: directus_files
       foreign_key_column: id
   - collection: centres
+    field: department
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: department
+      group: null
+      hidden: false
+      interface: input
+      note: Calculé depuis l’adresse
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 10
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Département
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: department
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: region
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: region
+      group: null
+      hidden: false
+      interface: input
+      note: Calculé depuis l’adresse
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 11
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Région
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: region
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: latitude
+    type: float
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: latitude
+      group: null
+      hidden: false
+      interface: input
+      note: Calculée depuis l’adresse (WGS84)
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 12
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Latitude
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: latitude
+      table: centres
+      data_type: real
+      default_value: null
+      max_length: null
+      numeric_precision: 24
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: longitude
+    type: float
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: longitude
+      group: null
+      hidden: false
+      interface: input
+      note: Calculée depuis l’adresse (WGS84)
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 13
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Longitude
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: longitude
+      table: centres
+      data_type: real
+      default_value: null
+      max_length: null
+      numeric_precision: 24
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: description
+    type: text
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: description
+      group: null
+      hidden: false
+      interface: input-rich-text-html
+      note: Présentation du centre
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 6
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Description
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: description
+      table: centres
+      data_type: text
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: specialties
+    type: json
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: specialties
+      group: null
+      hidden: false
+      interface: tags
+      note: Spécialités du centre (badges)
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 23
+      special:
+        - cast-json
+      translations:
+        - language: fr-FR
+          translation: Spécialités
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: specialties
+      table: centres
+      data_type: json
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: opening_hours
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: opening_hours
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 19
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Horaires d'ouverture
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: opening_hours
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: transport
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: transport
+      group: null
+      hidden: false
+      interface: input
+      note: Accès transports
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 20
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Transports
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: transport
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: parking
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: parking
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 21
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Parking
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: parking
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: pmr_accessible
+    type: boolean
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: pmr_accessible
+      group: null
+      hidden: false
+      interface: boolean
+      note: Locaux accessibles PMR
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 22
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Accessible PMR
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: pmr_accessible
+      table: centres
+      data_type: boolean
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: geocoded_address
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: geocoded_address
+      group: null
+      hidden: true
+      interface: null
+      note: Adresse utilisée pour le dernier géocodage
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 31
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Adresse géocodée
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: geocoded_address
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: qualiopi_certificate
+    type: uuid
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: qualiopi_certificate
+      group: null
+      hidden: false
+      interface: file
+      note: Certificat Qualiopi (PDF)
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 29
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Certificat Qualiopi
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: qualiopi_certificate
+      table: centres
+      data_type: uuid
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: directus_files
+      foreign_key_column: id
+  - collection: centres
+    field: mobile
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: mobile
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 15
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Mobile
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: mobile
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: qualiopi_certifier
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: qualiopi_certifier
+      group: null
+      hidden: false
+      interface: input
+      note: Organisme certificateur (ex. AFNOR)
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 26
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Certificateur Qualiopi
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: qualiopi_certifier
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: qualiopi_valid_until
+    type: timestamp
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: qualiopi_valid_until
+      group: null
+      hidden: false
+      interface: datetime
+      note: Date de fin de validité du certificat
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 28
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Validité Qualiopi
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: qualiopi_valid_until
+      table: centres
+      data_type: timestamp with time zone
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: franchise_since
+    type: date
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: franchise_since
+      group: null
+      hidden: false
+      interface: datetime
+      note: >-
+        Date d’entrée dans le réseau — affichée « Franchisé depuis … » sous le
+        nom du responsable sur la fiche
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 30
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Franchisé depuis
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: franchise_since
+      table: centres
+      data_type: date
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
     field: short_description
     type: text
     meta:
@@ -3051,7 +3503,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 14
+      sort: 5
       special: null
       translations:
         - language: fr-FR
@@ -3067,6 +3519,178 @@ fields:
       max_length: null
       numeric_precision: null
       numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: google_place_id
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: google_place_id
+      group: null
+      hidden: false
+      interface: input
+      note: >-
+        Identifiant Google Places (Place ID) — active la synchro des avis et le
+        bouton « Voir tous les avis »
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 31
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Google Place ID
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: google_place_id
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: google_maps_url
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: google_maps_url
+      group: null
+      hidden: false
+      interface: input
+      note: >-
+        Lien de partage Google Maps — utilisé par « Voir tous les avis » à la
+        place de l’URL construite depuis le Place ID
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 32
+      special: null
+      translations:
+        - language: fr-FR
+          translation: URL Google Maps
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: google_maps_url
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: google_rating
+    type: float
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: google_rating
+      group: null
+      hidden: false
+      interface: input
+      note: Note globale Google — mise à jour par la synchro des avis
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 33
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Note Google
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: google_rating
+      table: centres
+      data_type: real
+      default_value: null
+      max_length: null
+      numeric_precision: 24
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: google_reviews_count
+    type: integer
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: google_reviews_count
+      group: null
+      hidden: false
+      interface: input
+      note: Nombre d’avis Google — mis à jour par la synchro des avis
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 34
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Nombre d’avis Google
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: google_reviews_count
+      table: centres
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
       is_nullable: true
       is_unique: false
       is_indexed: false
@@ -3336,6 +3960,174 @@ fields:
       foreign_key_table: null
       foreign_key_column: null
   - collection: familles_formation
+    field: seo_title
+    type: string
+    meta:
+      collection: familles_formation
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_title
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 8
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Titre SEO
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_title
+      table: familles_formation
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: familles_formation
+    field: seo_description
+    type: text
+    meta:
+      collection: familles_formation
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_description
+      group: null
+      hidden: false
+      interface: input-multiline
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 9
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Description SEO
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: seo_description
+      table: familles_formation
+      data_type: text
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: familles_formation
+    field: seo_canonical
+    type: string
+    meta:
+      collection: familles_formation
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_canonical
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 10
+      special: null
+      translations:
+        - language: fr-FR
+          translation: URL canonique
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_canonical
+      table: familles_formation
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: familles_formation
+    field: icon
+    type: uuid
+    meta:
+      collection: familles_formation
+      conditions: null
+      display: null
+      display_options: null
+      field: icon
+      group: null
+      hidden: false
+      interface: file-image
+      note: Picto
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 11
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Icône
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: icon
+      table: familles_formation
+      data_type: uuid
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: directus_files
+      foreign_key_column: id
+  - collection: familles_formation
     field: image
     type: uuid
     meta:
@@ -3394,7 +4186,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 8
+      sort: 12
       special: null
       translations:
         - language: fr-FR
@@ -3436,7 +4228,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 9
+      sort: 13
       special: null
       translations:
         - language: fr-FR
@@ -3478,7 +4270,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 10
+      sort: 14
       special: null
       translations:
         - language: fr-FR
@@ -3503,174 +4295,6 @@ fields:
       has_auto_increment: false
       foreign_key_table: null
       foreign_key_column: null
-  - collection: familles_formation
-    field: seo_title
-    type: string
-    meta:
-      collection: familles_formation
-      conditions: null
-      display: null
-      display_options: null
-      field: seo_title
-      group: null
-      hidden: false
-      interface: input
-      note: null
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 11
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Titre SEO
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: seo_title
-      table: familles_formation
-      data_type: character varying
-      default_value: null
-      max_length: 255
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: familles_formation
-    field: seo_description
-    type: text
-    meta:
-      collection: familles_formation
-      conditions: null
-      display: null
-      display_options: null
-      field: seo_description
-      group: null
-      hidden: false
-      interface: input-multiline
-      note: null
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 12
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Description SEO
-      validation: null
-      validation_message: null
-      width: full
-    schema:
-      name: seo_description
-      table: familles_formation
-      data_type: text
-      default_value: null
-      max_length: null
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: familles_formation
-    field: seo_canonical
-    type: string
-    meta:
-      collection: familles_formation
-      conditions: null
-      display: null
-      display_options: null
-      field: seo_canonical
-      group: null
-      hidden: false
-      interface: input
-      note: null
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 13
-      special: null
-      translations:
-        - language: fr-FR
-          translation: URL canonique
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: seo_canonical
-      table: familles_formation
-      data_type: character varying
-      default_value: null
-      max_length: 255
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: familles_formation
-    field: icon
-    type: uuid
-    meta:
-      collection: familles_formation
-      conditions: null
-      display: null
-      display_options: null
-      field: icon
-      group: null
-      hidden: false
-      interface: file-image
-      note: Picto
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 14
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Icône
-      validation: null
-      validation_message: null
-      width: full
-    schema:
-      name: icon
-      table: familles_formation
-      data_type: uuid
-      default_value: null
-      max_length: null
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: directus_files
-      foreign_key_column: id
   - collection: formations
     field: id
     type: integer
@@ -3688,14 +4312,14 @@ fields:
       readonly: true
       required: false
       searchable: true
-      sort: 1
+      sort: 35
       special: null
       translations:
         - language: fr-FR
           translation: ID
       validation: null
       validation_message: null
-      width: full
+      width: half
     schema:
       name: id
       table: formations
@@ -3737,7 +4361,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 2
+      sort: 1
       special: null
       translations:
         - language: fr-FR
@@ -3779,14 +4403,14 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 3
+      sort: 2
       special: null
       translations:
         - language: fr-FR
           translation: Ordre
       validation: null
       validation_message: null
-      width: full
+      width: half
     schema:
       name: sort
       table: formations
@@ -3821,7 +4445,7 @@ fields:
       readonly: true
       required: false
       searchable: true
-      sort: 4
+      sort: 3
       special: null
       translations:
         - language: fr-FR
@@ -3863,7 +4487,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 5
+      sort: 4
       special: null
       translations:
         - language: fr-FR
@@ -3905,7 +4529,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 6
+      sort: 5
       special: null
       translations:
         - language: fr-FR
@@ -3947,7 +4571,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 8
+      sort: 11
       special: null
       translations:
         - language: fr-FR
@@ -3989,7 +4613,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 9
+      sort: 19
       special: null
       translations:
         - language: fr-FR
@@ -4031,7 +4655,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 10
+      sort: 20
       special: null
       translations:
         - language: fr-FR
@@ -4073,7 +4697,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 11
+      sort: 15
       special: null
       translations:
         - language: fr-FR
@@ -4115,7 +4739,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 12
+      sort: 16
       special: null
       translations:
         - language: fr-FR
@@ -4157,7 +4781,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 13
+      sort: 17
       special: null
       translations:
         - language: fr-FR
@@ -4199,7 +4823,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 14
+      sort: 12
       special: null
       translations:
         - language: fr-FR
@@ -4241,7 +4865,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 15
+      sort: 13
       special: null
       translations:
         - language: fr-FR
@@ -4283,7 +4907,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 16
+      sort: 14
       special: null
       translations:
         - language: fr-FR
@@ -4325,7 +4949,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 17
+      sort: 21
       special:
         - cast-json
       translations:
@@ -4361,14 +4985,14 @@ fields:
       display_options: null
       field: center_slug
       group: null
-      hidden: false
+      hidden: true
       interface: input
       note: null
       options: null
       readonly: false
       required: false
       searchable: true
-      sort: 18
+      sort: 36
       special: null
       translations:
         - language: fr-FR
@@ -4403,14 +5027,14 @@ fields:
       display_options: null
       field: center_slugs
       group: null
-      hidden: false
+      hidden: true
       interface: tags
       note: null
       options: null
       readonly: false
       required: false
       searchable: true
-      sort: 19
+      sort: 99
       special:
         - cast-json
       translations:
@@ -4509,7 +5133,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 20
+      sort: 25
       special:
         - cast-json
       translations:
@@ -4552,7 +5176,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 21
+      sort: 26
       special: null
       translations:
         - language: fr-FR
@@ -4719,7 +5343,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 23
+      sort: 31
       special: null
       translations:
         - language: fr-FR
@@ -4729,154 +5353,6 @@ fields:
       width: full
     schema:
       name: generated_program_url
-      table: formations
-      data_type: character varying
-      default_value: null
-      max_length: 255
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: formations
-    field: pedagogy
-    type: json
-    meta:
-      collection: formations
-      conditions: null
-      display: null
-      display_options: null
-      field: pedagogy
-      group: null
-      hidden: false
-      interface: list
-      note: >-
-        Modalités pédagogiques — proposées par la sync depuis Digiforma,
-        éditables
-      options:
-        fields:
-          - field: title
-            meta:
-              interface: input
-              required: true
-              width: full
-            name: Titre
-            schema: {}
-            type: string
-          - field: description
-            meta:
-              interface: input-multiline
-              width: full
-            name: Description
-            schema: {}
-            type: text
-      readonly: false
-      required: false
-      searchable: true
-      sort: 24
-      special:
-        - cast-json
-      translations:
-        - language: fr-FR
-          translation: Pédagogie
-      validation: null
-      validation_message: null
-      width: full
-    schema:
-      name: pedagogy
-      table: formations
-      data_type: json
-      default_value: null
-      max_length: null
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: formations
-    field: evaluation
-    type: json
-    meta:
-      collection: formations
-      conditions: null
-      display: null
-      display_options: null
-      field: evaluation
-      group: null
-      hidden: false
-      interface: tags
-      note: >-
-        Modalités d'évaluation — proposées par la sync depuis Digiforma,
-        éditables
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 25
-      special:
-        - cast-json
-      translations:
-        - language: fr-FR
-          translation: Évaluation
-      validation: null
-      validation_message: null
-      width: full
-    schema:
-      name: evaluation
-      table: formations
-      data_type: json
-      default_value: null
-      max_length: null
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: formations
-    field: validity
-    type: string
-    meta:
-      collection: formations
-      conditions: null
-      display: null
-      display_options: null
-      field: validity
-      group: null
-      hidden: false
-      interface: input
-      note: 'Validité de la certification (ex: « 5 ans · recyclage ») — éditorial'
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 26
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Validité
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: validity
       table: formations
       data_type: character varying
       default_value: null
@@ -5035,7 +5511,7 @@ fields:
       readonly: true
       required: false
       searchable: true
-      sort: 30
+      sort: 32
       special:
         - cast-json
       translations:
@@ -5078,7 +5554,7 @@ fields:
       readonly: true
       required: false
       searchable: true
-      sort: 31
+      sort: 33
       special:
         - date-created
       translations:
@@ -5121,7 +5597,7 @@ fields:
       readonly: true
       required: false
       searchable: true
-      sort: 32
+      sort: 34
       special:
         - date-updated
       translations:
@@ -5136,6 +5612,198 @@ fields:
       data_type: timestamp with time zone
       default_value: null
       max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: formations
+    field: famille
+    type: integer
+    meta:
+      collection: formations
+      conditions: null
+      display: related-values
+      display_options:
+        template: '{{name}}'
+      field: famille
+      group: null
+      hidden: false
+      interface: select-dropdown-m2o
+      note: Affectation éditoriale — seul champ modifiable
+      options:
+        template: '{{name}}'
+      readonly: false
+      required: false
+      searchable: true
+      sort: 6
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Famille
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: famille
+      table: formations
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: familles_formation
+      foreign_key_column: id
+  - collection: formations
+    field: pedagogy
+    type: json
+    meta:
+      collection: formations
+      conditions: null
+      display: null
+      display_options: null
+      field: pedagogy
+      group: null
+      hidden: false
+      interface: list
+      note: >-
+        Modalités pédagogiques — proposées par la sync depuis Digiforma,
+        éditables
+      options:
+        fields:
+          - field: title
+            meta:
+              interface: input
+              required: true
+              width: full
+            name: Titre
+            schema: {}
+            type: string
+          - field: description
+            meta:
+              interface: input-multiline
+              width: full
+            name: Description
+            schema: {}
+            type: text
+      readonly: false
+      required: false
+      searchable: true
+      sort: 23
+      special:
+        - cast-json
+      translations:
+        - language: fr-FR
+          translation: Pédagogie
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: pedagogy
+      table: formations
+      data_type: json
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: formations
+    field: evaluation
+    type: json
+    meta:
+      collection: formations
+      conditions: null
+      display: null
+      display_options: null
+      field: evaluation
+      group: null
+      hidden: false
+      interface: tags
+      note: >-
+        Modalités d'évaluation — proposées par la sync depuis Digiforma,
+        éditables
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 24
+      special:
+        - cast-json
+      translations:
+        - language: fr-FR
+          translation: Évaluation
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: evaluation
+      table: formations
+      data_type: json
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: formations
+    field: validity
+    type: string
+    meta:
+      collection: formations
+      conditions: null
+      display: null
+      display_options: null
+      field: validity
+      group: null
+      hidden: false
+      interface: input
+      note: 'Validité de la certification (ex: « 5 ans · recyclage ») — éditorial'
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 18
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Validité
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: validity
+      table: formations
+      data_type: character varying
+      default_value: null
+      max_length: 255
       numeric_precision: null
       numeric_scale: null
       is_nullable: true
@@ -5166,7 +5834,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 33
+      sort: 9
       special: null
       translations:
         - language: fr-FR
@@ -5192,50 +5860,6 @@ fields:
       foreign_key_table: directus_files
       foreign_key_column: id
   - collection: formations
-    field: famille
-    type: integer
-    meta:
-      collection: formations
-      conditions: null
-      display: related-values
-      display_options:
-        template: '{{name}}'
-      field: famille
-      group: null
-      hidden: false
-      interface: select-dropdown-m2o
-      note: Affectation éditoriale — seul champ modifiable
-      options:
-        template: '{{name}}'
-      readonly: false
-      required: false
-      searchable: true
-      sort: 34
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Famille
-      validation: null
-      validation_message: null
-      width: full
-    schema:
-      name: famille
-      table: formations
-      data_type: integer
-      default_value: null
-      max_length: null
-      numeric_precision: 32
-      numeric_scale: 0
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: familles_formation
-      foreign_key_column: id
-  - collection: formations
     field: sous_famille
     type: integer
     meta:
@@ -5254,14 +5878,14 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 35
+      sort: 7
       special: null
       translations:
         - language: fr-FR
           translation: Sous-famille
       validation: null
       validation_message: null
-      width: full
+      width: half
     schema:
       name: sous_famille
       table: formations
@@ -5298,7 +5922,7 @@ fields:
       readonly: false
       required: false
       searchable: true
-      sort: 7
+      sort: 10
       special: null
       translations:
         - language: fr-FR
@@ -5314,6 +5938,248 @@ fields:
       max_length: null
       numeric_precision: null
       numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: formations
+    field: image_url
+    type: string
+    meta:
+      collection: formations
+      conditions: null
+      display: null
+      display_options: null
+      field: image_url
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 30
+      special: null
+      translations: null
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: image_url
+      table: formations
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: formations
+    field: centres
+    type: alias
+    meta:
+      collection: formations
+      conditions: null
+      display: related-values
+      display_options:
+        template: '{{centre.name}}'
+      field: centres
+      group: null
+      hidden: false
+      interface: list-m2m
+      note: Centres dispensant la formation — éditorial, jamais réécrit par la sync
+      options:
+        enableCreate: false
+        enableSelect: true
+        template: '{{centre.name}}'
+      readonly: false
+      required: false
+      searchable: true
+      sort: 8
+      special:
+        - m2m
+      translations:
+        - language: fr-FR
+          translation: Centres
+      validation: null
+      validation_message: null
+      width: full
+  - collection: formations_centres
+    field: id
+    type: integer
+    meta:
+      collection: formations_centres
+      conditions: null
+      display: null
+      display_options: null
+      field: id
+      group: null
+      hidden: true
+      interface: input
+      note: null
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 1
+      special: null
+      translations:
+        - language: fr-FR
+          translation: ID
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: id
+      table: formations_centres
+      data_type: integer
+      default_value: nextval('formations_centres_id_seq'::regclass)
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: false
+      is_unique: true
+      is_indexed: false
+      is_primary_key: true
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: true
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: formations_centres
+    field: sort
+    type: integer
+    meta:
+      collection: formations_centres
+      conditions: null
+      display: null
+      display_options: null
+      field: sort
+      group: null
+      hidden: true
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 2
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Ordre
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: sort
+      table: formations_centres
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: formations_centres
+    field: centre
+    type: integer
+    meta:
+      collection: formations_centres
+      conditions: null
+      display: related-values
+      display_options:
+        template: '{{name}}'
+      field: centre
+      group: null
+      hidden: false
+      interface: select-dropdown-m2o
+      note: null
+      options:
+        template: '{{name}}'
+      readonly: false
+      required: true
+      searchable: true
+      sort: 3
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Centre
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: centre
+      table: formations_centres
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: centres
+      foreign_key_column: id
+  - collection: formations_centres
+    field: formation
+    type: integer
+    meta:
+      collection: formations_centres
+      conditions: null
+      display: related-values
+      display_options:
+        template: '{{title}}'
+      field: formation
+      group: null
+      hidden: false
+      interface: select-dropdown-m2o
+      note: null
+      options:
+        template: '{{title}}'
+      readonly: false
+      required: true
+      searchable: true
+      sort: 4
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Formation
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: formation
+      table: formations_centres
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
       is_nullable: true
       is_unique: false
       is_indexed: false
@@ -7284,7 +8150,10 @@ fields:
       group: null
       hidden: false
       interface: input-multiline
-      note: 'Texte saisi par le visiteur — e-mail, téléphone, SIRET, IBAN et adresse masqués avant enregistrement ; peut contenir d’autres données personnelles saisies librement (accès restreint, purge automatique)'
+      note: >-
+        Texte saisi par le visiteur — e-mail, téléphone, SIRET, IBAN et adresse
+        masqués avant enregistrement ; peut contenir d’autres données
+        personnelles saisies librement (accès restreint, purge automatique)
       options: null
       readonly: true
       required: false
@@ -7326,7 +8195,7 @@ fields:
       group: null
       hidden: true
       interface: input
-      note: 'Clé de regroupement (minuscules, sans accents ni ponctuation)'
+      note: Clé de regroupement (minuscules, sans accents ni ponctuation)
       options: null
       readonly: true
       required: false
@@ -7368,7 +8237,7 @@ fields:
       group: null
       hidden: false
       interface: input
-      note: 'Intention détectée par le moteur IA — vide pour le catalogue'
+      note: Intention détectée par le moteur IA — vide pour le catalogue
       options: null
       readonly: true
       required: false
@@ -7410,7 +8279,7 @@ fields:
       group: null
       hidden: false
       interface: input-code
-      note: 'Filtres actifs au moment de la recherche — jamais de donnée personnelle'
+      note: Filtres actifs au moment de la recherche — jamais de donnée personnelle
       options:
         language: json
       readonly: true
@@ -7454,7 +8323,7 @@ fields:
       group: null
       hidden: false
       interface: boolean
-      note: 'À cocher une fois la requête traitée en revue produit'
+      note: À cocher une fois la requête traitée en revue produit
       options: null
       readonly: false
       required: false
@@ -8033,24 +8902,24 @@ relations:
       on_update: NO ACTION
       on_delete: NO ACTION
   - collection: articles
-    field: related_formation
-    related_collection: formations
+    field: cover_image
+    related_collection: directus_files
     meta:
       junction_field: null
       many_collection: articles
-      many_field: related_formation
+      many_field: cover_image
       one_allowed_collections: null
-      one_collection: formations
+      one_collection: directus_files
       one_collection_field: null
       one_deselect_action: nullify
       one_field: null
       sort_field: null
     schema:
       table: articles
-      column: related_formation
-      foreign_key_table: formations
+      column: cover_image
+      foreign_key_table: directus_files
       foreign_key_column: id
-      constraint_name: articles_related_formation_foreign
+      constraint_name: articles_cover_image_foreign
       on_update: NO ACTION
       on_delete: NO ACTION
   - collection: articles
@@ -8075,24 +8944,45 @@ relations:
       on_update: NO ACTION
       on_delete: NO ACTION
   - collection: articles
-    field: cover_image
-    related_collection: directus_files
+    field: related_formation
+    related_collection: formations
     meta:
       junction_field: null
       many_collection: articles
-      many_field: cover_image
+      many_field: related_formation
       one_allowed_collections: null
-      one_collection: directus_files
+      one_collection: formations
       one_collection_field: null
       one_deselect_action: nullify
       one_field: null
       sort_field: null
     schema:
       table: articles
-      column: cover_image
-      foreign_key_table: directus_files
+      column: related_formation
+      foreign_key_table: formations
       foreign_key_column: id
-      constraint_name: articles_cover_image_foreign
+      constraint_name: articles_related_formation_foreign
+      on_update: NO ACTION
+      on_delete: NO ACTION
+  - collection: articles
+    field: category
+    related_collection: categories
+    meta:
+      junction_field: null
+      many_collection: articles
+      many_field: category
+      one_allowed_collections: null
+      one_collection: categories
+      one_collection_field: null
+      one_deselect_action: nullify
+      one_field: null
+      sort_field: null
+    schema:
+      table: articles
+      column: category
+      foreign_key_table: categories
+      foreign_key_column: id
+      constraint_name: articles_category_foreign
       on_update: NO ACTION
       on_delete: NO ACTION
   - collection: avis
@@ -8201,27 +9091,6 @@ relations:
       on_update: NO ACTION
       on_delete: NO ACTION
   - collection: formations
-    field: image
-    related_collection: directus_files
-    meta:
-      junction_field: null
-      many_collection: formations
-      many_field: image
-      one_allowed_collections: null
-      one_collection: directus_files
-      one_collection_field: null
-      one_deselect_action: nullify
-      one_field: null
-      sort_field: null
-    schema:
-      table: formations
-      column: image
-      foreign_key_table: directus_files
-      foreign_key_column: id
-      constraint_name: formations_image_foreign
-      on_update: NO ACTION
-      on_delete: NO ACTION
-  - collection: formations
     field: famille
     related_collection: familles_formation
     meta:
@@ -8240,6 +9109,27 @@ relations:
       foreign_key_table: familles_formation
       foreign_key_column: id
       constraint_name: formations_famille_foreign
+      on_update: NO ACTION
+      on_delete: NO ACTION
+  - collection: formations
+    field: image
+    related_collection: directus_files
+    meta:
+      junction_field: null
+      many_collection: formations
+      many_field: image
+      one_allowed_collections: null
+      one_collection: directus_files
+      one_collection_field: null
+      one_deselect_action: nullify
+      one_field: null
+      sort_field: null
+    schema:
+      table: formations
+      column: image
+      foreign_key_table: directus_files
+      foreign_key_column: id
+      constraint_name: formations_image_foreign
       on_update: NO ACTION
       on_delete: NO ACTION
   - collection: formations
@@ -8263,6 +9153,40 @@ relations:
       constraint_name: formations_sous_famille_foreign
       on_update: NO ACTION
       on_delete: NO ACTION
+  - collection: formations_centres
+    field: centre
+    related_collection: centres
+    meta:
+      junction_field: formation
+      many_collection: formations_centres
+      many_field: centre
+      one_allowed_collections: null
+      one_collection: centres
+      one_collection_field: null
+      one_deselect_action: nullify
+      one_field: null
+      sort_field: null
+    schema:
+      table: formations_centres
+      column: centre
+      foreign_key_table: centres
+      foreign_key_column: id
+      constraint_name: formations_centres_centre_foreign
+      on_update: NO ACTION
+      on_delete: NO ACTION
+  - collection: formations_centres
+    field: formation
+    related_collection: formations
+    meta:
+      junction_field: centre
+      many_collection: formations_centres
+      many_field: formation
+      one_allowed_collections: null
+      one_collection: formations
+      one_collection_field: null
+      one_deselect_action: nullify
+      one_field: centres
+      sort_field: sort
   - collection: page_blocks
     field: page
     related_collection: pages

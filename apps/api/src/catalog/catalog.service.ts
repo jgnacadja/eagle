@@ -172,9 +172,20 @@ function imageUrlFromRaw(raw: unknown): string | null {
   return image && typeof image.url === 'string' ? image.url : null
 }
 
+// Centres cochés dans l'admin (alias M2M `formations.centres`). La sélection
+// éditoriale prime sur `center_slugs` — liste legacy remplie par la sync
+// Digiforma, masquée dans l'admin : sans ça les centres choisis dans la fiche
+// n'apparaissent pas dans le filtre `center` du catalogue.
+function editorialCentreSlugs(raw: DirectusFormation): string[] {
+  return (raw.centres ?? [])
+    .map((entry) => (typeof entry === 'object' && entry !== null ? entry.centre?.slug : null))
+    .filter((slug): slug is string => Boolean(slug))
+}
+
 function toListItem(raw: DirectusFormation): CourseListItem {
   const durationDays = toNumber(raw.duration_days)
   const durationHours = toNumber(raw.duration_hours)
+  const centreSlugs = editorialCentreSlugs(raw)
 
   return {
     id: raw.id,
@@ -195,7 +206,7 @@ function toListItem(raw: DirectusFormation): CourseListItem {
     subFamilySlug: raw.sous_famille?.slug ?? null,
     subFamilyName: raw.sous_famille?.name ?? null,
     centerSlug: raw.center_slug,
-    centerSlugs: (raw.center_slugs as string[]) ?? [],
+    centerSlugs: centreSlugs.length > 0 ? centreSlugs : ((raw.center_slugs as string[]) ?? []),
     modalities: (raw.modalities as string[]) ?? [],
     sessions: mapSessions(raw.sessions),
     image: raw.image ?? null,

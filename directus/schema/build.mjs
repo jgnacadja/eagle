@@ -66,9 +66,14 @@ async function ensureCollections(token) {
     if (await collectionExists(token, def.collection)) {
       log(`↷  collection ${def.collection} déjà présente`)
       // Convergent aussi sur le meta de collection (note, traductions
-      // de nom) — sinon un renommage déclaré ici resterait invisible.
+      // de nom, visibilité) — sinon un renommage ou un masquage déclaré ici
+      // resterait invisible.
       await api(token, 'PATCH', `/collections/${def.collection}`, {
-        meta: { note: def.note ?? null, translations: def.translations ?? null }
+        meta: {
+          note: def.note ?? null,
+          translations: def.translations ?? null,
+          hidden: def.hidden ?? false
+        }
       })
       // Collection existante : créer les champs déclarés mais absents —
       // le fichier collections.mjs reste la source de vérité du schéma.
@@ -95,7 +100,11 @@ async function ensureCollections(token) {
     await api(token, 'POST', '/collections', {
       collection: def.collection,
       icon: def.icon,
-      meta: { note: def.note, translations: def.translations ?? null },
+      meta: {
+        note: def.note,
+        translations: def.translations ?? null,
+        hidden: def.hidden ?? false
+      },
       schema: {},
       fields: def.fields
     })
@@ -140,6 +149,8 @@ async function convergeRelation(token, rel) {
     metaPatch.one_field = rel.one_field
   if (rel.sort_field && current.meta?.sort_field !== rel.sort_field)
     metaPatch.sort_field = rel.sort_field
+  if (rel.junction_field && current.meta?.junction_field !== rel.junction_field)
+    metaPatch.junction_field = rel.junction_field
   if (Object.keys(metaPatch).length) {
     await api(token, 'PATCH', `/relations/${rel.collection}/${rel.field}`, {
       meta: metaPatch
@@ -152,6 +163,7 @@ async function createRelation(token, rel) {
   const meta = {}
   if (rel.one_field) meta.one_field = rel.one_field
   if (rel.sort_field) meta.sort_field = rel.sort_field
+  if (rel.junction_field) meta.junction_field = rel.junction_field
   await api(token, 'POST', '/relations', {
     collection: rel.collection,
     field: rel.field,
@@ -259,6 +271,80 @@ async function migrateLegalSections(token) {
   await api(token, 'DELETE', '/fields/pages_legales/sections')
   log(
     `✔  pages_legales.sections migré — ${toMigrate.length} section(s) copiée(s), champ JSON supprimé`
+  )
+}
+
+// Migration « catégorie d'article » : le champ `articles.category` était un
+// varchar libre (chaque rubrique retapée à la main) — il devient un M2O
+// vers la collection `categories`. Pour chaque libellé distinct on crée la
+// catégorie (slug dérivé), puis la colonne est recréée en `integer` et les
+// articles rattachés — la relation FK est posée ensuite par
+// ensureRelations. Idempotent : `category` déjà `integer` → no-op ; une
+// catégorie existante (même slug) est réutilisée.
+function slugifyCategory(label) {
+  return label
+    .trim()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+}
+
+async function migrateArticleCategories(token) {
+  const { data: fields } = await api(token, 'GET', '/fields/articles?limit=-1')
+  const field = (fields ?? []).find((f) => f.field === 'category')
+  if (field?.type !== 'string') return // absent ou déjà un M2O integer
+
+  const { data: articles } = await api(token, 'GET', '/items/articles?limit=-1&fields=id,category')
+  const labelsBySlug = new Map()
+  const articleLabel = new Map()
+  for (const article of articles ?? []) {
+    const label = article.category?.trim().replace(/\s+/g, ' ')
+    if (!label) continue
+    const slug = slugifyCategory(label)
+    labelsBySlug.set(slug, label)
+    articleLabel.set(article.id, slug)
+  }
+
+  const { data: existingCats } = await api(
+    token,
+    'GET',
+    '/items/categories?limit=-1&fields=id,slug'
+  )
+  const slugToId = new Map((existingCats ?? []).map((cat) => [cat.slug, cat.id]))
+
+  let sort = 1
+  for (const [slug, name] of labelsBySlug) {
+    if (slugToId.has(slug)) continue
+    const { data: created } = await api(token, 'POST', '/items/categories', {
+      status: 'published',
+      slug,
+      name,
+      sort: sort++
+    })
+    slugToId.set(slug, created.id)
+  }
+
+  // La colonne varchar ne peut pas porter la contrainte FK ni être castée
+  // proprement : on la supprime puis la recrée en integer (Directus gère le
+  // DROP/ADD COLUMN), les ids sont réécrits depuis le mapping en mémoire.
+  await api(token, 'DELETE', '/fields/articles/category')
+  const rel = relations.find((r) => r.collection === 'articles' && r.field === 'category')
+  await api(token, 'POST', '/fields/articles', {
+    field: 'category',
+    type: 'integer',
+    meta: rel?.meta
+  })
+
+  for (const [articleId, slug] of articleLabel) {
+    const categoryId = slugToId.get(slug)
+    if (!categoryId) continue
+    await api(token, 'PATCH', `/items/articles/${articleId}`, { category: categoryId })
+  }
+
+  log(
+    `✔  articles.category migré — ${labelsBySlug.size} catégorie(s), ${articleLabel.size} article(s) rattaché(s)`
   )
 }
 
@@ -507,6 +593,7 @@ async function main() {
   // `pages_legales.sections` (encore JSON), écrit via la colonne `page`,
   // puis supprime le champ pour libérer le nom de l'alias O2M.
   await migrateLegalSections(token)
+  await migrateArticleCategories(token)
   await ensureRelations(token)
   const roleIds = await ensureRoles(token)
   const policyIds = await ensurePolicies(token)

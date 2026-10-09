@@ -10,11 +10,7 @@
   >
     <div class="flex items-start justify-between gap-sm">
       <h3 class="font-sans text-h4 text-ink">{{ center.name }}</h3>
-      <span class="shrink-0 rounded-full bg-surface px-sm py-xs text-meta text-ink-subtle">{{
-        center.cp
-      }}</span>
     </div>
-    <p class="mt-xs text-small text-ink-muted">{{ center.address }}</p>
     <p
       v-if="center.distanceKm != null"
       data-testid="center-distance"

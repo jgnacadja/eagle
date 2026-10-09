@@ -35,6 +35,12 @@ export class CacheController {
     @Body() body?: InvalidateCacheDto
   ): Promise<{ success: boolean; purged: boolean }> {
     const collection = body?.collection
+    // La config des sources (secrets déchiffrés, 60 s de cache mémoire) ne
+    // vit pas dans Redis : son fournisseur la relit à la prochaine requête.
+    if (collection === 'sources') {
+      this.cache.invalidateScope()
+      return { success: true, purged: true }
+    }
     if (collection && !Object.hasOwn(COLLECTION_KEYS, collection)) {
       return { success: true, purged: false }
     }

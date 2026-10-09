@@ -1,10 +1,8 @@
 import { Module } from '@nestjs/common'
-import { ConfigModule } from '@nestjs/config'
-import { DigiformaClient } from './digiforma.client'
+import { DigiformaClientFactory } from './digiforma-client.factory'
 
 @Module({
-  imports: [ConfigModule],
-  providers: [DigiformaClient],
-  exports: [DigiformaClient]
+  providers: [DigiformaClientFactory],
+  exports: [DigiformaClientFactory]
 })
 export class DigiformaModule {}

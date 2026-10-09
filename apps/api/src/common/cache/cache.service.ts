@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import Redis, { RedisOptions } from 'ioredis'
@@ -15,6 +16,18 @@ const REDIS_OPTIONS: RedisOptions = {
   retryStrategy: (attempt) => Math.min(attempt * 500, 5000)
 }
 
+/**
+ * Port par lequel une feature précise au cache la portée de ses clés
+ * catalogue. `common/cache` ne connaît aucune feature : c'est la feature qui
+ * s'y enregistre au démarrage (`CacheService.setScopeProvider`).
+ */
+export interface CacheScopeProvider {
+  /** Codes des sources actives : leurs versions entrent dans toutes les clés catalogue. */
+  activeCodes(): Promise<string[]>
+  /** Relâche la copie mémoire du fournisseur (sa config vient de changer en admin). */
+  invalidate(): void
+}
+
 export interface SyncRun {
   status: 'running' | 'success' | 'failed'
   startedAt: string
@@ -23,6 +36,12 @@ export interface SyncRun {
   updated: number
   failed: number
   error: string | null
+  /** Code de la source synchronisée (absent des runs antérieurs au multi-sources). */
+  source?: string
+  /** Formations dépubliées par la désactivation d'une source (cycle de vie). */
+  archived?: number
+  /** Formations republiées à la réactivation d'une source. */
+  republished?: number
 }
 
 @Injectable()
@@ -39,6 +58,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private initPromise?: Promise<void>
   private connectionErrorLogged = false
   private readonly catalogListeners = new Set<() => void>()
+  private scopeProvider?: CacheScopeProvider
 
   constructor(config: ConfigService) {
     const url = config.get<string>('REDIS_URL')
@@ -115,6 +135,35 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       await this.deleteByPattern(await this.versionedKey(pattern))
     } catch (error) {
       this.logger.warn({ error, pattern }, 'Failed to delete cached values')
+    }
+  }
+
+  /**
+   * Enregistre le fournisseur de portée des clés catalogue (les sources
+   * actives). Sans fournisseur, les clés ne portent que la version globale.
+   */
+  setScopeProvider(provider: CacheScopeProvider): void {
+    this.scopeProvider = provider
+  }
+
+  /** La config du fournisseur de portée a changé : il doit la relire. */
+  invalidateScope(): void {
+    this.scopeProvider?.invalidate()
+  }
+
+  /**
+   * Version propre à une source (`catalog:ver:{code}`) : incrémentée à chaque
+   * sync réussi, désactivation et réactivation. Le hash des versions des
+   * sources actives entre dans toutes les clés catalogue : activer ou
+   * désactiver une source change la portée du cache sur toutes les instances,
+   * sans attendre le TTL.
+   */
+  async bumpSourceVersion(sourceCode: string): Promise<void> {
+    if (!this.client || !this.isReady) return
+    try {
+      await this.client.incr(`catalog:ver:${sourceCode}`)
+    } catch (error) {
+      this.logger.warn({ error, source: sourceCode }, 'Failed to bump the source cache version')
     }
   }
 
@@ -211,21 +260,28 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async setSyncRun(run: SyncRun): Promise<void> {
+  // `sync:last_run:{code}` garde le dernier run de chaque source ;
+  // `sync:last_run` (sans code) le dernier run global, que l'appelant agrège
+  // lui-même : un run de source ne l'écrase pas, sinon l'échec d'une source
+  // serait masqué par la réussite de la suivante.
+  async setSyncRun(run: SyncRun, sourceCode?: string): Promise<void> {
     if (!this.client || !this.isReady) return
 
     try {
-      await this.client.setex('sync:last_run', 86_400, JSON.stringify(run))
+      const key = sourceCode ? `sync:last_run:${sourceCode}` : 'sync:last_run'
+      await this.client.setex(key, 86_400, JSON.stringify(run))
     } catch (error) {
       this.logger.warn({ error, run }, 'Failed to set sync run status')
     }
   }
 
-  async getSyncRun(): Promise<SyncRun | null> {
+  async getSyncRun(sourceCode?: string): Promise<SyncRun | null> {
     if (!this.client || !this.isReady) return null
 
     try {
-      const value = await this.client.get('sync:last_run')
+      const value = await this.client.get(
+        sourceCode ? `sync:last_run:${sourceCode}` : 'sync:last_run'
+      )
       if (!value) return null
       return JSON.parse(value) as SyncRun
     } catch (error) {
@@ -239,11 +295,14 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   // Fail-open quand Redis est absent ou en erreur : le run est idempotent,
   // un doublon coûte moins qu'une sync manquée ; le flag `running` du
   // service conserve l'exclusion au sein du process.
-  async acquireSyncLock(token: string, ttlMs: number): Promise<boolean> {
+  // Un verrou par source (`sync:lock:{code}`) : deux sources se
+  // synchronisent en parallèle sur des instances différentes, jamais deux
+  // fois la même.
+  async acquireSyncLock(token: string, ttlMs: number, sourceCode = 'default'): Promise<boolean> {
     if (!this.client || !this.isReady) return true
 
     try {
-      const result = await this.client.set('sync:lock', token, 'PX', ttlMs, 'NX')
+      const result = await this.client.set(`sync:lock:${sourceCode}`, token, 'PX', ttlMs, 'NX')
       return result === 'OK'
     } catch (error) {
       this.logger.warn({ error }, 'Failed to acquire sync lock — proceeding without it')
@@ -253,14 +312,14 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
 
   // Compare-and-delete : le token évite de libérer le verrou posé par une
   // autre instance si le nôtre a déjà expiré (TTL dépassé pendant le run).
-  async releaseSyncLock(token: string): Promise<void> {
+  async releaseSyncLock(token: string, sourceCode = 'default'): Promise<void> {
     if (!this.client || !this.isReady) return
 
     try {
       await this.client.eval(
         'if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end',
         1,
-        'sync:lock',
+        `sync:lock:${sourceCode}`,
         token
       )
     } catch (error) {
@@ -277,11 +336,40 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   // immédiatement au lieu d'attendre le TTL. Une écriture concurrente
   // ne peut pas réintroduire du périmé : elle lit d'abord la version
   // courante, donc elle atterrit sous le préfixe frais.
+  //
+  // Version globale et versions par source partagent un seul MGET.
   private async versionedKey(path: string): Promise<string> {
-    const raw = await this.client!.get(this.versionKey)
-    const version = Number.parseInt(raw ?? '0', 10) || 0
+    const codes = await this.scopeCodes()
+    const [rawVersion, ...sourceVersions] = await this.client!.mget([
+      this.versionKey,
+      ...codes.map((code) => `catalog:ver:${code}`)
+    ])
+    const version = Number.parseInt(rawVersion ?? '0', 10) || 0
     this.currentVersion = version
-    return `catalog:v${version}:${path}`
+    return `catalog:v${version}:${this.scopeOf(codes, sourceVersions)}${path}`
+  }
+
+  // Codes de la portée des clés, triés. Vide sans fournisseur ou en cas
+  // d'erreur — le cache retombe alors sur la seule version globale (jamais
+  // d'échec de lecture pour autant).
+  private async scopeCodes(): Promise<string[]> {
+    if (!this.scopeProvider) return []
+    try {
+      return [...(await this.scopeProvider.activeCodes())].sort()
+    } catch (error) {
+      this.logger.warn({ error }, 'Failed to compute the sources cache scope')
+      return []
+    }
+  }
+
+  // Portée « sources actives » des clés : hash de leurs versions.
+  private scopeOf(codes: string[], versions: Array<string | null>): string {
+    if (codes.length === 0) return ''
+    const digest = createHash('sha1')
+      .update(codes.map((code, i) => `${code}=${versions[i] ?? 0}`).join('|'))
+      .digest('hex')
+      .slice(0, 8)
+    return `s${digest}:`
   }
 
   private async initializeClient(): Promise<void> {

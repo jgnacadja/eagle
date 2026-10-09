@@ -14,8 +14,14 @@ import type {
   NewsletterLeadDto,
   RappelLeadDto
 } from './leads.dto'
+import type { LeadFormName } from '../sources/source.types'
+import {
+  HubspotTargetResolver,
+  type HubspotTarget,
+  type LeadTargetContext
+} from './hubspot-target.resolver'
 
-export type LeadFormName = 'newsletter' | 'demande' | 'candidature' | 'conseiller' | 'rappel'
+export type { LeadFormName }
 
 interface HubSpotField {
   objectTypeId: '0-1'
@@ -67,32 +73,39 @@ const RAPPEL_CONSENT_TEXT =
 
 const SUBMIT_TIMEOUT_MS = 15_000
 
+// Refus 4xx qui relèvent de la config du portail (jeton révoqué, GUID erroné,
+// champ inconnu) ; 408 et 429 sont passagers et ne justifient pas de changer
+// de portail.
+const TRANSIENT_CLIENT_ERRORS: ReadonlySet<number> = new Set([408, 429])
+
+interface PageContext {
+  pageUri?: string
+  pageName?: string
+  hutk?: string
+}
+
 /**
  * Pivot des formulaires « lead » du site vers la Forms API v3 de HubSpot.
- * L'endpoint de soumission n'est pas authentifié (portalId + formGuid
- * suffisent) : le service ne détient aucun secret — la clé de service ne
- * sert qu'au provisioning, jamais ici.
+ * Le portail et le GUID du formulaire viennent de `HubspotTargetResolver`
+ * (source de la formation / du centre, repli HQ puis env). L'endpoint de
+ * soumission n'est pas authentifié (portalId + formGuid suffisent) ; seul un
+ * token d'app privée renseigné sur une source bascule sur l'endpoint
+ * `secure`. La clé de service d'administration n'est jamais utilisée ici.
+ *
+ * Un lead n'est jamais perdu faute de configuration franchise : le résolveur
+ * replie sur la HQ quand la config manque, et la HQ reprend la soumission
+ * quand le portail franchise la refuse (4xx hors 408 / 429).
  */
 @Injectable()
 export class LeadsService {
   private readonly logger = new Logger(LeadsService.name)
-  private readonly portalId: string | undefined
   private readonly formsBaseUrl: string
-  private readonly formGuids: Record<LeadFormName, string | undefined>
 
-  constructor(config: ConfigService) {
-    this.portalId = config.get<string>('HUBSPOT_PORTAL_ID')
+  constructor(
+    config: ConfigService,
+    private readonly targets: HubspotTargetResolver
+  ) {
     this.formsBaseUrl = config.get<string>('HUBSPOT_FORMS_BASE_URL') ?? 'https://api.hsforms.com'
-    this.formGuids = {
-      newsletter: config.get<string>('HUBSPOT_FORM_NEWSLETTER'),
-      demande: config.get<string>('HUBSPOT_FORM_DEMANDE'),
-      candidature: config.get<string>('HUBSPOT_FORM_CANDIDATURE'),
-      conseiller: config.get<string>('HUBSPOT_FORM_CONSEILLER'),
-      // Le rappel exige un formulaire HubSpot dédié (téléphone seul, sans
-      // e-mail requis) : replier sur le formulaire conseiller ferait rejeter
-      // la soumission par HubSpot. Configuration absente → 503 explicite.
-      rappel: config.get<string>('HUBSPOT_FORM_RAPPEL')
-    }
   }
 
   submitNewsletter(dto: NewsletterLeadDto): Promise<{ submitted: true }> {
@@ -102,7 +115,7 @@ export class LeadsService {
 
   submitDemande(dto: DemandeLeadDto): Promise<{ submitted: true }> {
     const fields = this.buildFields('demande', dto)
-    return this.post('demande', fields, dto, CONSENT_TEXT)
+    return this.post('demande', fields, dto, CONSENT_TEXT, dto)
   }
 
   submitCandidature(dto: CandidatureLeadDto): Promise<{ submitted: true }> {
@@ -112,14 +125,14 @@ export class LeadsService {
 
   submitConseiller(dto: ConseillerLeadDto): Promise<{ submitted: true }> {
     const fields = this.buildFields('conseiller', dto)
-    return this.post('conseiller', fields, dto, CONSENT_TEXT)
+    return this.post('conseiller', fields, dto, CONSENT_TEXT, dto)
   }
 
   submitRappel(dto: RappelLeadDto): Promise<{ submitted: true }> {
     const fields = this.buildFields('rappel', dto)
     // Le libellé affiché par la case front prime : HubSpot enregistre
     // exactement ce que l'utilisateur a lu et coché.
-    return this.post('rappel', fields, dto, dto.consentementTexte || RAPPEL_CONSENT_TEXT)
+    return this.post('rappel', fields, dto, dto.consentementTexte || RAPPEL_CONSENT_TEXT, dto)
   }
 
   private buildFields(form: 'newsletter', payload: NewsletterLeadPayload): HubSpotField[]
@@ -213,51 +226,99 @@ export class LeadsService {
   private async post(
     form: LeadFormName,
     hubspotFields: HubSpotField[],
-    context: { pageUri?: string; pageName?: string },
-    consentText?: string
+    context: PageContext,
+    consentText?: string,
+    routing: LeadTargetContext = {}
   ): Promise<{ submitted: true }> {
-    const formGuid = this.formGuids[form]
-    if (!this.portalId || !formGuid) {
+    const target = await this.targets.resolve(form, {
+      formationId: routing.formationId,
+      centreId: routing.centreId
+    })
+    let outcome = await this.send(target, form, hubspotFields, context, consentText)
+
+    // Les pannes passagères (429, 5xx, réseau) ne sont pas rejouées ailleurs :
+    // un lead franchise ne doit pas atterrir chez la HQ pour un incident court.
+    if (!outcome.ok && this.refusedByFranchise(target, outcome.status)) {
+      this.logger.warn(
+        { leadType: form, sourceCode: target.sourceCode, status: outcome.status },
+        'Franchise portal refused the lead — resubmitting to the HQ portal'
+      )
+      const hq = await this.targets.resolve(form)
+      outcome = await this.send(hq, form, hubspotFields, context, consentText)
+    }
+
+    if (!outcome.ok) {
+      this.logger.error(`HubSpot Forms HTTP ${outcome.status} (form: ${form})`)
+      throw new ServiceUnavailableException('The submission service is unavailable.')
+    }
+    return { submitted: true }
+  }
+
+  private refusedByFranchise(target: HubspotTarget, status: number): boolean {
+    return !target.isHq && status >= 400 && status < 500 && !TRANSIENT_CLIENT_ERRORS.has(status)
+  }
+
+  private async send(
+    target: HubspotTarget,
+    form: LeadFormName,
+    hubspotFields: HubSpotField[],
+    context: PageContext,
+    consentText?: string
+  ): Promise<{ ok: boolean; status: number }> {
+    const { portalId, formGuid } = target
+    if (!portalId || !formGuid) {
       this.logger.error(`Missing HubSpot configuration (form: ${form})`)
       throw new ServiceUnavailableException('The submission service is unavailable.')
     }
 
-    const body: Record<string, unknown> = { fields: hubspotFields }
-    // Contexte seulement si la page le fournit : un pageUri dont le domaine
-    // n'est pas tracké par le portail fait jeter la soumission par HubSpot.
-    if (context.pageUri || context.pageName) {
-      body.context = { pageUri: context.pageUri, pageName: context.pageName }
-    }
-    if (consentText) {
-      body.legalConsentOptions = {
-        consent: { consentToProcess: true, text: consentText }
-      }
-    }
+    const body = this.buildBody(target, hubspotFields, context, consentText)
 
     try {
+      const endpoint = target.token ? 'secure/submit' : 'submit'
       const response = await fetch(
-        `${this.formsBaseUrl}/submissions/v3/integration/submit/${this.portalId}/${formGuid}`,
+        `${this.formsBaseUrl}/submissions/v3/integration/${endpoint}/${portalId}/${formGuid}`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(target.token ? { Authorization: `Bearer ${target.token}` } : {})
+          },
           body: JSON.stringify(body),
           signal: AbortSignal.timeout(SUBMIT_TIMEOUT_MS)
         }
       )
-
-      if (!response.ok) {
-        this.logger.error(`HubSpot Forms HTTP ${response.status} (form: ${form})`)
-        throw new ServiceUnavailableException('The submission service is unavailable.')
-      }
+      return { ok: response.ok, status: response.status }
     } catch (error) {
-      if (error instanceof ServiceUnavailableException) throw error
       this.logger.error(
         `HubSpot Forms submit failed (form: ${form})`,
         error instanceof Error ? error.stack : String(error)
       )
       throw new ServiceUnavailableException('The submission service is unavailable.')
     }
+  }
 
-    return { submitted: true }
+  private buildBody(
+    target: HubspotTarget,
+    hubspotFields: HubSpotField[],
+    context: PageContext,
+    consentText?: string
+  ): Record<string, unknown> {
+    const body: Record<string, unknown> = { fields: hubspotFields }
+    // Contexte seulement si la page le fournit. `pageUri` et `hutk` n'ont de
+    // sens que sur le portail HQ, dont le script de tracking est celui du
+    // site : un `pageUri` dont le domaine n'est pas tracké par le portail fait
+    // jeter la soumission par HubSpot, et le cookie serait rejeté ou rattaché
+    // au mauvais contact. Sur un portail franchise seul `pageName` est joint.
+    const pageUri = target.isHq ? context.pageUri : undefined
+    const hutk = target.isHq ? context.hutk : undefined
+    if (pageUri || context.pageName || hutk) {
+      body.context = { pageUri, pageName: context.pageName, hutk }
+    }
+    if (consentText) {
+      body.legalConsentOptions = {
+        consent: { consentToProcess: true, text: consentText }
+      }
+    }
+    return body
   }
 }

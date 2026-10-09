@@ -2,12 +2,15 @@
 // `pnpm directus:build`. Trigger `action` (non bloquant) : une
 // purge qui échoue ne fait jamais échouer l'écriture éditoriale.
 //
-// Deux niveaux de précision :
+// Trois niveaux de précision :
 // - « Invalidate site cache » (toutes collections de contenu) : purge le
 //   cache catalogue Redis côté API et les routes ISR du front associées à
 //   la collection modifiée (mapping collection → routes côté front).
 // - « Invalidate formation page » (formations uniquement) : relit le slug
 //   de la formation et purge uniquement sa page fiche côté front.
+// - « Invalidate sources config » (sources uniquement) : relâche le cache
+//   mémoire de la config des sources côté API ; aucune page publique ne
+//   dépend de cette collection, donc pas de purge front.
 
 // URLs et secrets ne sont PAS cuits en base : `{{ $env.* }}` est interpolé
 // à l'exécution depuis l'env du container Directus — un rebuild avec un
@@ -102,6 +105,39 @@ export function buildFlows({ syncUserId } = {}) {
             url: `${FRONT_INTERNAL_URL}/api/cache/invalidate`,
             headers: [{ header: 'x-cache-secret', value: CACHE_PURGE_SECRET }],
             body: '{"collection":"{{$trigger.collection}}"}'
+          }
+        }
+      ]
+    },
+    {
+      // La config des sources (clés déchiffrées, URL, portail, statut) est
+      // gardée 60 s en mémoire par l'API : sans ce flow, une désactivation ou
+      // une clé corrigée dans l'admin n'était prise en compte qu'à
+      // l'expiration du TTL. La garde ignore les écritures de la sync, qui
+      // renseigne `last_sync_*` sur chaque source à chaque run.
+      name: 'Invalidate sources config',
+      icon: 'hub',
+      trigger: 'event',
+      accountability: 'all',
+      status: 'active',
+      options: {
+        type: 'action',
+        scope: ['items.create', 'items.update', 'items.delete'],
+        collections: ['sources']
+      },
+      operations: [
+        ...syncGuard(syncUserId),
+        {
+          name: 'Purge config sources (API)',
+          key: 'purge-sources',
+          type: 'request',
+          position_x: 40,
+          position_y: 20,
+          options: {
+            method: 'POST',
+            url: `${API_INTERNAL_URL}/admin/cache/invalidate`,
+            headers: [{ header: 'x-api-key', value: ADMIN_API_KEY }],
+            body: '{"collection":"sources"}'
           }
         }
       ]

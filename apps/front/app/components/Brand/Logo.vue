@@ -1,10 +1,8 @@
 <template>
-  <span class="inline-flex shrink-0 flex-col items-center gap-xs">
+  <span class="logo" :class="{ 'logo--white': variant === 'white' }">
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="44"
-      height="44"
-      viewBox="185 10 420 420"
+      viewBox="0 0 749 638"
       fill="none"
       preserveAspectRatio="xMidYMid meet"
       aria-hidden="true"
@@ -65,11 +63,73 @@
       <path fill="#203c87" d="M458 162h27v9h-27Z" />
       <path fill="#203c87" d="M359 390l2 1Z" />
     </svg>
-    <span class="flex flex-col items-center text-center">
-      <span class="font-display text-small font-bold uppercase leading-none text-primary">
-        Learn Up Academy
-      </span>
-      <span class="text-overline uppercase text-primary">Déclencheur de réussite</span>
-    </span>
+    <span class="logo-name">Learn Up Academy</span>
+    <span class="logo-tagline">Déclencheur de réussite</span>
   </span>
 </template>
+
+<script setup lang="ts">
+withDefaults(defineProps<{ variant?: 'color' | 'white' }>(), { variant: 'color' })
+</script>
+
+<style scoped>
+.logo {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
+  width: var(--layout-logo-header-width);
+  height: var(--layout-logo-header-height);
+  font-size: var(--layout-logo-header-width);
+}
+
+.logo svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.logo-name,
+.logo-tagline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+}
+
+.logo-name {
+  top: var(--layout-logo-name-top);
+  font-size: var(--text-logo-name-size);
+  line-height: var(--text-logo-name-line);
+  letter-spacing: var(--text-logo-name-tracking);
+  font-weight: var(--text-logo-name-weight);
+  color: var(--color-logo-name);
+}
+
+.logo-tagline {
+  top: var(--layout-logo-tagline-top);
+  font-size: var(--text-logo-tagline-size);
+  line-height: var(--text-logo-tagline-line);
+  letter-spacing: var(--text-logo-tagline-tracking);
+  font-weight: var(--text-logo-tagline-weight);
+  color: var(--color-logo-tagline);
+}
+
+.logo--white {
+  width: var(--layout-logo-width);
+  height: var(--layout-logo-height);
+  font-size: var(--layout-logo-width);
+}
+
+.logo--white svg path {
+  fill: var(--color-logo-inverse);
+}
+
+.logo--white .logo-name,
+.logo--white .logo-tagline {
+  color: var(--color-logo-inverse);
+}
+</style>

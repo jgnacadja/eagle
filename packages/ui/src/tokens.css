@@ -54,6 +54,10 @@
   --color-info: #1e3a6e;
   --color-info-soft: #edf2fa;
 
+  --color-logo-name: #203c87;
+  --color-logo-tagline: #eca224;
+  --color-logo-inverse: #f5ead8;
+
   /* Typographie */
   --font-display: Figtree, sans-serif;
   --font-sans: Figtree, sans-serif;
@@ -112,6 +116,14 @@
   --text-badge-line: 1;
   --text-badge-tracking: 0;
   --text-badge-weight: 700;
+  --text-logo-name-size: 0.0946em;
+  --text-logo-name-line: 1.1;
+  --text-logo-name-tracking: 0.025em;
+  --text-logo-name-weight: 800;
+  --text-logo-tagline-size: 0.034em;
+  --text-logo-tagline-line: 1;
+  --text-logo-tagline-tracking: 0;
+  --text-logo-tagline-weight: 800;
 
   /* Espacements */
   --spacing-xs: 4px;
@@ -136,6 +148,10 @@
   --layout-control-height-sm: 36px;
   --layout-logo-height: 58px;
   --layout-logo-width: 70px;
+  --layout-logo-header-width: 74px;
+  --layout-logo-header-height: 62px;
+  --layout-logo-name-top: 81%;
+  --layout-logo-tagline-top: 94%;
 
   /* Rayons */
   --radius-xs: 8px;

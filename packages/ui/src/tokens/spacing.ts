@@ -21,5 +21,9 @@ export const layout = {
   controlHeight: '48px',
   controlHeightSm: '36px',
   logoHeight: '58px',
-  logoWidth: '70px'
+  logoWidth: '70px',
+  logoHeaderWidth: '74px',
+  logoHeaderHeight: '62px',
+  logoNameTop: '81%',
+  logoTaglineTop: '94%'
 } as const

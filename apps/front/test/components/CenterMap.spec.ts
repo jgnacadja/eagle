@@ -340,7 +340,8 @@ describe('CenterMap', () => {
     })
 
     expect(wrapper.find('.w-full.flex-1').exists()).toBe(true)
-    expect(wrapper.text()).toContain('14 rue des Refuzniks, Créteil · Val-de-Marne')
+    // Adresse masquée pour le moment (demande métier) — seul l'itinéraire reste.
+    expect(wrapper.text()).not.toContain('14 rue des Refuzniks, Créteil · Val-de-Marne')
     expect(wrapper.find('a').attributes('href')).toBe(
       'https://www.google.com/maps/dir/?api=1&destination=48.7909,2.4534'
     )

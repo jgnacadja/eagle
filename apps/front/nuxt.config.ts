@@ -3,14 +3,19 @@ import tailwindcss from '@tailwindcss/vite'
 import { typography } from '@learnup/ui'
 import { MOTION_PRESETS } from './app/utils/reveal'
 
-const apiBase = process.env.NUXT_API_BASE ?? 'http://localhost:3001'
+// Les valeurs d'env peuvent finir par un `/` (copier-coller dashboard) :
+// normalisé ici pour éviter `…vercel.app//directus` sur tous les appels.
+const stripTrailingSlash = (url: string) => url.replace(/\/+$/, '')
+const apiBase = stripTrailingSlash(process.env.NUXT_API_BASE ?? 'http://localhost:3001')
 // Deux valeurs distinctes : le rendu SSR tourne dans le conteneur front et
 // doit joindre l'API via le nom de service Docker (`api`), alors que le
 // navigateur (hydratation, navigation client) ne connaît que l'URL publique.
 // Directus n'est jamais contacté directement : l'API expose un proxy
 // `/directus` (apps/api/src/directus).
-const publicApiBase = process.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:3001'
-const siteUrl = process.env.NUXT_PUBLIC_SITE_URL ?? 'https://learnup.fr'
+const publicApiBase = stripTrailingSlash(
+  process.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:3001'
+)
+const siteUrl = (process.env.NUXT_PUBLIC_SITE_URL ?? 'https://learnup.fr').replace(/\/+$/, '')
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-01-01',

@@ -701,8 +701,6 @@ if (requestEvent) {
   }
 }
 
-// Rue masquée pour le moment (demande métier) : le héro n'affiche que la
-// localité « CP, ville, région ». Réintroduire `streetAddress` pour rétablir.
 const heroAddress = computed(() =>
   [centre.value!.postal_code, centre.value!.city, centre.value!.region].filter(Boolean).join(', ')
 )

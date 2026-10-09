@@ -44,10 +44,8 @@
 
     <div
       v-if="mode === 'single' && hasVisibleCenters"
-      class="flex items-center justify-between gap-md border-t border-dashed border-rule bg-paper px-md py-md text-small"
+      class="flex items-center justify-end gap-md border-t border-dashed border-rule bg-paper px-md py-md text-small"
     >
-      <!-- Adresse masquée pour le moment (demande métier) — décommenter le
-           span pour rétablir. Le lien itinéraire reste actif. -->
       <a
         v-if="centers[0]!.lat != null && centers[0]!.lng != null"
         :href="directionsUrl"

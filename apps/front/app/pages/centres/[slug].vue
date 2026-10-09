@@ -21,10 +21,6 @@
                 >
                   {{ centre.name }}
                 </h1>
-                <p class="mt-sm flex items-center gap-sm text-body text-ink-body">
-                  <IconMapPin :size="16" class="shrink-0 text-primary" />
-                  {{ heroAddress }}
-                </p>
 
                 <ul v-if="specialties.length" class="mt-md flex flex-wrap gap-sm">
                   <Badge v-for="tag in specialties" :key="tag" as="li" variant="chip">
@@ -123,16 +119,6 @@
                 </CardHeader>
                 <CardContent class="p-lg pt-md">
                   <ul class="space-y-md text-small">
-                    <li class="flex gap-sm">
-                      <IconMapPin :size="20" class="shrink-0 text-primary" />
-                      <span class="text-ink-body">
-                        <!-- Rue masquée pour le moment (demande métier) :
-                             `streetAddress` reste utilisé par `mapAddress`. -->
-                        {{ centre.postal_code }} {{ centre.city
-                        }}<template v-if="centre.department"> · {{ centre.department }}</template
-                        ><template v-if="centre.region"> · {{ centre.region }}</template>
-                      </span>
-                    </li>
                     <li v-if="centre.phone" class="flex gap-sm">
                       <IconPhone :size="20" class="shrink-0 text-primary" />
                       <NuxtLink
@@ -620,7 +606,6 @@ import {
 import { availabilityStatus } from '~/composables/useCentres'
 import { useGeolocation } from '~/composables/useGeolocation'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
-import { streetOnly } from '~/utils/centre'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
 import { directusAssetUrl } from '~/utils/directusAsset'
 import { departmentCodeFromPostalCode, distanceKm, formatDistance } from '~/utils/geo'
@@ -701,10 +686,6 @@ if (requestEvent) {
   }
 }
 
-const heroAddress = computed(() =>
-  [centre.value!.postal_code, centre.value!.city, centre.value!.region].filter(Boolean).join(', ')
-)
-
 // Adresse de contact du centre : règle réseau « contact{dept}@learnup-academy.com »
 // dérivée du code postal (94 → contact94@…). Repli sur le champ `email`
 // Directus quand le code postal est absent ou invalide.
@@ -735,7 +716,7 @@ const singleMapCenters = computed<CenterResult[]>(() => {
       city: c.city ?? undefined,
       department: c.department ?? undefined,
       cp: c.postal_code ?? '',
-      address: mapAddress.value,
+      address: '',
       tags: '',
       tagsShort: '',
       lat: c.latitude!,
@@ -752,23 +733,6 @@ const mapFocus = computed(() => ({
   lat: centre.value!.latitude!,
   lng: centre.value!.longitude!
 }))
-
-// Localité « cp ville » et rue seule : le champ `address` peut déjà
-// contenir la localité (anciennes données) — on la retire pour recomposer
-// proprement les affichages sans doublon.
-const addressLocality = computed(() =>
-  [centre.value!.postal_code, centre.value!.city].filter(Boolean).join(' ')
-)
-
-const streetAddress = computed(() =>
-  streetOnly(centre.value!.address, centre.value!.postal_code, centre.value!.city)
-)
-
-// Adresse courte du pied de carte : rue + « code postal ville » (sans
-// département/région — contrairement à `heroAddress`).
-const mapAddress = computed(() =>
-  [streetAddress.value, addressLocality.value].filter(Boolean).join(', ')
-)
 
 function onMapSelect(id: string) {
   // Mini-carte sans popup : le pin d'un autre centre mène à sa fiche.
@@ -1009,7 +973,6 @@ const allCentres = await useDirectusList<Centre>('centres', 'centres-siblings', 
     'city',
     'region',
     'specialties',
-    'address',
     'postal_code',
     'department',
     'latitude',

@@ -398,9 +398,9 @@ describe('pages/centres/[slug]', () => {
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain('Centre LEARN UP ACADEMY de Créteil')
-    // Rue masquée pour le moment (demande métier) — la localité reste.
+    // Adresse complète masquée (demande métier) : ni rue ni code postal.
     expect(wrapper.text()).not.toContain('14 rue des Refuzniks')
-    expect(wrapper.text()).toContain('Île-de-France')
+    expect(wrapper.text()).not.toContain('94000')
     expect(routeMock.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
       { label: 'Réseau de centres', to: '/centres' },
@@ -511,35 +511,24 @@ describe('pages/centres/[slug]', () => {
     expect(wrapper.text()).toContain("valide jusqu'au 14 mars 2027")
   })
 
-  it('affiche le lien itinéraire dans le pied de la carte d’accès, sans la rue', async () => {
+  it('affiche le lien itinéraire dans le pied de la carte d’accès, sans adresse', async () => {
     const wrapper = await mountPage()
 
-    // Rue masquée pour le moment (demande métier) : la localité reste visible.
+    // Adresse complète masquée (demande métier) : aucune rue ni localité.
     expect(wrapper.text()).not.toContain('rue des Refuzniks')
-    expect(wrapper.text()).toContain('94000 Créteil')
+    expect(wrapper.text()).not.toContain('94000')
     const link = wrapper.findAll('a').find((a) => a.text().includes("Ouvrir l'itinéraire"))
     expect(link).toBeTruthy()
   })
 
-  it('déduplique la localité quand le champ address la contient déjà', async () => {
+  it('ne transmet aucune adresse à la carte d’accès', async () => {
     directusRequestMock.mockImplementation(async () => [
       { ...centreCreteil, address: '14 rue des Refuzniks, 94000 Créteil' }
     ])
     const wrapper = await mountPage()
 
-    // Adresse transmise à la carte (masquée à l'affichage) sans doublon.
     const map = wrapper.findComponent(CenterMapStub)
-    expect(map.props('centers')[0].address).toBe('14 rue des Refuzniks, 94000 Créteil')
-  })
-
-  it('déduplique la localité collée depuis Google Maps (« CP, ville, France »)', async () => {
-    directusRequestMock.mockImplementation(async () => [
-      { ...centreCreteil, address: '14 rue des Refuzniks, 94000, Créteil, France' }
-    ])
-    const wrapper = await mountPage()
-
-    const map = wrapper.findComponent(CenterMapStub)
-    expect(map.props('centers')[0].address).toBe('14 rue des Refuzniks, 94000 Créteil')
+    expect(map.props('centers')[0].address).toBe('')
   })
 
   it('affiche la ville par défaut sur les cartes des autres centres', async () => {

@@ -15,7 +15,7 @@ const center = {
 }
 
 describe('CenterResultCard', () => {
-  it('renders name, cp, tags and status (adresse masquée pour le moment)', () => {
+  it('renders name, tags and status (adresse complète masquée)', () => {
     const wrapper = mount(CenterResultCard, {
       props: { center },
       global: {
@@ -26,7 +26,7 @@ describe('CenterResultCard', () => {
     })
 
     expect(wrapper.text()).toContain('Centre de Créteil')
-    expect(wrapper.text()).toContain('94000')
+    expect(wrapper.text()).not.toContain('94000')
     expect(wrapper.text()).not.toContain('14 rue des Refuzniks, Créteil · Val-de-Marne')
     expect(wrapper.text()).toContain('CACES · Habilitations électriques · SST · Hauteur')
     expect(wrapper.text()).toContain('Sessions cette semaine')

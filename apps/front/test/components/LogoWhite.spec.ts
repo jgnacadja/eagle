@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 import LogoWhite from '~/components/Brand/LogoWhite.vue'
 
 describe('LogoWhite', () => {
-  it('renders the NuxtImg logo with correct attributes', () => {
+  it('renders the logo mark image and the brand name as text', () => {
     const wrapper = mount(LogoWhite, {
       global: {
         stubs: {
@@ -16,7 +16,8 @@ describe('LogoWhite', () => {
     })
     const img = wrapper.find('img')
     expect(img.exists()).toBe(true)
-    expect(img.attributes('src')).toBe('/images/learn-up-academy.svg')
-    expect(img.attributes('alt')).toBe('LEARN UP ACADEMY')
+    expect(img.attributes('src')).toBe('/images/learn-up-academy-mark.svg')
+    expect(img.attributes('alt')).toBe('')
+    expect(wrapper.text()).toContain('Learn Up Academy')
   })
 })

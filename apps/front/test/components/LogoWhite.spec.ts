@@ -19,5 +19,7 @@ describe('LogoWhite', () => {
     expect(img.attributes('src')).toBe('/images/learn-up-academy-mark.svg')
     expect(img.attributes('alt')).toBe('')
     expect(wrapper.text()).toContain('Learn Up Academy')
+    expect(wrapper.text()).toContain('Déclencheur de réussite')
+    expect(wrapper.find('span.flex-col').exists()).toBe(true)
   })
 })

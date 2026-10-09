@@ -11,8 +11,10 @@ describe('Logo', () => {
     expect(svg.attributes('aria-hidden')).toBe('true')
   })
 
-  it('renders the brand name as text', () => {
+  it('renders the brand name and tagline as stacked text under the mark', () => {
     const wrapper = mount(Logo)
     expect(wrapper.text()).toContain('Learn Up Academy')
+    expect(wrapper.text()).toContain('Déclencheur de réussite')
+    expect(wrapper.find('span.flex-col').exists()).toBe(true)
   })
 })

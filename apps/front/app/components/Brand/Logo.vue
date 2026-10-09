@@ -1,5 +1,5 @@
 <template>
-  <span class="inline-flex shrink-0 items-center gap-xs">
+  <span class="inline-flex shrink-0 flex-col items-center gap-xs">
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width="44"
@@ -65,6 +65,11 @@
       <path fill="#203c87" d="M458 162h27v9h-27Z" />
       <path fill="#203c87" d="M359 390l2 1Z" />
     </svg>
-    <span class="font-display text-h3 uppercase text-primary"> Learn Up Academy </span>
+    <span class="flex flex-col items-center text-center">
+      <span class="font-display text-small font-bold uppercase leading-none text-primary">
+        Learn Up Academy
+      </span>
+      <span class="text-overline uppercase text-primary">Déclencheur de réussite</span>
+    </span>
   </span>
 </template>

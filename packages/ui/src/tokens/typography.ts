@@ -25,6 +25,13 @@ export const typography = {
     small: { fontSize: '13.5px', lineHeight: '1.5', letterSpacing: '0', fontWeight: '400' },
     meta: { fontSize: '12.5px', lineHeight: '1', letterSpacing: '0', fontWeight: '500' },
     button: { fontSize: '15px', lineHeight: '1', letterSpacing: '0', fontWeight: '700' },
-    badge: { fontSize: '12px', lineHeight: '1', letterSpacing: '0', fontWeight: '700' }
+    badge: { fontSize: '12px', lineHeight: '1', letterSpacing: '0', fontWeight: '700' },
+    'logo-name': {
+      fontSize: '0.0946em',
+      lineHeight: '1.1',
+      letterSpacing: '0.025em',
+      fontWeight: '800'
+    },
+    'logo-tagline': { fontSize: '0.034em', lineHeight: '1', letterSpacing: '0', fontWeight: '800' }
   }
 } as const

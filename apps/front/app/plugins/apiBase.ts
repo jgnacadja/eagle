@@ -4,6 +4,9 @@ export default defineNuxtPlugin(() => {
   // nuxt.config.ts ne couvre que le build ; le runtime override d'env arrive
   // tel quel ici, d'où la double sécurité.
   const config = useRuntimeConfig()
-  config.apiBase = config.apiBase.replace(/\/+$/, '')
-  config.public.apiBase = config.public.apiBase.replace(/\/+$/, '')
+  // `apiBase` est une clé privée : absente de la runtime config côté client.
+  if (config.apiBase) config.apiBase = config.apiBase.replace(/\/+$/, '')
+  if (config.public.apiBase) {
+    config.public.apiBase = config.public.apiBase.replace(/\/+$/, '')
+  }
 })

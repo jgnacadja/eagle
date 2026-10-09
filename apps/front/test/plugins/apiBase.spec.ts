@@ -20,6 +20,17 @@ describe('apiBase plugin', () => {
     expect(config.public.apiBase).toBe('https://eagle-api.vercel.app')
   })
 
+  it('tolerates a missing private apiBase (client-side runtime config)', () => {
+    const config = {
+      apiBase: undefined as unknown as string,
+      public: { apiBase: 'https://eagle-api.vercel.app/' }
+    }
+    vi.stubGlobal('useRuntimeConfig', () => config)
+
+    expect(() => apiBasePlugin({} as Parameters<typeof apiBasePlugin>[0])).not.toThrow()
+    expect(config.public.apiBase).toBe('https://eagle-api.vercel.app')
+  })
+
   it('leaves already-normalized URLs untouched', () => {
     const config = {
       apiBase: 'http://localhost:3001',

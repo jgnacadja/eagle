@@ -170,7 +170,7 @@
         <h2 v-reveal-soft class="mt-sm max-w-prose font-display text-h3 font-extrabold md:text-h2">
           Un seul partenaire pour coordonner vos formations partout en France
         </h2>
-        <p class="mt-sm max-w-prose text-small text-ink-inverse-muted md:text-body">
+        <p class="hidden md:block mt-sm max-w-prose text-small text-ink-inverse-muted md:text-body">
           Retrouvez toutes vos demandes centralisées et qualifiées au même endroit. Vos déploiements
           s'effectuent site par site en lien avec nos centres locaux, tout en vous garantissant un
           interlocuteur unique et une vision globale.

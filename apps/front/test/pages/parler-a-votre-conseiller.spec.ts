@@ -337,7 +337,7 @@ describe('pages/parler-a-votre-conseiller', () => {
     expect(seoMock).toHaveBeenCalledWith(
       expect.objectContaining({
         seo_title: 'Parler à votre conseiller | LEARN UP ACADEMY',
-        seo_noindex: true
+        seo_robots: 'noindex, follow'
       }),
       'Parler à votre conseiller'
     )

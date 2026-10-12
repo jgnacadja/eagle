@@ -34,7 +34,7 @@ describe('ArticleCard', () => {
         category: 'Conseil',
         title: 'Quelle AIPR choisir pour vos salariés ?',
         date: '8 sept. 2026 · 4 min',
-        to: '/actualites/quelle-aipr-choisir'
+        to: '/actualites/quelle-aipr-choisir/'
       },
       global: {
         stubs: {
@@ -51,7 +51,7 @@ describe('ArticleCard', () => {
     expect(wrapper.text()).toContain('Quelle AIPR choisir pour vos salariés ?')
     expect(wrapper.text()).toContain('8 sept. 2026 · 4 min')
     expect(wrapper.text()).toContain('Visuel')
-    expect(wrapper.find('a').attributes('href')).toBe('/actualites/quelle-aipr-choisir')
+    expect(wrapper.find('a').attributes('href')).toBe('/actualites/quelle-aipr-choisir/')
   })
 
   it('renders NuxtImg when imageUrl is provided in variant="card"', () => {

@@ -136,7 +136,7 @@ function applyFilter(items: Article[], filter: ArticleFilter | undefined): Artic
   )
 }
 
-const route = reactive({ path: '/actualites', query: {} as Record<string, string> })
+const route = reactive({ path: '/actualites/', query: {} as Record<string, string> })
 
 const directusRequestMock = vi.fn(async (command: () => MockCommand) => {
   const { path, params } = command()
@@ -312,12 +312,12 @@ describe('pages/actualites/index', () => {
 
     expect(wrapper.text()).toContain('À la une')
     expect(wrapper.text()).toContain('Recyclage CACES')
-    const link = wrapper.find('a[href="/actualites/recyclage-caces-echeances-2027"]')
+    const link = wrapper.find('a[href="/actualites/recyclage-caces-echeances-2027/"]')
     expect(link.exists()).toBe(true)
     expect(
       wrapper
         .find('section[aria-label="Dernières actualités"]')
-        .findAll('a[href="/actualites/recyclage-caces-echeances-2027"]')
+        .findAll('a[href="/actualites/recyclage-caces-echeances-2027/"]')
     ).toHaveLength(0)
   })
 

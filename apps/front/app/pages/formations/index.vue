@@ -252,7 +252,7 @@
             <div class="mt-lg flex flex-wrap justify-center gap-md">
               <Button size="pill-sm" @click="openAssistant"> Être guidé dans mon choix </Button>
               <Button as-child variant="outline" size="pill-sm">
-                <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
+                <NuxtLink to="/parler-a-votre-conseiller/">Parler à votre conseiller</NuxtLink>
               </Button>
             </div>
             <div class="mt-lg flex gap-lg text-small font-semibold">
@@ -260,7 +260,7 @@
                 Réinitialiser les filtres
               </Button>
               <NuxtLink
-                to="/formations"
+                to="/formations/"
                 class="text-primary transition-colors hover:text-accent-text"
                 @click="resetFilters"
               >
@@ -274,7 +274,7 @@
             v-else-if="catalog.error.value"
             class="mt-lg"
             title="Le catalogue n'a pas pu être chargé."
-            link-to="/formations"
+            link-to="/formations/"
             link-label="Réessayer"
             @retry="catalog.refresh()"
           >
@@ -359,7 +359,7 @@
           Être guidé dans mon choix
         </Button>
         <Button as-child variant="outline-inverse" size="pill-sm" class="w-full sm:w-auto">
-          <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
+          <NuxtLink to="/parler-a-votre-conseiller/">Parler à votre conseiller</NuxtLink>
         </Button>
       </CtaBanner>
     </section>
@@ -471,17 +471,40 @@ definePageMeta({
   breadcrumb: [{ label: 'Accueil', to: '/' }, { label: 'Formations' }]
 })
 
-useContentSeo(
-  {
-    seo_title: 'Catalogue de formations — LEARN UP ACADEMY',
-    seo_description:
-      'Formations réglementaires et professionnelles, en centre partout en France ou dans votre entreprise.'
-  },
-  'Catalogue de formations — LEARN UP ACADEMY'
-)
-
 const route = useRoute()
 const router = useRouter()
+
+// Indexation du catalogue (ST-03) : la page pilier reste indexable et les
+// variantes de recherche/filtre/tri passent en « noindex, follow » avec une
+// canonical vers la forme propre — leur valeur est le maillage, pas
+// l'indexation. `?page=N` seule garde sa self-canonical (pagination).
+const FILTER_QUERY_KEYS = [
+  'q',
+  'famille',
+  'modalites',
+  'lieu',
+  'centre',
+  'duree',
+  'cpf',
+  'certifiant',
+  'tri'
+]
+const siteUrl = useRuntimeConfig().public.siteUrl
+useContentSeo(
+  computed(() => {
+    const filtered = FILTER_QUERY_KEYS.some((key) => route.query[key] !== undefined)
+    const page = Number(route.query.page)
+    return {
+      seo_title: 'Catalogue de formations — LEARN UP ACADEMY',
+      seo_description:
+        'Formations réglementaires et professionnelles, en centre partout en France ou dans votre entreprise.',
+      seo_robots: filtered ? 'noindex, follow' : null,
+      seo_canonical:
+        !filtered && page > 1 ? `${siteUrl}/formations/?page=${page}` : `${siteUrl}/formations/`
+    }
+  }),
+  'Catalogue de formations — LEARN UP ACADEMY'
+)
 
 const searchQuery = ref(typeof route.query.q === 'string' ? route.query.q : '')
 const selectedFamilies = ref<string[]>(
@@ -843,7 +866,7 @@ const familyShortcuts = computed<
         label,
         caption: `${count} formation${count > 1 ? 's' : ''}`,
         linkLabel: 'Voir la famille',
-        to: `/formations/${slug}`
+        to: `/formations/${slug}/`
       }))
   }
 
@@ -854,7 +877,7 @@ const familyShortcuts = computed<
       label: family.label,
       caption: `${count} formation${count > 1 ? 's' : ''}`,
       linkLabel: 'Voir la famille',
-      to: publishedSlugs.has(family.key) ? `/formations/${family.key}` : null
+      to: publishedSlugs.has(family.key) ? `/formations/${family.key}/` : null
     }
   })
 

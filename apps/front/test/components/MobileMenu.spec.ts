@@ -119,7 +119,7 @@ describe('MobileMenu', () => {
     expect(wrapper.text()).toContain('Formations')
     expect(wrapper.text()).toContain('Trouver un Centre')
     expect(wrapper.text()).toContain('Entreprise')
-    expect(wrapper.find('a[href="/entreprise"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/entreprise/"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('À propos')
     expect(wrapper.text()).toContain('Actualités')
     expect(wrapper.text()).toContain('Rejoindre le réseau')
@@ -162,14 +162,14 @@ describe('MobileMenu', () => {
     expect(wrapper.text()).toContain('Secourisme')
     expect(wrapper.text()).toContain('Incendie')
     expect(wrapper.text()).toContain('Voir la famille')
-    expect(wrapper.find('a[href="/formations/management"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/formations/management/"]').exists()).toBe(true)
     wrapper.unmount()
   })
 
   it('ferme le menu au clic sur un lien de navigation', async () => {
     const wrapper = await mountMenu(true)
 
-    await wrapper.find('a[href="/formations"]').trigger('click')
+    await wrapper.find('a[href="/formations/"]').trigger('click')
     expect(wrapper.emitted('update:open')).toEqual([[false]])
     wrapper.unmount()
   })
@@ -177,7 +177,7 @@ describe('MobileMenu', () => {
   it('ferme le menu au clic sur le lien Entreprise', async () => {
     const wrapper = await mountMenu(true)
 
-    await wrapper.find('a[href="/entreprise"]').trigger('click')
+    await wrapper.find('a[href="/entreprise/"]').trigger('click')
     expect(wrapper.emitted('update:open')).toEqual([[false]])
     wrapper.unmount()
   })

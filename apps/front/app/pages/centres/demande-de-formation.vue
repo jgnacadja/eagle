@@ -79,7 +79,7 @@
                 <NuxtLink :to="confirmationBackTo">{{ confirmationBackLabel }}</NuxtLink>
               </Button>
               <Button as-child variant="outline" size="pill-lg">
-                <NuxtLink to="/formations">Parcourir le catalogue</NuxtLink>
+                <NuxtLink to="/formations/">Parcourir le catalogue</NuxtLink>
               </Button>
             </div>
           </Card>
@@ -386,7 +386,7 @@
                   J'accepte que ces informations soient utilisées pour le traitement de ma demande
                   de formation.
                   <NuxtLink
-                    to="/confidentialite"
+                    to="/confidentialite/"
                     class="font-medium text-primary transition-colors hover:text-accent-text"
                   >
                     Politique de confidentialité
@@ -542,7 +542,7 @@ const isIntra = computed(() => queryValue(route.query.intra) === '1')
 
 // L'ancien CTA « conseiller » (?sujet=conseiller, home/footer) a sa page dédiée.
 if (sujetSlug.value === 'conseiller') {
-  await navigateTo('/parler-a-votre-conseiller')
+  await navigateTo('/parler-a-votre-conseiller/')
 }
 
 // D1 — contexte transmis par le moteur de recherche assistée : besoin brut,
@@ -789,7 +789,7 @@ const contextMeta = computed(() => {
 // Pas de repli sur une famille arbitraire : sans ?famille=, on retombe sur le centre.
 const formationPath = computed(() =>
   formationSlug.value && familleSlug.value
-    ? `/formations/${familleSlug.value}/${formationSlug.value}`
+    ? `/formations/${familleSlug.value}/${formationSlug.value}/`
     : null
 )
 const modifierTo = computed(() => {
@@ -799,34 +799,35 @@ const modifierTo = computed(() => {
   if (contextLevel.value === 'formation' && formationPath.value) {
     return formationPath.value
   }
-  return demandeCentreSlug.value ? `/centres/${demandeCentreSlug.value}` : '/centres'
+  return demandeCentreSlug.value ? `/centres/${demandeCentreSlug.value}/` : '/centres/'
 })
 
 // Breadcrumb : le nom du centre s'affiche quand le contexte est transmis.
 const defaultBreadcrumb = [
   { label: 'Accueil', to: '/' },
-  { label: 'Centres', to: '/centres' },
+  { label: 'Centres', to: '/centres/' },
   { label: 'Demande de formation' }
 ]
 watchEffect(() => {
   route.meta.breadcrumb = demandeCentreSlug.value
     ? [
         { label: 'Accueil', to: '/' },
-        { label: 'Centres', to: '/centres' },
-        { label: centreName.value, to: `/centres/${demandeCentreSlug.value}` },
+        { label: 'Centres', to: '/centres/' },
+        { label: centreName.value, to: `/centres/${demandeCentreSlug.value}/` },
         { label: 'Demande de formation' }
       ]
     : defaultBreadcrumb
 })
 
 useContentSeo(
-  {
+  computed(() => ({
     seo_title: 'Demande de formation | LEARN UP ACADEMY',
     seo_description:
       'Transmettez votre demande de formation : prise en charge par LEARN UP ACADEMY, réponse sous 24 h ouvrées.',
-    // Page formulaire paramétrée : hors indexation.
-    seo_noindex: true
-  },
+    // Page formulaire paramétrée : hors indexation mais ses liens gardent
+    // du poids ; l'écran de confirmation, lui, coupe aussi le suivi (ST-03).
+    seo_robots: submitted.value ? 'noindex, nofollow' : 'noindex, follow'
+  })),
   'Demande de formation'
 )
 
@@ -1048,7 +1049,7 @@ const confirmationSuffix = computed(() => {
 // connue, sinon au centre, sinon à l'accueil.
 const confirmationBackTo = computed(
   () =>
-    formationPath.value ?? (demandeCentreSlug.value ? `/centres/${demandeCentreSlug.value}` : '/')
+    formationPath.value ?? (demandeCentreSlug.value ? `/centres/${demandeCentreSlug.value}/` : '/')
 )
 const confirmationBackLabel = computed(() => {
   if (formationPath.value) return 'Retour à la formation'

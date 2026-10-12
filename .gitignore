@@ -44,6 +44,7 @@ docker-compose.override.yml
 
 # Directus data backups (contiennent des données réelles — jamais versionnés)
 /backups
+directus/schema/.backups
 
 # OS / editor
 .DS_Store

@@ -70,10 +70,46 @@ const sortField = () => ({
   meta: { interface: 'input', hidden: true, ...fr('Ordre') }
 })
 
+// Segments réservés au routage (ST-02) : un slug portant l'un d'eux serait
+// soit masqué par une route statique (`/{slug}` cède devant la page
+// existante), soit invalide dans le plan d'URL (departement/ville/page
+// sont réservés aux gabarits locaux et à la pagination).
+const RESERVED_SLUG_SEGMENTS = [
+  'departement',
+  'ville',
+  'page',
+  'recherche',
+  'actualites',
+  'centres',
+  'formations',
+  'a-propos',
+  'entreprise',
+  'entreprise-reseau',
+  'partenaire-reseau',
+  'parler-a-votre-conseiller',
+  'referencer-mon-organisme',
+  'rejoindre-le-reseau',
+  'api',
+  'directus'
+]
+
 const slugField = () => ({
   field: 'slug',
   type: 'string',
-  meta: { interface: 'input', width: 'half', required: true, ...fr('Slug') },
+  meta: {
+    interface: 'input',
+    width: 'half',
+    required: true,
+    ...fr('Slug'),
+    validation: {
+      _and: [
+        { slug: { _nin: RESERVED_SLUG_SEGMENTS } },
+        { slug: { _regex: '^[a-z0-9]+(-[a-z0-9]+)*$' } }
+      ]
+    },
+    validation_message:
+      'Slug refusé — minuscules non accentuées, chiffres et tirets uniquement, hors segments réservés au routage.'
+  },
   schema: { is_unique: true }
 })
 
@@ -472,7 +508,8 @@ export const collections = [
           note: 'Accroche éditoriale de la rubrique',
           ...fr('Description')
         }
-      }
+      },
+      ...seoFields()
     ]
   },
   {
@@ -796,6 +833,50 @@ export const collections = [
           required: true,
           note: 'Ex: "500+"',
           ...fr('Valeur')
+        }
+      }
+    ]
+  },
+  {
+    collection: 'seo_patterns',
+    icon: 'travel_explore',
+    note: 'Patrons de métas par gabarit (ST-04) — variables {…} substituées côté front.',
+    ...fr('Patrons SEO'),
+    fields: [
+      primaryKey(),
+      {
+        field: 'key',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          required: true,
+          note: 'Identifiant du gabarit : formation, famille, centre, article, categorie, catalogue…',
+          ...fr('Clé du gabarit'),
+          validation: { key: { _regex: '^[a-z0-9]+(-[a-z0-9]+)*$' } },
+          validation_message: 'Clé refusée — minuscules, chiffres et tirets uniquement.'
+        },
+        schema: { is_unique: true }
+      },
+      {
+        field: 'title_pattern',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'full',
+          required: true,
+          note: 'Ex: « Formation {intitulé} — {famille} | LEARN UP ACADEMY »',
+          ...fr('Patron de titre')
+        }
+      },
+      {
+        field: 'description_pattern',
+        type: 'text',
+        meta: {
+          interface: 'input-multiline',
+          width: 'full',
+          note: 'Ex: « Formation {intitulé} à {ville} ({cp}) — {durée}, certifiante {code}. »',
+          ...fr('Patron de description')
         }
       }
     ]

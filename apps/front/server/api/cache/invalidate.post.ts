@@ -19,10 +19,7 @@
 import { timingSafeEqual } from 'node:crypto'
 
 const COLLECTION_ROUTES: Record<string, string[]> = {
-  // Une formation modifiée change aussi les fiches centre : son bloc
-  // formations y est issu du même catalogue.
   formations: ['/formations', '/centres'],
-  // Jonction M2M formations↔centres : mêmes routes que `formations`.
   formations_centres: ['/formations', '/centres'],
   familles_formation: ['/formations'],
   sous_familles_formation: ['/formations'],

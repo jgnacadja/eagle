@@ -11,10 +11,6 @@ import { CacheService } from './cache.service'
 // list/detail/families/rows : ils dérivent tous de `formations:all`.
 const COLLECTION_KEYS: Record<string, string[]> = {
   formations: ['formations:all', 'courses:*'],
-  // Jonction M2M formations↔centres : cocher un centre sur une fiche ne
-  // déclenche pas d'événement `formations` — sans cette entrée, la purge
-  // demandée par le flow Directus serait ignorée et la fiche centre
-  // servirait l'ancien catalogue.
   formations_centres: ['formations:all', 'courses:*'],
   familles_formation: ['formations:all', 'courses:*'],
   sous_familles_formation: ['formations:all', 'courses:*'],

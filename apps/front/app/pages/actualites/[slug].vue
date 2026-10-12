@@ -303,6 +303,7 @@ import { articleAssetUrl, articleReadingTime, formatArticleDate } from '~/utils/
 import { sanitizeHtmlWithHeadings } from '~/utils/sanitizeHtml'
 import { copyTextToClipboard } from '~/utils/clipboard'
 import type { MetaPatternVars } from '~/utils/metaPatterns'
+import { buildArticleJsonLd } from '~/utils/jsonLd'
 import { useDataLayer } from '~/composables/useDataLayer'
 import { onMounted } from 'vue'
 
@@ -670,6 +671,19 @@ useContentSeo(
     if (state === 'found') return foundSeo.value.seo_title
     if (state === 'category') return categorySeo.value.seo_title
     return seoByState[state].seo_title
+  },
+  {
+    // JSON-LD schema.org/Article — uniquement sur une fiche trouvée ;
+    // les pages catégorie portent leur BreadcrumbList via le layout.
+    jsonLd: () => {
+      if (pageState.value !== 'found' || !article.value) return null
+      return buildArticleJsonLd({
+        article: article.value,
+        url: article.value.seo_canonical ?? `${config.public.siteUrl}${route.path}`,
+        siteUrl: config.public.siteUrl,
+        imageUrl: assetUrl(article.value.cover_image)
+      })
+    }
   }
 )
 

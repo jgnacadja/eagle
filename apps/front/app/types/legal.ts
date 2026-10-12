@@ -25,6 +25,7 @@ export interface LegalPage {
   slug: string
   label: string
   title: string
+  h1: string | null
   lastUpdated: string
   sections: LegalPageSection[]
   cta: { label: string; to: string }

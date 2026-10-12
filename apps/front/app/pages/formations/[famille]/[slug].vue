@@ -17,7 +17,7 @@
                 id="formation-title"
                 class="mt-sm font-display text-h2 font-bold text-ink lg:text-h1"
               >
-                {{ course.title }}
+                {{ formationH1 || course.title }}
               </h1>
               <p v-if="heroIntro" class="mt-md max-w-prose text-body text-ink-body">
                 {{ heroIntro }}
@@ -756,37 +756,46 @@ interface FormationLieeRow {
   } | null
 }
 
-const { data: lieesRows } = await useAsyncData<FormationLieeRow[]>(
-  `formations-liees-${slug}`,
-  async () => {
-    try {
-      const results = await directus.request<{ formations_liees: FormationLieeRow[] | null }[]>(
-        readItems('formations', {
-          fields: [
-            'formations_liees.sort',
-            'formations_liees.related.slug',
-            'formations_liees.related.title',
-            'formations_liees.related.duration_days',
-            'formations_liees.related.duration_hours',
-            'formations_liees.related.modalities',
-            'formations_liees.related.famille.slug',
-            'formations_liees.related.famille.name',
-            'formations_liees.related.sous_famille.name'
-          ],
-          filter: { slug: { _eq: slug }, status: { _eq: 'published' } },
-          limit: 1
-        })
-      )
-      return results[0]?.formations_liees ?? []
-    } catch (error) {
-      /* v8 ignore next 3 */
-      if (import.meta.server) {
-        logServerError(`[formations/slug] ${slug} related formations fetch failed:`, error)
-      }
-      return []
+const { data: formationDirectus } = await useAsyncData<{
+  h1: string | null
+  formations_liees: FormationLieeRow[] | null
+}>(`formations-liees-${slug}`, async () => {
+  try {
+    const results = await directus.request<
+      { h1: string | null; formations_liees: FormationLieeRow[] | null }[]
+    >(
+      readItems('formations', {
+        fields: [
+          'h1',
+          'formations_liees.sort',
+          'formations_liees.related.slug',
+          'formations_liees.related.title',
+          'formations_liees.related.duration_days',
+          'formations_liees.related.duration_hours',
+          'formations_liees.related.modalities',
+          'formations_liees.related.famille.slug',
+          'formations_liees.related.famille.name',
+          'formations_liees.related.sous_famille.name'
+        ],
+        filter: { slug: { _eq: slug }, status: { _eq: 'published' } },
+        limit: 1
+      })
+    )
+    return results[0] ?? { h1: null, formations_liees: [] }
+  } catch (error) {
+    /* v8 ignore next 3 */
+    if (import.meta.server) {
+      logServerError(`[formations/slug] ${slug} related formations fetch failed:`, error)
     }
+    return { h1: null, formations_liees: [] }
   }
+})
+
+const lieesRows = computed<FormationLieeRow[]>(
+  () => formationDirectus.value?.formations_liees ?? []
 )
+
+const formationH1 = computed(() => formationDirectus.value?.h1 ?? null)
 
 // Articles rattachés à la formation (related_formation) — maillage
 // interne éditorial vers le blog, rendu en cartes sous la fiche.

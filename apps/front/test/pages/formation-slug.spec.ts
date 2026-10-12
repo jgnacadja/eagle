@@ -6,6 +6,7 @@ import { resolveSeoDescription, resolveSeoTitle } from '~/utils/metaPatterns'
 import LoadError from '~/components/ErrorState/LoadError.vue'
 import NotFound from '~/components/ErrorState/NotFound.vue'
 import FormationPage from '~/pages/formations/[famille]/[slug].vue'
+import { assertHeadingStructure } from '../helpers/headings'
 
 // Session future calculée (+45 jours) : au-delà du mois courant quel que soit
 // le jour d'exécution — une date fixe devenait « ce mois-ci » puis passée.
@@ -37,7 +38,9 @@ const family: FamilleFormation = {
   image: null,
   seo_title: null,
   seo_description: null,
-  seo_canonical: null
+  seo_canonical: null,
+  h1: null,
+  seo_noindex: null
 }
 
 const course: Course = {
@@ -451,6 +454,22 @@ describe('pages/formations/[famille]/[slug]', () => {
     expect(wrapper.text()).toContain('Formations similaires')
     expect(wrapper.findAll('.similaire-card')).toHaveLength(similar.length - 1)
     expect(wrapper.text()).toContain('Télécharger le programme détaillé')
+    assertHeadingStructure(wrapper)
+  })
+
+  it('affiche le champ h1 Directus quand renseigné, sinon le titre', async () => {
+    directusRequest.mockImplementation(
+      (command: () => { path?: string; params?: Record<string, unknown> }) => {
+        const { path, params } = command()
+        if (path === '/items/formations') {
+          return Promise.resolve([{ h1: 'H1 éditorial CACES', formations_liees: [] }])
+        }
+        const slug = (params?.filter as { slug?: { _eq?: string } } | undefined)?.slug?._eq
+        return Promise.resolve(slug === 'caces-conduite-engins' ? [family] : [])
+      }
+    )
+    const wrapper = await mountPage()
+    expect(wrapper.find('h1').text()).toBe('H1 éditorial CACES')
   })
 
   it('remplace les similaires par les formations liées éditoriales (formations_liees)', async () => {

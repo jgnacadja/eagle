@@ -10,7 +10,7 @@
               <h1
                 class="mt-sm font-display text-h2 font-extrabold leading-tight text-ink lg:text-h1"
               >
-                {{ familleData?.name }}
+                {{ familleData?.h1 || familleData?.name }}
               </h1>
               <div
                 v-if="familleData?.intro"

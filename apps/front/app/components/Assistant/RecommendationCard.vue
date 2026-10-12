@@ -12,7 +12,7 @@
       {{ primary && !compact ? 'Recommandation principale' : 'Alternative' }}
     </p>
 
-    <h3 class="mt-xs font-sans font-bold text-ink" :class="primary ? 'text-h4' : 'text-body'">
+    <p class="mt-xs font-sans font-bold text-ink" :class="primary ? 'text-h4' : 'text-body'">
       <NuxtLink
         v-if="recommendation.url"
         :to="recommendation.url"
@@ -22,7 +22,7 @@
         {{ recommendation.title }}
       </NuxtLink>
       <template v-else>{{ recommendation.title }}</template>
-    </h3>
+    </p>
 
     <p class="mt-sm text-small text-ink-body">
       {{

@@ -6,6 +6,7 @@ import { resolveSeoDescription, resolveSeoTitle } from '~/utils/metaPatterns'
 import LoadError from '~/components/ErrorState/LoadError.vue'
 import NotFound from '~/components/ErrorState/NotFound.vue'
 import FamillePage from '~/pages/formations/[famille]/index.vue'
+import { assertHeadingStructure } from '../helpers/headings'
 
 const family: FamilleFormation = {
   id: 1,
@@ -357,6 +358,14 @@ describe('pages/formations/[famille]', () => {
     expect(wrapper.findAll('.formation-card')).toHaveLength(courses.length)
     expect(wrapper.text()).toContain('CACES R489 — chariots élévateurs')
     expect(wrapper.text()).toContain('CACES R490 — grues de chargement')
+    assertHeadingStructure(wrapper)
+  })
+
+  it('affiche le champ h1 Directus quand renseigné, sinon le nom de famille', async () => {
+    family.h1 = 'H1 éditorial famille'
+    const wrapper = await mountPage()
+    expect(wrapper.find('h1').text()).toBe('H1 éditorial famille')
+    family.h1 = null
   })
 
   it('affiche les cartes informations public concerné et validité', async () => {

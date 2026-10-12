@@ -473,7 +473,7 @@
                   v-for="(article, i) in centreArticles"
                   :key="article.slug"
                   v-reveal="revealStagger(i)"
-                  :category="article.category?.name ?? 'Actualité'"
+                  :category="articleCategory(article.category)?.name ?? 'Actualité'"
                   :title="article.title"
                   :date="formatArticleDate(article.publish_at)"
                   :excerpt="article.excerpt ?? ''"
@@ -609,7 +609,7 @@ import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
 import { directusAssetUrl } from '~/utils/directusAsset'
 import { departmentCodeFromPostalCode, distanceKm, formatDistance } from '~/utils/geo'
-import { formatArticleDate } from '~/utils/article'
+import { articleCategory, formatArticleDate } from '~/utils/article'
 import { mapAvis } from '~/utils/avis'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'

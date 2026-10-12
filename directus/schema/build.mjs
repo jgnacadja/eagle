@@ -82,12 +82,17 @@ async function ensureCollections(token) {
           // Convergent : le meta déclaré ici (readonly, note, interface…)
           // reste la source de vérité — les réglages faits à la main dans
           // l'admin sont écrasés au prochain build.
-          if (field.meta) {
+          if (field.meta || field.schema?.is_unique !== undefined) {
             // PATCH meta fusionne les clés : readonly/hidden absents du meta
             // déclaré doivent être explicitement remis à false pour être
-            // retirés de la base.
+            // retirés de la base. `schema` n'est reconvergé que sur
+            // l'unicité — les autres clés (type, PK) ne sont pas mutables
+            // via PATCH sans migration dédiée.
             await api(token, 'PATCH', `/fields/${def.collection}/${field.field}`, {
-              meta: { readonly: false, hidden: false, ...field.meta }
+              ...(field.meta ? { meta: { readonly: false, hidden: false, ...field.meta } } : {}),
+              ...(field.schema?.is_unique !== undefined
+                ? { schema: { is_unique: field.schema.is_unique } }
+                : {})
             })
           }
           continue

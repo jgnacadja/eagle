@@ -791,7 +791,7 @@ fields:
       numeric_precision: null
       numeric_scale: null
       is_nullable: true
-      is_unique: false
+      is_unique: true
       is_indexed: false
       is_primary_key: false
       is_generated: false
@@ -1183,6 +1183,92 @@ fields:
       has_auto_increment: false
       foreign_key_table: categories
       foreign_key_column: id
+  - collection: articles
+    field: h1
+    type: string
+    meta:
+      collection: articles
+      conditions: null
+      display: null
+      display_options: null
+      field: h1
+      group: null
+      hidden: false
+      interface: input
+      note: >-
+        Titre principal de la page — vide : le gabarit reprend le titre du
+        contenu.
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 19
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Titre H1
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: h1
+      table: articles
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: true
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: articles
+    field: seo_noindex
+    type: boolean
+    meta:
+      collection: articles
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_noindex
+      group: null
+      hidden: false
+      interface: boolean
+      note: Exclut la page de l’indexation (meta robots noindex).
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 20
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Noindex
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_noindex
+      table: articles
+      data_type: boolean
+      default_value: false
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
   - collection: avis
     field: id
     type: integer
@@ -2675,7 +2761,7 @@ fields:
       numeric_precision: null
       numeric_scale: null
       is_nullable: true
-      is_unique: false
+      is_unique: true
       is_indexed: false
       is_primary_key: false
       is_generated: false
@@ -3700,6 +3786,92 @@ fields:
       has_auto_increment: false
       foreign_key_table: null
       foreign_key_column: null
+  - collection: centres
+    field: h1
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: h1
+      group: null
+      hidden: false
+      interface: input
+      note: >-
+        Titre principal de la page — vide : le gabarit reprend le titre du
+        contenu.
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 41
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Titre H1
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: h1
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: true
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: seo_noindex
+    type: boolean
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_noindex
+      group: null
+      hidden: false
+      interface: boolean
+      note: Exclut la page de l’indexation (meta robots noindex).
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 42
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Noindex
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_noindex
+      table: centres
+      data_type: boolean
+      default_value: false
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
   - collection: familles_formation
     field: id
     type: integer
@@ -3993,7 +4165,7 @@ fields:
       numeric_precision: null
       numeric_scale: null
       is_nullable: true
-      is_unique: false
+      is_unique: true
       is_indexed: false
       is_primary_key: false
       is_generated: false
@@ -4283,6 +4455,92 @@ fields:
       table: familles_formation
       data_type: text
       default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: familles_formation
+    field: h1
+    type: string
+    meta:
+      collection: familles_formation
+      conditions: null
+      display: null
+      display_options: null
+      field: h1
+      group: null
+      hidden: false
+      interface: input
+      note: >-
+        Titre principal de la page — vide : le gabarit reprend le titre du
+        contenu.
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 15
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Titre H1
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: h1
+      table: familles_formation
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: true
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: familles_formation
+    field: seo_noindex
+    type: boolean
+    meta:
+      collection: familles_formation
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_noindex
+      group: null
+      hidden: false
+      interface: boolean
+      note: Exclut la page de l’indexation (meta robots noindex).
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 16
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Noindex
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_noindex
+      table: familles_formation
+      data_type: boolean
+      default_value: false
       max_length: null
       numeric_precision: null
       numeric_scale: null
@@ -4985,7 +5243,7 @@ fields:
       display_options: null
       field: center_slug
       group: null
-      hidden: true
+      hidden: false
       interface: input
       note: null
       options: null
@@ -5027,7 +5285,7 @@ fields:
       display_options: null
       field: center_slugs
       group: null
-      hidden: true
+      hidden: false
       interface: tags
       note: null
       options: null
@@ -5402,7 +5660,7 @@ fields:
       numeric_precision: null
       numeric_scale: null
       is_nullable: true
-      is_unique: false
+      is_unique: true
       is_indexed: false
       is_primary_key: false
       is_generated: false
@@ -6017,6 +6275,92 @@ fields:
       validation: null
       validation_message: null
       width: full
+  - collection: formations
+    field: h1
+    type: string
+    meta:
+      collection: formations
+      conditions: null
+      display: null
+      display_options: null
+      field: h1
+      group: null
+      hidden: false
+      interface: input
+      note: >-
+        Titre principal de la page — vide : le gabarit reprend le titre du
+        contenu.
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 100
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Titre H1
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: h1
+      table: formations
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: true
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: formations
+    field: seo_noindex
+    type: boolean
+    meta:
+      collection: formations
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_noindex
+      group: null
+      hidden: false
+      interface: boolean
+      note: Exclut la page de l’indexation (meta robots noindex).
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 101
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Noindex
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_noindex
+      table: formations
+      data_type: boolean
+      default_value: false
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
   - collection: formations_centres
     field: id
     type: integer
@@ -6703,7 +7047,7 @@ fields:
       numeric_precision: null
       numeric_scale: null
       is_nullable: true
-      is_unique: false
+      is_unique: true
       is_indexed: false
       is_primary_key: false
       is_generated: false
@@ -6784,6 +7128,92 @@ fields:
       data_type: character varying
       default_value: null
       max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages
+    field: h1
+    type: string
+    meta:
+      collection: pages
+      conditions: null
+      display: null
+      display_options: null
+      field: h1
+      group: null
+      hidden: false
+      interface: input
+      note: >-
+        Titre principal de la page — vide : le gabarit reprend le titre du
+        contenu.
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 8
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Titre H1
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: h1
+      table: pages
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: true
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages
+    field: seo_noindex
+    type: boolean
+    meta:
+      collection: pages
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_noindex
+      group: null
+      hidden: false
+      interface: boolean
+      note: Exclut la page de l’indexation (meta robots noindex).
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 9
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Noindex
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_noindex
+      table: pages
+      data_type: boolean
+      default_value: false
+      max_length: null
       numeric_precision: null
       numeric_scale: null
       is_nullable: true
@@ -7215,7 +7645,7 @@ fields:
       numeric_precision: null
       numeric_scale: null
       is_nullable: true
-      is_unique: false
+      is_unique: true
       is_indexed: false
       is_primary_key: false
       is_generated: false
@@ -7422,6 +7852,92 @@ fields:
       validation: null
       validation_message: null
       width: full
+  - collection: pages_legales
+    field: h1
+    type: string
+    meta:
+      collection: pages_legales
+      conditions: null
+      display: null
+      display_options: null
+      field: h1
+      group: null
+      hidden: false
+      interface: input
+      note: >-
+        Titre principal de la page — vide : le gabarit reprend le titre du
+        contenu.
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 15
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Titre H1
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: h1
+      table: pages_legales
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: true
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales
+    field: seo_noindex
+    type: boolean
+    meta:
+      collection: pages_legales
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_noindex
+      group: null
+      hidden: false
+      interface: boolean
+      note: Exclut la page de l’indexation (meta robots noindex).
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 16
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Noindex
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_noindex
+      table: pages_legales
+      data_type: boolean
+      default_value: false
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
   - collection: pages_legales_sections
     field: id
     type: integer

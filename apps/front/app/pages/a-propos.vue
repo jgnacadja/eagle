@@ -49,7 +49,7 @@
             class="mt-xl flex flex-col sm:flex-row items-center justify-center gap-md"
           >
             <Button as-child variant="dark" size="pill-lg" class="w-full sm:w-auto shadow-sm">
-              <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
+              <NuxtLink to="/parler-a-votre-conseiller/">Parler à votre conseiller</NuxtLink>
             </Button>
             <Button as-child variant="outline" size="pill-lg" class="w-full sm:w-auto shadow-xs">
               <NuxtLink to="#reseau">Découvrir le réseau</NuxtLink>
@@ -359,7 +359,7 @@
           </div>
           <div class="mt-md">
             <NuxtLink
-              to="/parler-a-votre-conseiller"
+              to="/parler-a-votre-conseiller/"
               class="inline-flex items-center gap-xs font-sans text-small font-bold text-primary transition-colors hover:text-accent-text"
             >
               <span>Contacter le référent handicap</span>
@@ -423,10 +423,10 @@
 
             <div class="mt-lg flex flex-col sm:flex-row items-center gap-md">
               <Button as-child variant="outline" size="pill-lg" class="w-full sm:w-auto shadow-xs">
-                <NuxtLink to="/centres">Trouver un centre</NuxtLink>
+                <NuxtLink to="/centres/">Trouver un centre</NuxtLink>
               </Button>
               <NuxtLink
-                to="/rejoindre-le-reseau"
+                to="/rejoindre-le-reseau/"
                 class="inline-block text-small font-bold text-accent-text transition-colors hover:text-primary"
               >
                 Rejoindre le réseau&nbsp;
@@ -485,10 +485,10 @@
 
             <div class="mt-xl flex flex-wrap items-center gap-md">
               <Button as-child variant="outline" size="pill-lg" class="shadow-xs">
-                <NuxtLink to="/centres">Trouver un centre</NuxtLink>
+                <NuxtLink to="/centres/">Trouver un centre</NuxtLink>
               </Button>
               <NuxtLink
-                to="/rejoindre-le-reseau"
+                to="/rejoindre-le-reseau/"
                 class="inline-block text-small font-bold text-accent-text transition-colors hover:text-primary ml-3"
               >
                 Rejoindre le réseau&nbsp;
@@ -527,7 +527,7 @@
 
         <div class="mt-xl flex flex-col sm:flex-row items-center justify-center gap-md">
           <Button as-child variant="accent" size="pill-lg" class="w-full sm:w-auto shadow-sm">
-            <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
+            <NuxtLink to="/parler-a-votre-conseiller/">Parler à votre conseiller</NuxtLink>
           </Button>
           <Button
             as-child
@@ -535,7 +535,7 @@
             size="pill-lg"
             class="hidden sm:inline-flex w-full sm:w-auto"
           >
-            <NuxtLink to="/formations">Voir les formations</NuxtLink>
+            <NuxtLink to="/formations/">Voir les formations</NuxtLink>
           </Button>
         </div>
       </div>

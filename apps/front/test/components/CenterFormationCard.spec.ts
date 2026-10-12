@@ -43,7 +43,7 @@ describe('CenterFormationCard', () => {
         variant: 'similar' as const,
         title: 'CACES R485 — gerbeurs',
         meta: '1 à 2 jours · Inter / intra',
-        to: '/formations/caces-conduite-engins/caces-r485'
+        to: '/formations/caces-conduite-engins/caces-r485/'
       },
       global: { stubs }
     })
@@ -68,7 +68,7 @@ describe('CenterFormationCard', () => {
 
   it('renders the « Voir la formation » button for the button variant', () => {
     const wrapper = mount(CenterFormationCard, {
-      props: { ...baseProps, to: '/formations/f/caces', variant: 'button' as const },
+      props: { ...baseProps, to: '/formations/f/caces/', variant: 'button' as const },
       global: { stubs }
     })
     expect(wrapper.text()).toContain('Voir la formation')
@@ -109,7 +109,7 @@ describe('CenterFormationCard', () => {
     const wrapper = mount(CenterFormationCard, {
       props: {
         ...baseProps,
-        to: '/formations/caces-conduite-engins/caces-r489'
+        to: '/formations/caces-conduite-engins/caces-r489/'
       },
       global: { stubs }
     })
@@ -123,7 +123,7 @@ describe('CenterFormationCard', () => {
     const wrapper = mount(CenterFormationCard, {
       props: {
         ...baseProps,
-        to: '/formations/caces-conduite-engins/caces-r489',
+        to: '/formations/caces-conduite-engins/caces-r489/',
         centerId: 'creteil',
         centerName: 'Learn Up Créteil',
         centerCity: 'Créteil',
@@ -152,7 +152,7 @@ describe('CenterFormationCard', () => {
     const wrapper = mount(CenterFormationCard, {
       props: {
         ...baseProps,
-        to: '/formations/caces-conduite-engins/caces-r489',
+        to: '/formations/caces-conduite-engins/caces-r489/',
         variant: 'similar',
         family: 'CACES'
       },

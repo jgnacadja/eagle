@@ -55,7 +55,7 @@ withDefaults(
     to?: string | null
     titleTo?: string | null
   }>(),
-  { tags: () => [], status: undefined, to: undefined, titleTo: '/centres' }
+  { tags: () => [], status: undefined, to: undefined, titleTo: '/centres/' }
 )
 
 function tagVariant(tag: string): 'success' | 'warning' | 'neutral' {

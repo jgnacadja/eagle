@@ -31,7 +31,7 @@ describe('CenterCard', () => {
         name: 'Centre de Créteil',
         distance: 'à 6 km',
         formations: 'CACES · SST',
-        titleTo: '/centres/creteil'
+        titleTo: '/centres/creteil/'
       },
       global: {
         stubs: {
@@ -41,7 +41,7 @@ describe('CenterCard', () => {
       }
     })
 
-    expect(wrapper.find('a[href="/centres/creteil"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/centres/creteil/"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Centre de Créteil')
   })
 
@@ -52,7 +52,7 @@ describe('CenterCard', () => {
         distance: 'à 6 km',
         formations: 'CACES · SST',
         status: { type: 'success', label: 'Sessions cette semaine', labelShort: 'Cette semaine' },
-        to: '/centres/creteil'
+        to: '/centres/creteil/'
       },
       global: {
         stubs: {
@@ -64,7 +64,7 @@ describe('CenterCard', () => {
 
     expect(wrapper.text()).toContain('Sessions cette semaine')
     expect(wrapper.text()).toContain('Cette semaine')
-    expect(wrapper.find('a[href="/centres/creteil"]').text()).toContain('Voir le centre')
+    expect(wrapper.find('a[href="/centres/creteil/"]').text()).toContain('Voir le centre')
   })
 
   it('affiche le badge statut warning', () => {

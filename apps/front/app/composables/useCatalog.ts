@@ -167,7 +167,7 @@ export function mapCourse(
     certifications: buildCertifications(course),
     image: directusAssetUrl(course.image, apiBase) ?? course.imageUrl ?? null,
     status: buildStatus(course),
-    to: familySlug ? `/formations/${familySlug}/${course.slug}` : null
+    to: familySlug ? `/formations/${familySlug}/${course.slug}/` : null
   }
 }
 

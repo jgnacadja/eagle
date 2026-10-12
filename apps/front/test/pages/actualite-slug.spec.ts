@@ -6,6 +6,7 @@ import type { Article, Course } from '@learnup/types'
 import LoadError from '~/components/ErrorState/LoadError.vue'
 import NotFound from '~/components/ErrorState/NotFound.vue'
 import ArticlePage from '~/pages/actualites/[slug].vue'
+import { assertHeadingStructure } from '../helpers/headings'
 
 const navigateToMock = vi.fn()
 const refreshMock = vi.fn()
@@ -45,7 +46,9 @@ const articleFixture: Article = {
   cover_image: null,
   seo_title: 'Recyclage CACES | LEARN UP ACADEMY',
   seo_description: 'Les échéances de recyclage CACES à anticiper.',
-  seo_canonical: 'https://learnup.fr/actualites/recyclage-caces-echeances-2027'
+  seo_canonical: 'https://learnup.fr/actualites/recyclage-caces-echeances-2027',
+  h1: null,
+  seo_noindex: null
 }
 
 const categoryFixture = {
@@ -464,6 +467,35 @@ describe('pages/actualites/[slug]', () => {
     expect(wrapper.text()).toContain('Passeport prévention : ce qui change')
     expect(wrapper.text()).toContain('SST : initier ses équipes au secours')
     expect(wrapper.text()).not.toContain("Cet article n'est pas disponible.")
+    assertHeadingStructure(wrapper)
+  })
+
+  it('affiche le champ h1 éditorial en priorité (article puis catégorie)', async () => {
+    directusRequestMock.mockImplementation(async (command: DirectusCommand) => {
+      const { path, params } = command()
+      if (path === '/items/articles') {
+        if (params?.filter && 'category' in params.filter) return []
+        return [{ ...articleFixture, h1: 'H1 éditorial article' }]
+      }
+      return []
+    })
+    const articleWrapper = await mountPage()
+    expect(articleWrapper.find('h1').text()).toBe('H1 éditorial article')
+
+    routeMock.params.slug = 'securite-au-travail'
+    directusRequestMock.mockImplementation(async (command: DirectusCommand) => {
+      const { path, params } = command()
+      if (path === '/items/categories') {
+        return [{ ...categoryFixture, h1: 'H1 éditorial rubrique' }]
+      }
+      if (path === '/items/articles') {
+        if (params?.filter && 'category' in params.filter) return categoryArticlesFixture
+        return []
+      }
+      return []
+    })
+    const categoryWrapper = await mountPage()
+    expect(categoryWrapper.find('h1').text()).toBe('H1 éditorial rubrique')
   })
 
   it('lie les articles de la catégorie vers leurs fiches canoniques', async () => {

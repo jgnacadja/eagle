@@ -22,6 +22,7 @@ const CenterMapStub = {
   </div>`
 }
 import CentrePage from '~/pages/centres/[slug].vue'
+import { assertHeadingStructure } from '../helpers/headings'
 
 const navigateToMock = vi.fn()
 const refreshMock = vi.fn()
@@ -75,7 +76,9 @@ const centreCreteil: Centre = {
   image: null,
   seo_title: null,
   seo_description: null,
-  seo_canonical: null
+  seo_canonical: null,
+  h1: null,
+  seo_noindex: null
 }
 
 const centreVitry = {
@@ -422,6 +425,13 @@ describe('pages/centres/[slug]', () => {
       })
     )
     expect(fallback).toBe('Centre LEARN UP ACADEMY de Créteil')
+    assertHeadingStructure(wrapper)
+  })
+
+  it('affiche le champ h1 Directus quand renseigné, sinon le nom', async () => {
+    directusRequestMock.mockImplementation(async () => [{ ...centreCreteil, h1: 'H1 éditorial' }])
+    const wrapper = await mountPage()
+    expect(wrapper.find('h1').text()).toBe('H1 éditorial')
   })
 
   it('affiche les formations du centre issues du catalogue API', async () => {

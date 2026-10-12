@@ -16,7 +16,7 @@
               <h1
                 class="mt-sm font-display text-h2 font-extrabold leading-tight text-ink lg:text-h1"
               >
-                {{ article?.title }}
+                {{ article?.h1 || article?.title }}
               </h1>
               <div class="mt-md h-xs flex-1 bg-accent w-4xl" aria-hidden="true" />
               <p class="mt-md text-body text-ink-body">{{ article?.excerpt }}</p>
@@ -227,7 +227,7 @@
         <header v-hero class="max-w-prose">
           <p class="text-overline font-bold uppercase text-accent-text">Catégorie</p>
           <h1 class="mt-sm font-display text-h2 font-extrabold leading-tight text-ink lg:text-h1">
-            {{ category?.name }}
+            {{ category?.h1 || category?.name }}
           </h1>
           <div class="mt-md h-xs w-4xl bg-accent" aria-hidden="true" />
           <p v-if="category?.description" class="mt-md text-body text-ink-body">

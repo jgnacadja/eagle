@@ -3,7 +3,7 @@
     <header class="border-b border-rule bg-linear-to-b from-paper to-surface">
       <div v-hero class="mx-auto w-full px-gutter-mobile pt-2xl md:px-gutter">
         <h1 class="font-display text-h1 font-extrabold text-ink">
-          {{ page.title }}
+          {{ page.h1 || page.title }}
         </h1>
         <p class="mt-sm text-small text-ink-muted">Dernière mise à jour : {{ page.lastUpdated }}</p>
 

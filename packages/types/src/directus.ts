@@ -7,6 +7,8 @@ interface SeoFields {
   seo_title: string | null
   seo_description: string | null
   seo_canonical: string | null
+  h1: string | null
+  seo_noindex: boolean | null
 }
 
 export interface Centre extends SeoFields {
@@ -129,7 +131,7 @@ export interface PageLegale extends SeoFields {
   updated_at: string | null
 }
 
-export interface ArticleCategory {
+export interface ArticleCategory extends SeoFields {
   id: number
   status: ContentStatus
   sort: number | null

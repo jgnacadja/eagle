@@ -19,7 +19,7 @@
                   id="hero-title"
                   class="mt-sm font-display text-h2 font-extrabold text-ink lg:text-h1"
                 >
-                  {{ centre.name }}
+                  {{ centre.h1 || centre.name }}
                 </h1>
 
                 <ul v-if="specialties.length" class="mt-md flex flex-wrap gap-sm">

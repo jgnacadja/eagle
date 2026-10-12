@@ -200,7 +200,7 @@
           v-else-if="catalog.error.value"
           class="mt-lg"
           title="Le catalogue n'a pas pu être chargé."
-          link-to="/formations"
+          link-to="/formations/"
           link-label="Voir le catalogue"
           @retry="catalog.refresh()"
         >
@@ -313,7 +313,7 @@
             Être guidé dans mon choix
           </Button>
           <Button as-child variant="outline-inverse" size="pill-sm" class="w-full sm:w-auto">
-            <NuxtLink :to="`/centres/demande-de-formation?famille=${famille}`"
+            <NuxtLink :to="`/centres/demande-de-formation/?famille=${famille}`"
               >Faire une demande</NuxtLink
             >
           </Button>
@@ -325,7 +325,7 @@
     <LoadError
       v-else-if="loadError"
       title="Le contenu n'a pas pu être chargé."
-      link-to="/formations"
+      link-to="/formations/"
       link-label="Voir le catalogue"
       @retry="retry"
     >
@@ -337,7 +337,7 @@
     <NotFound
       v-else
       title="Cette famille de formations n'est pas disponible."
-      primary-to="/formations"
+      primary-to="/formations/"
       primary-label="Voir le catalogue"
       secondary-label="Être guidé dans mon choix"
       search-placeholder="Intitulé, compétence ou certification"
@@ -441,7 +441,7 @@ const stateLabels: Record<Exclude<PageState, 'found'>, string> = {
 
 const defaultBreadcrumb = computed(() => [
   { label: 'Accueil', to: '/' },
-  { label: 'Formations', to: '/formations' },
+  { label: 'Formations', to: '/formations/' },
   { label: familleData.value!.name }
 ])
 
@@ -450,11 +450,14 @@ watchEffect(() => {
   route.meta.breadcrumb = stateLabel
     ? [
         { label: 'Accueil', to: '/' },
-        { label: 'Formations', to: '/formations' },
+        { label: 'Formations', to: '/formations/' },
         { label: stateLabel }
       ]
     : defaultBreadcrumb.value
 })
+
+// Patron administrable `famille` (ST-04) : seo_* éditorial > patron > repli.
+const famillePattern = useSeoPattern('famille')
 
 useContentSeo(
   () => {
@@ -462,13 +465,32 @@ useContentSeo(
     const stateLabel = isFound ? null : stateLabels[pageState.value]
     const title = stateLabel ?? familleData.value!.name
 
+    const vars = isFound
+      ? {
+          famille: familleData.value!.name,
+          'sous-famille': sousFamilles.value?.length
+            ? sousFamilles.value.map((s) => s.name).join(', ')
+            : null,
+          n: familyTotal.value
+        }
+      : {}
+
     return {
       seo_title: isFound
-        ? (familleData.value?.seo_title ?? `${title} — Formations | LEARN UP ACADEMY`)
+        ? resolveSeoTitle(
+            familleData.value?.seo_title,
+            famillePattern.value?.title_pattern,
+            vars,
+            `${title} — Formations | LEARN UP ACADEMY`
+          )
         : title,
       seo_description: isFound
-        ? (familleData.value?.seo_description ??
-          `Formations ${familleData.value!.name} en centre ou sur site.`)
+        ? resolveSeoDescription(
+            familleData.value?.seo_description,
+            famillePattern.value?.description_pattern,
+            vars,
+            `Formations ${familleData.value!.name} en centre ou sur site.`
+          )
         : undefined,
       seo_canonical: isFound ? familleData.value?.seo_canonical : undefined,
       seo_noindex: !isFound,
@@ -497,7 +519,7 @@ function retry() {
 }
 
 function onErrorSearch(query: string) {
-  navigateTo({ path: '/formations', query: query ? { q: query } : {} })
+  navigateTo({ path: '/formations/', query: query ? { q: query } : {} })
 }
 
 // Sous-familles publiées de la famille courante — affichées en cartes

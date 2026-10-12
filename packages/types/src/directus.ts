@@ -179,3 +179,11 @@ export interface Avis {
   /** Relation M2O vers `centres` — null = avis marque (toutes implantations). */
   centre: number | null
 }
+
+/** Patron de métas administrable (ST-04) — un par gabarit (`key`). */
+export interface SeoPattern {
+  id: number
+  key: string
+  title_pattern: string
+  description_pattern: string | null
+}

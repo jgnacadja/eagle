@@ -119,12 +119,26 @@ async function relationExists(token, collection, field) {
   return res.ok
 }
 
+// Le meta déclaré (interface, gabarit, traductions) reste la source de
+// vérité du champ relation — ré-appliqué partout, sinon une colonne créée
+// hors script (admin, migration) garderait l'interface `input` par défaut
+// et l'admin n'afficherait que l'id brut au lieu du dropdown M2O.
+async function convergeRelationFieldMeta(token, rel) {
+  if (!rel.meta) return
+  await api(token, 'PATCH', `/fields/${rel.collection}/${rel.field}`, {
+    meta: { readonly: false, hidden: false, ...rel.meta }
+  })
+}
+
 // Phase 1 : les colonnes M2O sont créées avant la migration de contenu —
 // une colonne suffit pour écrire des items, la relation n'est pas requise.
 async function ensureRelationFields(token) {
   for (const rel of relations) {
     if (await relationExists(token, rel.collection, rel.field)) continue
-    if (await fieldExists(token, rel.collection, rel.field)) continue
+    if (await fieldExists(token, rel.collection, rel.field)) {
+      await convergeRelationFieldMeta(token, rel)
+      continue
+    }
     await api(token, 'POST', `/fields/${rel.collection}`, {
       field: rel.field,
       type: rel.related_collection === 'directus_files' ? 'uuid' : 'integer',
@@ -138,11 +152,7 @@ async function ensureRelationFields(token) {
 // les réglages déclarés ici ne s'appliqueraient jamais sur une relation
 // déjà créée. one_field/sort_field sont aussi reconvergés via PATCH.
 async function convergeRelation(token, rel) {
-  if (rel.meta) {
-    await api(token, 'PATCH', `/fields/${rel.collection}/${rel.field}`, {
-      meta: { readonly: false, hidden: false, ...rel.meta }
-    })
-  }
+  await convergeRelationFieldMeta(token, rel)
   const { data: current } = await api(token, 'GET', `/relations/${rel.collection}/${rel.field}`)
   const metaPatch = {}
   if (rel.one_field && current.meta?.one_field !== rel.one_field)
@@ -170,6 +180,9 @@ async function createRelation(token, rel) {
     related_collection: rel.related_collection,
     ...(Object.keys(meta).length ? { meta } : {})
   })
+  // Meta ré-appliqué après création : une interface M2O posée sur un champ
+  // sans relation peut être assainie par Directus au POST /fields.
+  await convergeRelationFieldMeta(token, rel)
   log(`✔  relation ${rel.collection}.${rel.field} → ${rel.related_collection}`)
 }
 

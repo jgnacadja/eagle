@@ -81,7 +81,7 @@ describe('useAssistantAnalytics', () => {
     const analytics = useAssistantAnalytics()
     // Le chemin exigé par `chatbot_open` et `chatbot_message_sent` vient de
     // la même source que l'attribut de base des autres jalons.
-    routeMock().fullPath = '/formations'
+    routeMock().fullPath = '/formations/'
 
     analytics.chatbotOpen({ trigger_type: 'manuel', conversation_id: 'c1' })
     analytics.chatbotMessageSent({ conversation_id: 'c1', message_index: 1 })
@@ -127,7 +127,7 @@ describe('useAssistantAnalytics', () => {
           resolved: false,
           duration_seconds: 42
         }
-      ].map((event) => ({ page_path: '/formations', ...event }))
+      ].map((event) => ({ page_path: '/formations/', ...event }))
     )
   })
 

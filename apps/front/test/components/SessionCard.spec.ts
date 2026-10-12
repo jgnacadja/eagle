@@ -83,7 +83,7 @@ describe('SessionCard', () => {
 
   it('renders the provided to/ctaLabel', () => {
     const wrapper = mount(SessionCard, {
-      props: { ...baseProps, to: '/sessions/42', ctaLabel: 'Réserver' },
+      props: { ...baseProps, to: '/sessions/42/', ctaLabel: 'Réserver' },
       global: { stubs }
     })
 

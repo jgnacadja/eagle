@@ -136,7 +136,7 @@
             Un réseau présent partout en France
           </h2>
           <NuxtLink
-            to="/centres"
+            to="/centres/"
             class="hidden text-small font-bold text-primary transition-colors hover:text-accent-text md:block"
           >
             Explorer la carte des centres <span class="link-arrow">→</span>
@@ -163,7 +163,7 @@
 
         <div class="mt-lg md:hidden">
           <NuxtLink
-            to="/centres"
+            to="/centres/"
             class="text-small font-bold text-primary transition-colors hover:text-accent-text"
           >
             Explorer la carte des centres <span class="link-arrow">→</span>
@@ -186,10 +186,10 @@
           </div>
           <div class="flex shrink-0 flex-col gap-md sm:flex-row">
             <Button as-child size="pill-lg" class="w-full sm:w-auto">
-              <NuxtLink to="/formations">Parcourir le catalogue</NuxtLink>
+              <NuxtLink to="/formations/">Parcourir le catalogue</NuxtLink>
             </Button>
             <Button as-child variant="outline" size="pill-lg" class="w-full sm:w-auto">
-              <NuxtLink to="/parler-a-votre-conseiller">Être guidé dans mon choix</NuxtLink>
+              <NuxtLink to="/parler-a-votre-conseiller/">Être guidé dans mon choix</NuxtLink>
             </Button>
           </div>
         </div>
@@ -198,7 +198,7 @@
           <p class="text-meta md:text-small text-ink-muted">
             Vous êtes un organisme de formation ?
             <NuxtLink
-              to="/rejoindre-le-reseau"
+              to="/rejoindre-le-reseau/"
               class="font-bold text-primary underline underline-offset-4 transition-colors hover:text-accent-text"
             >
               Rejoindre le réseau
@@ -223,7 +223,7 @@ definePageMeta({
   layout: 'with-breadcrumb',
   breadcrumb: [
     { label: 'Accueil', to: '/' },
-    { label: 'Entreprises', to: '/entreprise' },
+    { label: 'Entreprises', to: '/entreprise/' },
     { label: 'Le réseau et ses partenaires' }
   ]
 })
@@ -263,7 +263,7 @@ const networkMembers = [
     title: 'Des centres de formation partout en France',
     body: "Chaque centre dispose d'une page avec ses sessions, ses équipements et ses moyens d'accès. Les formations ont lieu en centre, sur site ou en intra-entreprise.",
     cta: 'Explorer la carte des centres',
-    to: '/centres'
+    to: '/centres/'
   },
   {
     icon: IconCheck,

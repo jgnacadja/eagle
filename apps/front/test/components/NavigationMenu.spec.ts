@@ -28,11 +28,11 @@ function createMenu(triggerVariant?: string) {
           <NavigationMenuItem>
             <NavigationMenuTrigger :variant="triggerVariant">Formations</NavigationMenuTrigger>
             <NavigationMenuContent>
-              <NavigationMenuLink href="/formations">Catalogue</NavigationMenuLink>
+              <NavigationMenuLink href="/formations/">Catalogue</NavigationMenuLink>
             </NavigationMenuContent>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <NavigationMenuLink href="/centres">Nos centres</NavigationMenuLink>
+            <NavigationMenuLink href="/centres/">Nos centres</NavigationMenuLink>
           </NavigationMenuItem>
         </NavigationMenuList>
       </NavigationMenu>
@@ -48,7 +48,7 @@ describe('ui/NavigationMenu', () => {
     expect(trigger.text()).toContain('Formations')
     expect(trigger.find('svg').exists()).toBe(true)
     expect(wrapper.find('ul').classes()).toContain('list-none')
-    expect(wrapper.find('a[href="/centres"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/centres/"]').exists()).toBe(true)
   })
 
   it('applique le variant header au trigger', () => {

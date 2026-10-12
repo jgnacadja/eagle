@@ -17,7 +17,7 @@
         <NuxtLink to="/">Retour à l'accueil</NuxtLink>
       </Button>
       <Button as-child variant="outline" size="pill-lg">
-        <NuxtLink to="/actualites">Découvrir les actualités du réseau</NuxtLink>
+        <NuxtLink to="/actualites/">Découvrir les actualités du réseau</NuxtLink>
       </Button>
     </div>
     <p class="text-meta text-ink-subtle leading-relaxed">

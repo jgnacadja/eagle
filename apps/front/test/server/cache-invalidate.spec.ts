@@ -86,7 +86,7 @@ describe('server/api/cache/invalidate', () => {
   })
 
   it('purge les routes contenant le préfixe path', async () => {
-    const result = await handler(event({ path: '/actualites' }))
+    const result = await handler(event({ path: '/actualites/' }))
     expect(result).toEqual({ success: true, purged: 1, revalidated: 0 })
     expect(storage.keys).not.toContain('nitro:isr:actualites:mon-article')
   })

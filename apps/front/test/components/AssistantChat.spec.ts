@@ -26,10 +26,10 @@ const conversationStub = {
     '<button class="stop" @click="$emit(\'stop\')" />' +
     '<button class="reset" @click="$emit(\'reset\')" />' +
     '<button class="close" @click="$emit(\'close\')" />' +
-    '<a class="link" href="/centres/demande-de-formation?formation=sst" data-assistant-handoff>Demander</a>' +
-    '<a class="advisor" href="/parler-a-votre-conseiller" data-advisor-escalation="out_of_catalog" data-assistant-handoff>Conseiller</a>' +
-    '<a class="advisor-unavailable" href="/parler-a-votre-conseiller" data-advisor-escalation="unavailable" data-assistant-handoff>Conseiller</a>' +
-    '<a class="plain" href="/formations">Catalogue</a>' +
+    '<a class="link" href="/centres/demande-de-formation/?formation=sst" data-assistant-handoff>Demander</a>' +
+    '<a class="advisor" href="/parler-a-votre-conseiller/" data-advisor-escalation="out_of_catalog" data-assistant-handoff>Conseiller</a>' +
+    '<a class="advisor-unavailable" href="/parler-a-votre-conseiller/" data-advisor-escalation="unavailable" data-assistant-handoff>Conseiller</a>' +
+    '<a class="plain" href="/formations/">Catalogue</a>' +
     '</div>'
 }
 
@@ -152,7 +152,7 @@ describe('AssistantChat', () => {
     const wrapper = mountChat()
     expect(wrapper.find('dialog').exists()).toBe(true)
 
-    routeMock().fullPath = '/formations/sante/sst-sauveteur-secouriste-du-travail'
+    routeMock().fullPath = '/formations/sante/sst-sauveteur-secouriste-du-travail/'
     await nextTick()
     expect(wrapper.find('dialog').exists()).toBe(false)
     expect(launcher.isOpen.value).toBe(false)
@@ -500,7 +500,7 @@ describe('AssistantChat', () => {
     })
 
     it('writes the need into the current history entry when the link targets the displayed URL', async () => {
-      routeMock().fullPath = '/centres/demande-de-formation?formation=sst'
+      routeMock().fullPath = '/centres/demande-de-formation/?formation=sst'
       try {
         useAssistantLauncher().open()
         const wrapper = mountChat()
@@ -520,7 +520,7 @@ describe('AssistantChat', () => {
       // Le lien conseiller vise l'URL déjà affichée : navigation dupliquée,
       // ignorée par le routeur — le besoin passe par le canal et par
       // l'entrée d'historique courante.
-      routeMock().fullPath = '/parler-a-votre-conseiller'
+      routeMock().fullPath = '/parler-a-votre-conseiller/'
       try {
         useAssistantLauncher().open()
         const wrapper = mountChat()

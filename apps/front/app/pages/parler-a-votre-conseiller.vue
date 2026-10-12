@@ -43,7 +43,7 @@
                 <NuxtLink to="/">Retour à l'accueil</NuxtLink>
               </Button>
               <Button as-child variant="outline" size="pill-lg">
-                <NuxtLink to="/formations">Parcourir le catalogue</NuxtLink>
+                <NuxtLink to="/formations/">Parcourir le catalogue</NuxtLink>
               </Button>
             </div>
           </Card>
@@ -198,7 +198,7 @@
               >
                 J'accepte que ces informations soient utilisées pour le traitement de ma demande.
                 <NuxtLink
-                  to="/confidentialite"
+                  to="/confidentialite/"
                   class="font-medium text-primary underline underline-offset-4 transition-colors hover:text-accent-text"
                 >
                   Politique de confidentialité
@@ -258,7 +258,7 @@
             Les informations recueillies servent uniquement au traitement de la demande conformément
             à notre
             <NuxtLink
-              to="/confidentialite"
+              to="/confidentialite/"
               class="font-medium text-primary underline underline-offset-4 transition-colors hover:text-accent-text"
               >politique de confidentialité</NuxtLink
             >.
@@ -289,8 +289,8 @@ useContentSeo(
     seo_title: 'Parler à votre conseiller | LEARN UP ACADEMY',
     seo_description:
       'Décrivez votre besoin : votre demande est transmise à l’interlocuteur compétent de votre territoire, qui vous recontacte sous 24 h ouvrées.',
-    // Formulaire de contact : hors indexation.
-    seo_noindex: true
+    // Formulaire de contact : hors indexation, liens suivis (ST-03).
+    seo_robots: 'noindex, follow'
   },
   'Parler à votre conseiller'
 )

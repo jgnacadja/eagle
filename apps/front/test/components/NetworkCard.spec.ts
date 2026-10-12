@@ -10,7 +10,7 @@ describe('NetworkCard', () => {
         subtitle: 'Rejoignez un réseau en pleine croissance',
         body: 'Ouvrez votre centre.',
         cta: 'Découvrir la franchise →',
-        to: '/rejoindre-le-reseau'
+        to: '/rejoindre-le-reseau/'
       },
       global: {
         stubs: {
@@ -32,7 +32,7 @@ describe('NetworkCard', () => {
         subtitle: '',
         body: '',
         cta: '',
-        to: '/rejoindre-le-reseau'
+        to: '/rejoindre-le-reseau/'
       },
       global: {
         stubs: {

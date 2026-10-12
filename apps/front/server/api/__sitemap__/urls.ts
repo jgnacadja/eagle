@@ -71,6 +71,7 @@ async function fetchAllCourses(api: ApiFetch): Promise<CourseRow[]> {
 const COLLECTION_FIELDS: Record<string, string[]> = {
   familles_formation: ['slug'],
   articles: ['slug', 'publish_at'],
+  categories: ['slug'],
   pages_legales: ['slug', 'updated_at']
 }
 // Le proxy /directus borne `limit` à 100 (limit=-1 refusé) — on pagine
@@ -101,7 +102,40 @@ interface SitemapSources {
   familles: DirectusRow[]
   centres: CentreRow[]
   articles: DirectusRow[]
+  categories: DirectusRow[]
   legales: DirectusRow[]
+}
+
+// Sous-ensembles servis aux sitemaps segmentés (ST-03) via `?set=…` :
+// sitemap-pages (pages légales), sitemap-formations (familles + fiches),
+// sitemap-centres, sitemap-actualites (articles + catégories, namespace
+// partagé T9/T10), sitemap-local (lot 2 — encore vide). Sans `set`, la
+// réponse complète reste disponible (debug, rétrocompat).
+type SitemapSet = 'pages' | 'formations' | 'centres' | 'actualites' | 'local'
+const SITEMAP_SETS: SitemapSet[] = ['pages', 'formations', 'centres', 'actualites', 'local']
+
+const EMPTY: SitemapSources = {
+  formations: [],
+  familles: [],
+  centres: [],
+  articles: [],
+  categories: [],
+  legales: []
+}
+
+function subset(src: SitemapSources, set: SitemapSet): SitemapSources {
+  switch (set) {
+    case 'pages':
+      return { ...EMPTY, legales: src.legales }
+    case 'formations':
+      return { ...EMPTY, formations: src.formations, familles: src.familles }
+    case 'centres':
+      return { ...EMPTY, centres: src.centres }
+    case 'actualites':
+      return { ...EMPTY, articles: src.articles, categories: src.categories }
+    case 'local':
+      return EMPTY
+  }
 }
 
 // Les slugs en base ne sont pas tous normalisés (saisie éditoriale :
@@ -129,16 +163,21 @@ function buildSitemapUrls(src: SitemapSources): SitemapUrlInput[] {
     }
   }
 
-  addRows(src.familles, (slug) => `/formations/${seg(slug)}`)
-  addRows(src.centres, (slug) => `/centres/${seg(slug)}`)
+  // Slash final obligatoire : le middleware global 301 redirige toute URL
+  // sans slash vers sa forme canonique — le sitemap n'émet que des URLs
+  // canoniques, jamais d'entrée redirigée.
+  addRows(src.familles, (slug) => `/formations/${seg(slug)}/`)
+  addRows(src.centres, (slug) => `/centres/${seg(slug)}/`)
   addRows(
     src.articles,
-    (slug) => `/actualites/${seg(slug)}`,
+    (slug) => `/actualites/${seg(slug)}/`,
     (row) => row.publish_at
   )
+  // T9/T10 : les catégories vivent dans le même namespace que les articles.
+  addRows(src.categories, (slug) => `/actualites/${seg(slug)}/`)
   addRows(
     src.legales,
-    (slug) => `/${seg(slug)}`,
+    (slug) => `/${seg(slug)}/`,
     (row) => row.updated_at
   )
 
@@ -146,7 +185,7 @@ function buildSitemapUrls(src: SitemapSources): SitemapUrlInput[] {
   // une formation orpheline ne doit jamais apparaître dans le sitemap.
   for (const course of src.formations) {
     if (course.slug && course.familySlug) {
-      push(`/formations/${seg(course.familySlug)}/${seg(course.slug)}`)
+      push(`/formations/${seg(course.familySlug)}/${seg(course.slug)}/`)
     }
   }
 
@@ -160,21 +199,30 @@ export default defineCachedEventHandler(
     const headers = typeof token === 'string' && token ? { 'x-internal-ssr': token } : undefined
     const api: ApiFetch = (path, query) => $fetch(`${config.apiBase}${path}`, { query, headers })
 
-    const [formations, familles, centres, articles, legales] = await Promise.all([
+    const raw = getQuery(event).set
+    const set = SITEMAP_SETS.includes(raw as SitemapSet) ? (raw as SitemapSet) : undefined
+    // `set=local` (lot 2, encore vide) n'a besoin d'aucune source — on
+    // court-circuite les appels plutôt que de dépendre de leur dispo.
+    if (set === 'local') return []
+
+    const [formations, familles, centres, articles, categories, legales] = await Promise.all([
       fetchAllCourses(api),
       fetchSlugs(api, 'familles_formation'),
       api('/centres').catch(() => [] as CentreRow[]),
       fetchSlugs(api, 'articles'),
+      fetchSlugs(api, 'categories'),
       fetchSlugs(api, 'pages_legales')
     ])
 
-    return buildSitemapUrls({
+    const all: SitemapSources = {
       formations,
       familles,
       centres: centres as CentreRow[],
       articles,
+      categories,
       legales
-    })
+    }
+    return buildSitemapUrls(set ? subset(all, set) : all)
   }),
   { maxAge: CACHE_MAX_AGE_S }
 )

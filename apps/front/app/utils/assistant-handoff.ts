@@ -1,9 +1,9 @@
 import type { RouteLocationRaw } from 'vue-router'
 
 /** Page conseiller — cible de toutes les sorties « être accompagné ». */
-export const ADVISOR_PATH = '/parler-a-votre-conseiller'
+export const ADVISOR_PATH = '/parler-a-votre-conseiller/'
 /** Tunnel de demande de formation. */
-export const DEMANDE_PATH = '/centres/demande-de-formation'
+export const DEMANDE_PATH = '/centres/demande-de-formation/'
 
 /** Clé du besoin dans `history.state` de l'entrée de navigation cible. */
 export const HANDOFF_STATE_KEY = 'assistantHandoff'

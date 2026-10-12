@@ -52,7 +52,8 @@ const { pushEvent } = useDataLayer()
 
 function onClick() {
   const formationId =
-    props.formationId || (props.to ? props.to.split('/').pop() || props.title : props.title)
+    props.formationId ||
+    (props.to ? props.to.replace(/\/$/, '').split('/').pop() || props.title : props.title)
   pushEvent({
     event: 'select_formation_card',
     formation_id: formationId,

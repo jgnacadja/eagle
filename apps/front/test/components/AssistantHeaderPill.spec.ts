@@ -7,7 +7,7 @@ const routeMock = (globalThis as Record<string, unknown>).useRoute as () => { pa
 
 describe('AssistantHeaderPill', () => {
   beforeEach(() => {
-    routeMock().path = '/formations'
+    routeMock().path = '/formations/'
     const launcher = useAssistantLauncher()
     launcher.isOpen.value = false
     launcher.pendingMessage.value = null

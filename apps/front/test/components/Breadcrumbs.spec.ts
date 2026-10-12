@@ -4,7 +4,7 @@ import { Breadcrumbs } from '~/components/ui/breadcrumb'
 
 const items = [
   { label: 'Accueil', to: '/' },
-  { label: 'Centres', to: '/centres' },
+  { label: 'Centres', to: '/centres/' },
   { label: 'Centre de Créteil' }
 ]
 
@@ -16,7 +16,7 @@ describe('ui/Breadcrumbs', () => {
     expect(wrapper.findAll('a')).toHaveLength(2)
     expect(home?.attributes('href')).toBe('/')
     expect(home?.text()).toContain('Accueil')
-    expect(centres?.attributes('href')).toBe('/centres')
+    expect(centres?.attributes('href')).toBe('/centres/')
     expect(centres?.text()).toContain('Centres')
   })
 

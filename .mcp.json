@@ -16,7 +16,7 @@
       "command": "sh",
       "args": [
         "-c",
-        "export DIRECTUS_URL=\"$(grep '^NUXT_PUBLIC_DIRECTUS_URL=' '${workspaceFolder}/.env' | cut -d= -f2-)\"; export DIRECTUS_TOKEN=\"$(grep '^DIRECTUS_MCP_TOKEN=' '${workspaceFolder}/.env' | cut -d= -f2-)\"; exec npx -y @directus/content-mcp@latest"
+        "export DIRECTUS_URL=\"$(grep '^NUXT_PUBLIC_DIRECTUS_URL=' .env | cut -d= -f2-)\"; export DIRECTUS_TOKEN=\"$(grep '^DIRECTUS_MCP_TOKEN=' .env | cut -d= -f2-)\"; exec npx -y @directus/content-mcp@latest"
       ]
     },
     "postgres": {

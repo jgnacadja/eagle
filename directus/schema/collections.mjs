@@ -25,7 +25,8 @@ const seoFields = () => [
   {
     field: 'seo_title',
     type: 'string',
-    meta: { interface: 'input', width: 'half', ...fr('Titre SEO') }
+    meta: { interface: 'input', width: 'half', ...fr('Titre SEO') },
+    schema: { is_unique: true }
   },
   {
     field: 'seo_description',
@@ -36,6 +37,28 @@ const seoFields = () => [
     field: 'seo_canonical',
     type: 'string',
     meta: { interface: 'input', width: 'half', ...fr('URL canonique') }
+  },
+  {
+    field: 'h1',
+    type: 'string',
+    meta: {
+      interface: 'input',
+      width: 'half',
+      note: 'Titre principal de la page — vide : le gabarit reprend le titre du contenu.',
+      ...fr('Titre H1')
+    },
+    schema: { is_unique: true }
+  },
+  {
+    field: 'seo_noindex',
+    type: 'boolean',
+    meta: {
+      interface: 'boolean',
+      width: 'half',
+      note: 'Exclut la page de l’indexation (meta robots noindex).',
+      ...fr('Noindex')
+    },
+    schema: { default_value: false }
   }
 ]
 

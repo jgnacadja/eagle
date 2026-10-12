@@ -178,11 +178,13 @@ asset en WebP à la volée via l'API de transformation d'images
 ## SEO
 
 Chaque collection porteuse de page (`centres`, `familles_formation`,
-`articles`, `pages`) a ses propres champs `seo_title` / `seo_description` /
-`seo_canonical`. Structure posée maintenant ; les valeurs et règles précises
-(matrice d'intentions, anti-duplication, données structurées) viennent du
-livrable ST-06 et seront saisies dans ces mêmes champs, sans changement de
-schéma attendu.
+`articles`, `pages`, `pages_legales`, `formations`) a ses propres champs
+`seo_title` / `seo_description` / `seo_canonical` / `h1` / `seo_noindex`.
+`seo_title` et `h1` portent une contrainte d'unicité par collection
+(règle AD-3) — un doublon est refusé à l'enregistrement. Les valeurs et
+règles précises (matrice d'intentions, anti-duplication, données
+structurées) viennent du livrable ST-06 et sont saisies dans ces mêmes
+champs.
 
 ## Point d'attention — "formations"
 

@@ -116,7 +116,9 @@ export function permissionsFor(roleName) {
             'image',
             'seo_title',
             'seo_description',
-            'seo_canonical'
+            'seo_canonical',
+            'h1',
+            'seo_noindex'
           ]
         }
       ]
@@ -229,7 +231,9 @@ const PUBLIC_FIELDS = {
     'image',
     'seo_title',
     'seo_description',
-    'seo_canonical'
+    'seo_canonical',
+    'h1',
+    'seo_noindex'
   ],
   familles_formation: [
     'id',
@@ -245,7 +249,9 @@ const PUBLIC_FIELDS = {
     'validity_text',
     'seo_title',
     'seo_description',
-    'seo_canonical'
+    'seo_canonical',
+    'h1',
+    'seo_noindex'
   ],
   sous_familles_formation: ['id', 'status', 'sort', 'slug', 'name', 'caption', 'famille'],
   articles: [
@@ -266,11 +272,23 @@ const PUBLIC_FIELDS = {
     'cover_image',
     'seo_title',
     'seo_description',
-    'seo_canonical'
+    'seo_canonical',
+    'h1',
+    'seo_noindex'
   ],
   categories: ['id', 'status', 'sort', 'slug', 'name', 'description'],
   avis: ['id', 'status', 'sort', 'slug', 'author', 'published_at', 'stars', 'quote', 'centre'],
-  pages: ['id', 'status', 'slug', 'title', 'seo_title', 'seo_description', 'seo_canonical'],
+  pages: [
+    'id',
+    'status',
+    'slug',
+    'title',
+    'seo_title',
+    'seo_description',
+    'seo_canonical',
+    'h1',
+    'seo_noindex'
+  ],
   pages_legales: [
     'id',
     'status',
@@ -286,7 +304,9 @@ const PUBLIC_FIELDS = {
     'updated_at',
     'seo_title',
     'seo_description',
-    'seo_canonical'
+    'seo_canonical',
+    'h1',
+    'seo_noindex'
   ],
   // `page`/`section` : nécessaires au filtre `status` du parent et au
   // peuplement de l'alias O2M côté page. `subsections` doit être listé ici
@@ -321,7 +341,9 @@ const PUBLIC_FIELDS = {
     'sous_famille',
     'seo_title',
     'seo_description',
-    'seo_canonical'
+    'seo_canonical',
+    'h1',
+    'seo_noindex'
   ]
 }
 

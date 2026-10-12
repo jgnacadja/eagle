@@ -13,12 +13,11 @@
     },
     "directus": {
       "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@directus/content-mcp@latest"],
-      "env": {
-        "DIRECTUS_URL": "${env:NUXT_PUBLIC_DIRECTUS_URL}",
-        "DIRECTUS_TOKEN": "${env:DIRECTUS_MCP_TOKEN}"
-      }
+      "command": "sh",
+      "args": [
+        "-c",
+        "export DIRECTUS_URL=\"$(grep '^NUXT_PUBLIC_DIRECTUS_URL=' '${workspaceFolder}/.env' | cut -d= -f2-)\"; export DIRECTUS_TOKEN=\"$(grep '^DIRECTUS_MCP_TOKEN=' '${workspaceFolder}/.env' | cut -d= -f2-)\"; exec npx -y @directus/content-mcp@latest"
+      ]
     },
     "postgres": {
       "type": "stdio",

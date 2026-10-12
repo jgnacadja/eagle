@@ -338,8 +338,8 @@ const stubs = {
   CardDescription: { template: '<p><slot /></p>' },
   CardFooter: { template: '<div><slot /></div>' },
   CenterFormationCard: {
-    props: ['title', 'subFamily'],
-    template: '<div class="similaire-card">{{ subFamily }} — {{ title }}</div>'
+    props: ['title', 'subFamily', 'to'],
+    template: '<div class="similaire-card" :data-to="to">{{ subFamily }} — {{ title }}</div>'
   },
   CtaBanner: { template: '<div><slot /></div>' },
   SearchInput: {
@@ -429,6 +429,93 @@ describe('pages/formations/[famille]/[slug]', () => {
     expect(wrapper.text()).toContain('Formations similaires')
     expect(wrapper.findAll('.similaire-card')).toHaveLength(similar.length - 1)
     expect(wrapper.text()).toContain('Télécharger le programme détaillé')
+  })
+
+  it('remplace les similaires par les formations liées éditoriales (formations_liees)', async () => {
+    directusRequest.mockImplementation(
+      (command: () => { path?: string; params?: Record<string, unknown> }) => {
+        const { path, params } = command()
+        if (path === '/items/formations') {
+          return Promise.resolve([
+            {
+              formations_liees: [
+                {
+                  sort: 2,
+                  related: {
+                    slug: 'sst-initiale',
+                    title: 'SST initiale',
+                    duration_days: 2,
+                    duration_hours: 14,
+                    modalities: ['presentiel'],
+                    famille: { slug: 'secours-premiers-secours', name: 'Secours' },
+                    sous_famille: null
+                  }
+                },
+                {
+                  sort: 1,
+                  related: {
+                    slug: 'pasi',
+                    title: 'PASI — prévention incendie',
+                    duration_days: 1,
+                    duration_hours: null,
+                    modalities: ['intra'],
+                    famille: { slug: 'securite-incendie', name: 'Sécurité incendie' },
+                    sous_famille: { name: 'Évacuation' }
+                  }
+                }
+              ]
+            }
+          ])
+        }
+        const slug = (params?.filter as { slug?: { _eq?: string } } | undefined)?.slug?._eq
+        return Promise.resolve(slug === 'caces-conduite-engins' ? [family] : [])
+      }
+    )
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Formations liées')
+    expect(wrapper.text()).not.toContain('Formations similaires')
+    // Ordre = sort de la jonction (PASI avant SST malgré l'ordre de réponse).
+    const simCards = wrapper.findAll('.similaire-card')
+    expect(simCards.map((c) => c.attributes('data-to'))).toEqual([
+      '/formations/securite-incendie/pasi/',
+      '/formations/secours-premiers-secours/sst-initiale/'
+    ])
+    expect(wrapper.text()).toContain('PASI — prévention incendie')
+    expect(wrapper.text()).toContain('SST initiale')
+  })
+
+  it('retombe sur les similaires calculés quand formations_liees est vide', async () => {
+    const wrapper = await mountPage()
+    expect(wrapper.text()).toContain('Formations similaires')
+    expect(wrapper.text()).not.toContain('Formations liées')
+  })
+
+  it('affiche les articles rattachés à la formation avec leurs liens canoniques', async () => {
+    directusRequest.mockImplementation(
+      (command: () => { path?: string; params?: Record<string, unknown> }) => {
+        const { path, params } = command()
+        if (path === '/items/articles') {
+          return Promise.resolve([
+            {
+              slug: 'recyclage-caces-2027',
+              title: 'Recyclage CACES : échéance en 2027',
+              excerpt: 'Les échéances à anticiper.',
+              publish_at: '2026-09-02T00:00:00.000Z',
+              category: { name: 'Réglementation' },
+              cover_image: null
+            }
+          ])
+        }
+        const slug = (params?.filter as { slug?: { _eq?: string } } | undefined)?.slug?._eq
+        return Promise.resolve(slug === 'caces-conduite-engins' ? [family] : [])
+      }
+    )
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('Pour aller plus loin')
+    expect(wrapper.text()).toContain('Recyclage CACES : échéance en 2027')
+    expect(wrapper.find('a[href="/actualites/recyclage-caces-2027/"]').exists()).toBe(true)
   })
 
   it('rend la description WYSIWYG en HTML sans balises littérales', async () => {

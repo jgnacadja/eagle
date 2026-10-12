@@ -1213,6 +1213,16 @@ export const collections = [
     fields: [primaryKey(), sortField()]
   },
   {
+    // Jonction self-M2M formations ↔ formations liées — maillage interne
+    // éditorial : surcharge du bloc « Formations similaires ».
+    collection: 'formations_liees',
+    icon: 'link',
+    hidden: true,
+    note: "Jonction formations ↔ formations liées — lignes créées via le champ « Formations liées » de la fiche formation. La sync n'y touche pas.",
+    ...fr('Formations liées'),
+    fields: [primaryKey(), sortField()]
+  },
+  {
     collection: 'avis',
     icon: 'reviews',
     note: 'Avis clients affichés dans la section « Avis » des fiches centres. Sans centre associé, l’avis vaut pour la marque (toutes implantations).',
@@ -1543,6 +1553,35 @@ export const relations = [
       width: 'full',
       note: 'Centres dispensant la formation — éditorial, jamais réécrit par la sync',
       ...fr('Centres')
+    }
+  },
+  // Maillage interne éditorial (ST-05) : sélection de formations liées sur
+  // la fiche (self-M2M via formations_liees) — remplace le bloc
+  // « Formations similaires » calculé par famille quand il est rempli.
+  {
+    collection: 'formations_liees',
+    field: 'related',
+    related_collection: 'formations',
+    meta: m2o('{{title}}', { required: true, width: 'half', ...fr('Formation liée') }),
+    junction_field: 'formation'
+  },
+  {
+    collection: 'formations_liees',
+    field: 'formation',
+    related_collection: 'formations',
+    meta: m2o('{{title}}', { required: true, width: 'half', ...fr('Formation') }),
+    junction_field: 'related',
+    one_field: 'formations_liees',
+    sort_field: 'sort',
+    one_meta: {
+      interface: 'list-m2m',
+      special: ['m2m'],
+      options: { template: '{{related.title}}', enableCreate: false, enableSelect: true },
+      display: 'related-values',
+      display_options: { template: '{{related.title}}' },
+      width: 'full',
+      note: 'Remplace « Formations similaires » sur le site quand rempli — ordre = ordre d’affichage',
+      ...fr('Formations liées')
     }
   },
   // Pages légales : M2O obligatoire + alias O2M `sections`/`subsections`

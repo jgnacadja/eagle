@@ -36,13 +36,38 @@ export default defineNuxtConfig({
   // URL canonique du site — consommée par @nuxtjs/sitemap (loc absolus) et
   // @nuxtjs/robots (directive Sitemap). Doit être l'origine publique en
   // production, pas une URL de preview.
-  site: { url: siteUrl },
+  // Slash final canonique (ST-02) : le middleware server
+  // `trailing-slash.ts` impose le « / » en 301 — `trailingSlash: true`
+  // aligne les loc auto-découvertes du sitemap sur la forme canonique.
+  site: { url: siteUrl, trailingSlash: true },
   sitemap: {
-    // Pages noindex (formulaires) hors sitemap ; les routes dynamiques
-    // (fiches, familles, centres, articles, pages légales) sont fournies par
-    // le endpoint ci-dessous, les pages statiques auto-découvertes.
+    // Index + sitemaps segmentés (ST-03) : /sitemap.xml redirige vers
+    // /sitemap_index.xml qui liste les cinq sitemaps ci-dessous. Les clés
+    // deviennent les routes (/sitemap-{pages,formations,centres,actualites,local}.xml).
+    // Pages noindex (formulaires) hors sitemap ; le contenu dynamique est
+    // fourni par le endpoint /api/__sitemap__/urls filtré par `set`, les
+    // pages statiques auto-découvertes rejoignent sitemap-pages.
     exclude: ['/parler-a-votre-conseiller', '/centres/demande-de-formation'],
-    sources: ['/api/__sitemap__/urls']
+    sitemaps: {
+      'sitemap-pages': {
+        includeAppSources: true,
+        sources: ['/api/__sitemap__/urls?set=pages']
+      },
+      'sitemap-formations': {
+        sources: ['/api/__sitemap__/urls?set=formations']
+      },
+      'sitemap-centres': {
+        sources: ['/api/__sitemap__/urls?set=centres']
+      },
+      'sitemap-actualites': {
+        sources: ['/api/__sitemap__/urls?set=actualites']
+      },
+      // Pages locales (lot 2) : sitemap vide en attendant le déblocage —
+      // la structure est prête, aucune URL n'est encore éligible.
+      'sitemap-local': {
+        sources: ['/api/__sitemap__/urls?set=local']
+      }
+    }
   },
   robots: {
     // Hors environnement indexable (dev, previews Vercel), le module

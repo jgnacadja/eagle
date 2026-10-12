@@ -14,14 +14,14 @@ describe('FormationCard', () => {
         title: "CACES & conduite d'engins",
         imageTop: 'Photo à fournir',
         imageBottom: 'cariste en manœuvre',
-        to: '/formations/caces/caces-r489'
+        to: '/formations/caces/caces-r489/'
       },
       global: { stubs }
     })
 
     expect(wrapper.text()).toContain("CACES & conduite d'engins")
     expect(wrapper.text()).toContain('Voir le détail →')
-    expect(wrapper.find('a').attributes('href')).toBe('/formations/caces/caces-r489')
+    expect(wrapper.find('a').attributes('href')).toBe('/formations/caces/caces-r489/')
     expect(wrapper.text()).toContain('cariste en manœuvre')
   })
 
@@ -32,7 +32,7 @@ describe('FormationCard', () => {
         imageTop: 'Photo à fournir',
         imageBottom: 'secours',
         image: 'https://example.test/sst.jpg',
-        to: '/formations/sante/sst'
+        to: '/formations/sante/sst/'
       },
       global: { stubs }
     })
@@ -81,7 +81,7 @@ describe('FormationCard', () => {
         title: 'SST',
         imageTop: 'Sécurité',
         imageBottom: 'secours',
-        to: '/formations/sante/sst'
+        to: '/formations/sante/sst/'
       },
       global: { stubs }
     })

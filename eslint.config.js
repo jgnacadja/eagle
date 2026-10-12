@@ -80,6 +80,11 @@ const nitroGlobals = {
   defineCachedEventHandler: 'readonly',
   defineSitemapEventHandler: 'readonly',
   getHeader: 'readonly',
+  getQuery: 'readonly',
+  getRequestURL: 'readonly',
+  getSiteIndexable: 'readonly',
+  setHeader: 'readonly',
+  sendRedirect: 'readonly',
   readBody: 'readonly',
   useStorage: 'readonly'
 }

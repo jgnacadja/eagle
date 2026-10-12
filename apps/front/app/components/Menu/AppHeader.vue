@@ -33,7 +33,7 @@
 
           <NavigationMenuItem value="entreprise">
             <NuxtLink
-              to="/entreprise"
+              to="/entreprise/"
               :class="
                 cn(
                   navigationMenuTriggerStyle({ variant: 'header' }),
@@ -47,7 +47,7 @@
 
           <NavigationMenuItem value="apropos">
             <NuxtLink
-              to="/a-propos"
+              to="/a-propos/"
               :class="
                 cn(
                   navigationMenuTriggerStyle({ variant: 'header' }),
@@ -76,7 +76,7 @@
           size="pill-sm"
           class="hidden md:inline-flex shrink-0 gap-xs md:h-control-sm md:px-sm md:text-meta lg:h-control lg:px-md lg:text-small"
         >
-          <NuxtLink to="/rejoindre-le-reseau">
+          <NuxtLink to="/rejoindre-le-reseau/">
             Rejoindre le réseau <span class="link-arrow">→</span>
           </NuxtLink>
         </Button>

@@ -11,7 +11,7 @@
           <ul class="-mb-px flex items-center gap-md">
             <li v-for="tab in tabs" :key="tab.slug">
               <NuxtLink
-                :to="`/${tab.slug}`"
+                :to="`/${tab.slug}/`"
                 :aria-current="tab.slug === currentSlug ? 'page' : undefined"
                 :class="
                   cn(
@@ -153,7 +153,7 @@ const currentLabel = computed(
 
 watch(selectedPage, (newSlug) => {
   if (newSlug && newSlug !== currentSlug.value) {
-    navigateTo(`/${newSlug}`)
+    navigateTo(`/${newSlug}/`)
   }
 })
 

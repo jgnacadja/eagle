@@ -83,7 +83,7 @@ describe('pages/a-propos.vue', () => {
     const conseillerLink = links.find(
       (l) =>
         l.text().includes('Parler à votre conseiller') &&
-        l.attributes('href') === '/parler-a-votre-conseiller'
+        l.attributes('href') === '/parler-a-votre-conseiller/'
     )
     const reseauLink = links.find(
       (l) => l.text().includes('Découvrir le réseau') && l.attributes('href') === '#reseau'
@@ -191,8 +191,8 @@ describe('pages/a-propos.vue', () => {
     expect(reseauSection.text()).toContain('Un réseau national de centres, une seule marque')
 
     const links = reseauSection.findAll('a')
-    expect(links.some((l) => l.attributes('href') === '/centres')).toBe(true)
-    expect(links.some((l) => l.attributes('href') === '/rejoindre-le-reseau')).toBe(true)
+    expect(links.some((l) => l.attributes('href') === '/centres/')).toBe(true)
+    expect(links.some((l) => l.attributes('href') === '/rejoindre-le-reseau/')).toBe(true)
   })
 
   it('affiche le fallback quand aucun centre n est disponible', async () => {
@@ -214,8 +214,8 @@ describe('pages/a-propos.vue', () => {
     expect(ctaSection.text()).toContain('Un conseiller vous répond et vous oriente.')
 
     const links = ctaSection.findAll('a')
-    expect(links.some((l) => l.attributes('href') === '/parler-a-votre-conseiller')).toBe(true)
-    expect(links.some((l) => l.attributes('href') === '/formations')).toBe(true)
+    expect(links.some((l) => l.attributes('href') === '/parler-a-votre-conseiller/')).toBe(true)
+    expect(links.some((l) => l.attributes('href') === '/formations/')).toBe(true)
   })
 
   it('configure useContentSeo avec les métadonnées de la page', async () => {

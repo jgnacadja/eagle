@@ -15,7 +15,7 @@ const primary: AssistantRecommendation = {
   certification: null,
   familySlug: 'management',
   availability: null,
-  url: '/formations/management/gestion-conflits'
+  url: '/formations/management/gestion-conflits/'
 }
 
 const alternative: AssistantRecommendation = {
@@ -26,11 +26,11 @@ const alternative: AssistantRecommendation = {
   rank: 'alternative',
   durationDays: 3,
   modalities: ['presentiel'],
-  url: '/formations/management/communication'
+  url: '/formations/management/communication/'
 }
 
 const advisorTo = {
-  path: '/parler-a-votre-conseiller',
+  path: '/parler-a-votre-conseiller/',
   state: { assistantHandoff: { need: 'gestion des conflits pour des managers' } }
 }
 
@@ -66,8 +66,8 @@ describe('AssistantCompareTable', () => {
   it('lie le CTA à la fiche principale et le conseiller avec le besoin hors URL', () => {
     const wrapper = mountTable()
     const hrefs = wrapper.findAll('a').map((a) => a.attributes('href'))
-    expect(hrefs).toContain('/formations/management/gestion-conflits')
-    expect(hrefs).toContain('/parler-a-votre-conseiller')
+    expect(hrefs).toContain('/formations/management/gestion-conflits/')
+    expect(hrefs).toContain('/parler-a-votre-conseiller/')
     expect(wrapper.text()).toContain('Voir la formation principale')
     expect(wrapper.text()).toContain('Être accompagné dans le choix')
 

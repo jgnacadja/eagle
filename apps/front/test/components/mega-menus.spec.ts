@@ -59,7 +59,7 @@ vi.mock('~/composables/useMenuData', async () => {
         {
           slug: 'caces-r489',
           label: 'CACES R489 — chariots élévateurs',
-          to: '/formations/caces-conduite-engins/caces-r489'
+          to: '/formations/caces-conduite-engins/caces-r489/'
         }
       ]),
     useMenuFormationsParFamille: () =>
@@ -68,14 +68,14 @@ vi.mock('~/composables/useMenuData', async () => {
           {
             slug: 'sst-initial',
             label: 'SST — Sauveteur secouriste du travail',
-            to: '/formations/securite-prevention/sst-initial'
+            to: '/formations/securite-prevention/sst-initial/'
           }
         ],
         management: [
           {
             slug: 'manager-equipe',
             label: 'Manager une équipe',
-            to: '/formations/management/manager-equipe'
+            to: '/formations/management/manager-equipe/'
           }
         ]
       }),
@@ -199,20 +199,20 @@ describe('MegaMenuFormations', () => {
     const btn = wrapper.findAll('button').find((b) => b.text().includes('Management'))!
 
     await btn.trigger('click')
-    expect(wrapper.find('a[href="/formations/management/manager-equipe"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/formations/management/manager-equipe/"]').exists()).toBe(true)
   })
 
   it('liste les formations de la famille sélectionnée', async () => {
     const wrapper = await mountMenu(MegaMenuFormations)
 
-    expect(wrapper.find('a[href="/formations/securite-prevention/sst-initial"]').exists()).toBe(
+    expect(wrapper.find('a[href="/formations/securite-prevention/sst-initial/"]').exists()).toBe(
       true
     )
 
     const btn = wrapper.findAll('button').find((b) => b.text().includes('Management'))!
     await btn.trigger('click')
-    expect(wrapper.find('a[href="/formations/management/manager-equipe"]').exists()).toBe(true)
-    expect(wrapper.find('a[href="/formations/securite-prevention/sst-initial"]').exists()).toBe(
+    expect(wrapper.find('a[href="/formations/management/manager-equipe/"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/formations/securite-prevention/sst-initial/"]').exists()).toBe(
       false
     )
   })
@@ -220,7 +220,7 @@ describe('MegaMenuFormations', () => {
   it('émet close au clic sur un lien', async () => {
     const wrapper = await mountMenu(MegaMenuFormations)
 
-    await wrapper.find('a[href="/formations"]').trigger('click')
+    await wrapper.find('a[href="/formations/"]').trigger('click')
     expect(wrapper.findComponent(MegaMenuFormations).emitted('close')).toBeTruthy()
   })
 })
@@ -247,7 +247,7 @@ describe('MegaMenuCentres', () => {
   it('les liens centre pointent vers /centres/{slug}', async () => {
     const wrapper = await mountMenu(MegaMenuCentres)
 
-    expect(wrapper.find('a[href="/centres/creteil"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/centres/creteil/"]').exists()).toBe(true)
   })
 
   it('la recherche vide ne navigue pas', async () => {
@@ -263,7 +263,7 @@ describe('MegaMenuCentres', () => {
     await wrapper.find('input').setValue('Lille')
     await wrapper.find('form').trigger('submit.prevent')
 
-    expect(navigateMock).toHaveBeenCalledWith({ path: '/centres', query: { q: 'Lille' } })
+    expect(navigateMock).toHaveBeenCalledWith({ path: '/centres/', query: { q: 'Lille' } })
     expect(wrapper.findComponent(MegaMenuCentres).emitted('close')).toBeTruthy()
   })
 })
@@ -292,7 +292,7 @@ describe('MegaMenuActualites', () => {
   it('les liens article pointent vers /actualites/{slug}', () => {
     const wrapper = mount(MegaMenuActualites, { global: { stubs } })
 
-    expect(wrapper.find('a[href="/actualites/recyclage-caces-echeances-2027-idf"]').exists()).toBe(
+    expect(wrapper.find('a[href="/actualites/recyclage-caces-echeances-2027-idf/"]').exists()).toBe(
       true
     )
   })
@@ -327,8 +327,8 @@ describe('MegaMenuActualites', () => {
     expect(wrapper.text()).toContain('Le centre de Toulouse ouvre une offre management')
 
     // Carte article → select → close ; liens « Toutes les régions/actualités » → close.
-    await wrapper.find('a[href="/actualites/session-occitanie"]').trigger('click')
-    for (const link of wrapper.findAll('a[href="/actualites"]')) await link.trigger('click')
+    await wrapper.find('a[href="/actualites/session-occitanie/"]').trigger('click')
+    for (const link of wrapper.findAll('a[href="/actualites/"]')) await link.trigger('click')
 
     expect(wrapper.emitted('close')!.length).toBeGreaterThanOrEqual(3)
   })
@@ -367,7 +367,7 @@ describe('sélections tardives des méga-menus', () => {
     menuState.refs.familles!.value = [...defaultFamilles]
     await flushPromises()
 
-    expect(wrapper.find('a[href="/formations/securite-prevention/sst-initial"]').exists()).toBe(
+    expect(wrapper.find('a[href="/formations/securite-prevention/sst-initial/"]').exists()).toBe(
       true
     )
   })
@@ -378,7 +378,7 @@ describe('sélections tardives des méga-menus', () => {
     const btn = wrapper.findAll('button').find((b) => b.text().includes('Management'))!
     await btn.trigger('focus')
 
-    expect(wrapper.find('a[href="/formations/management/manager-equipe"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/formations/management/manager-equipe/"]').exists()).toBe(true)
   })
 
   it('pré-sélectionne la première région quand elle arrive tard', async () => {
@@ -388,7 +388,7 @@ describe('sélections tardives des méga-menus', () => {
     menuState.refs.centreRegions!.value = [...defaultCentreRegions]
     await flushPromises()
 
-    expect(wrapper.find('a[href="/centres/creteil"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/centres/creteil/"]').exists()).toBe(true)
   })
 
   it('sélectionne la région au focus', async () => {
@@ -397,18 +397,18 @@ describe('sélections tardives des méga-menus', () => {
     const btn = wrapper.findAll('button').find((b) => b.text().includes('Occitanie'))!
     await btn.trigger('focus')
 
-    expect(wrapper.find('a[href="/centres/toulouse"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/centres/toulouse/"]').exists()).toBe(true)
   })
 
   it('émet close sur les liens et la carte centre', async () => {
     const wrapper = await mountMenu(MegaMenuCentres)
     const menu = wrapper.findComponent(MegaMenuCentres)
 
-    await wrapper.find('a[href="/centres"]').trigger('click')
+    await wrapper.find('a[href="/centres/"]').trigger('click')
     const tousLesCentres = wrapper.findAll('a').find((a) => a.text().includes('Tous les centres'))!
     await tousLesCentres.trigger('click')
-    await wrapper.find('a[href="/centres/demande-de-formation"]').trigger('click')
-    await wrapper.find('a[href="/centres/creteil"]').trigger('click')
+    await wrapper.find('a[href="/centres/demande-de-formation/"]').trigger('click')
+    await wrapper.find('a[href="/centres/creteil/"]').trigger('click')
 
     expect(menu.emitted('close')!.length).toBeGreaterThanOrEqual(4)
   })
@@ -453,10 +453,10 @@ describe('MegaMenuFormations — interactions close', () => {
     const wrapper = await mountMenu(MegaMenuFormations)
     const menu = wrapper.findComponent(MegaMenuFormations)
 
-    await wrapper.find('a[href="/formations/securite-prevention/sst-initial"]').trigger('click')
+    await wrapper.find('a[href="/formations/securite-prevention/sst-initial/"]').trigger('click')
     const familleLink = wrapper.findAll('a').find((a) => a.text().includes('Voir la famille'))!
     await familleLink.trigger('click')
-    await wrapper.find('a[href="/formations/caces-conduite-engins/caces-r489"]').trigger('click')
+    await wrapper.find('a[href="/formations/caces-conduite-engins/caces-r489/"]').trigger('click')
     // Le CTA « Être guidé » ouvre le panneau de recherche assistée et émet close.
     const cta = wrapper.findAll('button').find((b) => b.text().includes('Être guidé'))!
     await cta.trigger('click')

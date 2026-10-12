@@ -97,7 +97,7 @@ describe('QuickCallbackCard', () => {
       'Saisissez votre numéro afin que votre conseiller puisse vous rappeler.'
     )
     expect(wrapper.text()).toContain('Me faire appeler')
-    expect(wrapper.find('a[href="/centres"]').text()).toContain('Trouver un centre')
+    expect(wrapper.find('a[href="/centres/"]').text()).toContain('Trouver un centre')
     expect(wrapper.find('form').exists()).toBe(false)
   })
 
@@ -341,7 +341,7 @@ describe('QuickCallbackCard', () => {
     // Le texte enregistré dans le CRM doit être celui lu par l'utilisateur —
     // capturé avant soumission : le formulaire laisse place à la confirmation.
     const labelText = wrapper.find('.consent-field label').text()
-    expect(wrapper.find('.consent-field a[href="/confidentialite"]').exists()).toBe(true)
+    expect(wrapper.find('.consent-field a[href="/confidentialite/"]').exists()).toBe(true)
 
     await fillValidForm(wrapper)
     await wrapper.find('form').trigger('submit')

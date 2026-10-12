@@ -103,7 +103,7 @@ describe('pages/entreprise-reseau.vue', () => {
     const wrapper = await mountReseau()
     const hrefs = wrapper.findAll('a').map((link) => link.attributes('href'))
 
-    expect(hrefs).toContain('/formations')
+    expect(hrefs).toContain('/formations/')
   })
 
   it('« Être guidé dans mon choix » ouvre la recherche assistée', async () => {

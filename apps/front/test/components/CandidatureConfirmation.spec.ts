@@ -38,7 +38,7 @@ describe('components/CandidatureConfirmation', () => {
     expect(links).toHaveLength(2)
     expect(links[0].attributes('href')).toBe('/')
     expect(links[0].text()).toContain("Retour à l'accueil")
-    expect(links[1].attributes('href')).toBe('/actualites')
+    expect(links[1].attributes('href')).toBe('/actualites/')
     expect(links[1].text()).toContain('actualités')
   })
 })

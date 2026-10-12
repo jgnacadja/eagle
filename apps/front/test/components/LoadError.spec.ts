@@ -12,7 +12,7 @@ function mountError(props: Record<string, unknown> = {}) {
   return mount(LoadError, {
     props: {
       title: 'Erreur de chargement',
-      linkTo: '/formations',
+      linkTo: '/formations/',
       linkLabel: 'Voir le catalogue',
       ...props
     },
@@ -27,7 +27,7 @@ describe('LoadError', () => {
 
     expect(wrapper.find('h1').text()).toBe('Erreur de chargement')
     expect(wrapper.text()).toContain('Le problème est temporaire.')
-    expect(wrapper.find('a[href="/formations"]').text()).toBe('Voir le catalogue')
+    expect(wrapper.find('a[href="/formations/"]').text()).toBe('Voir le catalogue')
   })
 
   it('links the title via aria-labelledby', () => {

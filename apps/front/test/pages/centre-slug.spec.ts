@@ -262,7 +262,7 @@ vi.mock('~/composables/useCatalog', () => ({
 }))
 
 const stubs = {
-  NuxtLink: { template: '<a><slot /></a>' },
+  NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
   Button: { template: '<button><slot /></button>' },
   SearchInput: {
     props: ['modelValue'],
@@ -423,6 +423,10 @@ describe('pages/centres/[slug]', () => {
     expect(wrapper.text()).toContain('12 formations')
     expect(wrapper.text()).toContain('1 famille')
     expect(wrapper.text()).toContain('Voir les 12 formations du centre')
+    // Le lien doit rester sur le périmètre du centre (filtre `centre`),
+    // pas sur la ville — les deux comptages diffèrent sinon.
+    const link = wrapper.findAll('a').find((a) => a.text().includes('formations du centre'))
+    expect(link?.attributes('href')).toBe('/formations?centre=creteil')
     expect(wrapper.text()).toContain('Prochaines sessions')
   })
 

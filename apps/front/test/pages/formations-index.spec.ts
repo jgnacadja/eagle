@@ -634,6 +634,36 @@ describe('pages/formations/index', () => {
       }
     })
 
+    it('?centre= filtre le catalogue, affiche le nom du centre et survit à la réécriture d’URL', async () => {
+      route.query = { centre: 'lille' }
+      directusRequest.mockReset()
+      directusRequest
+        .mockResolvedValueOnce(families)
+        .mockResolvedValue([{ name: 'Centre LEARN UP de Nord' }])
+      const wrapper = await mountPage()
+
+      const lastQuery = toValue(catalogMocks.useCatalog.mock.calls.at(-1)![0]) as CatalogQuery
+      expect(lastQuery.center).toBe('lille')
+      expect(wrapper.text()).toContain('Centre LEARN UP de Nord')
+
+      await wrapper.find('.catalogue-search').setValue('sst')
+      await flushPromises()
+      expect(routerReplace).toHaveBeenCalledWith(
+        expect.objectContaining({ query: expect.objectContaining({ centre: 'lille' }) })
+      )
+
+      const btn = wrapper
+        .findAll('button')
+        .find((b) => b.attributes('aria-label') === 'Retirer le filtre Centre LEARN UP de Nord')
+      await btn!.trigger('click')
+      await flushPromises()
+
+      const lastCall = routerReplace.mock.calls.at(-1)?.[0] as {
+        query?: Record<string, unknown>
+      }
+      expect(lastCall.query).not.toHaveProperty('centre')
+    })
+
     it('la recherche déclenchée pousse tri=pertinence dans l’URL', async () => {
       const wrapper = await mountPage()
 

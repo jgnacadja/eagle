@@ -349,7 +349,7 @@
                 size="inline"
                 class="mt-md font-bold"
               >
-                <NuxtLink :to="`/formations?lieu=${centre.city ?? ''}`"
+                <NuxtLink :to="`/formations?centre=${slug}`"
                   >Voir les {{ centreCatalog.data.value?.total }} formations du centre
                   <span class="link-arrow">→</span></NuxtLink
                 >

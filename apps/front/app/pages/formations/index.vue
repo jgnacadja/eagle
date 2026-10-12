@@ -455,7 +455,7 @@ interface SortOption {
 }
 
 interface ActiveFilter {
-  group: 'families' | 'modalities' | 'location' | 'durations' | 'cpf' | 'certifying'
+  group: 'families' | 'modalities' | 'location' | 'centre' | 'durations' | 'cpf' | 'certifying'
   key: string
   label: string
 }
@@ -489,6 +489,9 @@ const selectedFamilies = ref<string[]>(
 )
 const selectedModalities = ref<string[]>([])
 const location = ref('')
+// Filtre structurel (?centre=slug) — atteint depuis une fiche centre,
+// sans contrôle dédié dans le panneau de filtres.
+const centre = ref('')
 const selectedDurations = ref<string[]>([])
 const cpf = ref(false)
 const certifying = ref(false)
@@ -518,6 +521,7 @@ function openAssistant() {
     context: {
       source: 'catalogue',
       familleSlug: selectedFamilies.value.length === 1 ? selectedFamilies.value[0] : undefined,
+      centerSlug: centre.value || undefined,
       filters: filters.length ? filters : undefined
     },
     message: q || undefined
@@ -565,6 +569,7 @@ function parseUrl() {
   assignList(selectedFamilies, typeof famille === 'string' ? [famille] : [])
   assignList(selectedModalities, parseListParam(route.query.modalites))
   location.value = parseStringParam(route.query.lieu)
+  centre.value = parseStringParam(route.query.centre)
   assignList(selectedDurations, parseListParam(route.query.duree))
   cpf.value = route.query.cpf === 'true'
   certifying.value = route.query.certifiant === 'true'
@@ -594,7 +599,8 @@ const catalogQuery = computed<CatalogQuery>(() => {
     certifying: certifying.value || undefined,
     durations: selectedDurations.value.length ? [...selectedDurations.value] : undefined,
     modalities: selectedModalities.value.length ? selectedModalities.value : undefined,
-    location: location.value.trim() || undefined
+    location: location.value.trim() || undefined,
+    center: centre.value || undefined
   }
 })
 
@@ -707,6 +713,33 @@ const { data: familyCounts } = await useAsyncData<FamilyWithCount[]>(
     }
   },
   freshOnClient
+)
+
+// Nom du centre pour la chip du filtre `?centre=` — relu à chaque
+// changement de slug ; repli sur le slug si la lecture échoue.
+const { data: centreRow } = await useAsyncData<{ name: string } | null>(
+  'catalog-centre',
+  async () => {
+    const slug = centre.value
+    if (!slug) return null
+    try {
+      const res = await directus.request<{ name: string }[]>(
+        readItems('centres', {
+          fields: ['name'],
+          filter: { slug: { _eq: slug }, status: { _eq: 'published' } },
+          limit: 1
+        })
+      )
+      return res[0] ?? null
+    } catch (error) {
+      /* v8 ignore next 3 */
+      if (import.meta.server) {
+        logServerError('[formations/index] centre fetch failed:', error)
+      }
+      return null
+    }
+  },
+  { watch: [centre], ...freshOnClient }
 )
 
 const familyNames = computed(() => {
@@ -911,6 +944,14 @@ const activeFilters = computed<ActiveFilter[]>(() => {
     filters.push({ group: 'location', key: location.value, label: location.value })
   }
 
+  if (centre.value) {
+    filters.push({
+      group: 'centre',
+      key: centre.value,
+      label: centreRow.value?.name ?? centre.value
+    })
+  }
+
   for (const key of selectedDurations.value) {
     filters.push({ group: 'durations', key, label: DURATION_LABELS[key] ?? key })
   }
@@ -947,6 +988,8 @@ function removeFilter(filter: ActiveFilter) {
     selectedModalities.value = selectedModalities.value.filter((key) => key !== filter.key)
   } else if (filter.group === 'location') {
     location.value = ''
+  } else if (filter.group === 'centre') {
+    centre.value = ''
   } else if (filter.group === 'durations') {
     selectedDurations.value = selectedDurations.value.filter((key) => key !== filter.key)
   } else if (filter.group === 'cpf') {
@@ -1026,6 +1069,7 @@ function resetFilters() {
   selectedFamilies.value = []
   selectedModalities.value = []
   location.value = ''
+  centre.value = ''
   selectedDurations.value = []
   cpf.value = false
   certifying.value = false
@@ -1077,6 +1121,7 @@ watch(
     selectedFamilies,
     selectedModalities,
     location,
+    centre,
     selectedDurations,
     () => cpf.value,
     () => certifying.value,
@@ -1091,9 +1136,9 @@ watch(
     // plus ») ou si la mise à jour vient de l'URL (parseUrl restaure page
     // et filtres ensemble).
     const filtersChanged = newValues
-      .slice(0, 8)
+      .slice(0, 9)
       .some((value: unknown, i: number) => value !== oldValues[i])
-    const pageChanged = newValues[8] !== oldValues[8]
+    const pageChanged = newValues[9] !== oldValues[9]
     if (filtersChanged && !pageChanged && currentPage.value !== 1) {
       currentPage.value = 1
       return
@@ -1104,6 +1149,7 @@ watch(
     if (selectedFamilies.value.length) query.famille = selectedFamilies.value[0]
     if (selectedModalities.value.length) query.modalites = selectedModalities.value.join(',')
     if (location.value.trim()) query.lieu = location.value.trim()
+    if (centre.value) query.centre = centre.value
     if (selectedDurations.value.length) query.duree = selectedDurations.value.join(',')
     if (cpf.value) query.cpf = 'true'
     if (certifying.value) query.certifiant = 'true'

@@ -1,4 +1,5 @@
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
+import { jsonLdScriptTags } from '~/utils/jsonLd'
 
 interface SeoSource {
   seo_title?: string | null
@@ -72,28 +73,8 @@ export function useContentSeo(
               : [])
         ],
         link: [{ rel: 'canonical' as const, href: canonical }],
-        script: jsonLdScripts(toValue(options?.jsonLd))
+        script: jsonLdScriptTags(toValue(options?.jsonLd))
       }
     })
   )
-}
-
-// `</script>` dans une chaîne JSON-LD casserait le document (ou pire) —
-// échappement standard `<` → \u003c, invisible pour les parsers.
-function serializeJsonLd(entry: Record<string, unknown>): string {
-  return JSON.stringify(entry).replaceAll('<', String.raw`\u003c`)
-}
-
-function jsonLdScripts(
-  input: Record<string, unknown> | Record<string, unknown>[] | null | undefined
-): { type: 'application/ld+json'; innerHTML: string }[] {
-  const items = Array.isArray(input) ? input : [input]
-  const entries = items.filter(
-    (entry): entry is Record<string, unknown> =>
-      Boolean(entry) && typeof entry === 'object' && !Array.isArray(entry)
-  )
-  return entries.map((entry) => ({
-    type: 'application/ld+json',
-    innerHTML: serializeJsonLd(entry)
-  }))
 }

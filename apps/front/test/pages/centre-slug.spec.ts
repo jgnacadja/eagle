@@ -178,7 +178,9 @@ vi.stubGlobal('useContentSeo', seoMock)
 vi.stubGlobal('navigateTo', navigateToMock)
 vi.stubGlobal('logServerError', vi.fn())
 vi.stubGlobal('useDirectusClient', () => ({ request: directusRequestMock }))
-vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
+vi.stubGlobal('useRuntimeConfig', () => ({
+  public: { apiBase: 'http://api.test', siteUrl: 'https://learnup.test' }
+}))
 
 // Position pilotable par test : la page importe `useGeolocation`
 // explicitement — le mock remplace le module, `geoPosition` décide si la
@@ -324,9 +326,9 @@ const stubs = {
 
 // useContentSeo reçoit désormais des getters réactifs : on les résout pour les assertions.
 function seoArgs() {
-  const [source, fallback] = seoMock.mock.calls[0]!
+  const [source, fallback, options] = seoMock.mock.calls[0]!
   const resolve = (v: unknown) => (typeof v === 'function' ? (v as () => unknown)() : v)
-  return [resolve(source), resolve(fallback)] as const
+  return [resolve(source), resolve(fallback), options] as const
 }
 
 async function mountPage() {
@@ -665,6 +667,28 @@ describe('pages/centres/[slug]', () => {
       expect.objectContaining({ seo_title: 'Centre introuvable', seo_noindex: true })
     )
     expect(fallback).toBe('Centre introuvable')
+  })
+
+  it('émet le JSON-LD LocalBusiness sur une fiche trouvée, jamais sur erreur', async () => {
+    await mountPage()
+
+    const [, , options] = seoArgs()
+    const ld = (
+      options as { jsonLd?: () => Record<string, unknown> | null } | undefined
+    )?.jsonLd?.()
+    expect(ld).toMatchObject({
+      '@type': 'LocalBusiness',
+      name: 'Centre LEARN UP ACADEMY de Créteil',
+      url: 'https://learnup.test/centres/creteil/'
+    })
+
+    routeMock.query = { error: '1' }
+    seoMock.mockClear()
+    await mountPage()
+    const [, , errorOptions] = seoArgs()
+    expect(
+      (errorOptions as { jsonLd?: () => Record<string, unknown> | null } | undefined)?.jsonLd?.()
+    ).toBeNull()
   })
 
   it('affiche l’état erreur quand le chargement échoue', async () => {

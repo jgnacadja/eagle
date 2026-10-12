@@ -200,9 +200,9 @@ const stubs = {
 
 // useContentSeo reçoit des getters réactifs : on les résout pour les assertions.
 function seoArgs() {
-  const [source, fallback] = seoMock.mock.calls[0]!
+  const [source, fallback, options] = seoMock.mock.calls[0]!
   const resolve = (v: unknown) => (typeof v === 'function' ? (v as () => unknown)() : v)
-  return [resolve(source), resolve(fallback)] as const
+  return [resolve(source), resolve(fallback), options] as const
 }
 
 async function mountPage() {
@@ -365,6 +365,29 @@ describe('pages/actualites/[slug]', () => {
       })
     )
     expect(fallback).toEqual(expect.stringContaining('Recyclage CACES'))
+  })
+
+  it('émet le JSON-LD Article sur une fiche trouvée, jamais sur une catégorie', async () => {
+    await mountPage()
+
+    const [, , options] = seoArgs()
+    const ld = (
+      options as { jsonLd?: () => Record<string, unknown> | null } | undefined
+    )?.jsonLd?.()
+    expect(ld).toMatchObject({
+      '@type': 'Article',
+      headline: 'Recyclage CACES : échéance en 2027',
+      articleSection: 'Réglementation & obligations'
+    })
+
+    routeMock.params.slug = 'securite-au-travail'
+    routeMock.path = '/actualites/securite-au-travail/'
+    seoMock.mockClear()
+    await mountPage()
+    const [, , categoryOptions] = seoArgs()
+    expect(
+      (categoryOptions as { jsonLd?: () => Record<string, unknown> | null } | undefined)?.jsonLd?.()
+    ).toBeNull()
   })
 
   it('résout les metas via le patron administré quand les champs SEO sont vides', async () => {

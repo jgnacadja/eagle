@@ -608,6 +608,7 @@ import { useGeolocation } from '~/composables/useGeolocation'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
 import { directusAssetUrl } from '~/utils/directusAsset'
+import { buildLocalBusinessJsonLd } from '~/utils/jsonLd'
 import { departmentCodeFromPostalCode, distanceKm, formatDistance } from '~/utils/geo'
 import { articleCategory, formatArticleDate } from '~/utils/article'
 import { mapAvis } from '~/utils/avis'
@@ -857,6 +858,19 @@ useContentSeo(
   () => {
     const isFound = pageState.value === 'found'
     return isFound ? centre.value!.name : stateLabels[pageState.value]
+  },
+  {
+    // JSON-LD schema.org/LocalBusiness — adresse, géo et contact du
+    // centre, uniquement sur une fiche trouvée.
+    jsonLd: () => {
+      if (pageState.value !== 'found' || !centre.value) return null
+      return buildLocalBusinessJsonLd({
+        centre: centre.value,
+        url: centre.value.seo_canonical ?? `${config.public.siteUrl}${route.path}`,
+        siteUrl: config.public.siteUrl,
+        imageUrl: imageSrc.value
+      })
+    }
   }
 )
 

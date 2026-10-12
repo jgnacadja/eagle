@@ -97,6 +97,17 @@ describe('server/api/cache/invalidate', () => {
     expect(storage.keys).toEqual(['nitro:isr:actualites:mon-article', 'nitro:isr:'])
   })
 
+  it('jonction formations_centres purge aussi les fiches centre', async () => {
+    storage.keys = [
+      'nitro:isr:formations:sante:risques-chimiques',
+      'nitro:isr:centres:lille',
+      'nitro:isr:actualites:mon-article'
+    ]
+    const result = await handler(event({ collection: 'formations_centres' }))
+    expect(result).toEqual({ success: true, purged: 2, revalidated: 0 })
+    expect(storage.keys).toEqual(['nitro:isr:actualites:mon-article'])
+  })
+
   it('collection inconnue → purge complète (la fraîcheur prime)', async () => {
     const result = await handler(event({ collection: 'inconnue' }))
     expect(result).toEqual({ success: true, purged: 4, revalidated: 0 })
@@ -143,14 +154,25 @@ describe('server/api/cache/invalidate', () => {
       bypassToken = 'vercel-token'
     })
 
-    it('revalide le représentant du groupe formations pour une collection', async () => {
+    it('revalide les groupes formations et centres pour une formation', async () => {
       const result = await handler(event({ collection: 'formations' }))
-      expect(result).toEqual({ success: true, purged: 2, revalidated: 1 })
-      expect(revalidatedPaths()).toEqual(['https://front.test/formations'])
+      expect(result).toEqual({ success: true, purged: 2, revalidated: 2 })
+      expect(revalidatedPaths()).toEqual([
+        'https://front.test/formations',
+        'https://front.test/centres'
+      ])
       expect(fetchMock.mock.calls[0]![1]).toMatchObject({
         method: 'HEAD',
         headers: { 'x-prerender-revalidate': 'vercel-token' }
       })
+    })
+
+    it('formations_centres → mêmes groupes que formations', async () => {
+      await handler(event({ collection: 'formations_centres' }))
+      expect(revalidatedPaths()).toEqual([
+        'https://front.test/formations',
+        'https://front.test/centres'
+      ])
     })
 
     it('collection centres → groupes centres et formations', async () => {

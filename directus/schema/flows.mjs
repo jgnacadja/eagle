@@ -23,6 +23,7 @@ const CACHE_PURGE_SECRET = '{{$env.NUXT_CACHE_PURGE_SECRET}}'
 // Collections dont une écriture peut changer une page publique.
 const CONTENT_COLLECTIONS = [
   'formations',
+  'formations_centres',
   'centres',
   'familles_formation',
   'sous_familles_formation',

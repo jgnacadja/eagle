@@ -19,7 +19,8 @@
 import { timingSafeEqual } from 'node:crypto'
 
 const COLLECTION_ROUTES: Record<string, string[]> = {
-  formations: ['/formations'],
+  formations: ['/formations', '/centres'],
+  formations_centres: ['/formations', '/centres'],
   familles_formation: ['/formations'],
   sous_familles_formation: ['/formations'],
   centres: ['/centres', '/formations'],

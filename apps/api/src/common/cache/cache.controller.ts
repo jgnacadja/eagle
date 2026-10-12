@@ -11,6 +11,7 @@ import { CacheService } from './cache.service'
 // list/detail/families/rows : ils dérivent tous de `formations:all`.
 const COLLECTION_KEYS: Record<string, string[]> = {
   formations: ['formations:all', 'courses:*'],
+  formations_centres: ['formations:all', 'courses:*'],
   familles_formation: ['formations:all', 'courses:*'],
   sous_familles_formation: ['formations:all', 'courses:*'],
   centres: ['centres:*', 'formations:all', 'courses:*']

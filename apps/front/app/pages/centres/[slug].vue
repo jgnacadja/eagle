@@ -349,7 +349,7 @@
                 size="inline"
                 class="mt-md font-bold"
               >
-                <NuxtLink :to="`/formations?centre=${slug}`"
+                <NuxtLink :to="`/formations/?centre=${slug}`"
                   >Voir les {{ centreCatalog.data.value?.total }} formations du centre
                   <span class="link-arrow">→</span></NuxtLink
                 >
@@ -443,7 +443,7 @@
               </div>
               <div class="mt-lg">
                 <Button as-child variant="outline" size="pill" class="gap-xs">
-                  <NuxtLink to="/formations">Consulter <span class="link-arrow">→</span></NuxtLink>
+                  <NuxtLink to="/formations/">Consulter <span class="link-arrow">→</span></NuxtLink>
                 </Button>
               </div>
             </section>
@@ -463,7 +463,7 @@
                   Actualités de votre centre
                 </h2>
                 <Button as-child variant="link" size="inline" class="hidden font-bold sm:inline">
-                  <NuxtLink to="/actualites"
+                  <NuxtLink to="/actualites/"
                     >Toutes les actualités <span class="link-arrow">→</span></NuxtLink
                   >
                 </Button>
@@ -480,12 +480,12 @@
                   :image-url="
                     directusAssetUrl(article.cover_image, config.public.apiBase) ?? undefined
                   "
-                  :to="`/actualites/${article.slug}`"
+                  :to="`/actualites/${article.slug}/`"
                   class="h-full"
                 />
               </div>
               <Button as-child variant="link" size="inline" class="mt-md font-bold sm:hidden">
-                <NuxtLink to="/actualites"
+                <NuxtLink to="/actualites/"
                   >Toutes les actualités <span class="link-arrow">→</span></NuxtLink
                 >
               </Button>
@@ -502,7 +502,7 @@
         >
           <Button as-child variant="paper" size="pill-lg" class="w-full sm:w-auto">
             <NuxtLink
-              :to="`/centres/demande-de-formation?centre=${slug}`"
+              :to="`/centres/demande-de-formation/?centre=${slug}`"
               @click="onDemandeFormationClick('cta_banner')"
               >Demander une formation</NuxtLink
             >
@@ -527,7 +527,7 @@
               Autres centres<template v-if="centre.region"> en {{ centre.region }}</template>
             </h2>
             <Button as-child variant="link" size="inline" class="hidden font-bold sm:inline">
-              <NuxtLink to="/centres"
+              <NuxtLink to="/centres/"
                 >Voir le réseau de centres <span class="link-arrow">→</span></NuxtLink
               >
             </Button>
@@ -541,13 +541,13 @@
               :distance="nearby.distance"
               :formations="nearby.specialties"
               :tags="[]"
-              :to="`/centres/${nearby.slug}`"
-              :title-to="`/centres/${nearby.slug}`"
+              :to="`/centres/${nearby.slug}/`"
+              :title-to="`/centres/${nearby.slug}/`"
               class="h-full transition hover:shadow-md"
             />
           </div>
           <Button as-child variant="link" size="inline" class="mt-md font-bold sm:hidden">
-            <NuxtLink to="/centres"
+            <NuxtLink to="/centres/"
               >Voir le réseau de centres <span class="link-arrow">→</span></NuxtLink
             >
           </Button>
@@ -559,7 +559,7 @@
     <LoadError
       v-else-if="loadError"
       title="Les informations du centre n'ont pas pu être chargées."
-      link-to="/centres"
+      link-to="/centres/"
       link-label="Voir le réseau de centres"
       @retry="retry"
     >
@@ -570,9 +570,9 @@
     <NotFound
       v-else
       title="Centre introuvable"
-      primary-to="/centres"
+      primary-to="/centres/"
       primary-label="Voir le réseau LEARN UP"
-      secondary-to="/formations"
+      secondary-to="/formations/"
       secondary-label="Trouver ma formation"
       search-placeholder="Décrivez votre besoin — formation, ville, échéance"
       search-input-id="centre-search"
@@ -744,7 +744,7 @@ const mapFocus = computed(() => ({
 function onMapSelect(id: string) {
   // Mini-carte sans popup : le pin d'un autre centre mène à sa fiche.
   if (id && id !== slug) {
-    navigateTo(`/centres/${id}`)
+    navigateTo(`/centres/${id}/`)
     return
   }
   activeMapCenterId.value = id || null
@@ -798,8 +798,8 @@ const managerCaption = computed(() => {
 // leur propre fil d'Ariane) : le centre est garanti non nul ici.
 const defaultBreadcrumb = computed(() => [
   { label: 'Accueil', to: '/' },
-  { label: 'Réseau de centres', to: '/centres' },
-  ...(centre.value!.region ? [{ label: centre.value!.region, to: '/centres' }] : []),
+  { label: 'Réseau de centres', to: '/centres/' },
+  ...(centre.value!.region ? [{ label: centre.value!.region, to: '/centres/' }] : []),
   { label: centre.value!.name }
 ])
 const stateLabels: Record<Exclude<PageState, 'found'>, string> = {
@@ -811,23 +811,43 @@ watchEffect(() => {
   route.meta.breadcrumb = stateLabel
     ? [
         { label: 'Accueil', to: '/' },
-        { label: 'Réseau de centres', to: '/centres' },
+        { label: 'Réseau de centres', to: '/centres/' },
         { label: stateLabel }
       ]
     : defaultBreadcrumb.value
 })
 
+// Patron administrable `centre` (ST-04) : seo_* éditorial > patron > repli.
+const centrePattern = useSeoPattern('centre')
+
 useContentSeo(
   () => {
     const isFound = pageState.value === 'found'
     const name = centre.value?.name ?? 'Centre'
+    const vars = isFound
+      ? {
+          nom: name,
+          ville: centre.value!.city,
+          cp: centre.value!.postal_code,
+          département: centre.value!.department
+        }
+      : {}
     return {
       seo_title: isFound
-        ? (centre.value!.seo_title ?? `${name} — LEARN UP ACADEMY`)
+        ? resolveSeoTitle(
+            centre.value!.seo_title,
+            centrePattern.value?.title_pattern,
+            vars,
+            `${name} — LEARN UP ACADEMY`
+          )
         : stateLabels[pageState.value],
       seo_description: isFound
-        ? (centre.value!.seo_description ??
-          `Centre de formation ${centre.value!.city ?? ''} — LEARN UP ACADEMY.`)
+        ? resolveSeoDescription(
+            centre.value!.seo_description,
+            centrePattern.value?.description_pattern,
+            vars,
+            `Centre de formation ${centre.value!.city ?? ''} — LEARN UP ACADEMY.`
+          )
         : undefined,
       seo_noindex: !isFound,
       // Visuel OG/Twitter : visuel éditorial du centre, sinon défaut.
@@ -942,7 +962,7 @@ function toCentreSession(
     places,
     type: sessionSeatType(places),
     ctaLabel: places === 0 ? "Être informé d'une place" : "S'inscrire",
-    to: course.familySlug ? `/formations/${course.familySlug}/${course.slug}` : '/formations'
+    to: course.familySlug ? `/formations/${course.familySlug}/${course.slug}/` : '/formations/'
   }
 }
 
@@ -1057,7 +1077,7 @@ function retry() {
 }
 
 function onErrorSearch(query: string) {
-  navigateTo({ path: '/formations', query: query ? { q: query } : {} })
+  navigateTo({ path: '/formations/', query: query ? { q: query } : {} })
 }
 
 const { pushEvent } = useDataLayer()

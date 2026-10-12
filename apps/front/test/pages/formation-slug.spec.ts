@@ -2,6 +2,7 @@ import type { Course, CourseListItem, FamilleFormation } from '@learnup/types'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, ref, Suspense, watch, watchEffect } from 'vue'
+import { resolveSeoDescription, resolveSeoTitle } from '~/utils/metaPatterns'
 import LoadError from '~/components/ErrorState/LoadError.vue'
 import NotFound from '~/components/ErrorState/NotFound.vue'
 import FormationPage from '~/pages/formations/[famille]/[slug].vue'
@@ -229,6 +230,11 @@ vi.stubGlobal('computed', computed)
 vi.stubGlobal('watch', watch)
 vi.stubGlobal('watchEffect', watchEffect)
 vi.stubGlobal('definePageMeta', vi.fn())
+// ST-04 : patrons Directus non administrés en test — les gabarits
+// retombent sur leurs metas codées en dur (repli du moteur).
+vi.stubGlobal('useSeoPattern', () => ref(null))
+vi.stubGlobal('resolveSeoTitle', resolveSeoTitle)
+vi.stubGlobal('resolveSeoDescription', resolveSeoDescription)
 vi.stubGlobal('useRuntimeConfig', () => ({
   public: { apiBase: 'http://api.test', siteUrl: 'https://learnup.test' }
 }))
@@ -411,7 +417,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     routeMock = {
       params: { famille: 'caces-conduite-engins', slug: 'caces-r489-chariots-elevateurs' },
       query: {},
-      path: '/formations/caces-conduite-engins/caces-r489-chariots-elevateurs',
+      path: '/formations/caces-conduite-engins/caces-r489-chariots-elevateurs/',
       meta: {}
     }
   })
@@ -499,7 +505,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     expect(wrapper.findAll('.session-card')).toHaveLength(1)
     expect(wrapper.text()).toContain('Session en présentiel')
     expect(wrapper.text()).toContain('Où suivre cette formation ?')
-    expect(wrapper.find('a[href="/centres/creteil"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/centres/creteil/"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Centre de Créteil')
     expect(wrapper.text()).toContain('Val-de-Marne')
     expect(wrapper.text()).toContain(`Prochaine session le ${NEXT_SESSION.short}`)
@@ -680,7 +686,7 @@ describe('pages/formations/[famille]/[slug]', () => {
       name: 'CACES R489 — chariots élévateurs',
       description: 'Formation CACES R489.',
       inLanguage: 'fr',
-      url: 'https://learnup.test/formations/caces-conduite-engins/caces-r489-chariots-elevateurs',
+      url: 'https://learnup.test/formations/caces-conduite-engins/caces-r489-chariots-elevateurs/',
       provider: { '@type': 'Organization', name: 'LEARN UP ACADEMY' },
       about: { '@type': 'Thing', name: "CACES & conduite d'engins" },
       hasCourseInstance: { '@type': 'CourseInstance', courseWorkload: 'PT21H' },
@@ -716,7 +722,7 @@ describe('pages/formations/[famille]/[slug]', () => {
 
   it('n’émet pas de JSON-LD sur une fiche introuvable', async () => {
     routeMock.params.slug = 'inconnu'
-    routeMock.path = '/formations/caces-conduite-engins/inconnu'
+    routeMock.path = '/formations/caces-conduite-engins/inconnu/'
     await mountPage()
 
     const [, , options] = seoArgs()
@@ -725,13 +731,13 @@ describe('pages/formations/[famille]/[slug]', () => {
 
   it('affiche l’état indisponible et adapte breadcrumb/SEO pour un slug inconnu', async () => {
     routeMock.params.slug = 'inconnu'
-    routeMock.path = '/formations/caces-conduite-engins/inconnu'
+    routeMock.path = '/formations/caces-conduite-engins/inconnu/'
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain("Cette formation n'est pas disponible.")
     expect(routeMock.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
-      { label: 'Formations', to: '/formations' },
+      { label: 'Formations', to: '/formations/' },
       { label: 'Formation indisponible' }
     ])
 
@@ -748,7 +754,7 @@ describe('pages/formations/[famille]/[slug]', () => {
   it('affiche l’état indisponible pour une famille inconnue', async () => {
     routeMock.params.famille = 'inconnue'
     routeMock.params.slug = 'caces-r489-chariots-elevateurs'
-    routeMock.path = '/formations/inconnue/caces-r489-chariots-elevateurs'
+    routeMock.path = '/formations/inconnue/caces-r489-chariots-elevateurs/'
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain("Cette formation n'est pas disponible.")
@@ -761,7 +767,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     expect(wrapper.text()).toContain("Le contenu n'a pas pu être chargé.")
     expect(routeMock.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
-      { label: 'Formations', to: '/formations' },
+      { label: 'Formations', to: '/formations/' },
       { label: 'Erreur de chargement' }
     ])
 
@@ -792,20 +798,20 @@ describe('pages/formations/[famille]/[slug]', () => {
 
   it('la recherche de l’état indisponible redirige vers /formations avec la requête', async () => {
     routeMock.params.slug = 'inconnu'
-    routeMock.path = '/formations/caces-conduite-engins/inconnu'
+    routeMock.path = '/formations/caces-conduite-engins/inconnu/'
     const wrapper = await mountPage()
 
     await wrapper.find('.search-stub').trigger('click')
 
     expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/formations',
+      path: '/formations/',
       query: { q: 'caces' }
     })
   })
 
   it('passe le statut 404 quand la formation est introuvable', async () => {
     routeMock.params.slug = 'inconnu'
-    routeMock.path = '/formations/caces-conduite-engins/inconnu'
+    routeMock.path = '/formations/caces-conduite-engins/inconnu/'
     await mountPage()
 
     expect(setResponseStatusMock).toHaveBeenCalledWith(requestEvent, 404, 'Formation introuvable')
@@ -1275,6 +1281,6 @@ describe('pages/formations/[famille]/[slug]', () => {
     await wrapper.findComponent(NotFound).vm.$emit('search', '')
     await flushPromises()
 
-    expect(navigateToMock).toHaveBeenCalledWith({ path: '/formations', query: {} })
+    expect(navigateToMock).toHaveBeenCalledWith({ path: '/formations/', query: {} })
   })
 })

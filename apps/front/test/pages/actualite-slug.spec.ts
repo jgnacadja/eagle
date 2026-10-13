@@ -269,7 +269,7 @@ describe('pages/actualites/[slug]', () => {
     expect(wrapper.text()).toContain("CACES & conduite d'engins")
     expect(wrapper.text()).toContain('Recyclage CACES R489 — toutes catégories')
     const link = wrapper.find(
-      'a[href="/formations/caces-conduite-engins/caces-r489-chariots-elevateurs"]'
+      'a[href="/formations/caces-conduite-engins/caces-r489-chariots-elevateurs/"]'
     )
     expect(link.exists()).toBe(true)
   })

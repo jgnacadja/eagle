@@ -679,13 +679,12 @@ const howItWorksSteps = [
   }
 ]
 
+// Même règle que la home : avis publiés toutes implantations confondues
+// (marque + centres), les plus récents d'abord.
 const avisData = await useDirectusList<Avis>('avis', 'entreprise-avis', {
   fields: ['slug', 'author', 'quote', 'stars', 'published_at'],
-  filter: {
-    status: { _eq: 'published' },
-    centre: { _null: true }
-  },
-  sort: ['sort', '-published_at'],
+  filter: { status: { _eq: 'published' } },
+  sort: ['-published_at'],
   limit: 6
 })
 

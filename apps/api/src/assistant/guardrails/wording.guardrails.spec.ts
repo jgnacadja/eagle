@@ -106,6 +106,19 @@ describe('sanitizeJustification', () => {
     }
   })
 
+  it('keeps domain vocabulary that mixes letter case (units, acronyms)', () => {
+    // Unités (kV, mA, kWh, dB(A)) et sigles métier ne sont pas des mots
+    // collés : ils ne doivent pas basculer sur le texte de repli.
+    for (const legit of [
+      'Elle semble adaptée aux interventions jusqu’à 20 kV et 400 mA.',
+      'Elle semble utile pour vos chantiers soumis au seuil de 85 dB(A).',
+      'Il semble pertinent de prévoir un PrAP avant la mise en service.',
+      'Cette formation semble adaptée aux équipes sur batteries 96 kWh.'
+    ]) {
+      expect(sanitizeJustification(legit).issues).not.toContain('corrupted-justification')
+    }
+  })
+
   it('softens future-tense promises even next to a conditional marker', () => {
     expect(
       sanitizeJustification('Cette formation semble adaptée, et vous obtiendrez la certification.')

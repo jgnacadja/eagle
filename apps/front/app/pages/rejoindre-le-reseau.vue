@@ -142,6 +142,7 @@ const candidatureOpen = ref(false)
 const candidatureVoie = ref<CandidatureVoie>('centre')
 const { pushEvent } = useDataLayer()
 const route = useRoute()
+const router = useRouter()
 
 onMounted(() => {
   pushEvent({
@@ -157,17 +158,19 @@ const profileTypeMap: Record<CandidatureVoie, NetworkProfileType> = {
   formateur: 'formateur'
 }
 
-function onProfileClick(profileType: NetworkProfileType) {
+function onProfileClick(profileType: NetworkProfileType, trigger: 'cta' | 'deep_link' = 'cta') {
   pushEvent({
     event: 'select_network_profile',
     profile_type: profileType,
-    cta_location: 'rejoindre_reseau_options',
+    cta_location: trigger === 'deep_link' ? 'deep_link_voie' : 'rejoindre_reseau_options',
     page_path: typeof window !== 'undefined' ? window.location.pathname : ''
   })
 }
 
-function openCandidature(voie: CandidatureVoie) {
-  onProfileClick(profileTypeMap[voie] ?? 'franchise')
+function openCandidature(voie: CandidatureVoie, trigger: 'cta' | 'deep_link' = 'cta') {
+  // « deep_link » n'est pas un clic : ouverture automatique via ?voie= —
+  // le tracke comme tel plutôt que de gonfler les clics CTA.
+  onProfileClick(profileTypeMap[voie] ?? 'franchise', trigger)
   candidatureVoie.value = voie
   candidatureOpen.value = true
 }
@@ -179,12 +182,23 @@ function openCandidature(voie: CandidatureVoie) {
 watch(
   () => route.query.voie,
   (voie) => {
+    /* v8 ignore next — import.meta.server est indéfini sous Vitest */
+    if (import.meta.server) return // jamais en SSR : évite un mismatch d'hydratation
     if (voie === 'centre' || voie === 'organisme' || voie === 'formateur') {
-      openCandidature(voie)
+      openCandidature(voie, 'deep_link')
     }
   },
   { immediate: true }
 )
+
+// La query ?voie= est consommée à l'ouverture : sans nettoyage à la
+// fermeture, un nouveau clic sur le même lien ne change pas la query
+// (le watch ne se redéclenche pas) et un rechargement rouvrirait le
+// dialog. Les autres paramètres de query sont préservés.
+watch(candidatureOpen, (open) => {
+  if (open || route.query.voie === undefined) return
+  router.replace({ query: { ...route.query, voie: undefined } })
+})
 
 const joinOptions: {
   icon: Component

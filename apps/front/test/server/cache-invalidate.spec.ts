@@ -1,5 +1,5 @@
 import type { H3Event } from 'h3'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 interface FakeStorage {
   keys: string[]
@@ -149,9 +149,20 @@ describe('server/api/cache/invalidate', () => {
     await expect(handler(event())).rejects.toMatchObject({ statusCode: 503 })
   })
 
+  // La fenêtre de coalescence (60 s) est une map en mémoire du module,
+  // partagée entre les tests : chaque test reçoit un « maintenant » 121 s
+  // après le précédent (marge > fenêtre même après un avance interne).
+  let fakeNow = 0
   describe('revalidation Vercel (bypassToken configuré)', () => {
     beforeEach(() => {
       bypassToken = 'vercel-token'
+      fakeNow += 121_000
+      vi.useFakeTimers()
+      vi.setSystemTime(fakeNow)
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
     })
 
     it('revalide les groupes formations et centres pour une formation', async () => {
@@ -211,6 +222,37 @@ describe('server/api/cache/invalidate', () => {
       })
       const result = await handler(event({ collection: 'centres' }))
       expect(result).toEqual({ success: true, purged: 2, revalidated: 1 })
+    })
+
+    it('coalesce les revalidations d’un même groupe dans la fenêtre (60 s)', async () => {
+      // Rafale type sync Digiforma : 3 écritures formations à la chaîne —
+      // les groupes formations+centres ne sont marqués qu'une fois.
+      await handler(event({ collection: 'formations' }))
+      await handler(event({ collection: 'formations' }))
+      const result = await handler(event({ collection: 'formations' }))
+      expect(result.revalidated).toBe(0)
+      expect(revalidatedPaths()).toEqual([
+        'https://front.test/formations',
+        'https://front.test/centres'
+      ])
+
+      // La purge storage, elle, reste appliquée à chaque appel.
+      vi.advanceTimersByTime(61_000)
+      await handler(event({ collection: 'formations' }))
+      expect(revalidatedPaths()).toHaveLength(4)
+    })
+
+    it('retente un groupe dont le HEAD a échoué dans la fenêtre', async () => {
+      fetchMock.mockImplementationOnce(async () => {
+        throw new Error('cdn down')
+      })
+      await handler(event({ collection: 'centres' })) // /centres échoue, /formations marqué
+      fetchMock.mockClear()
+
+      const result = await handler(event({ collection: 'centres' }))
+      // /centres est retenté (dé-marqué à l'échec) ; /formations reste throttlé.
+      expect(result.revalidated).toBe(1)
+      expect(revalidatedPaths()).toEqual(['https://front.test/centres'])
     })
   })
 })

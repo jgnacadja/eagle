@@ -1,10 +1,10 @@
 <template>
-  <Card :variant="variant === 'dark' ? 'dark' : 'surface'" class="p-lg">
+  <Card :variant="s.card" class="p-lg">
     <div class="space-y-xs">
-      <h2 :class="['text-small font-semibold', variant === 'dark' ? 'text-paper' : 'text-ink']">
+      <h2 :class="['text-small font-semibold', s.heading]">
         Besoin d'un échange téléphonique direct&nbsp;?
       </h2>
-      <p :class="['text-small', variant === 'dark' ? 'text-ink-inverse-muted' : 'text-ink-muted']">
+      <p :class="['text-small', s.muted]">
         Saisissez votre numéro afin que votre conseiller puisse vous rappeler.
       </p>
     </div>
@@ -27,12 +27,7 @@
         <div class="mt-sm text-center">
           <NuxtLink
             to="/centres"
-            :class="[
-              'text-meta underline underline-offset-4 transition-colors',
-              variant === 'dark'
-                ? 'text-ink-inverse-muted hover:text-paper'
-                : 'text-ink-muted hover:text-ink'
-            ]"
+            :class="['text-meta underline underline-offset-4 transition-colors', s.link]"
           >
             Trouver un centre <span class="link-arrow">→</span>
           </NuxtLink>
@@ -49,19 +44,9 @@
         @keydown.esc="handleCancel"
       >
         <div>
-          <Label
-            for="rappel-telephone"
-            :class="[
-              'mb-xs block text-meta font-medium',
-              variant === 'dark' ? 'text-paper' : 'text-ink'
-            ]"
-          >
+          <Label for="rappel-telephone" :class="['mb-xs block text-meta font-medium', s.heading]">
             Votre numéro de téléphone
-            <span
-              :class="variant === 'dark' ? 'text-danger-inverse' : 'text-danger'"
-              aria-hidden="true"
-              >*</span
-            >
+            <span :class="s.error" aria-hidden="true">*</span>
           </Label>
           <Input
             id="rappel-telephone"
@@ -78,10 +63,7 @@
           <p
             v-if="showError"
             id="rappel-tel-error"
-            :class="[
-              'mt-xs text-meta font-semibold',
-              variant === 'dark' ? 'text-danger-inverse' : 'text-danger'
-            ]"
+            :class="['mt-xs text-meta font-semibold', s.error]"
             role="alert"
           >
             {{ errorMessage }}
@@ -92,10 +74,7 @@
           <Label
             id="rappel-creneau-label"
             for="rappel-creneau"
-            :class="[
-              'mb-xs block text-meta font-medium',
-              variant === 'dark' ? 'text-paper' : 'text-ink'
-            ]"
+            :class="['mb-xs block text-meta font-medium', s.heading]"
           >
             Heure / Créneau souhaité
             <span class="text-meta font-normal opacity-80">(optionnel)</span>
@@ -129,18 +108,13 @@
           v-model="consentement"
           :invalid="showConsentError"
           :error="errors.consentement"
-          :label-class="variant === 'dark' ? 'text-ink-inverse-muted' : undefined"
-          :variant="variant === 'dark' ? 'dark' : 'default'"
+          :label-class="s.consentLabel"
+          :variant="s.consentSurface"
         >
           {{ RAPPEL_CONSENT_TEXT }}
           <NuxtLink
             to="/confidentialite"
-            :class="[
-              'font-medium underline underline-offset-2 transition-colors',
-              variant === 'dark'
-                ? 'text-paper hover:text-accent'
-                : 'text-primary hover:text-accent-text'
-            ]"
+            :class="['font-medium underline underline-offset-2 transition-colors', s.linkAccent]"
           >
             Politique de confidentialité
           </NuxtLink>
@@ -164,10 +138,7 @@
 
           <p
             v-if="submitError"
-            :class="[
-              'mt-xs text-meta font-semibold text-center',
-              variant === 'dark' ? 'text-danger-inverse' : 'text-danger'
-            ]"
+            :class="['mt-xs text-meta font-semibold text-center', s.error]"
             role="alert"
           >
             {{ submitError }}
@@ -176,12 +147,7 @@
           <div class="mt-sm text-center">
             <button
               type="button"
-              :class="[
-                'text-meta underline underline-offset-4 transition-colors',
-                variant === 'dark'
-                  ? 'text-ink-inverse-muted hover:text-paper'
-                  : 'text-ink-muted hover:text-ink'
-              ]"
+              :class="['text-meta underline underline-offset-4 transition-colors', s.link]"
               @click="handleCancel"
             >
               Annuler
@@ -204,20 +170,10 @@
           <IconCheck :size="24" aria-hidden="true" />
         </div>
         <div>
-          <h3
-            :class="[
-              'font-display text-small font-bold',
-              variant === 'dark' ? 'text-paper' : 'text-ink'
-            ]"
-          >
+          <h3 :class="['font-display text-small font-bold', s.heading]">
             Demande de rappel enregistrée
           </h3>
-          <p
-            :class="[
-              'mt-xs text-meta leading-relaxed',
-              variant === 'dark' ? 'text-ink-inverse-muted' : 'text-ink-muted'
-            ]"
-          >
+          <p :class="['mt-xs text-meta leading-relaxed', s.muted]">
             Un conseiller vous rappellera <strong>{{ creneau?.toLowerCase() }}</strong> au
             <strong>{{ telephone }}</strong
             >.
@@ -225,12 +181,7 @@
         </div>
         <button
           type="button"
-          :class="[
-            'mt-xs text-meta underline underline-offset-4 transition-colors',
-            variant === 'dark'
-              ? 'text-accent hover:text-paper'
-              : 'text-primary hover:text-accent-text'
-          ]"
+          :class="['mt-xs text-meta underline underline-offset-4 transition-colors', s.accentLink]"
           @click="reset"
         >
           Faire une autre demande
@@ -277,7 +228,7 @@ function availableCreneaux(now = new Date()): string[] {
     : CRENEAU_OPTIONS.filter((option) => option !== CRENEAU_MATIN)
 }
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     variant?: 'dark' | 'light'
   }>(),
@@ -285,6 +236,36 @@ withDefaults(
     variant: 'dark'
   }
 )
+
+// Styles selon le fond de carte — regroupés ici plutôt qu'en ternaires
+// « variant === 'dark' » répétées dans le template ; ajouter une variante
+// = une entrée de plus dans la table.
+const surfaceStyles = {
+  dark: {
+    card: 'dark',
+    heading: 'text-paper',
+    muted: 'text-ink-inverse-muted',
+    error: 'text-danger-inverse',
+    link: 'text-ink-inverse-muted hover:text-paper',
+    linkAccent: 'text-paper hover:text-accent',
+    accentLink: 'text-accent hover:text-paper',
+    consentSurface: 'dark',
+    consentLabel: 'text-ink-inverse-muted'
+  },
+  light: {
+    card: 'surface',
+    heading: 'text-ink',
+    muted: 'text-ink-muted',
+    error: 'text-danger',
+    link: 'text-ink-muted hover:text-ink',
+    linkAccent: 'text-primary hover:text-accent-text',
+    accentLink: 'text-primary hover:text-accent-text',
+    consentSurface: 'default',
+    consentLabel: undefined
+  }
+} as const satisfies Record<string, Record<string, string | undefined>>
+
+const s = computed(() => surfaceStyles[props.variant])
 
 const emit = defineEmits<{
   (e: 'submit', payload: { telephone: string; creneau: string }): void

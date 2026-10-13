@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
-import { nextTick, ref } from 'vue'
+import { nextTick, reactive, ref } from 'vue'
 import RejoindreLeReseauPage from '~/pages/rejoindre-le-reseau.vue'
 
 vi.stubGlobal('ref', ref)
@@ -8,15 +8,24 @@ vi.stubGlobal('useHead', vi.fn())
 vi.stubGlobal('useContentSeo', vi.fn())
 vi.stubGlobal('useRuntimeConfig', () => ({ public: { siteUrl: 'https://learnup.fr' } }))
 
-const routeStub = {
+// `query` réactive : le watcher `route.query.voie` de la page ne se
+// redéclenche que si la propriété est trackée.
+const routeStub = reactive({
   path: '/rejoindre-le-reseau',
   fullPath: '/rejoindre-le-reseau',
   hash: '',
   params: {},
-  query: {} as Record<string, string>,
+  query: {} as Record<string, string | undefined>,
   meta: {}
-}
+})
 vi.stubGlobal('useRoute', () => routeStub)
+
+const routerReplaceMock = vi.fn(
+  ({ query }: { query?: Record<string, string | undefined> } = {}) => {
+    if (query) routeStub.query = { ...query }
+  }
+)
+vi.stubGlobal('useRouter', () => ({ replace: routerReplaceMock }))
 
 const CandidatureStub = {
   name: 'Candidature',
@@ -44,6 +53,7 @@ function mountPage() {
 describe('Rejoindre le réseau page', () => {
   beforeEach(() => {
     routeStub.query = {}
+    routerReplaceMock.mockClear()
   })
 
   it('présente les parcours, bénéfices et étapes du réseau', () => {
@@ -119,5 +129,36 @@ describe('Rejoindre le réseau page', () => {
 
     await wrapper.findComponent({ name: 'Candidature' }).vm.$emit('update:open', false)
     expect(wrapper.find('.candidature-dialog').attributes('data-open')).toBe('false')
+  })
+
+  it('retire ?voie= de l’URL à la fermeture du dialog', async () => {
+    routeStub.query = { voie: 'formateur', source: 'footer' }
+    const wrapper = mountPage()
+    await nextTick()
+
+    expect(wrapper.find('.candidature-dialog').attributes('data-open')).toBe('true')
+
+    await wrapper.findComponent({ name: 'Candidature' }).vm.$emit('update:open', false)
+    await nextTick()
+
+    expect(routerReplaceMock).toHaveBeenCalledWith({
+      query: { voie: undefined, source: 'footer' }
+    })
+    expect(routeStub.query.voie).toBeUndefined()
+
+    // La query étant nettoyée, rouvrir via le même lien rejoue le watch.
+    routeStub.query = { voie: 'formateur' }
+    await nextTick()
+    expect(wrapper.find('.candidature-dialog').attributes('data-open')).toBe('true')
+  })
+
+  it('ne touche pas à l’URL si le dialog se ferme sans ?voie=', async () => {
+    const wrapper = mountPage()
+
+    const cta = wrapper.findAll('button').find((b) => b.text().includes('Candidater'))
+    await cta!.trigger('click')
+    await wrapper.findComponent({ name: 'Candidature' }).vm.$emit('update:open', false)
+
+    expect(routerReplaceMock).not.toHaveBeenCalled()
   })
 })

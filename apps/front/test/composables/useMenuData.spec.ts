@@ -341,14 +341,14 @@ describe('useMenuData', () => {
         {
           slug: 'article-caces',
           title: 'Anticiper les échéances CACES',
-          category: 'Réglementation',
+          category: { slug: 'reglementation', name: 'Réglementation' },
           region: 'ile-de-france',
           publish_at: '2026-09-03T08:00:00.000Z'
         },
         {
           slug: 'article-reseau',
           title: 'Un nouveau centre ouvre',
-          category: 'Vie du réseau',
+          category: { slug: 'vie-du-reseau', name: 'Vie du réseau' },
           region: 'Occitanie',
           publish_at: '2026-08-19T08:00:00.000Z'
         }

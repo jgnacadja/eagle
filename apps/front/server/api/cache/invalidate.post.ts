@@ -19,7 +19,8 @@
 import { timingSafeEqual } from 'node:crypto'
 
 const COLLECTION_ROUTES: Record<string, string[]> = {
-  formations: ['/formations'],
+  formations: ['/formations', '/centres'],
+  formations_centres: ['/formations', '/centres'],
   familles_formation: ['/formations'],
   sous_familles_formation: ['/formations'],
   centres: ['/centres', '/formations'],
@@ -45,6 +46,17 @@ const SECTION_GROUPS: [RegExp, number][] = [
   [/centres/i, 2],
   [/actualites/i, 3]
 ]
+
+// Coalescence des marquages CDN : la sync Digiforma écrit des centaines de
+// formations à la chaîne et chaque écriture déclenche un appel ici — sans
+// fenêtre, chacun émettait un HEAD de revalidation par groupe (dont
+// /centres, groupe 2, mappé par `formations`). Un groupe déjà marqué stale
+// n'a pas besoin d'être re-marqué : on saute les appels dans la fenêtre et
+// on dé-marque un groupe dont le HEAD a échoué (le prochain write
+// réessaiera). Map en mémoire du process : chaque lambda throttle sa
+// propre rafale. La purge `useStorage` reste immédiate à chaque appel.
+const REVALIDATE_WINDOW_MS = 60_000
+const lastRevalidateAt = new Map<number, number>()
 
 // Comparaison en temps constant — timingSafeEqual lève sur des longueurs
 // différentes ; la longueur du secret n'est pas confidentielle.
@@ -137,8 +149,13 @@ export default defineEventHandler(async (event) => {
   const host = getHeader(event, 'host') ?? getHeader(event, ':authority')
   if (isrBypassToken && host) {
     const base = `${proto}://${host}`
+    const now = Date.now()
+    const dueGroups = groupsFor(matchers).filter(
+      (group) => now - (lastRevalidateAt.get(group) ?? 0) >= REVALIDATE_WINDOW_MS
+    )
+    for (const group of dueGroups) lastRevalidateAt.set(group, now)
     const settled = await Promise.allSettled(
-      groupsFor(matchers).map((group) =>
+      dueGroups.map((group) =>
         $fetch.raw(`${base}${GROUP_PATHS[group]}`, {
           method: 'HEAD',
           headers: { 'x-prerender-revalidate': isrBypassToken },
@@ -146,6 +163,11 @@ export default defineEventHandler(async (event) => {
         })
       )
     )
+    settled.forEach((result, i) => {
+      // Échec réseau → dé-marquer : la prochaine écriture retente le HEAD
+      // au lieu de laisser le groupe stale jusqu'à la fin de la fenêtre.
+      if (result.status === 'rejected') lastRevalidateAt.delete(dueGroups[i]!)
+    })
     revalidated = settled.filter((r) => r.status === 'fulfilled').length
   }
 

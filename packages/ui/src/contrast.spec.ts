@@ -79,6 +79,7 @@ const compliant: readonly Pair[] = [
   ['CTA principal — marine profond sur ambre', colors.navy.deep, colors.accent.default, AA_TEXT],
   ['succès sur blanc', colors.success.default, colors.paper, AA_TEXT],
   ['danger sur blanc', colors.danger.default, colors.paper, AA_TEXT],
+  ['danger inversé sur marine profond', colors.danger.inverse, colors.navy.deep, AA_TEXT],
   ['info sur fond info', colors.info.default, colors.info.soft, AA_TEXT],
   ['pastille d’étape — blanc sur vert', colors.ink.inverse, colors.success.default, AA_TEXT],
   ['pilule contour sur marine — blanc 40 %', colors.outlineInverse, colors.navy.deep, AA_LARGE]

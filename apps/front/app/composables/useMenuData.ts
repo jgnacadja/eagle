@@ -6,7 +6,7 @@
 
 import { readItems } from '@directus/sdk'
 import { buildMeta } from '~/composables/useCatalog'
-import { formatArticleDate } from '~/utils/article'
+import { articleCategory, formatArticleDate } from '~/utils/article'
 import { formatRegionLabel } from '~/utils/region'
 import { slugify } from '~/utils/slugify'
 import type {
@@ -403,7 +403,7 @@ export function useMenuActualites() {
       try {
         const articles = await directus.request<Article[]>(
           readItems('articles', {
-            fields: ['slug', 'title', 'category', 'region', 'publish_at'],
+            fields: ['slug', 'title', 'category.slug', 'category.name', 'region', 'publish_at'],
             filter: { status: { _eq: 'published' } },
             sort: ['-publish_at'],
             limit: MAX_ACTUALITES
@@ -414,9 +414,11 @@ export function useMenuActualites() {
         const regionArticles = new Map<string, { label: string; articles: MenuActualite[] }>()
 
         for (const article of articles) {
-          if (article.category?.trim()) {
-            const slug = slugify(article.category)
-            categoryLabels.set(slug, article.category.trim())
+          const category = articleCategory(article.category)
+          const categorySlug = category?.slug?.trim()
+          const categoryName = category?.name?.trim()
+          if (categorySlug && categoryName) {
+            categoryLabels.set(categorySlug, categoryName)
           }
 
           if (!article.region?.trim()) continue
@@ -426,8 +428,8 @@ export function useMenuActualites() {
 
           entry.articles.push({
             slug: article.slug,
-            categorySlug: article.category?.trim() ? slugify(article.category) : '',
-            tag: article.category?.trim() || 'Actualité',
+            categorySlug: category?.slug?.trim() ?? '',
+            tag: category?.name?.trim() || 'Actualité',
             date: formatArticleDate(article.publish_at),
             title: article.title
           })

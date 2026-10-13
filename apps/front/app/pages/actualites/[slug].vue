@@ -6,7 +6,9 @@
           <article class="lg:col-span-8">
             <header v-hero class="max-w-prose">
               <p class="text-overline text-accent-text">
-                <span class="font-bold uppercase">{{ article?.category }}</span>
+                <span class="font-bold uppercase">{{
+                  articleCategory(article?.category)?.name
+                }}</span>
                 <span class="font-medium text-ink-subtle">
                   <span class="mx-xs">·</span>{{ formatArticleDate(article?.publish_at) }}
                   <span class="mx-xs">· <span class="md:inline hidden">lecture</span> </span
@@ -199,7 +201,9 @@
             >
               <article>
                 <p class="text-overline text-accent-text">
-                  <span class="font-bold uppercase">{{ related.category ?? 'Actualité' }}</span>
+                  <span class="font-bold uppercase">{{
+                    articleCategory(related.category)?.name ?? 'Actualité'
+                  }}</span>
                   <span class="font-medium text-ink-subtle">
                     <span class="mx-xs">·</span>{{ formatArticleDate(related.publish_at) }}
                   </span>
@@ -254,7 +258,12 @@ import { readItems } from '@directus/sdk'
 import type { Article, Course } from '@learnup/types'
 import { buildMeta, mapCourse, type FormationItem } from '~/composables/useCatalog'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
-import { articleAssetUrl, articleReadingTime, formatArticleDate } from '~/utils/article'
+import {
+  articleAssetUrl,
+  articleCategory,
+  articleReadingTime,
+  formatArticleDate
+} from '~/utils/article'
 import { sanitizeHtmlWithHeadings } from '~/utils/sanitizeHtml'
 import { copyTextToClipboard } from '~/utils/clipboard'
 import { useDataLayer } from '~/composables/useDataLayer'
@@ -289,7 +298,8 @@ const {
             'title',
             'excerpt',
             'content',
-            'category',
+            'category.slug',
+            'category.name',
             'author_name',
             'author_image',
             'region',
@@ -334,7 +344,7 @@ function openAssistant() {
   assistant.open({
     context: {
       source: 'editorial',
-      theme: article.value?.category ?? article.value?.title ?? undefined,
+      theme: articleCategory(article.value?.category)?.name ?? article.value?.title ?? undefined,
       formationSlug: typeof related === 'object' && related ? related.slug : undefined
     }
   })
@@ -401,7 +411,7 @@ const sanitizedArticle = computed(() => sanitizeHtmlWithHeadings(article.value!.
 const articleHeadings = computed(() => sanitizedArticle.value.headings)
 
 const relatedArticles = await useDirectusList<Article>('articles', `actualites-related-${slug}`, {
-  fields: ['id', 'slug', 'title', 'category', 'publish_at'],
+  fields: ['id', 'slug', 'title', 'category.name', 'publish_at'],
   filter: { status: { _eq: 'published' }, slug: { _neq: slug } },
   sort: ['-publish_at'],
   limit: 3
@@ -442,10 +452,12 @@ const sourceRoute = computed(() => {
 })
 
 const defaultBreadcrumb = computed(() => {
-  const category =
-    (typeof route.query.category === 'string' && route.query.category.length > 0
-      ? route.query.category
-      : article.value?.category) ?? 'Article'
+  // `?category=` porte le slug (ex. « reglementation-obligations ») :
+  // afficher le libellé de la catégorie de l'article quand il correspond,
+  // sinon la valeur brute (ancien libellé d'URL encore partagé).
+  const raw = typeof route.query.category === 'string' ? route.query.category.trim() : ''
+  const cat = articleCategory(article.value?.category)
+  const category = (raw && raw === cat?.slug ? cat.name : raw) || cat?.name || 'Article'
 
   return [
     { label: 'Accueil', to: '/' },
@@ -535,7 +547,7 @@ onMounted(() => {
       event: 'view_article_detail',
       article_id: article.value.slug,
       article_title: article.value.title,
-      article_category: article.value.category ?? undefined,
+      article_category: articleCategory(article.value.category)?.name ?? undefined,
       publish_date: article.value.publish_at ?? undefined,
       page_path: typeof window !== 'undefined' ? window.location.pathname : ''
     })

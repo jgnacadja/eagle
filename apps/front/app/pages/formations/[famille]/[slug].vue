@@ -19,11 +19,9 @@
               >
                 {{ course.title }}
               </h1>
-              <div
-                v-if="course.description"
-                class="mt-md max-w-prose text-body text-ink-body"
-                v-html="sanitizeHtml(course.description)"
-              />
+              <p v-if="heroIntro" class="mt-md max-w-prose text-body text-ink-body">
+                {{ heroIntro }}
+              </p>
 
               <ul class="mt-md flex flex-wrap gap-sm">
                 <Badge v-if="durationTag" as="li" variant="chip">{{ durationTag }}</Badge>
@@ -818,6 +816,17 @@ const durationTag = computed(() => {
   if (course.value!.durationDays) parts.push(`${course.value!.durationDays} jours`)
   if (course.value!.durationHours) parts.push(`${course.value!.durationHours} h`)
   return parts.join(' · ')
+})
+
+// Accroche du hero : `shortDescription` est éditorial (hors sync
+// Digiforma) — formation jamais éditée → repli sur un extrait tronqué
+// de `description` (HTML synchronisé), sinon pas de paragraphe.
+const heroIntro = computed(() => {
+  const short = course.value!.shortDescription?.trim()
+  if (short) return short
+  const text = htmlToText(course.value!.description)
+  if (text.length <= 220) return text
+  return `${text.slice(0, 220).replace(/\s+\S*$/, '')}…`
 })
 
 const sessionBadge = computed(() => buildSessionBadge(course.value!))

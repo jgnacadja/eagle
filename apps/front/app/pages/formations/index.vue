@@ -455,7 +455,7 @@ interface SortOption {
 }
 
 interface ActiveFilter {
-  group: 'families' | 'modalities' | 'location' | 'durations' | 'cpf' | 'certifying'
+  group: 'families' | 'modalities' | 'location' | 'centre' | 'durations' | 'cpf' | 'certifying'
   key: string
   label: string
 }
@@ -489,6 +489,9 @@ const selectedFamilies = ref<string[]>(
 )
 const selectedModalities = ref<string[]>([])
 const location = ref('')
+// Filtre structurel (?centre=slug) — atteint depuis une fiche centre,
+// sans contrôle dédié dans le panneau de filtres.
+const centre = ref('')
 const selectedDurations = ref<string[]>([])
 const cpf = ref(false)
 const certifying = ref(false)
@@ -518,6 +521,7 @@ function openAssistant() {
     context: {
       source: 'catalogue',
       familleSlug: selectedFamilies.value.length === 1 ? selectedFamilies.value[0] : undefined,
+      centerSlug: centre.value || undefined,
       filters: filters.length ? filters : undefined
     },
     message: q || undefined
@@ -565,6 +569,7 @@ function parseUrl() {
   assignList(selectedFamilies, typeof famille === 'string' ? [famille] : [])
   assignList(selectedModalities, parseListParam(route.query.modalites))
   location.value = parseStringParam(route.query.lieu)
+  centre.value = parseStringParam(route.query.centre)
   assignList(selectedDurations, parseListParam(route.query.duree))
   cpf.value = route.query.cpf === 'true'
   certifying.value = route.query.certifiant === 'true'
@@ -594,7 +599,8 @@ const catalogQuery = computed<CatalogQuery>(() => {
     certifying: certifying.value || undefined,
     durations: selectedDurations.value.length ? [...selectedDurations.value] : undefined,
     modalities: selectedModalities.value.length ? selectedModalities.value : undefined,
-    location: location.value.trim() || undefined
+    location: location.value.trim() || undefined,
+    center: centre.value || undefined
   }
 })
 
@@ -707,6 +713,33 @@ const { data: familyCounts } = await useAsyncData<FamilyWithCount[]>(
     }
   },
   freshOnClient
+)
+
+// Nom du centre pour la chip du filtre `?centre=` — relu à chaque
+// changement de slug ; repli sur le slug si la lecture échoue.
+const { data: centreRow } = await useAsyncData<{ name: string } | null>(
+  'catalog-centre',
+  async () => {
+    const slug = centre.value
+    if (!slug) return null
+    try {
+      const res = await directus.request<{ name: string }[]>(
+        readItems('centres', {
+          fields: ['name'],
+          filter: { slug: { _eq: slug }, status: { _eq: 'published' } },
+          limit: 1
+        })
+      )
+      return res[0] ?? null
+    } catch (error) {
+      /* v8 ignore next 3 */
+      if (import.meta.server) {
+        logServerError('[formations/index] centre fetch failed:', error)
+      }
+      return null
+    }
+  },
+  { watch: [centre], ...freshOnClient }
 )
 
 const familyNames = computed(() => {
@@ -911,6 +944,14 @@ const activeFilters = computed<ActiveFilter[]>(() => {
     filters.push({ group: 'location', key: location.value, label: location.value })
   }
 
+  if (centre.value) {
+    filters.push({
+      group: 'centre',
+      key: centre.value,
+      label: centreRow.value?.name ?? centre.value
+    })
+  }
+
   for (const key of selectedDurations.value) {
     filters.push({ group: 'durations', key, label: DURATION_LABELS[key] ?? key })
   }
@@ -947,6 +988,8 @@ function removeFilter(filter: ActiveFilter) {
     selectedModalities.value = selectedModalities.value.filter((key) => key !== filter.key)
   } else if (filter.group === 'location') {
     location.value = ''
+  } else if (filter.group === 'centre') {
+    centre.value = ''
   } else if (filter.group === 'durations') {
     selectedDurations.value = selectedDurations.value.filter((key) => key !== filter.key)
   } else if (filter.group === 'cpf') {
@@ -1026,6 +1069,7 @@ function resetFilters() {
   selectedFamilies.value = []
   selectedModalities.value = []
   location.value = ''
+  centre.value = ''
   selectedDurations.value = []
   cpf.value = false
   certifying.value = false
@@ -1061,58 +1105,72 @@ function triggerSearch() {
   }
 }
 
+// Réécrit l'URL courante depuis l'état des filtres (sources nommées —
+// plus d'indices positionnels fragiles dans le watch).
+function syncUrl() {
+  const query: Record<string, unknown> = {}
+  if (searchQuery.value) query.q = searchQuery.value
+  if (selectedFamilies.value.length) query.famille = selectedFamilies.value[0]
+  if (selectedModalities.value.length) query.modalites = selectedModalities.value.join(',')
+  if (location.value.trim()) query.lieu = location.value.trim()
+  if (centre.value) query.centre = centre.value
+  if (selectedDurations.value.length) query.duree = selectedDurations.value.join(',')
+  if (cpf.value) query.cpf = 'true'
+  if (certifying.value) query.certifiant = 'true'
+  if (sortBy.value !== 'editorial' || searchQuery.value) query.tri = sortBy.value
+  if (currentPage.value > 1) query.page = String(currentPage.value)
+
+  router.replace({ path: route.path, query })
+}
+
 // La page ne se remonte plus sur changement de query (page-key = path) :
 // il faut resynchroniser l'état quand l'URL change sans venir de notre
-// propre router.replace (retour arrière, lien partagé, etc.).
+// propre router.replace (retour arrière, lien partagé, etc.). Le drapeau
+// bloque les watchers filtres/page pendant que parseUrl restaure page et
+// filtres ensemble — sinon ils réécriraient l'URL et réinitialiseraient
+// la page en cours de restauration.
+let restoringFromUrl = false
 watch(
   () => route.query,
-  () => {
+  async () => {
+    restoringFromUrl = true
     parseUrl()
+    await nextTick() // laisse passer les watchers déclenchés par parseUrl
+    restoringFromUrl = false
   }
 )
 
+// Tout changement de filtre/recherche/tri repart en page 1 — le watch de
+// currentPage réécrit alors l'URL ; déjà en page 1 → réécriture directe.
+const filterSources = [
+  searchQuery,
+  selectedFamilies,
+  selectedModalities,
+  location,
+  centre,
+  selectedDurations,
+  () => cpf.value,
+  () => certifying.value,
+  sortBy
+]
 watch(
-  [
-    searchQuery,
-    selectedFamilies,
-    selectedModalities,
-    location,
-    selectedDurations,
-    () => cpf.value,
-    () => certifying.value,
-    sortBy,
-    currentPage
-  ],
-  (newValues, oldValues) => {
-    if (currentPage.value < 1) currentPage.value = 1
-
-    // Tout changement de filtre/recherche/tri repart en page 1 — sauf si
-    // c'est la page elle-même qui vient de changer (pagination, « Afficher
-    // plus ») ou si la mise à jour vient de l'URL (parseUrl restaure page
-    // et filtres ensemble).
-    const filtersChanged = newValues
-      .slice(0, 8)
-      .some((value: unknown, i: number) => value !== oldValues[i])
-    const pageChanged = newValues[8] !== oldValues[8]
-    if (filtersChanged && !pageChanged && currentPage.value !== 1) {
-      currentPage.value = 1
-      return
-    }
-
-    const query: Record<string, unknown> = {}
-    if (searchQuery.value) query.q = searchQuery.value
-    if (selectedFamilies.value.length) query.famille = selectedFamilies.value[0]
-    if (selectedModalities.value.length) query.modalites = selectedModalities.value.join(',')
-    if (location.value.trim()) query.lieu = location.value.trim()
-    if (selectedDurations.value.length) query.duree = selectedDurations.value.join(',')
-    if (cpf.value) query.cpf = 'true'
-    if (certifying.value) query.certifiant = 'true'
-    if (sortBy.value !== 'editorial' || searchQuery.value) query.tri = sortBy.value
-    if (currentPage.value > 1) query.page = String(currentPage.value)
-
-    router.replace({ path: route.path, query })
-  }
+  filterSources,
+  () => {
+    if (restoringFromUrl) return
+    if (currentPage.value !== 1) currentPage.value = 1
+    else syncUrl()
+  },
+  { deep: true }
 )
+
+watch(currentPage, (page) => {
+  if (restoringFromUrl) return
+  if (page < 1) {
+    currentPage.value = 1
+    return
+  }
+  syncUrl()
+})
 
 watch(isFilterPanelOpen, (open) => {
   /* v8 ignore next 2 — import.meta.client est indéfini sous Vitest. */

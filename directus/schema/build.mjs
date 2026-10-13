@@ -8,7 +8,15 @@
 // `directus schema snapshot` (voir directus/README.md). Existence-checked
 // pour rester sûr à ré-exécuter, mais n'est pas le mécanisme de restore
 // officiel.
+//
+// Ordre de déploiement d'un changement de schéma :
+//   1. `build.mjs` (ou l'apply du snapshot) — Directus à jour en premier ;
+//   2. `apps/api` — le contrat lu par le front dépend du nouveau schéma ;
+//   3. `apps/front` — pages/ISR consommant les nouveaux champs ;
+//   4. purge ISR (`POST /api/cache/invalidate`, vide = complète) — les
+//      pages déjà générées avec l'ancien schéma sont marquées stale.
 
+import { mkdir, writeFile } from 'node:fs/promises'
 import { collections, relations } from './collections.mjs'
 import { buildFlows } from './flows.mjs'
 import { permissionsFor, publicPermissions, roles } from './roles.mjs'
@@ -66,9 +74,14 @@ async function ensureCollections(token) {
     if (await collectionExists(token, def.collection)) {
       log(`↷  collection ${def.collection} déjà présente`)
       // Convergent aussi sur le meta de collection (note, traductions
-      // de nom) — sinon un renommage déclaré ici resterait invisible.
+      // de nom, visibilité) — sinon un renommage ou un masquage déclaré ici
+      // resterait invisible.
       await api(token, 'PATCH', `/collections/${def.collection}`, {
-        meta: { note: def.note ?? null, translations: def.translations ?? null }
+        meta: {
+          note: def.note ?? null,
+          translations: def.translations ?? null,
+          hidden: def.hidden ?? false
+        }
       })
       // Collection existante : créer les champs déclarés mais absents —
       // le fichier collections.mjs reste la source de vérité du schéma.
@@ -95,7 +108,11 @@ async function ensureCollections(token) {
     await api(token, 'POST', '/collections', {
       collection: def.collection,
       icon: def.icon,
-      meta: { note: def.note, translations: def.translations ?? null },
+      meta: {
+        note: def.note,
+        translations: def.translations ?? null,
+        hidden: def.hidden ?? false
+      },
       schema: {},
       fields: def.fields
     })
@@ -110,12 +127,26 @@ async function relationExists(token, collection, field) {
   return res.ok
 }
 
+// Le meta déclaré (interface, gabarit, traductions) reste la source de
+// vérité du champ relation — ré-appliqué partout, sinon une colonne créée
+// hors script (admin, migration) garderait l'interface `input` par défaut
+// et l'admin n'afficherait que l'id brut au lieu du dropdown M2O.
+async function convergeRelationFieldMeta(token, rel) {
+  if (!rel.meta) return
+  await api(token, 'PATCH', `/fields/${rel.collection}/${rel.field}`, {
+    meta: { readonly: false, hidden: false, ...rel.meta }
+  })
+}
+
 // Phase 1 : les colonnes M2O sont créées avant la migration de contenu —
 // une colonne suffit pour écrire des items, la relation n'est pas requise.
 async function ensureRelationFields(token) {
   for (const rel of relations) {
     if (await relationExists(token, rel.collection, rel.field)) continue
-    if (await fieldExists(token, rel.collection, rel.field)) continue
+    if (await fieldExists(token, rel.collection, rel.field)) {
+      await convergeRelationFieldMeta(token, rel)
+      continue
+    }
     await api(token, 'POST', `/fields/${rel.collection}`, {
       field: rel.field,
       type: rel.related_collection === 'directus_files' ? 'uuid' : 'integer',
@@ -129,17 +160,15 @@ async function ensureRelationFields(token) {
 // les réglages déclarés ici ne s'appliqueraient jamais sur une relation
 // déjà créée. one_field/sort_field sont aussi reconvergés via PATCH.
 async function convergeRelation(token, rel) {
-  if (rel.meta) {
-    await api(token, 'PATCH', `/fields/${rel.collection}/${rel.field}`, {
-      meta: { readonly: false, hidden: false, ...rel.meta }
-    })
-  }
+  await convergeRelationFieldMeta(token, rel)
   const { data: current } = await api(token, 'GET', `/relations/${rel.collection}/${rel.field}`)
   const metaPatch = {}
   if (rel.one_field && current.meta?.one_field !== rel.one_field)
     metaPatch.one_field = rel.one_field
   if (rel.sort_field && current.meta?.sort_field !== rel.sort_field)
     metaPatch.sort_field = rel.sort_field
+  if (rel.junction_field && current.meta?.junction_field !== rel.junction_field)
+    metaPatch.junction_field = rel.junction_field
   if (Object.keys(metaPatch).length) {
     await api(token, 'PATCH', `/relations/${rel.collection}/${rel.field}`, {
       meta: metaPatch
@@ -152,12 +181,16 @@ async function createRelation(token, rel) {
   const meta = {}
   if (rel.one_field) meta.one_field = rel.one_field
   if (rel.sort_field) meta.sort_field = rel.sort_field
+  if (rel.junction_field) meta.junction_field = rel.junction_field
   await api(token, 'POST', '/relations', {
     collection: rel.collection,
     field: rel.field,
     related_collection: rel.related_collection,
     ...(Object.keys(meta).length ? { meta } : {})
   })
+  // Meta ré-appliqué après création : une interface M2O posée sur un champ
+  // sans relation peut être assainie par Directus au POST /fields.
+  await convergeRelationFieldMeta(token, rel)
   log(`✔  relation ${rel.collection}.${rel.field} → ${rel.related_collection}`)
 }
 
@@ -260,6 +293,161 @@ async function migrateLegalSections(token) {
   log(
     `✔  pages_legales.sections migré — ${toMigrate.length} section(s) copiée(s), champ JSON supprimé`
   )
+}
+
+// Migration « catégorie d'article » : le champ `articles.category` était un
+// varchar libre (chaque rubrique retapée à la main) — il devient un M2O
+// vers la collection `categories`. Pour chaque libellé distinct on crée la
+// catégorie (slug dérivé), puis la colonne est recréée en `integer` et les
+// articles rattachés — la relation FK est posée ensuite par
+// ensureRelations. Idempotent : `category` déjà `integer` → no-op ; une
+// catégorie existante (même slug) est réutilisée.
+function slugifyCategory(label) {
+  return label
+    .trim()
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+}
+
+// Sauvegarde du mapping article → catégorie avant toute suppression de
+// colonne : si le script est interrompu après le DELETE du varchar, le
+// lien survivrait sinon seulement en mémoire.
+async function backupCategoryMapping(articleLabel, slugToId) {
+  const backupDir = new URL('./.backups/', import.meta.url)
+  await mkdir(backupDir, { recursive: true })
+  const file = new URL(`articles-category-${Date.now()}.json`, backupDir)
+  await writeFile(
+    file,
+    JSON.stringify(
+      {
+        categories: Object.fromEntries(slugToId),
+        articles: Object.fromEntries(
+          [...articleLabel].map(([id, slug]) => [id, { slug, category: slugToId.get(slug) }])
+        )
+      },
+      null,
+      2
+    )
+  )
+  log(`✔  mapping article → catégorie sauvegardé dans ${file.pathname}`)
+}
+
+async function migrateArticleCategories(token) {
+  const { data: fields } = await api(token, 'GET', '/fields/articles?limit=-1')
+  const category = (fields ?? []).find((f) => f.field === 'category')
+  const hasTemp = (fields ?? []).some((f) => f.field === 'category_new')
+  // `category` integer et plus de tampon → déjà migré. Un tampon restant
+  // seul (crash entre DELETE et recopie) est repris en phase 2.
+  if (category?.type !== 'string' && !hasTemp) return
+
+  // Phase 1 — tant que `category` est le varchar libre : construire le
+  // mapping, créer les catégories, et écrire les ids dans la colonne
+  // tampon `category_new` — avant toute suppression.
+  if (category?.type === 'string') {
+    const { data: articles } = await api(
+      token,
+      'GET',
+      '/items/articles?limit=-1&fields=id,category'
+    )
+    const labelsBySlug = new Map()
+    const articleLabel = new Map()
+    for (const article of articles ?? []) {
+      const label = article.category?.trim().replace(/\s+/g, ' ')
+      if (!label) continue
+      const slug = slugifyCategory(label)
+      if (!slug) {
+        // Libellé de pure ponctuation → slug vide, le POST échouerait
+        // (slug requis/unique). L'article reste sans catégorie.
+        log(`⚠  article ${article.id} : catégorie « ${label} » sans slug exploitable, ignorée`)
+        continue
+      }
+      labelsBySlug.set(slug, label)
+      articleLabel.set(article.id, slug)
+    }
+
+    const { data: existingCats } = await api(
+      token,
+      'GET',
+      '/items/categories?limit=-1&fields=id,slug'
+    )
+    const slugToId = new Map((existingCats ?? []).map((cat) => [cat.slug, cat.id]))
+
+    let sort = 1
+    for (const [slug, name] of labelsBySlug) {
+      if (slugToId.has(slug)) continue
+      const { data: created } = await api(token, 'POST', '/items/categories', {
+        status: 'published',
+        slug,
+        name,
+        sort: sort++
+      })
+      slugToId.set(slug, created.id)
+    }
+
+    if (!hasTemp) {
+      await api(token, 'POST', '/fields/articles', {
+        field: 'category_new',
+        type: 'integer',
+        meta: { hidden: true, note: 'Tampon de migration category varchar → M2O' }
+      })
+    }
+
+    // PATCH batch : un appel unique — le PATCH item par item déclenchait
+    // le flow de purge du cache à chaque écriture (N webhooks).
+    const writes = [...articleLabel]
+      .map(([id, slug]) => ({ id, category_new: slugToId.get(slug) }))
+      .filter((row) => row.category_new != null)
+    if (writes.length) {
+      await api(token, 'PATCH', '/items/articles', writes)
+    }
+
+    // Filet avant le DELETE : mapping versé sur disque, puis suppression
+    // du varchar et recréation en integer (Directus gère DROP/ADD COLUMN).
+    await backupCategoryMapping(articleLabel, slugToId)
+    await api(token, 'DELETE', '/fields/articles/category')
+  }
+
+  // Phase 2 — `category_new` est peuplée : (re)créer `category` en
+  // integer si absente, recopier les ids en batch, vérifier, supprimer le
+  // tampon. Reprend aussi un run interrompu entre ces étapes.
+  const rel = relations.find((r) => r.collection === 'articles' && r.field === 'category')
+  if (category?.type === 'string' || !category) {
+    await api(token, 'POST', '/fields/articles', {
+      field: 'category',
+      type: 'integer',
+      meta: rel?.meta
+    })
+  }
+
+  const { data: rows } = await api(
+    token,
+    'GET',
+    '/items/articles?limit=-1&fields=id,category,category_new'
+  )
+  const copy = (rows ?? [])
+    .filter((a) => a.category_new != null && a.category == null)
+    .map((a) => ({ id: a.id, category: a.category_new }))
+  if (copy.length) {
+    await api(token, 'PATCH', '/items/articles', copy)
+  }
+
+  const { data: verified } = await api(
+    token,
+    'GET',
+    '/items/articles?limit=-1&fields=id,category,category_new&filter[category_new][_nnull]=true'
+  )
+  const orphans = (verified ?? []).filter((a) => a.category == null)
+  if (orphans.length) {
+    throw new Error(
+      `Migration articles.category interrompue — ${orphans.length} article(s) sans recopie du tampon`
+    )
+  }
+
+  await api(token, 'DELETE', '/fields/articles/category_new')
+  log(`✔  articles.category migré — ${copy.length} rattachement(s) recopié(s) depuis le tampon`)
 }
 
 async function fetchByName(token, endpoint) {
@@ -507,6 +695,7 @@ async function main() {
   // `pages_legales.sections` (encore JSON), écrit via la colonne `page`,
   // puis supprime le champ pour libérer le nom de l'alias O2M.
   await migrateLegalSections(token)
+  await migrateArticleCategories(token)
   await ensureRelations(token)
   const roleIds = await ensureRoles(token)
   const policyIds = await ensurePolicies(token)

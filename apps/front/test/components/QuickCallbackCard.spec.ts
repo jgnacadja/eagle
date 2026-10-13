@@ -44,7 +44,7 @@ const stubs = {
     template: '<label><slot /></label>'
   },
   ConsentField: {
-    props: ['modelValue', 'invalid', 'error', 'id'],
+    props: ['modelValue', 'invalid', 'error', 'id', 'variant'],
     emits: ['update:modelValue'],
     template:
       '<div class="consent-field"><input type="checkbox" :id="id" :checked="modelValue" @change="$emit(\'update:modelValue\', $event.target.checked)" /><label :for="id"><slot /></label><p v-if="invalid" class="consent-error" role="alert">{{ error }}</p></div>'
@@ -110,6 +110,38 @@ describe('QuickCallbackCard', () => {
       global: { stubs }
     })
     expect(lightWrapper.find('.card').attributes('data-variant')).toBe('surface')
+  })
+
+  it('relaye le variant au champ de consentement', async () => {
+    const darkWrapper = mount(QuickCallbackCard, { global: { stubs } })
+    await openCard(darkWrapper)
+    expect(darkWrapper.findComponent(stubs.ConsentField).props('variant')).toBe('dark')
+
+    const lightWrapper = mount(QuickCallbackCard, {
+      props: { variant: 'light' },
+      global: { stubs }
+    })
+    await openCard(lightWrapper)
+    expect(lightWrapper.findComponent(stubs.ConsentField).props('variant')).toBe('default')
+  })
+
+  it('atténue la couleur des erreurs en variante sombre', async () => {
+    const wrapper = mount(QuickCallbackCard, { global: { stubs } })
+    await openCard(wrapper)
+    await wrapper.find('form').trigger('submit')
+    await vi.waitFor(() => {
+      expect(wrapper.find('#rappel-tel-error').classes()).toContain('text-danger-inverse')
+    })
+
+    const lightWrapper = mount(QuickCallbackCard, {
+      props: { variant: 'light' },
+      global: { stubs }
+    })
+    await openCard(lightWrapper)
+    await lightWrapper.find('form').trigger('submit')
+    await vi.waitFor(() => {
+      expect(lightWrapper.find('#rappel-tel-error').classes()).toContain('text-danger')
+    })
   })
 
   it('déplie le formulaire au clic sur « Me faire appeler » sans prop de test', async () => {

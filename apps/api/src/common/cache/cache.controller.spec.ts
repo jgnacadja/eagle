@@ -29,6 +29,15 @@ describe('CacheController', () => {
     expect(cache.invalidateCatalog).not.toHaveBeenCalled()
   })
 
+  it('purge le catalogue quand la jonction centres change', async () => {
+    await expect(controller.invalidate({ collection: 'formations_centres' })).resolves.toEqual({
+      success: true,
+      purged: true
+    })
+    expect(cache.invalidatePatterns).toHaveBeenCalledWith(['formations:all', 'courses:*'])
+    expect(cache.invalidateCatalog).not.toHaveBeenCalled()
+  })
+
   it('purge aussi les centres quand un centre change', async () => {
     await expect(controller.invalidate({ collection: 'centres' })).resolves.toEqual({
       success: true,

@@ -449,6 +449,33 @@ export const collections = [
     ]
   },
   {
+    collection: 'categories',
+    icon: 'sell',
+    note: 'Catégories des articles de blog.',
+    ...fr('Catégories'),
+    fields: [
+      primaryKey(),
+      statusField(),
+      sortField(),
+      slugField(),
+      {
+        field: 'name',
+        type: 'string',
+        meta: { interface: 'input', width: 'half', required: true, ...fr('Nom') }
+      },
+      {
+        field: 'description',
+        type: 'text',
+        meta: {
+          interface: 'input-multiline',
+          width: 'full',
+          note: 'Accroche éditoriale de la rubrique',
+          ...fr('Description')
+        }
+      }
+    ]
+  },
+  {
     collection: 'articles',
     icon: 'article',
     note: 'Articles de blog.',
@@ -473,16 +500,7 @@ export const collections = [
         type: 'text',
         meta: { interface: 'input-rich-text-html', width: 'full', ...fr('Contenu') }
       },
-      {
-        field: 'category',
-        type: 'string',
-        meta: {
-          interface: 'input',
-          width: 'half',
-          note: 'Catégorie thématique',
-          ...fr('Catégorie')
-        }
-      },
+      // category = relation M2O vers categories (voir relations)
       {
         field: 'author_name',
         type: 'string',
@@ -1177,11 +1195,22 @@ export const collections = [
           ...fr('Dernière modification')
         }
       }
-      // famille + sous_famille (relations M2O, voir relations).
+      // famille + sous_famille (relations M2O, voir relations) + centres
+      // (alias M2M via formations_centres, voir relations).
       // Tous les champs contenu sont éditables : la sync ne remplit que
       // les champs vides. Readonly restants : digiforma_id, raw,
       // created_at, updated_at.
     ]
+  },
+  {
+    // Jonction M2M formations ↔ centres — masquée dans l'admin : les liens
+    // se gèrent depuis le champ « Centres » de la fiche formation.
+    collection: 'formations_centres',
+    icon: 'link',
+    hidden: true,
+    note: "Jonction formations ↔ centres — lignes créées via le champ « Centres » de la fiche formation. La sync n'y touche pas.",
+    ...fr('Formations × centres'),
+    fields: [primaryKey(), sortField()]
   },
   {
     collection: 'avis',
@@ -1357,6 +1386,16 @@ export const collections = [
 export const relations = [
   {
     collection: 'articles',
+    field: 'category',
+    related_collection: 'categories',
+    meta: m2o('{{name}}', {
+      width: 'half',
+      note: 'Catégorie éditoriale de l’article',
+      ...fr('Catégorie')
+    })
+  },
+  {
+    collection: 'articles',
     field: 'centre',
     related_collection: 'centres',
     meta: m2o('{{name}}', { ...fr('Centre') })
@@ -1475,6 +1514,36 @@ export const relations = [
       note: 'Famille parente',
       ...fr('Famille')
     })
+  },
+  // Sélection multiple de centres sur une formation (M2M via la jonction
+  // formations_centres) : `junction_field` sur la relation vers centres et
+  // `one_field` sur celle vers formations créent l'alias `formations.centres`
+  // — liste triable de centres sur la fiche formation.
+  {
+    collection: 'formations_centres',
+    field: 'centre',
+    related_collection: 'centres',
+    meta: m2o('{{name}}', { required: true, width: 'half', ...fr('Centre') }),
+    junction_field: 'formation'
+  },
+  {
+    collection: 'formations_centres',
+    field: 'formation',
+    related_collection: 'formations',
+    meta: m2o('{{title}}', { required: true, width: 'half', ...fr('Formation') }),
+    junction_field: 'centre',
+    one_field: 'centres',
+    sort_field: 'sort',
+    one_meta: {
+      interface: 'list-m2m',
+      special: ['m2m'],
+      options: { template: '{{centre.name}}', enableCreate: false, enableSelect: true },
+      display: 'related-values',
+      display_options: { template: '{{centre.name}}' },
+      width: 'full',
+      note: 'Centres dispensant la formation — éditorial, jamais réécrit par la sync',
+      ...fr('Centres')
+    }
   },
   // Pages légales : M2O obligatoire + alias O2M `sections`/`subsections`
   // sur le parent — l'éditeur gère le contenu en lignes triables depuis la

@@ -50,6 +50,7 @@
   --color-warning-soft: rgb(240 160 48 / 16%);
   --color-danger: #b03a2e;
   --color-danger-soft: rgb(176 58 46 / 10%);
+  --color-danger-inverse: #ffb4ab;
   --color-info: #1e3a6e;
   --color-info-soft: #edf2fa;
 

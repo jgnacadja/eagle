@@ -129,6 +129,15 @@ export interface PageLegale extends SeoFields {
   updated_at: string | null
 }
 
+export interface ArticleCategory {
+  id: number
+  status: ContentStatus
+  sort: number | null
+  slug: string
+  name: string
+  description: string | null
+}
+
 export interface Article extends SeoFields {
   id: number
   status: ContentStatus
@@ -136,7 +145,8 @@ export interface Article extends SeoFields {
   title: string
   excerpt: string | null
   content: string | null
-  category: string | null
+  /** Relation M2O vers `categories` — id brut ou objet expansé selon les champs demandés (`category.slug`, `category.name`). */
+  category: Partial<Pick<ArticleCategory, 'id' | 'slug' | 'name'>> | ArticleCategory['id'] | null
   author_name: string | null
   author_image: string | null
   region: string | null

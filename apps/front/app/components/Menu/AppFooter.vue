@@ -64,7 +64,7 @@
           <ul class="mt-md space-y-sm text-small">
             <li>
               <NuxtLink
-                to="/rejoindre-le-reseau"
+                :to="{ path: '/rejoindre-le-reseau', query: { voie: 'centre' } }"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Devenir franchisé</NuxtLink
               >
@@ -78,7 +78,7 @@
             </li>
             <li>
               <NuxtLink
-                to="/rejoindre-le-reseau#candidater"
+                :to="{ path: '/rejoindre-le-reseau', query: { voie: 'formateur' } }"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Formateur indépendant</NuxtLink
               >
@@ -91,7 +91,7 @@
           <ul class="mt-md space-y-sm text-small">
             <li>
               <NuxtLink
-                to="/"
+                to="/a-propos"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Qui sommes-nous</NuxtLink
               >
@@ -105,7 +105,7 @@
             </li>
             <li>
               <NuxtLink
-                to="/"
+                to="/parler-a-votre-conseiller"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Contact</NuxtLink
               >

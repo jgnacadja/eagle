@@ -92,6 +92,33 @@ describe('sanitizeJustification', () => {
     expect(sanitizeJustification('').text).toBe('')
   })
 
+  it('drops a justification corrupted by a leaked identifier or template variable', () => {
+    for (const corrupted of [
+      'Cette formation S.S.T semble adaptée si vous souhaitez_uidocation aux questions de santé.',
+      'Elle semble adaptée à votre besoin en ${location}.',
+      'Elle semble adaptée à votre besoin {{ville}}.',
+      'Elle semble adaptée à votreSanté au travail.'
+    ]) {
+      expect(sanitizeJustification(corrupted)).toEqual({
+        text: '',
+        issues: ['corrupted-justification']
+      })
+    }
+  })
+
+  it('keeps domain vocabulary that mixes letter case (units, acronyms)', () => {
+    // Unités (kV, mA, kWh, dB(A)) et sigles métier ne sont pas des mots
+    // collés : ils ne doivent pas basculer sur le texte de repli.
+    for (const legit of [
+      'Elle semble adaptée aux interventions jusqu’à 20 kV et 400 mA.',
+      'Elle semble utile pour vos chantiers soumis au seuil de 85 dB(A).',
+      'Il semble pertinent de prévoir un PrAP avant la mise en service.',
+      'Cette formation semble adaptée aux équipes sur batteries 96 kWh.'
+    ]) {
+      expect(sanitizeJustification(legit).issues).not.toContain('corrupted-justification')
+    }
+  })
+
   it('softens future-tense promises even next to a conditional marker', () => {
     expect(
       sanitizeJustification('Cette formation semble adaptée, et vous obtiendrez la certification.')
@@ -134,6 +161,19 @@ describe('applyWordingGuardrails', () => {
     expect(recommendations[0].justification).toBe(FALLBACK_JUSTIFICATION)
     expect(recommendations[1].justification).toBe('Semble utile en complément.')
     expect(issues).toEqual(['missing-justification'])
+  })
+
+  it('replaces a corrupted justification with the fallback wording', () => {
+    const { recommendations, issues } = applyWordingGuardrails([
+      recommendation(
+        'a',
+        'Cette formation S.S.T semble adaptée si vous souhaitez_uidocation aux questions de santé.',
+        'primary'
+      )
+    ])
+
+    expect(recommendations[0].justification).toBe(FALLBACK_JUSTIFICATION)
+    expect(issues).toEqual(['corrupted-justification'])
   })
 
   it('always promotes the first kept recommendation to primary', () => {

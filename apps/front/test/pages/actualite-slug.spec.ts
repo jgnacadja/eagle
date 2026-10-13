@@ -30,7 +30,7 @@ const articleFixture: Article = {
   excerpt: 'Les échéances de recyclage se rapprochent.',
   content:
     '<h2>Pourquoi 2027 concentre les échéances</h2><p>À retenir : 3 à 6 mois avant l’échéance.</p><h2>Comment étaler les recyclages</h2><p>CACES R489 — Autorisation de conduite</p>',
-  category: 'Réglementation & obligations',
+  category: { slug: 'reglementation-obligations', name: 'Réglementation & obligations' },
   author_name: 'Équipe réglementation LEARN UP ACADEMY',
   author_image: null,
   region: null,

@@ -244,7 +244,7 @@ describe('EntreprisePage', () => {
     expect(wrapper.find('img[alt="Logo Amazon"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('«')
     expect(wrapper.text()).toContain('Douze habilitations à renouveler')
-    expect(wrapper.text()).toContain('Avis réels et références publiées')
+    expect(wrapper.findAll('.testimonial-card')).toHaveLength(1)
   })
 
   it('affiche les blocs "Pour aller plus loin"', async () => {

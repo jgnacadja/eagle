@@ -5,7 +5,7 @@ import App from '~/app.vue'
 
 vi.stubGlobal('ref', ref)
 vi.stubGlobal('computed', computed)
-vi.stubGlobal('useRoute', () => ({ path: '/formations/', fullPath: '/formations/' }))
+vi.stubGlobal('useRoute', () => ({ path: '/formations', fullPath: '/formations' }))
 vi.stubGlobal('useRequestURL', () => ({ origin: 'https://learnup.fr' }))
 vi.stubGlobal('useSeoMeta', vi.fn())
 
@@ -31,6 +31,6 @@ describe('app.vue', () => {
     const pageKey = wrapper.findComponent(NuxtPageStub).props('pageKey') as (route: {
       path: string
     }) => string
-    expect(pageKey({ path: '/formations/caces/' })).toBe('/formations/caces/')
+    expect(pageKey({ path: '/formations/caces' })).toBe('/formations/caces')
   })
 })

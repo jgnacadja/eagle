@@ -173,6 +173,9 @@ const families: FamilleFormation[] = [
     intro: null,
     icon: null,
     image: null,
+    subnav_title: null,
+    audience_text: null,
+    validity_text: null,
     seo_title: null,
     seo_description: null,
     seo_canonical: null
@@ -191,8 +194,8 @@ const useContentSeoMock = vi.fn()
 const directusRequest = vi.fn()
 const fetchMock = vi.fn()
 const route = reactive({
-  query: {} as Record<string, string>,
-  path: '/formations/',
+  query: {} as Record<string, string | string[]>,
+  path: '/formations',
   meta: {}
 })
 
@@ -466,7 +469,7 @@ describe('pages/formations/index', () => {
     const source = toValue(useContentSeoMock.mock.calls[0]![0])
     expect(source).toMatchObject({
       seo_title: 'Catalogue de formations — LEARN UP ACADEMY',
-      seo_canonical: expect.stringContaining('/formations/')
+      seo_canonical: expect.stringContaining('/formations')
     })
   })
 
@@ -476,7 +479,7 @@ describe('pages/formations/index', () => {
 
     const source = toValue(useContentSeoMock.mock.calls[0]![0])
     expect(source.seo_robots).toBe('noindex, follow')
-    expect(source.seo_canonical).toBe('https://learnup.test/formations/')
+    expect(source.seo_canonical).toBe('https://learnup.test/formations')
   })
 
   it('garde une self-canonical sur ?page=N sans filtre', async () => {
@@ -485,7 +488,7 @@ describe('pages/formations/index', () => {
 
     const source = toValue(useContentSeoMock.mock.calls[0]![0])
     expect(source.seo_robots ?? null).toBeNull()
-    expect(source.seo_canonical).toBe('https://learnup.test/formations/?page=3')
+    expect(source.seo_canonical).toBe('https://learnup.test/formations?page=3')
   })
 
   it('noindex même paginée quand un filtre est actif', async () => {
@@ -494,7 +497,7 @@ describe('pages/formations/index', () => {
 
     const source = toValue(useContentSeoMock.mock.calls[0]![0])
     expect(source.seo_robots).toBe('noindex, follow')
-    expect(source.seo_canonical).toBe('https://learnup.test/formations/')
+    expect(source.seo_canonical).toBe('https://learnup.test/formations')
   })
 
   describe('raccourcis familles (showAllFamilies)', () => {

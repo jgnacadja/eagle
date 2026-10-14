@@ -83,7 +83,7 @@ describe('AssistantConversation', () => {
       certification: 'SST',
       justification: 'Semble adaptée.',
       availability: null,
-      url: '/formations/secours/sst/'
+      url: '/formations/secours/sst'
     }
     const wrapper = mountConversation({
       entries: [
@@ -130,7 +130,7 @@ describe('AssistantConversation', () => {
       certification: null,
       justification: 'Semble adaptée.',
       availability: null,
-      url: '/formations/secours/sst/',
+      url: '/formations/secours/sst',
       rank: 'primary' as const
     }
     const wrapper = mountConversation({
@@ -155,7 +155,7 @@ describe('AssistantConversation', () => {
     expect(status.text()).toContain('Recherche simplifiée')
     expect(status.text()).toContain("l'assistant IA est momentanément indisponible")
     // Sortie conseiller du bandeau : besoin hors URL, état d'origine « degraded ».
-    expect(status.find('a').attributes('href')).toBe('/parler-a-votre-conseiller/')
+    expect(status.find('a').attributes('href')).toBe('/parler-a-votre-conseiller')
     expect(status.find('a').attributes('data-state')).toBe(
       JSON.stringify({ assistantHandoff: { need: 'sst' } })
     )
@@ -205,7 +205,7 @@ describe('AssistantConversation', () => {
         city: 'Créteil',
         department: 'Val-de-Marne'
       },
-      url: '/formations/secours/sst/',
+      url: '/formations/secours/sst',
       rank: 'primary' as const
     }
     const wrapper = mountConversation({
@@ -246,7 +246,7 @@ describe('AssistantConversation', () => {
       certification: null,
       justification: 'Semble adaptée.',
       availability: null,
-      url: '/formations/secours/sst/'
+      url: '/formations/secours/sst'
     }
     const wrapper = mountConversation({
       entries: [
@@ -292,7 +292,7 @@ describe('AssistantConversation', () => {
       certification: null,
       justification: 'Semble adaptée.',
       availability: null,
-      url: '/formations/secours/sst/',
+      url: '/formations/secours/sst',
       rank: 'primary' as const
     }
     const wrapper = mountConversation({
@@ -330,7 +330,7 @@ describe('AssistantConversation', () => {
     }
     const advisorLinks = wrapper
       .findAll('a')
-      .filter((a) => a.attributes('href') === '/parler-a-votre-conseiller/')
+      .filter((a) => a.attributes('href') === '/parler-a-votre-conseiller')
     // Pied des recommandations, aucun résultat, hors catalogue, indisponible.
     expect(advisorLinks).toHaveLength(4)
     expect(advisorLinks.map((a) => a.text())).toEqual([
@@ -352,11 +352,11 @@ describe('AssistantConversation', () => {
 
     // Carte sans session et demande personnalisée : même transmission.
     expect(wrapper.find('.rec-card').attributes('data-advisor')).toBe(
-      JSON.stringify({ path: '/parler-a-votre-conseiller/', state })
+      JSON.stringify({ path: '/parler-a-votre-conseiller', state })
     )
     expect(wrapper.find('.rec-card').attributes('data-demande')).toBe(
       JSON.stringify({
-        path: '/centres/demande-de-formation/',
+        path: '/centres/demande-de-formation',
         query: { famille: 'secours', formation: 'sst' },
         state
       })
@@ -364,7 +364,7 @@ describe('AssistantConversation', () => {
     const demande = wrapper
       .findAll('a')
       .find((a) => a.text() === 'Faire une demande personnalisée')!
-    expect(demande.attributes('href')).toBe('/centres/demande-de-formation/')
+    expect(demande.attributes('href')).toBe('/centres/demande-de-formation')
     expect(demande.attributes('data-state')).toBe(JSON.stringify(state))
   })
 
@@ -372,7 +372,7 @@ describe('AssistantConversation', () => {
     const wrapper = mountConversation({ unavailable: true })
     const advisor = wrapper
       .findAll('a')
-      .find((a) => a.attributes('href') === '/parler-a-votre-conseiller/')
+      .find((a) => a.attributes('href') === '/parler-a-votre-conseiller')
     expect(advisor).toBeDefined()
     expect(advisor!.attributes('data-state')).toBeUndefined()
   })

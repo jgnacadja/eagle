@@ -18,9 +18,9 @@ function mountNotFound(props: Record<string, unknown> = {}) {
   return mount(NotFound, {
     props: {
       title: 'Introuvable',
-      primaryTo: '/formations/',
+      primaryTo: '/formations',
       primaryLabel: 'Voir le catalogue',
-      secondaryTo: '/centres/',
+      secondaryTo: '/centres',
       secondaryLabel: 'Voir les centres',
       ...props
     },
@@ -35,8 +35,8 @@ describe('NotFound', () => {
 
     expect(wrapper.find('h1').text()).toBe('Introuvable')
     expect(wrapper.text()).toContain("Cette page n'existe pas.")
-    expect(wrapper.find('a[href="/formations/"]').text()).toBe('Voir le catalogue')
-    expect(wrapper.find('a[href="/centres/"]').text()).toBe('Voir les centres')
+    expect(wrapper.find('a[href="/formations"]').text()).toBe('Voir le catalogue')
+    expect(wrapper.find('a[href="/centres"]').text()).toBe('Voir les centres')
   })
 
   it('links the title via aria-labelledby', () => {

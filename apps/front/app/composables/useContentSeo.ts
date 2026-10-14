@@ -42,7 +42,8 @@ export function useContentSeo(
       const title = resolved.seo_title || toValue(fallbackTitle)
       // Self-canonical garanti (ST-03) : champ Directus explicite, sinon
       // l'URL canonique de la requête — `route.path` est toujours la forme
-      // slashée (middleware 301 amont), sans query ni fragment. Origine de
+      // sans slash final (middleware 301 amont), sans query ni fragment.
+      // Origine de
       // la requête et non siteUrl : la canonical reste cohérente sur les
       // previews Vercel.
       const canonical = resolved.seo_canonical || `${requestUrl.origin}${route.path}`

@@ -252,7 +252,7 @@
             <div class="mt-lg flex flex-wrap justify-center gap-md">
               <Button size="pill-sm" @click="openAssistant"> Être guidé dans mon choix </Button>
               <Button as-child variant="outline" size="pill-sm">
-                <NuxtLink to="/parler-a-votre-conseiller/">Parler à votre conseiller</NuxtLink>
+                <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
               </Button>
             </div>
             <div class="mt-lg flex gap-lg text-small font-semibold">
@@ -260,7 +260,7 @@
                 Réinitialiser les filtres
               </Button>
               <NuxtLink
-                to="/formations/"
+                to="/formations"
                 class="text-primary transition-colors hover:text-accent-text"
                 @click="resetFilters"
               >
@@ -274,7 +274,7 @@
             v-else-if="catalog.error.value"
             class="mt-lg"
             title="Le catalogue n'a pas pu être chargé."
-            link-to="/formations/"
+            link-to="/formations"
             link-label="Réessayer"
             @retry="catalog.refresh()"
           >
@@ -359,7 +359,7 @@
           Être guidé dans mon choix
         </Button>
         <Button as-child variant="outline-inverse" size="pill-sm" class="w-full sm:w-auto">
-          <NuxtLink to="/parler-a-votre-conseiller/">Parler à votre conseiller</NuxtLink>
+          <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
         </Button>
       </CtaBanner>
     </section>
@@ -500,7 +500,7 @@ useContentSeo(
         'Formations réglementaires et professionnelles, en centre partout en France ou dans votre entreprise.',
       seo_robots: filtered ? 'noindex, follow' : null,
       seo_canonical:
-        !filtered && page > 1 ? `${siteUrl}/formations/?page=${page}` : `${siteUrl}/formations/`
+        !filtered && page > 1 ? `${siteUrl}/formations?page=${page}` : `${siteUrl}/formations`
     }
   }),
   'Catalogue de formations — LEARN UP ACADEMY'
@@ -866,7 +866,7 @@ const familyShortcuts = computed<
         label,
         caption: `${count} formation${count > 1 ? 's' : ''}`,
         linkLabel: 'Voir la famille',
-        to: `/formations/${slug}/`
+        to: `/formations/${slug}`
       }))
   }
 
@@ -877,7 +877,7 @@ const familyShortcuts = computed<
       label: family.label,
       caption: `${count} formation${count > 1 ? 's' : ''}`,
       linkLabel: 'Voir la famille',
-      to: publishedSlugs.has(family.key) ? `/formations/${family.key}/` : null
+      to: publishedSlugs.has(family.key) ? `/formations/${family.key}` : null
     }
   })
 

@@ -69,7 +69,7 @@
 
           <NuxtLink
             v-hero="heroStagger(5)"
-            to="/parler-a-votre-conseiller/"
+            to="/parler-a-votre-conseiller"
             class="mt-lg inline-block text-small font-bold text-accent-text underline underline-offset-4 transition-colors hover:text-primary"
           >
             Vous préférez échanger ? Parler à votre conseiller <span class="link-arrow">→</span>
@@ -219,7 +219,7 @@
             size="pill-lg"
             class="hidden lg:inline-flex gap-xs mt-lg w-full sm:w-auto"
           >
-            <NuxtLink to="/centres/">
+            <NuxtLink to="/centres">
               Voir la carte des centres <span class="link-arrow">→</span>
             </NuxtLink>
           </Button>
@@ -246,7 +246,7 @@
           size="pill-lg"
           class="gap-xs mt-lg w-full sm:w-auto lg:hidden"
         >
-          <NuxtLink to="/centres/">
+          <NuxtLink to="/centres">
             Voir la carte des centres <span class="link-arrow">→</span>
           </NuxtLink>
         </Button>
@@ -327,7 +327,7 @@
         </div>
         <Button as-child size="pill-lg" class="gap-xs w-full sm:w-auto">
           <NuxtLink
-            :to="selectedTag ? `/formations/?q=${encodeURIComponent(selectedTag)}` : '/formations/'"
+            :to="selectedTag ? `/formations?q=${encodeURIComponent(selectedTag)}` : '/formations'"
           >
             {{
               selectedTag
@@ -414,7 +414,7 @@
         </form>
 
         <Button as-child variant="accent" size="pill-lg" class="gap-xs mt-lg w-full sm:w-auto">
-          <NuxtLink to="/parler-a-votre-conseiller/">
+          <NuxtLink to="/parler-a-votre-conseiller">
             Échanger avec votre conseiller <span class="link-arrow">→</span>
           </NuxtLink>
         </Button>
@@ -493,7 +493,7 @@ const finalSearch = ref('')
 function onHeroSearch(value?: string) {
   const q = (value ?? heroSearch.value).trim()
   navigateTo({
-    path: '/parler-a-votre-conseiller/',
+    path: '/parler-a-votre-conseiller',
     query: q ? { q } : {}
   })
 }
@@ -501,7 +501,7 @@ function onHeroSearch(value?: string) {
 function onFinalSearch(value?: string) {
   const q = (value ?? finalSearch.value).trim()
   navigateTo({
-    path: '/parler-a-votre-conseiller/',
+    path: '/parler-a-votre-conseiller',
     query: q ? { q } : {}
   })
 }
@@ -541,21 +541,21 @@ const segments = [
     title: 'BTP',
     body: 'Formations essentielles chantiers.',
     cta: 'Voir les formations',
-    to: `/formations/?q=${encodeURIComponent('BTP')}`
+    to: `/formations?q=${encodeURIComponent('BTP')}`
   },
   {
     icon: IconFactory,
     title: 'Industrie',
     body: 'Habilitations et interventions.',
     cta: 'Voir les formations',
-    to: `/formations/?q=${encodeURIComponent('Industrie')}`
+    to: `/formations?q=${encodeURIComponent('Industrie')}`
   },
   {
     icon: IconBriefcase,
     title: 'Travail temporaire',
     body: 'Recyclages des intérimaires.',
     cta: 'Voir les formations',
-    to: `/formations/?q=${encodeURIComponent('Travail temporaire')}`
+    to: `/formations?q=${encodeURIComponent('Travail temporaire')}`
   }
 ]
 
@@ -571,22 +571,22 @@ const fallbackFormations = [
   {
     title: 'CACES® R489 Chariots élévateurs',
     body: 'Catégories 1A, 1B, 3 et 5 — Initiale et recyclage.',
-    to: '/formations/caces-conduite-engins/caces-r489-chariots-elevateurs/'
+    to: '/formations/caces-conduite-engins/caces-r489-chariots-elevateurs'
   },
   {
     title: 'Habilitation électrique B1V / B2V / BR / BC',
     body: 'Travaux électriques basse tension et interventions.',
-    to: '/formations/habilitation-electrique/habilitation-electrique-b1v-b2v-br-bc/'
+    to: '/formations/habilitation-electrique/habilitation-electrique-b1v-b2v-br-bc'
   },
   {
     title: 'SST — Sauveteur Secouriste du Travail',
     body: 'Formation initiale aux premiers secours en entreprise.',
-    to: '/formations/secourisme/sauveteur-secouriste-du-travail-sst/'
+    to: '/formations/secourisme/sauveteur-secouriste-du-travail-sst'
   },
   {
     title: 'Travail en hauteur & port du harnais',
     body: 'Prévention des chutes et utilisation des EPI.',
-    to: '/formations/hauteur/travail-en-hauteur-port-du-harnais/'
+    to: '/formations/hauteur/travail-en-hauteur-port-du-harnais'
   }
 ]
 
@@ -622,7 +622,7 @@ const formations = computed(() => {
         return {
           title: mapped.title,
           body: mapped.description,
-          to: mapped.to ?? '/formations/'
+          to: mapped.to ?? '/formations'
         }
       })
     }
@@ -633,7 +633,7 @@ const formations = computed(() => {
         return {
           title: mapped.title,
           body: mapped.description,
-          to: mapped.to ?? '/formations/'
+          to: mapped.to ?? '/formations'
         }
       })
     }
@@ -653,7 +653,7 @@ const formations = computed(() => {
       return {
         title: mapped.title,
         body: mapped.description,
-        to: mapped.to ?? '/formations/'
+        to: mapped.to ?? '/formations'
       }
     })
   }
@@ -695,12 +695,12 @@ const furtherLinks = [
   {
     title: "Le réseau d'entreprises clientes",
     body: 'Secteurs, typologies, références.',
-    to: '/entreprise-reseau/'
+    to: '/entreprise-reseau'
   },
   {
     title: 'Les partenaires du réseau',
     body: 'Centres et organismes du réseau.',
-    to: '/partenaire-reseau/'
+    to: '/partenaire-reseau'
   }
 ]
 

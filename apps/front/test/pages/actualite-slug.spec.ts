@@ -542,7 +542,7 @@ describe('pages/actualites/[slug]', () => {
     fetchMock.mockResolvedValue({ ...relatedCourse, familySlug: null })
     const wrapper = await mountPage()
 
-    expect(wrapper.find('a[href^="/formations/"]').exists()).toBe(false)
+    expect(wrapper.find('a[href^="/formations"]').exists()).toBe(false)
   })
 
   it('active le titre courant au clic dans la table des matières', async () => {

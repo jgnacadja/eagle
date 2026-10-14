@@ -24,7 +24,7 @@
         </li>
         <li>
           <NuxtLink
-            to="/formations/"
+            to="/formations"
             class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
@@ -56,7 +56,7 @@
           </li>
           <li v-if="selectedFamille" class="col-span-2">
             <NuxtLink
-              :to="`/formations/${selectedFamille}/`"
+              :to="`/formations/${selectedFamille}`"
               class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
               @click="$emit('close')"
             >

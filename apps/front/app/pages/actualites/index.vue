@@ -72,7 +72,7 @@
         <LoadError
           v-else-if="articlesError"
           title="Les actualités n'ont pas pu être chargées."
-          link-to="/actualites/"
+          link-to="/actualites"
           link-label="Réessayer"
           @retry="refreshArticles"
         >
@@ -119,7 +119,7 @@
                 </p>
                 <h3 class="font-display text-h3 font-extrabold leading-snug text-ink lg:text-h2">
                   <NuxtLink
-                    :to="`/actualites/${featuredArticle.slug}/`"
+                    :to="`/actualites/${featuredArticle.slug}`"
                     class="transition-colors hover:text-accent-text"
                   >
                     {{ featuredArticle.title }}
@@ -129,7 +129,7 @@
                   {{ featuredArticle.excerpt }}
                 </p>
                 <NuxtLink
-                  :to="`/actualites/${featuredArticle.slug}/`"
+                  :to="`/actualites/${featuredArticle.slug}`"
                   class="mt-xs text-small font-semibold text-ink transition-colors hover:text-accent-text"
                 >
                   Lire l'article <span class="link-arrow">→</span>
@@ -156,7 +156,7 @@
                   :date="formatArticleDate(article.publish_at)"
                   :excerpt="article.excerpt ?? ''"
                   :image-url="assetUrl(article.cover_image) ?? undefined"
-                  :to="`/actualites/${article.slug}/`"
+                  :to="`/actualites/${article.slug}`"
                   class="h-full"
                 />
               </li>
@@ -395,7 +395,7 @@ function setCategory(category: string) {
         categoryOptions.value.find((option) => option.value === category)?.label ?? category,
       results_count: listData.value?.total ?? 0
     })
-    navigateTo({ path: '/actualites/', query: filtersQuery({ category }) })
+    navigateTo({ path: '/actualites', query: filtersQuery({ category }) })
   }
 }
 
@@ -403,7 +403,7 @@ const regionModel = computed<string>({
   get: () => selectedRegion.value,
   set: (region) => {
     if (region !== selectedRegion.value) {
-      navigateTo({ path: '/actualites/', query: filtersQuery({ region }) })
+      navigateTo({ path: '/actualites', query: filtersQuery({ region }) })
     }
   }
 })
@@ -412,7 +412,7 @@ const pageModel = computed<number>({
   get: () => currentPage.value,
   set: (page) => {
     if (page !== currentPage.value) {
-      navigateTo({ path: '/actualites/', query: filtersQuery({ page }) })
+      navigateTo({ path: '/actualites', query: filtersQuery({ page }) })
     }
   }
 })

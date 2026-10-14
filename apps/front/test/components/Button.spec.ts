@@ -56,12 +56,12 @@ describe('Button', () => {
   it('renders as child with as-child', () => {
     const Test = defineComponent({
       components: { Btn: Button },
-      template: `<Btn as-child variant="accent" size="pill"><a href="/x/">Lien</a></Btn>`
+      template: `<Btn as-child variant="accent" size="pill"><a href="/x">Lien</a></Btn>`
     })
     const wrapper = mount(Test, { global: { stubs } })
     const anchor = wrapper.find('a')
     expect(anchor.exists()).toBe(true)
-    expect(anchor.attributes('href')).toBe('/x/')
+    expect(anchor.attributes('href')).toBe('/x')
     expect(anchor.classes()).toContain('bg-accent')
   })
 })

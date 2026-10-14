@@ -148,7 +148,7 @@ describe('useCatalog helpers', () => {
     expect(mapped.duration).toBe('moyenne')
     expect(mapped.days).toBe(3)
     expect(mapped.certifications).toEqual(['certification', 'reglementaire'])
-    expect(mapped.to).toBe('/formations/caces-conduite-engins/caces-r489-chariots-elevateurs/')
+    expect(mapped.to).toBe('/formations/caces-conduite-engins/caces-r489-chariots-elevateurs')
   })
 
   it('falls back to the slug when family name is not provided', () => {

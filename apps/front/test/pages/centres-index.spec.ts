@@ -556,7 +556,7 @@ describe('pages/centres/index', () => {
       const wrapper = await mountPage()
       await wrapper.findAll('.center-card')[1]!.trigger('click')
 
-      expect(navigateToMock).toHaveBeenCalledWith('/centres/vitry/')
+      expect(navigateToMock).toHaveBeenCalledWith('/centres/vitry')
       // Pas de sélection : la popup sticky est réservée au mode carte.
       expect(wrapper.find('.center-card.sticky').exists()).toBe(false)
     } finally {

@@ -9,11 +9,11 @@ const stubs = {
 describe('MegaMenuCard', () => {
   it('rend un lien carte avec titre et meta', () => {
     const wrapper = mount(MegaMenuCard, {
-      props: { to: '/centres/creteil/', title: 'Centre de Créteil', meta: 'Val-de-Marne' },
+      props: { to: '/centres/creteil', title: 'Centre de Créteil', meta: 'Val-de-Marne' },
       global: { stubs }
     })
 
-    const link = wrapper.find('a[href="/centres/creteil/"]')
+    const link = wrapper.find('a[href="/centres/creteil"]')
     expect(link.exists()).toBe(true)
     expect(wrapper.text()).toContain('Centre de Créteil')
     expect(wrapper.text()).toContain('Val-de-Marne')
@@ -21,7 +21,7 @@ describe('MegaMenuCard', () => {
 
   it('masque la meta quand elle est absente', () => {
     const wrapper = mount(MegaMenuCard, {
-      props: { to: '/centres/creteil/', title: 'Centre de Créteil' },
+      props: { to: '/centres/creteil', title: 'Centre de Créteil' },
       global: { stubs }
     })
 
@@ -30,7 +30,7 @@ describe('MegaMenuCard', () => {
 
   it('rend le slot eyebrow au-dessus du titre', () => {
     const wrapper = mount(MegaMenuCard, {
-      props: { to: '/actualites/foo/', title: 'Une actualité' },
+      props: { to: '/actualites/foo', title: 'Une actualité' },
       slots: { eyebrow: '<span class="eyebrow-test">PRESSE · 12 mai</span>' },
       global: { stubs }
     })
@@ -42,7 +42,7 @@ describe('MegaMenuCard', () => {
 
   it('émet select au clic', async () => {
     const wrapper = mount(MegaMenuCard, {
-      props: { to: '/centres/creteil/', title: 'Centre de Créteil' },
+      props: { to: '/centres/creteil', title: 'Centre de Créteil' },
       global: { stubs }
     })
 

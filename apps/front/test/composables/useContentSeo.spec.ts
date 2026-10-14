@@ -16,7 +16,7 @@ vi.stubGlobal('useHead', (input: ComputedRef<HeadPayload>) => {
 })
 
 // `useRoute`/`useRequestURL` alimentent le canonical de repli (ST-03).
-let routePath = '/formations/x/'
+let routePath = '/formations/x'
 vi.stubGlobal('useRoute', () => ({ path: routePath }))
 vi.stubGlobal('useRequestURL', () => new URL(`https://learnup.test${routePath}`))
 
@@ -35,7 +35,7 @@ const COURSE_LD = {
 describe('useContentSeo', () => {
   beforeEach(() => {
     lastHead = undefined
-    routePath = '/formations/x/'
+    routePath = '/formations/x'
   })
 
   it('alimente title/meta/canonical depuis la source SEO', () => {
@@ -63,9 +63,9 @@ describe('useContentSeo', () => {
   })
 
   it('déduit le self-canonical de la route quand seo_canonical est absent (ST-03)', () => {
-    routePath = '/centres/lille/'
+    routePath = '/centres/lille'
     useContentSeo({}, 'Fallback')
-    expect(head().link).toEqual([{ rel: 'canonical', href: 'https://learnup.test/centres/lille/' }])
+    expect(head().link).toEqual([{ rel: 'canonical', href: 'https://learnup.test/centres/lille' }])
   })
 
   it('émet og:image et twitter:image quand seo_image est fourni', () => {

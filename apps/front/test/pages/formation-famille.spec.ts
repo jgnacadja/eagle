@@ -6,6 +6,7 @@ import { resolveSeoDescription, resolveSeoTitle } from '~/utils/metaPatterns'
 import LoadError from '~/components/ErrorState/LoadError.vue'
 import NotFound from '~/components/ErrorState/NotFound.vue'
 import FamillePage from '~/pages/formations/[famille]/index.vue'
+import { assertHeadingStructure } from '../helpers/headings'
 
 const family: FamilleFormation = {
   id: 1,
@@ -328,7 +329,7 @@ describe('pages/formations/[famille]', () => {
     routeMock = {
       params: { famille: 'caces-conduite-engins' },
       query: {},
-      path: '/formations/caces-conduite-engins/',
+      path: '/formations/caces-conduite-engins',
       meta: {}
     }
     catalogState.pending = false
@@ -357,6 +358,14 @@ describe('pages/formations/[famille]', () => {
     expect(wrapper.findAll('.formation-card')).toHaveLength(courses.length)
     expect(wrapper.text()).toContain('CACES R489 — chariots élévateurs')
     expect(wrapper.text()).toContain('CACES R490 — grues de chargement')
+    assertHeadingStructure(wrapper)
+  })
+
+  it('affiche le champ h1 Directus quand renseigné, sinon le nom de famille', async () => {
+    family.h1 = 'H1 éditorial famille'
+    const wrapper = await mountPage()
+    expect(wrapper.find('h1').text()).toBe('H1 éditorial famille')
+    family.h1 = null
   })
 
   it('affiche les cartes informations public concerné et validité', async () => {
@@ -396,7 +405,7 @@ describe('pages/formations/[famille]', () => {
 
     expect(routeMock.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
-      { label: 'Formations', to: '/formations/' },
+      { label: 'Formations', to: '/formations' },
       { label: "CACES & conduite d'engins" }
     ])
 
@@ -413,13 +422,13 @@ describe('pages/formations/[famille]', () => {
     directusRequest.mockResolvedValue([])
 
     routeMock.params.famille = 'famille-inconnue'
-    routeMock.path = '/formations/famille-inconnue/'
+    routeMock.path = '/formations/famille-inconnue'
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain("Cette famille de formations n'est pas disponible.")
     expect(routeMock.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
-      { label: 'Formations', to: '/formations/' },
+      { label: 'Formations', to: '/formations' },
       { label: 'Famille introuvable' }
     ])
 
@@ -445,13 +454,13 @@ describe('pages/formations/[famille]', () => {
     directusRequest.mockResolvedValue([])
 
     routeMock.params.famille = 'famille-inconnue'
-    routeMock.path = '/formations/famille-inconnue/'
+    routeMock.path = '/formations/famille-inconnue'
     const wrapper = await mountPage()
 
     await wrapper.find('.search-stub').trigger('click')
 
     expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/formations/',
+      path: '/formations',
       query: { q: 'caces' }
     })
   })
@@ -459,7 +468,7 @@ describe('pages/formations/[famille]', () => {
   it('passe le statut 404 quand la famille est introuvable', async () => {
     directusRequest.mockResolvedValue([])
     routeMock.params.famille = 'famille-inconnue'
-    routeMock.path = '/formations/famille-inconnue/'
+    routeMock.path = '/formations/famille-inconnue'
     await mountPage()
 
     expect(setResponseStatusMock).toHaveBeenCalledWith(requestEvent, 404, 'Famille introuvable')
@@ -496,7 +505,7 @@ describe('pages/formations/[famille]', () => {
     await flushPromises()
 
     expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/formations/caces-conduite-engins/',
+      path: '/formations/caces-conduite-engins',
       query: { autre: 'x' }
     })
   })
@@ -680,7 +689,7 @@ describe('pages/formations/[famille]', () => {
     await wrapper.find('.search-empty').trigger('click')
     await flushPromises()
 
-    expect(navigateToMock).toHaveBeenCalledWith({ path: '/formations/', query: {} })
+    expect(navigateToMock).toHaveBeenCalledWith({ path: '/formations', query: {} })
   })
 
   it('réessaie le chargement du catalogue sur retry', async () => {

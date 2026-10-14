@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import LegalPage from '~/components/Legal/Page.vue'
 import type { LegalPage as LegalPageModel, LegalPageTab } from '~/types/legal'
+import { assertHeadingStructure } from '../helpers/headings'
 
 const navigateToMock = vi.fn()
 
@@ -50,6 +51,7 @@ const page: LegalPageModel = {
   slug: 'mentions-legales',
   label: 'Mentions légales',
   title: 'Mentions légales',
+  h1: null,
   lastUpdated: '01 septembre 2026',
   sections: [
     {
@@ -103,6 +105,15 @@ describe('components/LegalPage', () => {
     }
 
     expect(wrapper.text()).toContain(page.cta.label)
+    assertHeadingStructure(wrapper)
+  })
+
+  it('affiche le champ h1 éditorial quand renseigné, sinon le titre', () => {
+    const wrapper = mount(LegalPage, {
+      props: { page: { ...page, h1: 'H1 éditorial légal' }, tabs },
+      global: { stubs }
+    })
+    expect(wrapper.find('h1').text()).toBe('H1 éditorial légal')
   })
 
   it('rend le corps WYSIWYG des sections en HTML', () => {
@@ -129,7 +140,7 @@ describe('components/LegalPage', () => {
     // Au moins un lien vers le sommaire et un lien par section.
     expect(links.length).toBeGreaterThan(page.sections.length)
 
-    expect(links.some((a) => a.attributes('href') === '/confidentialite/')).toBe(true)
+    expect(links.some((a) => a.attributes('href') === '/confidentialite')).toBe(true)
 
     const firstSectionHref = `#${page.sections[0]?.id ?? ''}`
     const firstSummaryLink = links.find((a) => a.attributes('href') === firstSectionHref)
@@ -143,7 +154,7 @@ describe('components/LegalPage', () => {
     const select = wrapper.find('select')
     await select.setValue('confidentialite')
 
-    expect(navigateToMock).toHaveBeenCalledWith('/confidentialite/')
+    expect(navigateToMock).toHaveBeenCalledWith('/confidentialite')
   })
 
   it('affiche le sommaire avec la première section active par défaut', () => {

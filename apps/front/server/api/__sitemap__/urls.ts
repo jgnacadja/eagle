@@ -163,21 +163,21 @@ function buildSitemapUrls(src: SitemapSources): SitemapUrlInput[] {
     }
   }
 
-  // Slash final obligatoire : le middleware global 301 redirige toute URL
-  // sans slash vers sa forme canonique — le sitemap n'émet que des URLs
-  // canoniques, jamais d'entrée redirigée.
-  addRows(src.familles, (slug) => `/formations/${seg(slug)}/`)
-  addRows(src.centres, (slug) => `/centres/${seg(slug)}/`)
+  // Slash final proscrit : le middleware global 301 redirige toute URL
+  // slashée vers sa forme canonique sans slash — le sitemap n'émet que
+  // des URLs canoniques, jamais d'entrée redirigée.
+  addRows(src.familles, (slug) => `/formations/${seg(slug)}`)
+  addRows(src.centres, (slug) => `/centres/${seg(slug)}`)
   addRows(
     src.articles,
-    (slug) => `/actualites/${seg(slug)}/`,
+    (slug) => `/actualites/${seg(slug)}`,
     (row) => row.publish_at
   )
   // T9/T10 : les catégories vivent dans le même namespace que les articles.
-  addRows(src.categories, (slug) => `/actualites/${seg(slug)}/`)
+  addRows(src.categories, (slug) => `/actualites/${seg(slug)}`)
   addRows(
     src.legales,
-    (slug) => `/${seg(slug)}/`,
+    (slug) => `/${seg(slug)}`,
     (row) => row.updated_at
   )
 
@@ -185,19 +185,27 @@ function buildSitemapUrls(src: SitemapSources): SitemapUrlInput[] {
   // une formation orpheline ne doit jamais apparaître dans le sitemap.
   for (const course of src.formations) {
     if (course.slug && course.familySlug) {
-      push(`/formations/${seg(course.familySlug)}/${seg(course.slug)}/`)
+      push(`/formations/${seg(course.familySlug)}/${seg(course.slug)}`)
     }
   }
 
   return [...urls.values()]
 }
 
+// Le `$fetch` global Nitro est typé contre le registre des routes internes :
+// passer un `string` dynamique fait exploser la profondeur d'inférence TS.
+// Cast vers une signature générique — même runtime (`$fetch` = ofetch).
+const fetchJson = $fetch as unknown as (
+  url: string,
+  opts?: { query?: Record<string, unknown>; headers?: Record<string, string> }
+) => Promise<unknown>
+
 export default defineCachedEventHandler(
   defineSitemapEventHandler(async (event) => {
     const config = useRuntimeConfig(event)
     const token = config.internalApiToken
     const headers = typeof token === 'string' && token ? { 'x-internal-ssr': token } : undefined
-    const api: ApiFetch = (path, query) => $fetch(`${config.apiBase}${path}`, { query, headers })
+    const api: ApiFetch = (path, query) => fetchJson(`${config.apiBase}${path}`, { query, headers })
 
     const raw = getQuery(event).set
     const set = SITEMAP_SETS.includes(raw as SitemapSet) ? (raw as SitemapSet) : undefined

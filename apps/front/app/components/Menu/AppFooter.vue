@@ -13,18 +13,18 @@
         </div>
 
         <nav class="col-span-1 md:col-span-1" aria-label="Formations">
-          <h3 class="text-badge md:text-xs font-bold text-ink-inverse uppercase">Formations</h3>
+          <p class="text-badge md:text-xs font-bold text-ink-inverse uppercase">Formations</p>
           <ul class="mt-md space-y-sm text-small">
             <li v-for="famille in familles.slice(0, 2)" :key="famille.slug">
               <NuxtLink
-                :to="`/formations/${famille.slug}/`"
+                :to="`/formations/${famille.slug}`"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >{{ famille.label }}</NuxtLink
               >
             </li>
             <li>
               <NuxtLink
-                to="/formations/"
+                to="/formations"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Tout le catalogue</NuxtLink
               >
@@ -33,25 +33,25 @@
         </nav>
 
         <nav class="col-span-1 md:col-span-1" aria-label="Entreprises">
-          <h3 class="text-badge md:text-xs font-bold text-ink-inverse uppercase">Entreprises</h3>
+          <p class="text-badge md:text-xs font-bold text-ink-inverse uppercase">Entreprises</p>
           <ul class="mt-md space-y-sm text-small">
             <li>
               <NuxtLink
-                to="/centres/demande-de-formation/"
+                to="/centres/demande-de-formation"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Confier mes formations</NuxtLink
               >
             </li>
             <li>
               <NuxtLink
-                :to="{ path: '/formations/', query: { modalites: 'intra' } }"
+                :to="{ path: '/formations', query: { modalites: 'intra' } }"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Formation intra &amp; sur site</NuxtLink
               >
             </li>
             <li>
               <NuxtLink
-                to="/parler-a-votre-conseiller/"
+                to="/parler-a-votre-conseiller"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Parler à votre conseiller</NuxtLink
               >
@@ -60,25 +60,25 @@
         </nav>
 
         <nav class="col-span-1 md:col-span-1" aria-label="Rejoindre">
-          <h3 class="text-badge md:text-xs font-bold text-ink-inverse uppercase">Rejoindre</h3>
+          <p class="text-badge md:text-xs font-bold text-ink-inverse uppercase">Rejoindre</p>
           <ul class="mt-md space-y-sm text-small">
             <li>
               <NuxtLink
-                :to="{ path: '/rejoindre-le-reseau/', query: { voie: 'centre' } }"
+                :to="{ path: '/rejoindre-le-reseau', query: { voie: 'centre' } }"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Devenir franchisé</NuxtLink
               >
             </li>
             <li>
               <NuxtLink
-                to="/referencer-mon-organisme/"
+                to="/referencer-mon-organisme"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Référencer mon organisme</NuxtLink
               >
             </li>
             <li>
               <NuxtLink
-                :to="{ path: '/rejoindre-le-reseau/', query: { voie: 'formateur' } }"
+                :to="{ path: '/rejoindre-le-reseau', query: { voie: 'formateur' } }"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Formateur indépendant</NuxtLink
               >
@@ -87,25 +87,25 @@
         </nav>
 
         <nav class="col-span-1 md:col-span-1" aria-label="À propos">
-          <h3 class="text-badge md:text-xs font-bold text-ink-inverse uppercase">À propos</h3>
+          <p class="text-badge md:text-xs font-bold text-ink-inverse uppercase">À propos</p>
           <ul class="mt-md space-y-sm text-small">
             <li>
               <NuxtLink
-                to="/a-propos/"
+                to="/a-propos"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Qui sommes-nous</NuxtLink
               >
             </li>
             <li>
               <NuxtLink
-                to="/actualites/"
+                to="/actualites"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Actualités</NuxtLink
               >
             </li>
             <li>
               <NuxtLink
-                to="/parler-a-votre-conseiller/"
+                to="/parler-a-votre-conseiller"
                 class="text-small text-ink-inverse-muted transition-colors hover:text-accent"
                 >Contact</NuxtLink
               >

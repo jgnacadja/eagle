@@ -4,7 +4,7 @@
   >
     <!-- FAMILLES -->
     <div>
-      <h3 class="text-small font-semibold text-ink-muted">Familles</h3>
+      <p class="text-small font-semibold text-ink-muted">Familles</p>
       <ul class="mt-sm space-y-1">
         <li v-for="famille in familles" :key="famille.slug">
           <button
@@ -24,7 +24,7 @@
         </li>
         <li>
           <NuxtLink
-            to="/formations/"
+            to="/formations"
             class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
@@ -36,7 +36,7 @@
 
     <!-- FORMATIONS DE LA FAMILLE SÉLECTIONNÉE -->
     <div class="col-span-2 border-l border-rule pl-lg">
-      <h3 class="text-overline uppercase text-ink-muted">{{ selectedFamilleLabel }}</h3>
+      <p class="text-overline uppercase text-ink-muted">{{ selectedFamilleLabel }}</p>
       <Transition name="menu-panel" mode="out-in">
         <ul :key="selectedFamille" class="mt-sm grid grid-cols-2 gap-sm">
           <li
@@ -56,7 +56,7 @@
           </li>
           <li v-if="selectedFamille" class="col-span-2">
             <NuxtLink
-              :to="`/formations/${selectedFamille}/`"
+              :to="`/formations/${selectedFamille}`"
               class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
               @click="$emit('close')"
             >
@@ -69,7 +69,7 @@
 
     <!-- À LA UNE + CTA -->
     <div>
-      <h3 class="text-small font-semibold text-ink-muted uppercase">Les plus consultés</h3>
+      <p class="text-small font-semibold text-ink-muted uppercase">Les plus consultés</p>
       <ul class="mt-sm space-y-1">
         <li v-for="formation in formationsALaUne" :key="formation.slug">
           <NuxtLink

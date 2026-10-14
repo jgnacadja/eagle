@@ -4,7 +4,7 @@
   >
     <!-- RUBRIQUES -->
     <div class="border-r border-rule pr-lg">
-      <h3 class="text-small font-semibold text-ink-muted uppercase">Rubriques</h3>
+      <p class="text-small font-semibold text-ink-muted uppercase">Rubriques</p>
       <ul class="mt-sm space-y-1">
         <li v-for="rubrique in rubriques" :key="rubrique.slug">
           <button
@@ -26,7 +26,7 @@
 
     <!-- PAR RÉGION -->
     <div class="border-r border-rule pr-lg">
-      <h3 class="text-small font-semibold text-ink-muted uppercase">Par région</h3>
+      <p class="text-small font-semibold text-ink-muted uppercase">Par région</p>
       <ul class="mt-sm space-y-1">
         <li v-for="region in displayedRegions" :key="region.slug">
           <button
@@ -55,7 +55,7 @@
 
         <li>
           <NuxtLink
-            to="/actualites/"
+            to="/actualites"
             class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
@@ -67,19 +67,19 @@
 
     <!-- DERNIÈRES PUBLICATIONS DE LA RÉGION -->
     <div class="col-span-2">
-      <h3 class="text-small font-semibold text-ink-muted uppercase">
+      <p class="text-small font-semibold text-ink-muted uppercase">
         {{
           selectedRegionLabel
             ? `${selectedRegionLabel} — dernières publications`
             : 'Dernières publications'
         }}
-      </h3>
+      </p>
 
       <Transition name="menu-panel" mode="out-in">
         <ul :key="`${selectedRubrique}-${selectedRegion}`" class="mt-sm grid gap-sm">
           <li v-for="actu in featuredNews" :key="actu.slug">
             <MegaMenuCard
-              :to="`/actualites/${actu.slug}/`"
+              :to="`/actualites/${actu.slug}`"
               :title="actu.title"
               @select="$emit('close')"
             >
@@ -100,7 +100,7 @@
           </li>
           <li>
             <NuxtLink
-              to="/actualites/"
+              to="/actualites"
               class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
               @click="$emit('close')"
             >

@@ -50,7 +50,7 @@ describe('AppHeader', () => {
     expect(wrapper.text()).toContain('Formations')
     expect(wrapper.text()).toContain('Trouver un Centre')
     expect(wrapper.text()).toContain('Entreprise')
-    expect(wrapper.find('a[href="/entreprise/"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/entreprise"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('À propos')
     expect(wrapper.text()).toContain('Actualités')
     expect(wrapper.text()).toContain('Rejoindre le réseau')

@@ -2,10 +2,10 @@
   <div class="flex h-full min-h-0 flex-col bg-paper">
     <!-- En-tête -->
     <header class="flex items-center justify-between gap-sm border-b border-rule px-lg py-md">
-      <h2 class="flex items-center gap-sm text-small font-semibold text-ink">
+      <p class="flex items-center gap-sm text-small font-semibold text-ink">
         <IconSparkle :size="18" class="text-accent" aria-hidden="true" />
         Recherche assistée
-      </h2>
+      </p>
       <div class="flex items-center gap-md">
         <Button
           variant="outline"
@@ -329,7 +329,7 @@
                                   variant="outline"
                                   class="w-full gap-sm rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary max-md:min-h-touch"
                                 >
-                                  <NuxtLink to="/formations/">
+                                  <NuxtLink to="/formations">
                                     <IconBook
                                       :size="14"
                                       class="shrink-0 text-primary"
@@ -391,7 +391,7 @@
                                 variant="outline"
                                 class="rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary max-md:min-h-touch"
                               >
-                                <NuxtLink to="/formations/">Voir le catalogue</NuxtLink>
+                                <NuxtLink to="/formations">Voir le catalogue</NuxtLink>
                               </Button>
                             </div>
                           </template>
@@ -463,9 +463,9 @@
                         <IconAlertTriangle :size="20" />
                       </span>
                       <div>
-                        <h3 class="text-small font-bold text-ink">
+                        <p class="text-small font-bold text-ink">
                           La recherche assistée est momentanément indisponible.
-                        </h3>
+                        </p>
                         <p class="mt-sm text-meta text-ink-muted">
                           Vous pouvez réessayer dans quelques instants. Le catalogue reste
                           accessible pour rechercher une formation.

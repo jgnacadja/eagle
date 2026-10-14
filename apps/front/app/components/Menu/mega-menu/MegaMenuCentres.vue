@@ -4,7 +4,7 @@
   >
     <!-- RÉGIONS -->
     <div>
-      <h3 class="text-small font-semibold text-ink-muted uppercase">Régions</h3>
+      <p class="text-small font-semibold text-ink-muted uppercase">Régions</p>
       <ul class="mt-sm space-y-1">
         <li v-for="region in regions" :key="region.slug">
           <button
@@ -22,7 +22,7 @@
         </li>
         <li>
           <NuxtLink
-            to="/centres/"
+            to="/centres"
             class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
@@ -34,11 +34,11 @@
 
     <!-- CENTRES DE LA RÉGION SÉLECTIONNÉE -->
     <div class="col-span-2 border-l border-rule pl-lg">
-      <h3 class="text-overline uppercase text-ink-muted">
+      <p class="text-overline uppercase text-ink-muted">
         {{ selectedRegionLabel }} — {{ selectedRegionCount }} centre{{
           selectedRegionCount > 1 ? 's' : ''
         }}
-      </h3>
+      </p>
       <Transition name="menu-panel" mode="out-in">
         <ul :key="selectedRegion" class="mt-sm grid grid-cols-2 gap-sm">
           <li
@@ -47,7 +47,7 @@
             :class="{ 'col-span-2': centresAffiches.length === 1 }"
           >
             <MegaMenuCard
-              :to="`/centres/${centre.slug}/`"
+              :to="`/centres/${centre.slug}`"
               :title="centre.name"
               :meta="centre.department ?? centre.city"
               @select="$emit('close')"
@@ -55,7 +55,7 @@
           </li>
           <li class="col-span-2">
             <NuxtLink
-              :to="{ path: '/centres/', query: { region: selectedRegionLabel } }"
+              :to="{ path: '/centres', query: { region: selectedRegionLabel } }"
               class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
               @click="$emit('close')"
             >
@@ -68,7 +68,7 @@
 
     <!-- TROUVER UN CENTRE + CTA -->
     <div>
-      <h3 class="text-small font-semibold text-ink-muted uppercase">Trouver un centre</h3>
+      <p class="text-small font-semibold text-ink-muted uppercase">Trouver un centre</p>
       <form class="mt-sm flex flex-col gap-sm" @submit.prevent="onSearchSubmit">
         <Label for="mega-menu-centre-search" class="sr-only">Ville ou code postal</Label>
         <Input
@@ -84,7 +84,7 @@
           Besoin d’une formation sur votre site ?
         </p>
         <Button as-child variant="paper" size="pill-sm" class="mt-sm w-full">
-          <NuxtLink to="/centres/demande-de-formation/" @click="$emit('close')">
+          <NuxtLink to="/centres/demande-de-formation" @click="$emit('close')">
             Organiser une formation intra
           </NuxtLink>
         </Button>
@@ -136,7 +136,7 @@ function onSearchSubmit() {
   const q = searchQuery.value.trim()
   if (!q) return
   // Pas de page recherche dédiée : on renvoie vers l'annuaire avec la query.
-  navigateTo({ path: '/centres/', query: { q } })
+  navigateTo({ path: '/centres', query: { q } })
   emit('close')
 }
 </script>

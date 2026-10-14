@@ -367,17 +367,17 @@ describe('pages/index', () => {
     const hrefs = links.map((l) => l.attributes('href'))
 
     // Section entreprise : « Découvrir » mène à la page dédiée.
-    expect(hrefs).toContain('/entreprise/')
+    expect(hrefs).toContain('/entreprise')
     // Cartes réseau : liens profonds vers le bon formulaire de candidature.
-    expect(hrefs).toContain('/rejoindre-le-reseau/?voie=centre')
-    expect(hrefs).toContain('/referencer-mon-organisme/')
-    expect(hrefs).toContain('/rejoindre-le-reseau/?voie=formateur')
+    expect(hrefs).toContain('/rejoindre-le-reseau?voie=centre')
+    expect(hrefs).toContain('/referencer-mon-organisme')
+    expect(hrefs).toContain('/rejoindre-le-reseau?voie=formateur')
     expect(hrefs).not.toContain('/centres/demande-de-formation?sujet=franchise')
     expect(hrefs).not.toContain('/centres/demande-de-formation?sujet=formateur')
-    expect(hrefs).toContain('/parler-a-votre-conseiller/')
-    expect(hrefs).toContain('/formations/')
-    expect(hrefs).toContain('/centres/')
-    expect(hrefs).toContain('/actualites/')
+    expect(hrefs).toContain('/parler-a-votre-conseiller')
+    expect(hrefs).toContain('/formations')
+    expect(hrefs).toContain('/centres')
+    expect(hrefs).toContain('/actualites')
   })
 
   it('le badge « Près de moi » déclenche la géolocalisation et affiche les distances réelles', async () => {
@@ -419,7 +419,7 @@ describe('pages/index', () => {
     await input.setValue('vitry')
     await input.trigger('keydown.enter')
 
-    expect(navigateMock).toHaveBeenCalledWith({ path: '/centres/', query: { q: 'vitry' } })
+    expect(navigateMock).toHaveBeenCalledWith({ path: '/centres', query: { q: 'vitry' } })
   })
 
   it('autocomplète la recherche carte et soumet terme + département de la ville', async () => {
@@ -454,7 +454,7 @@ describe('pages/index', () => {
 
       // Ville choisie : ?q= recherche texte + ?dept= présélectionne le filtre.
       expect(navigateMock).toHaveBeenCalledWith({
-        path: '/centres/',
+        path: '/centres',
         query: { q: 'Lyon', dept: 'Rhône' }
       })
     } finally {
@@ -478,7 +478,7 @@ describe('pages/index', () => {
       await input.trigger('keydown.enter')
 
       expect(navigateMock).toHaveBeenCalledWith({
-        path: '/centres/',
+        path: '/centres',
         query: { dept: 'Seine-Maritime' }
       })
     } finally {
@@ -669,7 +669,7 @@ describe('pages/index', () => {
     const input = wrapper.find('input[input-id="map-search"]')
     await input.trigger('keydown.enter')
 
-    expect(navigateMock).toHaveBeenCalledWith({ path: '/centres/', query: {} })
+    expect(navigateMock).toHaveBeenCalledWith({ path: '/centres', query: {} })
   })
 
   it('retombe sur les listes vides quand les données Directus sont null', async () => {

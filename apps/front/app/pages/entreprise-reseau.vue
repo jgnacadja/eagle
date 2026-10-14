@@ -130,13 +130,13 @@
               size="pill"
               class="shrink-0 self-start font-bold sm:self-center"
             >
-              <NuxtLink to="/formations/">Voir le catalogue complet</NuxtLink>
+              <NuxtLink to="/formations">Voir le catalogue complet</NuxtLink>
             </Button>
           </article>
         </div>
 
         <NuxtLink
-          to="/formations/"
+          to="/formations"
           class="mt-md inline-flex items-center gap-xs text-small font-bold text-ink transition-colors hover:text-primary md:hidden"
         >
           Voir le catalogue complet <span class="link-arrow">→</span>
@@ -226,7 +226,7 @@
           </div>
           <div class="flex shrink-0 flex-col gap-sm w-full sm:w-auto sm:flex-row sm:items-center">
             <Button as-child variant="dark" size="pill" class="w-full sm:w-auto">
-              <NuxtLink to="/formations/">Parcourir le catalogue</NuxtLink>
+              <NuxtLink to="/formations">Parcourir le catalogue</NuxtLink>
             </Button>
             <Button variant="outline" size="pill" class="w-full sm:w-auto" @click="openAssistant">
               Être guidé dans mon choix
@@ -257,7 +257,7 @@ definePageMeta({
   },
   breadcrumb: [
     { label: 'Accueil', to: '/' },
-    { label: 'Entreprises', to: '/entreprise/' },
+    { label: 'Entreprises', to: '/entreprise' },
     { label: "Le réseau d'entreprises clientes" }
   ]
 })

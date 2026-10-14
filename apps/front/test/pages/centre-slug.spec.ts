@@ -22,6 +22,7 @@ const CenterMapStub = {
   </div>`
 }
 import CentrePage from '~/pages/centres/[slug].vue'
+import { assertHeadingStructure } from '../helpers/headings'
 
 const navigateToMock = vi.fn()
 const refreshMock = vi.fn()
@@ -75,7 +76,9 @@ const centreCreteil: Centre = {
   image: null,
   seo_title: null,
   seo_description: null,
-  seo_canonical: null
+  seo_canonical: null,
+  h1: null,
+  seo_noindex: null
 }
 
 const centreVitry = {
@@ -376,7 +379,7 @@ describe('pages/centres/[slug]', () => {
     routeMock = {
       params: { slug: 'creteil' },
       query: {},
-      path: '/centres/creteil/',
+      path: '/centres/creteil',
       meta: {}
     }
     catalogueCourses.items[0]!.sessions = [
@@ -411,8 +414,8 @@ describe('pages/centres/[slug]', () => {
     expect(wrapper.text()).not.toContain('94000')
     expect(routeMock.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
-      { label: 'Réseau de centres', to: '/centres/' },
-      { label: 'Île-de-France', to: '/centres/' },
+      { label: 'Réseau de centres', to: '/centres' },
+      { label: 'Île-de-France', to: '/centres' },
       { label: 'Centre LEARN UP ACADEMY de Créteil' }
     ])
     const [source, fallback] = seoArgs()
@@ -422,6 +425,13 @@ describe('pages/centres/[slug]', () => {
       })
     )
     expect(fallback).toBe('Centre LEARN UP ACADEMY de Créteil')
+    assertHeadingStructure(wrapper)
+  })
+
+  it('affiche le champ h1 Directus quand renseigné, sinon le nom', async () => {
+    directusRequestMock.mockImplementation(async () => [{ ...centreCreteil, h1: 'H1 éditorial' }])
+    const wrapper = await mountPage()
+    expect(wrapper.find('h1').text()).toBe('H1 éditorial')
   })
 
   it('affiche les formations du centre issues du catalogue API', async () => {
@@ -434,7 +444,7 @@ describe('pages/centres/[slug]', () => {
     // Le lien doit rester sur le périmètre du centre (filtre `centre`),
     // pas sur la ville — les deux comptages diffèrent sinon.
     const link = wrapper.findAll('a').find((a) => a.text().includes('formations du centre'))
-    expect(link?.attributes('href')).toBe('/formations/?centre=creteil')
+    expect(link?.attributes('href')).toBe('/formations?centre=creteil')
     expect(wrapper.text()).toContain('Prochaines sessions')
   })
 
@@ -637,13 +647,13 @@ describe('pages/centres/[slug]', () => {
 
   it('affiche l’état introuvable et adapte breadcrumb/SEO pour un slug inconnu', async () => {
     routeMock.params.slug = 'inconnu'
-    routeMock.path = '/centres/inconnu/'
+    routeMock.path = '/centres/inconnu'
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain('Centre introuvable')
     expect(routeMock.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
-      { label: 'Réseau de centres', to: '/centres/' },
+      { label: 'Réseau de centres', to: '/centres' },
       { label: 'Centre introuvable' }
     ])
     const [source, fallback] = seoArgs()
@@ -663,7 +673,7 @@ describe('pages/centres/[slug]', () => {
     expect(ld).toMatchObject({
       '@type': 'LocalBusiness',
       name: 'Centre LEARN UP ACADEMY de Créteil',
-      url: 'https://learnup.test/centres/creteil/'
+      url: 'https://learnup.test/centres/creteil'
     })
 
     routeMock.query = { error: '1' }
@@ -682,7 +692,7 @@ describe('pages/centres/[slug]', () => {
     expect(wrapper.text()).toContain("Les informations du centre n'ont pas pu être chargées.")
     expect(routeMock.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
-      { label: 'Réseau de centres', to: '/centres/' },
+      { label: 'Réseau de centres', to: '/centres' },
       { label: 'Erreur de chargement' }
     ])
     const [source, fallback] = seoArgs()
@@ -702,7 +712,7 @@ describe('pages/centres/[slug]', () => {
       .trigger('click')
 
     expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/centres/creteil/',
+      path: '/centres/creteil',
       query: { autre: 'x' }
     })
     expect(refreshMock).not.toHaveBeenCalled()
@@ -723,7 +733,7 @@ describe('pages/centres/[slug]', () => {
 
   it('renvoie un statut 404 quand le centre est introuvable et 500 en cas d’erreur', async () => {
     routeMock.params.slug = 'inconnu'
-    routeMock.path = '/centres/inconnu/'
+    routeMock.path = '/centres/inconnu'
     await mountPage()
     expect(setResponseStatusMock).toHaveBeenCalledWith(requestEvent, 404, 'Centre introuvable')
   })
@@ -782,15 +792,15 @@ describe('pages/centres/[slug]', () => {
   it('navigue vers la fiche d’un autre centre sélectionné sur la mini-carte', async () => {
     const wrapper = await mountPage()
     await wrapper.find('.select-vitry').trigger('click')
-    expect(navigateToMock).toHaveBeenCalledWith('/centres/vitry/')
+    expect(navigateToMock).toHaveBeenCalledWith('/centres/vitry')
   })
 
   it('met à jour le marqueur actif sans naviguer pour le centre courant', async () => {
     const wrapper = await mountPage()
     await wrapper.find('.select-same').trigger('click')
     await wrapper.find('.select-empty').trigger('click')
-    expect(navigateToMock).not.toHaveBeenCalledWith('/centres/creteil/')
-    expect(navigateToMock).not.toHaveBeenCalledWith('/centres/')
+    expect(navigateToMock).not.toHaveBeenCalledWith('/centres/creteil')
+    expect(navigateToMock).not.toHaveBeenCalledWith('/centres')
   })
 
   it('retombe sur la ville quand le centre voisin n’a pas de coordonnées', async () => {
@@ -808,25 +818,25 @@ describe('pages/centres/[slug]', () => {
 
   it('la recherche de l’état introuvable redirige vers /formations avec la requête', async () => {
     routeMock.params.slug = 'inconnu'
-    routeMock.path = '/centres/inconnu/'
+    routeMock.path = '/centres/inconnu'
     const wrapper = await mountPage()
 
     await wrapper.find('.search-stub').trigger('click')
 
     expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/formations/',
+      path: '/formations',
       query: { q: 'caces' }
     })
   })
 
   it('redirige sans query quand la recherche est vide', async () => {
     routeMock.params.slug = 'inconnu'
-    routeMock.path = '/centres/inconnu/'
+    routeMock.path = '/centres/inconnu'
     const wrapper = await mountPage()
 
     await wrapper.find('.search-empty').trigger('click')
 
-    expect(navigateToMock).toHaveBeenCalledWith({ path: '/formations/', query: {} })
+    expect(navigateToMock).toHaveBeenCalledWith({ path: '/formations', query: {} })
   })
 
   it('affiche une fiche centre sans aucune information facultative', async () => {
@@ -867,7 +877,7 @@ describe('pages/centres/[slug]', () => {
     expect(wrapper.findComponent({ name: 'CenterMap' }).exists()).toBe(false)
     expect(routeMock.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
-      { label: 'Réseau de centres', to: '/centres/' },
+      { label: 'Réseau de centres', to: '/centres' },
       { label: 'Centre LEARN UP ACADEMY de Créteil' }
     ])
     const [source] = seoArgs()
@@ -940,7 +950,7 @@ describe('pages/centres/[slug]', () => {
     const sessionLink = wrapper
       .findAll('a')
       .find((a) => a.text().includes("S'inscrire") || a.text().includes('informé'))
-    expect(sessionLink?.attributes('href')).toBe('/formations/')
+    expect(sessionLink?.attributes('href')).toBe('/formations')
   })
 
   it('couvre les variantes de sessions (lieu, date, places, modalité)', async () => {

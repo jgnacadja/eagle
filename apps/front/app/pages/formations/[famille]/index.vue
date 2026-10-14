@@ -10,7 +10,7 @@
               <h1
                 class="mt-sm font-display text-h2 font-extrabold leading-tight text-ink lg:text-h1"
               >
-                {{ familleData?.name }}
+                {{ familleData?.h1 || familleData?.name }}
               </h1>
               <div
                 v-if="familleData?.intro"
@@ -200,7 +200,7 @@
           v-else-if="catalog.error.value"
           class="mt-lg"
           title="Le catalogue n'a pas pu être chargé."
-          link-to="/formations/"
+          link-to="/formations"
           link-label="Voir le catalogue"
           @retry="catalog.refresh()"
         >
@@ -313,7 +313,7 @@
             Être guidé dans mon choix
           </Button>
           <Button as-child variant="outline-inverse" size="pill-sm" class="w-full sm:w-auto">
-            <NuxtLink :to="`/centres/demande-de-formation/?famille=${famille}`"
+            <NuxtLink :to="`/centres/demande-de-formation?famille=${famille}`"
               >Faire une demande</NuxtLink
             >
           </Button>
@@ -325,7 +325,7 @@
     <LoadError
       v-else-if="loadError"
       title="Le contenu n'a pas pu être chargé."
-      link-to="/formations/"
+      link-to="/formations"
       link-label="Voir le catalogue"
       @retry="retry"
     >
@@ -337,7 +337,7 @@
     <NotFound
       v-else
       title="Cette famille de formations n'est pas disponible."
-      primary-to="/formations/"
+      primary-to="/formations"
       primary-label="Voir le catalogue"
       secondary-label="Être guidé dans mon choix"
       search-placeholder="Intitulé, compétence ou certification"
@@ -441,7 +441,7 @@ const stateLabels: Record<Exclude<PageState, 'found'>, string> = {
 
 const defaultBreadcrumb = computed(() => [
   { label: 'Accueil', to: '/' },
-  { label: 'Formations', to: '/formations/' },
+  { label: 'Formations', to: '/formations' },
   { label: familleData.value!.name }
 ])
 
@@ -450,7 +450,7 @@ watchEffect(() => {
   route.meta.breadcrumb = stateLabel
     ? [
         { label: 'Accueil', to: '/' },
-        { label: 'Formations', to: '/formations/' },
+        { label: 'Formations', to: '/formations' },
         { label: stateLabel }
       ]
     : defaultBreadcrumb.value
@@ -519,7 +519,7 @@ function retry() {
 }
 
 function onErrorSearch(query: string) {
-  navigateTo({ path: '/formations/', query: query ? { q: query } : {} })
+  navigateTo({ path: '/formations', query: query ? { q: query } : {} })
 }
 
 // Sous-familles publiées de la famille courante — affichées en cartes

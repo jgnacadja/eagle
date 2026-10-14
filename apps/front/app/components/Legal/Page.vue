@@ -3,7 +3,7 @@
     <header class="border-b border-rule bg-linear-to-b from-paper to-surface">
       <div v-hero class="mx-auto w-full px-gutter-mobile pt-2xl md:px-gutter">
         <h1 class="font-display text-h1 font-extrabold text-ink">
-          {{ page.title }}
+          {{ page.h1 || page.title }}
         </h1>
         <p class="mt-sm text-small text-ink-muted">Dernière mise à jour : {{ page.lastUpdated }}</p>
 
@@ -11,7 +11,7 @@
           <ul class="-mb-px flex items-center gap-md">
             <li v-for="tab in tabs" :key="tab.slug">
               <NuxtLink
-                :to="`/${tab.slug}/`"
+                :to="`/${tab.slug}`"
                 :aria-current="tab.slug === currentSlug ? 'page' : undefined"
                 :class="
                   cn(
@@ -153,7 +153,7 @@ const currentLabel = computed(
 
 watch(selectedPage, (newSlug) => {
   if (newSlug && newSlug !== currentSlug.value) {
-    navigateTo(`/${newSlug}/`)
+    navigateTo(`/${newSlug}`)
   }
 })
 

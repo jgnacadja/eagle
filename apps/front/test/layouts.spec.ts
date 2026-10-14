@@ -3,11 +3,11 @@ import { describe, expect, it, vi } from 'vitest'
 import DefaultLayout from '~/layouts/default.vue'
 import WithBreadcrumbLayout from '~/layouts/with-breadcrumb.vue'
 
-const routeStub = { meta: {} as Record<string, unknown>, path: '/mentions-legales/' }
+const routeStub = { meta: {} as Record<string, unknown>, path: '/mentions-legales' }
 vi.stubGlobal('useRoute', () => routeStub)
 const headMock = vi.fn()
 vi.stubGlobal('useHead', headMock)
-vi.stubGlobal('useRequestURL', () => new URL('https://learnup.test/mentions-legales/'))
+vi.stubGlobal('useRequestURL', () => new URL('https://learnup.test/mentions-legales'))
 
 const stubs = {
   AppHeader: { template: '<header>header</header>' },
@@ -65,7 +65,7 @@ describe('layouts/with-breadcrumb', () => {
     routeStub.meta = {
       breadcrumb: [
         { label: 'Accueil', to: '/' },
-        { label: 'Actualités', to: '/actualites/' },
+        { label: 'Actualités', to: '/actualites' },
         { label: 'Mon article' }
       ]
     }
@@ -83,8 +83,8 @@ describe('layouts/with-breadcrumb', () => {
     expect(ld['@type']).toBe('BreadcrumbList')
     expect(ld.itemListElement.map((i) => i.item)).toEqual([
       'https://learnup.test/',
-      'https://learnup.test/actualites/',
-      'https://learnup.test/mentions-legales/'
+      'https://learnup.test/actualites',
+      'https://learnup.test/mentions-legales'
     ])
   })
 

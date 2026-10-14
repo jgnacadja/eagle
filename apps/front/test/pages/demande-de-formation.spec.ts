@@ -1,4 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils'
+import { toValue } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   computed,
@@ -669,10 +670,12 @@ describe('pages/centres/demande-de-formation', () => {
   it('applique le SEO de la page', async () => {
     await mountPage()
 
-    expect(seoMock).toHaveBeenCalledWith(
-      expect.objectContaining({ seo_title: 'Demande de formation | LEARN UP ACADEMY' }),
-      'Demande de formation'
-    )
+    expect(seoMock).toHaveBeenCalledWith(expect.anything(), 'Demande de formation')
+    const source = toValue(seoMock.mock.calls[0]![0])
+    expect(source).toMatchObject({
+      seo_title: 'Demande de formation | LEARN UP ACADEMY',
+      seo_robots: 'noindex, follow'
+    })
   })
 
   it('poste la demande au module leads avec le contexte résolu', async () => {

@@ -30,6 +30,7 @@ const CONTENT_COLLECTIONS = [
   'pages_legales_sections',
   'pages_legales_subsections',
   'stats',
+  'seo_patterns',
   'formations',
   'formations_centres',
   'recherches_sans_resultat'
@@ -175,7 +176,7 @@ const PUBLIC_PARENT_STATUS = {
   pages_legales_sections: { page: { status: { _eq: 'published' } } },
   pages_legales_subsections: { section: { page: { status: { _eq: 'published' } } } }
 }
-const PUBLIC_UNRESTRICTED = ['page_blocks', 'stats', 'directus_files']
+const PUBLIC_UNRESTRICTED = ['page_blocks', 'stats', 'seo_patterns', 'directus_files']
 
 // Champs exposés publiquement (allowlist) — le proxy `/directus` de l'API
 // relaie les requêtes sans token, tout champ interne non listé ici est
@@ -263,7 +264,20 @@ const PUBLIC_FIELDS = {
     'h1',
     'seo_noindex'
   ],
-  categories: ['id', 'status', 'sort', 'slug', 'name', 'description'],
+  categories: [
+    'id',
+    'status',
+    'sort',
+    'slug',
+    'name',
+    'description',
+    'seo_title',
+    'seo_description',
+    'seo_canonical',
+    'h1',
+    'seo_noindex'
+  ],
+  seo_patterns: ['id', 'key', 'title_pattern', 'description_pattern'],
   avis: ['id', 'status', 'sort', 'slug', 'author', 'published_at', 'stars', 'quote', 'centre'],
   pages: [
     'id',

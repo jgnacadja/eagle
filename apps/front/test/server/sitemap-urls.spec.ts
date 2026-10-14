@@ -12,6 +12,8 @@ let fetchImpl: (url: string, query?: Record<string, unknown>) => Promise<unknown
 
 vi.stubGlobal('defineSitemapEventHandler', (handler: unknown) => handler)
 vi.stubGlobal('defineCachedEventHandler', (handler: unknown) => handler)
+let querySet: string | undefined
+vi.stubGlobal('getQuery', () => (querySet ? { set: querySet } : {}))
 let apiToken = 'ssr-token'
 vi.stubGlobal('useRuntimeConfig', () => ({
   apiBase: 'http://api.test',
@@ -53,6 +55,7 @@ function happyFetch(url: string): Promise<unknown> {
   if (url.endsWith('/items/articles')) {
     return directusList([{ slug: 'loi-iafp', publish_at: '2026-09-01T10:00:00' }])
   }
+  if (url.endsWith('/items/categories')) return directusList([{ slug: 'prevention' }])
   if (url.endsWith('/items/pages_legales')) {
     return directusList([{ slug: 'mentions-legales', updated_at: '2026-08-15T12:00:00' }])
   }
@@ -77,12 +80,14 @@ describe('server/api/__sitemap__/urls', () => {
     fetchCalls.length = 0
     fetchImpl = happyFetch
     apiToken = 'ssr-token'
+    querySet = undefined
   })
 
   it('émet toutes les collections publiées avec leurs préfixes routiers', async () => {
     const result = await handler(event)
     expect(locs(result)).toEqual([
       '/actualites/loi-iafp',
+      '/actualites/prevention',
       '/centres/lyon-part-dieu',
       '/formations/caces-conduite-engins/caces-r489',
       '/formations/sante',
@@ -100,8 +105,8 @@ describe('server/api/__sitemap__/urls', () => {
 
   it('filtre status=published sur les collections Directus', async () => {
     await handler(event)
-    const directusCalls = fetchCalls.filter((c) => c.url.includes('/directus/items/'))
-    expect(directusCalls).toHaveLength(3)
+    const directusCalls = fetchCalls.filter((c) => c.url.includes('/directus/items'))
+    expect(directusCalls).toHaveLength(4)
     for (const call of directusCalls) {
       expect(call.query?.['filter[status][_eq]']).toBe('published')
     }
@@ -198,5 +203,49 @@ describe('server/api/__sitemap__/urls', () => {
         : base(url)
     const result = await handler(event)
     expect(locs(result).filter((l) => l === '/entreprise')).toHaveLength(1)
+  })
+
+  describe('?set= — sitemaps segmentés (ST-03)', () => {
+    it('set=pages ne retient que les pages légales', async () => {
+      querySet = 'pages'
+      const result = await handler(event)
+      expect(locs(result)).toEqual(['/mentions-legales'])
+    })
+
+    it('set=formations retient familles et fiches, sans centres ni actus', async () => {
+      querySet = 'formations'
+      const result = await handler(event)
+      expect(locs(result)).toEqual([
+        '/formations/caces-conduite-engins/caces-r489',
+        '/formations/sante',
+        '/formations/sante/sst'
+      ])
+    })
+
+    it('set=centres ne retient que les centres', async () => {
+      querySet = 'centres'
+      const result = await handler(event)
+      expect(locs(result)).toEqual(['/centres/lyon-part-dieu'])
+    })
+
+    it('set=actualites retient articles et catégories (namespace partagé)', async () => {
+      querySet = 'actualites'
+      const result = await handler(event)
+      expect(locs(result)).toEqual(['/actualites/loi-iafp', '/actualites/prevention'])
+    })
+
+    it('set=local est vide (lot 2) sans interroger les sources', async () => {
+      querySet = 'local'
+      const result = await handler(event)
+      expect(result).toEqual([])
+      expect(fetchCalls).toHaveLength(0)
+    })
+
+    it('un set inconnu retombe sur la liste complète', async () => {
+      querySet = 'inconnu'
+      const result = await handler(event)
+      expect(locs(result)).toContain('/centres/lyon-part-dieu')
+      expect(locs(result)).toContain('/actualites/loi-iafp')
+    })
   })
 })

@@ -289,8 +289,8 @@ useContentSeo(
     seo_title: 'Parler à votre conseiller | LEARN UP ACADEMY',
     seo_description:
       'Décrivez votre besoin : votre demande est transmise à l’interlocuteur compétent de votre territoire, qui vous recontacte sous 24 h ouvrées.',
-    // Formulaire de contact : hors indexation.
-    seo_noindex: true
+    // Formulaire de contact : hors indexation, liens suivis (ST-03).
+    seo_robots: 'noindex, follow'
   },
   'Parler à votre conseiller'
 )

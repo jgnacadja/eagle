@@ -808,13 +808,14 @@ watchEffect(() => {
 })
 
 useContentSeo(
-  {
+  computed(() => ({
     seo_title: 'Demande de formation | LEARN UP ACADEMY',
     seo_description:
       'Transmettez votre demande de formation : prise en charge par LEARN UP ACADEMY, réponse sous 24 h ouvrées.',
-    // Page formulaire paramétrée : hors indexation.
-    seo_noindex: true
-  },
+    // Page formulaire paramétrée : hors indexation mais ses liens gardent
+    // du poids ; l'écran de confirmation, lui, coupe aussi le suivi (ST-03).
+    seo_robots: submitted.value ? 'noindex, nofollow' : 'noindex, follow'
+  })),
   'Demande de formation'
 )
 

@@ -2,6 +2,7 @@ import type { Article, Centre, CourseListItem, CoursePage } from '@learnup/types
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, ref, Suspense, watchEffect } from 'vue'
+import { resolveSeoDescription, resolveSeoTitle } from '~/utils/metaPatterns'
 import LoadError from '~/components/ErrorState/LoadError.vue'
 import NotFound from '~/components/ErrorState/NotFound.vue'
 // Stub local : reproduit le pied « itinéraire » du mode single (contrat du
@@ -21,6 +22,7 @@ const CenterMapStub = {
   </div>`
 }
 import CentrePage from '~/pages/centres/[slug].vue'
+import { assertHeadingStructure } from '../helpers/headings'
 
 const navigateToMock = vi.fn()
 const refreshMock = vi.fn()
@@ -74,7 +76,9 @@ const centreCreteil: Centre = {
   image: null,
   seo_title: null,
   seo_description: null,
-  seo_canonical: null
+  seo_canonical: null,
+  h1: null,
+  seo_noindex: null
 }
 
 const centreVitry = {
@@ -155,6 +159,11 @@ vi.stubGlobal('computed', computed)
 vi.stubGlobal('ref', ref)
 vi.stubGlobal('watchEffect', watchEffect)
 vi.stubGlobal('definePageMeta', vi.fn())
+// ST-04 : patrons Directus non administrés en test — les gabarits
+// retombent sur leurs metas codées en dur (repli du moteur).
+vi.stubGlobal('useSeoPattern', () => ref(null))
+vi.stubGlobal('resolveSeoTitle', resolveSeoTitle)
+vi.stubGlobal('resolveSeoDescription', resolveSeoDescription)
 vi.stubGlobal('useRoute', () => routeMock)
 vi.stubGlobal('useAsyncData', async (_key: string, handler: () => Promise<unknown>) => {
   if (forceError) {
@@ -172,7 +181,9 @@ vi.stubGlobal('useContentSeo', seoMock)
 vi.stubGlobal('navigateTo', navigateToMock)
 vi.stubGlobal('logServerError', vi.fn())
 vi.stubGlobal('useDirectusClient', () => ({ request: directusRequestMock }))
-vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
+vi.stubGlobal('useRuntimeConfig', () => ({
+  public: { apiBase: 'http://api.test', siteUrl: 'https://learnup.test' }
+}))
 
 // Position pilotable par test : la page importe `useGeolocation`
 // explicitement — le mock remplace le module, `geoPosition` décide si la
@@ -315,9 +326,9 @@ const stubs = {
 
 // useContentSeo reçoit désormais des getters réactifs : on les résout pour les assertions.
 function seoArgs() {
-  const [source, fallback] = seoMock.mock.calls[0]!
+  const [source, fallback, options] = seoMock.mock.calls[0]!
   const resolve = (v: unknown) => (typeof v === 'function' ? (v as () => unknown)() : v)
-  return [resolve(source), resolve(fallback)] as const
+  return [resolve(source), resolve(fallback), options] as const
 }
 
 async function mountPage() {
@@ -414,6 +425,13 @@ describe('pages/centres/[slug]', () => {
       })
     )
     expect(fallback).toBe('Centre LEARN UP ACADEMY de Créteil')
+    assertHeadingStructure(wrapper)
+  })
+
+  it('affiche le champ h1 Directus quand renseigné, sinon le nom', async () => {
+    directusRequestMock.mockImplementation(async () => [{ ...centreCreteil, h1: 'H1 éditorial' }])
+    const wrapper = await mountPage()
+    expect(wrapper.find('h1').text()).toBe('H1 éditorial')
   })
 
   it('affiche les formations du centre issues du catalogue API', async () => {
@@ -645,6 +663,28 @@ describe('pages/centres/[slug]', () => {
     expect(fallback).toBe('Centre introuvable')
   })
 
+  it('émet le JSON-LD LocalBusiness sur une fiche trouvée, jamais sur erreur', async () => {
+    await mountPage()
+
+    const [, , options] = seoArgs()
+    const ld = (
+      options as { jsonLd?: () => Record<string, unknown> | null } | undefined
+    )?.jsonLd?.()
+    expect(ld).toMatchObject({
+      '@type': 'LocalBusiness',
+      name: 'Centre LEARN UP ACADEMY de Créteil',
+      url: 'https://learnup.test/centres/creteil'
+    })
+
+    routeMock.query = { error: '1' }
+    seoMock.mockClear()
+    await mountPage()
+    const [, , errorOptions] = seoArgs()
+    expect(
+      (errorOptions as { jsonLd?: () => Record<string, unknown> | null } | undefined)?.jsonLd?.()
+    ).toBeNull()
+  })
+
   it('affiche l’état erreur quand le chargement échoue', async () => {
     routeMock.query = { error: '1' }
     const wrapper = await mountPage()
@@ -843,7 +883,7 @@ describe('pages/centres/[slug]', () => {
     const [source] = seoArgs()
     expect(source).toEqual(
       expect.objectContaining({
-        seo_description: 'Centre de formation  — LEARN UP ACADEMY.'
+        seo_description: 'Centre de formation — LEARN UP ACADEMY.'
       })
     )
   })

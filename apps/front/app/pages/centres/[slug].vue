@@ -19,7 +19,7 @@
                   id="hero-title"
                   class="mt-sm font-display text-h2 font-extrabold text-ink lg:text-h1"
                 >
-                  {{ centre.name }}
+                  {{ centre.h1 || centre.name }}
                 </h1>
 
                 <ul v-if="specialties.length" class="mt-md flex flex-wrap gap-sm">
@@ -608,6 +608,7 @@ import { useGeolocation } from '~/composables/useGeolocation'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
 import { directusAssetUrl } from '~/utils/directusAsset'
+import { buildLocalBusinessJsonLd } from '~/utils/jsonLd'
 import { departmentCodeFromPostalCode, distanceKm, formatDistance } from '~/utils/geo'
 import { formatArticleDate } from '~/utils/article'
 import { mapAvis } from '~/utils/avis'
@@ -810,17 +811,37 @@ watchEffect(() => {
     : defaultBreadcrumb.value
 })
 
+// Patron administrable `centre` (ST-04) : seo_* éditorial > patron > repli.
+const centrePattern = useSeoPattern('centre')
+
 useContentSeo(
   () => {
     const isFound = pageState.value === 'found'
     const name = centre.value?.name ?? 'Centre'
+    const vars = isFound
+      ? {
+          nom: name,
+          ville: centre.value!.city,
+          cp: centre.value!.postal_code,
+          département: centre.value!.department
+        }
+      : {}
     return {
       seo_title: isFound
-        ? (centre.value!.seo_title ?? `${name} — LEARN UP ACADEMY`)
+        ? resolveSeoTitle(
+            centre.value!.seo_title,
+            centrePattern.value?.title_pattern,
+            vars,
+            `${name} — LEARN UP ACADEMY`
+          )
         : stateLabels[pageState.value],
       seo_description: isFound
-        ? (centre.value!.seo_description ??
-          `Centre de formation ${centre.value!.city ?? ''} — LEARN UP ACADEMY.`)
+        ? resolveSeoDescription(
+            centre.value!.seo_description,
+            centrePattern.value?.description_pattern,
+            vars,
+            `Centre de formation ${centre.value!.city ?? ''} — LEARN UP ACADEMY.`
+          )
         : undefined,
       seo_noindex: !isFound,
       // Visuel OG/Twitter : visuel éditorial du centre, sinon défaut.
@@ -830,6 +851,19 @@ useContentSeo(
   () => {
     const isFound = pageState.value === 'found'
     return isFound ? centre.value!.name : stateLabels[pageState.value]
+  },
+  {
+    // JSON-LD schema.org/LocalBusiness — adresse, géo et contact du
+    // centre, uniquement sur une fiche trouvée.
+    jsonLd: () => {
+      if (pageState.value !== 'found' || !centre.value) return null
+      return buildLocalBusinessJsonLd({
+        centre: centre.value,
+        url: centre.value.seo_canonical ?? `${config.public.siteUrl}${route.path}`,
+        siteUrl: config.public.siteUrl,
+        imageUrl: imageSrc.value
+      })
+    }
   }
 )
 

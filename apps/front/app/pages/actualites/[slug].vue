@@ -16,7 +16,7 @@
               <h1
                 class="mt-sm font-display text-h2 font-extrabold leading-tight text-ink lg:text-h1"
               >
-                {{ article?.title }}
+                {{ article?.h1 || article?.title }}
               </h1>
               <div class="mt-md h-xs flex-1 bg-accent w-4xl" aria-hidden="true" />
               <p class="mt-md text-body text-ink-body">{{ article?.excerpt }}</p>
@@ -221,6 +221,49 @@
       </section>
     </template>
 
+    <!-- T9 — page catégorie : même namespace que la fiche article -->
+    <template v-else-if="pageState === 'category'">
+      <div class="mx-auto w-full px-gutter-mobile py-2xl md:px-gutter">
+        <header v-hero class="max-w-prose">
+          <p class="text-overline font-bold uppercase text-accent-text">Catégorie</p>
+          <h1 class="mt-sm font-display text-h2 font-extrabold leading-tight text-ink lg:text-h1">
+            {{ category?.h1 || category?.name }}
+          </h1>
+          <div class="mt-md h-xs w-4xl bg-accent" aria-hidden="true" />
+          <p v-if="category?.description" class="mt-md text-body text-ink-body">
+            {{ category.description }}
+          </p>
+        </header>
+
+        <ul
+          v-if="categoryArticles?.length"
+          class="mt-2xl grid grid-cols-1 gap-lg sm:grid-cols-2 lg:grid-cols-3"
+        >
+          <li v-for="item in categoryArticles" :key="item.slug">
+            <ArticleCard
+              :category="item.category?.name ?? 'Actualité'"
+              :title="item.title"
+              :date="formatArticleDate(item.publish_at)"
+              :excerpt="item.excerpt ?? ''"
+              :image-url="assetUrl(item.cover_image) ?? undefined"
+              :to="`/actualites/${item.slug}`"
+              class="h-full"
+            />
+          </li>
+        </ul>
+        <p v-else class="mt-2xl text-body text-ink-muted">
+          Aucun article publié dans cette catégorie pour le moment.
+        </p>
+
+        <NuxtLink
+          to="/actualites"
+          class="mt-2xl inline-block text-small font-semibold text-ink transition-colors hover:text-accent-text"
+        >
+          ← Toute l'actualité
+        </NuxtLink>
+      </div>
+    </template>
+
     <LoadError
       v-else-if="loadError"
       title="L'article n'a pas pu être chargé."
@@ -253,12 +296,14 @@
 
 <script setup lang="ts">
 import { readItems } from '@directus/sdk'
-import type { Article, Course } from '@learnup/types'
+import type { Article, ArticleCategory, Course } from '@learnup/types'
 import { buildMeta, mapCourse, type FormationItem } from '~/composables/useCatalog'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { articleAssetUrl, articleReadingTime, formatArticleDate } from '~/utils/article'
 import { sanitizeHtmlWithHeadings } from '~/utils/sanitizeHtml'
 import { copyTextToClipboard } from '~/utils/clipboard'
+import type { MetaPatternVars } from '~/utils/metaPatterns'
+import { buildArticleJsonLd } from '~/utils/jsonLd'
 import { useDataLayer } from '~/composables/useDataLayer'
 import { onMounted } from 'vue'
 
@@ -329,6 +374,74 @@ const article = computed(() => {
   return articleData.value
 })
 
+// T9/T10 : /actualites/{categorie}/ et /actualites/{slug}/ partagent le
+// même espace de noms (ST-02) — un slug qui n'est pas un article publié
+// est résolu côté serveur comme catégorie publiée. L'article prime en cas
+// de collision (les slugs sont uniques par collection, pas entre elles).
+const { data: category } = await useAsyncData<ArticleCategory | null>(
+  `actualites-category-${slug}`,
+  async () => {
+    if (article.value) return null
+    try {
+      const results = await directus.request<ArticleCategory[]>(
+        readItems('categories', {
+          fields: [
+            'id',
+            'slug',
+            'name',
+            'description',
+            'seo_title',
+            'seo_description',
+            'seo_canonical'
+          ],
+          filter: { slug: { _eq: slug }, status: { _eq: 'published' } },
+          limit: 1
+        })
+      )
+      return results[0] ?? null
+    } catch (error) {
+      /* v8 ignore next 3 */
+      if (import.meta.server) {
+        logServerError(`[actualites/category] ${slug} load failed:`, error)
+      }
+      return null
+    }
+  },
+  {
+    getCachedData: (key, nuxtApp) =>
+      (nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as ArticleCategory | null | undefined
+  }
+)
+
+const { data: categoryArticles } = await useAsyncData<Article[]>(
+  `actualites-category-articles-${slug}`,
+  async () => {
+    if (!category.value) return []
+    try {
+      return await directus.request<Article[]>(
+        readItems('articles', {
+          fields: ['slug', 'title', 'excerpt', 'publish_at', 'cover_image', 'category.name'],
+          filter: {
+            status: { _eq: 'published' },
+            category: { slug: { _eq: slug } }
+          },
+          sort: ['-publish_at'],
+          limit: 24
+        })
+      )
+    } catch (error) {
+      /* v8 ignore next 3 */
+      if (import.meta.server) {
+        logServerError(`[actualites/category-articles] ${slug} load failed:`, error)
+      }
+      return []
+    }
+  },
+  {
+    getCachedData: (key, nuxtApp) =>
+      (nuxtApp.payload.data[key] ?? nuxtApp.static.data[key]) as Article[] | undefined
+  }
+)
 // C6 — le thème de l'article est transmis au panneau comme contexte éditorial.
 const assistant = useAssistantLauncher()
 function openAssistant() {
@@ -409,10 +522,11 @@ const relatedArticles = await useDirectusList<Article>('articles', `actualites-r
   limit: 3
 })
 
-type PageState = 'found' | 'not-found' | 'error'
+type PageState = 'found' | 'category' | 'not-found' | 'error'
 const pageState = computed<PageState>(() => {
   if (loadError.value) return 'error'
-  return article.value ? 'found' : 'not-found'
+  if (article.value) return 'found'
+  return category.value ? 'category' : 'not-found'
 })
 
 /* v8 ignore start — SSR uniquement : import.meta.server est toujours faux
@@ -457,12 +571,20 @@ const defaultBreadcrumb = computed(() => {
   ]
 })
 
-const stateLabels: Record<Exclude<PageState, 'found'>, string> = {
+const stateLabels: Record<Exclude<PageState, 'found' | 'category'>, string> = {
   'not-found': 'Article introuvable',
   error: 'Erreur de chargement'
 }
 
 watchEffect(() => {
+  if (pageState.value === 'category') {
+    route.meta.breadcrumb = [
+      { label: 'Accueil', to: '/' },
+      { label: 'Actualités', to: '/actualites' },
+      { label: category.value?.name ?? 'Catégorie' }
+    ]
+    return
+  }
   const stateLabel = pageState.value === 'found' ? null : stateLabels[pageState.value]
   route.meta.breadcrumb = stateLabel
     ? [
@@ -473,14 +595,59 @@ watchEffect(() => {
     : defaultBreadcrumb.value
 })
 
+// Patrons administrables (ST-04) : seo_* éditorial > patron > repli.
+const articlePattern = useSeoPattern('article')
+const categoriePattern = useSeoPattern('categorie')
+
+const articleVars = computed<MetaPatternVars>(() => ({
+  intitulé: article.value?.title,
+  catégorie: article.value?.category?.name,
+  date: article.value?.publish_at
+    ? new Date(article.value.publish_at).toLocaleDateString('fr-FR')
+    : null
+}))
+
+const foundSeo = computed(() => ({
+  seo_title: resolveSeoTitle(
+    article.value?.seo_title,
+    articlePattern.value?.title_pattern,
+    articleVars.value,
+    `${article.value?.title ?? 'Article'} | LEARN UP ACADEMY`
+  ),
+  seo_description: resolveSeoDescription(
+    article.value?.seo_description,
+    articlePattern.value?.description_pattern,
+    articleVars.value,
+    article.value?.excerpt ?? ''
+  ),
+  seo_canonical: article.value?.seo_canonical,
+  seo_noindex: article.value?.seo_noindex
+}))
+
+const categorySeo = computed(() => {
+  const vars: MetaPatternVars = { catégorie: category.value?.name }
+  return {
+    seo_title: resolveSeoTitle(
+      category.value?.seo_title,
+      categoriePattern.value?.title_pattern,
+      vars,
+      `${category.value?.name ?? 'Catégorie'} | LEARN UP ACADEMY`
+    ),
+    seo_description: resolveSeoDescription(
+      category.value?.seo_description,
+      categoriePattern.value?.description_pattern,
+      vars,
+      category.value?.description ??
+        `Tous les articles de la catégorie ${category.value?.name ?? ''} du réseau LEARN UP.`
+    ),
+    seo_canonical: category.value?.seo_canonical ?? `${config.public.siteUrl}/actualites/${slug}`
+  }
+})
+
 const seoByState: Record<
-  PageState,
+  Exclude<PageState, 'found' | 'category'>,
   { seo_title: string; seo_description: string; seo_noindex?: boolean }
 > = {
-  found: {
-    seo_title: `${article.value?.title ?? 'Article'} | LEARN UP ACADEMY`,
-    seo_description: article.value?.excerpt ?? ''
-  },
   'not-found': {
     seo_title: 'Article introuvable',
     seo_description: "Cet article n'existe pas ou n'est plus publié.",
@@ -494,12 +661,30 @@ const seoByState: Record<
 }
 
 useContentSeo(
-  () =>
-    pageState.value === 'found' && article.value ? article.value : seoByState[pageState.value],
-  () =>
-    pageState.value === 'found'
-      ? `${article.value?.title ?? 'Article'} | LEARN UP ACADEMY`
-      : seoByState[pageState.value].seo_title
+  () => {
+    if (pageState.value === 'found') return foundSeo.value
+    if (pageState.value === 'category') return categorySeo.value
+    return seoByState[pageState.value]
+  },
+  () => {
+    const state = pageState.value
+    if (state === 'found') return foundSeo.value.seo_title
+    if (state === 'category') return categorySeo.value.seo_title
+    return seoByState[state].seo_title
+  },
+  {
+    // JSON-LD schema.org/Article — uniquement sur une fiche trouvée ;
+    // les pages catégorie portent leur BreadcrumbList via le layout.
+    jsonLd: () => {
+      if (pageState.value !== 'found' || !article.value) return null
+      return buildArticleJsonLd({
+        article: article.value,
+        url: article.value.seo_canonical ?? `${config.public.siteUrl}${route.path}`,
+        siteUrl: config.public.siteUrl,
+        imageUrl: assetUrl(article.value.cover_image)
+      })
+    }
+  }
 )
 
 function retry() {

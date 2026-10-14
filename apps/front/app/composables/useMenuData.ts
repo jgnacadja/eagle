@@ -362,7 +362,9 @@ export function useMenuFormationsALaUne() {
         return result.items.map((course) => ({
           slug: course.slug,
           label: course.title,
-          to: course.familySlug ? `/formations/${course.familySlug}/${course.slug}` : '/formations'
+          to: course.familySlug
+            ? `/formations/${course.familySlug}/${course.slug}`
+            : '/formations'
         }))
       } catch (error) {
         /* v8 ignore next 3 */

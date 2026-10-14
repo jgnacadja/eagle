@@ -2,9 +2,11 @@ import type { CourseListItem, FamilleFormation, SousFamilleFormation } from '@le
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, ref, Suspense, watch, watchEffect } from 'vue'
+import { resolveSeoDescription, resolveSeoTitle } from '~/utils/metaPatterns'
 import LoadError from '~/components/ErrorState/LoadError.vue'
 import NotFound from '~/components/ErrorState/NotFound.vue'
 import FamillePage from '~/pages/formations/[famille]/index.vue'
+import { assertHeadingStructure } from '../helpers/headings'
 
 const family: FamilleFormation = {
   id: 1,
@@ -131,6 +133,11 @@ vi.stubGlobal('computed', computed)
 vi.stubGlobal('watch', watch)
 vi.stubGlobal('watchEffect', watchEffect)
 vi.stubGlobal('definePageMeta', vi.fn())
+// ST-04 : patrons Directus non administrés en test — les gabarits
+// retombent sur leurs metas codées en dur (repli du moteur).
+vi.stubGlobal('useSeoPattern', () => ref(null))
+vi.stubGlobal('resolveSeoTitle', resolveSeoTitle)
+vi.stubGlobal('resolveSeoDescription', resolveSeoDescription)
 vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
 vi.stubGlobal('useRoute', () => routeMock)
 vi.stubGlobal('useRouter', () => ({ replace: vi.fn() }))
@@ -351,6 +358,14 @@ describe('pages/formations/[famille]', () => {
     expect(wrapper.findAll('.formation-card')).toHaveLength(courses.length)
     expect(wrapper.text()).toContain('CACES R489 — chariots élévateurs')
     expect(wrapper.text()).toContain('CACES R490 — grues de chargement')
+    assertHeadingStructure(wrapper)
+  })
+
+  it('affiche le champ h1 Directus quand renseigné, sinon le nom de famille', async () => {
+    family.h1 = 'H1 éditorial famille'
+    const wrapper = await mountPage()
+    expect(wrapper.find('h1').text()).toBe('H1 éditorial famille')
+    family.h1 = null
   })
 
   it('affiche les cartes informations public concerné et validité', async () => {

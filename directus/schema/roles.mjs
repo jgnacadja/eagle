@@ -33,6 +33,7 @@ const CONTENT_COLLECTIONS = [
   'seo_patterns',
   'formations',
   'formations_centres',
+  'formations_liees',
   'recherches_sans_resultat'
 ]
 
@@ -70,6 +71,7 @@ export function permissionsFor(roleName) {
         // Jonction M2M : éditer le champ « Centres » d'une formation écrit
         // des lignes ici — la suppression permet de retirer un lien.
         ...grants('formations_centres', ['create', 'read', 'update', 'delete']),
+        ...grants('formations_liees', ['create', 'read', 'update', 'delete']),
         ...grants('directus_files', ['create', 'read']),
         { collection: 'formations', action: 'read' },
         {
@@ -134,6 +136,7 @@ export function permissionsFor(roleName) {
           'stats',
           'directus_files',
           'formations_centres',
+          'formations_liees',
           'recherches_sans_resultat'
         ].flatMap((c) => grants(c, ['read'])),
         { collection: 'formations', action: 'read' },
@@ -173,6 +176,7 @@ const PUBLIC_STATUS_FILTERED = [
 // sur le parent (`page` pour une section, `section.page` pour une
 // sous-section). Sans ça, le contenu d'une page en brouillon fuiterait.
 const PUBLIC_PARENT_STATUS = {
+  formations_liees: { formation: { status: { _eq: 'published' } } },
   pages_legales_sections: { page: { status: { _eq: 'published' } } },
   pages_legales_subsections: { section: { page: { status: { _eq: 'published' } } } }
 }
@@ -278,6 +282,7 @@ const PUBLIC_FIELDS = {
     'seo_noindex'
   ],
   seo_patterns: ['id', 'key', 'title_pattern', 'description_pattern'],
+  formations_liees: ['id', 'sort', 'formation', 'related'],
   avis: ['id', 'status', 'sort', 'slug', 'author', 'published_at', 'stars', 'quote', 'centre'],
   pages: [
     'id',
@@ -346,7 +351,8 @@ const PUBLIC_FIELDS = {
     'seo_description',
     'seo_canonical',
     'h1',
-    'seo_noindex'
+    'seo_noindex',
+    'formations_liees'
   ]
 }
 

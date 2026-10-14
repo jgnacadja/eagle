@@ -10,7 +10,7 @@
               <h1
                 class="mt-sm font-display text-h2 font-extrabold leading-tight text-ink lg:text-h1"
               >
-                {{ familleData?.name }}
+                {{ familleData?.h1 || familleData?.name }}
               </h1>
               <div
                 v-if="familleData?.intro"
@@ -456,19 +456,41 @@ watchEffect(() => {
     : defaultBreadcrumb.value
 })
 
+// Patron administrable `famille` (ST-04) : seo_* éditorial > patron > repli.
+const famillePattern = useSeoPattern('famille')
+
 useContentSeo(
   () => {
     const isFound = pageState.value === 'found'
     const stateLabel = isFound ? null : stateLabels[pageState.value]
     const title = stateLabel ?? familleData.value!.name
 
+    const vars = isFound
+      ? {
+          famille: familleData.value!.name,
+          'sous-famille': sousFamilles.value?.length
+            ? sousFamilles.value.map((s) => s.name).join(', ')
+            : null,
+          n: familyTotal.value
+        }
+      : {}
+
     return {
       seo_title: isFound
-        ? (familleData.value?.seo_title ?? `${title} — Formations | LEARN UP ACADEMY`)
+        ? resolveSeoTitle(
+            familleData.value?.seo_title,
+            famillePattern.value?.title_pattern,
+            vars,
+            `${title} — Formations | LEARN UP ACADEMY`
+          )
         : title,
       seo_description: isFound
-        ? (familleData.value?.seo_description ??
-          `Formations ${familleData.value!.name} en centre ou sur site.`)
+        ? resolveSeoDescription(
+            familleData.value?.seo_description,
+            famillePattern.value?.description_pattern,
+            vars,
+            `Formations ${familleData.value!.name} en centre ou sur site.`
+          )
         : undefined,
       seo_canonical: isFound ? familleData.value?.seo_canonical : undefined,
       seo_noindex: !isFound,

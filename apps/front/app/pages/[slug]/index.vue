@@ -35,6 +35,8 @@ const { data: pageData, error: loadError } = await useAsyncData<PageLegale | nul
             'seo_title',
             'seo_description',
             'seo_canonical',
+            'h1',
+            'seo_noindex',
             'sections.id',
             'sections.sort',
             'sections.title',
@@ -89,6 +91,7 @@ const page = computed<LegalPage | null>(() => {
     slug: raw.slug,
     label: raw.label,
     title: raw.title,
+    h1: raw.h1 ?? null,
     lastUpdated: formatDateFr(raw.updated_at ?? raw.created_at),
     sections: (raw.sections ?? [])
       .slice()

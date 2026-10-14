@@ -133,7 +133,9 @@ const families: FamilleFormation[] = [
     validity_text: null,
     seo_title: null,
     seo_description: null,
-    seo_canonical: null
+    seo_canonical: null,
+    h1: null,
+    seo_noindex: null
   },
   {
     id: 2,
@@ -148,7 +150,9 @@ const families: FamilleFormation[] = [
     validity_text: null,
     seo_title: null,
     seo_description: null,
-    seo_canonical: null
+    seo_canonical: null,
+    h1: null,
+    seo_noindex: null
   },
   {
     id: 3,
@@ -163,7 +167,9 @@ const families: FamilleFormation[] = [
     validity_text: null,
     seo_title: null,
     seo_description: null,
-    seo_canonical: null
+    seo_canonical: null,
+    h1: null,
+    seo_noindex: null
   },
   {
     id: 4,
@@ -178,7 +184,9 @@ const families: FamilleFormation[] = [
     validity_text: null,
     seo_title: null,
     seo_description: null,
-    seo_canonical: null
+    seo_canonical: null,
+    h1: null,
+    seo_noindex: null
   }
 ]
 

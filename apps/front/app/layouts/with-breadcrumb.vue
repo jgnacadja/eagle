@@ -15,6 +15,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { buildBreadcrumbJsonLd, jsonLdScriptTags } from '~/utils/jsonLd'
 
 export interface BreadcrumbItem {
   label: string
@@ -32,5 +33,16 @@ const color = computed(() => {
 
 const items = computed<BreadcrumbItem[] | undefined>(() =>
   Array.isArray(route.meta.breadcrumb) ? (route.meta.breadcrumb as BreadcrumbItem[]) : undefined
+)
+
+// BreadcrumbList schema.org — miroir du fil affiché, émis par le layout
+// pour couvrir tous les gabarits qui alimentent route.meta.breadcrumb.
+const requestUrl = useRequestURL()
+useHead(
+  computed(() => ({
+    script: jsonLdScriptTags(
+      buildBreadcrumbJsonLd(items.value ?? [], requestUrl.origin, route.path)
+    )
+  }))
 )
 </script>

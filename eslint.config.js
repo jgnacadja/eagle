@@ -70,7 +70,14 @@ const nuxtGlobals = {
   sanitizeHtml: 'readonly',
   logServerError: 'readonly',
   logClientError: 'readonly',
-  internalSsrHeaders: 'readonly'
+  internalSsrHeaders: 'readonly',
+  useSeoPattern: 'readonly',
+  useSeoPatterns: 'readonly',
+  renderPattern: 'readonly',
+  resolveSeoTitle: 'readonly',
+  resolveSeoDescription: 'readonly',
+  truncateTitle: 'readonly',
+  truncateDescription: 'readonly'
 }
 
 // Auto-imports Nitro (apps/front/server/) — injectés par unimport au build,

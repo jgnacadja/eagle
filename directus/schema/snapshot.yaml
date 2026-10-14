@@ -190,6 +190,34 @@ collections:
       versioning: false
     schema:
       name: formations_centres
+  - collection: formations_liees
+    meta:
+      accountability: all
+      archive_app_filter: true
+      archive_field: null
+      archive_value: null
+      collapse: open
+      collection: formations_liees
+      color: null
+      display_template: null
+      group: null
+      hidden: true
+      icon: link
+      item_duplication_fields: null
+      note: >-
+        Jonction formations ↔ formations liées — lignes créées via « Formations
+        liées » sur la fiche.
+      preview_url: null
+      singleton: false
+      sort: null
+      sort_field: null
+      translations:
+        - language: fr-FR
+          translation: Formations liées
+      unarchive_value: null
+      versioning: false
+    schema:
+      name: formations_liees
   - collection: page_blocks
     meta:
       accountability: all
@@ -6704,6 +6732,38 @@ fields:
       has_auto_increment: false
       foreign_key_table: null
       foreign_key_column: null
+  - collection: formations
+    field: formations_liees
+    type: alias
+    meta:
+      collection: formations
+      conditions: null
+      display: related-values
+      display_options:
+        template: '{{related.title}}'
+      field: formations_liees
+      group: null
+      hidden: false
+      interface: list-m2m
+      note: >-
+        Remplace « Formations similaires » sur le site quand rempli — ordre =
+        ordre d affichage
+      options:
+        enableCreate: false
+        enableSelect: true
+        template: '{{related.title}}'
+      readonly: false
+      required: false
+      searchable: true
+      sort: 102
+      special:
+        - m2m
+      translations:
+        - language: fr-FR
+          translation: Formations liées
+      validation: null
+      validation_message: null
+      width: full
   - collection: formations_centres
     field: id
     type: integer
@@ -6876,6 +6936,172 @@ fields:
       has_auto_increment: false
       foreign_key_table: null
       foreign_key_column: null
+  - collection: formations_liees
+    field: id
+    type: integer
+    meta:
+      collection: formations_liees
+      conditions: null
+      display: null
+      display_options: null
+      field: id
+      group: null
+      hidden: true
+      interface: input
+      note: null
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 1
+      special: null
+      translations: null
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: id
+      table: formations_liees
+      data_type: integer
+      default_value: nextval('formations_liees_id_seq'::regclass)
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: false
+      is_unique: true
+      is_indexed: false
+      is_primary_key: true
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: true
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: formations_liees
+    field: sort
+    type: integer
+    meta:
+      collection: formations_liees
+      conditions: null
+      display: null
+      display_options: null
+      field: sort
+      group: null
+      hidden: true
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 2
+      special: null
+      translations: null
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: sort
+      table: formations_liees
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: formations_liees
+    field: formation
+    type: integer
+    meta:
+      collection: formations_liees
+      conditions: null
+      display: null
+      display_options: null
+      field: formation
+      group: null
+      hidden: false
+      interface: select-dropdown-m2o
+      note: null
+      options:
+        template: '{{title}}'
+      readonly: false
+      required: true
+      searchable: true
+      sort: 3
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Formation
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: formation
+      table: formations_liees
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: formations_liees
+    field: related
+    type: integer
+    meta:
+      collection: formations_liees
+      conditions: null
+      display: null
+      display_options: null
+      field: related
+      group: null
+      hidden: false
+      interface: select-dropdown-m2o
+      note: null
+      options:
+        template: '{{title}}'
+      readonly: false
+      required: true
+      searchable: true
+      sort: 4
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Formation liée
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: related
+      table: formations_liees
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: formations
+      foreign_key_column: id
   - collection: page_blocks
     field: id
     type: integer
@@ -10287,6 +10513,40 @@ relations:
       one_deselect_action: nullify
       one_field: centres
       sort_field: sort
+  - collection: formations_liees
+    field: formation
+    related_collection: formations
+    meta:
+      junction_field: related
+      many_collection: formations_liees
+      many_field: formation
+      one_allowed_collections: null
+      one_collection: formations
+      one_collection_field: null
+      one_deselect_action: delete
+      one_field: formations_liees
+      sort_field: sort
+  - collection: formations_liees
+    field: related
+    related_collection: formations
+    meta:
+      junction_field: formation
+      many_collection: formations_liees
+      many_field: related
+      one_allowed_collections: null
+      one_collection: formations
+      one_collection_field: null
+      one_deselect_action: nullify
+      one_field: null
+      sort_field: null
+    schema:
+      table: formations_liees
+      column: related
+      foreign_key_table: formations
+      foreign_key_column: id
+      constraint_name: formations_liees_related_foreign
+      on_update: NO ACTION
+      on_delete: NO ACTION
   - collection: page_blocks
     field: page
     related_collection: pages

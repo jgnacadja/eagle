@@ -1,9 +1,9 @@
 <template>
   <div class="rounded-md border border-rule bg-paper p-lg">
-    <h2 class="flex items-center gap-sm font-sans text-h4 font-semibold text-ink">
+    <p class="flex items-center gap-sm font-sans text-h4 font-semibold text-ink">
       <IconSparkle :size="18" class="shrink-0 text-accent" aria-hidden="true" />
       {{ title }}
-    </h2>
+    </p>
     <p class="mt-sm text-small text-ink-muted">{{ text }}</p>
     <Button
       variant="outline"

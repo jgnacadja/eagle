@@ -1,10 +1,12 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, onScopeDispose, ref, Suspense, watchEffect } from 'vue'
+import { resolveSeoDescription, resolveSeoTitle } from '~/utils/metaPatterns'
 import type { Article, Course } from '@learnup/types'
 import LoadError from '~/components/ErrorState/LoadError.vue'
 import NotFound from '~/components/ErrorState/NotFound.vue'
 import ArticlePage from '~/pages/actualites/[slug].vue'
+import { assertHeadingStructure } from '../helpers/headings'
 
 const navigateToMock = vi.fn()
 const refreshMock = vi.fn()
@@ -44,8 +46,33 @@ const articleFixture: Article = {
   cover_image: null,
   seo_title: 'Recyclage CACES | LEARN UP ACADEMY',
   seo_description: 'Les échéances de recyclage CACES à anticiper.',
-  seo_canonical: 'https://learnup.fr/actualites/recyclage-caces-echeances-2027'
+  seo_canonical: 'https://learnup.fr/actualites/recyclage-caces-echeances-2027',
+  h1: null,
+  seo_noindex: null
 }
+
+const categoryFixture = {
+  id: 1,
+  status: 'published',
+  slug: 'securite-au-travail',
+  name: 'Sécurité au travail',
+  description: 'Tout sur la prévention des risques professionnels.'
+}
+
+const categoryArticlesFixture: Article[] = [
+  {
+    ...articleFixture,
+    slug: 'passeport-prevention-2026',
+    title: 'Passeport prévention : ce qui change',
+    cover_image: null
+  },
+  {
+    ...articleFixture,
+    slug: 'sst-initiation',
+    title: 'SST : initier ses équipes au secours',
+    cover_image: null
+  }
+]
 
 const relatedCourse = {
   id: 2,
@@ -86,13 +113,21 @@ const relatedCourse = {
 
 const directusRequestMock = vi.fn()
 const fetchMock = vi.fn()
-type DirectusCommand = () => { path: string }
+type DirectusCommand = () => {
+  path: string
+  params?: { filter?: Record<string, unknown> }
+}
 
 vi.stubGlobal('computed', computed)
 vi.stubGlobal('ref', ref)
 vi.stubGlobal('watchEffect', watchEffect)
 vi.stubGlobal('onScopeDispose', onScopeDispose)
 vi.stubGlobal('definePageMeta', vi.fn())
+// ST-04 : patrons Directus non administrés en test — les gabarits
+// retombent sur leurs metas codées en dur (repli du moteur).
+vi.stubGlobal('useSeoPattern', () => ref(null))
+vi.stubGlobal('resolveSeoTitle', resolveSeoTitle)
+vi.stubGlobal('resolveSeoDescription', resolveSeoDescription)
 vi.stubGlobal('useRoute', () => routeMock)
 vi.stubGlobal(
   'useAsyncData',
@@ -125,7 +160,9 @@ vi.stubGlobal('useRequestEvent', () => requestEvent)
 vi.stubGlobal('setResponseStatus', setResponseStatusMock)
 vi.stubGlobal('useContentSeo', seoMock)
 vi.stubGlobal('navigateTo', navigateToMock)
-vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
+vi.stubGlobal('useRuntimeConfig', () => ({
+  public: { apiBase: 'http://api.test', siteUrl: 'https://learnup.test' }
+}))
 vi.stubGlobal('useDirectusClient', () => ({ request: directusRequestMock }))
 vi.stubGlobal('useDirectusList', () =>
   ref([{ slug: 'aipr-qui-former', title: 'AIPR : qui former ?' }])
@@ -153,6 +190,10 @@ const stubs = {
     template: '<button class="search-stub" @click="$emit(\'submit\', \'caces\')" />'
   },
   ShareMenu: ShareMenuStub,
+  ArticleCard: {
+    props: ['title', 'to', 'category', 'excerpt', 'date'],
+    template: '<a :href="to">{{ title }}</a>'
+  },
   IconLink: true,
   IconCheck: true,
   IconFileOff: true,
@@ -162,9 +203,9 @@ const stubs = {
 
 // useContentSeo reçoit des getters réactifs : on les résout pour les assertions.
 function seoArgs() {
-  const [source, fallback] = seoMock.mock.calls[0]!
+  const [source, fallback, options] = seoMock.mock.calls[0]!
   const resolve = (v: unknown) => (typeof v === 'function' ? (v as () => unknown)() : v)
-  return [resolve(source), resolve(fallback)] as const
+  return [resolve(source), resolve(fallback), options] as const
 }
 
 async function mountPage() {
@@ -181,11 +222,23 @@ async function mountPage() {
 describe('pages/actualites/[slug]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Re-stub : les tests de patrons ci-dessous remplacent useSeoPattern —
+    // sans réinitialisation, le stub fuiterait dans les specs suivantes.
+    vi.stubGlobal('useSeoPattern', () => ref(null))
     forceError = null
     directusRequestMock.mockImplementation(async (command: DirectusCommand) => {
-      const { path } = command()
+      const { path, params } = command()
+      if (path === '/items/categories') {
+        return routeMock.params.slug === 'securite-au-travail' ? [categoryFixture] : []
+      }
       if (path === '/items/articles') {
-        return routeMock.params.slug === 'inconnu' ? [] : [articleFixture]
+        // Requête « articles de la catégorie » : filtre relationnel, pas de
+        // slug direct — renvoie la liste de la rubrique.
+        if (params?.filter && 'category' in params.filter) return categoryArticlesFixture
+        return routeMock.params.slug === 'inconnu' ||
+          routeMock.params.slug === 'securite-au-travail'
+          ? []
+          : [articleFixture]
       }
       return []
     })
@@ -317,6 +370,76 @@ describe('pages/actualites/[slug]', () => {
     expect(fallback).toEqual(expect.stringContaining('Recyclage CACES'))
   })
 
+  it('émet le JSON-LD Article sur une fiche trouvée, jamais sur une catégorie', async () => {
+    await mountPage()
+
+    const [, , options] = seoArgs()
+    const ld = (
+      options as { jsonLd?: () => Record<string, unknown> | null } | undefined
+    )?.jsonLd?.()
+    expect(ld).toMatchObject({
+      '@type': 'Article',
+      headline: 'Recyclage CACES : échéance en 2027',
+      articleSection: 'Réglementation & obligations'
+    })
+
+    routeMock.params.slug = 'securite-au-travail'
+    routeMock.path = '/actualites/securite-au-travail'
+    seoMock.mockClear()
+    await mountPage()
+    const [, , categoryOptions] = seoArgs()
+    expect(
+      (categoryOptions as { jsonLd?: () => Record<string, unknown> | null } | undefined)?.jsonLd?.()
+    ).toBeNull()
+  })
+
+  it('résout les metas via le patron administré quand les champs SEO sont vides', async () => {
+    vi.stubGlobal('useSeoPattern', (key: string) =>
+      ref(
+        key === 'article'
+          ? {
+              key: 'article',
+              title_pattern: 'Zoom : {intitulé} — {catégorie}',
+              description_pattern: 'Lire « {intitulé} » ({catégorie}) sur le blog LEARN UP.'
+            }
+          : null
+      )
+    )
+    directusRequestMock.mockImplementation(async (command: DirectusCommand) => {
+      const { path, params } = command()
+      if (path === '/items/articles' && !(params?.filter && 'category' in params.filter)) {
+        return [{ ...articleFixture, seo_title: null, seo_description: null }]
+      }
+      return []
+    })
+    await mountPage()
+
+    const [source] = seoArgs()
+    expect(source).toMatchObject({
+      // Titre > 60 : tronqué au mot par le garde-fou SERP, avec « … ».
+      seo_title: 'Zoom: Recyclage CACES: échéance en 2027 — Réglementation &…',
+      seo_description:
+        'Lire « Recyclage CACES: échéance en 2027 » (Réglementation & obligations) sur le blog LEARN UP.'
+    })
+  })
+
+  it('laisse le champ seo_title éditorial primer sur le patron administré', async () => {
+    vi.stubGlobal('useSeoPattern', () =>
+      ref({
+        key: 'article',
+        title_pattern: 'PATRON NE DOIT PAS APPARAÎTRE {intitulé}',
+        description_pattern: 'PATRON NE DOIT PAS APPARAÎTRE'
+      })
+    )
+    await mountPage()
+
+    const [source] = seoArgs()
+    expect(source).toMatchObject({
+      seo_title: 'Recyclage CACES | LEARN UP ACADEMY',
+      seo_description: 'Les échéances de recyclage CACES à anticiper.'
+    })
+  })
+
   it('affiche l’état introuvable et adapte breadcrumb/SEO pour un slug inconnu', async () => {
     routeMock.params.slug = 'inconnu'
     routeMock.path = '/actualites/inconnu'
@@ -333,6 +456,91 @@ describe('pages/actualites/[slug]', () => {
       expect.objectContaining({ seo_title: 'Article introuvable', seo_noindex: true })
     )
     expect(fallback).toBe('Article introuvable')
+  })
+
+  it('résout un slug de catégorie (T9) : titre, description et articles de la rubrique', async () => {
+    routeMock.params.slug = 'securite-au-travail'
+    const wrapper = await mountPage()
+
+    expect(wrapper.find('h1').text()).toBe('Sécurité au travail')
+    expect(wrapper.text()).toContain('prévention des risques professionnels')
+    expect(wrapper.text()).toContain('Passeport prévention : ce qui change')
+    expect(wrapper.text()).toContain('SST : initier ses équipes au secours')
+    expect(wrapper.text()).not.toContain("Cet article n'est pas disponible.")
+    assertHeadingStructure(wrapper)
+  })
+
+  it('affiche le champ h1 éditorial en priorité (article puis catégorie)', async () => {
+    directusRequestMock.mockImplementation(async (command: DirectusCommand) => {
+      const { path, params } = command()
+      if (path === '/items/articles') {
+        if (params?.filter && 'category' in params.filter) return []
+        return [{ ...articleFixture, h1: 'H1 éditorial article' }]
+      }
+      return []
+    })
+    const articleWrapper = await mountPage()
+    expect(articleWrapper.find('h1').text()).toBe('H1 éditorial article')
+
+    routeMock.params.slug = 'securite-au-travail'
+    directusRequestMock.mockImplementation(async (command: DirectusCommand) => {
+      const { path, params } = command()
+      if (path === '/items/categories') {
+        return [{ ...categoryFixture, h1: 'H1 éditorial rubrique' }]
+      }
+      if (path === '/items/articles') {
+        if (params?.filter && 'category' in params.filter) return categoryArticlesFixture
+        return []
+      }
+      return []
+    })
+    const categoryWrapper = await mountPage()
+    expect(categoryWrapper.find('h1').text()).toBe('H1 éditorial rubrique')
+  })
+
+  it('lie les articles de la catégorie vers leurs fiches canoniques', async () => {
+    routeMock.params.slug = 'securite-au-travail'
+    const wrapper = await mountPage()
+
+    const hrefs = wrapper.findAll('a').map((a) => a.attributes('href'))
+    expect(hrefs).toContain('/actualites/passeport-prevention-2026')
+    expect(hrefs).toContain('/actualites')
+  })
+
+  it('applique le SEO de la page catégorie : titre rubrique et canonical self', async () => {
+    routeMock.params.slug = 'securite-au-travail'
+    await mountPage()
+
+    const [source, fallback] = seoArgs()
+    expect(source).toMatchObject({
+      seo_title: 'Sécurité au travail | LEARN UP ACADEMY',
+      seo_description: 'Tout sur la prévention des risques professionnels.',
+      seo_canonical: 'https://learnup.test/actualites/securite-au-travail'
+    })
+    expect(fallback).toBe('Sécurité au travail | LEARN UP ACADEMY')
+  })
+
+  it('pose le fil d’Ariane de la catégorie (Accueil > Actualités > rubrique)', async () => {
+    routeMock.params.slug = 'securite-au-travail'
+    await mountPage()
+
+    expect(routeMock.meta.breadcrumb).toEqual([
+      { label: 'Accueil', to: '/' },
+      { label: 'Actualités', to: '/actualites' },
+      { label: 'Sécurité au travail' }
+    ])
+  })
+
+  it('l’article prime sur la catégorie en cas de collision de slug (T9/T10)', async () => {
+    // La fiche article gagne : la collection catégories n'est jamais interrogée.
+    routeMock.params.slug = 'recyclage-caces-echeances-2027'
+    const wrapper = await mountPage()
+
+    const categoryCalls = directusRequestMock.mock.calls.filter(
+      ([command]: [DirectusCommand]) => command().path === '/items/categories'
+    )
+    expect(categoryCalls).toHaveLength(0)
+    expect(wrapper.find('h1').text()).toContain('Recyclage CACES')
   })
 
   it('affiche l’état erreur quand le chargement échoue', async () => {

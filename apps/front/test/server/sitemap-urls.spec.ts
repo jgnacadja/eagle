@@ -248,4 +248,48 @@ describe('server/api/__sitemap__/urls', () => {
       expect(locs(result)).toContain('/actualites/loi-iafp')
     })
   })
+
+  describe('?set= — sitemaps segmentés (ST-03)', () => {
+    it('set=pages ne retient que les pages légales', async () => {
+      querySet = 'pages'
+      const result = await handler(event)
+      expect(locs(result)).toEqual(['/mentions-legales'])
+    })
+
+    it('set=formations retient familles et fiches, sans centres ni actus', async () => {
+      querySet = 'formations'
+      const result = await handler(event)
+      expect(locs(result)).toEqual([
+        '/formations/caces-conduite-engins/caces-r489',
+        '/formations/sante',
+        '/formations/sante/sst'
+      ])
+    })
+
+    it('set=centres ne retient que les centres', async () => {
+      querySet = 'centres'
+      const result = await handler(event)
+      expect(locs(result)).toEqual(['/centres/lyon-part-dieu'])
+    })
+
+    it('set=actualites retient articles et catégories (namespace partagé)', async () => {
+      querySet = 'actualites'
+      const result = await handler(event)
+      expect(locs(result)).toEqual(['/actualites/loi-iafp', '/actualites/prevention'])
+    })
+
+    it('set=local est vide (lot 2) sans interroger les sources', async () => {
+      querySet = 'local'
+      const result = await handler(event)
+      expect(result).toEqual([])
+      expect(fetchCalls).toHaveLength(0)
+    })
+
+    it('un set inconnu retombe sur la liste complète', async () => {
+      querySet = 'inconnu'
+      const result = await handler(event)
+      expect(locs(result)).toContain('/centres/lyon-part-dieu')
+      expect(locs(result)).toContain('/actualites/loi-iafp')
+    })
+  })
 })

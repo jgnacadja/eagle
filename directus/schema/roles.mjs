@@ -35,6 +35,13 @@ const CONTENT_COLLECTIONS = [
   'recherches_sans_resultat'
 ]
 
+// `sources` porte des secrets (clé API Digiforma, token HubSpot) : hors de
+// CONTENT_COLLECTIONS pour ne jamais être accordée en bloc. Seul le rôle
+// `admin` (et l'Administrator natif / le compte de service) y accède en
+// entier ; les autres rôles internes ne lisent que les champs non
+// sensibles, utiles à l'affichage de `formations.source` / `centres.source`.
+const SOURCES_SAFE_FIELDS = ['id', 'name', 'code', 'is_hq', 'status']
+
 function grants(collection, actions) {
   return actions.map((action) => ({ collection, action }))
 }
@@ -43,9 +50,12 @@ function grants(collection, actions) {
 export function permissionsFor(roleName) {
   switch (roleName) {
     case 'admin':
-      return [...CONTENT_COLLECTIONS, 'directus_files'].flatMap((c) =>
-        grants(c, ['create', 'read', 'update', 'delete'])
-      )
+      return [
+        ...[...CONTENT_COLLECTIONS, 'directus_files'].flatMap((c) =>
+          grants(c, ['create', 'read', 'update', 'delete'])
+        ),
+        ...grants('sources', ['create', 'read', 'update', 'delete'])
+      ]
 
     case 'editeur':
       return [
@@ -71,6 +81,7 @@ export function permissionsFor(roleName) {
         ...grants('formations_centres', ['create', 'read', 'update', 'delete']),
         ...grants('directus_files', ['create', 'read']),
         { collection: 'formations', action: 'read' },
+        { collection: 'sources', action: 'read', fields: SOURCES_SAFE_FIELDS },
         {
           collection: 'formations',
           action: 'update',
@@ -134,6 +145,7 @@ export function permissionsFor(roleName) {
           'recherches_sans_resultat'
         ].flatMap((c) => grants(c, ['read'])),
         { collection: 'formations', action: 'read' },
+        { collection: 'sources', action: 'read', fields: SOURCES_SAFE_FIELDS },
         // Publier / dépublier une formation = mettre à jour son status.
         { collection: 'formations', action: 'update', fields: ['status'] },
         // Revue produit : marquer une recherche sans résultat comme traitée.
@@ -141,7 +153,10 @@ export function permissionsFor(roleName) {
       ]
 
     case 'lecteur':
-      return [...CONTENT_COLLECTIONS, 'directus_files'].flatMap((c) => grants(c, ['read']))
+      return [
+        ...[...CONTENT_COLLECTIONS, 'directus_files'].flatMap((c) => grants(c, ['read'])),
+        { collection: 'sources', action: 'read', fields: SOURCES_SAFE_FIELDS }
+      ]
 
     default:
       return []

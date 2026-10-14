@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { ConfigService } from '@nestjs/config'
 import { EventEmitter } from 'node:events'
-import { CacheService } from './cache.service'
+import { CacheService, type CacheScopeProvider } from './cache.service'
 
 // Store partagé entre toutes les instances MockRedis : permet de simuler
 // plusieurs instances CacheService derrière un seul Redis (multi-instances).
@@ -37,6 +37,10 @@ vi.mock('ioredis', () => ({
       this.store.set(key, value)
       return Promise.resolve('OK')
     })
+
+    mget = vi.fn((keys: string[]) =>
+      Promise.resolve(keys.map((key) => this.store.get(key) ?? null))
+    )
 
     quit = vi.fn().mockResolvedValue(undefined)
 
@@ -352,6 +356,48 @@ describe('CacheService', () => {
     await expect(service.getSyncRun()).resolves.toEqual(run)
   })
 
+  it('stores the run per source without touching the overall latest', async () => {
+    const base = {
+      status: 'success' as const,
+      startedAt: '2025-01-01T00:00:00Z',
+      finishedAt: '2025-01-01T00:01:00Z',
+      inserted: 1,
+      updated: 0,
+      failed: 0,
+      error: null
+    }
+    const hq = { ...base, source: 'hq' }
+    const lyon = { ...base, source: 'lyon', inserted: 5 }
+
+    await service.setSyncRun(hq, 'hq')
+    await service.setSyncRun(lyon, 'lyon')
+
+    await expect(service.getSyncRun('hq')).resolves.toEqual(hq)
+    await expect(service.getSyncRun('lyon')).resolves.toEqual(lyon)
+    await expect(service.getSyncRun('nice')).resolves.toBeNull()
+    // Le dernier run global est écrit par l'appelant (statut agrégé) : un run
+    // de source ne l'écrase pas, sinon l'échec d'une source serait masqué.
+    await expect(service.getSyncRun()).resolves.toBeNull()
+
+    const overall = { ...base, status: 'failed' as const, error: 'lyon: boom' }
+    await service.setSyncRun(overall)
+    await expect(service.getSyncRun()).resolves.toEqual(overall)
+    await expect(service.getSyncRun('lyon')).resolves.toEqual(lyon)
+  })
+
+  it('locks each source independently', async () => {
+    const other = await buildService()
+
+    await expect(service.acquireSyncLock('a', 60_000, 'hq')).resolves.toBe(true)
+    await expect(other.acquireSyncLock('b', 60_000, 'hq')).resolves.toBe(false)
+    await expect(other.acquireSyncLock('b', 60_000, 'lyon')).resolves.toBe(true)
+
+    await service.releaseSyncLock('a', 'hq')
+    await expect(other.acquireSyncLock('b', 60_000, 'hq')).resolves.toBe(true)
+    await other.releaseSyncLock('b', 'lyon')
+    await other.onModuleDestroy()
+  })
+
   it('returns null when the sync run store is unreadable', async () => {
     const redis = Reflect.get(service, 'client') as { get: ReturnType<typeof vi.fn> }
     redis.get = vi.fn().mockRejectedValue(new Error('redis down'))
@@ -589,5 +635,182 @@ describe('CacheService', () => {
     expect(sharedStore.has('catalog:v1:courses')).toBe(false)
 
     await other.onModuleDestroy()
+  })
+})
+
+describe('CacheService — portée par source', () => {
+  let activeCodes: string[]
+  let provider: { activeCodes: ReturnType<typeof vi.fn>; invalidate: ReturnType<typeof vi.fn> }
+
+  const buildScoped = async (): Promise<CacheService> => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CacheService,
+        { provide: ConfigService, useValue: { get: () => 'redis://localhost:6379' } }
+      ]
+    }).compile()
+    const instance = module.get<CacheService>(CacheService)
+    instance.setScopeProvider(provider as CacheScopeProvider)
+    const client = Reflect.get(instance, 'client') as { status?: string }
+    client.status = 'ready'
+    await instance.onModuleInit()
+    return instance
+  }
+
+  const scopedKeys = () =>
+    Array.from(sharedStore.keys()).filter(
+      (key) => key.startsWith('catalog:v') && key.endsWith(':courses')
+    )
+
+  beforeEach(() => {
+    sharedStore.clear()
+    activeCodes = ['hq', 'lyon']
+    provider = {
+      activeCodes: vi.fn(async () => [...activeCodes]),
+      invalidate: vi.fn()
+    }
+  })
+
+  it('prefixes catalog keys with a hash of the active sources versions', async () => {
+    const service = await buildScoped()
+
+    await service.set('courses', { id: 1 })
+
+    expect(scopedKeys()).toHaveLength(1)
+    expect(scopedKeys()[0]).toMatch(/^catalog:v0:s[0-9a-f]{8}:courses$/)
+    await expect(service.get('courses')).resolves.toEqual({ id: 1 })
+    await service.onModuleDestroy()
+  })
+
+  it('bumping a source version moves every instance to fresh keys', async () => {
+    const a = await buildScoped()
+    const b = await buildScoped()
+    await a.set('courses', { id: 1 })
+    await expect(b.get('courses')).resolves.toEqual({ id: 1 })
+
+    await a.bumpSourceVersion('lyon')
+
+    expect(sharedStore.get('catalog:ver:lyon')).toBe('1')
+    await expect(a.get('courses')).resolves.toBeNull()
+    await expect(b.get('courses')).resolves.toBeNull()
+    await a.onModuleDestroy()
+    await b.onModuleDestroy()
+  })
+
+  it('activating or deactivating a source changes the scope', async () => {
+    const service = await buildScoped()
+    await service.set('courses', { id: 1 })
+
+    activeCodes = ['hq']
+    await expect(service.get('courses')).resolves.toBeNull()
+
+    activeCodes = ['hq', 'lyon']
+    await expect(service.get('courses')).resolves.toEqual({ id: 1 })
+    await service.onModuleDestroy()
+  })
+
+  it('is insensitive to the order of the active sources', async () => {
+    const service = await buildScoped()
+    await service.set('courses', { id: 1 })
+
+    activeCodes = ['lyon', 'hq']
+    await expect(service.get('courses')).resolves.toEqual({ id: 1 })
+    await service.onModuleDestroy()
+  })
+
+  it('still purges scoped keys on invalidateCatalog and invalidatePatterns', async () => {
+    const service = await buildScoped()
+    await service.set('courses', { id: 1 })
+    await service.invalidatePatterns(['courses'])
+    expect(scopedKeys()).toHaveLength(0)
+
+    await service.set('courses', { id: 2 })
+    await service.invalidateCatalog()
+    expect(scopedKeys().filter((key) => key.startsWith('catalog:v0:'))).toHaveLength(0)
+    await service.onModuleDestroy()
+  })
+
+  it('reads the global and per-source versions with a single MGET', async () => {
+    const service = await buildScoped()
+    const redis = Reflect.get(service, 'client') as { mget: ReturnType<typeof vi.fn> }
+
+    await service.set('courses', { id: 1 })
+    redis.mget.mockClear()
+    await service.get('courses')
+
+    expect(redis.mget).toHaveBeenCalledTimes(1)
+    expect(redis.mget).toHaveBeenCalledWith([
+      'catalog:version',
+      'catalog:ver:hq',
+      'catalog:ver:lyon'
+    ])
+    await service.onModuleDestroy()
+  })
+
+  it('does not mutate the codes returned by the scope provider', async () => {
+    const service = await buildScoped()
+    const codes = ['lyon', 'hq']
+    provider.activeCodes.mockResolvedValue(codes)
+
+    await service.set('courses', { id: 1 })
+
+    expect(codes).toEqual(['lyon', 'hq'])
+    await service.onModuleDestroy()
+  })
+
+  it('relays invalidateScope() to the scope provider, and ignores it without one', async () => {
+    const service = await buildScoped()
+    service.invalidateScope()
+    expect(provider.invalidate).toHaveBeenCalledOnce()
+    await service.onModuleDestroy()
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [CacheService, { provide: ConfigService, useValue: { get: () => undefined } }]
+    }).compile()
+    expect(() => module.get<CacheService>(CacheService).invalidateScope()).not.toThrow()
+  })
+
+  it('keeps unscoped keys without a scope provider', async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CacheService,
+        { provide: ConfigService, useValue: { get: () => 'redis://localhost:6379' } }
+      ]
+    }).compile()
+    const bare = module.get<CacheService>(CacheService)
+    const client = Reflect.get(bare, 'client') as { status?: string }
+    client.status = 'ready'
+    await bare.onModuleInit()
+
+    await bare.set('courses', { id: 1 })
+
+    expect(sharedStore.has('catalog:v0:courses')).toBe(true)
+    await bare.onModuleDestroy()
+  })
+
+  it('falls back to unscoped keys when the sources lookup fails', async () => {
+    provider.activeCodes.mockRejectedValue(new Error('directus down'))
+    const service = await buildScoped()
+
+    await service.set('courses', { id: 1 })
+
+    expect(sharedStore.has('catalog:v0:courses')).toBe(true)
+    await expect(service.get('courses')).resolves.toEqual({ id: 1 })
+    await service.onModuleDestroy()
+  })
+
+  it('ignores bumpSourceVersion when Redis is absent or errors', async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [CacheService, { provide: ConfigService, useValue: { get: () => undefined } }]
+    }).compile()
+    const disabled = module.get<CacheService>(CacheService)
+    await disabled.onModuleInit()
+    await expect(disabled.bumpSourceVersion('hq')).resolves.toBeUndefined()
+
+    const service = await buildScoped()
+    const redis = Reflect.get(service, 'client') as { incr: ReturnType<typeof vi.fn> }
+    redis.incr = vi.fn().mockRejectedValue(new Error('redis down'))
+    await expect(service.bumpSourceVersion('hq')).resolves.toBeUndefined()
+    await service.onModuleDestroy()
   })
 })

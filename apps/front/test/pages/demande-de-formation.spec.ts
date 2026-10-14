@@ -298,7 +298,7 @@ describe('pages/centres/demande-de-formation', () => {
     routeStub.query = { sujet: 'conseiller' }
     await mountPage()
 
-    expect(navigateMock).toHaveBeenCalledWith('/parler-a-votre-conseiller/')
+    expect(navigateMock).toHaveBeenCalledWith('/parler-a-votre-conseiller')
   })
 
   it('affiche le contexte générique sans paramètres (RG04)', async () => {
@@ -318,8 +318,8 @@ describe('pages/centres/demande-de-formation', () => {
     expect(wrapper.text()).toContain('Créteil · Val-de-Marne (94)')
     expect(routeStub.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
-      { label: 'Centres', to: '/centres/' },
-      { label: 'Centre LEARN UP de Créteil', to: '/centres/creteil/' },
+      { label: 'Centres', to: '/centres' },
+      { label: 'Centre LEARN UP de Créteil', to: '/centres/creteil' },
       { label: 'Demande de formation' }
     ])
   })
@@ -453,7 +453,7 @@ describe('pages/centres/demande-de-formation', () => {
   it("le lien Modifier renvoie au point d'origine selon le niveau transmis", async () => {
     routeStub.query = { centre: 'creteil' }
     let wrapper = await mountPage()
-    expect(wrapper.find('aside a').attributes('href')).toBe('/centres/creteil/')
+    expect(wrapper.find('aside a').attributes('href')).toBe('/centres/creteil')
 
     routeStub.query = {
       centre: 'creteil',
@@ -461,7 +461,7 @@ describe('pages/centres/demande-de-formation', () => {
       famille: 'sante'
     }
     wrapper = await mountPage()
-    expect(wrapper.find('aside a').attributes('href')).toBe('/formations/sante/sst-initial/')
+    expect(wrapper.find('aside a').attributes('href')).toBe('/formations/sante/sst-initial')
 
     routeStub.query = {
       centre: 'creteil',
@@ -471,7 +471,7 @@ describe('pages/centres/demande-de-formation', () => {
     }
     wrapper = await mountPage()
     expect(wrapper.find('aside a').attributes('href')).toBe(
-      '/formations/sante/sst-initial/#sessions'
+      '/formations/sante/sst-initial#sessions'
     )
   })
 
@@ -559,8 +559,8 @@ describe('pages/centres/demande-de-formation', () => {
   it('lie la politique de confidentialité à la page dédiée', async () => {
     const wrapper = await mountPage()
 
-    expect(wrapper.find('a[href="/confidentialite/"]').exists()).toBe(true)
-    expect(wrapper.find('a[href="/confidentialite/"]').text()).toContain(
+    expect(wrapper.find('a[href="/confidentialite"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/confidentialite"]').text()).toContain(
       'Politique de confidentialité'
     )
   })
@@ -721,7 +721,7 @@ describe('pages/centres/demande-de-formation', () => {
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain('Centre LEARN UP de Créteil')
-    expect(wrapper.find('aside a').attributes('href')).toBe('/centres/creteil/')
+    expect(wrapper.find('aside a').attributes('href')).toBe('/centres/creteil')
   })
 
   it('affiche un breadcrumb générique sans contexte', async () => {
@@ -729,7 +729,7 @@ describe('pages/centres/demande-de-formation', () => {
 
     expect(routeStub.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
-      { label: 'Centres', to: '/centres/' },
+      { label: 'Centres', to: '/centres' },
       { label: 'Demande de formation' }
     ])
   })
@@ -887,10 +887,10 @@ describe('pages/centres/demande-de-formation', () => {
     expect(wrapper.text()).toContain('SST — Sauveteur secouriste du travail')
     expect(wrapper.text()).toContain('session du 12 octobre 2026')
     expect(wrapper.text()).toContain('à Créteil')
-    expect(wrapper.find('a[href="/formations/sante/sst-initial/"]').text()).toContain(
+    expect(wrapper.find('a[href="/formations/sante/sst-initial"]').text()).toContain(
       'Retour à la formation'
     )
-    expect(wrapper.find('a[href="/formations/"]').text()).toContain('Parcourir le catalogue')
+    expect(wrapper.find('a[href="/formations"]').text()).toContain('Parcourir le catalogue')
   })
 
   it('confirmation intra : mentionne la formation et le lieu saisi', async () => {
@@ -904,7 +904,7 @@ describe('pages/centres/demande-de-formation', () => {
 
     expect(wrapper.text()).toContain('SST — Sauveteur secouriste du travail')
     expect(wrapper.text()).toContain('dans votre entreprise à Lyon 69003')
-    expect(wrapper.find('a[href="/formations/sante/sst-initial/"]').text()).toContain(
+    expect(wrapper.find('a[href="/formations/sante/sst-initial"]').text()).toContain(
       'Retour à la formation'
     )
   })
@@ -1151,7 +1151,7 @@ describe('pages/centres/demande-de-formation', () => {
     await wrapper.find('form').trigger('submit.prevent')
     await waitUntil(() => wrapper.text().includes('Votre demande est transmise'))
 
-    expect(wrapper.find('a[href="/centres/creteil/"]').text()).toContain('Retour au centre')
+    expect(wrapper.find('a[href="/centres/creteil"]').text()).toContain('Retour au centre')
   })
 
   it('conserve la modalité brute quand elle est inconnue du dictionnaire', async () => {

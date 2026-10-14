@@ -26,7 +26,7 @@
         </Button>
         <div class="mt-sm text-center">
           <NuxtLink
-            to="/centres/"
+            to="/centres"
             :class="['text-meta underline underline-offset-4 transition-colors', s.link]"
           >
             Trouver un centre <span class="link-arrow">→</span>
@@ -113,7 +113,7 @@
         >
           {{ RAPPEL_CONSENT_TEXT }}
           <NuxtLink
-            to="/confidentialite/"
+            to="/confidentialite"
             :class="['font-medium underline underline-offset-2 transition-colors', s.linkAccent]"
           >
             Politique de confidentialité

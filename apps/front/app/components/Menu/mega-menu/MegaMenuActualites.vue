@@ -55,7 +55,7 @@
 
         <li>
           <NuxtLink
-            to="/actualites/"
+            to="/actualites"
             class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
             @click="$emit('close')"
           >
@@ -79,7 +79,7 @@
         <ul :key="`${selectedRubrique}-${selectedRegion}`" class="mt-sm grid gap-sm">
           <li v-for="actu in featuredNews" :key="actu.slug">
             <MegaMenuCard
-              :to="`/actualites/${actu.slug}/`"
+              :to="`/actualites/${actu.slug}`"
               :title="actu.title"
               @select="$emit('close')"
             >
@@ -100,7 +100,7 @@
           </li>
           <li>
             <NuxtLink
-              to="/actualites/"
+              to="/actualites"
               class="block rounded-md px-2 py-1.5 text-small font-semibold text-ink transition-colors hover:text-accent-text"
               @click="$emit('close')"
             >

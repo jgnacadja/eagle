@@ -776,7 +776,7 @@ describe('pages/centres/[slug]', () => {
     await wrapper.find('.select-same').trigger('click')
     await wrapper.find('.select-empty').trigger('click')
     expect(navigateToMock).not.toHaveBeenCalledWith('/centres/creteil')
-    expect(navigateToMock).not.toHaveBeenCalledWith('/centres/')
+    expect(navigateToMock).not.toHaveBeenCalledWith('/centres')
   })
 
   it('retombe sur la ville quand le centre voisin n’a pas de coordonnées', async () => {

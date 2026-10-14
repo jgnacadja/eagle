@@ -13,13 +13,13 @@ const scroll = (
 describe('router.options scrollBehavior', () => {
   it('restaure la position sauvegardée pour une ancre même-page (back)', async () => {
     await expect(
-      scroll({ hash: '#s', path: '/a/' }, { hash: '', path: '/a/' }, { top: 120, left: 0 })
+      scroll({ hash: '#s', path: '/a' }, { hash: '', path: '/a' }, { top: 120, left: 0 })
     ).resolves.toEqual({ top: 120, left: 0, behavior: 'instant' })
     expect(hookOnceMock).not.toHaveBeenCalled()
   })
 
   it('cible l’ancre en smooth pour une ancre même-page sans position', async () => {
-    await expect(scroll({ hash: '#s', path: '/a/' }, { hash: '', path: '/a/' })).resolves.toEqual({
+    await expect(scroll({ hash: '#s', path: '/a' }, { hash: '', path: '/a' })).resolves.toEqual({
       el: '#s',
       behavior: 'smooth'
     })
@@ -27,7 +27,7 @@ describe('router.options scrollBehavior', () => {
   })
 
   it('attend page:finish et cible l’ancre sur une nouvelle page', async () => {
-    await expect(scroll({ hash: '#s', path: '/b/' }, { hash: '', path: '/a/' })).resolves.toEqual({
+    await expect(scroll({ hash: '#s', path: '/b' }, { hash: '', path: '/a' })).resolves.toEqual({
       el: '#s',
       behavior: 'smooth'
     })
@@ -36,12 +36,12 @@ describe('router.options scrollBehavior', () => {
 
   it('restaure la position sauvegardée après page:finish (back)', async () => {
     await expect(
-      scroll({ hash: '', path: '/b/' }, { hash: '', path: '/a/' }, { top: 50, left: 0 })
+      scroll({ hash: '', path: '/b' }, { hash: '', path: '/a' }, { top: 50, left: 0 })
     ).resolves.toEqual({ top: 50, left: 0, behavior: 'instant' })
   })
 
   it('remonte en haut instantanément sur une nouvelle page', async () => {
-    await expect(scroll({ hash: '', path: '/b/' }, { hash: '', path: '/a/' })).resolves.toEqual({
+    await expect(scroll({ hash: '', path: '/b' }, { hash: '', path: '/a' })).resolves.toEqual({
       top: 0,
       left: 0,
       behavior: 'instant'

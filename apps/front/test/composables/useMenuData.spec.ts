@@ -217,7 +217,7 @@ describe('useMenuData', () => {
           {
             slug: 'caces-r489',
             label: 'CACES R489',
-            to: '/formations/caces/caces-r489/',
+            to: '/formations/caces/caces-r489',
             meta: ''
           }
         ],
@@ -225,7 +225,7 @@ describe('useMenuData', () => {
           {
             slug: 'caces-r489',
             label: 'CACES R489',
-            to: '/formations/sante/caces-r489/',
+            to: '/formations/sante/caces-r489',
             meta: ''
           }
         ]
@@ -316,8 +316,8 @@ describe('useMenuData', () => {
       await flushPromises()
 
       expect(formations.value).toEqual([
-        { slug: 'sst-initial', label: 'SST', to: '/formations/sante/sst-initial/' },
-        { slug: 'orpheline', label: 'Sans famille', to: '/formations/' }
+        { slug: 'sst-initial', label: 'SST', to: '/formations/sante/sst-initial' },
+        { slug: 'orpheline', label: 'Sans famille', to: '/formations' }
       ])
       expect(fetchMock).toHaveBeenCalledWith(
         'http://api.test/courses',

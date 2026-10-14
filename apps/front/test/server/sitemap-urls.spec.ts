@@ -86,21 +86,21 @@ describe('server/api/__sitemap__/urls', () => {
   it('émet toutes les collections publiées avec leurs préfixes routiers', async () => {
     const result = await handler(event)
     expect(locs(result)).toEqual([
-      '/actualites/loi-iafp/',
-      '/actualites/prevention/',
-      '/centres/lyon-part-dieu/',
-      '/formations/caces-conduite-engins/caces-r489/',
-      '/formations/sante/',
-      '/formations/sante/sst/',
-      '/mentions-legales/'
+      '/actualites/loi-iafp',
+      '/actualites/prevention',
+      '/centres/lyon-part-dieu',
+      '/formations/caces-conduite-engins/caces-r489',
+      '/formations/sante',
+      '/formations/sante/sst',
+      '/mentions-legales'
     ])
   })
 
   it('passe lastmod quand la collection expose une date', async () => {
     const result = await handler(event)
-    expect(findLoc(result, '/actualites/loi-iafp/')?.lastmod).toBe('2026-09-01T10:00:00')
-    expect(findLoc(result, '/mentions-legales/')?.lastmod).toBe('2026-08-15T12:00:00')
-    expect(findLoc(result, '/formations/sante/')).not.toHaveProperty('lastmod')
+    expect(findLoc(result, '/actualites/loi-iafp')?.lastmod).toBe('2026-09-01T10:00:00')
+    expect(findLoc(result, '/mentions-legales')?.lastmod).toBe('2026-08-15T12:00:00')
+    expect(findLoc(result, '/formations/sante')).not.toHaveProperty('lastmod')
   })
 
   it('filtre status=published sur les collections Directus', async () => {
@@ -127,8 +127,8 @@ describe('server/api/__sitemap__/urls', () => {
       return happyFetch(url)
     }
     const result = await handler(event)
-    expect(locs(result)).toContain('/formations/sante/f-1/')
-    expect(locs(result)).toContain('/formations/sante/f-2/')
+    expect(locs(result)).toContain('/formations/sante/f-1')
+    expect(locs(result)).toContain('/formations/sante/f-2')
     const coursesCalls = fetchCalls.filter((c) => c.url.endsWith('/courses'))
     expect(coursesCalls.length).toBeGreaterThanOrEqual(2)
   })
@@ -138,9 +138,9 @@ describe('server/api/__sitemap__/urls', () => {
     fetchImpl = (url) =>
       url.endsWith('/courses') ? Promise.reject(new Error('api down')) : base(url)
     const result = await handler(event)
-    expect(locs(result)).not.toContain('/formations/sante/sst/')
-    expect(locs(result)).toContain('/centres/lyon-part-dieu/')
-    expect(locs(result)).toContain('/actualites/loi-iafp/')
+    expect(locs(result)).not.toContain('/formations/sante/sst')
+    expect(locs(result)).toContain('/centres/lyon-part-dieu')
+    expect(locs(result)).toContain('/actualites/loi-iafp')
   })
 
   it('renvoie [] si toutes les sources tombent', async () => {
@@ -159,7 +159,7 @@ describe('server/api/__sitemap__/urls', () => {
       return happyFetch(url)
     }
     const result = await handler(event)
-    expect(locs(result)).toContain('/formations/sante/f-2/')
+    expect(locs(result)).toContain('/formations/sante/f-2')
     const coursesCalls = fetchCalls.filter((c) => c.url.endsWith('/courses'))
     expect(coursesCalls).toHaveLength(2)
   })
@@ -170,7 +170,7 @@ describe('server/api/__sitemap__/urls', () => {
         ? Promise.resolve({ items: [{ slug: 'sst', familySlug: 'sante' }] })
         : happyFetch(url)
     const result = await handler(event)
-    expect(locs(result)).toContain('/formations/sante/sst/')
+    expect(locs(result)).toContain('/formations/sante/sst')
     const coursesCalls = fetchCalls.filter((c) => c.url.endsWith('/courses'))
     expect(coursesCalls).toHaveLength(1)
   })
@@ -185,13 +185,13 @@ describe('server/api/__sitemap__/urls', () => {
           ])
         : base(url)
     const result = await handler(event)
-    expect(locs(result).filter((l) => l === '/actualites/loi-iafp/')).toHaveLength(1)
+    expect(locs(result).filter((l) => l === '/actualites/loi-iafp')).toHaveLength(1)
   })
 
   it('fonctionne sans token interne configuré', async () => {
     apiToken = ''
     const result = await handler(event)
-    expect(locs(result)).toContain('/centres/lyon-part-dieu/')
+    expect(locs(result)).toContain('/centres/lyon-part-dieu')
     expect(fetchCalls.every((c) => c.headers === undefined)).toBe(true)
   })
 
@@ -202,36 +202,36 @@ describe('server/api/__sitemap__/urls', () => {
         ? directusList([{ slug: 'entreprise' }, { slug: 'mentions-legales' }])
         : base(url)
     const result = await handler(event)
-    expect(locs(result).filter((l) => l === '/entreprise/')).toHaveLength(1)
+    expect(locs(result).filter((l) => l === '/entreprise')).toHaveLength(1)
   })
 
   describe('?set= — sitemaps segmentés (ST-03)', () => {
     it('set=pages ne retient que les pages légales', async () => {
       querySet = 'pages'
       const result = await handler(event)
-      expect(locs(result)).toEqual(['/mentions-legales/'])
+      expect(locs(result)).toEqual(['/mentions-legales'])
     })
 
     it('set=formations retient familles et fiches, sans centres ni actus', async () => {
       querySet = 'formations'
       const result = await handler(event)
       expect(locs(result)).toEqual([
-        '/formations/caces-conduite-engins/caces-r489/',
-        '/formations/sante/',
-        '/formations/sante/sst/'
+        '/formations/caces-conduite-engins/caces-r489',
+        '/formations/sante',
+        '/formations/sante/sst'
       ])
     })
 
     it('set=centres ne retient que les centres', async () => {
       querySet = 'centres'
       const result = await handler(event)
-      expect(locs(result)).toEqual(['/centres/lyon-part-dieu/'])
+      expect(locs(result)).toEqual(['/centres/lyon-part-dieu'])
     })
 
     it('set=actualites retient articles et catégories (namespace partagé)', async () => {
       querySet = 'actualites'
       const result = await handler(event)
-      expect(locs(result)).toEqual(['/actualites/loi-iafp/', '/actualites/prevention/'])
+      expect(locs(result)).toEqual(['/actualites/loi-iafp', '/actualites/prevention'])
     })
 
     it('set=local est vide (lot 2) sans interroger les sources', async () => {
@@ -244,8 +244,8 @@ describe('server/api/__sitemap__/urls', () => {
     it('un set inconnu retombe sur la liste complète', async () => {
       querySet = 'inconnu'
       const result = await handler(event)
-      expect(locs(result)).toContain('/centres/lyon-part-dieu/')
-      expect(locs(result)).toContain('/actualites/loi-iafp/')
+      expect(locs(result)).toContain('/centres/lyon-part-dieu')
+      expect(locs(result)).toContain('/actualites/loi-iafp')
     })
   })
 })

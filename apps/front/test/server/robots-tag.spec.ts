@@ -25,13 +25,13 @@ function run(path: string, method = 'GET') {
 describe('server/middleware/robots-tag (ST-03)', () => {
   it('pose X-Robots-Tag: noindex sur les pages hors environnement indexable', () => {
     indexable = false
-    run('/formations/')
+    run('/formations')
     expect(headers).toEqual([{ name: 'X-Robots-Tag', value: 'noindex' }])
   })
 
   it('ne pose aucun en-tête en environnement indexable', () => {
     indexable = true
-    run('/formations/')
+    run('/formations')
     expect(headers).toHaveLength(0)
   })
 
@@ -46,7 +46,7 @@ describe('server/middleware/robots-tag (ST-03)', () => {
 
   it('ignore les méthodes non GET/HEAD', () => {
     indexable = false
-    run('/formations/', 'POST')
+    run('/formations', 'POST')
     expect(headers).toHaveLength(0)
   })
 })

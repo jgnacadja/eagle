@@ -109,7 +109,7 @@
           <!-- CTA Link -->
           <div v-hero="heroStagger(6)" class="mt-5">
             <NuxtLink
-              to="/parler-a-votre-conseiller/"
+              to="/parler-a-votre-conseiller"
               class="inline-block text-small md:text-body font-bold text-accent-text underline underline-offset-4 transition-colors hover:text-primary"
             >
               Besoin d'être accompagné&nbsp;? Parler à votre conseiller
@@ -317,7 +317,7 @@
 
         <div class="flex items-center justify-center mt-xl">
           <Button as-child size="pill-lg" class="lg:inline-flex gap-xs">
-            <NuxtLink to="/formations/">
+            <NuxtLink to="/formations">
               Voir tout le catalogue <span class="link-arrow">→</span>
             </NuxtLink>
           </Button>
@@ -385,12 +385,12 @@
             :distance="centreDistance(centre)"
             :formations="centreFormations(centre)"
             :status="centreStatus(centre)"
-            :to="`/centres/${centre.slug}/`"
+            :to="`/centres/${centre.slug}`"
           />
 
           <div>
             <Button as-child size="pill-lg" class="w-full gap-xs">
-              <NuxtLink to="/centres/">
+              <NuxtLink to="/centres">
                 Explorer la carte des centres <span class="link-arrow">→</span>
               </NuxtLink>
             </Button>
@@ -434,12 +434,12 @@
             <!-- Boutons d'action -->
             <div class="mt-lg flex w-full flex-col gap-sm sm:w-auto sm:flex-row sm:items-center">
               <Button as-child variant="accent" size="pill" class="w-full sm:w-auto">
-                <NuxtLink to="/entreprise/">
+                <NuxtLink to="/entreprise">
                   Découvrir nos solutions entreprises <span class="link-arrow">→</span>
                 </NuxtLink>
               </Button>
               <Button as-child variant="outline-inverse" size="pill" class="w-full sm:w-auto">
-                <NuxtLink to="/parler-a-votre-conseiller/">Parler à votre conseiller</NuxtLink>
+                <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
               </Button>
             </div>
           </div>
@@ -524,7 +524,7 @@
 
       <div class="mt-xl flex justify-center">
         <Button as-child variant="outline" size="pill-lg" class="lg:inline-flex gap-xs">
-          <NuxtLink to="/formations/">
+          <NuxtLink to="/formations">
             Voir toutes les sessions <span class="link-arrow">→</span>
           </NuxtLink>
         </Button>
@@ -602,7 +602,7 @@
         <div class="mt-xl flex flex-col gap-lg sm:flex-row sm:items-center sm:justify-between">
           <div class="shrink-0">
             <Button as-child variant="link" size="inline" class="gap-xs">
-              <NuxtLink to="/formations/"> Consulter <span class="link-arrow">→</span></NuxtLink>
+              <NuxtLink to="/formations"> Consulter <span class="link-arrow">→</span></NuxtLink>
             </Button>
           </div>
         </div>
@@ -659,13 +659,13 @@
           :date="formatArticleDate(article.publish_at)"
           :excerpt="article.excerpt ?? ''"
           :image-url="assetUrl(article.cover_image) ?? undefined"
-          :to="`/actualites/${article.slug}/`"
+          :to="`/actualites/${article.slug}`"
         />
       </div>
 
       <div class="mt-xl flex justify-center">
         <Button as-child variant="outline" size="pill-lg" class="lg:inline-flex gap-xs">
-          <NuxtLink to="/actualites/">
+          <NuxtLink to="/actualites">
             Toutes les actualités <span class="link-arrow">→</span>
           </NuxtLink>
         </Button>
@@ -700,7 +700,7 @@
 
         <div class="mt-lg flex justify-center">
           <Button as-child variant="outline-inverse" size="pill-lg">
-            <NuxtLink to="/parler-a-votre-conseiller/" class="w-full sm:w-auto"
+            <NuxtLink to="/parler-a-votre-conseiller" class="w-full sm:w-auto"
               >Parler à votre conseiller</NuxtLink
             >
           </Button>
@@ -846,17 +846,17 @@ const networkCards = [
   {
     title: 'Devenir franchisé',
     subtitle: "Ouvrez votre centre avec l'appui du réseau",
-    to: '/rejoindre-le-reseau/?voie=centre'
+    to: '/rejoindre-le-reseau?voie=centre'
   },
   {
     title: 'Organisme partenaire',
     subtitle: 'Référencez vos centres et vos sessions',
-    to: '/referencer-mon-organisme/'
+    to: '/referencer-mon-organisme'
   },
   {
     title: 'Formateur indépendant',
     subtitle: 'Intervenez sur les sessions du réseau',
-    to: '/rejoindre-le-reseau/?voie=formateur'
+    to: '/rejoindre-le-reseau?voie=formateur'
   }
 ]
 
@@ -1005,7 +1005,7 @@ const displayUpcomingSessions = computed(() => {
       location: mapped.meta || 'Centre partenaire',
       badgeText,
       badgeVariant,
-      to: mapped.to ?? '/formations/'
+      to: mapped.to ?? '/formations'
     })
 
     if (result.length >= 3) break
@@ -1106,12 +1106,12 @@ function centreStatus(centre: Centre) {
 function onMapSearch(value: string) {
   const picked = geoSuggest.byLabel(value)
   if (picked?.kind === 'department') {
-    navigateTo({ path: '/centres/', query: { dept: picked.term } })
+    navigateTo({ path: '/centres', query: { dept: picked.term } })
     return
   }
   const q = (picked?.term ?? value).trim()
   navigateTo({
-    path: '/centres/',
+    path: '/centres',
     query: {
       ...(q ? { q } : {}),
       ...(picked?.departmentName ? { dept: picked.departmentName } : {})

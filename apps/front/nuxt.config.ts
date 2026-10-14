@@ -36,10 +36,10 @@ export default defineNuxtConfig({
   // URL canonique du site — consommée par @nuxtjs/sitemap (loc absolus) et
   // @nuxtjs/robots (directive Sitemap). Doit être l'origine publique en
   // production, pas une URL de preview.
-  // Slash final canonique (ST-02) : le middleware server
-  // `trailing-slash.ts` impose le « / » en 301 — `trailingSlash: true`
+  // Pas de slash final (ST-02) : le middleware server
+  // `trailing-slash.ts` supprime le « / » en 301 — `trailingSlash: false`
   // aligne les loc auto-découvertes du sitemap sur la forme canonique.
-  site: { url: siteUrl, trailingSlash: true },
+  site: { url: siteUrl, trailingSlash: false },
   sitemap: {
     // Index + sitemaps segmentés (ST-03) : /sitemap.xml redirige vers
     // /sitemap_index.xml qui liste les cinq sitemaps ci-dessous. Les clés

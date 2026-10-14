@@ -65,7 +65,7 @@
                           >
                             <NuxtLink
                               :to="{
-                                path: `/formations/${famille.slug}/`,
+                                path: `/formations/${famille.slug}`,
                                 query: { subFamily: sousFamille.slug }
                               }"
                               class="flex items-center justify-between py-2 text-body text-primary transition-colors hover:text-accent-text"
@@ -77,7 +77,7 @@
                           </li>
                           <li>
                             <NuxtLink
-                              :to="`/formations/${famille.slug}/`"
+                              :to="`/formations/${famille.slug}`"
                               class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                               @click="closeMenu"
                             >
@@ -89,7 +89,7 @@
                     </AccordionItem>
                     <NuxtLink
                       v-else
-                      :to="`/formations/${famille.slug}/`"
+                      :to="`/formations/${famille.slug}`"
                       class="flex items-center justify-between px-3 py-2 text-body text-primary transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
@@ -100,7 +100,7 @@
 
                   <div>
                     <NuxtLink
-                      to="/formations/"
+                      to="/formations"
                       class="block px-3 py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
@@ -118,7 +118,7 @@
                 <Accordion type="multiple" class="pb-sm">
                   <div>
                     <NuxtLink
-                      :to="{ path: '/centres/', query: { geo: '1' } }"
+                      :to="{ path: '/centres', query: { geo: '1' } }"
                       class="flex items-center gap-2 px-3 py-2 text-body text-primary transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
@@ -146,7 +146,7 @@
                             :key="centre.slug"
                           >
                             <NuxtLink
-                              :to="`/centres/${centre.slug}/`"
+                              :to="`/centres/${centre.slug}`"
                               class="flex items-center justify-between py-2 text-body text-primary transition-colors hover:text-accent-text"
                               @click="closeMenu"
                             >
@@ -158,7 +158,7 @@
                           </li>
                           <li>
                             <NuxtLink
-                              :to="{ path: '/centres/', query: { region: region.label } }"
+                              :to="{ path: '/centres', query: { region: region.label } }"
                               class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                               @click="closeMenu"
                             >
@@ -171,7 +171,7 @@
                     </AccordionItem>
                     <NuxtLink
                       v-else
-                      :to="{ path: '/centres/', query: { region: region.label } }"
+                      :to="{ path: '/centres', query: { region: region.label } }"
                       class="flex items-center justify-between px-3 py-2 text-body text-primary transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
@@ -182,7 +182,7 @@
 
                   <div>
                     <NuxtLink
-                      to="/centres/"
+                      to="/centres"
                       class="block px-3 py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
@@ -195,7 +195,7 @@
 
             <!-- ENTREPRISE -->
             <NuxtLink
-              to="/entreprise/"
+              to="/entreprise"
               class="flex w-full items-center py-md text-h3 text-ink transition-all hover:text-accent-text"
               @click="closeMenu"
             >
@@ -204,7 +204,7 @@
 
             <!-- À PROPOS -->
             <NuxtLink
-              to="/a-propos/"
+              to="/a-propos"
               class="flex w-full items-center py-md text-h3 text-ink transition-all hover:text-accent-text"
               @click="closeMenu"
             >
@@ -218,7 +218,7 @@
                 <ul class="pb-sm px-6">
                   <li v-for="rubrique in actualitesRubriques" :key="rubrique.slug">
                     <NuxtLink
-                      to="/actualites/"
+                      to="/actualites"
                       class="block py-2 text-body text-primary transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
@@ -230,7 +230,7 @@
                   <p class="pb-1 text-small font-bold text-ink-muted uppercase">Par région</p>
                   <li v-for="region in actualitesRegions.slice(0, 2)" :key="region.slug">
                     <NuxtLink
-                      to="/actualites/"
+                      to="/actualites"
                       class="block py-2 text-body text-primary transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
@@ -239,7 +239,7 @@
                   </li>
                   <li>
                     <NuxtLink
-                      to="/actualites/"
+                      to="/actualites"
                       class="block py-2 text-small font-semibold text-ink transition-colors hover:text-accent-text"
                       @click="closeMenu"
                     >
@@ -256,7 +256,7 @@
           class="sticky bottom-0 flex flex-col gap-sm border-t border-rule px-gutter-mobile py-md"
         >
           <NuxtLink
-            to="/rejoindre-le-reseau/"
+            to="/rejoindre-le-reseau"
             class="inline-block text-body font-semibold text-ink transition-colors hover:text-accent-text underline"
             @click="closeMenu"
           >

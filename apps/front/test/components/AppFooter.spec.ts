@@ -51,17 +51,17 @@ describe('AppFooter', () => {
     const franchise = links.find((l) => l.text() === 'Devenir franchisé')
     const formateur = links.find((l) => l.text() === 'Formateur indépendant')
 
-    expect(franchise?.attributes('href')).toBe('/rejoindre-le-reseau/?voie=centre')
-    expect(formateur?.attributes('href')).toBe('/rejoindre-le-reseau/?voie=formateur')
+    expect(franchise?.attributes('href')).toBe('/rejoindre-le-reseau?voie=centre')
+    expect(formateur?.attributes('href')).toBe('/rejoindre-le-reseau?voie=formateur')
   })
 
   it('links Qui sommes-nous to the about page and Contact to the advisor page', () => {
     const wrapper = mountFooter()
     const links = wrapper.findAll('a')
 
-    expect(links.find((l) => l.text() === 'Qui sommes-nous')?.attributes('href')).toBe('/a-propos/')
+    expect(links.find((l) => l.text() === 'Qui sommes-nous')?.attributes('href')).toBe('/a-propos')
     expect(links.find((l) => l.text() === 'Contact')?.attributes('href')).toBe(
-      '/parler-a-votre-conseiller/'
+      '/parler-a-votre-conseiller'
     )
   })
 

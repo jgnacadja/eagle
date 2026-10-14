@@ -39,7 +39,7 @@
         size="pill-sm"
         class="shrink-0 font-bold"
       >
-        <NuxtLink :to="`/centres/${center.id}/`" @click.stop>Voir le centre</NuxtLink>
+        <NuxtLink :to="`/centres/${center.id}`" @click.stop>Voir le centre</NuxtLink>
       </Button>
     </div>
   </article>

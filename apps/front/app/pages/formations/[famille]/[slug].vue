@@ -397,7 +397,7 @@
                       <NuxtLink :to="demandeTo">Demander cette formation</NuxtLink>
                     </Button>
                     <Button as-child variant="outline" size="pill" class="w-full">
-                      <NuxtLink to="/parler-a-votre-conseiller/"
+                      <NuxtLink to="/parler-a-votre-conseiller"
                         >Parler à votre conseiller</NuxtLink
                       >
                     </Button>
@@ -516,7 +516,7 @@
               Être guidé dans mon choix
             </Button>
             <Button as-child variant="outline-inverse" size="control" class="w-full sm:w-auto">
-              <NuxtLink to="/parler-a-votre-conseiller/">Parler à votre conseiller</NuxtLink>
+              <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
             </Button>
           </CtaBanner>
 
@@ -530,7 +530,7 @@
                 {{ liees.length ? 'Formations liées' : 'Formations similaires' }}
               </h2>
               <Button as-child variant="link" size="inline" class="font-bold">
-                <NuxtLink :to="`/formations/${famille}/`"
+                <NuxtLink :to="`/formations/${famille}`"
                   >Voir la famille {{ familyName }} <span class="link-arrow">→</span></NuxtLink
                 >
               </Button>
@@ -573,7 +573,7 @@
                   :image-url="
                     articleAssetUrl(article.cover_image, config.public.apiBase) ?? undefined
                   "
-                  :to="`/actualites/${article.slug}/`"
+                  :to="`/actualites/${article.slug}`"
                   class="h-full"
                 />
               </li>
@@ -608,7 +608,7 @@
     <LoadError
       v-else-if="loadError"
       title="Le contenu n'a pas pu être chargé."
-      link-to="/formations/"
+      link-to="/formations"
       link-label="Voir le catalogue"
       @retry="retry"
     >
@@ -620,7 +620,7 @@
     <NotFound
       v-else
       title="Cette formation n'est pas disponible."
-      primary-to="/formations/"
+      primary-to="/formations"
       primary-label="Voir le catalogue"
       secondary-label="Être guidé dans mon choix"
       search-placeholder="Intitulé, compétence ou certification"
@@ -843,8 +843,8 @@ if (requestEvent) {
 
 const defaultBreadcrumb = computed(() => [
   { label: 'Accueil', to: '/' },
-  { label: 'Formations', to: '/formations/' },
-  { label: familyName.value, to: `/formations/${famille}/` },
+  { label: 'Formations', to: '/formations' },
+  { label: familyName.value, to: `/formations/${famille}` },
   { label: course.value!.title }
 ])
 
@@ -858,7 +858,7 @@ watchEffect(() => {
   route.meta.breadcrumb = stateLabel
     ? [
         { label: 'Accueil', to: '/' },
-        { label: 'Formations', to: '/formations/' },
+        { label: 'Formations', to: '/formations' },
         { label: stateLabel }
       ]
     : defaultBreadcrumb.value
@@ -936,7 +936,7 @@ useContentSeo(
         familyName: familyName.value,
         // Aligné sur la canonical : un surchargement éditorial doit primer.
         url:
-          course.value!.seoCanonical ?? `${config.public.siteUrl}/formations/${famille}/${slug}/`,
+          course.value!.seoCanonical ?? `${config.public.siteUrl}/formations/${famille}/${slug}`,
         siteUrl: config.public.siteUrl,
         imageUrl: imageSrc.value
       })
@@ -956,7 +956,7 @@ function retry() {
 }
 
 function onErrorSearch(query: string) {
-  navigateTo({ path: '/formations/', query: query ? { q: query } : {} })
+  navigateTo({ path: '/formations', query: query ? { q: query } : {} })
 }
 
 const mobileCta = ref<HTMLElement | null>(null)
@@ -1148,7 +1148,7 @@ function demandeUrl(session?: CourseSession): string {
   const centre = session?.location?.centreSlug ?? course.value!.centerSlug ?? null
   if (centre) params.set('centre', centre)
   if (session?.id) params.set('session', session.id)
-  return `/centres/demande-de-formation/?${params.toString()}`
+  return `/centres/demande-de-formation?${params.toString()}`
 }
 const demandeTo = computed(() => demandeUrl())
 
@@ -1159,7 +1159,7 @@ const hasIntra = computed(() => (course.value!.modalities ?? []).includes('intra
 // par le client dans le formulaire (« sans centre imposé »).
 const demandeIntraTo = computed(() => {
   const params = new URLSearchParams({ famille, formation: slug, intra: '1' })
-  return `/centres/demande-de-formation/?${params.toString()}`
+  return `/centres/demande-de-formation?${params.toString()}`
 })
 
 // C4 — la fiche d'origine est transmise au panneau : il cherche une alternative.
@@ -1275,7 +1275,7 @@ const lieux = computed(() => {
         department: loc.department ?? loc.region ?? '',
         modalities: new Set(),
         sessions: [],
-        to: loc.centreSlug ? `/centres/${loc.centreSlug}/` : null
+        to: loc.centreSlug ? `/centres/${loc.centreSlug}` : null
       }
       grouped.set(key, lieu)
     }
@@ -1351,7 +1351,7 @@ const liees = computed<FormationItem[]>(() =>
         duration: r.duration_days != null && r.duration_days > 5 ? 'longue' : 'courte',
         certifications: [],
         image: null,
-        to: `/formations/${r.famille!.slug}/${r.slug}/`
+        to: `/formations/${r.famille!.slug}/${r.slug}`
       } satisfies FormationItem
     })
 )

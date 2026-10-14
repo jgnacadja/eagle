@@ -166,7 +166,7 @@
                   série avec vos équipes.
                 </p>
                 <Button as-child variant="paper" size="pill" class="mt-lg w-full">
-                  <NuxtLink to="/parler-a-votre-conseiller/">Parler à votre conseiller</NuxtLink>
+                  <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
                 </Button>
               </Card>
             </div>
@@ -185,7 +185,7 @@
               À lire ensuite
             </h2>
             <NuxtLink
-              to="/actualites/"
+              to="/actualites"
               class="hidden text-small font-semibold text-ink transition-colors hover:text-accent-text sm:inline"
             >
               Toute l'actualité <span class="link-arrow">→</span>
@@ -208,7 +208,7 @@
                 </p>
                 <h3 class="mt-xs text-small font-bold leading-snug text-ink">
                   <NuxtLink
-                    :to="`/actualites/${related.slug}/`"
+                    :to="`/actualites/${related.slug}`"
                     class="transition-colors hover:text-accent-text"
                   >
                     {{ related.title }}
@@ -246,7 +246,7 @@
               :date="formatArticleDate(item.publish_at)"
               :excerpt="item.excerpt ?? ''"
               :image-url="assetUrl(item.cover_image) ?? undefined"
-              :to="`/actualites/${item.slug}/`"
+              :to="`/actualites/${item.slug}`"
               class="h-full"
             />
           </li>
@@ -256,7 +256,7 @@
         </p>
 
         <NuxtLink
-          to="/actualites/"
+          to="/actualites"
           class="mt-2xl inline-block text-small font-semibold text-ink transition-colors hover:text-accent-text"
         >
           ← Toute l'actualité
@@ -267,7 +267,7 @@
     <LoadError
       v-else-if="loadError"
       title="L'article n'a pas pu être chargé."
-      link-to="/actualites/"
+      link-to="/actualites"
       link-label="Voir toute l'actualité"
       @retry="retry"
     >
@@ -277,9 +277,9 @@
     <NotFound
       v-else
       title="Cet article n'est pas disponible."
-      primary-to="/actualites/"
+      primary-to="/actualites"
       primary-label="Voir toute l'actualité"
-      secondary-to="/formations/"
+      secondary-to="/formations"
       secondary-label="Trouver ma formation"
       search-placeholder="Titre, mot-clé ou catégorie d'article"
       search-label="Rechercher un article"
@@ -544,17 +544,17 @@ if (import.meta.server) {
 /* v8 ignore end */
 
 const sourceRoute = computed(() => {
-  const from = typeof route.query.from === 'string' ? route.query.from : '/actualites/'
+  const from = typeof route.query.from === 'string' ? route.query.from : '/actualites'
 
   if (from.startsWith('/formations')) {
-    return { label: 'Formations', to: '/formations/' }
+    return { label: 'Formations', to: '/formations' }
   }
 
   if (from.startsWith('/centres')) {
-    return { label: 'Réseau de centres', to: '/centres/' }
+    return { label: 'Réseau de centres', to: '/centres' }
   }
 
-  return { label: 'Actualités', to: '/actualites/' }
+  return { label: 'Actualités', to: '/actualites' }
 })
 
 const defaultBreadcrumb = computed(() => {
@@ -580,7 +580,7 @@ watchEffect(() => {
   if (pageState.value === 'category') {
     route.meta.breadcrumb = [
       { label: 'Accueil', to: '/' },
-      { label: 'Actualités', to: '/actualites/' },
+      { label: 'Actualités', to: '/actualites' },
       { label: category.value?.name ?? 'Catégorie' }
     ]
     return
@@ -589,7 +589,7 @@ watchEffect(() => {
   route.meta.breadcrumb = stateLabel
     ? [
         { label: 'Accueil', to: '/' },
-        { label: 'Actualités', to: '/actualites/' },
+        { label: 'Actualités', to: '/actualites' },
         { label: stateLabel }
       ]
     : defaultBreadcrumb.value
@@ -640,7 +640,7 @@ const categorySeo = computed(() => {
       category.value?.description ??
         `Tous les articles de la catégorie ${category.value?.name ?? ''} du réseau LEARN UP.`
     ),
-    seo_canonical: category.value?.seo_canonical ?? `${config.public.siteUrl}/actualites/${slug}/`
+    seo_canonical: category.value?.seo_canonical ?? `${config.public.siteUrl}/actualites/${slug}`
   }
 })
 
@@ -697,7 +697,7 @@ function retry() {
 }
 
 function onErrorSearch(query: string) {
-  navigateTo({ path: '/actualites/', query: query ? { q: query } : {} })
+  navigateTo({ path: '/actualites', query: query ? { q: query } : {} })
 }
 
 function assetUrl(id: string | null): string | undefined {

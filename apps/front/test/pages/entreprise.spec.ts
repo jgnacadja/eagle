@@ -24,7 +24,7 @@ vi.mock('~/composables/useCatalog', () => ({
     description: c.description ?? '',
     family: c.familySlug ?? 'Autre',
     meta: '',
-    to: c.familySlug ? `/formations/${c.familySlug}/${c.slug}/` : null
+    to: c.familySlug ? `/formations/${c.familySlug}/${c.slug}` : null
   }),
   useCatalog: vi.fn(async () => ({
     data: ref(
@@ -265,7 +265,7 @@ describe('EntreprisePage', () => {
     expect(wrapper.text()).toContain('Habilitation électrique B1V / B2V')
     expect(
       wrapper
-        .find('a[href="/formations/caces-conduite-engins/caces-r489-chariots-elevateurs/"]')
+        .find('a[href="/formations/caces-conduite-engins/caces-r489-chariots-elevateurs"]')
         .exists()
     ).toBe(true)
   })
@@ -308,7 +308,7 @@ describe('EntreprisePage', () => {
     await wrapper.findAll('.search-input-mock')[0]!.find('button').trigger('click')
 
     expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/parler-a-votre-conseiller/',
+      path: '/parler-a-votre-conseiller',
       query: { q: 'Besoin CACES pour 10 personnes' }
     })
 
@@ -317,7 +317,7 @@ describe('EntreprisePage', () => {
     await wrapper.findAll('.search-input-mock')[0]!.find('button').trigger('click')
 
     expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/parler-a-votre-conseiller/',
+      path: '/parler-a-votre-conseiller',
       query: {}
     })
   })
@@ -331,7 +331,7 @@ describe('EntreprisePage', () => {
     await wrapper.findAll('.search-input-mock')[1]!.find('button').trigger('click')
 
     expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/parler-a-votre-conseiller/',
+      path: '/parler-a-votre-conseiller',
       query: { q: 'Renouveler 12 habilitations' }
     })
   })
@@ -341,8 +341,8 @@ describe('EntreprisePage', () => {
     await flushPromises()
 
     expect(wrapper.find('a[href="#multisites"]').exists()).toBe(true)
-    expect(wrapper.find('a[href="/entreprise-reseau/"]').exists()).toBe(true)
-    expect(wrapper.find('a[href="/partenaire-reseau/"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/entreprise-reseau"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/partenaire-reseau"]').exists()).toBe(true)
   })
 
   it('affiche le repli quand aucun centre n’est retourné', async () => {
@@ -377,7 +377,7 @@ describe('EntreprisePage', () => {
     const wrapper = mountPage()
     await flushPromises()
 
-    expect(wrapper.find('a[href="/formations/"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/formations"]').exists()).toBe(true)
   })
 
   it('retombe sur la saisie quand submit est émis sans valeur', async () => {
@@ -387,7 +387,7 @@ describe('EntreprisePage', () => {
     const [hero, final] = wrapper.findAllComponents({ name: 'SearchInput' })
     await hero!.vm.$emit('submit', '   ')
     expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/parler-a-votre-conseiller/',
+      path: '/parler-a-votre-conseiller',
       query: {}
     })
 
@@ -395,7 +395,7 @@ describe('EntreprisePage', () => {
     await wrapper.find('#entreprises-hero-search').setValue('Habilitation B2V')
     await hero!.vm.$emit('submit')
     expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/parler-a-votre-conseiller/',
+      path: '/parler-a-votre-conseiller',
       query: { q: 'Habilitation B2V' }
     })
 
@@ -403,14 +403,14 @@ describe('EntreprisePage', () => {
     await wrapper.find('#entreprises-final-search').setValue('Échéance amiante')
     await final!.vm.$emit('submit')
     expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/parler-a-votre-conseiller/',
+      path: '/parler-a-votre-conseiller',
       query: { q: 'Échéance amiante' }
     })
 
     navigateToMock.mockClear()
     await final!.vm.$emit('submit', '   ')
     expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/parler-a-votre-conseiller/',
+      path: '/parler-a-votre-conseiller',
       query: {}
     })
   })

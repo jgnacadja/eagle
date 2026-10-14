@@ -9,8 +9,8 @@ vi.stubGlobal('useContentSeo', vi.fn())
 vi.stubGlobal('useRuntimeConfig', () => ({ public: { siteUrl: 'https://learnup.fr' } }))
 
 const routeStub = {
-  path: '/rejoindre-le-reseau/',
-  fullPath: '/rejoindre-le-reseau/',
+  path: '/rejoindre-le-reseau',
+  fullPath: '/rejoindre-le-reseau',
   hash: '',
   params: {},
   query: {} as Record<string, string>,
@@ -55,7 +55,7 @@ describe('Rejoindre le réseau page', () => {
     expect(wrapper.text()).toContain("De la candidature à l'ouverture")
 
     const hrefs = wrapper.findAll('a').map((link) => link.attributes('href'))
-    expect(hrefs).toContain('/referencer-mon-organisme/')
+    expect(hrefs).toContain('/referencer-mon-organisme')
     // Les cartes franchise et formateur ouvrent le dialog — plus de redirection.
     expect(hrefs).not.toContain('/centres/demande-de-formation?sujet=franchise')
     expect(hrefs).not.toContain('/centres/demande-de-formation?sujet=formateur')

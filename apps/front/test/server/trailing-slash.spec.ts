@@ -9,7 +9,7 @@ vi.stubGlobal('sendRedirect', (_event: unknown, location: string, code: number) 
   return location
 })
 
-let url = 'https://learnup.test/formations'
+let url = 'https://learnup.test/formations/'
 vi.stubGlobal('getRequestURL', () => new URL(url))
 
 const { default: handler } = await import('../../server/middleware/trailing-slash')
@@ -22,28 +22,35 @@ function run(path: string, method = 'GET') {
 }
 
 describe('server/middleware/trailing-slash (ST-02)', () => {
-  it('redirige en 301 vers la forme slashée en un seul saut', () => {
-    run('/formations')
-    expect(redirects).toEqual([{ location: '/formations/', code: 301 }])
+  it('redirige en 301 vers la forme sans slash en un seul saut', () => {
+    run('/formations/')
+    expect(redirects).toEqual([{ location: '/formations', code: 301 }])
   })
 
   it('conserve la query string dans la cible', () => {
-    run('/formations?centre=lille&page=2')
+    run('/formations/?centre=lille&page=2')
     expect(redirects[0]).toEqual({
-      location: '/formations/?centre=lille&page=2',
+      location: '/formations?centre=lille&page=2',
       code: 301
     })
   })
 
+  it('absorbe les slashs terminaux multiples en un seul saut', () => {
+    run('/formations//')
+    expect(redirects[0]).toEqual({ location: '/formations', code: 301 })
+  })
+
   it.each([
     '/',
-    '/formations/',
+    '/formations',
     '/api/courses',
-    '/directus/items/articles',
+    '/api/courses/',
+    '/directus/items/articles/',
     '/_nuxt/app.js',
     '/__sitemap__/urls',
     '/favicon.ico',
     '/images/hero.webp',
+    '/images/hero.webp/',
     '/uploads/guide.pdf'
   ])('laisse passer %s sans redirection', (path) => {
     run(path)
@@ -51,13 +58,13 @@ describe('server/middleware/trailing-slash (ST-02)', () => {
   })
 
   it('ignore les méthodes non idempotentes de lecture (POST)', () => {
-    const result = run('/formations', 'POST')
+    const result = run('/formations/', 'POST')
     expect(redirects).toHaveLength(0)
     expect(result).toBeUndefined()
   })
 
   it('redirige les routes profondes dynamiques', () => {
-    run('/formations/caces-conduite-engins/caces-r489')
-    expect(redirects[0].location).toBe('/formations/caces-conduite-engins/caces-r489/')
+    run('/formations/caces-conduite-engins/caces-r489/')
+    expect(redirects[0]!.location).toBe('/formations/caces-conduite-engins/caces-r489')
   })
 })

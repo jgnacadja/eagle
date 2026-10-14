@@ -243,7 +243,7 @@
             </p>
             <div class="mt-xl flex flex-wrap items-center justify-center gap-md">
               <Button as-child size="pill-sm" class="font-bold">
-                <NuxtLink to="/centres/demande-de-formation/">Demander une formation</NuxtLink>
+                <NuxtLink to="/centres/demande-de-formation">Demander une formation</NuxtLink>
               </Button>
               <Button variant="outline" size="pill-sm" class="font-bold" @click="resetFilters">
                 {{
@@ -620,7 +620,7 @@ function onListCardSelect(id: string) {
   const isDesktop =
     typeof window.matchMedia !== 'function' || window.matchMedia(DESKTOP_QUERY).matches
   if (!isDesktop) {
-    void navigateTo(`/centres/${id}/`)
+    void navigateTo(`/centres/${id}`)
     return
   }
   selectCenter(id)

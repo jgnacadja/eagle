@@ -18,7 +18,7 @@
     <p class="text-meta text-ink-subtle">{{ locationLabel }}</p>
     <p class="text-small font-medium text-ink-body">{{ tagsShort }}</p>
     <Button as-child size="pill-sm" class="center-map-popup-cta self-start font-bold">
-      <a :href="`/centres/${id}/`">Voir le centre</a>
+      <a :href="`/centres/${id}`">Voir le centre</a>
     </Button>
     <span
       aria-hidden="true"

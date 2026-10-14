@@ -329,7 +329,7 @@
                                   variant="outline"
                                   class="w-full gap-sm rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary max-md:min-h-touch"
                                 >
-                                  <NuxtLink to="/formations/">
+                                  <NuxtLink to="/formations">
                                     <IconBook
                                       :size="14"
                                       class="shrink-0 text-primary"
@@ -391,7 +391,7 @@
                                 variant="outline"
                                 class="rounded-full border-rule px-md py-sm text-meta font-semibold text-ink hover:border-primary max-md:min-h-touch"
                               >
-                                <NuxtLink to="/formations/">Voir le catalogue</NuxtLink>
+                                <NuxtLink to="/formations">Voir le catalogue</NuxtLink>
                               </Button>
                             </div>
                           </template>

@@ -16,7 +16,7 @@ describe('components/CenterMapPopup', () => {
     expect(wrapper.text()).toContain('Centre de Créteil')
     expect(wrapper.text()).toContain('Créteil · Val-de-Marne')
     expect(wrapper.text()).toContain('CACES · SST')
-    expect(wrapper.find('a').attributes('href')).toBe('/centres/creteil/')
+    expect(wrapper.find('a').attributes('href')).toBe('/centres/creteil')
   })
 
   it('émet close et appelle la prop onClose au clic sur Fermer', async () => {

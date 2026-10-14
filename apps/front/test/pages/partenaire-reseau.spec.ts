@@ -121,8 +121,8 @@ describe('pages/partenaire-reseau.vue', () => {
     const wrapper = await mountReseau()
     const hrefs = wrapper.findAll('a').map((link) => link.attributes('href'))
 
-    expect(hrefs).toContain('/formations/')
-    expect(hrefs).toContain('/parler-a-votre-conseiller/')
-    expect(hrefs).toContain('/rejoindre-le-reseau/')
+    expect(hrefs).toContain('/formations')
+    expect(hrefs).toContain('/parler-a-votre-conseiller')
+    expect(hrefs).toContain('/rejoindre-le-reseau')
   })
 })

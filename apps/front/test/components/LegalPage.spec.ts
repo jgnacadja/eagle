@@ -140,7 +140,7 @@ describe('components/LegalPage', () => {
     // Au moins un lien vers le sommaire et un lien par section.
     expect(links.length).toBeGreaterThan(page.sections.length)
 
-    expect(links.some((a) => a.attributes('href') === '/confidentialite/')).toBe(true)
+    expect(links.some((a) => a.attributes('href') === '/confidentialite')).toBe(true)
 
     const firstSectionHref = `#${page.sections[0]?.id ?? ''}`
     const firstSummaryLink = links.find((a) => a.attributes('href') === firstSectionHref)
@@ -154,7 +154,7 @@ describe('components/LegalPage', () => {
     const select = wrapper.find('select')
     await select.setValue('confidentialite')
 
-    expect(navigateToMock).toHaveBeenCalledWith('/confidentialite/')
+    expect(navigateToMock).toHaveBeenCalledWith('/confidentialite')
   })
 
   it('affiche le sommaire avec la première section active par défaut', () => {

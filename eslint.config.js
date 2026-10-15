@@ -213,7 +213,7 @@ export default defineConfig(
     }
   },
   {
-    files: ['directus/**/*.mjs'],
+    files: ['directus/**/*.mjs', 'matomo/**/*.mjs'],
     languageOptions: {
       globals: {
         ...nodeGlobals,

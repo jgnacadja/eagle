@@ -1,6 +1,7 @@
 import { nextTick } from 'vue'
 import { useAnalytics } from '~/composables/useAnalytics'
 import { isPreviewQuery } from '~/utils/matomo'
+import { firstStringParam, gabaritForRouteName } from '~/utils/matomo-dimensions'
 import { logClientWarning } from '~/utils/logger'
 
 // ST-27 — tracker Matomo sans cookie. La file `_paq` est remplie avant
@@ -27,12 +28,43 @@ export default defineNuxtPlugin((nuxtApp) => {
   window._paq.push(['setSiteId', siteId])
   window._paq.push(['disableCookies'])
 
-  const { trackPageView } = useAnalytics()
+  const { trackPageView, setActionDimension, setVisitDimension } = useAnalytics()
   const route = useRoute()
+
+  // Dimensions ST-32 dérivables de la route : Gabarit sur toutes les vues,
+  // Famille (param `/formations/:famille` ou filtre `?famille=`), Département
+  // (filtre `?dept=` des centres). Les pages enrichissent Département/Source
+  // via `setActionDimension` quand la donnée arrive (fiche centre/formation).
+  const applyRouteDimensions = () => {
+    const current = useRoute()
+    setActionDimension('gabarit', gabaritForRouteName(current.name))
+    setActionDimension(
+      'famille',
+      firstStringParam(current.params.famille) ?? firstStringParam(current.query.famille)
+    )
+    setActionDimension('departement', firstStringParam(current.query.dept))
+  }
+
+  // Landing SEO (portée visite) : gabarit de la page d'entrée, figé pour la
+  // session de l'onglet — sans cookie, sessionStorage borne la visite.
+  const LANDING_KEY = 'matomo:landing-seo'
+  const landingGabarit = () => {
+    try {
+      if (window.sessionStorage.getItem(LANDING_KEY)) return
+      setVisitDimension('landingSeo', gabaritForRouteName(route.name))
+      window.sessionStorage.setItem(LANDING_KEY, '1')
+    } catch {
+      // sessionStorage indisponible (navigation privée stricte) — sans gravité.
+    }
+  }
 
   // Vue initiale (déclenchée immédiatement, les commandes attendent matomo.js),
   // puis une vue à chaque navigation client — après useHead pour avoir le titre.
-  if (!isPreviewQuery(route.query)) trackPageView()
+  if (!isPreviewQuery(route.query)) {
+    applyRouteDimensions()
+    landingGabarit()
+    trackPageView()
+  }
   window._paq.push(['enableLinkTracking'])
 
   if (!document.getElementById('matomo-script')) {
@@ -45,6 +77,10 @@ export default defineNuxtPlugin((nuxtApp) => {
   }
 
   nuxtApp.hook('page:finish', () => {
-    nextTick(trackPageView)
+    nextTick(() => {
+      if (isPreviewQuery(useRoute().query)) return
+      applyRouteDimensions()
+      trackPageView()
+    })
   })
 })

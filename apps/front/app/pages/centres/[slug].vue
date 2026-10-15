@@ -124,6 +124,7 @@
                       <NuxtLink
                         :to="`tel:${centre.phone.replace(/\s/g, '')}`"
                         class="font-semibold text-ink transition-colors hover:text-accent-text"
+                        @click="trackPhoneClick('fixe')"
                       >
                         {{ centre.phone }}
                       </NuxtLink>
@@ -133,6 +134,7 @@
                       <NuxtLink
                         :to="`tel:${centre.mobile.replace(/\s/g, '')}`"
                         class="font-semibold text-ink transition-colors hover:text-accent-text"
+                        @click="trackPhoneClick('mobile')"
                       >
                         {{ centre.mobile }}
                       </NuxtLink>
@@ -704,7 +706,9 @@ const contactEmail = computed(() => {
 
 function callCentrePhone() {
   const phone = centre.value?.phone
-  if (phone) window.location.href = `tel:${phone.replace(/\s/g, '')}`
+  if (!phone) return
+  trackPhoneClick('fixe')
+  window.location.href = `tel:${phone.replace(/\s/g, '')}`
 }
 
 const { position: userPosition } = useGeolocation()
@@ -1094,7 +1098,15 @@ function onErrorSearch(query: string) {
   navigateTo({ path: '/formations/', query: query ? { q: query } : {} })
 }
 
-const { pushEvent } = useAnalytics()
+const { pushEvent, setActionDimension } = useAnalytics()
+
+// Dimension « Département » (ST-32) : enrichie dès que la fiche centre est
+// résolue — avant la vue de fin de page quand la donnée vient du SSR.
+watch(
+  () => centre.value?.department,
+  (department) => setActionDimension('departement', department ?? undefined),
+  { immediate: true }
+)
 
 onMounted(() => {
   if (centre.value) {
@@ -1127,5 +1139,18 @@ function onDownloadQualiopi() {
       center_name: centre.value.name
     })
   }
+}
+
+// Clic `tel:` — objectif « Clic téléphone » (ST-32) : le numéro ne part
+// jamais (PII) ; seuls le centre et le type de ligne sont mesurés.
+function trackPhoneClick(phoneType: 'fixe' | 'mobile') {
+  if (!centre.value) return
+  pushEvent({
+    event: 'click_phone',
+    center_id: centre.value.slug || centre.value.id,
+    center_name: centre.value.name,
+    phone_type: phoneType,
+    page_path: typeof window !== 'undefined' ? window.location.pathname : ''
+  })
 }
 </script>

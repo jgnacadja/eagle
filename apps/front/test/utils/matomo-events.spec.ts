@@ -101,6 +101,15 @@ describe('toMatomoCommands', () => {
     ])
   })
 
+  it('click_phone / session_signup déclenchent les objectifs ST-32 (action = nom du plan)', () => {
+    expect(
+      toMatomoCommands({ event: 'click_phone', center_name: 'Paris', phone_type: 'fixe' })
+    ).toEqual([['trackEvent', 'Centres', 'click_phone', 'Paris:fixe']])
+    expect(
+      toMatomoCommands({ event: 'session_signup', formation_id: 'sst', session_id: 's1' })
+    ).toEqual([['trackEvent', 'Formations', 'session_signup', 'sst:s1']])
+  })
+
   it('ignore page_view (couvert par trackPageView) et les événements sans règle', () => {
     expect(toMatomoCommands({ event: 'page_view', page_path: '/' })).toEqual([])
     expect(toMatomoCommands({ event: 'event_inconnu' })).toEqual([])

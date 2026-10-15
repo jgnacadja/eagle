@@ -242,7 +242,8 @@
                 v-else
                 key="newsletter-success"
                 aria-labelledby="newsletter-success-heading"
-                role="status"
+                aria-live="polite"
+                aria-atomic="true"
                 class="mt-xl rounded-md border border-rule bg-accent-soft p-xl text-center shadow-sm lg:mt-3xl lg:p-xl"
               >
                 <div class="mx-auto flex flex-col items-center">

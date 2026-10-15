@@ -243,7 +243,7 @@
         >
           <li v-for="item in categoryArticles" :key="item.slug">
             <ArticleCard
-              :category="item.category?.name ?? 'Actualité'"
+              :category="articleCategory(item.category)?.name ?? 'Actualité'"
               :title="item.title"
               :date="formatArticleDate(item.publish_at)"
               :excerpt="item.excerpt ?? ''"
@@ -611,7 +611,7 @@ const categoriePattern = useSeoPattern('categorie')
 
 const articleVars = computed<MetaPatternVars>(() => ({
   intitulé: article.value?.title,
-  catégorie: article.value?.category?.name,
+  catégorie: articleCategory(article.value?.category)?.name,
   date: article.value?.publish_at
     ? new Date(article.value.publish_at).toLocaleDateString('fr-FR')
     : null

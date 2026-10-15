@@ -564,7 +564,7 @@
                 v-reveal="revealStagger(i)"
               >
                 <ArticleCard
-                  :category="article.category?.name ?? 'Actualité'"
+                  :category="articleCategory(article.category)?.name ?? 'Actualité'"
                   :title="article.title"
                   :date="formatArticleDate(article.publish_at)"
                   :excerpt="article.excerpt ?? ''"
@@ -657,7 +657,8 @@ import { directusAssetUrl } from '~/utils/directusAsset'
 import { formatDateFr } from '~/utils/date'
 import { buildCourseJsonLd } from '~/utils/jsonLd'
 import { htmlToText, sanitizeHtml } from '~/utils/sanitizeHtml'
-import { articleAssetUrl, formatArticleDate } from '~/utils/article'
+import { articleAssetUrl, articleCategory, formatArticleDate } from '~/utils/article'
+import type { MetaPatternVars } from '~/utils/metaPatterns'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
 import { revealStagger } from '~/utils/reveal'
@@ -871,7 +872,7 @@ const imageSrc = computed(
 // Patron de métas administrable (ST-04) — priorité : champ seo_* éditorial,
 // puis patron `formation` de la collection seo_patterns, puis le repli.
 const formationPattern = useSeoPattern('formation')
-const metaVars = computed<Record<string, string | number | null>>(() => {
+const metaVars = computed<MetaPatternVars>(() => {
   if (pageState.value !== 'found' || !course.value) return {}
   const upcoming = upcomingSessions(course.value)
     .slice()

@@ -27,6 +27,12 @@ export function isPreviewQuery(query: Record<string, unknown>): boolean {
 export type MatomoCommand = [string, ...Array<string | number | boolean>]
 
 /**
+ * Commande fonction : exécutée par matomo.js une fois chargé, `this` = l'API
+ * du tracker (ex. `isUserOptedOut()` pour l'opt-out ST-33).
+ */
+export type MatomoCallback = [() => void]
+
+/**
  * File de commandes du tracker. Avant le chargement de `matomo.js` c'est un
  * simple tableau ; une fois le script exécuté, Matomo le remplace par son
  * proxy asynchrone — un objet qui expose toujours `push` (d'où le test
@@ -34,7 +40,7 @@ export type MatomoCommand = [string, ...Array<string | number | boolean>]
  * Le typage garde la forme tableau : seule `push` est utilisée au runtime
  * et les specs insèrent/inspectent les commandes.
  */
-export type MatomoQueue = MatomoCommand[]
+export type MatomoQueue = Array<MatomoCommand | MatomoCallback>
 
 declare global {
   interface Window {

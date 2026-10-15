@@ -10,7 +10,7 @@
 // Le token doit être envoyé en POST (les tokens « secure only » refusent le
 // query string) — toutes les requêtes de ce script passent par api().
 
-import { dimensions, goals, privacy, site, SITE_ID } from './config.mjs'
+import { dimensions, goals, privacy, retention, site, SITE_ID } from './config.mjs'
 import { log, logError } from '../directus/logger.mjs'
 
 const MATOMO_URL = (
@@ -176,16 +176,30 @@ async function ensureGoals(api) {
   }
 }
 
-async function ensurePrivacy(api) {
+async function ensurePrivacy(api, adminPassword) {
   await api('PrivacyManager.setAnonymizeIpSettings', privacy)
   log('↻ anonymisation IP appliquée (masque /' + 8 * privacy.ipAddressMaskLength + ')')
+  // setDeleteLogsSettings exige `passwordConfirmation` (reconfirmation du mot
+  // de passe admin) — le token seul ne suffit pas. Sans MATOMO_ADMIN_PASSWORD,
+  // la rétention est sautée et signalée : appliquer le réglage dans Matomo
+  // (Vie privée → Purge des données) avant la recette.
+  if (!adminPassword) {
+    log('⚠ MATOMO_ADMIN_PASSWORD absent — rétention des logs sautée')
+    return
+  }
+  await api('PrivacyManager.setDeleteLogsSettings', {
+    enableDeleteLogs: retention.enableLogDelete,
+    deleteLogsOlderThan: retention.deleteLogsOlderThan,
+    passwordConfirmation: adminPassword
+  })
+  log('↻ rétention appliquée (logs purgés au-delà de ' + retention.deleteLogsOlderThan + ' mois)')
 }
 
-export async function provision(api) {
+export async function provision(api, { adminPassword } = {}) {
   await ensureSite(api)
   await ensureDimensions(api)
   await ensureGoals(api)
-  await ensurePrivacy(api)
+  await ensurePrivacy(api, adminPassword)
 }
 
 async function main() {
@@ -197,7 +211,7 @@ async function main() {
     process.exit(1)
   }
   const api = createApi(MATOMO_URL, token)
-  await provision(api)
+  await provision(api, { adminPassword: process.env.MATOMO_ADMIN_PASSWORD })
   log(`✔ provisioning terminé sur ${MATOMO_URL}`)
 }
 

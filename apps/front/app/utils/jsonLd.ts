@@ -223,28 +223,28 @@ export function buildCourseJsonLd(input: {
     ...(imageUrl ? { image: [imageUrl] } : {}),
     ...(courseModes.length || workload
       ? {
-        hasCourseInstance: {
-          '@type': 'CourseInstance',
-          ...(courseModes.length ? { courseMode: courseModes } : {}),
-          ...(workload ? { courseWorkload: workload } : {})
+          hasCourseInstance: {
+            '@type': 'CourseInstance',
+            ...(courseModes.length ? { courseMode: courseModes } : {}),
+            ...(workload ? { courseWorkload: workload } : {})
+          }
         }
-      }
       : {}),
     ...(course.price
       ? {
-        offers: { '@type': 'Offer', price: course.price, priceCurrency: 'EUR' }
-      }
+          offers: { '@type': 'Offer', price: course.price, priceCurrency: 'EUR' }
+        }
       : {}),
     ...(course.certification
       ? {
-        educationalCredentialAwarded: {
-          '@type': 'EducationalOccupationalCredential',
-          name: course.certification,
-          ...(course.certifierName
-            ? { recognizedBy: { '@type': 'Organization', name: course.certifierName } }
-            : {})
+          educationalCredentialAwarded: {
+            '@type': 'EducationalOccupationalCredential',
+            name: course.certification,
+            ...(course.certifierName
+              ? { recognizedBy: { '@type': 'Organization', name: course.certifierName } }
+              : {})
+          }
         }
-      }
       : {})
   }
 }

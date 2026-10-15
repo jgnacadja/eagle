@@ -571,7 +571,7 @@ const defaultBreadcrumb = computed(() => {
   // sinon la valeur brute (ancien libellé d'URL encore partagé).
   const raw = typeof route.query.category === 'string' ? route.query.category.trim() : ''
   const cat = articleCategory(article.value?.category)
-  const category = (raw && raw === cat?.slug ? cat.name : raw) || cat?.name || 'Article'
+  const category = (raw && raw === cat?.slug ? cat?.name : raw) || cat?.name || 'Article'
 
   return [
     { label: 'Accueil', to: '/' },

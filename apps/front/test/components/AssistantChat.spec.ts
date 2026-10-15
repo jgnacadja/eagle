@@ -4,6 +4,7 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import AssistantChat from '~/components/Assistant/Chat.vue'
 import { useAssistantHandoffChannel } from '~/composables/useAssistantHandoff'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
+import type { MatomoCommand } from '~/utils/matomo'
 
 const routeMock = (globalThis as Record<string, unknown>).useRoute as () => {
   path: string
@@ -13,7 +14,13 @@ const routeMock = (globalThis as Record<string, unknown>).useRoute as () => {
 const fetchMock = vi.fn()
 
 vi.stubGlobal('$fetch', fetchMock)
-vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
+vi.stubGlobal('useRuntimeConfig', () => ({
+  public: {
+    apiBase: 'http://api.test',
+    matomoUrl: 'https://stats.test',
+    matomoSiteId: '1'
+  }
+}))
 vi.stubGlobal('logServerError', vi.fn())
 vi.stubGlobal('internalSsrHeaders', () => undefined)
 
@@ -53,38 +60,42 @@ afterEach(() => {
   mounted.splice(0).forEach((wrapper) => wrapper.unmount())
 })
 
-type Pushed = Record<string, unknown> & { event: string }
-
-function pushed(): Pushed[] {
-  return (window.dataLayer ?? []) as Pushed[]
+function pushed(): MatomoCommand[] {
+  return (window._paq ?? []).filter((c): c is MatomoCommand => c[0] === 'trackEvent')
 }
 
-// Le chemin de page est posé par le dataLayer (spec de useAssistantAnalytics) :
-// les jalons sont comparés sans lui.
-const withoutPage = ({ page_path: _page, ...event }: Pushed) => event
+const ai = (action: string, name?: string, value?: number): MatomoCommand => {
+  const command: MatomoCommand = ['trackEvent', 'Assistant IA', action]
+  if (name !== undefined || value !== undefined) command.push(name ?? '')
+  if (value !== undefined) command.push(value)
+  return command
+}
+
+const bot = (action: string, name?: string, value?: number): MatomoCommand => {
+  const command: MatomoCommand = ['trackEvent', 'Chatbot', action]
+  if (name !== undefined || value !== undefined) command.push(name ?? '')
+  if (value !== undefined) command.push(value)
+  return command
+}
 
 /** Jalons `ai_*` poussés depuis le montage, sans leurs paramètres. */
 function events(): string[] {
-  return aiEvents().map((e) => e.event as string)
+  return aiEvents().map((c) => c[2] as string)
 }
 
-/** Jalons `ai_*` complets. */
-function aiEvents(): Record<string, unknown>[] {
-  return pushed()
-    .filter((e) => e.event.startsWith('ai_'))
-    .map(withoutPage)
+/** Jalons `ai_*` complets (commandes Matomo). */
+function aiEvents(): MatomoCommand[] {
+  return pushed().filter((c) => String(c[2]).startsWith('ai_'))
 }
 
 /** Jalons du module Chatbot. */
-function chatbotEvents(): Record<string, unknown>[] {
-  return pushed()
-    .filter((e) => e.event.startsWith('chatbot_'))
-    .map(withoutPage)
+function chatbotEvents(): MatomoCommand[] {
+  return pushed().filter((c) => String(c[2]).startsWith('chatbot_'))
 }
 
 beforeEach(() => {
   fetchMock.mockReset().mockResolvedValue({ kind: 'clarify', text: 'ok' })
-  window.dataLayer = []
+  window._paq = []
   window.history.replaceState(null, '')
   useAssistantHandoffChannel().channel.value = { value: null, revision: 0 }
   const launcher = useAssistantLauncher()
@@ -201,13 +212,13 @@ describe('AssistantChat', () => {
       expect(events()).toEqual([])
 
       await wrapper.find('button[aria-label="Ouvrir la recherche assistée"]').trigger('click')
-      expect(aiEvents()).toEqual([{ event: 'ai_search_start' }])
+      expect(aiEvents()).toEqual([ai('ai_search_start')])
 
       useAssistantLauncher().close()
       await nextTick()
       useAssistantLauncher().open({ context: { source: 'catalogue' } })
       await nextTick()
-      expect(aiEvents().at(-1)).toEqual({ event: 'ai_search_start', source: 'catalogue' })
+      expect(aiEvents().at(-1)).toEqual(ai('ai_search_start', 'catalogue'))
     })
 
     it('tracks an entry-point message as a search submit, then the clarification', async () => {
@@ -216,9 +227,9 @@ describe('AssistantChat', () => {
       await vi.waitFor(() => expect(events()).toContain('ai_clarification_requested'))
 
       expect(aiEvents()).toEqual([
-        { event: 'ai_search_start', source: 'home' },
-        { event: 'ai_search_submit', source: 'home', turn: 1, via: 'entry' },
-        { event: 'ai_clarification_requested', source: 'home', turn: 1 }
+        ai('ai_search_start', 'home'),
+        ai('ai_search_submit', 'home:entry', 1),
+        ai('ai_clarification_requested', 'home', 1)
       ])
     })
 
@@ -240,11 +251,11 @@ describe('AssistantChat', () => {
       await vi.waitFor(() => expect(events()).toContain('ai_recommendation_display'))
 
       expect(aiEvents()).toEqual([
-        { event: 'ai_search_start', source: 'home' },
-        { event: 'ai_search_submit', source: 'home', turn: 1, via: 'text' },
-        { event: 'ai_clarification_requested', source: 'home', turn: 1 },
-        { event: 'ai_clarification_answer', source: 'home', turn: 2, via: 'suggestion' },
-        { event: 'ai_recommendation_display', source: 'home', turn: 2, count: 2, mode: 'ai' }
+        ai('ai_search_start', 'home'),
+        ai('ai_search_submit', 'home:text', 1),
+        ai('ai_clarification_requested', 'home', 1),
+        ai('ai_clarification_answer', 'home:suggestion', 2),
+        ai('ai_recommendation_display', 'home:ai', 2)
       ])
     })
 
@@ -258,7 +269,7 @@ describe('AssistantChat', () => {
       conversation(wrapper).vm.$emit('edit', id, 'premier modifié')
       await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
 
-      expect(aiEvents()).toContainEqual({ event: 'ai_search_submit', turn: 1, via: 'edit' })
+      expect(aiEvents()).toContainEqual(ai('ai_search_submit', 'edit', 1))
     })
 
     it('tracks a recommendation CTA with the entry-point source', async () => {
@@ -267,13 +278,7 @@ describe('AssistantChat', () => {
 
       conversation(wrapper).vm.$emit('select', { slug: 'sst', rank: 'primary', action: 'sessions' })
 
-      expect(aiEvents().at(-1)).toEqual({
-        event: 'ai_recommendation_select',
-        slug: 'sst',
-        rank: 'primary',
-        action: 'sessions',
-        source: 'formation'
-      })
+      expect(aiEvents().at(-1)).toEqual(ai('ai_recommendation_select', 'sst:primary:sessions'))
     })
 
     it('ignores blank submissions', () => {
@@ -314,13 +319,8 @@ describe('AssistantChat', () => {
 
       // Nouveau début de recherche puis envoi « entry » au tour 2 — la réponse
       // à ce second tour peut déjà être tracée derrière.
-      expect(aiEvents()).toContainEqual({ event: 'ai_search_start', source: 'catalogue' })
-      expect(aiEvents()).toContainEqual({
-        event: 'ai_search_submit',
-        source: 'catalogue',
-        turn: 2,
-        via: 'entry'
-      })
+      expect(aiEvents()).toContainEqual(ai('ai_search_start', 'catalogue'))
+      expect(aiEvents()).toContainEqual(ai('ai_search_submit', 'catalogue:entry', 2))
       expect(events().filter((e) => e === 'ai_search_start')).toHaveLength(2)
       expect(events()).not.toContain('ai_clarification_answer')
     })
@@ -360,10 +360,7 @@ describe('AssistantChat', () => {
       })
 
       // Pas de nouvelle recherche : la sélection reste attribuée à « home ».
-      expect(aiEvents().at(-1)).toMatchObject({
-        event: 'ai_recommendation_select',
-        source: 'home'
-      })
+      expect(aiEvents().at(-1)).toEqual(ai('ai_recommendation_select', 'sst:primary:formation'))
     })
 
     it('numbers queued entry-point messages by the turn they actually take', async () => {
@@ -388,8 +385,8 @@ describe('AssistantChat', () => {
       await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
 
       const submits = aiEvents()
-        .filter((e) => e.event === 'ai_search_submit')
-        .map((e) => e.turn)
+        .filter((c) => c[2] === 'ai_search_submit')
+        .map((c) => c[4])
       expect(submits).toEqual([1, 2, 3])
     })
 
@@ -417,24 +414,11 @@ describe('AssistantChat', () => {
       await nextTick()
 
       const [open, sent, end] = chatbotEvents()
-      expect(open).toEqual({
-        event: 'chatbot_open',
-        trigger_type: 'manuel',
-        conversation_id: expect.any(String)
-      })
-      expect(sent).toEqual({
-        event: 'chatbot_message_sent',
-        conversation_id: open!.conversation_id,
-        message_index: 1
-      })
+      expect(open).toEqual(bot('chatbot_open', 'manuel'))
+      expect(sent).toEqual(bot('chatbot_message_sent', undefined, 1))
       // Accueil, message, question de précision : pas de recommandation.
-      expect(end).toEqual({
-        event: 'chatbot_conversation_end',
-        conversation_id: open!.conversation_id,
-        messages_count: 3,
-        resolved: false,
-        duration_seconds: expect.any(Number)
-      })
+      expect(end?.[2]).toBe('chatbot_conversation_end')
+      expect(typeof end?.[4]).toBe('number')
       expect(chatbotEvents()).toHaveLength(3)
     })
 
@@ -446,18 +430,10 @@ describe('AssistantChat', () => {
 
       await wrapper.find('.conversation .advisor').trigger('click')
 
-      expect(chatbotEvents().at(0)).toMatchObject({ event: 'chatbot_open', trigger_type: 'auto' })
-      expect(chatbotEvents()).toContainEqual({
-        event: 'chatbot_handoff_to_advisor',
-        conversation_id: expect.any(String),
-        reason: 'out_of_catalog',
-        messages_count: 2
-      })
+      expect(chatbotEvents().at(0)).toEqual(bot('chatbot_open', 'auto'))
+      expect(chatbotEvents()).toContainEqual(bot('chatbot_handoff_to_advisor', 'out_of_catalog', 2))
       // Le clic ferme le panneau : la conversation se termine.
-      expect(chatbotEvents().at(-1)).toMatchObject({
-        event: 'chatbot_conversation_end',
-        resolved: false
-      })
+      expect(chatbotEvents().at(-1)?.[2]).toBe('chatbot_conversation_end')
     })
 
     it('labels suggestion clicks and starts a new conversation after a reset', async () => {
@@ -465,21 +441,17 @@ describe('AssistantChat', () => {
       const wrapper = mountChat()
       conversation(wrapper).vm.$emit('send', 'Je veux former mes salariés au SST', 'suggestion')
       await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
-      const first = chatbotEvents()[0]!.conversation_id
 
       await wrapper.find('.conversation .reset').trigger('click')
       conversation(wrapper).vm.$emit('send', 'autre besoin', 'text')
       await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
 
-      expect(chatbotEvents()).toContainEqual({
-        event: 'chatbot_suggested_action_click',
-        conversation_id: first,
-        action_type: 'suggestion',
-        action_label: 'Je veux former mes salariés au SST'
-      })
+      expect(chatbotEvents()).toContainEqual(
+        bot('chatbot_suggested_action_click', 'suggestion:Je veux former mes salariés au SST')
+      )
       const last = chatbotEvents().at(-1)
-      expect(last).toMatchObject({ event: 'chatbot_message_sent', message_index: 1 })
-      expect(last!.conversation_id).not.toBe(first)
+      expect(last?.[2]).toBe('chatbot_message_sent')
+      expect(last?.[4]).toBe(1)
     })
   })
 
@@ -589,19 +561,8 @@ describe('AssistantChat', () => {
       expect(conversation(wrapper).props('notice')).toBe(
         'Réponses générées par un assistant automatisé.'
       )
-      expect(aiEvents()).toContainEqual({
-        event: 'ai_recommendation_display',
-        source: 'home',
-        turn: 1,
-        count: 1,
-        mode: 'fallback'
-      })
-      expect(aiEvents()).toContainEqual({
-        event: 'ai_fallback_mode',
-        source: 'home',
-        turn: 1,
-        kind: 'recommend'
-      })
+      expect(aiEvents()).toContainEqual(ai('ai_recommendation_display', 'home:fallback', 1))
+      expect(aiEvents()).toContainEqual(ai('ai_fallback_mode', 'recommend:home', 1))
     })
 
     it('tracks a dead end, then the advisor escalation with its origin', async () => {
@@ -611,21 +572,10 @@ describe('AssistantChat', () => {
 
       conversation(wrapper).vm.$emit('send', 'piloter un drone', 'text')
       await vi.waitFor(() => expect(events()).toContain('ai_no_results'))
-      expect(aiEvents()).toContainEqual({
-        event: 'ai_no_results',
-        source: 'catalogue',
-        turn: 1,
-        kind: 'out_of_catalog',
-        mode: 'ai'
-      })
+      expect(aiEvents()).toContainEqual(ai('ai_no_results', 'out_of_catalog:catalogue', 1))
 
       await wrapper.find('.conversation .advisor').trigger('click')
-      expect(aiEvents().at(-1)).toEqual({
-        event: 'ai_advisor_escalation',
-        source: 'catalogue',
-        from: 'out_of_catalog',
-        mode: 'ai'
-      })
+      expect(aiEvents().at(-1)).toEqual(ai('ai_advisor_escalation', 'out_of_catalog:catalogue'))
       expect(useAssistantLauncher().isOpen.value).toBe(false)
     })
 
@@ -636,14 +586,11 @@ describe('AssistantChat', () => {
 
       conversation(wrapper).vm.$emit('send', 'former au SST', 'text')
       await vi.waitFor(() => expect(events()).toContain('ai_unavailable'))
-      expect(aiEvents()).toContainEqual({ event: 'ai_unavailable', turn: 1 })
+      expect(aiEvents()).toContainEqual(ai('ai_unavailable', undefined, 1))
       expect(conversation(wrapper).props('unavailable')).toBe(true)
 
       await wrapper.find('.conversation .advisor-unavailable').trigger('click')
-      expect(aiEvents().at(-1)).toEqual({
-        event: 'ai_advisor_escalation',
-        from: 'unavailable'
-      })
+      expect(aiEvents().at(-1)).toEqual(ai('ai_advisor_escalation', 'unavailable'))
     })
 
     it('tracks the comparison table opening', () => {
@@ -652,11 +599,7 @@ describe('AssistantChat', () => {
 
       conversation(wrapper).vm.$emit('compare', 3)
 
-      expect(aiEvents().at(-1)).toEqual({
-        event: 'ai_recommendation_compare',
-        source: 'home',
-        count: 3
-      })
+      expect(aiEvents().at(-1)).toEqual(ai('ai_recommendation_compare', 'home', 3))
     })
   })
 })

@@ -21,7 +21,7 @@ import type {
   ChatbotSuggestedActionClickEvent,
   TrackingEvent
 } from '~/types/analytics'
-import { useDataLayer } from '~/composables/useDataLayer'
+import { useAnalytics } from '~/composables/useAnalytics'
 
 // Les formes des jalons vivent dans le plan de tracking ; ré-exportées pour
 // le widget et ses specs.
@@ -30,7 +30,7 @@ export type { AssistantEscalationFrom, AssistantSelectAction, AssistantSubmitVia
 /** Paramètres d'un jalon sans son nom d'événement. */
 type Params<E extends TrackingEvent> = Omit<E, 'event'>
 
-/** Idem, sans le chemin de page : le dataLayer le fournit. */
+/** Idem, sans le chemin de page : Matomo le fournit via le contexte de la vue. */
 type PageParams<E extends TrackingEvent> = Omit<Params<E>, 'page_path'>
 
 export type AssistantSelection = {
@@ -101,18 +101,17 @@ export interface AssistantAnalytics {
 }
 
 /**
- * Jalons analytics du moteur IA, poussés dans le dataLayer par `useDataLayer`
- * (plan de tracking GA4 / GTM : `page_path` et `page_title` ajoutés, valeurs
- * vides et clés personnelles retirées). Deux familles : le parcours propre au
- * moteur (`ai_*` — DEV-CORE : ouverture, envoi, clarification, recommandation,
- * sélection ; DEV-EDGE : impasses, indisponibilité, mode dégradé, comparaison,
- * sortie conseiller) et le module Chatbot du plan (`chatbot_*`). Jamais le
- * contenu des messages. Un dataLayer défaillant (surchargé par un script
- * tiers) ne remonte jamais : l'analytics ne doit pas pouvoir casser la
+ * Jalons analytics du moteur IA, poussés dans Matomo par `useAnalytics`
+ * (plan de tracking : valeurs vides et clés personnelles retirées avant envoi).
+ * Deux familles : le parcours propre au moteur (`ai_*` — DEV-CORE : ouverture,
+ * envoi, clarification, recommandation, sélection ; DEV-EDGE : impasses,
+ * indisponibilité, mode dégradé, comparaison, sortie conseiller) et le module
+ * Chatbot du plan (`chatbot_*`). Jamais le contenu des messages. Un tracker
+ * défaillant ne remonte jamais : l'analytics ne doit pas pouvoir casser la
  * conversation.
  */
 export function useAssistantAnalytics(): AssistantAnalytics {
-  const { pushEvent, getPageAttributes } = useDataLayer()
+  const { pushEvent, getPageAttributes } = useAnalytics()
 
   function track(event: TrackingEvent): void {
     try {

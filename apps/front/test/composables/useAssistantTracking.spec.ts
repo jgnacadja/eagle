@@ -3,6 +3,7 @@ import { computed, nextTick, ref } from 'vue'
 import type { AssistantContext, AssistantReply } from '@learnup/types'
 import type { AssistantEntry, AssistantSendOptions } from '~/composables/useAssistant'
 import { useAssistantTracking } from '~/composables/useAssistantTracking'
+import type { MatomoCommand } from '~/utils/matomo'
 
 /**
  * Conversation factice : seuls les signaux observés par le suivi existent.
@@ -50,36 +51,40 @@ const assistantTurn = (id: string, reply: AssistantReply): AssistantEntry => ({
   reply
 })
 
-type Pushed = Record<string, unknown> & { event: string }
-
-function pushed(): Pushed[] {
-  return (window.dataLayer ?? []) as Pushed[]
+function pushed(): MatomoCommand[] {
+  return (window._paq ?? []).filter((c): c is MatomoCommand => c[0] === 'trackEvent')
 }
 
-// Le chemin de page est posé par le dataLayer (spec de useAssistantAnalytics) :
-// les jalons sont comparés sans lui.
-const withoutPage = ({ page_path: _page, ...event }: Pushed) => event
-
-/** Jalons `ai_*` poussés. */
-function events(): unknown[] {
-  return pushed()
-    .filter((e) => e.event.startsWith('ai_'))
-    .map(withoutPage)
+/** Jalons `ai_*` poussés (action = nom de l'événement du plan). */
+function events(): MatomoCommand[] {
+  return pushed().filter((c) => String(c[2]).startsWith('ai_'))
 }
 
 /** Jalons du module Chatbot. */
-function chatbotEvents(): Record<string, unknown>[] {
-  return pushed()
-    .filter((e) => e.event.startsWith('chatbot_'))
-    .map(withoutPage)
+function chatbotEvents(): MatomoCommand[] {
+  return pushed().filter((c) => String(c[2]).startsWith('chatbot_'))
+}
+
+const ai = (action: string, name?: string, value?: number): MatomoCommand => {
+  const command: MatomoCommand = ['trackEvent', 'Assistant IA', action]
+  if (name !== undefined || value !== undefined) command.push(name ?? '')
+  if (value !== undefined) command.push(value)
+  return command
+}
+
+const bot = (action: string, name?: string, value?: number): MatomoCommand => {
+  const command: MatomoCommand = ['trackEvent', 'Chatbot', action]
+  if (name !== undefined || value !== undefined) command.push(name ?? '')
+  if (value !== undefined) command.push(value)
+  return command
 }
 
 beforeEach(() => {
-  window.dataLayer = []
+  window._paq = []
 })
 
 afterEach(() => {
-  delete window.dataLayer
+  delete window._paq
 })
 
 describe('useAssistantTracking', () => {
@@ -92,8 +97,8 @@ describe('useAssistantTracking', () => {
     await tracking.submit('à Créteil', 'text')
 
     expect(events()).toEqual([
-      { event: 'ai_search_submit', source: 'home', turn: 2, via: 'suggestion' },
-      { event: 'ai_clarification_answer', source: 'home', turn: 2, via: 'text' }
+      ai('ai_search_submit', 'home:suggestion', 2),
+      ai('ai_clarification_answer', 'home:text', 2)
     ])
     expect(assistant.send).toHaveBeenCalledTimes(2)
   })
@@ -107,9 +112,7 @@ describe('useAssistantTracking', () => {
     // Le message d'entrée rejoint la file d'envoi même pendant l'analyse.
     await tracking.submit('un autre besoin', 'entry')
 
-    expect(events()).toEqual([
-      { event: 'ai_search_submit', source: 'catalogue', turn: 2, via: 'entry' }
-    ])
+    expect(events()).toEqual([ai('ai_search_submit', 'catalogue:entry', 2)])
     expect(assistant.send).toHaveBeenCalledWith('un autre besoin', expect.any(Object))
   })
 
@@ -144,10 +147,10 @@ describe('useAssistantTracking', () => {
     starts[1]!()
 
     expect(events()).toEqual([
-      { event: 'ai_search_submit', source: 'home', turn: 2, via: 'entry' },
-      { event: 'ai_search_submit', source: 'home', turn: 3, via: 'entry' }
+      ai('ai_search_submit', 'home:entry', 2),
+      ai('ai_search_submit', 'home:entry', 3)
     ])
-    expect(chatbotEvents().map((e) => e.message_index)).toEqual([2, 3])
+    expect(chatbotEvents().map((c) => c[4])).toEqual([2, 3])
   })
 
   it('ne compte pas un envoi abandonné avant son départ', async () => {
@@ -170,10 +173,7 @@ describe('useAssistantTracking', () => {
     tracking.onOpen()
     tracking.onOpen({ entryMessage: true })
 
-    expect(events()).toEqual([
-      { event: 'ai_search_start', source: 'header' },
-      { event: 'ai_search_start', source: 'header' }
-    ])
+    expect(events()).toEqual([ai('ai_search_start', 'header'), ai('ai_search_start', 'header')])
   })
 
   it('garde la source de la recherche en cours quand le panneau est rouvert ailleurs', async () => {
@@ -193,15 +193,9 @@ describe('useAssistantTracking', () => {
     tracking.escalate('recommend')
 
     expect(events().slice(2)).toEqual([
-      { event: 'ai_recommendation_display', source: 'home', turn: 1, count: 0 },
-      {
-        event: 'ai_recommendation_select',
-        slug: 'sst',
-        rank: 'primary',
-        action: 'formation',
-        source: 'home'
-      },
-      { event: 'ai_advisor_escalation', source: 'home', from: 'recommend' }
+      ai('ai_recommendation_display', 'home', 0),
+      ai('ai_recommendation_select', 'sst:primary:formation'),
+      ai('ai_advisor_escalation', 'recommend:home')
     ])
 
     // Un nouveau besoin transmis par un point d'entrée ouvre une recherche : la source suit.
@@ -210,8 +204,8 @@ describe('useAssistantTracking', () => {
     await tracking.submit('autre besoin', 'entry')
 
     expect(events().slice(-2)).toEqual([
-      { event: 'ai_search_start', source: 'catalogue' },
-      { event: 'ai_search_submit', source: 'catalogue', turn: 2, via: 'entry' }
+      ai('ai_search_start', 'catalogue'),
+      ai('ai_search_submit', 'catalogue:entry', 2)
     ])
   })
 
@@ -223,10 +217,8 @@ describe('useAssistantTracking', () => {
     await tracking.edit('nope', 'x')
     await tracking.edit('u2', '   ')
 
-    expect(events()).toEqual([{ event: 'ai_search_submit', source: 'home', turn: 1, via: 'edit' }])
-    expect(chatbotEvents()).toEqual([
-      { event: 'chatbot_message_sent', conversation_id: expect.any(String), message_index: 1 }
-    ])
+    expect(events()).toEqual([ai('ai_search_submit', 'home:edit', 1)])
+    expect(chatbotEvents()).toEqual([bot('chatbot_message_sent', undefined, 1)])
     expect(assistant.editAndSend).toHaveBeenCalledTimes(1)
     expect(assistant.editAndSend).toHaveBeenCalledWith(
       'u1',
@@ -248,16 +240,10 @@ describe('useAssistantTracking', () => {
     tracking.select({ slug: 'sst', rank: 'primary', action: 'formation' })
 
     expect(events()).toEqual([
-      { event: 'ai_clarification_requested', source: 'formation', turn: 1 },
-      { event: 'ai_recommendation_display', source: 'formation', turn: 2, count: 0, mode: 'ai' },
-      { event: 'ai_no_results', source: 'formation', turn: 3, kind: 'no_results' },
-      {
-        event: 'ai_recommendation_select',
-        slug: 'sst',
-        rank: 'primary',
-        action: 'formation',
-        source: 'formation'
-      }
+      ai('ai_clarification_requested', 'formation', 1),
+      ai('ai_recommendation_display', 'formation:ai', 0),
+      ai('ai_no_results', 'no_results:formation', 3),
+      ai('ai_recommendation_select', 'sst:primary:formation')
     ])
   })
 
@@ -272,9 +258,9 @@ describe('useAssistantTracking', () => {
     )
 
     expect(events()).toEqual([
-      { event: 'ai_no_results', source: 'home', turn: 1, kind: 'no_results', mode: 'ai' },
-      { event: 'ai_recommendation_display', source: 'home', turn: 2, count: 0, mode: 'fallback' },
-      { event: 'ai_fallback_mode', source: 'home', turn: 2, kind: 'recommend' }
+      ai('ai_no_results', 'no_results:home', 1),
+      ai('ai_recommendation_display', 'home:fallback', 0),
+      ai('ai_fallback_mode', 'recommend:home', 2)
     ])
   })
 
@@ -287,7 +273,7 @@ describe('useAssistantTracking', () => {
     unavailableState.value = false
     await nextTick()
 
-    expect(events()).toEqual([{ event: 'ai_unavailable', source: 'centre', turn: 1 }])
+    expect(events()).toEqual([ai('ai_unavailable', 'centre', 1)])
   })
 
   it("trace la comparaison et la sortie conseiller avec son état d'origine", () => {
@@ -301,9 +287,9 @@ describe('useAssistantTracking', () => {
     tracking.escalate('nope')
 
     expect(events()).toEqual([
-      { event: 'ai_recommendation_compare', source: 'home', count: 3 },
-      { event: 'ai_advisor_escalation', source: 'home', from: 'degraded', mode: 'fallback' },
-      { event: 'ai_advisor_escalation', source: 'home', mode: 'fallback' }
+      ai('ai_recommendation_compare', 'home', 3),
+      ai('ai_advisor_escalation', 'degraded:home'),
+      ai('ai_advisor_escalation', 'home')
     ])
   })
 
@@ -332,23 +318,9 @@ describe('useAssistantTracking', () => {
       }
 
       const [open, sent, end] = chatbotEvents()
-      expect(open).toEqual({
-        event: 'chatbot_open',
-        trigger_type: 'manuel',
-        conversation_id: expect.any(String)
-      })
-      expect(sent).toEqual({
-        event: 'chatbot_message_sent',
-        conversation_id: open!.conversation_id,
-        message_index: 1
-      })
-      expect(end).toEqual({
-        event: 'chatbot_conversation_end',
-        conversation_id: open!.conversation_id,
-        messages_count: 2,
-        resolved: true,
-        duration_seconds: 42
-      })
+      expect(open).toEqual(bot('chatbot_open', 'manuel'))
+      expect(sent).toEqual(bot('chatbot_message_sent', undefined, 1))
+      expect(end).toEqual(bot('chatbot_conversation_end', undefined, 42))
       expect(chatbotEvents()).toHaveLength(3)
     })
 
@@ -365,44 +337,18 @@ describe('useAssistantTracking', () => {
       // Un état inconnu : passage sans motif.
       tracking.escalate('nope')
 
-      const id = chatbotEvents()[0]!.conversation_id
       expect(chatbotEvents()).toEqual([
-        {
-          event: 'chatbot_suggested_action_click',
-          conversation_id: id,
-          action_type: 'suggestion',
-          action_label: '8 salariés'
-        },
-        { event: 'chatbot_message_sent', conversation_id: id, message_index: 2 },
-        {
-          event: 'chatbot_suggested_action_click',
-          conversation_id: id,
-          action_type: 'recommendation_formation',
-          action_label: 'sst'
-        },
-        {
-          event: 'chatbot_handoff_to_advisor',
-          conversation_id: id,
-          reason: 'compare_advisor',
-          messages_count: 2
-        },
-        {
-          event: 'chatbot_handoff_to_advisor',
-          conversation_id: id,
-          reason: 'error_advisor',
-          messages_count: 2
-        },
-        {
-          event: 'chatbot_handoff_to_advisor',
-          conversation_id: id,
-          reason: 'recommend',
-          messages_count: 2
-        },
-        { event: 'chatbot_handoff_to_advisor', conversation_id: id, messages_count: 2 }
+        bot('chatbot_suggested_action_click', 'suggestion:8 salariés'),
+        bot('chatbot_message_sent', undefined, 2),
+        bot('chatbot_suggested_action_click', 'recommendation_formation:sst'),
+        bot('chatbot_handoff_to_advisor', 'compare_advisor', 2),
+        bot('chatbot_handoff_to_advisor', 'error_advisor', 2),
+        bot('chatbot_handoff_to_advisor', 'recommend', 2),
+        bot('chatbot_handoff_to_advisor', undefined, 2)
       ])
     })
 
-    it("renouvelle l'identifiant de conversation à la nouvelle recherche", async () => {
+    it('une nouvelle recherche trace un nouvel envoi au tour courant', async () => {
       const { assistant } = fakeAssistant()
       const tracking = useAssistantTracking(assistant, ref<AssistantContext>({}))
 
@@ -411,9 +357,8 @@ describe('useAssistantTracking', () => {
       await tracking.submit('autre besoin', 'text')
 
       const [open, sent] = chatbotEvents()
-      expect(open).toMatchObject({ event: 'chatbot_open', trigger_type: 'auto' })
-      expect(sent).toMatchObject({ event: 'chatbot_message_sent', message_index: 1 })
-      expect(sent!.conversation_id).not.toBe(open!.conversation_id)
+      expect(open).toEqual(bot('chatbot_open', 'auto'))
+      expect(sent).toEqual(bot('chatbot_message_sent', undefined, 1))
     })
   })
 })

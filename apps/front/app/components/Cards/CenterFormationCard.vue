@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useDataLayer } from '~/composables/useDataLayer'
+import { useAnalytics } from '~/composables/useAnalytics'
 
 const props = withDefaults(
   defineProps<{
@@ -89,7 +89,7 @@ const props = withDefaults(
   }
 )
 
-const { pushEvent } = useDataLayer()
+const { pushEvent } = useAnalytics()
 
 function onClick() {
   const formationId = props.to ? props.to.split('/').pop() || props.title : props.title

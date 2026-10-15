@@ -664,7 +664,7 @@ import { sessionSeatType } from '~/utils/placesLabel'
 import { revealStagger } from '~/utils/reveal'
 import { availabilityStatus } from '~/composables/useCentres'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
-import { useDataLayer } from '~/composables/useDataLayer'
+import { useAnalytics } from '~/composables/useAnalytics'
 
 interface ProgrammeModule {
   title: string
@@ -1397,7 +1397,7 @@ function formatPrice(value: number): string {
   }).format(value)
 }
 
-const { pushEvent } = useDataLayer()
+const { pushEvent } = useAnalytics()
 
 onMounted(() => {
   if (course.value) {

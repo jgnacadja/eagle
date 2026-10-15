@@ -100,6 +100,9 @@ services:
       # des volumes internes — la sync lit les collections avec limit=-1.
       QUERY_LIMIT_DEFAULT: '100'
       QUERY_LIMIT_MAX: '1000'
+      # La sync envoie des lots de formations (sessions + raw Digiforma) ; le
+      # défaut de 1 Mo est trop juste. L'API borne déjà ses lots à ~500 Ko.
+      MAX_PAYLOAD_SIZE: '5mb'
       PUBLIC_URL: ${DIRECTUS_PUBLIC_URL:-http://localhost:8055}
       # Flows : les opérations request lisent {{ $env.* }} à l'exécution
       # (schema/flows.mjs) — rien n'est cuit en base. Sans cette allow-list,

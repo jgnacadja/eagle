@@ -190,6 +190,8 @@ export class DirectusCatalogService {
   private readonly timeoutMs = 10_000
   private readonly maxRetries = 2
   private readonly updateConcurrency = 10
+  // Budget d'un POST de création, sous le MAX_PAYLOAD_SIZE par défaut de Directus (1 Mo).
+  private readonly createChunkBytes = 500_000
 
   constructor(config: ConfigService) {
     // Token facultatif : l'API doit démarrer sans accès Directus (dev,
@@ -735,18 +737,39 @@ export class DirectusCatalogService {
     return data
   }
 
+  /**
+   * Création par lots bornés en taille : un POST unique de toutes les
+   * formations (sessions + `raw` Digiforma) dépasse MAX_PAYLOAD_SIZE de
+   * Directus (1 Mo par défaut → 400 « request entity too large »). Lots
+   * séquentiels, jamais rejoués (POST non idempotent) ; une ligne plus grosse
+   * que le budget part seule.
+   */
   private async createMany(
     rows: FormationDirectusPayload[]
   ): Promise<Array<{ id: number; digiforma_id: string }>> {
-    if (rows.length === 0) return []
-    const response = await this.request<{
-      data: Array<{ id: number; digiforma_id: string }>
-    }>(
-      `${this.baseUrl}/items/formations`,
-      'POST',
-      rows.map((r) => this.toColumnPayload(r))
-    )
-    return response?.data ?? []
+    const created: Array<{ id: number; digiforma_id: string }> = []
+    let chunk: Array<Record<string, unknown>> = []
+    let chunkBytes = 0
+
+    const flush = async (): Promise<void> => {
+      if (chunk.length === 0) return
+      const response = await this.request<{
+        data: Array<{ id: number; digiforma_id: string }>
+      }>(`${this.baseUrl}/items/formations`, 'POST', chunk)
+      created.push(...(response?.data ?? []))
+      chunk = []
+      chunkBytes = 0
+    }
+
+    for (const row of rows) {
+      const payload = this.toColumnPayload(row)
+      const bytes = Buffer.byteLength(JSON.stringify(payload))
+      if (chunk.length > 0 && chunkBytes + bytes > this.createChunkBytes) await flush()
+      chunk.push(payload)
+      chunkBytes += bytes
+    }
+    await flush()
+    return created
   }
 
   private async updateMany(rows: UpsertBatch['update']): Promise<void> {

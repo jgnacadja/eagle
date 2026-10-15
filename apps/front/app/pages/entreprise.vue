@@ -383,13 +383,6 @@
           :author="testimonial.author"
         />
       </div>
-
-      <p class="mt-md text-small text-ink-subtle">
-        <span class="hidden md:inline">
-          Avis réels et références publiées avec l'accord des entreprises concernées.
-        </span>
-        <span class="md:hidden"> Avis réels — références publiées avec accord. </span>
-      </p>
     </section>
 
     <!-- CTA final -->
@@ -679,14 +672,13 @@ const howItWorksSteps = [
   }
 ]
 
+// Même règle que la home : avis publiés toutes implantations confondues
+// (marque + centres), les plus récents d'abord.
 const avisData = await useDirectusList<Avis>('avis', 'entreprise-avis', {
   fields: ['slug', 'author', 'quote', 'stars', 'published_at'],
-  filter: {
-    status: { _eq: 'published' },
-    centre: { _null: true }
-  },
-  sort: ['sort', '-published_at'],
-  limit: 6
+  filter: { status: { _eq: 'published' } },
+  sort: ['-published_at'],
+  limit: 2
 })
 
 const testimonials = computed(() => (avisData.value ?? []).map(mapAvis))

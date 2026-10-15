@@ -108,6 +108,27 @@ describe('DirectusCatalogService', () => {
     expect(patchCall[0]).toBe('http://directus:8055/items/formations/1')
   })
 
+  it('splits large creations into several bounded POSTs', async () => {
+    const big = (id: string): FormationDirectusPayload => ({
+      ...samplePayloads[0],
+      digiforma_id: id,
+      slug: id,
+      raw: { blob: 'x'.repeat(300_000) }
+    })
+    fetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+      .mockImplementation(async () => new Response(JSON.stringify({ data: [] }), { status: 200 }))
+
+    await service.upsertMany([big('a'), big('b'), big('c')])
+
+    const posts = fetch.mock.calls.filter((call) => call[1]?.method === 'POST')
+    const created = posts.filter((call) => call[0] === 'http://directus:8055/items/formations')
+    expect(created).toHaveLength(3)
+    for (const call of created) {
+      expect(JSON.parse(call[1].body)).toHaveLength(1)
+    }
+  })
+
   it('scopes the existing lookup to the source and stamps it on created rows', async () => {
     fetch
       .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))

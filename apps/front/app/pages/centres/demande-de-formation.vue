@@ -503,7 +503,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Centre, Course } from '@learnup/types'
+import type { Centre, Course, LeadRouting } from '@learnup/types'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
@@ -654,7 +654,7 @@ const centresData = await useDirectusList<Centre>(
   () =>
     demandeCentreSlug.value
       ? {
-          fields: ['name', 'city', 'department', 'postal_code'],
+          fields: ['id', 'name', 'city', 'department', 'postal_code'],
           filter: { slug: { _eq: demandeCentreSlug.value }, status: { _eq: 'published' } },
           limit: 1
         }
@@ -666,6 +666,18 @@ const centresData = await useDirectusList<Centre>(
 const centre = computed(() => centresData.value?.[0] ?? null)
 
 const centreName = computed(() => (demandeCentreSlug.value ? (centre.value?.name ?? '') : ''))
+
+// Ids Directus joints au lead — absents hors contexte (l'API route alors vers
+// la tête de réseau). Le centre n'est retenu que s'il correspond au slug ancre
+// courant (la liste peut rester sur le centre précédent le temps d'un refetch).
+const leadRouting = computed<LeadRouting>(() => {
+  const formationId = formationSlug.value ? formation.value?.id : undefined
+  const centreId = demandeCentreSlug.value ? centre.value?.id : undefined
+  return {
+    ...(formationId === undefined ? {} : { formationId }),
+    ...(centreId === undefined ? {} : { centreId })
+  }
+})
 // « Créteil · Val-de-Marne (94) » : code département entre parenthèses —
 // 3 chiffres pour l'outre-mer (971…), 2A/2B pour la Corse, et pas de
 // doublon « Paris · Paris » quand ville et département se confondent.
@@ -1083,6 +1095,9 @@ const onSubmit = handleSubmit(
       formation: formationName.value || undefined,
       session: sessionName.value || undefined,
       sujet: sujetSlug.value || undefined,
+      // Rattachement à la source (portail HubSpot de la franchise) : ids Directus
+      // de la formation et du centre ancre, seulement quand le contexte est connu.
+      ...leadRouting.value,
       consentement: true,
       // pageUri sans query : elle porte du texte libre (?besoin=…) qui n'apporte
       // rien à l'attribution HubSpot et pouvait dépasser MaxLength(2000) → 400.

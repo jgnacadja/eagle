@@ -170,7 +170,7 @@
         <h2 v-reveal-soft class="mt-sm max-w-prose font-display text-h3 font-extrabold md:text-h2">
           Un seul partenaire pour coordonner vos formations partout en France
         </h2>
-        <p class="mt-sm max-w-prose text-small text-ink-inverse-muted md:text-body">
+        <p class="hidden md:block mt-sm max-w-prose text-small text-ink-inverse-muted md:text-body">
           Retrouvez toutes vos demandes centralisées et qualifiées au même endroit. Vos déploiements
           s'effectuent site par site en lien avec nos centres locaux, tout en vous garantissant un
           interlocuteur unique et une vision globale.
@@ -383,13 +383,6 @@
           :author="testimonial.author"
         />
       </div>
-
-      <p class="mt-md text-small text-ink-subtle">
-        <span class="hidden md:inline">
-          Avis réels et références publiées avec l'accord des entreprises concernées.
-        </span>
-        <span class="md:hidden"> Avis réels — références publiées avec accord. </span>
-      </p>
     </section>
 
     <!-- CTA final -->
@@ -679,14 +672,13 @@ const howItWorksSteps = [
   }
 ]
 
+// Même règle que la home : avis publiés toutes implantations confondues
+// (marque + centres), les plus récents d'abord.
 const avisData = await useDirectusList<Avis>('avis', 'entreprise-avis', {
   fields: ['slug', 'author', 'quote', 'stars', 'published_at'],
-  filter: {
-    status: { _eq: 'published' },
-    centre: { _null: true }
-  },
-  sort: ['sort', '-published_at'],
-  limit: 6
+  filter: { status: { _eq: 'published' } },
+  sort: ['-published_at'],
+  limit: 2
 })
 
 const testimonials = computed(() => (avisData.value ?? []).map(mapAvis))

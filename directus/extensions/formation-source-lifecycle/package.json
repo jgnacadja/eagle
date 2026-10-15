@@ -1,0 +1,13 @@
+{
+  "name": "directus-extension-formation-source-lifecycle",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Préserve les changements éditoriaux de statut après dépublication automatique.",
+  "directus:extension": {
+    "type": "hook",
+    "path": "index.js",
+    "source": "index.js",
+    "host": "^11.0.0"
+  }
+}

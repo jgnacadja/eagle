@@ -1246,6 +1246,29 @@ describe('list filters and field normalization', () => {
     expect(creteil.items.map((i) => i.slug)).toEqual(['securite'])
   })
 
+  it('aligns centerSlug on the first editorial centre slug', async () => {
+    catalog.fetchAllFormations.mockResolvedValue([
+      {
+        ...baseFormation,
+        center_slug: 'creteil',
+        center_slugs: ['creteil'],
+        centres: [{ centre: { slug: 'lyon' } }, { centre: { slug: 'paris' } }]
+      }
+    ] as unknown as DirectusFormation[])
+
+    const result = await service.list({ page: 1, limit: 20 } as ListCoursesDto)
+    // centerSlug ne contredit pas centerSlugs : la sélection éditoriale
+    // prime — repli sur center_slug seulement si tout est vide.
+    expect(result.items[0]?.centerSlugs).toEqual(['lyon', 'paris'])
+    expect(result.items[0]?.centerSlug).toBe('lyon')
+
+    catalog.fetchAllFormations.mockResolvedValue([
+      { ...baseFormation, center_slug: 'creteil', center_slugs: [], centres: [] }
+    ] as unknown as DirectusFormation[])
+    const legacy = await service.list({ page: 1, limit: 20 } as ListCoursesDto)
+    expect(legacy.items[0]?.centerSlug).toBe('creteil')
+  })
+
   it('filters by certifying flag', async () => {
     const certifying = await service.list({
       certifying: true,

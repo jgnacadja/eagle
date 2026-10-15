@@ -80,9 +80,6 @@
         </h2>
 
         <ClientLogoWall variant="grid" />
-        <p class="mt-md text-meta text-ink-subtle">
-          Références publiées avec l'accord des entreprises concernées.
-        </p>
       </section>
 
       <!-- Secteurs réglementaires -->

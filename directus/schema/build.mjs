@@ -8,10 +8,19 @@
 // `directus schema snapshot` (voir directus/README.md). Existence-checked
 // pour rester sûr à ré-exécuter, mais n'est pas le mécanisme de restore
 // officiel.
+//
+// Ordre de déploiement d'un changement de schéma :
+//   1. `build.mjs` (ou l'apply du snapshot) — Directus à jour en premier ;
+//   2. `apps/api` — le contrat lu par le front dépend du nouveau schéma ;
+//   3. `apps/front` — pages/ISR consommant les nouveaux champs ;
+//   4. purge ISR (`POST /api/cache/invalidate`, vide = complète) — les
+//      pages déjà générées avec l'ancien schéma sont marquées stale.
 
+import { mkdir, writeFile } from 'node:fs/promises'
 import { collections, relations } from './collections.mjs'
 import { buildFlows } from './flows.mjs'
 import { permissionsFor, publicPermissions, roles } from './roles.mjs'
+import { buildHqSource, planHqSource } from './sources.mjs'
 import { legalSectionToHtml, stripSectionNumber } from '../legalContent.mjs'
 import { log, logError } from '../logger.mjs'
 
@@ -130,6 +139,9 @@ async function convergeRelationFieldMeta(token, rel) {
   })
 }
 
+// Collections cibles à clé primaire uuid (les autres ont un id entier).
+const UUID_TARGETS = new Set(['directus_files', 'sources'])
+
 // Phase 1 : les colonnes M2O sont créées avant la migration de contenu —
 // une colonne suffit pour écrire des items, la relation n'est pas requise.
 async function ensureRelationFields(token) {
@@ -141,7 +153,7 @@ async function ensureRelationFields(token) {
     }
     await api(token, 'POST', `/fields/${rel.collection}`, {
       field: rel.field,
-      type: rel.related_collection === 'directus_files' ? 'uuid' : 'integer',
+      type: UUID_TARGETS.has(rel.related_collection) ? 'uuid' : 'integer',
       meta: rel.meta
     })
     log(`✔  champ ${rel.collection}.${rel.field} créé`)
@@ -204,6 +216,42 @@ async function ensureRelations(token) {
       })
     }
   }
+}
+
+// Migration multi-sources : ligne source HQ reprise de l'env, rattachement
+// des formations existantes, puis `formations.source` NOT NULL avec la HQ
+// pour défaut — la sync mono-source actuelle (qui n'envoie pas `source`)
+// continue d'écrire sans erreur jusqu'à sa mise à jour. Idempotent : sans
+// formation orpheline, no-op.
+async function ensureHqSource(token) {
+  const { data: existing } = await api(token, 'GET', '/items/sources?fields=id,code,is_hq&limit=-1')
+  const plan = planHqSource(existing ?? [])
+  let hqId = plan.id
+  if (plan.action === 'create') {
+    const { data } = await api(token, 'POST', '/items/sources', buildHqSource(process.env))
+    hqId = data.id
+    log('✔  source HQ créée depuis l’env')
+  }
+
+  const orphans = await api(
+    token,
+    'GET',
+    '/items/formations?filter[source][_null]=true&aggregate[count]=id'
+  )
+  const orphanCount = Number(orphans.data?.[0]?.count?.id ?? 0)
+  if (orphanCount > 0) {
+    await api(token, 'PATCH', '/items/formations', {
+      query: { filter: { source: { _null: true } }, limit: -1 },
+      data: { source: hqId }
+    })
+    log(`✔  ${orphanCount} formation(s) rattachée(s) à la source HQ`)
+  }
+
+  await api(token, 'PATCH', '/fields/formations/source', {
+    schema: { is_nullable: false, default_value: hqId },
+    meta: { required: false }
+  })
+  return hqId
 }
 
 // Migration « pages légales » : le champ JSON `pages_legales.sections`
@@ -298,67 +346,148 @@ function slugifyCategory(label) {
   return label
     .trim()
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/\p{M}/gu, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '')
 }
 
+// Sauvegarde du mapping article → catégorie avant toute suppression de
+// colonne : si le script est interrompu après le DELETE du varchar, le
+// lien survivrait sinon seulement en mémoire.
+async function backupCategoryMapping(articleLabel, slugToId) {
+  const backupDir = new URL('./.backups/', import.meta.url)
+  await mkdir(backupDir, { recursive: true })
+  const file = new URL(`articles-category-${Date.now()}.json`, backupDir)
+  await writeFile(
+    file,
+    JSON.stringify(
+      {
+        categories: Object.fromEntries(slugToId),
+        articles: Object.fromEntries(
+          [...articleLabel].map(([id, slug]) => [id, { slug, category: slugToId.get(slug) }])
+        )
+      },
+      null,
+      2
+    )
+  )
+  log(`✔  mapping article → catégorie sauvegardé dans ${file.pathname}`)
+}
+
 async function migrateArticleCategories(token) {
   const { data: fields } = await api(token, 'GET', '/fields/articles?limit=-1')
-  const field = (fields ?? []).find((f) => f.field === 'category')
-  if (field?.type !== 'string') return // absent ou déjà un M2O integer
+  const category = (fields ?? []).find((f) => f.field === 'category')
+  const hasTemp = (fields ?? []).some((f) => f.field === 'category_new')
+  // `category` integer et plus de tampon → déjà migré. Un tampon restant
+  // seul (crash entre DELETE et recopie) est repris en phase 2.
+  if (category?.type !== 'string' && !hasTemp) return
 
-  const { data: articles } = await api(token, 'GET', '/items/articles?limit=-1&fields=id,category')
-  const labelsBySlug = new Map()
-  const articleLabel = new Map()
-  for (const article of articles ?? []) {
-    const label = article.category?.trim().replace(/\s+/g, ' ')
-    if (!label) continue
-    const slug = slugifyCategory(label)
-    labelsBySlug.set(slug, label)
-    articleLabel.set(article.id, slug)
+  // Phase 1 — tant que `category` est le varchar libre : construire le
+  // mapping, créer les catégories, et écrire les ids dans la colonne
+  // tampon `category_new` — avant toute suppression.
+  if (category?.type === 'string') {
+    const { data: articles } = await api(
+      token,
+      'GET',
+      '/items/articles?limit=-1&fields=id,category'
+    )
+    const labelsBySlug = new Map()
+    const articleLabel = new Map()
+    for (const article of articles ?? []) {
+      const label = article.category?.trim().replace(/\s+/g, ' ')
+      if (!label) continue
+      const slug = slugifyCategory(label)
+      if (!slug) {
+        // Libellé de pure ponctuation → slug vide, le POST échouerait
+        // (slug requis/unique). L'article reste sans catégorie.
+        log(`⚠  article ${article.id} : catégorie « ${label} » sans slug exploitable, ignorée`)
+        continue
+      }
+      labelsBySlug.set(slug, label)
+      articleLabel.set(article.id, slug)
+    }
+
+    const { data: existingCats } = await api(
+      token,
+      'GET',
+      '/items/categories?limit=-1&fields=id,slug'
+    )
+    const slugToId = new Map((existingCats ?? []).map((cat) => [cat.slug, cat.id]))
+
+    let sort = 1
+    for (const [slug, name] of labelsBySlug) {
+      if (slugToId.has(slug)) continue
+      const { data: created } = await api(token, 'POST', '/items/categories', {
+        status: 'published',
+        slug,
+        name,
+        sort: sort++
+      })
+      slugToId.set(slug, created.id)
+    }
+
+    if (!hasTemp) {
+      await api(token, 'POST', '/fields/articles', {
+        field: 'category_new',
+        type: 'integer',
+        meta: { hidden: true, note: 'Tampon de migration category varchar → M2O' }
+      })
+    }
+
+    // PATCH batch : un appel unique — le PATCH item par item déclenchait
+    // le flow de purge du cache à chaque écriture (N webhooks).
+    const writes = [...articleLabel]
+      .map(([id, slug]) => ({ id, category_new: slugToId.get(slug) }))
+      .filter((row) => row.category_new != null)
+    if (writes.length) {
+      await api(token, 'PATCH', '/items/articles', writes)
+    }
+
+    // Filet avant le DELETE : mapping versé sur disque, puis suppression
+    // du varchar et recréation en integer (Directus gère DROP/ADD COLUMN).
+    await backupCategoryMapping(articleLabel, slugToId)
+    await api(token, 'DELETE', '/fields/articles/category')
   }
 
-  const { data: existingCats } = await api(
+  // Phase 2 — `category_new` est peuplée : (re)créer `category` en
+  // integer si absente, recopier les ids en batch, vérifier, supprimer le
+  // tampon. Reprend aussi un run interrompu entre ces étapes.
+  const rel = relations.find((r) => r.collection === 'articles' && r.field === 'category')
+  if (category?.type === 'string' || !category) {
+    await api(token, 'POST', '/fields/articles', {
+      field: 'category',
+      type: 'integer',
+      meta: rel?.meta
+    })
+  }
+
+  const { data: rows } = await api(
     token,
     'GET',
-    '/items/categories?limit=-1&fields=id,slug'
+    '/items/articles?limit=-1&fields=id,category,category_new'
   )
-  const slugToId = new Map((existingCats ?? []).map((cat) => [cat.slug, cat.id]))
-
-  let sort = 1
-  for (const [slug, name] of labelsBySlug) {
-    if (slugToId.has(slug)) continue
-    const { data: created } = await api(token, 'POST', '/items/categories', {
-      status: 'published',
-      slug,
-      name,
-      sort: sort++
-    })
-    slugToId.set(slug, created.id)
+  const copy = (rows ?? [])
+    .filter((a) => a.category_new != null && a.category == null)
+    .map((a) => ({ id: a.id, category: a.category_new }))
+  if (copy.length) {
+    await api(token, 'PATCH', '/items/articles', copy)
   }
 
-  // La colonne varchar ne peut pas porter la contrainte FK ni être castée
-  // proprement : on la supprime puis la recrée en integer (Directus gère le
-  // DROP/ADD COLUMN), les ids sont réécrits depuis le mapping en mémoire.
-  await api(token, 'DELETE', '/fields/articles/category')
-  const rel = relations.find((r) => r.collection === 'articles' && r.field === 'category')
-  await api(token, 'POST', '/fields/articles', {
-    field: 'category',
-    type: 'integer',
-    meta: rel?.meta
-  })
-
-  for (const [articleId, slug] of articleLabel) {
-    const categoryId = slugToId.get(slug)
-    if (!categoryId) continue
-    await api(token, 'PATCH', `/items/articles/${articleId}`, { category: categoryId })
+  const { data: verified } = await api(
+    token,
+    'GET',
+    '/items/articles?limit=-1&fields=id,category,category_new&filter[category_new][_nnull]=true'
+  )
+  const orphans = (verified ?? []).filter((a) => a.category == null)
+  if (orphans.length) {
+    throw new Error(
+      `Migration articles.category interrompue — ${orphans.length} article(s) sans recopie du tampon`
+    )
   }
 
-  log(
-    `✔  articles.category migré — ${labelsBySlug.size} catégorie(s), ${articleLabel.size} article(s) rattaché(s)`
-  )
+  await api(token, 'DELETE', '/fields/articles/category_new')
+  log(`✔  articles.category migré — ${copy.length} rattachement(s) recopié(s) depuis le tampon`)
 }
 
 async function fetchByName(token, endpoint) {
@@ -608,6 +737,7 @@ async function main() {
   await migrateLegalSections(token)
   await migrateArticleCategories(token)
   await ensureRelations(token)
+  await ensureHqSource(token)
   const roleIds = await ensureRoles(token)
   const policyIds = await ensurePolicies(token)
   await ensureAccess(token, roleIds, policyIds)

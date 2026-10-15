@@ -19,8 +19,8 @@
               >
                 {{ course.title }}
               </h1>
-              <p v-if="course.shortDescription" class="mt-md max-w-prose text-body text-ink-body">
-                {{ course.shortDescription }}
+              <p v-if="heroIntro" class="mt-md max-w-prose text-body text-ink-body">
+                {{ heroIntro }}
               </p>
 
               <ul class="mt-md flex flex-wrap gap-sm">
@@ -397,7 +397,7 @@
                       <NuxtLink :to="demandeTo">Demander cette formation</NuxtLink>
                     </Button>
                     <Button as-child variant="outline" size="pill" class="w-full">
-                      <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
+                      <NuxtLink :to="advisorTo">Parler à votre conseiller</NuxtLink>
                     </Button>
                   </div>
                   <p class="mt-sm text-meta leading-relaxed text-ink-subtle">
@@ -514,7 +514,7 @@
               Être guidé dans mon choix
             </Button>
             <Button as-child variant="outline-inverse" size="control" class="w-full sm:w-auto">
-              <NuxtLink to="/parler-a-votre-conseiller">Parler à votre conseiller</NuxtLink>
+              <NuxtLink :to="advisorTo">Parler à votre conseiller</NuxtLink>
             </Button>
           </CtaBanner>
 
@@ -924,6 +924,17 @@ const durationTag = computed(() => {
   return parts.join(' · ')
 })
 
+// Accroche du hero : `shortDescription` est éditorial (hors sync
+// Digiforma) — formation jamais éditée → repli sur un extrait tronqué
+// de `description` (HTML synchronisé), sinon pas de paragraphe.
+const heroIntro = computed(() => {
+  const short = course.value!.shortDescription?.trim()
+  if (short) return short
+  const text = htmlToText(course.value!.description)
+  if (text.length <= 220) return text
+  return `${text.slice(0, 220).replace(/\s+\S*$/, '')}…`
+})
+
 const sessionBadge = computed(() => buildSessionBadge(course.value!))
 
 const certificationTag = computed(() => {
@@ -1103,6 +1114,13 @@ function demandeUrl(session?: CourseSession): string {
   return `/centres/demande-de-formation?${params.toString()}`
 }
 const demandeTo = computed(() => demandeUrl())
+
+// « Parler à votre conseiller » : l'id de la formation est joint pour que le lead
+// parte dans le HubSpot de la franchise qui la dispense.
+const advisorTo = computed(() => ({
+  path: '/parler-a-votre-conseiller',
+  query: course.value ? { formationId: String(course.value.id) } : {}
+}))
 
 // La carte intra n'est proposée que si la formation déclare la modalité.
 const hasIntra = computed(() => (course.value!.modalities ?? []).includes('intra'))

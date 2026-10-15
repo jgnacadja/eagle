@@ -111,7 +111,9 @@
               </div>
               <div class="flex flex-1 flex-col gap-md bg-paper p-lg 2xl:mt-lg">
                 <p class="text-overline text-accent-text">
-                  <span class="font-bold uppercase">{{ featuredArticle.category?.name }}</span>
+                  <span class="font-bold uppercase">{{
+                    articleCategory(featuredArticle.category)?.name
+                  }}</span>
                   <span class="font-medium text-ink-subtle">
                     <span class="mx-xs">·</span>{{ formatArticleDate(featuredArticle.publish_at) }}
                     <span class="mx-xs">·</span> {{ readingTime }} min
@@ -151,7 +153,7 @@
                 v-reveal="revealStagger(index % 3)"
               >
                 <ArticleCard
-                  :category="article.category?.name ?? 'Actualité'"
+                  :category="articleCategory(article.category)?.name ?? 'Actualité'"
                   :title="article.title"
                   :date="formatArticleDate(article.publish_at)"
                   :excerpt="article.excerpt ?? ''"
@@ -315,7 +317,12 @@ import { toTypedSchema } from '@vee-validate/zod'
 import type { Article, ArticleCategory } from '@learnup/types'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
-import { articleAssetUrl, articleReadingTime, formatArticleDate } from '~/utils/article'
+import {
+  articleAssetUrl,
+  articleCategory,
+  articleReadingTime,
+  formatArticleDate
+} from '~/utils/article'
 import { formatRegionLabel } from '~/utils/region'
 import { revealStagger } from '~/utils/reveal'
 import { useDataLayer } from '~/composables/useDataLayer'
@@ -345,18 +352,17 @@ const directus = useDirectusClient()
 // Filtres portés par l'URL : partageables, rendus côté serveur et cachés
 // par variante grâce à l'ISR `passQuery`.
 // `?category=` porte le slug ; un libellé d'ancienne URL est résolu vers le
-// slug correspondant, une valeur inconnue retombe sur « Tout ».
+// slug correspondant via la collection `categories` (pas les facettes —
+// en mode dégradé elles peuvent être vides alors que le slug est valide).
+// Un slug inconnu est conservé : la requête renvoie un simple état vide,
+// sans écraser le filtre demandé par un faux « Tout ».
 const selectedCategory = computed(() => {
-  const raw =
-    typeof route.query.category === 'string' && route.query.category
-      ? route.query.category
-      : CATEGORY_ALL
-  if (raw === CATEGORY_ALL) return raw
-  if (categoryOptions.value.some((option) => option.value === raw)) return raw
-  const byLabel = categoryOptions.value.find(
-    (option) => option.label.trim().toLowerCase() === raw.trim().toLowerCase()
+  const raw = typeof route.query.category === 'string' ? route.query.category.trim() : ''
+  if (!raw || raw === CATEGORY_ALL) return CATEGORY_ALL
+  const byLabel = (categoriesData.value ?? []).find(
+    (cat) => cat.name.trim().toLowerCase() === raw.toLowerCase()
   )
-  return byLabel?.value ?? CATEGORY_ALL
+  return byLabel?.slug ?? raw
 })
 const selectedRegion = computed(() =>
   typeof route.query.region === 'string' && route.query.region ? route.query.region : REGION_ALL

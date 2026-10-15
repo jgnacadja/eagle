@@ -1,0 +1,34 @@
+[
+  {
+    "id": "uuid-hq",
+    "code": "hq",
+    "name": "LEARN UP HQ",
+    "is_hq": true,
+    "status": "active",
+    "digiforma_api_url": "https://digiforma-hq.test/graphql",
+    "digiforma_api_key": "digiforma-key-hq-0001",
+    "hubspot_portal_id": "1111111",
+    "hubspot_token": null,
+    "hubspot_form_newsletter": "hq-form-newsletter",
+    "hubspot_form_demande": "hq-form-demande",
+    "hubspot_form_candidature": "hq-form-candidature",
+    "hubspot_form_conseiller": "hq-form-conseiller",
+    "hubspot_form_rappel": "hq-form-rappel"
+  },
+  {
+    "id": "uuid-lyon",
+    "code": "lyon",
+    "name": "LEARN UP Lyon",
+    "is_hq": false,
+    "status": "active",
+    "digiforma_api_url": "https://digiforma-lyon.test/graphql",
+    "digiforma_api_key": "digiforma-key-lyon-0002",
+    "hubspot_portal_id": "2222222",
+    "hubspot_token": "hubspot-token-lyon-0003",
+    "hubspot_form_newsletter": "lyon-form-newsletter",
+    "hubspot_form_demande": "lyon-form-demande",
+    "hubspot_form_candidature": "lyon-form-candidature",
+    "hubspot_form_conseiller": "lyon-form-conseiller",
+    "hubspot_form_rappel": "lyon-form-rappel"
+  }
+]

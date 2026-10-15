@@ -6,21 +6,14 @@
         v-model="model"
         :aria-invalid="invalid || undefined"
         :aria-describedby="invalid ? `${id}-error` : undefined"
-        :class="
-          variant === 'dark'
-            ? 'border-outline-inverse focus-visible:ring-accent aria-invalid:border-danger-inverse data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[state=checked]:text-ink'
-            : 'aria-invalid:border-danger'
-        "
+        :class="consentCheckbox({ surface: variant })"
       />
       <span><slot>Consentement requis</slot></span>
     </Label>
     <p
       v-if="invalid"
       :id="`${id}-error`"
-      :class="[
-        'mt-xs text-small font-semibold',
-        variant === 'dark' ? 'text-danger-inverse' : 'text-danger'
-      ]"
+      :class="['mt-xs text-small font-semibold', consentErrorText({ surface: variant })]"
     >
       {{ error }}
     </p>
@@ -29,6 +22,7 @@
 
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue'
+import { consentCheckbox, consentErrorText, type ConsentSurface } from '~/utils/consentVariants'
 
 const model = defineModel<boolean>()
 
@@ -43,7 +37,7 @@ withDefaults(
     /** Classes additionnelles du label (ex. texte clair sur carte sombre). */
     labelClass?: HTMLAttributes['class']
     /** `dark` adapte le contour du checkbox et l'erreur aux fonds marine. */
-    variant?: 'default' | 'dark'
+    variant?: ConsentSurface
   }>(),
   { id: 'consentement', error: undefined, labelClass: undefined, variant: 'default' }
 )

@@ -8,6 +8,17 @@
 export interface LeadPageContext {
   pageUri?: string
   pageName?: string
+  /** Cookie de tracking HubSpot — transmis à la seule tête de réseau (HQ). */
+  hutk?: string
+}
+
+/**
+ * Rattachement d'un lead à une source (portail HubSpot) : ids Directus de la
+ * formation / du centre visé. Absents ou inconnus → portail HQ.
+ */
+export interface LeadRouting {
+  formationId?: number
+  centreId?: number
 }
 
 /** Voie de candidature réseau (sélecteur du dialog Candidature). */
@@ -24,7 +35,7 @@ export interface NewsletterLeadPayload extends LeadPageContext {
   email: string
 }
 
-export interface DemandeLeadPayload extends LeadPageContext {
+export interface DemandeLeadPayload extends LeadPageContext, LeadRouting {
   nom: string
   email: string
   telephone: string
@@ -56,7 +67,7 @@ export interface CandidatureLeadPayload extends LeadPageContext {
   consentement: boolean
 }
 
-export interface ConseillerLeadPayload extends LeadPageContext {
+export interface ConseillerLeadPayload extends LeadPageContext, LeadRouting {
   besoin: ConseillerBesoin
   nom: string
   email: string
@@ -66,7 +77,7 @@ export interface ConseillerLeadPayload extends LeadPageContext {
   consentement: boolean
 }
 
-export interface RappelLeadPayload extends LeadPageContext {
+export interface RappelLeadPayload extends LeadPageContext, LeadRouting {
   telephone: string
   creneau?: string
   consentement: boolean

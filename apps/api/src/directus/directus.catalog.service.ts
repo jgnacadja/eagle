@@ -753,9 +753,16 @@ export class DirectusCatalogService {
 
     const flush = async (): Promise<void> => {
       if (chunk.length === 0) return
-      const response = await this.request<{
-        data: Array<{ id: number; digiforma_id: string }>
-      }>(`${this.baseUrl}/items/formations`, 'POST', chunk)
+      let response: { data: Array<{ id: number; digiforma_id: string }> } | undefined
+      try {
+        response = await this.request<{ data: Array<{ id: number; digiforma_id: string }> }>(
+          `${this.baseUrl}/items/formations`,
+          'POST',
+          chunk
+        )
+      } catch (error) {
+        throw this.withOversizedFields(error, chunk)
+      }
       created.push(...(response?.data ?? []))
       chunk = []
       chunkBytes = 0
@@ -770,6 +777,32 @@ export class DirectusCatalogService {
     }
     await flush()
     return created
+  }
+
+  /**
+   * Directus attribue parfois VALUE_TOO_LONG au mauvais champ (ex. `blocks`
+   * alors que la colonne est json). Ajoute à l'erreur les champs texte du lot
+   * qui dépassent 255 caractères : ce sont les colonnes `varchar(255)`
+   * suspectes.
+   */
+  private withOversizedFields(error: unknown, rows: Array<Record<string, unknown>>): unknown {
+    if (!(error instanceof DirectusRequestError) || !error.message.includes('VALUE_TOO_LONG')) {
+      return error
+    }
+    const longest = new Map<string, number>()
+    for (const row of rows) {
+      for (const [field, value] of Object.entries(row)) {
+        if (typeof value === 'string' && value.length > 255) {
+          longest.set(field, Math.max(longest.get(field) ?? 0, value.length))
+        }
+      }
+    }
+    if (longest.size === 0) return error
+    const detail = [...longest].map(([field, length]) => `${field}(${length})`).join(', ')
+    return new DirectusRequestError(
+      `${error.message} — champs > 255 car. : ${detail}`,
+      error.status
+    )
   }
 
   private async updateMany(rows: UpsertBatch['update']): Promise<void> {

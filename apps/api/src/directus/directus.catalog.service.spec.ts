@@ -129,6 +129,19 @@ describe('DirectusCatalogService', () => {
     }
   })
 
+  it('names the oversized text fields when Directus answers VALUE_TOO_LONG', async () => {
+    const body = JSON.stringify({
+      errors: [{ message: 'too long', extensions: { code: 'VALUE_TOO_LONG', field: 'blocks' } }]
+    })
+    fetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(body, { status: 400 }))
+
+    await expect(
+      service.upsertMany([{ ...samplePayloads[0], generated_program_url: 'u'.repeat(400) }])
+    ).rejects.toThrow(/VALUE_TOO_LONG.*generated_program_url\(400\)/)
+  })
+
   it('scopes the existing lookup to the source and stamps it on created rows', async () => {
     fetch
       .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))

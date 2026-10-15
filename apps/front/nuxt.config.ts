@@ -159,7 +159,11 @@ export default defineNuxtConfig({
     public: {
       apiBase: publicApiBase,
       siteUrl,
-      gtmId: process.env.NUXT_PUBLIC_GTM_ID ?? ''
+      gtmId: process.env.NUXT_PUBLIC_GTM_ID ?? '',
+      // Tracker Matomo (ST-27) : URL de l'instance dédiée (ST-26) et site par
+      // environnement — vides en dev, le tracking reste un no-op sans eux.
+      matomoUrl: process.env.NUXT_PUBLIC_MATOMO_URL ?? '',
+      matomoSiteId: process.env.NUXT_PUBLIC_MATOMO_SITE_ID ?? ''
     }
   }
 })

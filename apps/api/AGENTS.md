@@ -76,6 +76,14 @@ Lire d'abord `AGENTS.md` à la racine.
 - Les impasses (`no_results`, `out_of_catalog`) sont journalisées via `SearchMissesService` (`source: 'assistant'`, `intent` = facettes détectées par le modèle, `context.mode`).
 - Throttler dédié : 20 req/min/IP sur `/assistant/*`, hors quota public.
 
+## SEO — résolution d'URL (`src/seo`)
+
+- `GET /seo/resolve?path=` : contrat pour le middleware serveur du front (`apps/front/server/middleware/redirects.ts`), interrogé avant chaque rendu. Réponses : `{redirect:{to,status:301}}`, `{gone:true}`, ou `{type,id}` (contenu publié résolu — `type`/`id` null = adresse inconnue, la page gère son 404).
+- Table Directus `redirects` (`from_path` unique, `to_path` nullable, `status` 301/410, `origin` auto/manual/import), remplie par l'extension `directus/extensions/slug-redirects` (renommages, dépublications, cascade famille) et par le référent SEO (manuel). Une ligne `manual`/`import` n'est jamais écrasée ; 301 sans cible est ignorée.
+- Gabarits résolus : `/formations/{fam}/{slug}`, `/formations/{fam}`, `/actualites/{slug}`, `/centres/{slug}`, `/{slug}` (pages_legales) + routes codées (STATIC_PATHS). Chemin normalisé : minuscules, sans slash final.
+- Résolutions en cache Redis `seo:resolve:*` (TTL défaut 1 h) ; le flow Directus « Invalidate site cache » purge ce préfixe sur toute écriture `redirects` (`COLLECTION_KEYS` dans `cache.controller.ts`).
+- Guide référent SEO : `docs/redirections.md`.
+
 ## Recherches sans résultat (`src/search-misses`)
 
 - Journal des requêtes sans correspondance — « aucun résultat » (catalogue) et « hors catalogue » (moteur IA) — stocké dans la collection Directus `recherches_sans_resultat` via `DirectusItemsClient` (client REST générique `/items/*`, `src/directus`). Distinct des events analytics : on conserve le **contenu** de la requête pour la revue produit.

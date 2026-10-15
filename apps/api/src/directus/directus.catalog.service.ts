@@ -94,6 +94,32 @@ class DirectusRequestError extends Error {
   }
 }
 
+/**
+ * Corps d'erreur Directus (`{ errors: [{ message, extensions: { code, field } }] }`)
+ * aplati sur une ligne : les loggers tronquent les objets imbriqués
+ * (`errors: […]`), ce qui masque la cause d'un 400. Corps non JSON → texte brut.
+ */
+export function summarizeDirectusErrorBody(text: string): string {
+  try {
+    const parsed = JSON.parse(text) as {
+      errors?: Array<{
+        message?: string
+        extensions?: { code?: string; field?: string; collection?: string }
+      }>
+    }
+    if (!Array.isArray(parsed.errors) || parsed.errors.length === 0) return text
+    return parsed.errors
+      .map((err) => {
+        const { code, field, collection } = err.extensions ?? {}
+        const where = [collection, field].filter(Boolean).join('.')
+        return `[${code ?? 'ERROR'}${where ? ` ${where}` : ''}] ${err.message ?? ''}`.trim()
+      })
+      .join(' | ')
+  } catch {
+    return text
+  }
+}
+
 function isEmptyValue(value: unknown): boolean {
   if (value === null || value === undefined) return true
   if (typeof value === 'string') return value.trim() === ''
@@ -764,7 +790,7 @@ export class DirectusCatalogService {
         if (!response.ok) {
           const text = await response.text()
           throw new DirectusRequestError(
-            `Directus ${method} ${url} failed: ${response.status} ${text}`,
+            `Directus ${method} ${url} failed: ${response.status} ${summarizeDirectusErrorBody(text)}`,
             response.status
           )
         }

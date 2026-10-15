@@ -1,5 +1,5 @@
 /**
- * Types pour le plan de tracking DataLayer (GA4 / GTM)
+ * Types pour le plan de tracking (collecte Matomo — ex-GA4/GTM)
  * Conforme au plan de tracking LearnUp Academy :
  * - 1_Conventions_Attributs
  * - 2_Evenements_Cartographie

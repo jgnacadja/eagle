@@ -37,7 +37,7 @@ import Confirmation from './Confirmation.vue'
 import { VOIE_LABELS, type CandidaturePayload, type CandidatureVoie } from '~/types/candidature'
 import type { FormId, NetworkProfileType } from '~/types/analytics'
 
-import { useDataLayer } from '~/composables/useDataLayer'
+import { useAnalytics } from '~/composables/useAnalytics'
 
 const props = withDefaults(
   defineProps<{
@@ -56,7 +56,7 @@ const voie = ref<CandidatureVoie>(props.voie)
 const submitted = ref(false)
 const projet = ref('')
 const { submit: submitLead, sending, error: submitError, reset: resetLeadError } = useLeadSubmit()
-const { pushEvent } = useDataLayer()
+const { pushEvent } = useAnalytics()
 
 // Chaque ouverture repart sur la voie demandée et le formulaire (pas l'écran succès).
 watch(

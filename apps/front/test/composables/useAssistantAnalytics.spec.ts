@@ -1,20 +1,29 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { useAssistantAnalytics } from '~/composables/useAssistantAnalytics'
+import type { MatomoCommand } from '~/utils/matomo'
 
-const routeMock = (globalThis as Record<string, unknown>).useRoute as () => {
-  path: string
-  fullPath: string
+const events = () => (window._paq ?? []).filter((c): c is MatomoCommand => c[0] === 'trackEvent')
+
+const event = (action: string, name?: string, value?: number): MatomoCommand => {
+  const command: MatomoCommand = ['trackEvent', 'Assistant IA', action]
+  if (name !== undefined || value !== undefined) command.push(name ?? '')
+  if (value !== undefined) command.push(value)
+  return command
 }
 
-/** Attribut de page ajouté par le dataLayer du plan (route de test : `/`). */
-const onPage = (event: Record<string, unknown>) => ({ page_path: '/', ...event })
+const chatbotEvent = (action: string, name?: string, value?: number): MatomoCommand => {
+  const command: MatomoCommand = ['trackEvent', 'Chatbot', action]
+  if (name !== undefined || value !== undefined) command.push(name ?? '')
+  if (value !== undefined) command.push(value)
+  return command
+}
 
 beforeEach(() => {
-  window.dataLayer = []
+  window._paq = []
 })
 
 afterEach(() => {
-  delete window.dataLayer
+  delete window._paq
 })
 
 describe('useAssistantAnalytics', () => {
@@ -33,28 +42,20 @@ describe('useAssistantAnalytics', () => {
       action: 'sessions'
     })
 
-    expect(window.dataLayer).toEqual(
-      [
-        { event: 'ai_search_start', source: 'home' },
-        { event: 'ai_search_submit', source: 'home', turn: 1, via: 'entry' },
-        { event: 'ai_clarification_requested', source: 'home', turn: 1 },
-        { event: 'ai_clarification_answer', source: 'home', turn: 2, via: 'suggestion' },
-        { event: 'ai_recommendation_display', source: 'home', turn: 2, count: 3, mode: 'ai' },
-        {
-          event: 'ai_recommendation_select',
-          source: 'home',
-          slug: 'sst',
-          rank: 'primary',
-          action: 'sessions'
-        }
-      ].map(onPage)
-    )
+    expect(events()).toEqual([
+      event('ai_search_start', 'home'),
+      event('ai_search_submit', 'home:entry', 1),
+      event('ai_clarification_requested', 'home', 1),
+      event('ai_clarification_answer', 'home:suggestion', 2),
+      event('ai_recommendation_display', 'home:ai', 3),
+      event('ai_recommendation_select', 'sst:primary:sessions')
+    ])
   })
 
   it("n'exige pas de source (lanceur flottant)", () => {
     useAssistantAnalytics().searchStart()
 
-    expect(window.dataLayer).toEqual([onPage({ event: 'ai_search_start' })])
+    expect(events()).toEqual([event('ai_search_start')])
   })
 
   it('émet les jalons des états limites', () => {
@@ -66,22 +67,17 @@ describe('useAssistantAnalytics', () => {
     analytics.fallbackMode({ source: 'home', turn: 3, kind: 'recommend' })
     analytics.advisorEscalation({ source: 'home', from: 'unavailable' })
 
-    expect(window.dataLayer).toEqual(
-      [
-        { event: 'ai_recommendation_compare', source: 'home', count: 3 },
-        { event: 'ai_no_results', source: 'home', turn: 2, kind: 'no_results', mode: 'ai' },
-        { event: 'ai_unavailable', source: 'home', turn: 2 },
-        { event: 'ai_fallback_mode', source: 'home', turn: 3, kind: 'recommend' },
-        { event: 'ai_advisor_escalation', source: 'home', from: 'unavailable' }
-      ].map(onPage)
-    )
+    expect(events()).toEqual([
+      event('ai_recommendation_compare', 'home', 3),
+      event('ai_no_results', 'no_results:home', 2),
+      event('ai_unavailable', 'home', 2),
+      event('ai_fallback_mode', 'recommend:home', 3),
+      event('ai_advisor_escalation', 'unavailable:home')
+    ])
   })
 
-  it('émet les jalons du module Chatbot du plan avec le chemin de page du dataLayer', () => {
+  it('émet les jalons du module Chatbot du plan', () => {
     const analytics = useAssistantAnalytics()
-    // Le chemin exigé par `chatbot_open` et `chatbot_message_sent` vient de
-    // la même source que l'attribut de base des autres jalons.
-    routeMock().fullPath = '/formations'
 
     analytics.chatbotOpen({ trigger_type: 'manuel', conversation_id: 'c1' })
     analytics.chatbotMessageSent({ conversation_id: 'c1', message_index: 1 })
@@ -102,42 +98,21 @@ describe('useAssistantAnalytics', () => {
       duration_seconds: 42
     })
 
-    routeMock().fullPath = '/'
-
-    expect(window.dataLayer).toEqual(
-      [
-        { event: 'chatbot_open', trigger_type: 'manuel', conversation_id: 'c1' },
-        { event: 'chatbot_message_sent', conversation_id: 'c1', message_index: 1 },
-        {
-          event: 'chatbot_suggested_action_click',
-          conversation_id: 'c1',
-          action_type: 'suggestion',
-          action_label: '8 salariés'
-        },
-        {
-          event: 'chatbot_handoff_to_advisor',
-          conversation_id: 'c1',
-          reason: 'compare_advisor',
-          messages_count: 3
-        },
-        {
-          event: 'chatbot_conversation_end',
-          conversation_id: 'c1',
-          messages_count: 4,
-          resolved: false,
-          duration_seconds: 42
-        }
-      ].map((event) => ({ page_path: '/formations', ...event }))
-    )
+    expect(events()).toEqual([
+      chatbotEvent('chatbot_open', 'manuel'),
+      chatbotEvent('chatbot_message_sent', undefined, 1),
+      chatbotEvent('chatbot_suggested_action_click', 'suggestion:8 salariés'),
+      chatbotEvent('chatbot_handoff_to_advisor', 'compare_advisor', 3),
+      chatbotEvent('chatbot_conversation_end', undefined, 42)
+    ])
   })
 
-  it('ne laisse pas une erreur du dataLayer remonter dans la conversation', () => {
-    // Un script tiers peut remplacer le dataLayer par un objet qui rejette.
-    window.dataLayer = {
-      push() {
-        throw new Error('dataLayer tiers')
-      }
-    } as unknown as typeof window.dataLayer
+  it('ne laisse pas une erreur du tracker remonter dans la conversation', () => {
+    // Un script tiers peut remplacer la file par un objet qui rejette.
+    window._paq = []
+    window._paq.push = () => {
+      throw new Error('_paq tiers')
+    }
 
     expect(() => useAssistantAnalytics().searchStart('home')).not.toThrow()
   })

@@ -182,7 +182,12 @@ vi.stubGlobal('navigateTo', navigateToMock)
 vi.stubGlobal('logServerError', vi.fn())
 vi.stubGlobal('useDirectusClient', () => ({ request: directusRequestMock }))
 vi.stubGlobal('useRuntimeConfig', () => ({
-  public: { apiBase: 'http://api.test', siteUrl: 'https://learnup.test' }
+  public: {
+    apiBase: 'http://api.test',
+    siteUrl: 'https://learnup.test',
+    matomoUrl: 'https://stats.test',
+    matomoSiteId: '1'
+  }
 }))
 
 // Position pilotable par test : la page importe `useGeolocation`
@@ -350,6 +355,7 @@ describe('pages/centres/[slug]', () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date('2026-09-15T10:00:00Z'))
     vi.clearAllMocks()
+    window._paq = []
     forceError = null
     geoPosition.value = null
     catalogNull.value = false
@@ -783,11 +789,15 @@ describe('pages/centres/[slug]', () => {
     expect(link!.attributes('href')).toContain('cert-file-uuid')
 
     await link!.trigger('click')
-    const qualiopiEvent = window.dataLayer?.find((e) => e.event === 'click_download_qualiopi')
-    expect(qualiopiEvent).toMatchObject({
-      event: 'click_download_qualiopi',
-      center_name: centreCreteil.name
-    })
+    const qualiopiEvent = window._paq?.find(
+      (c) => c[0] === 'trackEvent' && c[2] === 'click_download_qualiopi'
+    )
+    expect(qualiopiEvent).toEqual([
+      'trackEvent',
+      'Centres',
+      'click_download_qualiopi',
+      centreCreteil.name
+    ])
   })
 
   it('affiche le message quand aucune session n’est programmée', async () => {

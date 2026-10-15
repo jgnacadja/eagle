@@ -22,6 +22,7 @@ import { DirectusModule } from './directus/directus.module'
 import { AssistantModule } from './assistant/assistant.module'
 import { SearchMissesModule } from './search-misses/search-misses.module'
 import { RetrievalModule } from './retrieval/retrieval.module'
+import { SeoModule } from './seo/seo.module'
 import { SourcesModule } from './sources/sources.module'
 
 // Express route sans tenir compte de la casse (`/LEADS/demande` atteint le
@@ -256,6 +257,7 @@ export function buildThrottlers(
     AssistantModule,
     SearchMissesModule,
     RetrievalModule,
+    SeoModule,
     SourcesModule
   ],
   controllers: [HealthController],

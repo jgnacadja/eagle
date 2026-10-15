@@ -654,7 +654,7 @@
           :key="article.slug"
           v-reveal="revealStagger(i)"
           variant="card"
-          :category="article.category?.name ?? 'Conseil'"
+          :category="articleCategory(article.category)?.name ?? 'Conseil'"
           :title="article.title"
           :date="formatArticleDate(article.publish_at)"
           :excerpt="article.excerpt ?? ''"
@@ -723,7 +723,7 @@ import { distanceKm, formatDistance } from '~/utils/geo'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { useAnimatedPlaceholder } from '~/composables/useAnimatedPlaceholder'
 import { heroStagger, revealStagger } from '~/utils/reveal'
-import { articleAssetUrl, formatArticleDate } from '~/utils/article'
+import { articleAssetUrl, articleCategory, formatArticleDate } from '~/utils/article'
 import { mapAvis } from '~/utils/avis'
 import { placesLabel, sessionSeatType } from '~/utils/placesLabel'
 import type { CenterResult } from '~/types/center-result'

@@ -1,0 +1,13 @@
+{
+  "name": "directus-extension-sources-encrypt",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Chiffre AES-256-GCM les secrets de la collection sources avant écriture.",
+  "directus:extension": {
+    "type": "hook",
+    "path": "index.js",
+    "source": "index.js",
+    "host": "^11.0.0"
+  }
+}

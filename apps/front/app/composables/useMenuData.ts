@@ -6,7 +6,7 @@
 
 import { readItems } from '@directus/sdk'
 import { buildMeta } from '~/composables/useCatalog'
-import { formatArticleDate } from '~/utils/article'
+import { articleCategory, formatArticleDate } from '~/utils/article'
 import { formatRegionLabel } from '~/utils/region'
 import { slugify } from '~/utils/slugify'
 import type {
@@ -416,8 +416,9 @@ export function useMenuActualites() {
         const regionArticles = new Map<string, { label: string; articles: MenuActualite[] }>()
 
         for (const article of articles) {
-          const categorySlug = article.category?.slug?.trim()
-          const categoryName = article.category?.name?.trim()
+          const category = articleCategory(article.category)
+          const categorySlug = category?.slug?.trim()
+          const categoryName = category?.name?.trim()
           if (categorySlug && categoryName) {
             categoryLabels.set(categorySlug, categoryName)
           }
@@ -429,8 +430,8 @@ export function useMenuActualites() {
 
           entry.articles.push({
             slug: article.slug,
-            categorySlug: article.category?.slug?.trim() ?? '',
-            tag: article.category?.name?.trim() || 'Actualité',
+            categorySlug: category?.slug?.trim() ?? '',
+            tag: category?.name?.trim() || 'Actualité',
             date: formatArticleDate(article.publish_at),
             title: article.title
           })

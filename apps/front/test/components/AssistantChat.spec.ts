@@ -116,7 +116,7 @@ describe('AssistantChat', () => {
     expect(entries[0].reply?.suggestions).toEqual([
       'Je veux former mes salariés au SST',
       'Je cherche une formation CACES R486',
-      'Je veux former mes équipes au ATEX'
+      'Je veux former mes équipes à l’ATEX'
     ])
   })
 

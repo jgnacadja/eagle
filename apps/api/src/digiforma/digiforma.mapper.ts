@@ -6,6 +6,8 @@ export interface PedagogyItemPayload {
 }
 
 export interface FormationDirectusPayload {
+  /** Id Directus de la source d'origine — posé à la création par l'upsert. */
+  source?: string
   digiforma_id: string
   slug: string
   title: string

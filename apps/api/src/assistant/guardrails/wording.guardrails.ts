@@ -36,7 +36,11 @@ const WORD_END = '(?![\\p{L}\\p{N}_])'
 // « ${lieu} » / « {{ lieu }} » ou mot collé en camelCase (« votreSanté »).
 // Aucune de ces formes n'existe en prose française : la phrase est
 // irrécupérable, le texte est vidé pour déclencher le repli.
-const CORRUPTED_TOKEN = /[\p{L}\p{N}]+(?:_[\p{L}\p{N}]+)+|\$\{[^}]*\}|\{\{[^}]*\}\}|\p{Ll}\p{Lu}/u
+// Le motif camelCase exige un vrai mot minuscule avant la majuscule —
+// `\p{Ll}\p{Lu}` seul rejetait le vocabulaire métier légitime (unités
+// « kV », « mA », « kWh », « dB(A) », sigles type « PrAP »).
+const CORRUPTED_TOKEN =
+  /[\p{L}\p{N}]+(?:_[\p{L}\p{N}]+)+|\$\{[^}]*\}|\{\{[^}]*\}\}|\p{Ll}{3,}\p{Lu}\p{Ll}/u
 
 // Formulations assertives (§14) → équivalent au conditionnel.
 const ASSERTIVE_REWRITES: Array<[RegExp, string]> = [

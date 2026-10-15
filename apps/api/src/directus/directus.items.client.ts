@@ -25,7 +25,7 @@ interface FetchLikeResponse {
   text(): Promise<string>
 }
 
-type HttpMethod = 'GET' | 'POST' | 'DELETE'
+type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE'
 
 /**
  * Client REST générique `/items/{collection}` (token statique
@@ -68,6 +68,15 @@ export class DirectusItemsClient {
     }
     const response = await this.request<{ data: T }>(url, 'POST', payload)
     return response?.data ?? null
+  }
+
+  async updateOne(
+    collection: string,
+    id: string | number,
+    payload: Record<string, unknown>
+  ): Promise<void> {
+    if (!this.enabled) return
+    await this.request(new URL(`${this.itemsUrl(collection).toString()}/${id}`), 'PATCH', payload)
   }
 
   async readMany<T>(collection: string, query: DirectusItemsQuery): Promise<DirectusListResult<T>> {

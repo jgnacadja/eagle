@@ -1128,60 +1128,72 @@ function triggerSearch() {
   }
 }
 
+// Réécrit l'URL courante depuis l'état des filtres (sources nommées —
+// plus d'indices positionnels fragiles dans le watch).
+function syncUrl() {
+  const query: Record<string, unknown> = {}
+  if (searchQuery.value) query.q = searchQuery.value
+  if (selectedFamilies.value.length) query.famille = selectedFamilies.value[0]
+  if (selectedModalities.value.length) query.modalites = selectedModalities.value.join(',')
+  if (location.value.trim()) query.lieu = location.value.trim()
+  if (centre.value) query.centre = centre.value
+  if (selectedDurations.value.length) query.duree = selectedDurations.value.join(',')
+  if (cpf.value) query.cpf = 'true'
+  if (certifying.value) query.certifiant = 'true'
+  if (sortBy.value !== 'editorial' || searchQuery.value) query.tri = sortBy.value
+  if (currentPage.value > 1) query.page = String(currentPage.value)
+
+  router.replace({ path: route.path, query })
+}
+
 // La page ne se remonte plus sur changement de query (page-key = path) :
 // il faut resynchroniser l'état quand l'URL change sans venir de notre
-// propre router.replace (retour arrière, lien partagé, etc.).
+// propre router.replace (retour arrière, lien partagé, etc.). Le drapeau
+// bloque les watchers filtres/page pendant que parseUrl restaure page et
+// filtres ensemble — sinon ils réécriraient l'URL et réinitialiseraient
+// la page en cours de restauration.
+let restoringFromUrl = false
 watch(
   () => route.query,
-  () => {
+  async () => {
+    restoringFromUrl = true
     parseUrl()
+    await nextTick() // laisse passer les watchers déclenchés par parseUrl
+    restoringFromUrl = false
   }
 )
 
+// Tout changement de filtre/recherche/tri repart en page 1 — le watch de
+// currentPage réécrit alors l'URL ; déjà en page 1 → réécriture directe.
+const filterSources = [
+  searchQuery,
+  selectedFamilies,
+  selectedModalities,
+  location,
+  centre,
+  selectedDurations,
+  () => cpf.value,
+  () => certifying.value,
+  sortBy
+]
 watch(
-  [
-    searchQuery,
-    selectedFamilies,
-    selectedModalities,
-    location,
-    centre,
-    selectedDurations,
-    () => cpf.value,
-    () => certifying.value,
-    sortBy,
-    currentPage
-  ],
-  (newValues, oldValues) => {
-    if (currentPage.value < 1) currentPage.value = 1
-
-    // Tout changement de filtre/recherche/tri repart en page 1 — sauf si
-    // c'est la page elle-même qui vient de changer (pagination, « Afficher
-    // plus ») ou si la mise à jour vient de l'URL (parseUrl restaure page
-    // et filtres ensemble).
-    const filtersChanged = newValues
-      .slice(0, 9)
-      .some((value: unknown, i: number) => value !== oldValues[i])
-    const pageChanged = newValues[9] !== oldValues[9]
-    if (filtersChanged && !pageChanged && currentPage.value !== 1) {
-      currentPage.value = 1
-      return
-    }
-
-    const query: Record<string, unknown> = {}
-    if (searchQuery.value) query.q = searchQuery.value
-    if (selectedFamilies.value.length) query.famille = selectedFamilies.value[0]
-    if (selectedModalities.value.length) query.modalites = selectedModalities.value.join(',')
-    if (location.value.trim()) query.lieu = location.value.trim()
-    if (centre.value) query.centre = centre.value
-    if (selectedDurations.value.length) query.duree = selectedDurations.value.join(',')
-    if (cpf.value) query.cpf = 'true'
-    if (certifying.value) query.certifiant = 'true'
-    if (sortBy.value !== 'editorial' || searchQuery.value) query.tri = sortBy.value
-    if (currentPage.value > 1) query.page = String(currentPage.value)
-
-    router.replace({ path: route.path, query })
-  }
+  filterSources,
+  () => {
+    if (restoringFromUrl) return
+    if (currentPage.value !== 1) currentPage.value = 1
+    else syncUrl()
+  },
+  { deep: true }
 )
+
+watch(currentPage, (page) => {
+  if (restoringFromUrl) return
+  if (page < 1) {
+    currentPage.value = 1
+    return
+  }
+  syncUrl()
+})
 
 watch(isFilterPanelOpen, (open) => {
   /* v8 ignore next 2 — import.meta.client est indéfini sous Vitest. */

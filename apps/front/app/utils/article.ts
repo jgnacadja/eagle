@@ -2,7 +2,7 @@ import type { Article } from '@learnup/types'
 import { formatDateFr } from './date'
 
 /** Catégorie d'article expansée (`category.name`/`.slug` demandés) ou null (id brut). */
-export function articleCategory(category: Article['category']) {
+export function articleCategory(category: Article['category'] | undefined) {
   return category && typeof category === 'object' ? category : null
 }
 

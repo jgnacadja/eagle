@@ -17,8 +17,6 @@ const samplePayloads: FormationDirectusPayload[] = [
     certification: null,
     certifier_name: null,
     category_name: 'Management',
-    center_slug: null,
-    center_slugs: [],
     modalities: [],
     sessions: null,
     locations_text: null,
@@ -44,8 +42,6 @@ const samplePayloads: FormationDirectusPayload[] = [
     certification: null,
     certifier_name: null,
     category_name: null,
-    center_slug: null,
-    center_slugs: [],
     modalities: [],
     sessions: null,
     locations_text: null,
@@ -709,6 +705,113 @@ describe('DirectusCatalogService', () => {
         (call) =>
           call[1]?.method === 'PATCH' && JSON.parse(call[1].body ?? '{}').image !== undefined
       )
+    ).toBe(false)
+  })
+
+  it('links Digiforma centre slugs via the junction when the selection is empty', async () => {
+    fetch
+      // fetchExisting → inconnu, create → id 7
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 7, digiforma_id: 'prog-001' }] }), {
+          status: 200
+        })
+      )
+      // centres + liens existants
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            data: [
+              { id: 3, slug: 'creteil' },
+              { id: 4, slug: 'lyon' }
+            ]
+          }),
+          { status: 200 }
+        )
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 1 }, { id: 2 }] }), { status: 200 })
+      )
+
+    const result = await service.upsertMany(
+      [samplePayloads[0]],
+      new Map([['prog-001', ['creteil', 'lyon']]])
+    )
+
+    expect(result.inserted).toBe(1)
+    const linkCall = fetch.mock.calls.find(
+      (call) => call[1]?.method === 'POST' && String(call[0]).endsWith('/items/formations_centres')
+    )
+    expect(linkCall).toBeDefined()
+    if (!linkCall) throw new Error('junction POST call not found')
+    expect(JSON.parse(linkCall[1].body)).toEqual([
+      { formation: 7, centre: 3, sort: 1 },
+      { formation: 7, centre: 4, sort: 2 }
+    ])
+  })
+
+  it('never links centres on a formation that already has a selection', async () => {
+    fetch
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 7, digiforma_id: 'prog-001' }] }), {
+          status: 200
+        })
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 3, slug: 'creteil' }] }), { status: 200 })
+      )
+      // La formation a déjà une ligne de jonction (sélection éditoriale).
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ formation: 7 }] }), { status: 200 })
+      )
+
+    await service.upsertMany([samplePayloads[0]], new Map([['prog-001', ['creteil']]]))
+
+    expect(
+      fetch.mock.calls.some(
+        (call) =>
+          call[1]?.method === 'POST' && String(call[0]).endsWith('/items/formations_centres')
+      )
+    ).toBe(false)
+  })
+
+  it('ignores unknown centre slugs and tolerates a junction write failure', async () => {
+    fetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 7, digiforma_id: 'prog-001' }] }), {
+          status: 200
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 3, slug: 'creteil' }] }), { status: 200 })
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response('boom', { status: 500 }))
+
+    const result = await service.upsertMany(
+      [samplePayloads[0]],
+      new Map([['prog-001', ['creteil', 'inconnu']]])
+    )
+
+    expect(result.inserted).toBe(1)
+  })
+
+  it('skips the junction entirely when no centre slugs are provided', async () => {
+    fetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 7, digiforma_id: 'prog-001' }] }), {
+          status: 200
+        })
+      )
+
+    await service.upsertMany([samplePayloads[0]], new Map([['prog-001', []]]))
+
+    expect(
+      fetch.mock.calls.some((call) => String(call[0]).endsWith('/items/formations_centres'))
     ).toBe(false)
   })
 

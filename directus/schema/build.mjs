@@ -450,6 +450,75 @@ async function migrateArticleCategories(token) {
   log(`✔  articles.category migré — ${copy.length} rattachement(s) recopié(s) depuis le tampon`)
 }
 
+// Migration « centres de formation » : les champs legacy `center_slug` /
+// `center_slugs` (string + JSON remplis par la sync Digiforma) sont
+// remplacés par la M2M `formations.centres` (jonction `formations_centres`).
+// Chaque slug est recopié en ligne de jonction — uniquement quand la
+// formation n'a pas déjà de sélection (l'éditorial prime, comme la sync).
+// Idempotent : champs absents → no-op ; une formation déjà liée est ignorée.
+// Le mapping est versé sur disque avant suppression des colonnes : un crash
+// entre recopie et DELETE ne perd pas le lien formation → slugs.
+async function migrateFormationCentres(token) {
+  const { data: fields } = await api(token, 'GET', '/fields/formations?limit=-1')
+  const legacy = new Set(
+    (fields ?? [])
+      .map((f) => f.field)
+      .filter((name) => name === 'center_slug' || name === 'center_slugs')
+  )
+  if (!legacy.size) return
+
+  // `center_slugs` (JSON) est la source complète ; `center_slug` n'en est
+  // que le premier élément — repli si seul le singulier subsiste.
+  const slugsField = legacy.has('center_slugs') ? 'center_slugs' : 'center_slug'
+  const { data: formations } = await api(
+    token,
+    'GET',
+    `/items/formations?limit=-1&fields=id,${slugsField}`
+  )
+  const { data: centres } = await api(token, 'GET', '/items/centres?limit=-1&fields=id,slug')
+  const { data: links } = await api(
+    token,
+    'GET',
+    '/items/formations_centres?limit=-1&fields=formation'
+  )
+
+  const centreIdBySlug = new Map((centres ?? []).map((c) => [c.slug, c.id]))
+  const linkedFormations = new Set((links ?? []).map((l) => l.formation))
+
+  const mapping = new Map()
+  const rows = []
+  for (const formation of formations ?? []) {
+    const raw = formation[slugsField]
+    const slugs = Array.isArray(raw) ? raw : [raw].filter(Boolean)
+    if (slugs.length) mapping.set(formation.id, slugs)
+    if (linkedFormations.has(formation.id)) continue
+    slugs.forEach((slug, index) => {
+      const centre = centreIdBySlug.get(slug)
+      if (!centre) {
+        log(`⚠  formation ${formation.id} : centre « ${slug} » introuvable, lien ignoré`)
+        return
+      }
+      rows.push({ formation: formation.id, centre, sort: index + 1 })
+    })
+  }
+
+  if (rows.length) {
+    await api(token, 'POST', '/items/formations_centres', rows)
+  }
+
+  const backupDir = new URL('./.backups/', import.meta.url)
+  await mkdir(backupDir, { recursive: true })
+  const backupFile = new URL(`formations-centres-${Date.now()}.json`, backupDir)
+  await writeFile(backupFile, JSON.stringify(Object.fromEntries(mapping), null, 2))
+
+  for (const field of legacy) {
+    await api(token, 'DELETE', `/fields/formations/${field}`)
+  }
+  log(
+    `✔  formations.center_slug(s) migré — ${rows.length} lien(s) créé(s), mapping sauvegardé dans ${backupFile.pathname}, champs supprimés`
+  )
+}
+
 async function fetchByName(token, endpoint) {
   const { data } = await api(token, 'GET', `${endpoint}?limit=-1`)
   return new Map(data.map((r) => [r.name, r.id]))
@@ -696,6 +765,7 @@ async function main() {
   // puis supprime le champ pour libérer le nom de l'alias O2M.
   await migrateLegalSections(token)
   await migrateArticleCategories(token)
+  await migrateFormationCentres(token)
   await ensureRelations(token)
   const roleIds = await ensureRoles(token)
   const policyIds = await ensurePolicies(token)

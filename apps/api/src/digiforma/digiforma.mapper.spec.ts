@@ -1,4 +1,4 @@
-import { mapProgramToCourse } from './digiforma.mapper'
+import { mapCentreSlugs, mapProgramToCourse } from './digiforma.mapper'
 import type { Program } from './digiforma.client'
 
 const program: Program = {
@@ -56,67 +56,66 @@ describe('mapProgramToCourse', () => {
     expect(course.duration_hours).toBe(18)
   })
 
-  it('returns null category and center when category and sessions are missing', () => {
+  it('returns null category and no centre slugs when category and sessions are missing', () => {
     const course = mapProgramToCourse({ ...program, category: null, sessions: null })
     expect(course.category_name).toBeNull()
-    expect(course.center_slug).toBeNull()
-    expect(course.center_slugs).toEqual([])
+    expect(mapCentreSlugs(null)).toEqual([])
   })
 
   it('maps sessions, modalities, centre slugs and location text', () => {
+    const sessions = [
+      {
+        id: 'sess-1',
+        startDate: '2026-10-05',
+        endDate: '2026-10-07',
+        modality: 'presentiel',
+        seatsRemaining: 4,
+        location: {
+          name: 'Centre de Créteil',
+          city: 'Créteil',
+          postalCode: '94000',
+          department: 'Val-de-Marne',
+          region: 'Île-de-France',
+          centreSlug: 'creteil'
+        }
+      },
+      {
+        id: 'sess-2',
+        startDate: '2026-11-10',
+        endDate: '2026-11-12',
+        modality: 'distanciel',
+        seatsRemaining: null,
+        location: { name: 'Classe virtuelle', city: 'À distance', centreSlug: null }
+      }
+    ]
     const course = mapProgramToCourse({
       ...program,
       modalities: ['presentiel', 'distanciel'],
-      sessions: [
-        {
-          id: 'sess-1',
-          startDate: '2026-10-05',
-          endDate: '2026-10-07',
-          modality: 'presentiel',
-          seatsRemaining: 4,
-          location: {
-            name: 'Centre de Créteil',
-            city: 'Créteil',
-            postalCode: '94000',
-            department: 'Val-de-Marne',
-            region: 'Île-de-France',
-            centreSlug: 'creteil'
-          }
-        },
-        {
-          id: 'sess-2',
-          startDate: '2026-11-10',
-          endDate: '2026-11-12',
-          modality: 'distanciel',
-          seatsRemaining: null,
-          location: { name: 'Classe virtuelle', city: 'À distance', centreSlug: null }
-        }
-      ]
+      sessions
     })
 
     expect(course.modalities).toEqual(expect.arrayContaining(['presentiel', 'distanciel', 'inter']))
-    expect(course.center_slugs).toEqual(['creteil'])
-    expect(course.center_slug).toBe('creteil')
+    expect(mapCentreSlugs(sessions)).toEqual(['creteil'])
     expect(course.locations_text).toContain('Créteil')
     expect(course.locations_text).toContain('Val-de-Marne')
     expect(course.sessions).toHaveLength(2)
   })
 
   it('deduplicates centre slugs and filters unknown modalities', () => {
+    const sessions = [
+      { location: { centreSlug: 'lyon', city: 'Lyon' } },
+      { location: { centreSlug: 'lyon', city: 'Lyon' } },
+      { location: { centreSlug: 'paris', city: 'Paris' } }
+    ]
     const course = mapProgramToCourse({
       ...program,
       costsInter: [],
       modalities: ['presentiel', 'webinar-inconnu', 'presentiel'],
-      sessions: [
-        { location: { centreSlug: 'lyon', city: 'Lyon' } },
-        { location: { centreSlug: 'lyon', city: 'Lyon' } },
-        { location: { centreSlug: 'paris', city: 'Paris' } }
-      ]
+      sessions
     })
 
     expect(course.modalities).toEqual(['presentiel'])
-    expect(course.center_slugs).toEqual(['lyon', 'paris'])
-    expect(course.center_slug).toBe('lyon')
+    expect(mapCentreSlugs(sessions)).toEqual(['lyon', 'paris'])
     expect(course.locations_text).toContain('Lyon')
     expect(course.locations_text).toContain('Paris')
   })
@@ -146,11 +145,10 @@ describe('mapProgramToCourse', () => {
     expect(course.evaluation).toBeNull()
   })
 
-  it('returns null centre/location data when sessions are absent', () => {
+  it('returns null location data when sessions are absent', () => {
     const course = mapProgramToCourse({ ...program, sessions: null })
 
-    expect(course.center_slugs).toEqual([])
-    expect(course.center_slug).toBeNull()
+    expect(mapCentreSlugs(null)).toEqual([])
     expect(course.locations_text).toBeNull()
     expect(course.sessions).toBeNull()
   })

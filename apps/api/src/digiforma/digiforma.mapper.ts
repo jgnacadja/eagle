@@ -18,8 +18,6 @@ export interface FormationDirectusPayload {
   certification: string | null
   certifier_name: string | null
   category_name: string | null
-  center_slug: string | null
-  center_slugs: string[]
   modalities: string[]
   sessions: unknown
   locations_text: string | null
@@ -95,7 +93,10 @@ function mapModalities(program: Program): string[] {
   return [...new Set(modalities)]
 }
 
-function mapCenterSlugs(sessions?: DigiformaSession[] | null): string[] {
+// Slugs de centres déclarés par les localisations de session — hors payload
+// Directus : upsertMany les résout en lignes `formations_centres` (M2M),
+// uniquement quand la sélection de la formation est vide.
+export function mapCentreSlugs(sessions?: DigiformaSession[] | null): string[] {
   const slugs = (sessions ?? [])
     .map((s) => s.location?.centreSlug)
     .filter((s): s is string => typeof s === 'string' && s.length > 0)
@@ -142,7 +143,6 @@ function mapLocationsText(sessions?: DigiformaSession[] | null): string | null {
 export function mapProgramToCourse(program: Program): FormationDirectusPayload {
   const title = program.name.trim()
   const slug = slugify(title)
-  const centerSlugs = mapCenterSlugs(program.sessions)
 
   return {
     digiforma_id: program.id,
@@ -157,8 +157,6 @@ export function mapProgramToCourse(program: Program): FormationDirectusPayload {
     certification: program.certificationType ?? null,
     certifier_name: program.certifierName ?? null,
     category_name: program.category?.name ?? null,
-    center_slug: centerSlugs[0] ?? null,
-    center_slugs: centerSlugs,
     modalities: mapModalities(program),
     sessions: program.sessions ?? null,
     locations_text: mapLocationsText(program.sessions),

@@ -7,7 +7,7 @@ import { waitUntil } from '@vercel/functions'
 import { CacheService, type SyncRun } from '../common/cache/cache.service'
 import { DirectusCatalogService } from '../directus/directus.catalog.service'
 import { DigiformaClient, type Program } from '../digiforma/digiforma.client'
-import { mapProgramToCourse } from '../digiforma/digiforma.mapper'
+import { mapCentreSlugs, mapProgramToCourse } from '../digiforma/digiforma.mapper'
 import { GeocodingService } from '../centres/geocoding.service'
 
 // TTL du verrou : borne la durée max d'un run (fetch Digiforma paginé +
@@ -81,17 +81,19 @@ export class SyncService {
     try {
       const programs = await this.loadPrograms()
       const payloads = [] as ReturnType<typeof mapProgramToCourse>[]
+      const centreSlugsByDigiformaId = new Map<string, string[]>()
 
       for (const program of programs) {
         try {
           payloads.push(mapProgramToCourse(program))
+          centreSlugsByDigiformaId.set(program.id, mapCentreSlugs(program.sessions))
         } catch (error) {
           run.failed += 1
           this.logger.warn({ error, programId: program.id }, 'Failed to map program')
         }
       }
 
-      const result = await this.catalog.upsertMany(payloads)
+      const result = await this.catalog.upsertMany(payloads, centreSlugsByDigiformaId)
       run.inserted = result.inserted
       run.updated = result.updated
 

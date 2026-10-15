@@ -119,7 +119,8 @@ describe('SyncService', () => {
     await runAndWait(service, cache)
 
     expect(catalog.upsertMany).toHaveBeenCalledWith(
-      expect.arrayContaining([expect.objectContaining({ digiforma_id: 'prog-001' })])
+      expect.arrayContaining([expect.objectContaining({ digiforma_id: 'prog-001' })]),
+      new Map([['prog-001', []]])
     )
     expect(cache.invalidateCatalog).toHaveBeenCalled()
     expect(cache.setSyncRun).toHaveBeenLastCalledWith(

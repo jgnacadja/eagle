@@ -172,11 +172,10 @@ function imageUrlFromRaw(raw: unknown): string | null {
   return image && typeof image.url === 'string' ? image.url : null
 }
 
-// Centres cochés dans l'admin (alias M2M `formations.centres`). La sélection
-// éditoriale prime sur `center_slugs` — liste legacy remplie par la sync
-// Digiforma, masquée dans l'admin : sans ça les centres choisis dans la fiche
-// n'apparaissent pas dans le filtre `center` du catalogue.
-function editorialCentreSlugs(raw: DirectusFormation): string[] {
+// Centres liés à la formation (alias M2M `formations.centres` → jonction
+// `formations_centres`) — seule source : proposés par la sync quand la
+// sélection est vide, réassignables dans l'admin.
+function linkedCentreSlugs(raw: DirectusFormation): string[] {
   return (raw.centres ?? [])
     .map((entry) => (typeof entry === 'object' && entry !== null ? entry.centre?.slug : null))
     .filter((slug): slug is string => Boolean(slug))
@@ -185,8 +184,7 @@ function editorialCentreSlugs(raw: DirectusFormation): string[] {
 function toListItem(raw: DirectusFormation): CourseListItem {
   const durationDays = toNumber(raw.duration_days)
   const durationHours = toNumber(raw.duration_hours)
-  const centreSlugs = editorialCentreSlugs(raw)
-  const centerSlugs = centreSlugs.length > 0 ? centreSlugs : ((raw.center_slugs as string[]) ?? [])
+  const centerSlugs = linkedCentreSlugs(raw)
 
   return {
     id: raw.id,
@@ -206,9 +204,7 @@ function toListItem(raw: DirectusFormation): CourseListItem {
     familySlug: raw.famille?.slug ?? null,
     subFamilySlug: raw.sous_famille?.slug ?? null,
     subFamilyName: raw.sous_famille?.name ?? null,
-    // Le centre « principal » suit la sélection éditoriale (cohérent avec
-    // centerSlugs) ; repli sur le slug legacy Digiforma si tout est vide.
-    centerSlug: centerSlugs[0] ?? raw.center_slug,
+    centerSlug: centerSlugs[0] ?? null,
     centerSlugs,
     modalities: (raw.modalities as string[]) ?? [],
     sessions: mapSessions(raw.sessions),

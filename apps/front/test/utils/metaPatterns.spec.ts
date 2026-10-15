@@ -19,9 +19,7 @@ describe('renderPattern', () => {
 
   it('absorbe le séparateur orphelin d’une variable vide', () => {
     expect(renderPattern('{intitulé} — {ville}', { intitulé: 'SST', ville: null })).toBe('SST')
-    expect(renderPattern('{ville} — {intitulé}', { intitulé: 'SST', ville: undefined })).toBe(
-      'SST'
-    )
+    expect(renderPattern('{ville} — {intitulé}', { intitulé: 'SST', ville: undefined })).toBe('SST')
   })
 
   it('ne laisse ni accolades ni espaces doubles ni virgules orphelines', () => {
@@ -99,9 +97,7 @@ describe('resolveSeo*', () => {
     const longTitle = `${'T'.repeat(70)}`
     expect(resolveSeoTitle(longTitle, null, vars, 'repli').length).toBeLessThanOrEqual(60)
     const longDesc = `${'d'.repeat(200)}`
-    expect(resolveSeoDescription(longDesc, null, vars, 'repli').length).toBeLessThanOrEqual(
-      160
-    )
+    expect(resolveSeoDescription(longDesc, null, vars, 'repli').length).toBeLessThanOrEqual(160)
   })
 
   it('description : explicite > patron > repli', () => {

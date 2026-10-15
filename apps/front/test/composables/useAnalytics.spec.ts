@@ -155,4 +155,64 @@ describe('useAnalytics (ST-27)', () => {
     trackPageView()
     expect(window._paq).toBeUndefined()
   })
+
+  // Droit d'opposition (ST-33) : optUserOut/forgetUserOptOut sont des
+  // commandes tracker ; isOptedOut passe par une commande fonction.
+  describe('opt-out', () => {
+    it('optOut empile la commande Matomo', () => {
+      const { optOut } = useAnalytics()
+      optOut()
+      expect(window._paq).toEqual([['optUserOut']])
+    })
+
+    it('optIn empile la commande Matomo', () => {
+      const { optIn } = useAnalytics()
+      optIn()
+      expect(window._paq).toEqual([['forgetUserOptOut']])
+    })
+
+    it('isOptedOut relaie la valeur lue dans le contexte du tracker', () => {
+      const { isOptedOut } = useAnalytics()
+      let value: boolean | undefined
+      isOptedOut((opted) => {
+        value = opted
+      })
+      expect(window._paq![0]).toHaveLength(1)
+      const command = window._paq![0][0] as unknown as (this: {
+        isUserOptedOut: () => boolean
+      }) => void
+      expect(command).toBeInstanceOf(Function)
+      command.call({ isUserOptedOut: () => true })
+      expect(value).toBe(true)
+      command.call({ isUserOptedOut: () => false })
+      expect(value).toBe(false)
+    })
+
+    it('isOptedOut répond « non suivi » sans tracker', () => {
+      delete window._paq
+      const { isOptedOut } = useAnalytics()
+      const callback = vi.fn()
+      isOptedOut(callback)
+      expect(callback).toHaveBeenCalledWith(false)
+    })
+
+    it('optOut/optIn sont des no-op sans tracker', () => {
+      delete window._paq
+      const { optOut, optIn } = useAnalytics()
+      optOut()
+      optIn()
+      expect(window._paq).toBeUndefined()
+    })
+
+    it('opt-out muet pendant une prévisualisation', () => {
+      query = { preview: 'tok' }
+      const { optOut, optIn, isOptedOut } = useAnalytics()
+      optOut()
+      optIn()
+      const callback = vi.fn()
+      isOptedOut(callback)
+      expect(window._paq).toEqual([])
+      expect(callback).toHaveBeenCalledWith(false)
+    })
+  })
 })

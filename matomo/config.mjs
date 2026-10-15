@@ -101,3 +101,11 @@ export const privacy = {
   anonymizeOrderId: 1,
   forceAnonymousVisitTracking: 0
 }
+
+// Durées de conservation (ST-33) : les données brutes de visite sont purgées
+// au-delà de 13 mois — borne du référentiel d'exemption CNIL. Les rapports
+// agrégés, déjà anonymes, sont conservés au-delà.
+export const retention = {
+  enableLogDelete: 1,
+  deleteLogsOlderThan: 13 // mois
+}

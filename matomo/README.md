@@ -11,6 +11,8 @@ ST-26/27/32) — équivalent de `directus/schema/` pour Directus.
   Matomo. Idempotent : ré-exécutable sans casse (crée ce qui manque, met à
   jour les objectifs dont le déclencheur a changé, ignore le reste).
 - `provision.test.mjs` — couverture node:test (`pnpm test:matomo`).
+- `CNIL.md` — dossier d'exemption CNIL (config retenue, finalités,
+  rétention, opt-out, auto-évaluation, validation requise — ST-33).
 
 ## Provisioning
 
@@ -23,7 +25,10 @@ pnpm matomo:provision
 ```
 
 Variables : `MATOMO_TOKEN_AUTH` (requis, jamais commité), `MATOMO_URL`
-(défaut `http://localhost:${MATOMO_PORT:-8080}`).
+(défaut `http://localhost:${MATOMO_PORT:-8080}`), `MATOMO_ADMIN_PASSWORD`
+(requis pour la rétention des logs — Matomo exige une reconfirmation du
+mot de passe admin ; sans lui le provision saute ce réglage avec un
+avertissement).
 
 ## Contrat front ↔ config
 
@@ -68,6 +73,10 @@ Vérifications acceptées en local (instance `localhost:8082`) :
 - 7/7 objectifs déclenchés (URL de confirmation + actions événement) :
   conversions visibles dans `Goals.get` par `idGoal`.
 - IP tronquée (`192.168.0.0`) conformément à `privacy`.
+- Opt-out (ST-33) : `/confidentialite` affiche le statut et le bouton
+  sous « Mesure d'audience » ; `optUserOut` pose `mtm_consent_removed`
+  (seul cookie), les hits suivants ne remontent plus dans `Live.*`,
+  `forgetUserOptOut` restaure la collecte.
 
 Rapports agrégés : Matomo archive par période — si `Goals.get` renvoie 0
 alors que `Live.*` montre la conversion, invalider puis archiver :

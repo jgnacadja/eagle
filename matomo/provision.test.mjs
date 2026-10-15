@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { dimensions, goals, privacy, site } from './config.mjs'
+import { dimensions, goals, privacy, retention, site } from './config.mjs'
 import { planDimension, planGoal, planSite, provision } from './provision.mjs'
 
 const fakeApi = (responses = {}) => {
@@ -152,12 +152,35 @@ describe('provision', () => {
     const privacyCall = calls.find((c) => c.method === 'PrivacyManager.setAnonymizeIpSettings')
     assert.deepEqual(privacyCall.params, privacy)
 
+    // ST-33 — rétention : purge des logs bruts au-delà de 13 mois. Sans mot
+    // de passe admin (reconfirmation exigée par Matomo), l'appel est sauté.
+    const retentionCall = calls.find((c) => c.method === 'PrivacyManager.setDeleteLogsSettings')
+    assert.equal(retentionCall, undefined)
+
     // Objectif événement : match_attribute `event_action` ; URL : `url`.
     const addGoalCalls = calls.filter((c) => c.method === 'Goals.addGoal')
     const urlGoal = addGoalCalls.find((c) => c.params.pattern === '/confirmation/devis')
     assert.equal(urlGoal.params.matchAttribute, 'url')
     const telGoal = addGoalCalls.find((c) => c.params.pattern === '^click_phone$')
     assert.equal(telGoal.params.matchAttribute, 'event_action')
+  })
+
+  it('applique la rétention des logs avec le mot de passe admin', async () => {
+    const { api, calls } = fakeApi({
+      'SitesManager.getSiteFromId': () => {
+        throw new Error('not found')
+      },
+      'CustomDimensions.getConfiguredCustomDimensions': () => [],
+      'Goals.getGoals': () => []
+    })
+    await provision(api, { adminPassword: 'admin-secret' })
+
+    const retentionCall = calls.find((c) => c.method === 'PrivacyManager.setDeleteLogsSettings')
+    assert.deepEqual(retentionCall.params, {
+      enableDeleteLogs: retention.enableLogDelete,
+      deleteLogsOlderThan: retention.deleteLogsOlderThan,
+      passwordConfirmation: 'admin-secret'
+    })
   })
 
   it('instance déjà conforme : aucune écriture hors vie privée', async () => {

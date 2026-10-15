@@ -228,7 +228,11 @@ describe('SyncService', () => {
       await waitForRelease(1)
 
       expect(clients['uuid-hq'].fetchAllPrograms).not.toHaveBeenCalled()
-      expect(catalog.upsertMany).toHaveBeenCalledWith(expect.any(Array), 'uuid-lyon')
+      expect(catalog.upsertMany).toHaveBeenCalledWith(
+        expect.any(Array),
+        'uuid-lyon',
+        expect.any(Map)
+      )
     })
 
     it('409s on an unreadable source and says why, without leaking the secret', async () => {
@@ -281,8 +285,18 @@ describe('SyncService', () => {
       await service.trigger()
       await waitForRelease(2)
 
-      expect(catalog.upsertMany).toHaveBeenNthCalledWith(1, expect.any(Array), 'uuid-hq')
-      expect(catalog.upsertMany).toHaveBeenNthCalledWith(2, expect.any(Array), 'uuid-lyon')
+      expect(catalog.upsertMany).toHaveBeenNthCalledWith(
+        1,
+        expect.any(Array),
+        'uuid-hq',
+        expect.any(Map)
+      )
+      expect(catalog.upsertMany).toHaveBeenNthCalledWith(
+        2,
+        expect.any(Array),
+        'uuid-lyon',
+        expect.any(Map)
+      )
       expect(cache.setSyncRun).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'success', source: 'hq', inserted: 2, updated: 1 }),
         'hq'
@@ -362,7 +376,7 @@ describe('SyncService', () => {
       await service.trigger()
       await waitForRelease(1)
 
-      expect(catalog.upsertMany).toHaveBeenCalledWith(expect.any(Array), undefined)
+      expect(catalog.upsertMany).toHaveBeenCalledWith(expect.any(Array), undefined, expect.any(Map))
       expect(directus.updateOne).not.toHaveBeenCalled()
     })
 
@@ -375,7 +389,7 @@ describe('SyncService', () => {
       await service.trigger()
       await waitForRelease(1)
 
-      expect(catalog.upsertMany).toHaveBeenCalledWith(expect.any(Array), 'uuid-hq')
+      expect(catalog.upsertMany).toHaveBeenCalledWith(expect.any(Array), 'uuid-hq', expect.any(Map))
     })
   })
 
@@ -385,7 +399,8 @@ describe('SyncService', () => {
 
     expect(catalog.upsertMany).toHaveBeenCalledWith(
       expect.arrayContaining([expect.objectContaining({ digiforma_id: 'prog-001' })]),
-      'uuid-hq'
+      'uuid-hq',
+      new Map([['prog-001', []]])
     )
     expect(cache.invalidateCatalog).toHaveBeenCalled()
     expect(lastRun('hq')).toMatchObject({ status: 'success', inserted: 1, updated: 0 })
@@ -783,7 +798,8 @@ describe('SyncService', () => {
 
       expect(catalog.upsertMany).toHaveBeenCalledWith(
         expect.arrayContaining([expect.objectContaining({ digiforma_id: 'prog-001' })]),
-        'uuid-hq'
+        'uuid-hq',
+        expect.any(Map)
       )
       expect(lastRun('hq')).toMatchObject({ status: 'success' })
     })
@@ -797,7 +813,7 @@ describe('SyncService', () => {
 
       expect(lastRun('lyon')).toMatchObject({ status: 'failed', error: 'lyon 500' })
       expect(catalog.upsertMany).toHaveBeenCalledTimes(1)
-      expect(catalog.upsertMany).toHaveBeenCalledWith(expect.any(Array), 'uuid-hq')
+      expect(catalog.upsertMany).toHaveBeenCalledWith(expect.any(Array), 'uuid-hq', expect.any(Map))
     })
 
     it('never replaces a franchise catalogue with demo formations (key missing)', async () => {

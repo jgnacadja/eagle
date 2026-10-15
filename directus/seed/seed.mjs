@@ -58,7 +58,10 @@ const DATASETS = [
     items: formations,
     refs: [
       { key: 'familleSlug', collection: 'familles_formation', field: 'famille' },
-      { key: 'sousFamilleSlug', collection: 'sous_familles_formation', field: 'sous_famille' }
+      { key: 'sousFamilleSlug', collection: 'sous_familles_formation', field: 'sous_famille' },
+      // `centreSlugs` → lignes de la jonction M2M `centres` ({centre: id}).
+      // Un slug absent n'ignore que le lien, pas la formation.
+      { key: 'centreSlugs', collection: 'centres', field: 'centres', junction: 'centre' }
     ]
   },
   { collection: 'categories', items: categories },
@@ -232,6 +235,22 @@ async function seedChildren(token, spec, parentId, rawChildren) {
 function resolveRefs(item, refs, refsBySlug, collection) {
   for (const ref of refs ?? []) {
     if (item[ref.key] === undefined) continue
+    if (ref.junction) {
+      // Ref M2M : liste de slugs → lignes d'alias { <junction>: id } écrites
+      // via l'alias (Directus crée les lignes de jonction).
+      const rows = []
+      for (const slug of item[ref.key]) {
+        const refId = refsBySlug.get(ref.collection).get(slug)
+        if (refId === undefined) {
+          log(`⚠  ${collection}/${item.slug} — ${ref.collection}/${slug} absent, lien ignoré`)
+          continue
+        }
+        rows.push({ [ref.junction]: refId })
+      }
+      item[ref.field] = rows
+      delete item[ref.key]
+      continue
+    }
     const refId = refsBySlug.get(ref.collection).get(item[ref.key])
     if (refId === undefined) {
       log(`⏭  ${collection}/${item.slug} — ${ref.collection}/${item[ref.key]} absent, ignoré`)

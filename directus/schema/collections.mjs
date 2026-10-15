@@ -1027,16 +1027,6 @@ export const collections = [
         meta: { interface: 'tags', width: 'full', ...fr('Modalités') }
       },
       {
-        field: 'center_slug',
-        type: 'string',
-        meta: { interface: 'input', width: 'half', ...fr('Centre (slug)') }
-      },
-      {
-        field: 'center_slugs',
-        type: 'json',
-        meta: { interface: 'tags', width: 'full', ...fr('Centres (slugs)') }
-      },
-      {
         field: 'sessions',
         type: 'json',
         meta: {
@@ -1323,7 +1313,7 @@ export const collections = [
     collection: 'formations_centres',
     icon: 'link',
     hidden: true,
-    note: "Jonction formations ↔ centres — lignes créées via le champ « Centres » de la fiche formation. La sync n'y touche pas.",
+    note: 'Jonction formations ↔ centres — lignes gérées via le champ « Centres » de la fiche formation. La sync ne propose des liens que quand la sélection est vide.',
     ...fr('Formations × centres'),
     fields: [primaryKey(), sortField()]
   },
@@ -1797,7 +1787,7 @@ export const relations = [
       display: 'related-values',
       display_options: { template: '{{centre.name}}' },
       width: 'full',
-      note: 'Centres dispensant la formation — éditorial, jamais réécrit par la sync',
+      note: 'Centres dispensant la formation — proposés par la sync quand vide, réassignables (jamais écrasés)',
       ...fr('Centres')
     }
   },

@@ -25,7 +25,7 @@ import CandidatureForm from './Form.vue'
 import { type CandidaturePayload, type CandidatureVoie } from '~/types/candidature'
 import type { FormId, NetworkProfileType } from '~/types/analytics'
 
-import { useDataLayer } from '~/composables/useDataLayer'
+import { useAnalytics } from '~/composables/useAnalytics'
 
 const props = withDefaults(
   defineProps<{
@@ -43,7 +43,7 @@ const formRef = ref<InstanceType<typeof CandidatureForm> | null>(null)
 const voie = ref<CandidatureVoie>(props.voie)
 const { submit: submitLead, sending, error: submitError, reset: resetLeadError } = useLeadSubmit()
 const { confirmConversion } = useConfirmationRedirect()
-const { pushEvent } = useDataLayer()
+const { pushEvent } = useAnalytics()
 
 // Chaque ouverture repart sur la voie demandée et le formulaire (pas l'écran succès).
 watch(

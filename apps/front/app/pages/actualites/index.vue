@@ -286,7 +286,7 @@ import {
 } from '~/utils/article'
 import { formatRegionLabel } from '~/utils/region'
 import { revealStagger } from '~/utils/reveal'
-import { useDataLayer } from '~/composables/useDataLayer'
+import { useAnalytics } from '~/composables/useAnalytics'
 import { onMounted } from 'vue'
 
 const config = useRuntimeConfig()
@@ -344,7 +344,7 @@ function filtersQuery(patch: { category?: string; region?: string; page?: number
   return query
 }
 
-const { pushEvent } = useDataLayer()
+const { pushEvent } = useAnalytics()
 
 onMounted(() => {
   pushEvent({

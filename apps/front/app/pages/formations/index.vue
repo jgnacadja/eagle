@@ -445,7 +445,7 @@ import {
 } from '~/utils/catalog-filters'
 import { useDirectusClient } from '~/composables/useDirectus'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
-import { useDataLayer } from '~/composables/useDataLayer'
+import { useAnalytics } from '~/composables/useAnalytics'
 import { revealStagger } from '~/utils/reveal'
 import { readItems } from '@directus/sdk'
 
@@ -994,7 +994,7 @@ const hasActiveCriteria = computed(
   () => activeFilters.value.length > 0 || searchQuery.value.trim().length > 0
 )
 
-const { pushEvent } = useDataLayer()
+const { pushEvent } = useAnalytics()
 
 onMounted(() => {
   pushEvent({

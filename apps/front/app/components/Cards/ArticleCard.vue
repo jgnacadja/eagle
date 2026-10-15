@@ -87,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { useDataLayer } from '~/composables/useDataLayer'
+import { useAnalytics } from '~/composables/useAnalytics'
 
 const props = withDefaults(
   defineProps<{
@@ -102,7 +102,7 @@ const props = withDefaults(
   { excerpt: '', imageUrl: '', to: '#', variant: 'default' }
 )
 
-const { pushEvent } = useDataLayer()
+const { pushEvent } = useAnalytics()
 
 function onClick() {
   const articleId = props.to ? props.to.split('/').pop() || props.title : props.title

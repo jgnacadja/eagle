@@ -1,5 +1,5 @@
 import { ref, onMounted, onBeforeUnmount, getCurrentInstance } from 'vue'
-import { useDataLayer } from '~/composables/useDataLayer'
+import { useAnalytics } from '~/composables/useAnalytics'
 import type { FormId } from '~/types/analytics'
 
 export interface FormTrackingOptions {
@@ -18,7 +18,7 @@ export interface FormTrackingOptions {
  * - form_abandon (si l'utilisateur quitte sans soumettre)
  */
 export function useFormTracking(options: FormTrackingOptions) {
-  const { pushEvent } = useDataLayer()
+  const { pushEvent } = useAnalytics()
 
   const startTime = ref<number | null>(null)
   const isStarted = ref(false)

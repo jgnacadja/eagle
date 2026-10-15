@@ -311,7 +311,7 @@ import { sanitizeHtmlWithHeadings } from '~/utils/sanitizeHtml'
 import { copyTextToClipboard } from '~/utils/clipboard'
 import type { MetaPatternVars } from '~/utils/metaPatterns'
 import { buildArticleJsonLd } from '~/utils/jsonLd'
-import { useDataLayer } from '~/composables/useDataLayer'
+import { useAnalytics } from '~/composables/useAnalytics'
 import { onMounted } from 'vue'
 
 definePageMeta({
@@ -724,7 +724,7 @@ const shareUrl = computed(() =>
   typeof window === 'undefined' ? '' : `${window.location.origin}${route.path}`
 )
 
-const { pushEvent } = useDataLayer()
+const { pushEvent } = useAnalytics()
 
 onMounted(() => {
   if (article.value) {

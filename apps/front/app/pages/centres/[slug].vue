@@ -616,7 +616,7 @@ import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
 import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
-import { useDataLayer } from '~/composables/useDataLayer'
+import { useAnalytics } from '~/composables/useAnalytics'
 
 definePageMeta({
   layout: 'with-breadcrumb'
@@ -1094,7 +1094,7 @@ function onErrorSearch(query: string) {
   navigateTo({ path: '/formations', query: query ? { q: query } : {} })
 }
 
-const { pushEvent } = useDataLayer()
+const { pushEvent } = useAnalytics()
 
 onMounted(() => {
   if (centre.value) {

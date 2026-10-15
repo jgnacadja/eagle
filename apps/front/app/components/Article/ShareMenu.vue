@@ -64,7 +64,7 @@ import IconLinkedin from '~/components/icons/IconLinkedin.vue'
 import IconMail from '~/components/icons/IconMail.vue'
 import IconWhatsapp from '~/components/icons/IconWhatsapp.vue'
 import IconX from '~/components/icons/IconX.vue'
-import { useDataLayer } from '~/composables/useDataLayer'
+import { useAnalytics } from '~/composables/useAnalytics'
 
 const props = defineProps<{
   url: string
@@ -73,7 +73,7 @@ const props = defineProps<{
   articleId?: string
 }>()
 
-const { pushEvent } = useDataLayer()
+const { pushEvent } = useAnalytics()
 
 function onChannelClick(channel: string) {
   const id = props.articleId || props.url.split('/').pop() || ''

@@ -10,7 +10,7 @@
 //          entre sources — à nettoyer avant).
 //
 // `up` / `down` reçoivent une instance knex : Directus en embarque une, que
-// ce script charge depuis l'image (voir `loadKnex`). Il ne tourne donc que
+// ce script charge depuis l'image via @directus/api (voir `loadKnex`). Il ne tourne donc que
 // dans le conteneur `directus-init` — `pnpm directus:indexes [up|down]` l'y
 // lance, y compris pour le retour arrière.
 
@@ -48,8 +48,9 @@ export async function down(knex) {
 // knex vit dans node_modules de l'image Directus (/directus), pas à côté de
 // ce script monté en lecture seule.
 function loadKnex() {
-  const require = createRequire('/directus/package.json')
-  const knex = require('knex')
+  const fromDirectus = createRequire('/directus/package.json')
+  const fromApi = createRequire(fromDirectus.resolve('@directus/api/package.json'))
+  const knex = fromApi('knex')
   return (knex.default ?? knex)({
     client: 'pg',
     connection: {

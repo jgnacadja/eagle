@@ -166,8 +166,12 @@ services:
       HUBSPOT_FORM_CANDIDATURE: ${HUBSPOT_FORM_CANDIDATURE:-}
       HUBSPOT_FORM_CONSEILLER: ${HUBSPOT_FORM_CONSEILLER:-}
       HUBSPOT_FORM_RAPPEL: ${HUBSPOT_FORM_RAPPEL:-}
+      # /opt/directus est en lecture seule : les sauvegardes de migration
+      # (build.mjs) vont sur un volume inscriptible.
+      SCHEMA_BACKUP_DIR: /schema-backups
     volumes:
       - ./directus:/opt/directus:ro
+      - schema-backups:/schema-backups
     entrypoint:
       - sh
       - -c
@@ -253,3 +257,4 @@ volumes:
   pgdata:
   redisdata:
   miniodata:
+  schema-backups:

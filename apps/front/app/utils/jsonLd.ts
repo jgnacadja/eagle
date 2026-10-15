@@ -18,7 +18,7 @@ export function jsonLdScriptTags(
   )
   return entries.map((entry) => ({
     type: 'application/ld+json',
-    innerHTML: JSON.stringify(entry).replaceAll('<', '\\u003c')
+    innerHTML: JSON.stringify(entry).replaceAll('<', String.raw`\u003c`)
   }))
 }
 
@@ -39,23 +39,23 @@ export function buildBreadcrumbJsonLd(
   currentPath: string
 ): Record<string, unknown> | null {
   if (!items.length) return null
-  const absolute = (to: string | undefined, fallbackPath: string) =>
-    to ? (to.startsWith('http') ? to : `${origin}${to}`) : `${origin}${fallbackPath}`
+  const absolute = (to: string | undefined, fallbackPath: string) => {
+    if (!to) return `${origin}${fallbackPath}`
+    return to.startsWith('http') ? to : `${origin}${to}`
+  }
 
   return {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
-    itemListElement: items.map((item, index) => ({
-      '@type': 'ListItem',
-      position: index + 1,
-      name: item.label,
-      item:
-        index === items.length - 1
-          ? absolute(item.to, currentPath)
-          : item.to
-            ? absolute(item.to, currentPath)
-            : undefined
-    }))
+    itemListElement: items.map((item, index) => {
+      const isLast = index === items.length - 1
+      return {
+        '@type': 'ListItem',
+        position: index + 1,
+        name: item.label,
+        item: item.to || isLast ? absolute(item.to, currentPath) : undefined
+      }
+    })
   }
 }
 
@@ -78,6 +78,7 @@ export function buildArticleJsonLd(input: {
   if (!article?.title) return null
 
   const description = article.seo_description ?? article.excerpt
+  const section = articleCategory(article.category)?.name
   return {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -95,9 +96,7 @@ export function buildArticleJsonLd(input: {
       url: siteUrl,
       logo: { '@type': 'ImageObject', url: `${siteUrl}/images/learn-up-academy.svg` }
     },
-    ...(articleCategory(article.category)?.name
-      ? { articleSection: articleCategory(article.category)!.name }
-      : {}),
+    ...(section ? { articleSection: section } : {}),
     ...(article.region ? { contentLocation: article.region } : {}),
     ...(imageUrl ? { image: [imageUrl] } : {})
   }
@@ -108,25 +107,49 @@ export function buildArticleJsonLd(input: {
  * géolocalisation et contact omis proprement quand la donnée manque —
  * un LocalBusiness sans adresse reste valide.
  */
+type LocalBusinessCentre = Pick<
+  Centre,
+  | 'name'
+  | 'slug'
+  | 'description'
+  | 'short_description'
+  | 'seo_description'
+  | 'address'
+  | 'city'
+  | 'postal_code'
+  | 'department'
+  | 'region'
+  | 'phone'
+  | 'email'
+  | 'latitude'
+  | 'longitude'
+  | 'opening_hours'
+>
+
+function buildPostalAddress(centre: LocalBusinessCentre): Record<string, unknown> | null {
+  if (!centre.address && !centre.city && !centre.postal_code) return null
+  const region = centre.department ?? centre.region
+  return {
+    '@type': 'PostalAddress',
+    ...(centre.address ? { streetAddress: centre.address } : {}),
+    ...(centre.city ? { addressLocality: centre.city } : {}),
+    ...(centre.postal_code ? { postalCode: centre.postal_code } : {}),
+    ...(region ? { addressRegion: region } : {}),
+    addressCountry: 'FR'
+  }
+}
+
+function buildGeoCoordinates(centre: LocalBusinessCentre): Record<string, unknown> | null {
+  if (centre.latitude == null || centre.longitude == null) return null
+  return {
+    '@type': 'GeoCoordinates',
+    latitude: centre.latitude,
+    longitude: centre.longitude
+  }
+}
+
 export function buildLocalBusinessJsonLd(input: {
-  centre: Pick<
-    Centre,
-    | 'name'
-    | 'slug'
-    | 'description'
-    | 'short_description'
-    | 'seo_description'
-    | 'address'
-    | 'city'
-    | 'postal_code'
-    | 'department'
-    | 'region'
-    | 'phone'
-    | 'email'
-    | 'latitude'
-    | 'longitude'
-    | 'opening_hours'
-  > | null
+  centre: LocalBusinessCentre | null
   /** URL canonique absolue de la fiche. */
   url: string
   siteUrl: string
@@ -137,7 +160,8 @@ export function buildLocalBusinessJsonLd(input: {
 
   const description =
     centre.seo_description ?? centre.short_description ?? htmlToText(centre.description)
-  const hasAddress = centre.address || centre.city || centre.postal_code
+  const address = buildPostalAddress(centre)
+  const geo = buildGeoCoordinates(centre)
 
   return {
     '@context': 'https://schema.org',
@@ -146,29 +170,8 @@ export function buildLocalBusinessJsonLd(input: {
     ...(description ? { description } : {}),
     url,
     ...(imageUrl ? { image: [imageUrl] } : {}),
-    ...(hasAddress
-      ? {
-        address: {
-          '@type': 'PostalAddress',
-          ...(centre.address ? { streetAddress: centre.address } : {}),
-          ...(centre.city ? { addressLocality: centre.city } : {}),
-          ...(centre.postal_code ? { postalCode: centre.postal_code } : {}),
-          ...((centre.department ?? centre.region)
-            ? { addressRegion: centre.department ?? centre.region }
-            : {}),
-          addressCountry: 'FR'
-        }
-      }
-      : {}),
-    ...(centre.latitude != null && centre.longitude != null
-      ? {
-        geo: {
-          '@type': 'GeoCoordinates',
-          latitude: centre.latitude,
-          longitude: centre.longitude
-        }
-      }
-      : {}),
+    ...(address ? { address } : {}),
+    ...(geo ? { geo } : {}),
     ...(centre.phone ? { telephone: centre.phone } : {}),
     ...(centre.email ? { email: centre.email } : {}),
     ...(centre.opening_hours ? { openingHours: centre.opening_hours } : {}),

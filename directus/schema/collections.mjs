@@ -899,17 +899,17 @@ export const collections = [
       },
       {
         field: 'certification',
-        type: 'string',
+        type: 'text',
         meta: { interface: 'input', width: 'half', ...fr('Certification') }
       },
       {
         field: 'certifier_name',
-        type: 'string',
+        type: 'text',
         meta: { interface: 'input', width: 'half', ...fr('Certificateur') }
       },
       {
         field: 'category_name',
-        type: 'string',
+        type: 'text',
         meta: {
           interface: 'input',
           width: 'half',
@@ -1105,7 +1105,7 @@ export const collections = [
       },
       {
         field: 'generated_program_url',
-        type: 'string',
+        type: 'text',
         meta: {
           interface: 'input',
           width: 'full',

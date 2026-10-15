@@ -206,6 +206,17 @@ const routeState = reactive({
 })
 vi.stubGlobal('useRoute', () => routeState)
 
+// useRuntimeConfig (auto-import Nuxt) : config publique minimale — instance
+// Matomo « configurée » pour que `useAnalytics()` collecte dans `window._paq`.
+// Les specs peuvent la remplacer par leur propre `vi.stubGlobal`.
+vi.stubGlobal('useRuntimeConfig', () => ({
+  public: {
+    apiBase: 'http://localhost:3001',
+    matomoUrl: 'https://stats.test',
+    matomoSiteId: '1'
+  }
+}))
+
 // Directives motion-v (enregistrées par le module Nuxt, absentes ici) et
 // utilitaires de reveal utilisés dans les templates.
 config.global.directives = {

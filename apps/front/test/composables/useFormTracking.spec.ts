@@ -1,9 +1,15 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { useFormTracking } from '~/composables/useFormTracking'
+import type { MatomoCommand } from '~/utils/matomo'
+
+const pushed = (): MatomoCommand[] =>
+  (window._paq ?? []).filter((c): c is MatomoCommand => c[0] === 'trackEvent')
+
+const findEvent = (action: string) => pushed().find((c) => c[2] === action)
 
 describe('useFormTracking', () => {
   beforeEach(() => {
-    window.dataLayer = []
+    window._paq = []
     document.title = 'Demande de formation'
   })
 
@@ -15,14 +21,12 @@ describe('useFormTracking', () => {
 
     trackFormView(1, 'Besoin')
 
-    const lastEvent = window.dataLayer?.find((e) => e.event === 'form_view')
-    expect(lastEvent).toMatchObject({
-      event: 'form_view',
-      form_id: 'demande_formation',
-      form_name: 'Demande de formation',
-      form_step: 1,
-      form_step_name: 'Besoin'
-    })
+    expect(findEvent('form_view')).toEqual([
+      'trackEvent',
+      'Formulaires',
+      'form_view',
+      'demande_formation:Besoin'
+    ])
   })
 
   it('triggers form_start on first interaction only once', () => {
@@ -34,13 +38,14 @@ describe('useFormTracking', () => {
     trackFormStart('besoin')
     trackFieldInteraction('nom')
 
-    const startEvents = window.dataLayer?.filter((e) => e.event === 'form_start')
-    expect(startEvents?.length).toBe(1)
-    expect(startEvents?.[0]).toMatchObject({
-      event: 'form_start',
-      form_id: 'demande_formation',
-      field_name: 'besoin'
-    })
+    const startEvents = pushed().filter((c) => c[2] === 'form_start')
+    expect(startEvents.length).toBe(1)
+    expect(startEvents[0]).toEqual([
+      'trackEvent',
+      'Formulaires',
+      'form_start',
+      'demande_formation:besoin'
+    ])
   })
 
   it('pushes form_error with field and error details', () => {
@@ -51,14 +56,12 @@ describe('useFormTracking', () => {
 
     trackFormError('email', 'Email invalide')
 
-    const errorEvent = window.dataLayer?.find((e) => e.event === 'form_error')
-    expect(errorEvent).toMatchObject({
-      event: 'form_error',
-      form_id: 'demande_formation',
-      field_name: 'email',
-      error_message: 'Email invalide',
-      error_type: 'validation'
-    })
+    expect(findEvent('form_error')).toEqual([
+      'trackEvent',
+      'Formulaires',
+      'form_error',
+      'demande_formation:email:validation'
+    ])
   })
 
   it('pushes form_submit on successful completion', () => {
@@ -73,14 +76,13 @@ describe('useFormTracking', () => {
     vi.advanceTimersByTime(5000)
     trackFormSubmit('devis')
 
-    const submitEvent = window.dataLayer?.find((e) => e.event === 'form_submit')
-    expect(submitEvent).toMatchObject({
-      event: 'form_submit',
-      form_id: 'demande_formation',
-      form_type: 'devis',
-      steps_count: 3,
-      completion_time_seconds: 5
-    })
+    expect(findEvent('form_submit')).toEqual([
+      'trackEvent',
+      'Formulaires',
+      'form_submit',
+      'demande_formation:devis',
+      5
+    ])
     vi.useRealTimers()
   })
 
@@ -96,15 +98,13 @@ describe('useFormTracking', () => {
     vi.advanceTimersByTime(12000)
     trackFormAbandon()
 
-    const abandonEvent = window.dataLayer?.find((e) => e.event === 'form_abandon')
-    expect(abandonEvent).toMatchObject({
-      event: 'form_abandon',
-      form_id: 'demande_formation',
-      last_field_filled: 'besoin',
-      fields_completed_count: 1,
-      fields_total_count: 5,
-      time_spent_seconds: 12
-    })
+    expect(findEvent('form_abandon')).toEqual([
+      'trackEvent',
+      'Formulaires',
+      'form_abandon',
+      'demande_formation',
+      1
+    ])
     vi.useRealTimers()
   })
 
@@ -122,11 +122,8 @@ describe('useFormTracking', () => {
 
     trackFormSubmit('demande_organisme')
 
-    const submitEvent = window.dataLayer?.find((e) => e.event === 'form_submit')
-    expect(submitEvent).toMatchObject({
-      event: 'form_submit',
-      form_id: 'demande_organisme',
-      form_name: 'Référencer mon organisme'
-    })
+    const submitEvent = findEvent('form_submit')
+    expect(submitEvent?.[1]).toBe('Formulaires')
+    expect(submitEvent?.[3]).toContain('demande_organisme')
   })
 })

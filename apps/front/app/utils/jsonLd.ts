@@ -1,4 +1,5 @@
 import type { Article, Centre, Course } from '@learnup/types'
+import { articleCategory } from './article'
 import { htmlToText } from './sanitizeHtml'
 import { MODALITY_LABELS } from './catalog-filters'
 
@@ -94,7 +95,9 @@ export function buildArticleJsonLd(input: {
       url: siteUrl,
       logo: { '@type': 'ImageObject', url: `${siteUrl}/images/learn-up-academy.svg` }
     },
-    ...(article.category?.name ? { articleSection: article.category.name } : {}),
+    ...(articleCategory(article.category)?.name
+      ? { articleSection: articleCategory(article.category)!.name }
+      : {}),
     ...(article.region ? { contentLocation: article.region } : {}),
     ...(imageUrl ? { image: [imageUrl] } : {})
   }
@@ -145,26 +148,26 @@ export function buildLocalBusinessJsonLd(input: {
     ...(imageUrl ? { image: [imageUrl] } : {}),
     ...(hasAddress
       ? {
-          address: {
-            '@type': 'PostalAddress',
-            ...(centre.address ? { streetAddress: centre.address } : {}),
-            ...(centre.city ? { addressLocality: centre.city } : {}),
-            ...(centre.postal_code ? { postalCode: centre.postal_code } : {}),
-            ...((centre.department ?? centre.region)
-              ? { addressRegion: centre.department ?? centre.region }
-              : {}),
-            addressCountry: 'FR'
-          }
+        address: {
+          '@type': 'PostalAddress',
+          ...(centre.address ? { streetAddress: centre.address } : {}),
+          ...(centre.city ? { addressLocality: centre.city } : {}),
+          ...(centre.postal_code ? { postalCode: centre.postal_code } : {}),
+          ...((centre.department ?? centre.region)
+            ? { addressRegion: centre.department ?? centre.region }
+            : {}),
+          addressCountry: 'FR'
         }
+      }
       : {}),
     ...(centre.latitude != null && centre.longitude != null
       ? {
-          geo: {
-            '@type': 'GeoCoordinates',
-            latitude: centre.latitude,
-            longitude: centre.longitude
-          }
+        geo: {
+          '@type': 'GeoCoordinates',
+          latitude: centre.latitude,
+          longitude: centre.longitude
         }
+      }
       : {}),
     ...(centre.phone ? { telephone: centre.phone } : {}),
     ...(centre.email ? { email: centre.email } : {}),
@@ -217,28 +220,28 @@ export function buildCourseJsonLd(input: {
     ...(imageUrl ? { image: [imageUrl] } : {}),
     ...(courseModes.length || workload
       ? {
-          hasCourseInstance: {
-            '@type': 'CourseInstance',
-            ...(courseModes.length ? { courseMode: courseModes } : {}),
-            ...(workload ? { courseWorkload: workload } : {})
-          }
+        hasCourseInstance: {
+          '@type': 'CourseInstance',
+          ...(courseModes.length ? { courseMode: courseModes } : {}),
+          ...(workload ? { courseWorkload: workload } : {})
         }
+      }
       : {}),
     ...(course.price
       ? {
-          offers: { '@type': 'Offer', price: course.price, priceCurrency: 'EUR' }
-        }
+        offers: { '@type': 'Offer', price: course.price, priceCurrency: 'EUR' }
+      }
       : {}),
     ...(course.certification
       ? {
-          educationalCredentialAwarded: {
-            '@type': 'EducationalOccupationalCredential',
-            name: course.certification,
-            ...(course.certifierName
-              ? { recognizedBy: { '@type': 'Organization', name: course.certifierName } }
-              : {})
-          }
+        educationalCredentialAwarded: {
+          '@type': 'EducationalOccupationalCredential',
+          name: course.certification,
+          ...(course.certifierName
+            ? { recognizedBy: { '@type': 'Organization', name: course.certifierName } }
+            : {})
         }
+      }
       : {})
   }
 }

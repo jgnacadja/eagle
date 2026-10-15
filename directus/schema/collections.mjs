@@ -1505,6 +1505,89 @@ export const collections = [
     ]
   },
   {
+    // ST-03 : lignes créées par l'extension `slug-redirects` (renommage de
+    // slug, dépublication) ou saisies à la main par le référent SEO / par
+    // l'import. `from_path` unique — pas de doublon possible sur une même
+    // adresse source. La résolution passe par l'API (`GET /seo/resolve`),
+    // la collection n'est jamais exposée publiquement.
+    collection: 'redirects',
+    icon: 'alt_route',
+    note: 'Redirections 301/410 — remplies automatiquement aux changements de slug et dépublications, ou saisies à la main. 301 sans cible et 410 avec cible sont ignorés à la résolution.',
+    ...fr('Redirections'),
+    fields: [
+      primaryKey(),
+      {
+        field: 'from_path',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          required: true,
+          note: 'Chemin source, sans domaine ni slash final — ex. /formations/gestion/ancien-slug',
+          ...fr('Depuis')
+        },
+        schema: { is_unique: true }
+      },
+      {
+        field: 'to_path',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          note: 'Cible du 301 — vide obligatoirement pour un 410',
+          ...fr('Vers')
+        }
+      },
+      {
+        field: 'status',
+        type: 'string',
+        meta: {
+          interface: 'select-dropdown',
+          width: 'half',
+          required: true,
+          options: {
+            choices: [
+              { text: '301 — Déplacé définitivement', value: '301' },
+              { text: '410 — Supprimé', value: '410' }
+            ]
+          },
+          ...fr('Code HTTP')
+        },
+        schema: { default_value: '301' }
+      },
+      {
+        field: 'origin',
+        type: 'string',
+        meta: {
+          interface: 'select-dropdown',
+          width: 'half',
+          required: true,
+          options: {
+            choices: [
+              { text: 'Saisie manuelle', value: 'manual' },
+              { text: 'Automatique (slug/dépublication)', value: 'auto' },
+              { text: 'Import', value: 'import' }
+            ]
+          },
+          note: 'Les lignes « auto » sont maintenues par le système — une ligne manuelle n’est jamais écrasée.',
+          ...fr('Origine')
+        },
+        schema: { default_value: 'manual' }
+      },
+      {
+        field: 'created_at',
+        type: 'timestamp',
+        meta: {
+          special: ['date-created'],
+          interface: 'datetime',
+          width: 'half',
+          readonly: true,
+          ...fr('Créée le')
+        }
+      }
+    ]
+  },
+  {
     collection: 'sources',
     icon: 'hub',
     note: 'Comptes Digiforma (un par franchise) et portail HubSpot associé. Une seule source tête de réseau (HQ). Les clés sont chiffrées à l’enregistrement — accès réservé à l’administration.',

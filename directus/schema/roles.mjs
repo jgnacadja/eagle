@@ -34,6 +34,7 @@ const CONTENT_COLLECTIONS = [
   'formations',
   'formations_centres',
   'formations_liees',
+  'redirects',
   'recherches_sans_resultat'
 ]
 
@@ -82,6 +83,8 @@ export function permissionsFor(roleName) {
         // des lignes ici — la suppression permet de retirer un lien.
         ...grants('formations_centres', ['create', 'read', 'update', 'delete']),
         ...grants('formations_liees', ['create', 'read', 'update', 'delete']),
+        // Redirections 301/410 : saisie manuelle par le référent SEO.
+        ...grants('redirects', ['create', 'read', 'update', 'delete']),
         ...grants('directus_files', ['create', 'read']),
         { collection: 'formations', action: 'read' },
         { collection: 'sources', action: 'read', fields: SOURCES_SAFE_FIELDS },
@@ -148,6 +151,7 @@ export function permissionsFor(roleName) {
           'directus_files',
           'formations_centres',
           'formations_liees',
+          'redirects',
           'recherches_sans_resultat'
         ].flatMap((c) => grants(c, ['read'])),
         { collection: 'formations', action: 'read' },

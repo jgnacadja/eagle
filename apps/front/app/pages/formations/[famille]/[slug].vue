@@ -979,7 +979,10 @@ const heroIntro = computed(() => {
   if (short) return short
   const text = htmlToText(course.value!.description)
   if (text.length <= 220) return text
-  return `${text.slice(0, 220).replace(/\s+\S*$/, '')}…`
+  return `${text
+    .slice(0, 220)
+    .replace(/\s\S*$/, '')
+    .trimEnd()}…`
 })
 
 const sessionBadge = computed(() => buildSessionBadge(course.value!))

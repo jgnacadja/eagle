@@ -64,11 +64,32 @@ async function collectionExists(token, name) {
   return res.ok
 }
 
-async function fieldExists(token, collection, field) {
+async function fetchField(token, collection, field) {
   const res = await fetch(`${DIRECTUS_URL}/fields/${collection}/${field}`, {
     headers: { Authorization: `Bearer ${token}` }
   })
-  return res.ok
+  if (!res.ok) return null
+  const { data } = await res.json()
+  return data ?? null
+}
+
+async function fieldExists(token, collection, field) {
+  return (await fetchField(token, collection, field)) !== null
+}
+
+// Un champ déclaré `json` dont la colonne existante n'est pas JSON (varchar
+// hérité d'un ancien schéma ou créé à la main) rejette les objets
+// (VALUE_TOO_LONG). Converge la colonne vers `json` : Directus n'altère la
+// colonne que si `schema` est fourni et diffère de l'existant. Limité à json :
+// la conversion varchar/text → json est la seule sûre sans perte.
+async function ensureJsonColumn(token, collection, field, current) {
+  const dataType = current.schema?.data_type
+  if (!dataType || dataType === 'json' || dataType === 'jsonb') return
+  await api(token, 'PATCH', `/fields/${collection}/${field}`, {
+    type: 'json',
+    schema: { ...current.schema, data_type: 'json', max_length: null }
+  })
+  log(`✔  champ ${collection}.${field} converti ${dataType} → json`)
 }
 
 async function ensureCollections(token) {
@@ -88,7 +109,11 @@ async function ensureCollections(token) {
       // Collection existante : créer les champs déclarés mais absents —
       // le fichier collections.mjs reste la source de vérité du schéma.
       for (const field of def.fields) {
-        if (await fieldExists(token, def.collection, field.field)) {
+        const current = await fetchField(token, def.collection, field.field)
+        if (current) {
+          if (field.type === 'json') {
+            await ensureJsonColumn(token, def.collection, field.field, current)
+          }
           // Convergent : le meta déclaré ici (readonly, note, interface…)
           // reste la source de vérité — les réglages faits à la main dans
           // l'admin sont écrasés au prochain build.

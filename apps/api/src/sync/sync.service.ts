@@ -9,7 +9,7 @@ import { DirectusCatalogService } from '../directus/directus.catalog.service'
 import { DirectusItemsClient } from '../directus/directus.items.client'
 import { DigiformaClientFactory } from '../digiforma/digiforma-client.factory'
 import type { Program } from '../digiforma/digiforma.client'
-import { mapProgramToCourse } from '../digiforma/digiforma.mapper'
+import { mapCentreSlugs, mapProgramToCourse } from '../digiforma/digiforma.mapper'
 import { GeocodingService } from '../centres/geocoding.service'
 import type { SourceConfig, UnreadableSource } from '../sources/source.types'
 import { SourcesService } from '../sources/sources.service'
@@ -294,10 +294,12 @@ export class SyncService {
     try {
       const programs = await this.loadPrograms(source)
       const payloads = [] as ReturnType<typeof mapProgramToCourse>[]
+      const centreSlugsByDigiformaId = new Map<string, string[]>()
 
       for (const program of programs) {
         try {
           payloads.push(mapProgramToCourse(program))
+          centreSlugsByDigiformaId.set(program.id, mapCentreSlugs(program.sessions))
         } catch (error) {
           run.failed += 1
           this.logger.warn(
@@ -307,13 +309,13 @@ export class SyncService {
         }
       }
 
-      const result = await this.catalog.upsertMany(payloads, await this.sourceIdFor(source))
+      const sourceId = await this.sourceIdFor(source)
+      const result = await this.catalog.upsertMany(payloads, sourceId, centreSlugsByDigiformaId)
       run.inserted = result.inserted
       run.updated = result.updated
 
       // Réactivation : republie les formations dépubliées par la désactivation
       // que Digiforma renvoie toujours (jamais celles archivées à la main).
-      const sourceId = await this.sourceIdFor(source)
       if (sourceId) {
         run.republished = await this.catalog.republishArchivedBySource(
           sourceId,

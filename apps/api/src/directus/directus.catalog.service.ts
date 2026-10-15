@@ -135,8 +135,6 @@ const ALL_FORMATION_FIELDS = [
   'certifier_name',
   'category_name',
   'modalities',
-  'center_slug',
-  'center_slugs',
   'centres.centre.slug',
   'sessions',
   'locations_text',
@@ -185,10 +183,14 @@ export class DirectusCatalogService {
   /**
    * Crée ou met à jour un lot de formations dans Directus.
    * L'affectation famille n'est jamais écrite : elle reste éditoriale.
+   * `centreSlugsByDigiformaId` porte les slugs de centres remontés par
+   * Digiforma : résolus en lignes `formations_centres` uniquement quand la
+   * formation n'a aucune sélection — un choix éditorial n'est jamais écrasé.
    */
   async upsertMany(
     courses: FormationDirectusPayload[],
-    sourceId?: string
+    sourceId?: string,
+    centreSlugsByDigiformaId?: Map<string, string[]>
   ): Promise<{ inserted: number; updated: number }> {
     if (courses.length === 0 || !this.enabled) {
       return { inserted: 0, updated: 0 }
@@ -210,11 +212,98 @@ export class DirectusCatalogService {
       this.updateMany(batch.update)
     ])
     await this.syncFormationImages(courses, existing, created)
+    if (centreSlugsByDigiformaId?.size) {
+      await this.syncFormationCentres(courses, existing, created, centreSlugsByDigiformaId)
+    }
 
     return {
       inserted: batch.create.length,
       updated: batch.update.length
     }
+  }
+
+  /**
+   * Lie les centres Digiforma aux formations via la jonction
+   * `formations_centres`. Best-effort : un slug inconnu ou un POST en
+   * échec est loggé et rejoué au run suivant, jamais bloquant pour la sync.
+   */
+  private async syncFormationCentres(
+    courses: FormationDirectusPayload[],
+    existing: Map<string, ExistingFormation>,
+    created: Array<{ id: number; digiforma_id: string }>,
+    centreSlugsByDigiformaId: Map<string, string[]>
+  ): Promise<void> {
+    try {
+      const createdIdByDigiformaId = new Map(created.map((r) => [r.digiforma_id, r.id]))
+      const formationIds = courses
+        .map((c) => existing.get(c.digiforma_id)?.id ?? createdIdByDigiformaId.get(c.digiforma_id))
+        .filter((id): id is number => id !== undefined)
+      // Aucun slug remonté → pas de requêtes centres/jonction.
+      if (
+        !formationIds.length ||
+        !courses.some((c) => (centreSlugsByDigiformaId.get(c.digiforma_id) ?? []).length > 0)
+      ) {
+        return
+      }
+
+      const [centreIdBySlug, linked] = await Promise.all([
+        this.getCentreIdsBySlug(),
+        this.fetchLinkedFormationIds(formationIds)
+      ])
+
+      const rows: Array<{ formation: number; centre: number; sort: number }> = []
+      for (const course of courses) {
+        const formationId =
+          existing.get(course.digiforma_id)?.id ?? createdIdByDigiformaId.get(course.digiforma_id)
+        if (!formationId || linked.has(formationId)) continue
+        const slugs = centreSlugsByDigiformaId.get(course.digiforma_id) ?? []
+        slugs.forEach((slug, index) => {
+          const centre = centreIdBySlug.get(slug)
+          if (!centre) {
+            this.logger.warn(
+              `Formation ${course.digiforma_id}: centre « ${slug} » introuvable, lien ignoré`
+            )
+            return
+          }
+          rows.push({ formation: formationId, centre, sort: index + 1 })
+        })
+      }
+      if (!rows.length) return
+
+      await this.request(`${this.baseUrl}/items/formations_centres`, 'POST', rows)
+    } catch (error) {
+      this.logger.warn({ error }, 'Centre links sync failed — retried on next run')
+    }
+  }
+
+  /** Slug → id pour tous les centres (tout statut — le lien M2M n'est pas une publication). */
+  private async getCentreIdsBySlug(): Promise<Map<string, number>> {
+    const url = new URL(`${this.baseUrl}/items/centres`)
+    url.searchParams.set('limit', '-1')
+    url.searchParams.append('fields[]', 'id')
+    url.searchParams.append('fields[]', 'slug')
+
+    const response = await this.request<{ data: Array<{ id: number; slug: string }> }>(
+      url.toString()
+    )
+    return new Map((response.data ?? []).map((c) => [c.slug, c.id]))
+  }
+
+  private async fetchLinkedFormationIds(formationIds: number[]): Promise<Set<number>> {
+    const linked = new Set<number>()
+    for (let i = 0; i < formationIds.length; i += 100) {
+      const slice = formationIds.slice(i, i + 100)
+      const url = new URL(`${this.baseUrl}/items/formations_centres`)
+      url.searchParams.set('filter[formation][_in]', slice.join(','))
+      url.searchParams.set('limit', '-1')
+      url.searchParams.append('fields[]', 'formation')
+
+      const response = await this.request<{ data: Array<{ formation: number }> }>(url.toString())
+      for (const row of response.data ?? []) {
+        linked.add(row.formation)
+      }
+    }
+    return linked
   }
 
   /**

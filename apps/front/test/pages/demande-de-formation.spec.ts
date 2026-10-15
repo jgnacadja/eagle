@@ -33,6 +33,7 @@ vi.stubGlobal('useAsyncData', async (_key: string, handler: () => Promise<unknow
 }))
 
 const centreCreteil = {
+  id: 3,
   slug: 'creteil',
   name: 'Centre LEARN UP de Créteil',
   city: 'Créteil',
@@ -76,6 +77,7 @@ const navigateMock = vi.fn()
 vi.stubGlobal('navigateTo', navigateMock)
 
 const courseSst = {
+  id: 12,
   slug: 'sst-initial',
   title: 'SST — Sauveteur secouriste du travail',
   durationDays: 2,
@@ -615,6 +617,71 @@ describe('pages/centres/demande-de-formation', () => {
       'demande',
       expect.objectContaining({ telephonePro: '0142556677' })
     )
+  })
+
+  describe('rattachement à la source (routage HubSpot)', () => {
+    const lastPayload = () => leadSubmitMock.mock.calls.at(-1)?.[1] as Record<string, unknown>
+
+    it('joint formationId et centreId quand le contexte est connu', async () => {
+      routeStub.query = { famille: 'sante', formation: 'sst-initial', centre: 'creteil' }
+      const wrapper = await mountPage()
+      await fillValidForm(wrapper)
+
+      await wrapper.find('form').trigger('submit.prevent')
+      await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+      expect(lastPayload()).toMatchObject({ formationId: 12, centreId: 3 })
+    })
+
+    it('déduit le centre de la formation quand ?centre= est absent', async () => {
+      fetchMock.mockImplementation(async () => ({ ...courseSst, centerSlug: 'creteil' }))
+      routeStub.query = { famille: 'sante', formation: 'sst-initial' }
+      const wrapper = await mountPage()
+      await fillValidForm(wrapper)
+
+      await wrapper.find('form').trigger('submit.prevent')
+      await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+      expect(lastPayload()).toMatchObject({ formationId: 12, centreId: 3 })
+    })
+
+    it('ne joint que le centre sans formation', async () => {
+      routeStub.query = { centre: 'creteil' }
+      const wrapper = await mountPage()
+      await fillValidForm(wrapper)
+
+      await wrapper.find('form').trigger('submit.prevent')
+      await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+      expect(lastPayload()).toMatchObject({ centreId: 3 })
+      expect(lastPayload()).not.toHaveProperty('formationId')
+    })
+
+    it('n’envoie aucun id hors contexte', async () => {
+      routeStub.query = {}
+      const wrapper = await mountPage()
+      await fillValidForm(wrapper)
+
+      await wrapper.find('form').trigger('submit.prevent')
+      await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+      expect(lastPayload()).not.toHaveProperty('formationId')
+      expect(lastPayload()).not.toHaveProperty('centreId')
+    })
+
+    it('n’envoie pas de centre en intra (aucun centre imposé)', async () => {
+      fetchMock.mockImplementation(async () => ({ ...courseSst, centerSlug: 'creteil' }))
+      routeStub.query = { famille: 'sante', formation: 'sst-initial', intra: '1' }
+      const wrapper = await mountPage()
+      await fillValidForm(wrapper)
+      await wrapper.find('#lieu').setValue('Lyon 69003')
+
+      await wrapper.find('form').trigger('submit.prevent')
+      await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
+
+      expect(lastPayload()).toMatchObject({ formationId: 12 })
+      expect(lastPayload()).not.toHaveProperty('centreId')
+    })
   })
 
   it('signale un téléphone professionnel incomplet sans le rendre obligatoire', async () => {

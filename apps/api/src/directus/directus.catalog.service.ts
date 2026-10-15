@@ -135,8 +135,6 @@ const ALL_FORMATION_FIELDS = [
   'certifier_name',
   'category_name',
   'modalities',
-  'center_slug',
-  'center_slugs',
   'centres.centre.slug',
   'sessions',
   'locations_text',
@@ -185,26 +183,191 @@ export class DirectusCatalogService {
   /**
    * Crée ou met à jour un lot de formations dans Directus.
    * L'affectation famille n'est jamais écrite : elle reste éditoriale.
+   * `centreSlugsByDigiformaId` porte les slugs de centres remontés par
+   * Digiforma : résolus en lignes `formations_centres` uniquement quand la
+   * formation n'a aucune sélection — un choix éditorial n'est jamais écrasé.
    */
   async upsertMany(
-    courses: FormationDirectusPayload[]
+    courses: FormationDirectusPayload[],
+    sourceId?: string,
+    centreSlugsByDigiformaId?: Map<string, string[]>
   ): Promise<{ inserted: number; updated: number }> {
     if (courses.length === 0 || !this.enabled) {
       return { inserted: 0, updated: 0 }
     }
 
-    const existing = await this.fetchExisting(courses.map((c) => c.digiforma_id))
+    // Clé d'upsert composite (source, digiforma_id) : deux comptes Digiforma
+    // peuvent partager un même id sans se marcher dessus. Sans `sourceId`
+    // (config mono-source issue de l'env), la colonne `source` retombe sur la
+    // HQ via son défaut en base.
+    const existing = await this.fetchExisting(
+      courses.map((c) => c.digiforma_id),
+      sourceId
+    )
     const batch = this.buildBatch(courses, existing)
+    if (sourceId) batch.create = batch.create.map((course) => ({ ...course, source: sourceId }))
 
     const [created] = await Promise.all([
       this.createMany(batch.create),
       this.updateMany(batch.update)
     ])
     await this.syncFormationImages(courses, existing, created)
+    if (centreSlugsByDigiformaId?.size) {
+      await this.syncFormationCentres(courses, existing, created, centreSlugsByDigiformaId)
+    }
 
     return {
       inserted: batch.create.length,
       updated: batch.update.length
+    }
+  }
+
+  /**
+   * Lie les centres Digiforma aux formations via la jonction
+   * `formations_centres`. Best-effort : un slug inconnu ou un POST en
+   * échec est loggé et rejoué au run suivant, jamais bloquant pour la sync.
+   */
+  private async syncFormationCentres(
+    courses: FormationDirectusPayload[],
+    existing: Map<string, ExistingFormation>,
+    created: Array<{ id: number; digiforma_id: string }>,
+    centreSlugsByDigiformaId: Map<string, string[]>
+  ): Promise<void> {
+    try {
+      const createdIdByDigiformaId = new Map(created.map((r) => [r.digiforma_id, r.id]))
+      const formationIds = courses
+        .map((c) => existing.get(c.digiforma_id)?.id ?? createdIdByDigiformaId.get(c.digiforma_id))
+        .filter((id): id is number => id !== undefined)
+      // Aucun slug remonté → pas de requêtes centres/jonction.
+      if (
+        !formationIds.length ||
+        !courses.some((c) => (centreSlugsByDigiformaId.get(c.digiforma_id) ?? []).length > 0)
+      ) {
+        return
+      }
+
+      const [centreIdBySlug, linked] = await Promise.all([
+        this.getCentreIdsBySlug(),
+        this.fetchLinkedFormationIds(formationIds)
+      ])
+
+      const rows: Array<{ formation: number; centre: number; sort: number }> = []
+      for (const course of courses) {
+        const formationId =
+          existing.get(course.digiforma_id)?.id ?? createdIdByDigiformaId.get(course.digiforma_id)
+        if (!formationId || linked.has(formationId)) continue
+        const slugs = centreSlugsByDigiformaId.get(course.digiforma_id) ?? []
+        slugs.forEach((slug, index) => {
+          const centre = centreIdBySlug.get(slug)
+          if (!centre) {
+            this.logger.warn(
+              `Formation ${course.digiforma_id}: centre « ${slug} » introuvable, lien ignoré`
+            )
+            return
+          }
+          rows.push({ formation: formationId, centre, sort: index + 1 })
+        })
+      }
+      if (!rows.length) return
+
+      await this.request(`${this.baseUrl}/items/formations_centres`, 'POST', rows)
+    } catch (error) {
+      this.logger.warn({ error }, 'Centre links sync failed — retried on next run')
+    }
+  }
+
+  /** Slug → id pour tous les centres (tout statut — le lien M2M n'est pas une publication). */
+  private async getCentreIdsBySlug(): Promise<Map<string, number>> {
+    const url = new URL(`${this.baseUrl}/items/centres`)
+    url.searchParams.set('limit', '-1')
+    url.searchParams.append('fields[]', 'id')
+    url.searchParams.append('fields[]', 'slug')
+
+    const response = await this.request<{ data: Array<{ id: number; slug: string }> }>(
+      url.toString()
+    )
+    return new Map((response.data ?? []).map((c) => [c.slug, c.id]))
+  }
+
+  private async fetchLinkedFormationIds(formationIds: number[]): Promise<Set<number>> {
+    const linked = new Set<number>()
+    for (let i = 0; i < formationIds.length; i += 100) {
+      const slice = formationIds.slice(i, i + 100)
+      const url = new URL(`${this.baseUrl}/items/formations_centres`)
+      url.searchParams.set('filter[formation][_in]', slice.join(','))
+      url.searchParams.set('limit', '-1')
+      url.searchParams.append('fields[]', 'formation')
+
+      const response = await this.request<{ data: Array<{ formation: number }> }>(url.toString())
+      for (const row of response.data ?? []) {
+        linked.add(row.formation)
+      }
+    }
+    return linked
+  }
+
+  /**
+   * Désactivation d'une source : dépublie ses formations publiées
+   * (`status=archived` + `archived_by_source=true`) sans rien supprimer ni
+   * appeler Digiforma. Les formations déjà brouillon / archivées à la main
+   * ne sont pas touchées. Renvoie le nombre de formations dépubliées.
+   */
+  async archivePublishedBySource(sourceId: string): Promise<number> {
+    if (!this.enabled) return 0
+    const ids = await this.fetchFormationKeys(sourceId, { status: 'published' })
+    await this.patchFormations(
+      ids.map((row) => row.id),
+      { status: 'archived', archived_by_source: true }
+    )
+    return ids.length
+  }
+
+  /**
+   * Réactivation d'une source : republie uniquement les formations
+   * `archived_by_source=true` et toujours `archived` que Digiforma renvoie
+   * encore, puis remet le drapeau à false. Une formation dont un éditeur a
+   * changé le statut n'est jamais republiée. Renvoie le nombre de formations
+   * republiées.
+   */
+  async republishArchivedBySource(
+    sourceId: string,
+    digiformaIds: Iterable<string>
+  ): Promise<number> {
+    if (!this.enabled) return 0
+    const wanted = new Set(digiformaIds)
+    const rows = await this.fetchFormationKeys(sourceId, {
+      archived_by_source: true,
+      status: 'archived'
+    })
+    const ids = rows.filter((row) => wanted.has(row.digiforma_id)).map((row) => row.id)
+    await this.patchFormations(ids, { status: 'published', archived_by_source: false })
+    return ids.length
+  }
+
+  private async fetchFormationKeys(
+    sourceId: string,
+    filter: Record<string, string | boolean>
+  ): Promise<Array<{ id: number; digiforma_id: string }>> {
+    const url = new URL(`${this.baseUrl}/items/formations`)
+    url.searchParams.append('fields[]', 'id')
+    url.searchParams.append('fields[]', 'digiforma_id')
+    url.searchParams.set('filter[source][_eq]', sourceId)
+    for (const [field, value] of Object.entries(filter)) {
+      url.searchParams.set(`filter[${field}][_eq]`, String(value))
+    }
+    url.searchParams.set('limit', '-1')
+    const response = await this.request<{ data: Array<{ id: number; digiforma_id: string }> }>(
+      url.toString()
+    )
+    return response?.data ?? []
+  }
+
+  private async patchFormations(ids: number[], data: Record<string, unknown>): Promise<void> {
+    for (let i = 0; i < ids.length; i += 100) {
+      await this.request(`${this.baseUrl}/items/formations`, 'PATCH', {
+        keys: ids.slice(i, i + 100),
+        data
+      })
     }
   }
 
@@ -482,7 +645,10 @@ export class DirectusCatalogService {
     return map
   }
 
-  private async fetchExisting(digiformaIds: string[]): Promise<Map<string, ExistingFormation>> {
+  private async fetchExisting(
+    digiformaIds: string[],
+    sourceId?: string
+  ): Promise<Map<string, ExistingFormation>> {
     const map = new Map<string, ExistingFormation>()
 
     for (let i = 0; i < digiformaIds.length; i += 100) {
@@ -496,6 +662,7 @@ export class DirectusCatalogService {
       url.searchParams.append('fields[]', 'image.id')
       url.searchParams.append('fields[]', 'image.description')
       url.searchParams.set('filter[digiforma_id][_in]', slice.join(','))
+      if (sourceId) url.searchParams.set('filter[source][_eq]', sourceId)
       url.searchParams.set('limit', '-1')
 
       const response = await this.request<{ data: ExistingFormation[] }>(url.toString())

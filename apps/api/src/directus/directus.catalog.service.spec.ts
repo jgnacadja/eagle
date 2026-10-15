@@ -17,8 +17,6 @@ const samplePayloads: FormationDirectusPayload[] = [
     certification: null,
     certifier_name: null,
     category_name: 'Management',
-    center_slug: null,
-    center_slugs: [],
     modalities: [],
     sessions: null,
     locations_text: null,
@@ -44,8 +42,6 @@ const samplePayloads: FormationDirectusPayload[] = [
     certification: null,
     certifier_name: null,
     category_name: null,
-    center_slug: null,
-    center_slugs: [],
     modalities: [],
     sessions: null,
     locations_text: null,
@@ -110,6 +106,52 @@ describe('DirectusCatalogService', () => {
     expect(patchCall).toBeDefined()
     if (!patchCall) throw new Error('PATCH call not found')
     expect(patchCall[0]).toBe('http://directus:8055/items/formations/1')
+  })
+
+  it('scopes the existing lookup to the source and stamps it on created rows', async () => {
+    fetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 7, digiforma_id: 'prog-001' }] }), {
+          status: 200
+        })
+      )
+
+    await service.upsertMany([samplePayloads[0]], 'source-lyon')
+
+    const lookup = new URL(fetch.mock.calls[0][0] as string)
+    expect(lookup.searchParams.get('filter[source][_eq]')).toBe('source-lyon')
+    expect(lookup.searchParams.get('filter[digiforma_id][_in]')).toBe('prog-001')
+    const createCall = fetch.mock.calls.find((call) => call[1]?.method === 'POST')
+    expect(JSON.parse(createCall?.[1].body)).toEqual([
+      expect.objectContaining({ digiforma_id: 'prog-001', source: 'source-lyon' })
+    ])
+  })
+
+  it('does not touch a same-id formation of another source (no collision)', async () => {
+    // Le filtre `source` ne remonte rien pour cette source : création, pas de PATCH.
+    fetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+
+    await service.upsertMany([samplePayloads[0]], 'source-b')
+
+    expect(fetch.mock.calls.some((call) => call[1]?.method === 'PATCH')).toBe(false)
+    expect(fetch.mock.calls.some((call) => call[1]?.method === 'POST')).toBe(true)
+  })
+
+  it('leaves source unset and unfiltered without a sourceId (env mono-source)', async () => {
+    fetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+
+    await service.upsertMany([samplePayloads[0]])
+
+    expect(new URL(fetch.mock.calls[0][0] as string).searchParams.has('filter[source][_eq]')).toBe(
+      false
+    )
+    const createCall = fetch.mock.calls.find((call) => call[1]?.method === 'POST')
+    expect(JSON.parse(createCall?.[1].body)[0]).not.toHaveProperty('source')
   })
 
   it('does not overwrite editorial pedagogy/evaluation on update', async () => {
@@ -712,6 +754,115 @@ describe('DirectusCatalogService', () => {
     ).toBe(false)
   })
 
+  it('links Digiforma centre slugs via the junction when the selection is empty', async () => {
+    fetch
+      // fetchExisting → inconnu, create → id 7
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 7, digiforma_id: 'prog-001' }] }), {
+          status: 200
+        })
+      )
+      // centres + liens existants
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            data: [
+              { id: 3, slug: 'creteil' },
+              { id: 4, slug: 'lyon' }
+            ]
+          }),
+          { status: 200 }
+        )
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 1 }, { id: 2 }] }), { status: 200 })
+      )
+
+    const result = await service.upsertMany(
+      [samplePayloads[0]],
+      undefined,
+      new Map([['prog-001', ['creteil', 'lyon']]])
+    )
+
+    expect(result.inserted).toBe(1)
+    const linkCall = fetch.mock.calls.find(
+      (call) => call[1]?.method === 'POST' && String(call[0]).endsWith('/items/formations_centres')
+    )
+    expect(linkCall).toBeDefined()
+    if (!linkCall) throw new Error('junction POST call not found')
+    expect(JSON.parse(linkCall[1].body)).toEqual([
+      { formation: 7, centre: 3, sort: 1 },
+      { formation: 7, centre: 4, sort: 2 }
+    ])
+  })
+
+  it('never links centres on a formation that already has a selection', async () => {
+    fetch
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 7, digiforma_id: 'prog-001' }] }), {
+          status: 200
+        })
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 3, slug: 'creteil' }] }), { status: 200 })
+      )
+      // La formation a déjà une ligne de jonction (sélection éditoriale).
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ formation: 7 }] }), { status: 200 })
+      )
+
+    await service.upsertMany([samplePayloads[0]], undefined, new Map([['prog-001', ['creteil']]]))
+
+    expect(
+      fetch.mock.calls.some(
+        (call) =>
+          call[1]?.method === 'POST' && String(call[0]).endsWith('/items/formations_centres')
+      )
+    ).toBe(false)
+  })
+
+  it('ignores unknown centre slugs and tolerates a junction write failure', async () => {
+    fetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 7, digiforma_id: 'prog-001' }] }), {
+          status: 200
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 3, slug: 'creteil' }] }), { status: 200 })
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response('boom', { status: 500 }))
+
+    const result = await service.upsertMany(
+      [samplePayloads[0]],
+      undefined,
+      new Map([['prog-001', ['creteil', 'inconnu']]])
+    )
+
+    expect(result.inserted).toBe(1)
+  })
+
+  it('skips the junction entirely when no centre slugs are provided', async () => {
+    fetch
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ data: [{ id: 7, digiforma_id: 'prog-001' }] }), {
+          status: 200
+        })
+      )
+
+    await service.upsertMany([samplePayloads[0]], undefined, new Map([['prog-001', []]]))
+
+    expect(
+      fetch.mock.calls.some((call) => String(call[0]).endsWith('/items/formations_centres'))
+    ).toBe(false)
+  })
+
   it('returns [] for geocoding and assignment fetches without data', async () => {
     fetch.mockImplementation(() =>
       Promise.resolve(new Response(JSON.stringify({}), { status: 200 }))
@@ -805,5 +956,82 @@ describe('DirectusCatalogService', () => {
     expect(fetch.mock.calls.some((call) => String(call[0]).endsWith('/items/formations/12'))).toBe(
       true
     )
+  })
+
+  describe('source lifecycle', () => {
+    const json = (data: unknown) => new Response(JSON.stringify({ data }), { status: 200 })
+
+    it('archives the published formations of a source, flagging them', async () => {
+      fetch
+        .mockResolvedValueOnce(
+          json([
+            { id: 1, digiforma_id: 'a' },
+            { id: 2, digiforma_id: 'b' }
+          ])
+        )
+        .mockResolvedValueOnce(new Response(null, { status: 204 }))
+
+      await expect(service.archivePublishedBySource('source-nice')).resolves.toBe(2)
+
+      const read = new URL(fetch.mock.calls[0][0] as string)
+      expect(read.searchParams.get('filter[source][_eq]')).toBe('source-nice')
+      expect(read.searchParams.get('filter[status][_eq]')).toBe('published')
+      const [url, init] = fetch.mock.calls[1]
+      expect(url).toBe('http://directus:8055/items/formations')
+      expect(init.method).toBe('PATCH')
+      expect(JSON.parse(init.body)).toEqual({
+        keys: [1, 2],
+        data: { status: 'archived', archived_by_source: true }
+      })
+    })
+
+    it('does not write when there is nothing to archive', async () => {
+      fetch.mockResolvedValueOnce(json([]))
+
+      await expect(service.archivePublishedBySource('source-nice')).resolves.toBe(0)
+      expect(fetch).toHaveBeenCalledTimes(1)
+    })
+
+    it('republishes only flagged, still archived formations that Digiforma returns', async () => {
+      fetch
+        .mockResolvedValueOnce(
+          json([
+            { id: 1, digiforma_id: 'a' },
+            { id: 2, digiforma_id: 'gone' },
+            { id: 3, digiforma_id: 'c' }
+          ])
+        )
+        .mockResolvedValueOnce(new Response(null, { status: 204 }))
+
+      await expect(service.republishArchivedBySource('source-nice', ['a', 'c', 'z'])).resolves.toBe(
+        2
+      )
+
+      const read = new URL(fetch.mock.calls[0][0] as string)
+      expect(read.searchParams.get('filter[archived_by_source][_eq]')).toBe('true')
+      expect(read.searchParams.get('filter[status][_eq]')).toBe('archived')
+      expect(read.searchParams.get('filter[source][_eq]')).toBe('source-nice')
+      expect(JSON.parse(fetch.mock.calls[1][1].body)).toEqual({
+        keys: [1, 3],
+        data: { status: 'published', archived_by_source: false }
+      })
+    })
+
+    it('leaves manually changed statuses alone (filters to still archived rows)', async () => {
+      fetch.mockResolvedValueOnce(json([]))
+
+      await expect(service.republishArchivedBySource('source-nice', ['a'])).resolves.toBe(0)
+      expect(fetch).toHaveBeenCalledTimes(1)
+    })
+
+    it('writes in batches of 100 keys', async () => {
+      const rows = Array.from({ length: 250 }, (_, i) => ({ id: i + 1, digiforma_id: `d${i}` }))
+      fetch.mockResolvedValueOnce(json(rows)).mockResolvedValue(new Response(null, { status: 204 }))
+
+      await expect(service.archivePublishedBySource('s')).resolves.toBe(250)
+
+      const patches = fetch.mock.calls.filter((call) => call[1]?.method === 'PATCH')
+      expect(patches.map((call) => JSON.parse(call[1].body).keys.length)).toEqual([100, 100, 50])
+    })
   })
 })

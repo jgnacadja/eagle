@@ -262,7 +262,10 @@ vi.mock('~/composables/useCatalog', () => ({
 }))
 
 const stubs = {
-  NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
+  NuxtLink: {
+    props: ['to'],
+    template: '<a :data-to="typeof to === \'string\' ? to : JSON.stringify(to)"><slot /></a>'
+  },
   Button: { template: '<button><slot /></button>' },
   SearchInput: {
     props: ['modelValue'],
@@ -394,6 +397,19 @@ describe('pages/centres/[slug]', () => {
     vi.useRealTimers()
   })
 
+  it('joint l’id du centre aux liens « Parler à votre conseiller » (routage HubSpot)', async () => {
+    const wrapper = await mountPage()
+
+    const links = wrapper.findAll('a').filter((a) => a.text().includes('Parler à votre conseiller'))
+    expect(links.length).toBeGreaterThan(0)
+    for (const link of links) {
+      expect(JSON.parse(link.attributes('data-to')!)).toEqual({
+        path: '/parler-a-votre-conseiller',
+        query: { centreId: String(centreCreteil.id) }
+      })
+    }
+  })
+
   it('affiche le centre et le breadcrumb par défaut pour un slug connu', async () => {
     const wrapper = await mountPage()
 
@@ -426,7 +442,7 @@ describe('pages/centres/[slug]', () => {
     // Le lien doit rester sur le périmètre du centre (filtre `centre`),
     // pas sur la ville — les deux comptages diffèrent sinon.
     const link = wrapper.findAll('a').find((a) => a.text().includes('formations du centre'))
-    expect(link?.attributes('href')).toBe('/formations?centre=creteil')
+    expect(link?.attributes('data-to')).toBe('/formations?centre=creteil')
     expect(wrapper.text()).toContain('Prochaines sessions')
   })
 

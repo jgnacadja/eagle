@@ -30,8 +30,6 @@ const baseFormation: DirectusFormation = {
   certification: 'Certificat',
   certifier_name: 'LEARN UP',
   category_name: 'Management',
-  center_slug: null,
-  center_slugs: [],
   centres: null,
   modalities: [],
   sessions: null,
@@ -1210,28 +1208,13 @@ describe('list filters and field normalization', () => {
     expect(result.items.map((i) => i.slug)).toEqual(['securite'])
   })
 
-  it('filters by center on centerSlug or centerSlugs', async () => {
-    catalog.fetchAllFormations.mockResolvedValue([
-      { ...baseFormation, center_slug: 'creteil' },
-      { ...secondFormation, center_slugs: ['creteil', 'lyon'] }
-    ] as unknown as DirectusFormation[])
-
-    const creteil = await service.list({ center: 'creteil', page: 1, limit: 20 } as ListCoursesDto)
-    expect(creteil.items).toHaveLength(2)
-
-    const paris = await service.list({ center: 'paris', page: 1, limit: 20 } as ListCoursesDto)
-    expect(paris.items).toHaveLength(0)
-  })
-
-  it('filters by center on the M2M centres selection, which wins over center_slugs', async () => {
+  it('filters by center on the M2M centres selection', async () => {
     catalog.fetchAllFormations.mockResolvedValue([
       {
         ...baseFormation,
-        center_slugs: ['creteil'],
         centres: [{ centre: { slug: 'lyon' } }, { centre: { slug: 'paris' } }]
       },
-      // M2M vide → repli sur la liste legacy `center_slugs`.
-      { ...secondFormation, center_slugs: ['creteil'], centres: [] }
+      { ...secondFormation, centres: [{ centre: { slug: 'creteil' } }] }
     ] as unknown as DirectusFormation[])
 
     const lyon = await service.list({ center: 'lyon', page: 1, limit: 20 } as ListCoursesDto)
@@ -1240,33 +1223,35 @@ describe('list filters and field normalization', () => {
     const paris = await service.list({ center: 'paris', page: 1, limit: 20 } as ListCoursesDto)
     expect(paris.items.map((i) => i.slug)).toEqual(['pilotage-de-projet'])
 
-    // La sélection éditoriale remplace la liste legacy : 'creteil' ne matche
-    // plus la formation une fois le M2M renseigné.
     const creteil = await service.list({ center: 'creteil', page: 1, limit: 20 } as ListCoursesDto)
     expect(creteil.items.map((i) => i.slug)).toEqual(['securite'])
+
+    // Aucun centre lié → aucun résultat sur le filtre.
+    catalog.fetchAllFormations.mockResolvedValue([
+      { ...baseFormation, centres: [] },
+      { ...secondFormation, centres: null }
+    ] as unknown as DirectusFormation[])
+    const none = await service.list({ center: 'creteil', page: 1, limit: 20 } as ListCoursesDto)
+    expect(none.items).toHaveLength(0)
   })
 
-  it('aligns centerSlug on the first editorial centre slug', async () => {
+  it('aligns centerSlug on the first linked centre slug', async () => {
     catalog.fetchAllFormations.mockResolvedValue([
       {
         ...baseFormation,
-        center_slug: 'creteil',
-        center_slugs: ['creteil'],
         centres: [{ centre: { slug: 'lyon' } }, { centre: { slug: 'paris' } }]
       }
     ] as unknown as DirectusFormation[])
 
     const result = await service.list({ page: 1, limit: 20 } as ListCoursesDto)
-    // centerSlug ne contredit pas centerSlugs : la sélection éditoriale
-    // prime — repli sur center_slug seulement si tout est vide.
     expect(result.items[0]?.centerSlugs).toEqual(['lyon', 'paris'])
     expect(result.items[0]?.centerSlug).toBe('lyon')
 
     catalog.fetchAllFormations.mockResolvedValue([
-      { ...baseFormation, center_slug: 'creteil', center_slugs: [], centres: [] }
+      { ...baseFormation, centres: [] }
     ] as unknown as DirectusFormation[])
-    const legacy = await service.list({ page: 1, limit: 20 } as ListCoursesDto)
-    expect(legacy.items[0]?.centerSlug).toBe('creteil')
+    const unlinked = await service.list({ page: 1, limit: 20 } as ListCoursesDto)
+    expect(unlinked.items[0]?.centerSlug).toBeNull()
   })
 
   it('filters by certifying flag', async () => {
@@ -1824,7 +1809,7 @@ describe('branch coverage: residual arms', () => {
     catalog.fetchAllFormations.mockResolvedValue([
       {
         ...baseFormation,
-        center_slugs: undefined,
+        centres: undefined,
         modalities: undefined,
         cpf: null
       }

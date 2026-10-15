@@ -440,8 +440,7 @@ export const formations = [
     certifier_name: 'Organisme testeur certifié',
     category_name: 'CACES',
     modalities: ['presentiel', 'inter', 'intra'],
-    center_slug: 'creteil',
-    center_slugs: ['creteil', 'paris', 'lyon'],
+    centreSlugs: ['creteil', 'paris', 'lyon'],
     sessions: [
       {
         id: 'seed-sess-1',
@@ -612,8 +611,7 @@ export const formations = [
     certifier_name: 'Institut national de recherche et de sécurité (INRS)',
     category_name: 'Secourisme',
     modalities: ['presentiel', 'inter', 'intra'],
-    center_slug: 'creteil',
-    center_slugs: ['creteil'],
+    centreSlugs: ['creteil'],
     sessions: [],
     locations_text: 'Créteil Val-de-Marne',
     blocks: [
@@ -694,8 +692,7 @@ export const formations = [
     certifier_name: null,
     category_name: 'Bien-être au travail',
     modalities: ['presentiel', 'distanciel'],
-    center_slug: 'paris',
-    center_slugs: ['paris'],
+    centreSlugs: ['paris'],
     sessions: [
       {
         id: 'seed-sess-5',

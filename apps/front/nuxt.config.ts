@@ -47,7 +47,7 @@ export default defineNuxtConfig({
     // Pages noindex (formulaires) hors sitemap ; le contenu dynamique est
     // fourni par le endpoint /api/__sitemap__/urls filtré par `set`, les
     // pages statiques auto-découvertes rejoignent sitemap-pages.
-    exclude: ['/parler-a-votre-conseiller', '/centres/demande-de-formation'],
+    exclude: ['/parler-a-votre-conseiller', '/centres/demande-de-formation', '/confirmation/**'],
     sitemaps: {
       'sitemap-pages': {
         includeAppSources: true,

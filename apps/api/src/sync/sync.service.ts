@@ -328,7 +328,10 @@ export class SyncService {
       )
       return { source, run }
     } catch (error) {
-      this.logger.error({ error, source: source.code }, 'Source sync failed')
+      this.logger.error(
+        { error, source: source.code },
+        `Source sync failed: ${error instanceof Error ? error.message : String(error)}`
+      )
       await this.finish(
         { source, run },
         'failed',

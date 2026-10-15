@@ -31,7 +31,7 @@ export const dimensions = [
 // 7 objectifs (ST-32). Trois familles de déclencheurs :
 // - URL de confirmation (ST-30) : une page vue sur l'URL suffit, aucun
 //   code front requis — le drapeau sessionStorage garantit le comptage.
-// // - Événement : correspondance sur l'action (`match_attribute
+// - Événement : correspondance sur l'action (`match_attribute`
 //   `event_action` — la valeur confrontée au motif est l'action Matomo,
 //   soit le nom du plan émis via useAnalytics().pushEvent).
 // - session_signup : contrat d'événement réservé au tunnel d'inscription

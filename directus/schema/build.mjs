@@ -17,6 +17,7 @@
 //      pages déjà générées avec l'ancien schéma sont marquées stale.
 
 import { mkdir, writeFile } from 'node:fs/promises'
+import { pathToFileURL } from 'node:url'
 import { collections, relations } from './collections.mjs'
 import { buildFlows } from './flows.mjs'
 import { permissionsFor, publicPermissions, roles } from './roles.mjs'
@@ -352,27 +353,42 @@ function slugifyCategory(label) {
     .replace(/(^-|-$)/g, '')
 }
 
+// Dossier des sauvegardes de migration. Dans `directus-init`, /opt/directus
+// est monté en lecture seule : SCHEMA_BACKUP_DIR pointe alors sur un volume
+// inscriptible. Sans variable (dev local), `schema/.backups/` (gitignoré).
+function schemaBackupDir() {
+  const dir = process.env.SCHEMA_BACKUP_DIR
+  return dir ? pathToFileURL(dir.replace(/\/?$/, '/')) : new URL('./.backups/', import.meta.url)
+}
+
+// Écrit une sauvegarde de migration sans jamais bloquer celle-ci : un dossier
+// non inscriptible (volume créé en root, montage lecture seule) donne un
+// avertissement. Les colonnes legacy ne sont supprimées qu'après, la donnée
+// source reste donc en base. Retourne le chemin écrit, ou null.
+async function writeMigrationBackup(name, content) {
+  const dir = schemaBackupDir()
+  try {
+    await mkdir(dir, { recursive: true })
+    const file = new URL(`${name}-${Date.now()}.json`, dir)
+    await writeFile(file, JSON.stringify(content, null, 2))
+    return file.pathname
+  } catch (error) {
+    log(`⚠  sauvegarde ${name} impossible (${error.code ?? error.message}) — migration poursuivie`)
+    return null
+  }
+}
+
 // Sauvegarde du mapping article → catégorie avant toute suppression de
 // colonne : si le script est interrompu après le DELETE du varchar, le
 // lien survivrait sinon seulement en mémoire.
 async function backupCategoryMapping(articleLabel, slugToId) {
-  const backupDir = new URL('./.backups/', import.meta.url)
-  await mkdir(backupDir, { recursive: true })
-  const file = new URL(`articles-category-${Date.now()}.json`, backupDir)
-  await writeFile(
-    file,
-    JSON.stringify(
-      {
-        categories: Object.fromEntries(slugToId),
-        articles: Object.fromEntries(
-          [...articleLabel].map(([id, slug]) => [id, { slug, category: slugToId.get(slug) }])
-        )
-      },
-      null,
-      2
+  const path = await writeMigrationBackup('articles-category', {
+    categories: Object.fromEntries(slugToId),
+    articles: Object.fromEntries(
+      [...articleLabel].map(([id, slug]) => [id, { slug, category: slugToId.get(slug) }])
     )
-  )
-  log(`✔  mapping article → catégorie sauvegardé dans ${file.pathname}`)
+  })
+  if (path) log(`✔  mapping article → catégorie sauvegardé dans ${path}`)
 }
 
 async function migrateArticleCategories(token) {
@@ -546,16 +562,13 @@ async function migrateFormationCentres(token) {
     await api(token, 'POST', '/items/formations_centres', rows)
   }
 
-  const backupDir = new URL('./.backups/', import.meta.url)
-  await mkdir(backupDir, { recursive: true })
-  const backupFile = new URL(`formations-centres-${Date.now()}.json`, backupDir)
-  await writeFile(backupFile, JSON.stringify(Object.fromEntries(mapping), null, 2))
+  const backupPath = await writeMigrationBackup('formations-centres', Object.fromEntries(mapping))
 
   for (const field of legacy) {
     await api(token, 'DELETE', `/fields/formations/${field}`)
   }
   log(
-    `✔  formations.center_slug(s) migré — ${rows.length} lien(s) créé(s), mapping sauvegardé dans ${backupFile.pathname}, champs supprimés`
+    `✔  formations.center_slug(s) migré — ${rows.length} lien(s) créé(s), mapping ${backupPath ? `sauvegardé dans ${backupPath}` : 'non sauvegardé'}, champs supprimés`
   )
 }
 

@@ -46,51 +46,7 @@
 
       <div class="grid grid-cols-1 items-start gap-lg lg:grid-cols-3">
         <div class="lg:col-span-2 md:px-16">
-          <!-- Confirmation d'envoi -->
-          <Card
-            v-if="submitted"
-            v-reveal
-            class="flex flex-col items-center gap-lg p-xl text-center"
-          >
-            <p
-              class="flex h-4xl w-4xl items-center justify-center rounded-full bg-success-soft text-success"
-            >
-              <IconCheck :size="32" />
-            </p>
-            <div>
-              <h2 class="font-display text-h3 font-extrabold text-ink">
-                Votre demande est transmise
-              </h2>
-              <p class="mt-sm max-w-prose text-body text-ink-muted">
-                <template v-if="formationName">
-                  Votre conseiller LEARN&nbsp;UP&nbsp;ACADEMY vous recontacte sous 24&nbsp;h ouvrées
-                  au sujet de la formation
-                  <strong class="font-semibold text-ink">{{ formationName }}</strong
-                  >{{ confirmationSuffix }}
-                </template>
-                <template v-else>
-                  Votre conseiller LEARN&nbsp;UP&nbsp;ACADEMY prend en charge votre demande et vous
-                  recontacte sous 24&nbsp;h ouvrées.
-                </template>
-              </p>
-            </div>
-            <div class="flex flex-wrap justify-center gap-md">
-              <Button as-child variant="dark" size="pill-lg">
-                <NuxtLink :to="confirmationBackTo">{{ confirmationBackLabel }}</NuxtLink>
-              </Button>
-              <Button as-child variant="outline" size="pill-lg">
-                <NuxtLink to="/formations">Parcourir le catalogue</NuxtLink>
-              </Button>
-            </div>
-          </Card>
-
-          <form
-            v-show="!submitted"
-            novalidate
-            class="space-y-lg"
-            @focusin="onFieldFocus"
-            @submit.prevent="onSubmit"
-          >
+          <form novalidate class="space-y-lg" @focusin="onFieldFocus" @submit.prevent="onSubmit">
             <!-- Votre besoin -->
             <Card v-reveal class="p-lg sm:py-lg sm:px-xl">
               <fieldset class="space-y-md">
@@ -825,8 +781,9 @@ useContentSeo(
     seo_description:
       'Transmettez votre demande de formation : prise en charge par LEARN UP ACADEMY, réponse sous 24 h ouvrées.',
     // Page formulaire paramétrée : hors indexation mais ses liens gardent
-    // du poids ; l'écran de confirmation, lui, coupe aussi le suivi (ST-03).
-    seo_robots: submitted.value ? 'noindex, nofollow' : 'noindex, follow'
+    // du poids ; l'écran de confirmation vit désormais sur /confirmation
+    // (ST-30), noindex et hors sitemap.
+    seo_robots: 'noindex, follow'
   })),
   'Demande de formation'
 )
@@ -1017,34 +974,7 @@ onMounted(() => {
 })
 
 const { submit: submitLead, sending, error: submitError } = useLeadSubmit()
-const submitted = ref(false)
-
-// Confirmation : le message reprend le contexte — « , session du 12 octobre
-// 2026 à Créteil. » ou « , dans votre entreprise à Lyon. » (« . » seul si la
-// formation est transmise sans session ni lieu).
-const confirmationSuffix = computed(() => {
-  if (sessionSlug.value) {
-    const start = session.value?.startDate
-    const startLabel = start
-      ? new Intl.DateTimeFormat('fr-FR', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-          timeZone: 'UTC'
-        }).format(new Date(`${start}T00:00:00Z`))
-      : null
-    const when = startLabel ? `session du ${startLabel}` : 'session programmée'
-    const city = session.value?.location?.city ?? centre.value?.city
-    const citySuffix = city ? ` à ${city}` : ''
-    return `, ${when}${citySuffix}.`
-  }
-  if (isIntra.value) {
-    // En intra, lieu est requis par le schéma avant l'envoi — non vide ici.
-    return `, dans votre entreprise à ${lieu.value!.trim()}.`
-  }
-  return '.'
-})
-
+const { confirmConversion } = useConfirmationRedirect()
 // Sortie de la confirmation : retour à la fiche formation quand elle est
 // connue, sinon au centre, sinon à l'accueil.
 const confirmationBackTo = computed(
@@ -1106,9 +1036,12 @@ const onSubmit = handleSubmit(
       pageName: 'Demande de formation'
     })
     if (ok) {
-      submitted.value = true
       trackFormSubmit('demande_formation')
       window.sessionStorage.removeItem(draftKey.value)
+      await confirmConversion('devis', {
+        backTo: confirmationBackTo.value,
+        backLabel: confirmationBackLabel.value
+      })
     }
   },
   ({ errors }) => {

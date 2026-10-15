@@ -21,6 +21,13 @@ vi.stubGlobal('useLeadSubmit', () => ({
   error: leadState.error
 }))
 
+// Redirection de confirmation (ST-30) : stubée — la page quitte le formulaire
+// vers /confirmation/rendez-vous/ avec la référence de suivi.
+const confirmConversionMock = vi.fn<(type: string, context?: unknown) => Promise<unknown>>()
+vi.stubGlobal('useConfirmationRedirect', () => ({
+  confirmConversion: confirmConversionMock
+}))
+
 const routeStub = { query: {} as Record<string, string> }
 vi.stubGlobal('useRoute', () => routeStub)
 
@@ -233,23 +240,19 @@ describe('pages/parler-a-votre-conseiller', () => {
     )
   })
 
-  it('affiche la confirmation avec référence de suivi après envoi', async () => {
+  it('redirige vers la confirmation avec référence de suivi après envoi', async () => {
     const wrapper = await mountPage()
     await fillValidForm(wrapper)
 
     await wrapper.find('form').trigger('submit.prevent')
-    await waitUntil(() => wrapper.text().includes('Demande transmise'))
+    await waitUntil(() => confirmConversionMock.mock.calls.length > 0)
 
-    expect(wrapper.text()).toContain('Demande transmise')
-    expect(wrapper.text()).toContain('Référence de suivi')
-    expect(wrapper.text()).toMatch(/LU-\d{4}-\d{4}-\d{3}/)
-    // La référence affichée est bien celle envoyée au back-office
-    // (suffixée au message → learnup_precisions).
+    // La référence transmise à la page de confirmation est bien celle envoyée
+    // au back-office (suffixée au message → learnup_precisions).
     const sent = leadSubmitMock.mock.calls[0]?.[1] as { message: string }
+    const reference = sent.message.replace('Référence : ', '')
     expect(sent.message).toMatch(/^Référence : LU-\d{4}-\d{4}-\d{3}$/)
-    expect(wrapper.text()).toContain(sent.message.replace('Référence : ', ''))
-    // v-show : le formulaire reste monté mais masqué après confirmation.
-    expect(wrapper.find('form').attributes('style')).toContain('display: none')
+    expect(confirmConversionMock).toHaveBeenCalledWith('rendez-vous', { reference })
   })
 
   it('garde le formulaire si l’envoi échoue', async () => {
@@ -260,8 +263,8 @@ describe('pages/parler-a-votre-conseiller', () => {
     await wrapper.find('form').trigger('submit.prevent')
     await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
 
-    expect(wrapper.find('form').attributes('style') ?? '').not.toContain('display: none')
-    expect(wrapper.text()).not.toContain('Demande transmise')
+    expect(wrapper.find('form').exists()).toBe(true)
+    expect(confirmConversionMock).not.toHaveBeenCalled()
   })
 
   it('pré-remplit « Votre besoin en quelques mots » depuis ?q=', async () => {
@@ -374,9 +377,11 @@ describe('pages/parler-a-votre-conseiller', () => {
     const wrapper = await mountPage()
     await fillValidForm(wrapper)
     await wrapper.find('form').trigger('submit.prevent')
-    await waitUntil(() => wrapper.text().includes('Référence de suivi'))
+    await waitUntil(() => confirmConversionMock.mock.calls.length > 0)
 
-    expect(wrapper.text()).toContain('-042')
+    expect((confirmConversionMock.mock.calls[0]?.[1] as { reference: string }).reference).toContain(
+      '-042'
+    )
     spy.mockRestore()
   })
 
@@ -388,9 +393,11 @@ describe('pages/parler-a-votre-conseiller', () => {
     const wrapper = await mountPage()
     await fillValidForm(wrapper)
     await wrapper.find('form').trigger('submit.prevent')
-    await waitUntil(() => wrapper.text().includes('Référence de suivi'))
+    await waitUntil(() => confirmConversionMock.mock.calls.length > 0)
 
-    expect(wrapper.text()).toContain('-000')
+    expect((confirmConversionMock.mock.calls[0]?.[1] as { reference: string }).reference).toContain(
+      '-000'
+    )
     spy.mockRestore()
   })
 
@@ -406,9 +413,11 @@ describe('pages/parler-a-votre-conseiller', () => {
     const wrapper = await mountPage()
     await fillValidForm(wrapper)
     await wrapper.find('form').trigger('submit.prevent')
-    await waitUntil(() => wrapper.text().includes('Référence de suivi'))
+    await waitUntil(() => confirmConversionMock.mock.calls.length > 0)
 
-    expect(wrapper.text()).toContain('-000')
+    expect((confirmConversionMock.mock.calls[0]?.[1] as { reference: string }).reference).toContain(
+      '-000'
+    )
     spy.mockRestore()
   })
 

@@ -17,10 +17,12 @@ export interface AssignmentProposal {
 
 // `image_url` est exclu : ce n'est plus une colonne — l'URL source vit dans
 // `raw` et la sync importe le fichier dans `directus_files` (champ `image`).
-export type DirectusFormation = Omit<FormationDirectusPayload, 'image_url'> & {
+export type DirectusFormation = Omit<FormationDirectusPayload, 'image_url' | 'source'> & {
   id: number
   famille: { id: number; slug: string } | null
   sous_famille: { id: number; slug: string; name: string } | null
+  /** M2O `sources` — code en lecture (`source.code`), id brut en écriture. */
+  source?: string | { code: string } | null
   /** Champ éditorial — hors payload de sync, jamais écrit par upsertMany. */
   short_description: string | null
   /** Alias M2M `formations_centres` — lignes de jonction (`centre.slug`). */
@@ -152,6 +154,7 @@ const ALL_FORMATION_FIELDS = [
   'famille.slug',
   'sous_famille.slug',
   'sous_famille.name',
+  'source.code',
   'created_at',
   'updated_at'
 ]

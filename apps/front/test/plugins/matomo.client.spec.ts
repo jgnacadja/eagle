@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import matomoPlugin from '~/plugins/matomo.client'
+import { resetAnalyticsDimensions } from '~/composables/useAnalytics'
 
 let query: Record<string, string> = {}
-vi.stubGlobal('useRoute', () => ({ query }))
+let routeName = 'index'
+let params: Record<string, string> = {}
+vi.stubGlobal('useRoute', () => ({ query, name: routeName, params }))
 
 let config = { public: { matomoUrl: 'https://stats.learnup.test', matomoSiteId: '2' } }
 vi.stubGlobal('useRuntimeConfig', () => config)
@@ -14,9 +17,13 @@ describe('matomo.client plugin (ST-27)', () => {
   beforeEach(() => {
     window._paq = undefined
     query = {}
+    routeName = 'index'
+    params = {}
     hookCallbacks.clear()
     config = { public: { matomoUrl: 'https://stats.learnup.test', matomoSiteId: '2' } }
     document.getElementById('matomo-script')?.remove()
+    window.sessionStorage.clear()
+    resetAnalyticsDimensions()
     fakeNuxtApp.hook.mockClear()
   })
 
@@ -69,5 +76,35 @@ describe('matomo.client plugin (ST-27)', () => {
     config = { public: { matomoUrl: 'https://stats.learnup.test/', matomoSiteId: '2' } }
     matomoPlugin(fakeNuxtApp as never)
     expect(window._paq).toContainEqual(['setTrackerUrl', 'https://stats.learnup.test/matomo.php'])
+  })
+
+  it('dimension Gabarit déduite de la route, posée sur chaque vue (ST-32)', async () => {
+    matomoPlugin(fakeNuxtApp as never)
+    expect(window._paq).toContainEqual(['setCustomDimension', 1, 'accueil'])
+    routeName = 'formations-famille-slug'
+    params = { famille: 'securite' }
+    hookCallbacks.get('page:finish')!()
+    await Promise.resolve()
+    expect(window._paq).toContainEqual(['setCustomDimension', 1, 'formation'])
+    expect(window._paq).toContainEqual(['setCustomDimension', 2, 'securite'])
+  })
+
+  it('dimension Département lue du filtre ?dept= (ST-32)', () => {
+    routeName = 'centres'
+    query = { dept: '75' }
+    matomoPlugin(fakeNuxtApp as never)
+    expect(window._paq).toContainEqual(['setCustomDimension', 3, '75'])
+  })
+
+  it('Landing SEO (visite) figé sur la page d’entrée, une fois par session', async () => {
+    routeName = 'formations-famille'
+    matomoPlugin(fakeNuxtApp as never)
+    expect(window._paq).toContainEqual(['setCustomDimension', 5, 'famille'])
+    window._paq = []
+    routeName = 'centres'
+    hookCallbacks.get('page:finish')!()
+    await Promise.resolve()
+    expect(window._paq).toContainEqual(['setCustomDimension', 5, 'famille'])
+    expect(window._paq).not.toContainEqual(['setCustomDimension', 5, 'centre'])
   })
 })

@@ -114,6 +114,18 @@ export interface ClickDownloadProgramEvent {
   formation_family: string
 }
 
+/**
+ * Inscription à une session — objectif ST-32 déclenché sur l'action
+ * `session_signup` (tunnel d'inscription Digiforma à venir ; l'objectif
+ * est déjà provisionné côté Matomo).
+ */
+export interface SessionSignupEvent {
+  event: 'session_signup'
+  formation_id: string
+  session_id?: string
+  page_path: string
+}
+
 // ── 3. Événements Chatbot ───────────────────────────────────────────────────
 
 export interface ChatbotOpenEvent {
@@ -298,6 +310,15 @@ export interface ClickCtaDemandeFormationFromCentreEvent {
   page_path: string
 }
 
+/** Clic sur un lien `tel:` — déclenche l'objectif « Clic téléphone » (ST-32). */
+export interface ClickPhoneEvent {
+  event: 'click_phone'
+  center_id: string
+  center_name: string
+  phone_type?: 'fixe' | 'mobile'
+  page_path: string
+}
+
 export interface ClickDownloadQualiopiEvent {
   event: 'click_download_qualiopi'
   center_id: string
@@ -416,6 +437,7 @@ export type TrackingEvent =
   | ViewFormationDetailEvent
   | ClickCtaConfierFormationEvent
   | ClickDownloadProgramEvent
+  | SessionSignupEvent
   | ChatbotOpenEvent
   | ChatbotMessageSentEvent
   | ChatbotSuggestedActionClickEvent
@@ -439,6 +461,7 @@ export type TrackingEvent =
   | ViewCentreDetailEvent
   | ToggleMapViewEvent
   | ClickCtaDemandeFormationFromCentreEvent
+  | ClickPhoneEvent
   | ClickDownloadQualiopiEvent
   | ViewBlogListEvent
   | FilterBlogCategoryEvent

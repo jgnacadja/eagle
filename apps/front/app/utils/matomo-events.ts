@@ -56,6 +56,9 @@ const EVENT_RULES: Record<string, EventRule> = {
     category: 'Formations',
     nameKeys: ['formation_name', 'formation_family']
   },
+  // Déclenche l'objectif « Inscription à une session » (ST-32) — contrat
+  // réservé au tunnel d'inscription Digiforma à venir.
+  session_signup: { category: 'Formations', nameKeys: ['formation_id', 'session_id'] },
   // Module Chatbot du plan
   chatbot_open: { category: 'Chatbot', nameKeys: ['trigger_type'] },
   chatbot_message_sent: { category: 'Chatbot', valueKey: 'message_index' },
@@ -110,6 +113,7 @@ const EVENT_RULES: Record<string, EventRule> = {
     category: 'Centres',
     nameKeys: ['center_id', 'cta_location']
   },
+  click_phone: { category: 'Centres', nameKeys: ['center_name', 'phone_type'] },
   click_download_qualiopi: { category: 'Centres', nameKeys: ['center_name'] },
   // Actualités
   view_blog_list: { category: 'Actualités', valueKey: 'articles_count' },

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useAnalytics } from '~/composables/useAnalytics'
+import { resetAnalyticsDimensions, useAnalytics } from '~/composables/useAnalytics'
 
 let query: Record<string, string> = {}
 vi.stubGlobal('useRoute', () => ({ query }))
@@ -12,13 +12,16 @@ describe('useAnalytics (ST-27)', () => {
     window._paq = []
     query = {}
     config = { public: { matomoUrl: 'https://stats.learnup.test', matomoSiteId: '2' } }
+    resetAnalyticsDimensions()
   })
 
   it('trackPageView empile url nettoyée, titre et commande', () => {
     const { trackPageView } = useAnalytics()
     trackPageView()
     const commands = window._paq!.map((c) => c[0])
-    expect(commands).toEqual(['setCustomUrl', 'setDocumentTitle', 'trackPageView'])
+    expect(commands[0]).toBe('setCustomUrl')
+    expect(commands[1]).toBe('setDocumentTitle')
+    expect(commands.at(-1)).toBe('trackPageView')
     expect(window._paq![0][1]).toBe(window.location.pathname)
   })
 
@@ -34,14 +37,49 @@ describe('useAnalytics (ST-27)', () => {
     const { trackPageView } = useAnalytics()
     trackPageView({ 1: 'formation', 2: 'securite' })
     const commands = window._paq!.map((c) => c[0])
-    expect(commands).toEqual([
-      'setCustomUrl',
-      'setDocumentTitle',
-      'setCustomDimension',
-      'setCustomDimension',
-      'trackPageView'
-    ])
-    expect(window._paq![2]).toEqual(['setCustomDimension', 1, 'formation'])
+    expect(commands.at(-1)).toBe('trackPageView')
+    expect(commands.indexOf('setDocumentTitle')).toBeLessThan(
+      commands.indexOf('setCustomDimension')
+    )
+    expect(window._paq).toContainEqual(['setCustomDimension', 1, 'formation'])
+    expect(window._paq).toContainEqual(['setCustomDimension', 2, 'securite'])
+  })
+
+  it('les dimensions du registre sont posées, les absentes retirées (ST-32)', () => {
+    const { setActionDimension, setVisitDimension, trackPageView } = useAnalytics()
+    setActionDimension('gabarit', 'formation')
+    setActionDimension('famille', 'securite')
+    setVisitDimension('landingSeo', 'famille')
+    trackPageView()
+    // action 1..2 posées ; action 3 (département) et 4 (source) retirées
+    expect(window._paq).toContainEqual(['setCustomDimension', 1, 'formation'])
+    expect(window._paq).toContainEqual(['setCustomDimension', 2, 'securite'])
+    expect(window._paq).toContainEqual(['setCustomDimension', 5, 'famille']) // visite : id global
+    expect(window._paq).toContainEqual(['deleteCustomDimension', 3])
+    expect(window._paq).toContainEqual(['deleteCustomDimension', 4])
+  })
+
+  it('une dimension retirée disparaît de la vue suivante', () => {
+    const { setActionDimension, trackPageView } = useAnalytics()
+    setActionDimension('departement', '75')
+    trackPageView()
+    window._paq = []
+    setActionDimension('departement', null)
+    trackPageView()
+    expect(window._paq).toContainEqual(['deleteCustomDimension', 3])
+    expect(window._paq).not.toContainEqual(['setCustomDimension', 3, '75'])
+  })
+
+  it('les dimensions explicites priment sur le registre', () => {
+    const { setActionDimension, trackPageView } = useAnalytics()
+    setActionDimension('gabarit', 'centre')
+    trackPageView({ 1: 'formation' })
+    const commands = window._paq as unknown as Array<[string, number, string]>
+    const indexOf = (value: string) =>
+      commands.findIndex((c) => c[0] === 'setCustomDimension' && c[1] === 1 && c[2] === value)
+    // Matomo applique la dernière valeur posée : la dimension explicite doit
+    // venir après celle du registre.
+    expect(indexOf('formation')).toBeGreaterThan(indexOf('centre'))
   })
 
   it('pushEvent traduit un événement du plan en commande Matomo', () => {

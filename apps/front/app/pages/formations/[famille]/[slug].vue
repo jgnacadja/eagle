@@ -665,6 +665,7 @@ import { revealStagger } from '~/utils/reveal'
 import { availabilityStatus } from '~/composables/useCentres'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { useAnalytics } from '~/composables/useAnalytics'
+import { sourceLabel } from '~/utils/matomo-dimensions'
 
 interface ProgrammeModule {
   title: string
@@ -1397,7 +1398,15 @@ function formatPrice(value: number): string {
   }).format(value)
 }
 
-const { pushEvent } = useAnalytics()
+const { pushEvent, setActionDimension } = useAnalytics()
+
+// Dimension « Source catalogue » (ST-32) : Digiforma vs éditorial Learn Up,
+// enrichie dès que la fiche est résolue (SSR : avant la vue de fin de page).
+watch(
+  () => course.value?.source,
+  (source) => setActionDimension('source', sourceLabel(source)),
+  { immediate: true }
+)
 
 onMounted(() => {
   if (course.value) {

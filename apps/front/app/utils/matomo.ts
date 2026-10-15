@@ -26,8 +26,18 @@ export function isPreviewQuery(query: Record<string, unknown>): boolean {
 
 export type MatomoCommand = [string, ...Array<string | number | boolean>]
 
+/**
+ * File de commandes du tracker. Avant le chargement de `matomo.js` c'est un
+ * simple tableau ; une fois le script exécuté, Matomo le remplace par son
+ * proxy asynchrone — un objet qui expose toujours `push`. Le contrat retenu
+ * est donc la méthode `push`, pas la forme tableau.
+ */
+export interface MatomoQueue {
+  push: (command: MatomoCommand) => unknown
+}
+
 declare global {
   interface Window {
-    _paq?: MatomoCommand[]
+    _paq?: MatomoQueue
   }
 }

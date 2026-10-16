@@ -265,6 +265,8 @@ services:
   # volume `matomohtml` conserve config et plugins entre les rebuilds.
   matomo-db:
     image: mariadb:11
+    # 64M recommandé par le check système Matomo (16M par défaut).
+    command: --max_allowed_packet=64M
     restart: unless-stopped
     environment:
       MARIADB_DATABASE: ${MATOMO_DB_NAME:-matomo}
@@ -281,7 +283,7 @@ services:
       start_period: 30s
 
   matomo:
-    image: matomo:5
+    image: matomo:5.14.1
     restart: unless-stopped
     environment:
       MATOMO_DATABASE_HOST: matomo-db

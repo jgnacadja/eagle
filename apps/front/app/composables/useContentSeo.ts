@@ -53,18 +53,18 @@ export function useContentSeo(
         meta: [
           ...(resolved.seo_description
             ? [
-              { name: 'description', content: resolved.seo_description },
-              { property: 'og:description', content: resolved.seo_description },
-              { name: 'twitter:description', content: resolved.seo_description }
-            ]
+                { name: 'description', content: resolved.seo_description },
+                { property: 'og:description', content: resolved.seo_description },
+                { name: 'twitter:description', content: resolved.seo_description }
+              ]
             : []),
           { property: 'og:title', content: title },
           { name: 'twitter:title', content: title },
           ...(resolved.seo_image
             ? [
-              { property: 'og:image', content: resolved.seo_image },
-              { name: 'twitter:image', content: resolved.seo_image }
-            ]
+                { property: 'og:image', content: resolved.seo_image },
+                { name: 'twitter:image', content: resolved.seo_image }
+              ]
             : []),
           ...(resolved.seo_robots
             ? [{ name: 'robots', content: resolved.seo_robots }]

@@ -159,6 +159,31 @@ export function useAnalytics() {
     return { page_path, page_title }
   }
 
+  // Droit d'opposition (ST-33) : le suivi est sans cookie, l'opt-out s'appuie
+  // donc sur le marqueur first-party de Matomo (`optUserOut` dépose le cookie
+  // « mtm_consent_removed » sur le domaine du site — seul cookie toléré par
+  // l'exemption, il matérialise le choix). `isOptedOut` passe par une
+  // commande fonction : la valeur se lit dans le contexte du tracker.
+  function isOptedOut(callback: (optedOut: boolean) => void) {
+    if (!ready()) {
+      callback(false)
+      return
+    }
+    window._paq!.push([
+      function (this: { isUserOptedOut: () => boolean }) {
+        callback(this.isUserOptedOut())
+      }
+    ])
+  }
+
+  function optOut() {
+    if (ready()) window._paq!.push(['optUserOut'])
+  }
+
+  function optIn() {
+    if (ready()) window._paq!.push(['forgetUserOptOut'])
+  }
+
   return {
     trackPageView,
     trackEvent,
@@ -166,6 +191,9 @@ export function useAnalytics() {
     getPageAttributes,
     setActionDimension,
     setVisitDimension,
+    isOptedOut,
+    optOut,
+    optIn,
     enabled: isConfigured()
   }
 }

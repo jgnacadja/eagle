@@ -1,5 +1,6 @@
 import { nextTick } from 'vue'
 import { useAnalytics } from '~/composables/useAnalytics'
+import { isConfirmationPath } from '~/utils/confirmation'
 import { isPreviewQuery } from '~/utils/matomo'
 import { logClientWarning } from '~/utils/logger'
 
@@ -32,7 +33,12 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   // Vue initiale (déclenchée immédiatement, les commandes attendent matomo.js),
   // puis une vue à chaque navigation client — après useHead pour avoir le titre.
-  if (!isPreviewQuery(route.query)) trackPageView()
+  // /confirmation/{type} exclu (ST-30) : la vue n'y est émise que par la page
+  // elle-même, après validation du drapeau de conversion — sinon un accès
+  // direct, un rechargement ou un retour arrière compterait une conversion
+  // fantôme avant même la redirection vers l'accueil.
+  const autoTrackable = () => !isConfirmationPath(window.location.pathname)
+  if (!isPreviewQuery(route.query) && autoTrackable()) trackPageView()
   window._paq.push(['enableLinkTracking'])
 
   if (!document.getElementById('matomo-script')) {
@@ -45,6 +51,8 @@ export default defineNuxtPlugin((nuxtApp) => {
   }
 
   nuxtApp.hook('page:finish', () => {
-    nextTick(trackPageView)
+    nextTick(() => {
+      if (autoTrackable()) trackPageView()
+    })
   })
 })

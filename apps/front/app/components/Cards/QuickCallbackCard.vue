@@ -9,10 +9,11 @@
       </p>
     </div>
 
-    <!-- Transition fluide entre l'état initial, le formulaire déplié et la confirmation -->
+    <!-- Transition fluide entre l'état initial et le formulaire déplié — la
+         confirmation vit sur /confirmation/rendez-vous/ (ST-30). -->
     <Transition name="form-step" mode="out-in" @after-enter="onTransitionAfterEnter">
       <!-- État A : Encart compact (Bouton CTA principal) -->
-      <div v-if="!isOpen && !submitted" key="cta" class="mt-md">
+      <div v-if="!isOpen" key="cta" class="mt-md">
         <Button
           ref="openButtonRef"
           type="button"
@@ -36,7 +37,7 @@
 
       <!-- État B : Formulaire démasqué / déplié -->
       <form
-        v-else-if="isOpen && !submitted"
+        v-else
         key="form"
         novalidate
         class="mt-md space-y-md"
@@ -155,38 +156,6 @@
           </div>
         </div>
       </form>
-
-      <!-- État C : Confirmation après validation -->
-      <output
-        v-else
-        key="confirmed"
-        aria-live="polite"
-        class="mt-md flex flex-col items-center gap-sm text-center py-sm"
-      >
-        <div
-          class="flex h-3xl w-3xl items-center justify-center rounded-full bg-success-soft text-success"
-          aria-hidden="true"
-        >
-          <IconCheck :size="24" aria-hidden="true" />
-        </div>
-        <div>
-          <h3 :class="['font-display text-small font-bold', s.heading]">
-            Demande de rappel enregistrée
-          </h3>
-          <p :class="['mt-xs text-meta leading-relaxed', s.muted]">
-            Un conseiller vous rappellera <strong>{{ creneau?.toLowerCase() }}</strong> au
-            <strong>{{ telephone }}</strong
-            >.
-          </p>
-        </div>
-        <button
-          type="button"
-          :class="['mt-xs text-meta underline underline-offset-4 transition-colors', s.accentLink]"
-          @click="reset"
-        >
-          Faire une autre demande
-        </button>
-      </output>
     </Transition>
   </Card>
 </template>
@@ -278,7 +247,6 @@ const emit = defineEmits<{
 }>()
 
 const isOpen = ref(false)
-const submitted = ref(false)
 const submitAttempted = ref(false)
 const creneauOptions = ref<string[]>(availableCreneaux())
 
@@ -292,12 +260,12 @@ const {
   validationErrors,
   reset: resetLeadError
 } = useLeadSubmit()
+const { confirmConversion } = useConfirmationRedirect()
 
 const {
   errors,
   defineField,
   handleSubmit: validateAndSubmit,
-  resetForm,
   setFieldError
 } = useForm({
   validationSchema: toTypedSchema(
@@ -333,13 +301,13 @@ function openForm() {
 }
 
 function onTransitionAfterEnter() {
-  if (isOpen.value && !submitted.value) {
+  if (isOpen.value) {
     const el =
       (phoneInputRef.value?.$el as HTMLElement)?.querySelector('input') ??
       phoneInputRef.value?.$el ??
       phoneInputRef.value
     el?.focus?.()
-  } else if (!isOpen.value && !submitted.value) {
+  } else {
     const el = openButtonRef.value?.$el ?? openButtonRef.value
     el?.focus?.()
   }
@@ -371,8 +339,10 @@ const handleSubmit = validateAndSubmit(
     })
 
     if (success) {
-      submitted.value = true
       emit('submit', { telephone: tel, creneau: cr })
+      await confirmConversion('rendez-vous', {
+        detail: `Un conseiller vous rappellera ${cr.toLowerCase()} au ${tel}.`
+      })
     } else if (validationErrors.value.length > 0) {
       // 400 de validation : le message du champ remonte sous l'input
       // plutôt que l'erreur générique sans piste de correction.
@@ -384,18 +354,4 @@ const handleSubmit = validateAndSubmit(
     submitAttempted.value = true
   }
 )
-
-function reset() {
-  submitted.value = false
-  isOpen.value = false
-  submitAttempted.value = false
-  resetLeadError()
-  resetForm({
-    values: {
-      telephone: '',
-      creneau: 'Dès que possible',
-      consentement: false
-    }
-  })
-}
 </script>

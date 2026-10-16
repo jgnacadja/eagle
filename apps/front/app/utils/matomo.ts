@@ -29,12 +29,12 @@ export type MatomoCommand = [string, ...Array<string | number | boolean>]
 /**
  * File de commandes du tracker. Avant le chargement de `matomo.js` c'est un
  * simple tableau ; une fois le script exécuté, Matomo le remplace par son
- * proxy asynchrone — un objet qui expose toujours `push`. Le contrat retenu
- * est donc la méthode `push`, pas la forme tableau.
+ * proxy asynchrone — un objet qui expose toujours `push` (d'où le test
+ * `typeof push === 'function'` dans `useAnalytics.ready`, pas `isArray`).
+ * Le typage garde la forme tableau : seule `push` est utilisée au runtime
+ * et les specs insèrent/inspectent les commandes.
  */
-export interface MatomoQueue {
-  push: (command: MatomoCommand) => unknown
-}
+export type MatomoQueue = MatomoCommand[]
 
 declare global {
   interface Window {

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import matomoPlugin from '~/plugins/matomo.client'
-import { resetAnalyticsDimensions } from '~/composables/useAnalytics'
+import { resetAnalyticsDimensions, useAnalytics } from '~/composables/useAnalytics'
 
 let query: Record<string, string> = {}
 let routeName = 'index'
@@ -30,7 +30,7 @@ describe('matomo.client plugin (ST-27)', () => {
 
   it('sans configuration : avertit, ni script ni file', () => {
     config = { public: { matomoUrl: '', matomoSiteId: '' } }
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { })
     matomoPlugin(fakeNuxtApp as never)
     expect(warnSpy).toHaveBeenCalledWith(
       '[Analytics] NUXT_PUBLIC_MATOMO_URL / NUXT_PUBLIC_MATOMO_SITE_ID manquants : Matomo désactivé.'
@@ -121,6 +121,19 @@ describe('matomo.client plugin (ST-27)', () => {
     query = { dept: '75' }
     matomoPlugin(fakeNuxtApp as never)
     expect(window._paq).toContainEqual(['setCustomDimension', 3, '75'])
+  })
+
+  // ST-32 — la fiche centre pose Département depuis `centre.department` au
+  // setup (avant page:finish) : applyRouteDimensions ne doit pas l'écraser.
+  it('dimension Département de la fiche centre survit à page:finish (ST-32)', async () => {
+    routeName = 'centres-slug'
+    matomoPlugin(fakeNuxtApp as never)
+    useAnalytics().setActionDimension('departement', 'Paris')
+    window._paq = []
+    hookCallbacks.get('page:finish')!()
+    await Promise.resolve()
+    expect(window._paq).toContainEqual(['setCustomDimension', 3, 'Paris'])
+    expect(window._paq).not.toContainEqual(['deleteCustomDimension', 3])
   })
 
   it('Landing SEO (visite) figé sur la page d’entrée, une fois par session', async () => {

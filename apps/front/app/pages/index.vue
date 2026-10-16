@@ -732,7 +732,11 @@ import { homeLogos } from '~/data/companies'
 const config = useRuntimeConfig()
 
 function assetUrl(id: string | null): string | null {
-  return articleAssetUrl(id, config.public.apiBase)
+  return articleAssetUrl(id, config.public.apiBase, {
+    width: 800,
+    quality: 70,
+    format: 'auto'
+  })
 }
 
 const siteUrl = config.public.siteUrl

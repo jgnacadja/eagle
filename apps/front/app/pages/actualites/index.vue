@@ -103,7 +103,13 @@
               >
                 <NuxtImg
                   v-if="featuredArticle.cover_image"
-                  :src="assetUrl(featuredArticle.cover_image)"
+                  :src="
+                    assetUrl(featuredArticle.cover_image, {
+                      width: 1200,
+                      quality: 75,
+                      format: 'auto'
+                    })
+                  "
                   :alt="featuredArticle.title"
                   class="h-full w-full object-cover"
                 />
@@ -284,6 +290,7 @@ import {
   articleReadingTime,
   formatArticleDate
 } from '~/utils/article'
+import type { DirectusAssetTransform } from '~/utils/directusAsset'
 import { formatRegionLabel } from '~/utils/region'
 import { revealStagger } from '~/utils/reveal'
 import { useAnalytics } from '~/composables/useAnalytics'
@@ -292,8 +299,11 @@ import { onMounted } from 'vue'
 const config = useRuntimeConfig()
 const route = useRoute()
 
-function assetUrl(id: string | null): string | undefined {
-  return articleAssetUrl(id, config.public.apiBase) ?? undefined
+function assetUrl(
+  id: string | null,
+  transform: DirectusAssetTransform = { width: 800, quality: 70, format: 'auto' }
+): string | undefined {
+  return articleAssetUrl(id, config.public.apiBase, transform) ?? undefined
 }
 
 useContentSeo(

@@ -1,4 +1,5 @@
 import type { Article } from '@learnup/types'
+import { directusAssetUrl, type DirectusAssetTransform } from './directusAsset'
 import { formatDateFr } from './date'
 
 /** Catégorie d'article expansée (`category.name`/`.slug` demandés) ou null (id brut). */
@@ -10,9 +11,12 @@ export function formatArticleDate(value: string | null | undefined): string {
   return formatDateFr(value)
 }
 
-export function articleAssetUrl(id: string | null | undefined, apiBase: string): string | null {
-  if (!id) return null
-  return `${apiBase}/directus/assets/${id}`
+export function articleAssetUrl(
+  id: string | null | undefined,
+  apiBase: string,
+  transform?: DirectusAssetTransform
+): string | null {
+  return directusAssetUrl(id, apiBase, transform)
 }
 
 export function articleReadingTime(content: string | null | undefined): number {

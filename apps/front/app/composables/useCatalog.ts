@@ -143,6 +143,11 @@ export function buildStatus(
 // `apiBase` obligatoire : runtime config capturée au setup par l'appelant —
 // mapCourse est résolu dans des computeds qui ne doivent pas dépendre du
 // contexte Nuxt (NUXT_E1001 si useRuntimeConfig était appelé ici).
+// Visuels de cartes : 800px couvre le rendu retina (~380px affichés),
+// format auto = webp/avif selon l'en-tête Accept — divisent le poids
+// téléchargé par ~10 vs le fichier original importé depuis Digiforma.
+const CARD_IMAGE_TRANSFORM = { width: 800, quality: 70, format: 'auto' } as const
+
 export function mapCourse(
   course: CourseListItem,
   familyName: string | undefined,
@@ -165,7 +170,7 @@ export function mapCourse(
     // ici, sinon carte et filtre `durations` peuvent diverger.
     duration: course.durationBucket,
     certifications: buildCertifications(course),
-    image: directusAssetUrl(course.image, apiBase) ?? course.imageUrl ?? null,
+    image: directusAssetUrl(course.image, apiBase, CARD_IMAGE_TRANSFORM) ?? course.imageUrl ?? null,
     status: buildStatus(course),
     to: familySlug ? `/formations/${familySlug}/${course.slug}` : null
   }

@@ -3,30 +3,32 @@ export interface CompanyLogo {
   logoUrl: string
 }
 
+// Logos servis depuis public/logos — assets locaux, pas d'allers-retours
+// vers Wikimedia à chaque chargement.
 export const companyLogos: CompanyLogo[] = [
   {
     name: 'Capgemini',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/9d/Capgemini_201x_logo.svg'
+    logoUrl: '/logos/capgemini.svg'
   },
   {
     name: 'Microsoft',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg'
+    logoUrl: '/logos/microsoft.svg'
   },
   {
     name: 'Google Cloud',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/51/Google_Cloud_logo.svg'
+    logoUrl: '/logos/google-cloud.svg'
   },
   {
     name: 'Amazon',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg'
+    logoUrl: '/logos/amazon.svg'
   },
   {
     name: 'IBM',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg'
+    logoUrl: '/logos/ibm.svg'
   },
   {
     name: 'Oracle',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/50/Oracle_logo.svg'
+    logoUrl: '/logos/oracle.svg'
   }
 ]
 
@@ -35,10 +37,10 @@ export const homeLogos: CompanyLogo[] = [
   ...companyLogos,
   {
     name: 'Salesforce',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f9/Salesforce.com_logo.svg'
+    logoUrl: '/logos/salesforce.svg'
   },
   {
     name: 'SAP',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/59/SAP_2011_logo.svg'
+    logoUrl: '/logos/sap.svg'
   }
 ]

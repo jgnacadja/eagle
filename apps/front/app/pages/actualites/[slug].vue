@@ -29,7 +29,14 @@
                 <NuxtImg
                   v-if="article?.author_image"
                   class="h-control-sm w-control-sm rounded-full border border-outline object-cover"
-                  :src="assetUrl(article.author_image)"
+                  :src="
+                    assetUrl(article.author_image, {
+                      width: 200,
+                      height: 200,
+                      fit: 'cover',
+                      format: 'auto'
+                    })
+                  "
                   :alt="article.author_name ?? 'Auteur'"
                 />
                 <span
@@ -307,6 +314,7 @@ import {
   articleReadingTime,
   formatArticleDate
 } from '~/utils/article'
+import type { DirectusAssetTransform } from '~/utils/directusAsset'
 import { sanitizeHtmlWithHeadings } from '~/utils/sanitizeHtml'
 import { copyTextToClipboard } from '~/utils/clipboard'
 import type { MetaPatternVars } from '~/utils/metaPatterns'
@@ -696,7 +704,9 @@ useContentSeo(
         article: article.value,
         url: article.value.seo_canonical ?? `${config.public.siteUrl}${route.path}`,
         siteUrl: config.public.siteUrl,
-        imageUrl: assetUrl(article.value.cover_image)
+        imageUrl: articleAssetUrl(article.value.cover_image, config.public.apiBase, {
+          width: 1200
+        })
       })
     }
   }
@@ -715,8 +725,13 @@ function onErrorSearch(query: string) {
   navigateTo({ path: '/actualites', query: query ? { q: query } : {} })
 }
 
-function assetUrl(id: string | null): string | undefined {
-  return articleAssetUrl(id, config.public.apiBase) ?? undefined
+// Visuels affichés : dimensionnés côté Directus (sharp) et servis en
+// webp/avif selon l'en-tête Accept — le fichier original peut peser des Mo.
+function assetUrl(
+  id: string | null,
+  transform: DirectusAssetTransform = { width: 1600, quality: 75, format: 'auto' }
+): string | undefined {
+  return articleAssetUrl(id, config.public.apiBase, transform) ?? undefined
 }
 
 const linkCopied = ref(false)

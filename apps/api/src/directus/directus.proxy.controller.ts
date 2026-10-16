@@ -46,16 +46,33 @@ const ALLOWED_QUERY_PARAMS = new Set([
   'aggregate',
   'groupBy'
 ])
+// Transformations d'images natives de Directus (sharp) — bornées par
+// l'upstream (ASSETS_TRANSFORM_MAX_*), elles servent à dimensionner les
+// visuels au lieu de télécharger le fichier d'origine au poids complet.
+const ALLOWED_ASSET_PARAMS = new Set([
+  'key',
+  'width',
+  'height',
+  'fit',
+  'quality',
+  'format',
+  'withoutEnlargement',
+  'transforms'
+])
 const MAX_LIMIT = 100
 
 // `limit` est plafonnée : `limit=-1` (et toute valeur non positive ou non
 // entière) est refusée, au-delà du plafond on clampe — un appelant ne doit
 // jamais obtenir une collection entière en une seule requête.
-function sanitizeQueryParams(searchParams: URLSearchParams): URLSearchParams {
+function sanitizeQueryParams(pathname: string, searchParams: URLSearchParams): URLSearchParams {
+  const allowed =
+    pathname.split('/').filter(Boolean)[0] === 'assets'
+      ? ALLOWED_ASSET_PARAMS
+      : ALLOWED_QUERY_PARAMS
   const sanitized = new URLSearchParams()
   for (const [name, value] of searchParams) {
     const base = name.split('[')[0]!
-    if (!ALLOWED_QUERY_PARAMS.has(base)) {
+    if (!allowed.has(base)) {
       throw new BadRequestException(`Paramètre Directus non autorisé : ${base}`)
     }
     if (base === 'limit') {
@@ -139,7 +156,7 @@ export class DirectusProxyController {
     const upstreamUrl = new URL(this.baseUrl)
     const basePath = upstreamUrl.pathname.replace(/\/$/, '')
     upstreamUrl.pathname = `${basePath}${incoming.pathname}`
-    upstreamUrl.search = sanitizeQueryParams(incoming.searchParams).toString()
+    upstreamUrl.search = sanitizeQueryParams(incoming.pathname, incoming.searchParams).toString()
 
     let upstream: globalThis.Response
     try {

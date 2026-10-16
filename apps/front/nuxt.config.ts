@@ -12,6 +12,23 @@ const apiBase = process.env.NUXT_API_BASE ?? 'http://localhost:3001'
 const publicApiBase = process.env.NUXT_PUBLIC_API_BASE ?? 'http://localhost:3001'
 const siteUrl = process.env.NUXT_PUBLIC_SITE_URL ?? 'https://learnup.fr'
 
+// Origines tierces contactées par le navigateur après hydratation :
+// preconnect/dns-prefetch amortissent TCP+TLS (~0,5–1 s sur la VM Matomo,
+// visible à chaque chargement de matomo.js).
+const thirdPartyOrigins = Array.from(
+  new Set(
+    [process.env.NUXT_PUBLIC_MATOMO_URL, publicApiBase]
+      .map((url) => {
+        try {
+          return new URL(url ?? '').origin
+        } catch {
+          return ''
+        }
+      })
+      .filter((origin) => origin && !origin.startsWith('http://localhost'))
+  )
+)
+
 export default defineNuxtConfig({
   compatibilityDate: '2026-01-01',
   future: { compatibilityVersion: 4 },
@@ -28,7 +45,11 @@ export default defineNuxtConfig({
         // Figtree (charte §03) — l'URL vit dans @learnup/ui avec les autres tokens.
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
-        { rel: 'stylesheet', href: typography.googleFontsUrl }
+        { rel: 'stylesheet', href: typography.googleFontsUrl },
+        ...thirdPartyOrigins.flatMap((origin) => [
+          { rel: 'preconnect', href: origin },
+          { rel: 'dns-prefetch', href: origin }
+        ])
       ]
     }
   },

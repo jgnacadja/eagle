@@ -144,6 +144,29 @@ describe('DirectusProxyController', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
+  it('relaye les paramètres de transformation sur assets/', async () => {
+    fetchMock.mockResolvedValueOnce(new Response('img', { status: 200 }))
+
+    const res = await request(app.getHttpServer()).get(
+      '/directus/assets/abc?width=800&quality=70&format=auto&fit=cover'
+    )
+
+    expect(res.status).toBe(200)
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://directus:8055/assets/abc?width=800&quality=70&format=auto&fit=cover',
+      expect.objectContaining({ method: 'GET' })
+    )
+  })
+
+  it('refuse les paramètres items sur assets/', async () => {
+    const res = await request(app.getHttpServer()).get(
+      '/directus/assets/abc?filter[status][_eq]=published'
+    )
+
+    expect(res.status).toBe(400)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   it('refuse les chemins hors items/ et assets/', async () => {
     const res = await request(app.getHttpServer()).get('/directus/server/ping')
 

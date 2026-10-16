@@ -1,4 +1,4 @@
-// Types de domaine — miroir des collections Directus modélisées en ST-11
+// Types de domaine — miroir des collections Directus modélisées
 // (directus/schema/collections.mjs est la source de vérité du schéma).
 
 export type ContentStatus = 'draft' | 'published' | 'archived'
@@ -7,6 +7,8 @@ interface SeoFields {
   seo_title: string | null
   seo_description: string | null
   seo_canonical: string | null
+  h1: string | null
+  seo_noindex: boolean | null
 }
 
 export interface Centre extends SeoFields {
@@ -129,7 +131,7 @@ export interface PageLegale extends SeoFields {
   updated_at: string | null
 }
 
-export interface ArticleCategory {
+export interface ArticleCategory extends SeoFields {
   id: number
   status: ContentStatus
   sort: number | null
@@ -178,4 +180,12 @@ export interface Avis {
   quote: string
   /** Relation M2O vers `centres` — null = avis marque (toutes implantations). */
   centre: number | null
+}
+
+/** Patron de métas administrable — un par gabarit (`key`). */
+export interface SeoPattern {
+  id: number
+  key: string
+  title_pattern: string
+  description_pattern: string | null
 }

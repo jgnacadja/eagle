@@ -181,6 +181,13 @@ vi.stubGlobal('useLeadSubmit', () => ({
   error: leadError
 }))
 
+// Redirection de confirmation : stubée — l'inscription newsletter
+// quitte la page vers /confirmation/inscription/.
+const confirmConversionMock = vi.fn<(type: string, context?: unknown) => Promise<unknown>>()
+vi.stubGlobal('useConfirmationRedirect', () => ({
+  confirmConversion: confirmConversionMock
+}))
+
 vi.stubGlobal(
   'useAsyncData',
   async (
@@ -382,16 +389,11 @@ describe('pages/actualites/index', () => {
       'newsletter',
       expect.objectContaining({ email: 'abonne@site.fr' })
     )
-    // Le bandeau newsletter et son formulaire ont complètement disparu
-    expect(wrapper.find('section[aria-labelledby="newsletter-heading"]').exists()).toBe(false)
-    expect(wrapper.text()).not.toContain('Inscription confirmée')
-
-    // La section de confirmation centrée et explicite est affichée
-    expect(wrapper.find('section[aria-labelledby="newsletter-success-heading"]').exists()).toBe(
-      true
-    )
-    expect(wrapper.text()).toContain('Votre adresse e-mail a bien été enregistrée')
-    expect(wrapper.text()).toContain('dates limites et les prochaines sessions de formation')
+    // L'inscription réussie part vers la page de confirmation mesurable.
+    expect(confirmConversionMock).toHaveBeenCalledWith('inscription', {
+      detail:
+        "Pensez à vérifier vos courriers indésirables si vous ne recevez rien d'ici quelques minutes."
+    })
   })
 
   it('bloque la soumission et affiche l’erreur si l’e-mail est invalide', async () => {
@@ -416,7 +418,7 @@ describe('pages/actualites/index', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('envoi a échoué')
-    expect(wrapper.text()).not.toContain('Votre adresse e-mail a bien été enregistrée')
+    expect(confirmConversionMock).not.toHaveBeenCalled()
     expect(wrapper.find('input[type="email"]').exists()).toBe(true)
   })
 

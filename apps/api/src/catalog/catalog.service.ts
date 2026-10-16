@@ -181,6 +181,15 @@ function linkedCentreSlugs(raw: DirectusFormation): string[] {
     .filter((slug): slug is string => Boolean(slug))
 }
 
+// Code de la source d'origine de la formation (dimension « Source
+// catalogue » Matomo) : `hq` = éditorial Learn Up, autre = compte
+// Digiforma. Le champ M2O arrive en `{ code }` (fields `source.code`).
+function sourceCode(raw: DirectusFormation): string | null {
+  const source = raw.source
+  if (!source || typeof source === 'string') return null
+  return typeof source.code === 'string' ? source.code : null
+}
+
 function toListItem(raw: DirectusFormation): CourseListItem {
   const durationDays = toNumber(raw.duration_days)
   const durationHours = toNumber(raw.duration_hours)
@@ -214,7 +223,8 @@ function toListItem(raw: DirectusFormation): CourseListItem {
     status: raw.status,
     seoTitle: raw.seo_title,
     seoDescription: raw.seo_description,
-    seoCanonical: raw.seo_canonical
+    seoCanonical: raw.seo_canonical,
+    source: sourceCode(raw)
   }
 }
 

@@ -13,7 +13,7 @@
         </div>
 
         <nav class="col-span-1 md:col-span-1" aria-label="Formations">
-          <h3 class="text-badge md:text-xs font-bold text-ink-inverse uppercase">Formations</h3>
+          <p class="text-badge md:text-xs font-bold text-ink-inverse uppercase">Formations</p>
           <ul class="mt-md space-y-sm text-small">
             <li v-for="famille in familles.slice(0, 2)" :key="famille.slug">
               <NuxtLink
@@ -33,7 +33,7 @@
         </nav>
 
         <nav class="col-span-1 md:col-span-1" aria-label="Entreprises">
-          <h3 class="text-badge md:text-xs font-bold text-ink-inverse uppercase">Entreprises</h3>
+          <p class="text-badge md:text-xs font-bold text-ink-inverse uppercase">Entreprises</p>
           <ul class="mt-md space-y-sm text-small">
             <li>
               <NuxtLink
@@ -60,7 +60,7 @@
         </nav>
 
         <nav class="col-span-1 md:col-span-1" aria-label="Rejoindre">
-          <h3 class="text-badge md:text-xs font-bold text-ink-inverse uppercase">Rejoindre</h3>
+          <p class="text-badge md:text-xs font-bold text-ink-inverse uppercase">Rejoindre</p>
           <ul class="mt-md space-y-sm text-small">
             <li>
               <NuxtLink
@@ -87,7 +87,7 @@
         </nav>
 
         <nav class="col-span-1 md:col-span-1" aria-label="À propos">
-          <h3 class="text-badge md:text-xs font-bold text-ink-inverse uppercase">À propos</h3>
+          <p class="text-badge md:text-xs font-bold text-ink-inverse uppercase">À propos</p>
           <ul class="mt-md space-y-sm text-small">
             <li>
               <NuxtLink

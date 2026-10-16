@@ -14,7 +14,8 @@ const COLLECTION_KEYS: Record<string, string[]> = {
   formations_centres: ['formations:all', 'courses:*'],
   familles_formation: ['formations:all', 'courses:*'],
   sous_familles_formation: ['formations:all', 'courses:*'],
-  centres: ['centres:*', 'formations:all', 'courses:*']
+  centres: ['centres:*', 'formations:all', 'courses:*'],
+  redirects: ['seo:resolve:*']
 }
 
 @ApiTags('admin')

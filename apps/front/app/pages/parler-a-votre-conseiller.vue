@@ -13,43 +13,8 @@
 
       <div class="grid grid-cols-1 items-start gap-lg lg:grid-cols-3">
         <div class="lg:col-span-2 md:px-16">
-          <!-- Confirmation d'envoi -->
-          <Card
-            v-if="submitted"
-            v-reveal
-            class="flex flex-col items-center gap-lg p-xl text-center"
-          >
-            <p
-              class="flex h-4xl w-4xl items-center justify-center rounded-full bg-success-soft text-success"
-            >
-              <IconCheck :size="32" />
-            </p>
-            <div>
-              <h2 class="font-display text-h3 font-extrabold text-ink">Demande transmise</h2>
-              <p class="mt-sm max-w-prose text-body text-ink-muted">
-                Votre conseiller vous recontacte sous 24&nbsp;h ouvrées aux coordonnées indiquées.
-              </p>
-            </div>
-            <div class="rounded-md border border-rule bg-surface px-xl py-md">
-              <p class="text-small font-semibold text-ink">
-                Référence de suivi&nbsp;: {{ reference }}
-              </p>
-              <p class="mt-xs text-meta text-ink-subtle">
-                Conservez-la&nbsp;: elle facilite le suivi.
-              </p>
-            </div>
-            <div class="flex flex-wrap justify-center gap-md">
-              <Button as-child variant="dark" size="pill-lg">
-                <NuxtLink to="/">Retour à l'accueil</NuxtLink>
-              </Button>
-              <Button as-child variant="outline" size="pill-lg">
-                <NuxtLink to="/formations">Parcourir le catalogue</NuxtLink>
-              </Button>
-            </div>
-          </Card>
-
-          <!-- Formulaire (v-show : jamais démonté — cf. demande-de-formation) -->
-          <form v-show="!submitted" novalidate @focusin="onFieldFocus" @submit.prevent="onSubmit">
+          <!-- La confirmation d'envoi vit sur /confirmation/rendez-vous/. -->
+          <form novalidate @focusin="onFieldFocus" @submit.prevent="onSubmit">
             <Card v-reveal class="space-y-lg p-lg sm:px-xl sm:py-lg">
               <fieldset>
                 <legend class="mb-md text-small font-semibold text-ink">
@@ -294,8 +259,8 @@ useContentSeo(
     seo_title: 'Parler à votre conseiller | LEARN UP ACADEMY',
     seo_description:
       'Décrivez votre besoin : votre demande est transmise à l’interlocuteur compétent de votre territoire, qui vous recontacte sous 24 h ouvrées.',
-    // Formulaire de contact : hors indexation.
-    seo_noindex: true
+    // Formulaire de contact : hors indexation, liens suivis.
+    seo_robots: 'noindex, follow'
   },
   'Parler à votre conseiller'
 )
@@ -377,8 +342,7 @@ const showError = (field: ConseillerField) => submitCount.value > 0 && !!errors.
 const siretDescribedby = computed(() => (showError('siret') ? 'siret-error' : 'siret-hint'))
 
 const { submit: submitLead, sending, error: submitError } = useLeadSubmit()
-const submitted = ref(false)
-const reference = ref('')
+const { confirmConversion } = useConfirmationRedirect()
 
 // Référence de suivi LU-AAAA-MMDD-NNN : générée à l'envoi et suffixée au
 // message — elle remonte dans learnup_precisions, où le back-office peut la
@@ -434,9 +398,8 @@ const onSubmit = handleSubmit(
       pageName: 'Parler à votre conseiller'
     })
     if (ok) {
-      reference.value = ref
-      submitted.value = true
       trackFormSubmit('demande_formation')
+      await confirmConversion('rendez-vous', { reference: ref })
     }
   },
   ({ errors }) => {

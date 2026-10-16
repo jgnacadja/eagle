@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { useDataLayer } from '~/composables/useDataLayer'
+import { useAnalytics } from '~/composables/useAnalytics'
 
 const props = defineProps<{
   title: string
@@ -48,11 +48,12 @@ const props = defineProps<{
   position?: number
 }>()
 
-const { pushEvent } = useDataLayer()
+const { pushEvent } = useAnalytics()
 
 function onClick() {
   const formationId =
-    props.formationId || (props.to ? props.to.split('/').pop() || props.title : props.title)
+    props.formationId ||
+    (props.to ? props.to.replace(/\/$/, '').split('/').pop() || props.title : props.title)
   pushEvent({
     event: 'select_formation_card',
     formation_id: formationId,

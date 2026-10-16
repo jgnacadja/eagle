@@ -3,7 +3,7 @@
     <header class="border-b border-rule bg-linear-to-b from-paper to-surface">
       <div v-hero class="mx-auto w-full px-gutter-mobile pt-2xl md:px-gutter">
         <h1 class="font-display text-h1 font-extrabold text-ink">
-          {{ page.title }}
+          {{ page.h1 || page.title }}
         </h1>
         <p class="mt-sm text-small text-ink-muted">Dernière mise à jour : {{ page.lastUpdated }}</p>
 
@@ -104,7 +104,14 @@
                 />
               </section>
             </div>
+            <!-- Droit d'opposition à la mesure d'audience : injecté
+                 dans la politique de confidentialité, sous la section dédiée. -->
+            <LegalAnalyticsOptOut v-if="isAnalyticsSection(section.id)" class="mt-md" />
           </section>
+
+          <!-- Repli : sans section « mesure-audience » dans le contenu, le
+               mécanisme d'opposition reste visible en fin de page. -->
+          <LegalAnalyticsOptOut v-if="showOptOutFallback" class="-mt-xl" />
 
           <div
             class="flex flex-col gap-lg border-t border-rule pt-2xl sm:flex-row sm:items-center sm:justify-between"
@@ -145,6 +152,18 @@ const props = defineProps<{
 
 const route = useRoute()
 const currentSlug = computed(() => (route.params.slug as string) || props.page.slug)
+
+// le bloc d'opt-out Matomo n'existe que sur la politique
+// confidentialité, sous la section « Mesure d'audience » quand le contenu la
+// fournit, sinon en fin d'article (le droit d'opposition doit rester visible).
+const ANALYTICS_SECTION_ID = 'mesure-audience'
+const isAnalyticsSection = (sectionId: string) =>
+  props.page.slug === 'confidentialite' && sectionId === ANALYTICS_SECTION_ID
+const showOptOutFallback = computed(
+  () =>
+    props.page.slug === 'confidentialite' &&
+    !props.page.sections.some((s) => s.id === ANALYTICS_SECTION_ID)
+)
 
 const selectedPage = ref(currentSlug.value)
 const currentLabel = computed(

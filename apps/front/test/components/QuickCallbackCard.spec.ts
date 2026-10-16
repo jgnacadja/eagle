@@ -21,6 +21,13 @@ vi.stubGlobal('useLeadSubmit', () => ({
   })
 }))
 
+// Redirection de confirmation : stubée — le rappel réussi quitte
+// carte vers /confirmation/rendez-vous/.
+const confirmConversionMock = vi.fn<(type: string, context?: unknown) => Promise<unknown>>()
+vi.stubGlobal('useConfirmationRedirect', () => ({
+  confirmConversion: confirmConversionMock
+}))
+
 const stubs = {
   NuxtLink: {
     props: ['to'],
@@ -84,6 +91,7 @@ describe('QuickCallbackCard', () => {
     vi.useRealTimers()
     leadSubmitMock.mockClear()
     leadSubmitMock.mockResolvedValue(true)
+    confirmConversionMock.mockClear()
     leadState.error.value = null
     leadState.validationErrors.value = []
     leadState.sending.value = false
@@ -254,24 +262,11 @@ describe('QuickCallbackCard', () => {
       }
     ])
 
-    // Live region status pour les lecteurs d'écran (<output> = role status implicite)
-    const statusRegion = wrapper.find('output')
-    expect(statusRegion.exists()).toBe(true)
-    expect(statusRegion.attributes('aria-live')).toBe('polite')
-    expect(wrapper.text()).toContain('Demande de rappel enregistrée')
-    expect(wrapper.text()).toContain('06 12 34 56 78')
-    expect(wrapper.text()).toContain('Faire une autre demande')
-
-    // Clic sur « Faire une autre demande »
-    const resetButton = wrapper
-      .findAll('button')
-      .find((b) => b.text().includes('Faire une autre demande'))
-    expect(resetButton).toBeDefined()
-    await resetButton!.trigger('click')
-    await flushPromises()
-
-    expect(wrapper.find('form').exists()).toBe(false)
-    expect(wrapper.text()).toContain('Me faire appeler')
+    // Confirmation déportée sur /confirmation/rendez-vous
+    // détail reprend créneau et téléphone de l'ancien écran.
+    expect(confirmConversionMock).toHaveBeenCalledWith('rendez-vous', {
+      detail: 'Un conseiller vous rappellera dès que possible au 06 12 34 56 78.'
+    })
   })
 
   it('exerce la sélection d’un créneau personnalisé et transmet la valeur au payload', async () => {
@@ -302,7 +297,9 @@ describe('QuickCallbackCard', () => {
         creneau: 'Cet après-midi'
       }
     ])
-    expect(wrapper.text()).toContain('cet après-midi')
+    expect(confirmConversionMock).toHaveBeenCalledWith('rendez-vous', {
+      detail: 'Un conseiller vous rappellera cet après-midi au 06 98 76 54 32.'
+    })
   })
 
   it('affiche un message d’erreur si l’appel API échoue et ne confirme pas', async () => {

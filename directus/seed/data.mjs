@@ -953,6 +953,15 @@ export const pagesLegales = [
         ]
       },
       {
+        anchor: 'mesure-audience',
+        title: 'Mesure d’audience',
+        paragraphs: [
+          'LEARN UP ACADEMY mesure l’audience du site au moyen de Matomo, une solution auto-hébergée qui n’envoie aucune donnée à un prestataire tiers. La mesure sert uniquement à évaluer le contenu et la navigation du site (pages vues, origine des visites, clics sur les actions principales).',
+          'Cette mesure bénéficie de l’exemption de consentement prévue par la CNIL : aucun cookie de suivi n’est déposé, votre adresse IP est anonymisée avant tout traitement, les données sont conservées 13 mois et ne sont croisées avec aucun autre traitement ni transmises à des tiers.',
+          'Vous pouvez vous opposer à cette mesure à tout moment à l’aide du mécanisme ci-dessous. Votre choix est conservé par un marqueur sur votre navigateur ; il s’applique à tous vos écrans où ce choix a été exprimé.'
+        ]
+      },
+      {
         anchor: 'droits',
         title: 'Vos droits',
         paragraphs: [

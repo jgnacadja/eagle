@@ -248,6 +248,10 @@ services:
       NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE}
       NUXT_INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
       NUXT_CACHE_PURGE_SECRET: ${NUXT_CACHE_PURGE_SECRET:-}
+      # Tracker Matomo : le navigateur charge matomo.js depuis
+      # l'instance — localhost:8082 en full-compose, vide = tracking coupé.
+      NUXT_PUBLIC_MATOMO_URL: ${NUXT_PUBLIC_MATOMO_URL:-http://localhost:8082}
+      NUXT_PUBLIC_MATOMO_SITE_ID: ${NUXT_PUBLIC_MATOMO_SITE_ID:-1}
     ports:
       - '3000:3000'
     depends_on:
@@ -256,8 +260,53 @@ services:
       directus:
         condition: service_healthy
 
+  # Matomo auto-hébergé : même topologie que la VM — MariaDB dédiée
+  # (Matomo n'est pas compatible PostgreSQL) + conteneur applicatif. Le
+  # volume `matomohtml` conserve config et plugins entre les rebuilds.
+  matomo-db:
+    image: mariadb:11
+    # 64M recommandé par le check système Matomo (16M par défaut).
+    command: --max_allowed_packet=64M
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${MATOMO_DB_NAME:-matomo}
+      MARIADB_USER: ${MATOMO_DB_USER:-matomo}
+      MARIADB_PASSWORD: ${MATOMO_DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${MATOMO_DB_ROOT_PASSWORD}
+    volumes:
+      - matomodb:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  matomo:
+    image: matomo:5.14.1
+    restart: unless-stopped
+    environment:
+      MATOMO_DATABASE_HOST: matomo-db
+      MATOMO_DATABASE_PORT: '3306'
+      MATOMO_DATABASE_DBNAME: ${MATOMO_DB_NAME:-matomo}
+      MATOMO_DATABASE_USERNAME: ${MATOMO_DB_USER:-matomo}
+      MATOMO_DATABASE_PASSWORD: ${MATOMO_DB_PASSWORD}
+      MATOMO_DATABASE_TABLES_PREFIX: matomo_
+      # Host accepté par l'interface — le port n'entre pas dans le check.
+      MATOMO_TRUSTED_HOSTS: ${MATOMO_TRUSTED_HOSTS:-localhost}
+      PHP_MEMORY_LIMIT: ${MATOMO_PHP_MEMORY_LIMIT:-512M}
+    volumes:
+      - matomohtml:/var/www/html
+    ports:
+      - '${MATOMO_PORT:-8082}:80'
+    depends_on:
+      matomo-db:
+        condition: service_healthy
+
 volumes:
   pgdata:
   redisdata:
   miniodata:
+  matomodb:
+  matomohtml:
   schema-backups:

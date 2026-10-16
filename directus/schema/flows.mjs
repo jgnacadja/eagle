@@ -37,6 +37,10 @@ const CONTENT_COLLECTIONS = [
   'pages_legales_sections',
   'pages_legales_subsections',
   'stats'
+  // `redirects` volontairement absente : le front n'a pas de mapping
+  // collection→routes pour des chemins arbitraires — une purge par
+  // collection viderait TOUT l'ISR à chaque écriture. Le flow dédié
+  // « Invalidate redirect resolution » purge l'API puis l'adresse source.
 ]
 
 // La sync Digiforma écrit via le compte de service DIRECTUS_TOKEN — un
@@ -106,6 +110,66 @@ export function buildFlows({ syncUserId } = {}) {
             url: `${FRONT_INTERNAL_URL}/api/cache/invalidate`,
             headers: [{ header: 'x-cache-secret', value: CACHE_PURGE_SECRET }],
             body: '{"collection":"{{$trigger.collection}}"}'
+          }
+        }
+      ]
+    },
+    {
+      // Lignes écrites par l'extension slug-redirects ou l'éditeur. Purge
+      // API des résolutions `seo:resolve:*`, puis purge ISR ciblée sur
+      // `from_path` : sans elle, une page encore en cache edge continuerait
+      // de servir son HTML au lieu d'être reprise par la 301/410 du
+      // middleware. `items.delete` : la ligne n'existe plus à la relecture
+      // — le flow s'arrête après la purge API, la page s'aligne au TTL ISR.
+      name: 'Invalidate redirect resolution',
+      icon: 'alt_route',
+      trigger: 'event',
+      accountability: 'all',
+      status: 'active',
+      options: {
+        type: 'action',
+        scope: ['items.create', 'items.update', 'items.delete'],
+        collections: ['redirects']
+      },
+      operations: [
+        ...syncGuard(syncUserId),
+        {
+          name: 'Purge API (Redis)',
+          key: 'purge-api',
+          type: 'request',
+          position_x: 40,
+          position_y: 20,
+          options: {
+            method: 'POST',
+            url: `${API_INTERNAL_URL}/admin/cache/invalidate`,
+            headers: [{ header: 'x-api-key', value: ADMIN_API_KEY }],
+            body: '{"collection":"redirects"}'
+          }
+        },
+        {
+          name: 'Relire la redirection',
+          key: 'read-redirect',
+          type: 'item-read',
+          position_x: 60,
+          position_y: 20,
+          options: {
+            collection: 'redirects',
+            key: '{{$trigger.keys[0]}}',
+            permissions: '$full',
+            query: { fields: 'from_path' }
+          }
+        },
+        {
+          name: 'Purge adresse source (ISR)',
+          key: 'purge-redirect-path',
+          type: 'request',
+          position_x: 80,
+          position_y: 20,
+          options: {
+            method: 'POST',
+            url: `${FRONT_INTERNAL_URL}/api/cache/invalidate`,
+            headers: [{ header: 'x-cache-secret', value: CACHE_PURGE_SECRET }],
+            body: '{"path":"{{$last.from_path}}"}'
           }
         }
       ]

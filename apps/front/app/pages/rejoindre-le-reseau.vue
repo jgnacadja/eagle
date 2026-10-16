@@ -125,7 +125,7 @@ import IconBook from '~/components/icons/IconBook.vue'
 import IconBuilding from '~/components/icons/IconBuilding.vue'
 import type { CandidatureVoie } from '~/types/candidature'
 import { heroStagger, revealStagger } from '~/utils/reveal'
-import { useDataLayer } from '~/composables/useDataLayer'
+import { useAnalytics } from '~/composables/useAnalytics'
 import type { NetworkProfileType } from '~/types/analytics'
 import { onMounted } from 'vue'
 
@@ -140,7 +140,7 @@ useContentSeo(
 
 const candidatureOpen = ref(false)
 const candidatureVoie = ref<CandidatureVoie>('centre')
-const { pushEvent } = useDataLayer()
+const { pushEvent } = useAnalytics()
 const route = useRoute()
 const router = useRouter()
 

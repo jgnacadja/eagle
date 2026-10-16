@@ -17,7 +17,7 @@
                 id="formation-title"
                 class="mt-sm font-display text-h2 font-bold text-ink lg:text-h1"
               >
-                {{ course.title }}
+                {{ formationH1 || course.title }}
               </h1>
               <p v-if="heroIntro" class="mt-md max-w-prose text-body text-ink-body">
                 {{ heroIntro }}
@@ -525,7 +525,7 @@
                 v-reveal-soft
                 class="font-display text-h2 font-extrabold text-ink"
               >
-                Formations similaires
+                {{ liees.length ? 'Formations liées' : 'Formations similaires' }}
               </h2>
               <Button as-child variant="link" size="inline" class="font-bold">
                 <NuxtLink :to="`/formations/${famille}`"
@@ -547,6 +547,35 @@
                 class="h-full"
               />
             </div>
+          </section>
+
+          <section v-if="relatedArticles?.length" aria-labelledby="articles-lies-title">
+            <h2
+              id="articles-lies-title"
+              v-reveal-soft
+              class="font-display text-h2 font-extrabold text-ink"
+            >
+              Pour aller plus loin
+            </h2>
+            <ul class="mt-md grid gap-md sm:grid-cols-3">
+              <li
+                v-for="(article, i) in relatedArticles"
+                :key="article.slug"
+                v-reveal="revealStagger(i)"
+              >
+                <ArticleCard
+                  :category="articleCategory(article.category)?.name ?? 'Actualité'"
+                  :title="article.title"
+                  :date="formatArticleDate(article.publish_at)"
+                  :excerpt="article.excerpt ?? ''"
+                  :image-url="
+                    articleAssetUrl(article.cover_image, config.public.apiBase) ?? undefined
+                  "
+                  :to="`/actualites/${article.slug}`"
+                  class="h-full"
+                />
+              </li>
+            </ul>
           </section>
         </div>
       </div>
@@ -610,8 +639,9 @@
 <script setup lang="ts">
 import { useElementSize } from '@vueuse/core'
 import { readItems } from '@directus/sdk'
-import type { Course, CourseSession, FamilleFormation } from '@learnup/types'
+import type { Article, Course, CourseSession, FamilleFormation } from '@learnup/types'
 import { useDirectusClient } from '~/composables/useDirectus'
+import ArticleCard from '~/components/Cards/ArticleCard.vue'
 import IconBook from '~/components/icons/IconBook.vue'
 import IconBuilding from '~/components/icons/IconBuilding.vue'
 import IconFactory from '~/components/icons/IconFactory.vue'
@@ -624,14 +654,18 @@ import {
   type FormationItem
 } from '~/composables/useCatalog'
 import { directusAssetUrl } from '~/utils/directusAsset'
+import { formatDateFr } from '~/utils/date'
 import { buildCourseJsonLd } from '~/utils/jsonLd'
 import { htmlToText, sanitizeHtml } from '~/utils/sanitizeHtml'
+import { articleAssetUrl, articleCategory, formatArticleDate } from '~/utils/article'
+import type { MetaPatternVars } from '~/utils/metaPatterns'
 import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
 import { revealStagger } from '~/utils/reveal'
 import { availabilityStatus } from '~/composables/useCentres'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
-import { useDataLayer } from '~/composables/useDataLayer'
+import { useAnalytics } from '~/composables/useAnalytics'
+import { sourceLabel } from '~/utils/matomo-dimensions'
 
 interface ProgrammeModule {
   title: string
@@ -708,6 +742,96 @@ const { data: familleData } = await useAsyncData<FamilleFormation | null>(
 
 const familyName = computed(() => familleData.value?.name ?? famille)
 
+// Formations liées éditoriales : self-M2M `formations_liees`
+// quand l'éditeur remplit le champ, il remplace le bloc « similaires »
+// calculé par famille. Vide/injoignable → [] et le fallback garde la main.
+interface FormationLieeRow {
+  sort: number | null
+  related: {
+    slug: string
+    title: string
+    duration_days: number | null
+    duration_hours: number | null
+    modalities: string[] | null
+    famille: { slug: string; name: string | null } | null
+    sous_famille: { name: string | null } | null
+  } | null
+}
+
+const { data: formationDirectus } = await useAsyncData<{
+  h1: string | null
+  seo_noindex: boolean | null
+  formations_liees: FormationLieeRow[] | null
+}>(`formations-liees-${slug}`, async () => {
+  try {
+    const results = await directus.request<
+      {
+        h1: string | null
+        seo_noindex: boolean | null
+        formations_liees: FormationLieeRow[] | null
+      }[]
+    >(
+      readItems('formations', {
+        fields: [
+          'h1',
+          'seo_noindex',
+          'formations_liees.sort',
+          'formations_liees.related.slug',
+          'formations_liees.related.title',
+          'formations_liees.related.duration_days',
+          'formations_liees.related.duration_hours',
+          'formations_liees.related.modalities',
+          'formations_liees.related.famille.slug',
+          'formations_liees.related.famille.name',
+          'formations_liees.related.sous_famille.name'
+        ],
+        filter: { slug: { _eq: slug }, status: { _eq: 'published' } },
+        limit: 1
+      })
+    )
+    return results[0] ?? { h1: null, seo_noindex: null, formations_liees: [] }
+  } catch (error) {
+    /* v8 ignore next 3 */
+    if (import.meta.server) {
+      logServerError(`[formations/slug] ${slug} related formations fetch failed:`, error)
+    }
+    return { h1: null, seo_noindex: null, formations_liees: [] }
+  }
+})
+
+const lieesRows = computed<FormationLieeRow[]>(
+  () => formationDirectus.value?.formations_liees ?? []
+)
+
+const formationH1 = computed(() => formationDirectus.value?.h1 ?? null)
+
+// Articles rattachés à la formation (related_formation) — maillage
+// interne éditorial vers le blog, rendu en cartes sous la fiche.
+const { data: relatedArticles } = await useAsyncData<Article[]>(
+  `formation-articles-${slug}`,
+  async () => {
+    try {
+      return await directus.request<Article[]>(
+        readItems('articles', {
+          fields: ['slug', 'title', 'excerpt', 'publish_at', 'category.name', 'cover_image'],
+          filter: {
+            related_formation: { slug: { _eq: slug } },
+            status: { _eq: 'published' }
+          },
+          sort: ['-publish_at'],
+          limit: 3
+        })
+      )
+    } catch (error) {
+      /* v8 ignore next 3 */
+      if (import.meta.server) {
+        logServerError(`[formations/slug] ${slug} related articles fetch failed:`, error)
+      }
+      return []
+    }
+  }
+)
+
 type PageState = 'found' | 'not-found' | 'error'
 const pageState = computed<PageState>(() => {
   if (loadError.value) return 'error'
@@ -752,18 +876,53 @@ const imageSrc = computed(
   () => directusAssetUrl(course.value!.image, config.public.apiBase) ?? course.value!.imageUrl
 )
 
+// Patron de métas administrable — priorité : champ seo_* éditorial,
+// puis patron `formation` de la collection seo_patterns, puis le repli.
+const formationPattern = useSeoPattern('formation')
+const metaVars = computed<MetaPatternVars>(() => {
+  if (pageState.value !== 'found' || !course.value) return {}
+  const upcoming = upcomingSessions(course.value)
+    .slice()
+    .sort((a, b) => a.startDate.localeCompare(b.startDate))
+  const first = upcoming[0]
+  const loc = first?.location
+  return {
+    intitulé: course.value.title,
+    famille: familyName.value,
+    'sous-famille': course.value.subFamilyName,
+    ville: loc?.city,
+    cp: loc?.postalCode,
+    département: loc?.department,
+    code: course.value.cpfCode ?? course.value.certification,
+    durée: durationLabel.value || null,
+    n: upcoming.length,
+    date: first ? formatDateFr(first.startDate) : null,
+    catégorie: course.value.category
+  }
+})
+
 useContentSeo(
   () => {
     const isFound = pageState.value === 'found'
     return {
       seo_title: isFound
-        ? (course.value!.seoTitle ?? course.value!.title)
+        ? resolveSeoTitle(
+            course.value!.seoTitle,
+            formationPattern.value?.title_pattern,
+            metaVars.value,
+            course.value!.title
+          )
         : stateLabels[pageState.value],
       seo_description: isFound
-        ? (course.value!.seoDescription ?? htmlToText(course.value!.description))
+        ? resolveSeoDescription(
+            course.value!.seoDescription,
+            formationPattern.value?.description_pattern,
+            metaVars.value,
+            htmlToText(course.value!.description)
+          )
         : undefined,
       seo_canonical: isFound ? course.value!.seoCanonical : undefined,
-      seo_noindex: !isFound,
+      seo_noindex: !isFound || Boolean(formationDirectus.value?.seo_noindex),
       // Visuel OG/Twitter : fichier Directus éditorial, sinon image
       // synchronisée Digiforma (imageSrc gère déjà cette priorité).
       seo_image: isFound ? imageSrc.value : undefined
@@ -826,7 +985,10 @@ const heroIntro = computed(() => {
   if (short) return short
   const text = htmlToText(course.value!.description)
   if (text.length <= 220) return text
-  return `${text.slice(0, 220).replace(/\s+\S*$/, '')}…`
+  return `${text
+    .slice(0, 220)
+    .replace(/\s\S*$/, '')
+    .trimEnd()}…`
 })
 
 const sessionBadge = computed(() => buildSessionBadge(course.value!))
@@ -1189,17 +1351,50 @@ const similarQuery = computed(() => ({
 
 const similarCatalog = await useCatalog(similarQuery)
 
+// Surcharge éditoriale : les lignes `formations_liees` triées remplacent
+// les similaires calculés — l'éditeur pilote le maillage interne.
+const liees = computed<FormationItem[]>(() =>
+  [...(lieesRows.value ?? [])]
+    .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
+    .map((row) => row.related)
+    .filter(
+      (r): r is NonNullable<typeof r> => r != null && r.slug !== slug && r.famille?.slug != null
+    )
+    .map((r) => {
+      const modalities = (r.modalities ?? []).map((m) => MODALITY_LABELS[m] ?? m).join(' / ')
+      return {
+        slug: r.slug,
+        title: r.title,
+        family: r.famille!.name ?? r.famille!.slug,
+        familyKey: r.famille!.slug,
+        subFamily: r.sous_famille?.name ?? null,
+        description: '',
+        meta: [
+          ...(r.duration_days ? [`${r.duration_days} jours`] : []),
+          ...(modalities ? [modalities] : [])
+        ].join(' · '),
+        days: r.duration_days ?? 0,
+        duration: r.duration_days != null && r.duration_days > 5 ? 'longue' : 'courte',
+        certifications: [],
+        image: null,
+        to: `/formations/${r.famille!.slug}/${r.slug}`
+      } satisfies FormationItem
+    })
+)
+
 // Cartes similaires : méta courte (durée + modalités), sans certification
 // ni certificateur — la maquette n'affiche que l'essentiel.
-const similaires = computed<FormationItem[]>(
-  () =>
+const similaires = computed<FormationItem[]>(() => {
+  if (liees.value.length) return liees.value
+  return (
     similarCatalog.data.value?.items
       .map((course) => ({
         ...mapCourse(course, familyName.value, config.public.apiBase),
         meta: buildMeta(course, false)
       }))
       .filter((f) => f.slug !== slug) ?? []
-)
+  )
+})
 
 function formatPrice(value: number): string {
   return new Intl.NumberFormat('fr-FR', {
@@ -1209,7 +1404,15 @@ function formatPrice(value: number): string {
   }).format(value)
 }
 
-const { pushEvent } = useDataLayer()
+const { pushEvent, setActionDimension } = useAnalytics()
+
+// Dimension « Source catalogue » : Digiforma vs éditorial Learn Up,
+// enrichie dès que la fiche est résolue (SSR : avant la vue de fin de page).
+watch(
+  () => course.value?.source,
+  (source) => setActionDimension('source', sourceLabel(source)),
+  { immediate: true }
+)
 
 onMounted(() => {
   if (course.value) {

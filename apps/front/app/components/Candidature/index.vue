@@ -1,31 +1,20 @@
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
     <DialogScrollContent class="max-w-prose">
-      <Transition name="candidature-step" mode="out-in">
-        <!-- Confirmation d'envoi -->
-        <Confirmation v-if="submitted" :projet="projet" />
+      <div class="grid gap-md">
+        <DialogHeader>
+          <DialogTitle class="text-h3">Candidater pour rejoindre le réseau</DialogTitle>
+          <DialogDescription>
+            Votre candidature est étudiée par l'équipe de développement du réseau. Nous vous
+            répondrons sous 5 jours ouvrés.
+          </DialogDescription>
+        </DialogHeader>
 
-        <!-- Formulaire de candidature -->
-        <div v-else class="grid gap-md">
-          <DialogHeader>
-            <DialogTitle class="text-h3">Candidater pour rejoindre le réseau</DialogTitle>
-            <DialogDescription>
-              Votre candidature est étudiée par l'équipe de développement du réseau. Nous vous
-              répondrons sous 5 jours ouvrés.
-            </DialogDescription>
-          </DialogHeader>
-
-          <CandidatureForm
-            ref="formRef"
-            v-model:voie="voie"
-            :sending="sending"
-            @submit="onSubmit"
-          />
-          <p v-if="submitError" class="text-small font-semibold text-danger" role="alert">
-            {{ submitError }}
-          </p>
-        </div>
-      </Transition>
+        <CandidatureForm ref="formRef" v-model:voie="voie" :sending="sending" @submit="onSubmit" />
+        <p v-if="submitError" class="text-small font-semibold text-danger" role="alert">
+          {{ submitError }}
+        </p>
+      </div>
     </DialogScrollContent>
   </Dialog>
 </template>
@@ -33,11 +22,10 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import CandidatureForm from './Form.vue'
-import Confirmation from './Confirmation.vue'
 import { VOIE_LABELS, type CandidaturePayload, type CandidatureVoie } from '~/types/candidature'
 import type { FormId, NetworkProfileType } from '~/types/analytics'
 
-import { useDataLayer } from '~/composables/useDataLayer'
+import { useAnalytics } from '~/composables/useAnalytics'
 
 const props = withDefaults(
   defineProps<{
@@ -53,10 +41,9 @@ const emit = defineEmits<{
 
 const formRef = ref<InstanceType<typeof CandidatureForm> | null>(null)
 const voie = ref<CandidatureVoie>(props.voie)
-const submitted = ref(false)
-const projet = ref('')
 const { submit: submitLead, sending, error: submitError, reset: resetLeadError } = useLeadSubmit()
-const { pushEvent } = useDataLayer()
+const { confirmConversion } = useConfirmationRedirect()
+const { pushEvent } = useAnalytics()
 
 // Chaque ouverture repart sur la voie demandée et le formulaire (pas l'écran succès).
 watch(
@@ -64,7 +51,6 @@ watch(
   (isOpen) => {
     if (!isOpen) return
     voie.value = props.voie
-    submitted.value = false
     resetLeadError()
   }
 )
@@ -79,9 +65,6 @@ async function onSubmit(payload: CandidaturePayload) {
   })
   if (!ok) return
   formRef.value?.trackFormSubmit()
-  // ville est requise par le schéma (min 1) : toujours renseignée ici.
-  projet.value = `${VOIE_LABELS[payload.voie]} — ${payload.ville}`
-  submitted.value = true
 
   const profileType: NetworkProfileType = payload.voie === 'centre' ? 'franchise' : payload.voie
   const formId: FormId =
@@ -95,6 +78,13 @@ async function onSubmit(payload: CandidaturePayload) {
     event: 'submit_network_interest',
     profile_type: profileType,
     form_id: formId
+  })
+
+  // Confirmation mesurable : la conversion quitte le dialog,
+  // détail reprend le récapitulatif « Voie — Ville » de l'ancien écran.
+  // ville est requise par le schéma (min 1) : toujours renseignée ici.
+  await confirmConversion('candidature', {
+    detail: `Projet « ${VOIE_LABELS[payload.voie]} — ${payload.ville} » — réponse sous 5 jours ouvrés.`
   })
 }
 </script>

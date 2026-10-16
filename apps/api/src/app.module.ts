@@ -86,8 +86,13 @@ function isInternalSsr(context: ExecutionContext, token: string | undefined): bo
 }
 
 const THROTTLER_REDIS_OPTIONS: RedisOptions = {
-  connectTimeout: 1_000,
-  enableOfflineQueue: false,
+  // Serverless : le 1er hit d'un cold start arrive avant la fin du
+  // TCP+TLS vers Redis managé. File d'attente hors-ligne activée (bornée par
+  // connectTimeout / commandTimeout) pour attendre la connexion au lieu
+  // d'échouer en « Stream isn't writeable » et basculer 30 s en mémoire.
+  connectTimeout: 3_000,
+  commandTimeout: 2_000,
+  enableOfflineQueue: true,
   maxRetriesPerRequest: 0,
   // Reconnexion bornée (même backoff que CacheService) : une coupure
   // transitoire ne doit pas laisser le stockage mort jusqu'au restart —

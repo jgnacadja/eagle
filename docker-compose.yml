@@ -84,7 +84,7 @@ services:
       CACHE_ENABLED: 'true'
       CACHE_AUTO_PURGE: 'true'
       CACHE_STORE: redis
-      REDIS: redis://redis:6379
+      REDIS: ${DIRECTUS_REDIS_URL:-redis://redis:6379}
       STORAGE_LOCATIONS: s3
       STORAGE_S3_DRIVER: s3
       STORAGE_S3_KEY: ${MINIO_ROOT_USER}
@@ -216,7 +216,7 @@ services:
       EMBEDDINGS_API_KEY: ${EMBEDDINGS_API_KEY:-}
       EMBEDDINGS_MODEL: ${EMBEDDINGS_MODEL:-}
       ASSISTANT_AI_TIMEOUT_MS: ${ASSISTANT_AI_TIMEOUT_MS:-30000}
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: ${REDIS_URL_DOCKER:-redis://redis:6379}
       DIRECTUS_INTERNAL_URL: http://directus:8055
       DIRECTUS_TOKEN: ${DIRECTUS_TOKEN}
       SOURCES_ENC_KEY: ${SOURCES_ENC_KEY:-}

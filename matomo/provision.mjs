@@ -5,7 +5,7 @@
 //
 // Usage : pnpm matomo:provision
 // Requis : MATOMO_TOKEN_AUTH (token admin « secure only », jamais commité —
-// .env local / secret CI). MATOMO_URL sinon http://localhost:${MATOMO_PORT:-8080}.
+// .env local / secret CI). MATOMO_URL sinon http://localhost:${MATOMO_PORT:-8082}.
 //
 // Le token doit être envoyé en POST (les tokens « secure only » refusent le
 // query string) — toutes les requêtes de ce script passent par api().
@@ -14,7 +14,7 @@ import { dimensions, goals, privacy, retention, site, SITE_ID } from './config.m
 import { log, logError } from '../directus/logger.mjs'
 
 const MATOMO_URL = (
-  process.env.MATOMO_URL ?? `http://localhost:${process.env.MATOMO_PORT ?? '8080'}`
+  process.env.MATOMO_URL ?? `http://localhost:${process.env.MATOMO_PORT ?? '8082'}`
 ).replace(/\/+$/, '')
 
 /**

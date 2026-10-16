@@ -25,7 +25,7 @@ pnpm matomo:provision
 ```
 
 Variables : `MATOMO_TOKEN_AUTH` (requis, jamais commité), `MATOMO_URL`
-(défaut `http://localhost:${MATOMO_PORT:-8080}`), `MATOMO_ADMIN_PASSWORD`
+(défaut `http://localhost:${MATOMO_PORT:-8082}`), `MATOMO_ADMIN_PASSWORD`
 (requis pour la rétention des logs — Matomo exige une reconfirmation du
 mot de passe admin ; sans lui le provision saute ce réglage avec un
 avertissement).
@@ -57,7 +57,7 @@ réservé au tunnel d'inscription session à venir.
 Stack : `docker compose up -d postgres redis directus directus-init minio
 matomo matomo-db`, puis `pnpm directus:build` si le schéma est absent,
 `pnpm seed`, API sur `API_PORT`, front avec
-`NUXT_PUBLIC_MATOMO_URL=http://localhost:${MATOMO_PORT:-8080}` +
+`NUXT_PUBLIC_MATOMO_URL=http://localhost:${MATOMO_PORT:-8082}` +
 `NUXT_PUBLIC_MATOMO_SITE_ID=1`.
 
 Vérifications acceptées en local (instance `localhost:8082`) :

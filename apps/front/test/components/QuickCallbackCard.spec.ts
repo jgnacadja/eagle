@@ -262,8 +262,11 @@ describe('QuickCallbackCard', () => {
       }
     ])
 
-    // Confirmation déportée sur /confirmation/rendez-vous/ (ST-30).
-    expect(confirmConversionMock).toHaveBeenCalledWith('rendez-vous')
+    // Confirmation déportée sur /confirmation/rendez-vous (ST-30) — le
+    // détail reprend créneau et téléphone de l'ancien écran.
+    expect(confirmConversionMock).toHaveBeenCalledWith('rendez-vous', {
+      detail: 'Un conseiller vous rappellera dès que possible au 06 12 34 56 78.'
+    })
   })
 
   it('exerce la sélection d’un créneau personnalisé et transmet la valeur au payload', async () => {
@@ -294,7 +297,9 @@ describe('QuickCallbackCard', () => {
         creneau: 'Cet après-midi'
       }
     ])
-    expect(confirmConversionMock).toHaveBeenCalledWith('rendez-vous')
+    expect(confirmConversionMock).toHaveBeenCalledWith('rendez-vous', {
+      detail: 'Un conseiller vous rappellera cet après-midi au 06 98 76 54 32.'
+    })
   })
 
   it('affiche un message d’erreur si l’appel API échoue et ne confirme pas', async () => {

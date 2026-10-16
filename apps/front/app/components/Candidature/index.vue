@@ -22,7 +22,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import CandidatureForm from './Form.vue'
-import { type CandidaturePayload, type CandidatureVoie } from '~/types/candidature'
+import { VOIE_LABELS, type CandidaturePayload, type CandidatureVoie } from '~/types/candidature'
 import type { FormId, NetworkProfileType } from '~/types/analytics'
 
 import { useAnalytics } from '~/composables/useAnalytics'
@@ -80,7 +80,11 @@ async function onSubmit(payload: CandidaturePayload) {
     form_id: formId
   })
 
-  // Confirmation mesurable (ST-30) : la conversion quitte le dialog.
-  await confirmConversion('candidature')
+  // Confirmation mesurable (ST-30) : la conversion quitte le dialog, le
+  // détail reprend le récapitulatif « Voie — Ville » de l'ancien écran.
+  // ville est requise par le schéma (min 1) : toujours renseignée ici.
+  await confirmConversion('candidature', {
+    detail: `Projet « ${VOIE_LABELS[payload.voie]} — ${payload.ville} » — réponse sous 5 jours ouvrés.`
+  })
 }
 </script>

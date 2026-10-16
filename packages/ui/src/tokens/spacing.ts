@@ -21,5 +21,12 @@ export const layout = {
   controlHeight: '48px',
   controlHeightSm: '36px',
   logoHeight: '58px',
-  logoWidth: '70px'
+  logoWidth: '70px',
+  logoHeaderWidth: '74px',
+  logoHeaderHeight: '62px',
+  // Match the original screenshot's text spacing and width without changing glyph height.
+  logoNameTop: '76.5%',
+  logoTaglineTop: '93.6%',
+  logoNameScaleX: '0.937931',
+  logoTaglineScaleX: '0.975728'
 } as const

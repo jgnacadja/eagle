@@ -53,5 +53,10 @@ export const colors = {
   info: {
     default: '#1e3a6e',
     soft: '#edf2fa'
+  },
+  logo: {
+    name: '#203c87',
+    tagline: '#eca224',
+    inverse: '#f5ead8'
   }
 } as const

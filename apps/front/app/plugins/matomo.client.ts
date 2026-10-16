@@ -43,7 +43,12 @@ export default defineNuxtPlugin((nuxtApp) => {
       'famille',
       firstStringParam(current.params.famille) ?? firstStringParam(current.query.famille)
     )
-    setActionDimension('departement', firstStringParam(current.query.dept))
+    // Hors fiche centre : la page la pose depuis `centre.department` au
+    // setup — `page:finish` arrive après et ne doit pas l'écraser. Le
+    // registre purge ailleurs la valeur catalogue résiduelle.
+    if (current.name !== 'centres-slug') {
+      setActionDimension('departement', firstStringParam(current.query.dept))
+    }
   }
 
   // Landing SEO (portée visite) : gabarit de la page d'entrée, figé pour la

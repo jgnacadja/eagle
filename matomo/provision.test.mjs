@@ -34,6 +34,18 @@ describe('planSite', () => {
       'update'
     )
   })
+
+  it('tolère `urls` renvoyé en chaîne par getSiteFromId', () => {
+    assert.equal(
+      planSite({
+        name: site.name,
+        timezone: site.timezone,
+        ecommerce: '0',
+        urls: site.urls[0]
+      }).action,
+      'update'
+    )
+  })
 })
 
 describe('planDimension', () => {
@@ -135,6 +147,7 @@ describe('provision', () => {
       'SitesManager.getSiteFromId': () => {
         throw new Error('not found')
       },
+      'SitesManager.addSite': () => 1,
       'CustomDimensions.getConfiguredCustomDimensions': () => [],
       'Goals.getGoals': () => []
     })
@@ -193,5 +206,19 @@ describe('provision', () => {
         ) && !/getGoals|getConfigured|getSiteFromId/.test(c.method)
     )
     assert.deepEqual(writes, [])
+  })
+
+  it('échoue si le site créé reçoit un idSite ≠ SITE_ID', async () => {
+    const { api, calls } = fakeApi({
+      'SitesManager.getSiteFromId': () => {
+        throw new Error('not found')
+      },
+      'SitesManager.addSite': () => 2
+    })
+    await assert.rejects(() => provision(api), /idSite=2/)
+    assert.equal(
+      calls.filter((c) => c.method.startsWith('CustomDimensions.')).length,
+      0
+    )
   })
 })

@@ -333,7 +333,7 @@
                   :meta="formation.meta"
                   :status="formation.status"
                   :to="formation.to ?? undefined"
-                  :center-id="centre.slug || centre.id"
+                  :center-id="centre.slug"
                   :center-name="centre.name"
                   :center-city="centre.city ?? undefined"
                   :position="i + 1"
@@ -1135,7 +1135,7 @@ function onDownloadQualiopi() {
   if (centre.value) {
     pushEvent({
       event: 'click_download_qualiopi',
-      center_id: centre.value.slug || centre.value.id,
+      center_id: centre.value.slug,
       center_name: centre.value.name
     })
   }
@@ -1147,7 +1147,7 @@ function trackPhoneClick(phoneType: 'fixe' | 'mobile') {
   if (!centre.value) return
   pushEvent({
     event: 'click_phone',
-    center_id: centre.value.slug || centre.value.id,
+    center_id: centre.value.slug,
     center_name: centre.value.name,
     phone_type: phoneType,
     page_path: typeof window !== 'undefined' ? window.location.pathname : ''

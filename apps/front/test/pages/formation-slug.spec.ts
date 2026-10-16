@@ -420,7 +420,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     routeMock = {
       params: { famille: 'caces-conduite-engins', slug: 'caces-r489-chariots-elevateurs' },
       query: {},
-      path: '/formations/caces-conduite-engins/caces-r489-chariots-elevateurs/',
+      path: '/formations/caces-conduite-engins/caces-r489-chariots-elevateurs',
       meta: {}
     }
   })
@@ -519,8 +519,8 @@ describe('pages/formations/[famille]/[slug]', () => {
     // Ordre = sort de la jonction (PASI avant SST malgré l'ordre de réponse).
     const simCards = wrapper.findAll('.similaire-card')
     expect(simCards.map((c) => c.attributes('data-to'))).toEqual([
-      '/formations/securite-incendie/pasi/',
-      '/formations/secours-premiers-secours/sst-initiale/'
+      '/formations/securite-incendie/pasi',
+      '/formations/secours-premiers-secours/sst-initiale'
     ])
     expect(wrapper.text()).toContain('PASI — prévention incendie')
     expect(wrapper.text()).toContain('SST initiale')
@@ -556,7 +556,7 @@ describe('pages/formations/[famille]/[slug]', () => {
 
     expect(wrapper.text()).toContain('Pour aller plus loin')
     expect(wrapper.text()).toContain('Recyclage CACES : échéance en 2027')
-    expect(wrapper.find('a[href="/actualites/recyclage-caces-2027/"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/actualites/recyclage-caces-2027"]').exists()).toBe(true)
   })
 
   it('rend la description WYSIWYG en HTML sans balises littérales', async () => {
@@ -611,7 +611,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     expect(wrapper.findAll('.session-card')).toHaveLength(1)
     expect(wrapper.text()).toContain('Session en présentiel')
     expect(wrapper.text()).toContain('Où suivre cette formation ?')
-    expect(wrapper.find('a[href="/centres/creteil/"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/centres/creteil"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('Centre de Créteil')
     expect(wrapper.text()).toContain('Val-de-Marne')
     expect(wrapper.text()).toContain(`Prochaine session le ${NEXT_SESSION.short}`)
@@ -792,7 +792,7 @@ describe('pages/formations/[famille]/[slug]', () => {
       name: 'CACES R489 — chariots élévateurs',
       description: 'Formation CACES R489.',
       inLanguage: 'fr',
-      url: 'https://learnup.test/formations/caces-conduite-engins/caces-r489-chariots-elevateurs/',
+      url: 'https://learnup.test/formations/caces-conduite-engins/caces-r489-chariots-elevateurs',
       provider: { '@type': 'Organization', name: 'LEARN UP ACADEMY' },
       about: { '@type': 'Thing', name: "CACES & conduite d'engins" },
       hasCourseInstance: { '@type': 'CourseInstance', courseWorkload: 'PT21H' },
@@ -828,7 +828,7 @@ describe('pages/formations/[famille]/[slug]', () => {
 
   it('n’émet pas de JSON-LD sur une fiche introuvable', async () => {
     routeMock.params.slug = 'inconnu'
-    routeMock.path = '/formations/caces-conduite-engins/inconnu/'
+    routeMock.path = '/formations/caces-conduite-engins/inconnu'
     await mountPage()
 
     const [, , options] = seoArgs()
@@ -837,13 +837,13 @@ describe('pages/formations/[famille]/[slug]', () => {
 
   it('affiche l’état indisponible et adapte breadcrumb/SEO pour un slug inconnu', async () => {
     routeMock.params.slug = 'inconnu'
-    routeMock.path = '/formations/caces-conduite-engins/inconnu/'
+    routeMock.path = '/formations/caces-conduite-engins/inconnu'
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain("Cette formation n'est pas disponible.")
     expect(routeMock.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
-      { label: 'Formations', to: '/formations/' },
+      { label: 'Formations', to: '/formations' },
       { label: 'Formation indisponible' }
     ])
 
@@ -860,7 +860,7 @@ describe('pages/formations/[famille]/[slug]', () => {
   it('affiche l’état indisponible pour une famille inconnue', async () => {
     routeMock.params.famille = 'inconnue'
     routeMock.params.slug = 'caces-r489-chariots-elevateurs'
-    routeMock.path = '/formations/inconnue/caces-r489-chariots-elevateurs/'
+    routeMock.path = '/formations/inconnue/caces-r489-chariots-elevateurs'
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain("Cette formation n'est pas disponible.")
@@ -873,7 +873,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     expect(wrapper.text()).toContain("Le contenu n'a pas pu être chargé.")
     expect(routeMock.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
-      { label: 'Formations', to: '/formations/' },
+      { label: 'Formations', to: '/formations' },
       { label: 'Erreur de chargement' }
     ])
 
@@ -904,20 +904,20 @@ describe('pages/formations/[famille]/[slug]', () => {
 
   it('la recherche de l’état indisponible redirige vers /formations avec la requête', async () => {
     routeMock.params.slug = 'inconnu'
-    routeMock.path = '/formations/caces-conduite-engins/inconnu/'
+    routeMock.path = '/formations/caces-conduite-engins/inconnu'
     const wrapper = await mountPage()
 
     await wrapper.find('.search-stub').trigger('click')
 
     expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/formations/',
+      path: '/formations',
       query: { q: 'caces' }
     })
   })
 
   it('passe le statut 404 quand la formation est introuvable', async () => {
     routeMock.params.slug = 'inconnu'
-    routeMock.path = '/formations/caces-conduite-engins/inconnu/'
+    routeMock.path = '/formations/caces-conduite-engins/inconnu'
     await mountPage()
 
     expect(setResponseStatusMock).toHaveBeenCalledWith(requestEvent, 404, 'Formation introuvable')
@@ -1387,6 +1387,6 @@ describe('pages/formations/[famille]/[slug]', () => {
     await wrapper.findComponent(NotFound).vm.$emit('search', '')
     await flushPromises()
 
-    expect(navigateToMock).toHaveBeenCalledWith({ path: '/formations/', query: {} })
+    expect(navigateToMock).toHaveBeenCalledWith({ path: '/formations', query: {} })
   })
 })

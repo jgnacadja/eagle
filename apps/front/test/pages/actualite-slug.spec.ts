@@ -246,7 +246,7 @@ describe('pages/actualites/[slug]', () => {
     routeMock = {
       params: { slug: 'recyclage-caces-echeances-2027' },
       query: {},
-      path: '/actualites/recyclage-caces-echeances-2027/',
+      path: '/actualites/recyclage-caces-echeances-2027',
       meta: {}
     }
     Object.defineProperty(window.navigator, 'share', { value: undefined, configurable: true })
@@ -279,7 +279,7 @@ describe('pages/actualites/[slug]', () => {
       value: { writeText },
       configurable: true
     })
-    routeMock.query = { from: '/formations/', category: 'SST' }
+    routeMock.query = { from: '/formations', category: 'SST' }
     const wrapper = await mountPage()
     const buttonByLabel = (label: string) =>
       wrapper.findAll('button').find((b) => b.attributes('aria-label') === label)!
@@ -288,19 +288,19 @@ describe('pages/actualites/[slug]', () => {
     await flushPromises()
 
     expect(writeText).toHaveBeenCalledWith(
-      `${window.location.origin}/actualites/recyclage-caces-echeances-2027/`
+      `${window.location.origin}/actualites/recyclage-caces-echeances-2027`
     )
     expect(buttonByLabel('Lien copié').exists()).toBe(true)
   })
 
   it('passe l’URL propre de l’article au menu de partage', async () => {
-    routeMock.query = { from: '/formations/', category: 'SST' }
+    routeMock.query = { from: '/formations', category: 'SST' }
     const wrapper = await mountPage()
 
     const share = wrapper.findComponent(ShareMenuStub)
     expect(share.exists()).toBe(true)
     expect(share.props('url')).toBe(
-      `${window.location.origin}/actualites/recyclage-caces-echeances-2027/`
+      `${window.location.origin}/actualites/recyclage-caces-echeances-2027`
     )
     expect(share.props('title')).toBe('Recyclage CACES : échéance en 2027')
   })
@@ -322,7 +322,7 @@ describe('pages/actualites/[slug]', () => {
     expect(wrapper.text()).toContain("CACES & conduite d'engins")
     expect(wrapper.text()).toContain('Recyclage CACES R489 — toutes catégories')
     const link = wrapper.find(
-      'a[href="/formations/caces-conduite-engins/caces-r489-chariots-elevateurs/"]'
+      'a[href="/formations/caces-conduite-engins/caces-r489-chariots-elevateurs"]'
     )
     expect(link.exists()).toBe(true)
   })
@@ -330,7 +330,7 @@ describe('pages/actualites/[slug]', () => {
   it('affiche le CTA conseiller vers le formulaire dédié', async () => {
     const wrapper = await mountPage()
 
-    const link = wrapper.find('a[href="/parler-a-votre-conseiller/"]')
+    const link = wrapper.find('a[href="/parler-a-votre-conseiller"]')
     expect(link.exists()).toBe(true)
     expect(link.text()).toContain('Parler à votre conseiller')
   })
@@ -342,7 +342,7 @@ describe('pages/actualites/[slug]', () => {
     expect(wrapper.find('a[href="#pourquoi-2027-concentre-les-echeances"]').exists()).toBe(true)
     expect(wrapper.find('a[href="#comment-etaler-les-recyclages"]').exists()).toBe(true)
     expect(wrapper.text()).toContain('À lire ensuite')
-    expect(wrapper.find('a[href="/actualites/aipr-qui-former/"]').exists()).toBe(true)
+    expect(wrapper.find('a[href="/actualites/aipr-qui-former"]').exists()).toBe(true)
   })
 
   it('met à jour le breadcrumb avec la catégorie et le titre', async () => {
@@ -350,7 +350,7 @@ describe('pages/actualites/[slug]', () => {
 
     expect(routeMock.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
-      { label: 'Actualités', to: '/actualites/' },
+      { label: 'Actualités', to: '/actualites' },
       { label: 'Réglementation & obligations' },
       { label: expect.stringContaining('Recyclage CACES') }
     ])
@@ -384,7 +384,7 @@ describe('pages/actualites/[slug]', () => {
     })
 
     routeMock.params.slug = 'securite-au-travail'
-    routeMock.path = '/actualites/securite-au-travail/'
+    routeMock.path = '/actualites/securite-au-travail'
     seoMock.mockClear()
     await mountPage()
     const [, , categoryOptions] = seoArgs()
@@ -442,13 +442,13 @@ describe('pages/actualites/[slug]', () => {
 
   it('affiche l’état introuvable et adapte breadcrumb/SEO pour un slug inconnu', async () => {
     routeMock.params.slug = 'inconnu'
-    routeMock.path = '/actualites/inconnu/'
+    routeMock.path = '/actualites/inconnu'
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain("Cet article n'est pas disponible.")
     expect(routeMock.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
-      { label: 'Actualités', to: '/actualites/' },
+      { label: 'Actualités', to: '/actualites' },
       { label: 'Article introuvable' }
     ])
     const [source, fallback] = seoArgs()
@@ -503,8 +503,8 @@ describe('pages/actualites/[slug]', () => {
     const wrapper = await mountPage()
 
     const hrefs = wrapper.findAll('a').map((a) => a.attributes('href'))
-    expect(hrefs).toContain('/actualites/passeport-prevention-2026/')
-    expect(hrefs).toContain('/actualites/')
+    expect(hrefs).toContain('/actualites/passeport-prevention-2026')
+    expect(hrefs).toContain('/actualites')
   })
 
   it('applique le SEO de la page catégorie : titre rubrique et canonical self', async () => {
@@ -515,7 +515,7 @@ describe('pages/actualites/[slug]', () => {
     expect(source).toMatchObject({
       seo_title: 'Sécurité au travail | LEARN UP ACADEMY',
       seo_description: 'Tout sur la prévention des risques professionnels.',
-      seo_canonical: 'https://learnup.test/actualites/securite-au-travail/'
+      seo_canonical: 'https://learnup.test/actualites/securite-au-travail'
     })
     expect(fallback).toBe('Sécurité au travail | LEARN UP ACADEMY')
   })
@@ -526,7 +526,7 @@ describe('pages/actualites/[slug]', () => {
 
     expect(routeMock.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
-      { label: 'Actualités', to: '/actualites/' },
+      { label: 'Actualités', to: '/actualites' },
       { label: 'Sécurité au travail' }
     ])
   })
@@ -550,7 +550,7 @@ describe('pages/actualites/[slug]', () => {
     expect(wrapper.text()).toContain("L'article n'a pas pu être chargé.")
     expect(routeMock.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
-      { label: 'Actualités', to: '/actualites/' },
+      { label: 'Actualités', to: '/actualites' },
       { label: 'Erreur de chargement' }
     ])
     const [source, fallback] = seoArgs()
@@ -570,7 +570,7 @@ describe('pages/actualites/[slug]', () => {
       .trigger('click')
 
     expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/actualites/recyclage-caces-echeances-2027/',
+      path: '/actualites/recyclage-caces-echeances-2027',
       query: { autre: 'x' }
     })
     expect(refreshMock).not.toHaveBeenCalled()
@@ -638,22 +638,22 @@ describe('pages/actualites/[slug]', () => {
   })
 
   it('adapte le fil d’Ariane selon la source ?from=/formations', async () => {
-    routeMock.query = { from: '/formations/caces-conduite-engins/' }
+    routeMock.query = { from: '/formations/caces-conduite-engins' }
     await mountPage()
 
     expect(routeMock.meta.breadcrumb).toContainEqual({
       label: 'Formations',
-      to: '/formations/'
+      to: '/formations'
     })
   })
 
   it('adapte le fil d’Ariane selon la source ?from=/centres', async () => {
-    routeMock.query = { from: '/centres/creteil/' }
+    routeMock.query = { from: '/centres/creteil' }
     await mountPage()
 
     expect(routeMock.meta.breadcrumb).toContainEqual({
       label: 'Réseau de centres',
-      to: '/centres/'
+      to: '/centres'
     })
   })
 
@@ -700,13 +700,13 @@ describe('pages/actualites/[slug]', () => {
 
   it('la recherche de l’état introuvable redirige vers /actualites avec la requête', async () => {
     routeMock.params.slug = 'inconnu'
-    routeMock.path = '/actualites/inconnu/'
+    routeMock.path = '/actualites/inconnu'
     const wrapper = await mountPage()
 
     await wrapper.find('.search-stub').trigger('click')
 
     expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/actualites/',
+      path: '/actualites',
       query: { q: 'caces' }
     })
   })
@@ -717,7 +717,7 @@ describe('pages/actualites/[slug]', () => {
 
     expect(
       wrapper
-        .find('a[href="/formations/caces-conduite-engins/caces-r489-chariots-elevateurs/"]')
+        .find('a[href="/formations/caces-conduite-engins/caces-r489-chariots-elevateurs"]')
         .exists()
     ).toBe(false)
   })

@@ -183,6 +183,7 @@ describe('provision', () => {
       'SitesManager.getSiteFromId': () => {
         throw new Error('not found')
       },
+      'SitesManager.addSite': () => 1,
       'CustomDimensions.getConfiguredCustomDimensions': () => [],
       'Goals.getGoals': () => []
     })

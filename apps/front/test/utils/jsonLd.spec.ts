@@ -214,11 +214,11 @@ describe('buildBreadcrumbJsonLd', () => {
     const ld = buildBreadcrumbJsonLd(
       [
         { label: 'Accueil', to: '/' },
-        { label: 'Actualités', to: '/actualites/' },
+        { label: 'Actualités', to: '/actualites' },
         { label: 'Mon article' }
       ],
       'https://learnup.fr',
-      '/actualites/mon-article/'
+      '/actualites/mon-article'
     ) as { itemListElement: Record<string, unknown>[] }
 
     expect(ld['@type']).toBe('BreadcrumbList')
@@ -228,23 +228,23 @@ describe('buildBreadcrumbJsonLd', () => {
         '@type': 'ListItem',
         position: 2,
         name: 'Actualités',
-        item: 'https://learnup.fr/actualites/'
+        item: 'https://learnup.fr/actualites'
       },
       {
         '@type': 'ListItem',
         position: 3,
         name: 'Mon article',
-        item: 'https://learnup.fr/actualites/mon-article/'
+        item: 'https://learnup.fr/actualites/mon-article'
       }
     ])
   })
 
   it('renvoie null sans élément et tolère les URLs déjà absolues', () => {
-    expect(buildBreadcrumbJsonLd([], 'https://learnup.fr', '/x/')).toBeNull()
+    expect(buildBreadcrumbJsonLd([], 'https://learnup.fr', '/x')).toBeNull()
     const ld = buildBreadcrumbJsonLd(
       [{ label: 'Ext', to: 'https://ext.test/page' }],
       'https://learnup.fr',
-      '/x/'
+      '/x'
     ) as { itemListElement: { item?: string }[] }
     expect(ld.itemListElement[0]!.item).toBe('https://ext.test/page')
   })
@@ -254,7 +254,7 @@ describe('buildArticleJsonLd', () => {
   it('émet un Article complet avec auteur Person', () => {
     const ld = buildArticleJsonLd({
       article: ARTICLE,
-      url: 'https://learnup.fr/actualites/recyclage-caces/',
+      url: 'https://learnup.fr/actualites/recyclage-caces',
       siteUrl: 'https://learnup.fr',
       imageUrl: 'https://api.test/assets/cover.png'
     }) as Record<string, unknown>
@@ -271,7 +271,7 @@ describe('buildArticleJsonLd', () => {
       publisher: { '@type': 'Organization', name: 'LEARN UP ACADEMY' },
       mainEntityOfPage: {
         '@type': 'WebPage',
-        '@id': 'https://learnup.fr/actualites/recyclage-caces/'
+        '@id': 'https://learnup.fr/actualites/recyclage-caces'
       }
     })
   })
@@ -279,7 +279,7 @@ describe('buildArticleJsonLd', () => {
   it('retombe sur Organization sans nom d’auteur et null sans titre', () => {
     const ld = buildArticleJsonLd({
       article: { ...ARTICLE, author_name: null, seo_description: null, region: null },
-      url: 'https://learnup.fr/a/',
+      url: 'https://learnup.fr/a',
       siteUrl: 'https://learnup.fr'
     }) as Record<string, unknown>
     expect(ld.author).toMatchObject({ '@type': 'Organization' })
@@ -294,7 +294,7 @@ describe('buildLocalBusinessJsonLd', () => {
   it('émet un LocalBusiness complet : adresse, géo, contact', () => {
     const ld = buildLocalBusinessJsonLd({
       centre: CENTRE,
-      url: 'https://learnup.fr/centres/creteil/',
+      url: 'https://learnup.fr/centres/creteil',
       siteUrl: 'https://learnup.fr'
     }) as Record<string, unknown>
 
@@ -302,7 +302,7 @@ describe('buildLocalBusinessJsonLd', () => {
       '@type': 'LocalBusiness',
       name: 'Centre LEARN UP de Créteil',
       description: 'Centre en bord de Marne.',
-      url: 'https://learnup.fr/centres/creteil/',
+      url: 'https://learnup.fr/centres/creteil',
       telephone: '01 23 45 67 89',
       email: 'creteil@learnup.fr',
       openingHours: 'Lun–Ven 8h30–17h30',
@@ -334,7 +334,7 @@ describe('buildLocalBusinessJsonLd', () => {
         email: null,
         opening_hours: null
       },
-      url: 'https://learnup.fr/centres/x/',
+      url: 'https://learnup.fr/centres/x',
       siteUrl: 'https://learnup.fr'
     }) as Record<string, unknown>
 

@@ -329,7 +329,7 @@ describe('pages/formations/[famille]', () => {
     routeMock = {
       params: { famille: 'caces-conduite-engins' },
       query: {},
-      path: '/formations/caces-conduite-engins/',
+      path: '/formations/caces-conduite-engins',
       meta: {}
     }
     catalogState.pending = false
@@ -405,7 +405,7 @@ describe('pages/formations/[famille]', () => {
 
     expect(routeMock.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
-      { label: 'Formations', to: '/formations/' },
+      { label: 'Formations', to: '/formations' },
       { label: "CACES & conduite d'engins" }
     ])
 
@@ -422,13 +422,13 @@ describe('pages/formations/[famille]', () => {
     directusRequest.mockResolvedValue([])
 
     routeMock.params.famille = 'famille-inconnue'
-    routeMock.path = '/formations/famille-inconnue/'
+    routeMock.path = '/formations/famille-inconnue'
     const wrapper = await mountPage()
 
     expect(wrapper.text()).toContain("Cette famille de formations n'est pas disponible.")
     expect(routeMock.meta.breadcrumb).toEqual([
       { label: 'Accueil', to: '/' },
-      { label: 'Formations', to: '/formations/' },
+      { label: 'Formations', to: '/formations' },
       { label: 'Famille introuvable' }
     ])
 
@@ -454,13 +454,13 @@ describe('pages/formations/[famille]', () => {
     directusRequest.mockResolvedValue([])
 
     routeMock.params.famille = 'famille-inconnue'
-    routeMock.path = '/formations/famille-inconnue/'
+    routeMock.path = '/formations/famille-inconnue'
     const wrapper = await mountPage()
 
     await wrapper.find('.search-stub').trigger('click')
 
     expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/formations/',
+      path: '/formations',
       query: { q: 'caces' }
     })
   })
@@ -468,7 +468,7 @@ describe('pages/formations/[famille]', () => {
   it('passe le statut 404 quand la famille est introuvable', async () => {
     directusRequest.mockResolvedValue([])
     routeMock.params.famille = 'famille-inconnue'
-    routeMock.path = '/formations/famille-inconnue/'
+    routeMock.path = '/formations/famille-inconnue'
     await mountPage()
 
     expect(setResponseStatusMock).toHaveBeenCalledWith(requestEvent, 404, 'Famille introuvable')
@@ -505,7 +505,7 @@ describe('pages/formations/[famille]', () => {
     await flushPromises()
 
     expect(navigateToMock).toHaveBeenCalledWith({
-      path: '/formations/caces-conduite-engins/',
+      path: '/formations/caces-conduite-engins',
       query: { autre: 'x' }
     })
   })
@@ -689,7 +689,7 @@ describe('pages/formations/[famille]', () => {
     await wrapper.find('.search-empty').trigger('click')
     await flushPromises()
 
-    expect(navigateToMock).toHaveBeenCalledWith({ path: '/formations/', query: {} })
+    expect(navigateToMock).toHaveBeenCalledWith({ path: '/formations', query: {} })
   })
 
   it('réessaie le chargement du catalogue sur retry', async () => {

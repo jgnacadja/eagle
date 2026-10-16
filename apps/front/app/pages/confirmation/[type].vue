@@ -11,11 +11,18 @@
           <IconCheck :size="32" />
         </p>
         <div v-hero>
-          <h1 class="font-display text-h2 font-extrabold text-ink lg:text-h1">
+          <h1
+            ref="titleRef"
+            tabindex="-1"
+            class="font-display text-h2 font-extrabold text-ink lg:text-h1"
+          >
             {{ content.title }}
           </h1>
           <p class="mt-sm max-w-prose text-body text-ink-muted">
             {{ content.message }}
+          </p>
+          <p v-if="detail" class="mt-sm max-w-prose text-small font-semibold text-ink">
+            {{ detail }}
           </p>
         </div>
         <div v-if="reference" class="rounded-md border border-rule bg-surface px-xl py-md">
@@ -39,9 +46,13 @@
 // ST-30 — page de confirmation d'une conversion. La conversion n'est
 // mesurable que si elle suit un envoi réussi : le formulaire pose un
 // drapeau sessionStorage, consommé ici au montage (supprimé — un
-// rechargement ou un accès direct repart vers l'accueil, jamais de
-// conversion fantôme). Pages noindex/nofollow, hors sitemaps.
+// rechargement ou un accès direct repart vers l'accueil). La vue Matomo
+// n'est émise qu'après validation du drapeau : le plugin exclut ces pages
+// du suivi automatique, jamais de conversion fantôme. Pages noindex/
+// nofollow, hors sitemaps.
 import { confirmationFlagKey, type ConfirmationType } from '~/utils/confirmation'
+import { useAnalytics } from '~/composables/useAnalytics'
+import type { ConfirmationContext } from '~/composables/useConfirmationRedirect'
 
 const CONTENT: Record<ConfirmationType, { title: string; message: string }> = {
   devis: {
@@ -78,7 +89,11 @@ useHead({
   meta: [{ name: 'robots', content: 'noindex, nofollow' }]
 })
 
+const { trackPageView } = useAnalytics()
+
+const titleRef = ref<HTMLElement | null>(null)
 const reference = ref<string | null>(null)
+const detail = ref<string | null>(null)
 const backTo = ref('/')
 const backLabel = ref("Retour à l'accueil")
 const allowed = ref(false)
@@ -94,13 +109,20 @@ onMounted(async () => {
   }
   window.sessionStorage.removeItem(key)
   try {
-    const context = JSON.parse(flag) as { reference?: string; backTo?: string; backLabel?: string }
+    const context = JSON.parse(flag) as ConfirmationContext
     reference.value = context.reference || null
-    backTo.value = context.backTo || '/'
+    detail.value = context.detail || null
+    // Le CTA retour ne reste qu'un chemin interne — un contenu forgé dans le
+    // drapeau ne doit pas ouvrir de lien externe.
+    backTo.value = context.backTo?.startsWith('/') ? context.backTo : '/'
     backLabel.value = context.backLabel || "Retour à l'accueil"
   } catch {
     // Drapeau corrompu : la conversion compte quand même, sans contexte.
   }
   allowed.value = true
+  // Vue mesurable — émise ici seulement, drapeau validé et titre appliqué.
+  await nextTick()
+  trackPageView()
+  titleRef.value?.focus()
 })
 </script>

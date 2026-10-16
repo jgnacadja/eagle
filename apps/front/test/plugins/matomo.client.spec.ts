@@ -25,6 +25,7 @@ describe('matomo.client plugin (ST-27)', () => {
     window.sessionStorage.clear()
     resetAnalyticsDimensions()
     fakeNuxtApp.hook.mockClear()
+    window.history.pushState({}, '', '/')
   })
 
   it('sans configuration : avertit, ni script ni file', () => {
@@ -70,6 +71,32 @@ describe('matomo.client plugin (ST-27)', () => {
     query = { preview: 'tok' }
     matomoPlugin(fakeNuxtApp as never)
     expect(window._paq!.map((c) => c[0])).not.toContain('trackPageView')
+  })
+
+  // ST-30 — la conversion n'est mesurée que par la page après validation du
+  // drapeau : ni la vue initiale ni les navigations ne la comptent ici.
+  it('confirmation : la vue initiale n’est pas émise', () => {
+    window.history.pushState({}, '', '/confirmation/devis')
+    matomoPlugin(fakeNuxtApp as never)
+    expect(window._paq!.map((c) => c[0])).not.toContain('trackPageView')
+  })
+
+  it('confirmation : la navigation n’émet pas de vue automatique', async () => {
+    matomoPlugin(fakeNuxtApp as never)
+    const before = window._paq!.filter((c) => c[0] === 'trackPageView').length
+    window.history.pushState({}, '', '/confirmation/candidature')
+    hookCallbacks.get('page:finish')!()
+    await Promise.resolve() // nextTick
+    expect(window._paq!.filter((c) => c[0] === 'trackPageView')).toHaveLength(before)
+  })
+
+  it('confirmation : un type inconnu reste suivi normalement', async () => {
+    matomoPlugin(fakeNuxtApp as never)
+    const before = window._paq!.filter((c) => c[0] === 'trackPageView').length
+    window.history.pushState({}, '', '/confirmation/inconnu')
+    hookCallbacks.get('page:finish')!()
+    await Promise.resolve() // nextTick
+    expect(window._paq!.filter((c) => c[0] === 'trackPageView')).toHaveLength(before + 1)
   })
 
   it('l’url de l’instance est normalisée (pas de double slash)', () => {

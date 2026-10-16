@@ -36,7 +36,11 @@ const CONTENT_COLLECTIONS = [
   'pages_legales',
   'pages_legales_sections',
   'pages_legales_subsections',
-  'stats'
+  'stats',
+  // Lignes écrites par l'extension slug-redirects ou l'éditeur : purge les
+  // résolutions `seo:resolve:*` en cache API (le front n'a rien à purger —
+  // son middleware consulte la résolution avant le rendu ISR).
+  'redirects'
 ]
 
 // La sync Digiforma écrit via le compte de service DIRECTUS_TOKEN — un

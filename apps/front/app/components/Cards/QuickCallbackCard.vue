@@ -340,7 +340,9 @@ const handleSubmit = validateAndSubmit(
 
     if (success) {
       emit('submit', { telephone: tel, creneau: cr })
-      await confirmConversion('rendez-vous')
+      await confirmConversion('rendez-vous', {
+        detail: `Un conseiller vous rappellera ${cr.toLowerCase()} au ${tel}.`
+      })
     } else if (validationErrors.value.length > 0) {
       // 400 de validation : le message du champ remonte sous l'input
       // plutôt que l'erreur générique sans piste de correction.

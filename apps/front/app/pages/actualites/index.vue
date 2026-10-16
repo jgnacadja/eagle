@@ -632,7 +632,10 @@ const onSubscribe = handleSubmit(async (values) => {
     pageName: 'Actualités'
   })
   if (ok) {
-    await confirmConversion('inscription')
+    await confirmConversion('inscription', {
+      detail:
+        "Pensez à vérifier vos courriers indésirables si vous ne recevez rien d'ici quelques minutes."
+    })
   }
 })
 </script>

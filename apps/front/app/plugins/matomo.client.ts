@@ -1,5 +1,6 @@
 import { nextTick } from 'vue'
 import { useAnalytics } from '~/composables/useAnalytics'
+import { isConfirmationPath } from '~/utils/confirmation'
 import { isPreviewQuery } from '~/utils/matomo'
 import { firstStringParam, gabaritForRouteName } from '~/utils/matomo-dimensions'
 import { logClientWarning } from '~/utils/logger'
@@ -42,7 +43,12 @@ export default defineNuxtPlugin((nuxtApp) => {
       'famille',
       firstStringParam(current.params.famille) ?? firstStringParam(current.query.famille)
     )
-    setActionDimension('departement', firstStringParam(current.query.dept))
+    // Hors fiche centre : la page la pose depuis `centre.department` au
+    // setup — `page:finish` arrive après et ne doit pas l'écraser. Le
+    // registre purge ailleurs la valeur catalogue résiduelle.
+    if (current.name !== 'centres-slug') {
+      setActionDimension('departement', firstStringParam(current.query.dept))
+    }
   }
 
   // Landing SEO (portée visite) : gabarit de la page d'entrée, figé pour la
@@ -60,7 +66,12 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   // Vue initiale (déclenchée immédiatement, les commandes attendent matomo.js),
   // puis une vue à chaque navigation client — après useHead pour avoir le titre.
-  if (!isPreviewQuery(route.query)) {
+  // /confirmation/{type} exclu (ST-30) : la vue n'y est émise que par la page
+  // elle-même, après validation du drapeau de conversion — sinon un accès
+  // direct, un rechargement ou un retour arrière compterait une conversion
+  // fantôme avant même la redirection vers l'accueil.
+  const autoTrackable = () => !isConfirmationPath(window.location.pathname)
+  if (!isPreviewQuery(route.query) && autoTrackable()) {
     applyRouteDimensions()
     landingGabarit()
     trackPageView()
@@ -78,7 +89,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   nuxtApp.hook('page:finish', () => {
     nextTick(() => {
-      if (isPreviewQuery(useRoute().query)) return
+      if (isPreviewQuery(useRoute().query) || !autoTrackable()) return
       applyRouteDimensions()
       trackPageView()
     })

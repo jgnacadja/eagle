@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import matomoPlugin from '~/plugins/matomo.client'
-import { resetAnalyticsDimensions } from '~/composables/useAnalytics'
+import { resetAnalyticsDimensions, useAnalytics } from '~/composables/useAnalytics'
 
 let query: Record<string, string> = {}
 let routeName = 'index'
@@ -25,11 +25,12 @@ describe('matomo.client plugin (ST-27)', () => {
     window.sessionStorage.clear()
     resetAnalyticsDimensions()
     fakeNuxtApp.hook.mockClear()
+    window.history.pushState({}, '', '/')
   })
 
   it('sans configuration : avertit, ni script ni file', () => {
     config = { public: { matomoUrl: '', matomoSiteId: '' } }
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { })
     matomoPlugin(fakeNuxtApp as never)
     expect(warnSpy).toHaveBeenCalledWith(
       '[Analytics] NUXT_PUBLIC_MATOMO_URL / NUXT_PUBLIC_MATOMO_SITE_ID manquants : Matomo désactivé.'
@@ -72,6 +73,32 @@ describe('matomo.client plugin (ST-27)', () => {
     expect(window._paq!.map((c) => c[0])).not.toContain('trackPageView')
   })
 
+  // ST-30 — la conversion n'est mesurée que par la page après validation du
+  // drapeau : ni la vue initiale ni les navigations ne la comptent ici.
+  it('confirmation : la vue initiale n’est pas émise', () => {
+    window.history.pushState({}, '', '/confirmation/devis')
+    matomoPlugin(fakeNuxtApp as never)
+    expect(window._paq!.map((c) => c[0])).not.toContain('trackPageView')
+  })
+
+  it('confirmation : la navigation n’émet pas de vue automatique', async () => {
+    matomoPlugin(fakeNuxtApp as never)
+    const before = window._paq!.filter((c) => c[0] === 'trackPageView').length
+    window.history.pushState({}, '', '/confirmation/candidature')
+    hookCallbacks.get('page:finish')!()
+    await Promise.resolve() // nextTick
+    expect(window._paq!.filter((c) => c[0] === 'trackPageView')).toHaveLength(before)
+  })
+
+  it('confirmation : un type inconnu reste suivi normalement', async () => {
+    matomoPlugin(fakeNuxtApp as never)
+    const before = window._paq!.filter((c) => c[0] === 'trackPageView').length
+    window.history.pushState({}, '', '/confirmation/inconnu')
+    hookCallbacks.get('page:finish')!()
+    await Promise.resolve() // nextTick
+    expect(window._paq!.filter((c) => c[0] === 'trackPageView')).toHaveLength(before + 1)
+  })
+
   it('l’url de l’instance est normalisée (pas de double slash)', () => {
     config = { public: { matomoUrl: 'https://stats.learnup.test/', matomoSiteId: '2' } }
     matomoPlugin(fakeNuxtApp as never)
@@ -94,6 +121,19 @@ describe('matomo.client plugin (ST-27)', () => {
     query = { dept: '75' }
     matomoPlugin(fakeNuxtApp as never)
     expect(window._paq).toContainEqual(['setCustomDimension', 3, '75'])
+  })
+
+  // ST-32 — la fiche centre pose Département depuis `centre.department` au
+  // setup (avant page:finish) : applyRouteDimensions ne doit pas l'écraser.
+  it('dimension Département de la fiche centre survit à page:finish (ST-32)', async () => {
+    routeName = 'centres-slug'
+    matomoPlugin(fakeNuxtApp as never)
+    useAnalytics().setActionDimension('departement', 'Paris')
+    window._paq = []
+    hookCallbacks.get('page:finish')!()
+    await Promise.resolve()
+    expect(window._paq).toContainEqual(['setCustomDimension', 3, 'Paris'])
+    expect(window._paq).not.toContainEqual(['deleteCustomDimension', 3])
   })
 
   it('Landing SEO (visite) figé sur la page d’entrée, une fois par session', async () => {

@@ -177,9 +177,7 @@ const PII_FORBIDDEN_KEYS = new Set([
  * 1. Supprimer les clés ayant une valeur `undefined`, `null` ou chaîne vide `""`.
  * 2. Éliminer toute clé contenant des données personnelles (PII).
  */
-export function cleanEventPayload<T extends Record<string, unknown>>(
-  payload: T
-): Record<string, unknown> {
+export function cleanEventPayload(payload: object): Record<string, unknown> {
   const result: Record<string, unknown> = {}
 
   for (const [key, value] of Object.entries(payload)) {

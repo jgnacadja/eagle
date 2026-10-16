@@ -873,8 +873,9 @@ describe('pages/centres/demande-de-formation', () => {
     await wrapper.find('form').trigger('submit.prevent')
     await waitUntil(() => confirmConversionMock.mock.calls.length > 0)
 
-    // Sans contexte connu : retour à l'accueil.
+    // Sans contexte connu : pas de détail, retour à l'accueil.
     expect(confirmConversionMock).toHaveBeenCalledWith('devis', {
+      detail: undefined,
       backTo: '/',
       backLabel: "Retour à l'accueil"
     })
@@ -896,6 +897,8 @@ describe('pages/centres/demande-de-formation', () => {
     await waitUntil(() => confirmConversionMock.mock.calls.length > 0)
 
     expect(confirmConversionMock).toHaveBeenCalledWith('devis', {
+      detail:
+        'au sujet de la formation SST — Sauveteur secouriste du travail, session du 12 octobre 2026 à Créteil.',
       backTo: '/formations/sante/sst-initial',
       backLabel: 'Retour à la formation'
     })
@@ -911,6 +914,48 @@ describe('pages/centres/demande-de-formation', () => {
     await waitUntil(() => confirmConversionMock.mock.calls.length > 0)
 
     expect(confirmConversionMock).toHaveBeenCalledWith('devis', {
+      detail:
+        'au sujet de la formation SST — Sauveteur secouriste du travail, dans votre entreprise à Lyon 69003.',
+      backTo: '/formations/sante/sst-initial',
+      backLabel: 'Retour à la formation'
+    })
+  })
+
+  it('confirmation : session sans date annonce « session programmée »', async () => {
+    fetchMock.mockImplementation(async () => ({
+      ...courseSst,
+      sessions: [{ ...courseSst.sessions[0], startDate: '' }]
+    }))
+    routeStub.query = {
+      centre: 'creteil',
+      famille: 'sante',
+      formation: 'sst-initial',
+      session: 'sess-1'
+    }
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => confirmConversionMock.mock.calls.length > 0)
+
+    expect(confirmConversionMock).toHaveBeenCalledWith('devis', {
+      detail:
+        'au sujet de la formation SST — Sauveteur secouriste du travail, session programmée à Créteil.',
+      backTo: '/formations/sante/sst-initial',
+      backLabel: 'Retour à la formation'
+    })
+  })
+
+  it('confirmation : formation sans session ni intra — détail au nom seul', async () => {
+    routeStub.query = { famille: 'sante', formation: 'sst-initial' }
+    const wrapper = await mountPage()
+    await fillValidForm(wrapper)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await waitUntil(() => confirmConversionMock.mock.calls.length > 0)
+
+    expect(confirmConversionMock).toHaveBeenCalledWith('devis', {
+      detail: 'au sujet de la formation SST — Sauveteur secouriste du travail.',
       backTo: '/formations/sante/sst-initial',
       backLabel: 'Retour à la formation'
     })
@@ -1024,6 +1069,7 @@ describe('pages/centres/demande-de-formation', () => {
 
   it('formate le méta centre pour chaque variante de code postal', async () => {
     centresBySlug.set('fort-de-france', {
+      id: 21,
       slug: 'fort-de-france',
       name: 'Centre de Fort-de-France',
       city: 'Fort-de-France',
@@ -1031,6 +1077,7 @@ describe('pages/centres/demande-de-formation', () => {
       postal_code: '97234'
     })
     centresBySlug.set('bastia', {
+      id: 22,
       slug: 'bastia',
       name: 'Centre de Bastia',
       city: 'Bastia',
@@ -1038,6 +1085,7 @@ describe('pages/centres/demande-de-formation', () => {
       postal_code: '20290'
     })
     centresBySlug.set('ajaccio', {
+      id: 23,
       slug: 'ajaccio',
       name: "Centre d'Ajaccio",
       city: 'Ajaccio',
@@ -1045,6 +1093,7 @@ describe('pages/centres/demande-de-formation', () => {
       postal_code: '20100'
     })
     centresBySlug.set('paris', {
+      id: 24,
       slug: 'paris',
       name: 'Centre de Paris',
       city: 'Paris',
@@ -1052,6 +1101,7 @@ describe('pages/centres/demande-de-formation', () => {
       postal_code: '75001'
     })
     centresBySlug.set('sans-cp', {
+      id: 25,
       slug: 'sans-cp',
       name: 'Centre sans code postal',
       city: 'Lyon',
@@ -1089,6 +1139,7 @@ describe('pages/centres/demande-de-formation', () => {
     await waitUntil(() => confirmConversionMock.mock.calls.length > 0)
 
     expect(confirmConversionMock).toHaveBeenCalledWith('devis', {
+      detail: undefined,
       backTo: '/centres/creteil',
       backLabel: 'Retour au centre'
     })

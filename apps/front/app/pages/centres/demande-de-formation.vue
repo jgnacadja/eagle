@@ -975,6 +975,31 @@ onMounted(() => {
 
 const { submit: submitLead, sending, error: submitError } = useLeadSubmit()
 const { confirmConversion } = useConfirmationRedirect()
+// Détail repris sur /confirmation/devis : « au sujet de la formation X,
+// session du 12 octobre 2026 à Créteil. » — « …, dans votre entreprise
+// à Lyon. » en intra, « …. » quand la formation est seule connue.
+const confirmationDetail = computed(() => {
+  if (!formationName.value) return undefined
+  if (sessionSlug.value) {
+    const start = session.value?.startDate
+    const startLabel = start
+      ? new Intl.DateTimeFormat('fr-FR', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+          timeZone: 'UTC'
+        }).format(new Date(`${start}T00:00:00Z`))
+      : null
+    const when = startLabel ? `session du ${startLabel}` : 'session programmée'
+    const city = session.value?.location?.city ?? centre.value?.city
+    return `au sujet de la formation ${formationName.value}, ${when}${city ? ` à ${city}` : ''}.`
+  }
+  if (isIntra.value) {
+    // En intra, lieu est requis par le schéma avant l'envoi — non vide ici.
+    return `au sujet de la formation ${formationName.value}, dans votre entreprise à ${lieu.value!.trim()}.`
+  }
+  return `au sujet de la formation ${formationName.value}.`
+})
 // Sortie de la confirmation : retour à la fiche formation quand elle est
 // connue, sinon au centre, sinon à l'accueil.
 const confirmationBackTo = computed(
@@ -1039,6 +1064,7 @@ const onSubmit = handleSubmit(
       trackFormSubmit('demande_formation')
       window.sessionStorage.removeItem(draftKey.value)
       await confirmConversion('devis', {
+        detail: confirmationDetail.value,
         backTo: confirmationBackTo.value,
         backLabel: confirmationBackLabel.value
       })

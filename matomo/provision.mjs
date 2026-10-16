@@ -52,7 +52,8 @@ export function createApi(baseUrl, token) {
  */
 export function planSite(current) {
   if (!current) return { action: 'create' }
-  const currentUrls = (current.urls ?? []).map(String).sort()
+  const raw = current.urls
+  const currentUrls = (Array.isArray(raw) ? raw : raw ? [raw] : []).map(String).sort()
   const wanted = [...site.urls].sort()
   if (
     current.name !== site.name ||
@@ -100,12 +101,17 @@ async function ensureSite(api) {
   }
   const plan = planSite(current)
   if (plan.action === 'create') {
-    await api('SitesManager.addSite', {
+    const created = await api('SitesManager.addSite', {
       siteName: site.name,
       timezone: site.timezone,
       ecommerce: site.ecommerce,
       urls: site.urls
     })
+    // addSite retourne l'idSite attribué — si ≠ SITE_ID, les dimensions et
+    // objectifs partiraient sur un site absent : échouer tout de suite.
+    if (Number(created) !== SITE_ID) {
+      throw new Error(`site créé avec idSite=${created} ≠ SITE_ID=${SITE_ID} — aligner config.mjs`)
+    }
     log(`+ site « ${site.name} » créé`)
   } else if (plan.action === 'update') {
     await api('SitesManager.updateSite', {

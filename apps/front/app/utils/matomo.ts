@@ -28,19 +28,21 @@ export type MatomoCommand = [string, ...Array<string | number | boolean>]
 
 /**
  * Commande fonction : exécutée par matomo.js une fois chargé, `this` = l'API
- * du tracker (ex. `isUserOptedOut()` pour l'opt-out ST-33).
+ * du tracker (ex. `isUserOptedOut()` pour l'opt-out ST-33). La queue reste
+ * typée tableau — la queue de tuple évite les erreurs d'indexation en spec.
  */
-export type MatomoCallback = [() => void]
+export type MatomoCallback = [() => void, ...Array<string | number | boolean>]
 
 /**
  * File de commandes du tracker. Avant le chargement de `matomo.js` c'est un
  * simple tableau ; une fois le script exécuté, Matomo le remplace par son
- * proxy asynchrone — un objet qui expose toujours `push`. Le contrat retenu
- * est donc la méthode `push`, pas la forme tableau.
+ * proxy asynchrone — un objet qui expose toujours `push` (d'où le test
+ * `typeof push === 'function'` dans `useAnalytics.ready`, pas `isArray`).
+ * Le typage garde la forme tableau : seule `push` est utilisée au runtime
+ * et les specs insèrent/inspectent les commandes. Les éléments sont des
+ * commandes classiques ou des commandes-fonction (opt-out ST-33).
  */
-export interface MatomoQueue {
-  push: (command: MatomoCommand | MatomoCallback) => unknown
-}
+export type MatomoQueue = Array<MatomoCommand | MatomoCallback>
 
 declare global {
   interface Window {

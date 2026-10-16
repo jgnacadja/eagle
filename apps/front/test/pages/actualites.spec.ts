@@ -390,7 +390,10 @@ describe('pages/actualites/index', () => {
       expect.objectContaining({ email: 'abonne@site.fr' })
     )
     // L'inscription réussie part vers la page de confirmation mesurable (ST-30).
-    expect(confirmConversionMock).toHaveBeenCalledWith('inscription')
+    expect(confirmConversionMock).toHaveBeenCalledWith('inscription', {
+      detail:
+        "Pensez à vérifier vos courriers indésirables si vous ne recevez rien d'ici quelques minutes."
+    })
   })
 
   it('bloque la soumission et affiche l’erreur si l’e-mail est invalide', async () => {

@@ -15,8 +15,9 @@ export interface AnalyticsPageDimensions {
 
 // Registre des dimensions courantes (ST-32). Module-level : la SPA vit dans
 // un seul onglet — un rechargement repart à zéro, ce qui est le comportement
-// attendu pour des dimensions de portée action. Jamais alimenté côté
-// serveur : la lecture n'a lieu que dans `trackPageView` (gardé navigateur).
+// attendu pour des dimensions de portée action. Les pages peuvent l'écrire
+// en SSR (le watch s'y exécute) : sans effet, rien n'est émis côté serveur —
+// la lecture n'a lieu que dans `trackPageView` (gardé navigateur).
 const actionDimensions = new Map<number, string>()
 const visitDimensions = new Map<number, string>()
 

@@ -94,6 +94,32 @@ class DirectusRequestError extends Error {
   }
 }
 
+/**
+ * Corps d'erreur Directus (`{ errors: [{ message, extensions: { code, field } }] }`)
+ * aplati sur une ligne : les loggers tronquent les objets imbriqués
+ * (`errors: […]`), ce qui masque la cause d'un 400. Corps non JSON → texte brut.
+ */
+export function summarizeDirectusErrorBody(text: string): string {
+  try {
+    const parsed = JSON.parse(text) as {
+      errors?: Array<{
+        message?: string
+        extensions?: { code?: string; field?: string; collection?: string }
+      }>
+    }
+    if (!Array.isArray(parsed.errors) || parsed.errors.length === 0) return text
+    return parsed.errors
+      .map((err) => {
+        const { code, field, collection } = err.extensions ?? {}
+        const where = [collection, field].filter(Boolean).join('.')
+        return `[${code ?? 'ERROR'}${where ? ` ${where}` : ''}] ${err.message ?? ''}`.trim()
+      })
+      .join(' | ')
+  } catch {
+    return text
+  }
+}
+
 function isEmptyValue(value: unknown): boolean {
   if (value === null || value === undefined) return true
   if (typeof value === 'string') return value.trim() === ''
@@ -164,6 +190,8 @@ export class DirectusCatalogService {
   private readonly timeoutMs = 10_000
   private readonly maxRetries = 2
   private readonly updateConcurrency = 10
+  // Budget d'un POST de création, sous le MAX_PAYLOAD_SIZE par défaut de Directus (1 Mo).
+  private readonly createChunkBytes = 500_000
 
   constructor(config: ConfigService) {
     // Token facultatif : l'API doit démarrer sans accès Directus (dev,
@@ -709,18 +737,72 @@ export class DirectusCatalogService {
     return data
   }
 
+  /**
+   * Création par lots bornés en taille : un POST unique de toutes les
+   * formations (sessions + `raw` Digiforma) dépasse MAX_PAYLOAD_SIZE de
+   * Directus (1 Mo par défaut → 400 « request entity too large »). Lots
+   * séquentiels, jamais rejoués (POST non idempotent) ; une ligne plus grosse
+   * que le budget part seule.
+   */
   private async createMany(
     rows: FormationDirectusPayload[]
   ): Promise<Array<{ id: number; digiforma_id: string }>> {
-    if (rows.length === 0) return []
-    const response = await this.request<{
-      data: Array<{ id: number; digiforma_id: string }>
-    }>(
-      `${this.baseUrl}/items/formations`,
-      'POST',
-      rows.map((r) => this.toColumnPayload(r))
+    const created: Array<{ id: number; digiforma_id: string }> = []
+    let chunk: Array<Record<string, unknown>> = []
+    let chunkBytes = 0
+
+    const flush = async (): Promise<void> => {
+      if (chunk.length === 0) return
+      let response: { data: Array<{ id: number; digiforma_id: string }> } | undefined
+      try {
+        response = await this.request<{ data: Array<{ id: number; digiforma_id: string }> }>(
+          `${this.baseUrl}/items/formations`,
+          'POST',
+          chunk
+        )
+      } catch (error) {
+        throw this.withOversizedFields(error, chunk)
+      }
+      created.push(...(response?.data ?? []))
+      chunk = []
+      chunkBytes = 0
+    }
+
+    for (const row of rows) {
+      const payload = this.toColumnPayload(row)
+      const bytes = Buffer.byteLength(JSON.stringify(payload))
+      if (chunk.length > 0 && chunkBytes + bytes > this.createChunkBytes) await flush()
+      chunk.push(payload)
+      chunkBytes += bytes
+    }
+    await flush()
+    return created
+  }
+
+  /**
+   * Directus attribue parfois VALUE_TOO_LONG au mauvais champ (ex. `blocks`
+   * alors que la colonne est json). Ajoute à l'erreur les champs texte du lot
+   * qui dépassent 255 caractères : ce sont les colonnes `varchar(255)`
+   * suspectes.
+   */
+  private withOversizedFields(error: unknown, rows: Array<Record<string, unknown>>): unknown {
+    if (!(error instanceof DirectusRequestError) || !error.message.includes('VALUE_TOO_LONG')) {
+      return error
+    }
+    const longest = new Map<string, number>()
+    for (const row of rows) {
+      for (const [field, value] of Object.entries(row)) {
+        if (typeof value === 'string' && value.length > 255) {
+          longest.set(field, Math.max(longest.get(field) ?? 0, value.length))
+        }
+      }
+    }
+    if (longest.size === 0) return error
+    const detail = [...longest].map(([field, length]) => `${field}(${length})`).join(', ')
+    return new DirectusRequestError(
+      `${error.message} — champs > 255 car. : ${detail}`,
+      error.status
     )
-    return response?.data ?? []
   }
 
   private async updateMany(rows: UpsertBatch['update']): Promise<void> {
@@ -764,7 +846,7 @@ export class DirectusCatalogService {
         if (!response.ok) {
           const text = await response.text()
           throw new DirectusRequestError(
-            `Directus ${method} ${url} failed: ${response.status} ${text}`,
+            `Directus ${method} ${url} failed: ${response.status} ${summarizeDirectusErrorBody(text)}`,
             response.status
           )
         }

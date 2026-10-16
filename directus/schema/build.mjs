@@ -64,11 +64,37 @@ async function collectionExists(token, name) {
   return res.ok
 }
 
-async function fieldExists(token, collection, field) {
+async function fetchField(token, collection, field) {
   const res = await fetch(`${DIRECTUS_URL}/fields/${collection}/${field}`, {
     headers: { Authorization: `Bearer ${token}` }
   })
-  return res.ok
+  if (!res.ok) return null
+  const { data } = await res.json()
+  return data ?? null
+}
+
+async function fieldExists(token, collection, field) {
+  return (await fetchField(token, collection, field)) !== null
+}
+
+// Un champ déclaré `json` ou `text` dont la colonne existante est d'un type
+// plus étroit (varchar(255) hérité d'un ancien schéma, créé à la main ou
+// passé de `string` à `text` ici) rejette les valeurs longues/objets
+// (VALUE_TOO_LONG). Converge la colonne : Directus n'altère la colonne que si
+// `schema` est fourni et diffère de l'existant. Limité à ces élargissements
+// (varchar → text, varchar/text → json) : seuls sûrs sans perte.
+async function ensureWideColumn(token, collection, field, declaredType, current) {
+  const dataType = current.schema?.data_type
+  if (!dataType) return
+  const widen =
+    (declaredType === 'json' && !['json', 'jsonb'].includes(dataType)) ||
+    (declaredType === 'text' && dataType === 'character varying')
+  if (!widen) return
+  await api(token, 'PATCH', `/fields/${collection}/${field}`, {
+    type: declaredType,
+    schema: { ...current.schema, data_type: declaredType, max_length: null }
+  })
+  log(`✔  champ ${collection}.${field} converti ${dataType} → ${declaredType}`)
 }
 
 async function ensureCollections(token) {
@@ -88,7 +114,11 @@ async function ensureCollections(token) {
       // Collection existante : créer les champs déclarés mais absents —
       // le fichier collections.mjs reste la source de vérité du schéma.
       for (const field of def.fields) {
-        if (await fieldExists(token, def.collection, field.field)) {
+        const current = await fetchField(token, def.collection, field.field)
+        if (current) {
+          if (field.type === 'json' || field.type === 'text') {
+            await ensureWideColumn(token, def.collection, field.field, field.type, current)
+          }
           // Convergent : le meta déclaré ici (readonly, note, interface…)
           // reste la source de vérité — les réglages faits à la main dans
           // l'admin sont écrasés au prochain build.

@@ -302,6 +302,20 @@ describe('CacheService', () => {
     await expect(service.del('courses')).resolves.toBeUndefined()
   })
 
+  it('falls back to a short in-memory cache without Redis, purged on invalidation', async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [CacheService, { provide: ConfigService, useValue: { get: () => undefined } }]
+    }).compile()
+    const fallback = module.get<CacheService>(CacheService)
+    await fallback.onModuleInit()
+
+    await fallback.set('formations:all', [{ id: 1 }])
+    await expect(fallback.get('formations:all')).resolves.toEqual([{ id: 1 }])
+
+    await fallback.invalidateCatalog()
+    await expect(fallback.get('formations:all')).resolves.toBeNull()
+  })
+
   it('disables the cache when REDIS_URL is missing', async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [

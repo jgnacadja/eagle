@@ -84,7 +84,7 @@ services:
       CACHE_ENABLED: 'true'
       CACHE_AUTO_PURGE: 'true'
       CACHE_STORE: redis
-      REDIS: redis://redis:6379
+      REDIS: ${DIRECTUS_REDIS_URL:-redis://redis:6379}
       STORAGE_LOCATIONS: s3
       STORAGE_S3_DRIVER: s3
       STORAGE_S3_KEY: ${MINIO_ROOT_USER}
@@ -100,6 +100,9 @@ services:
       # des volumes internes — la sync lit les collections avec limit=-1.
       QUERY_LIMIT_DEFAULT: '100'
       QUERY_LIMIT_MAX: '1000'
+      # La sync envoie des lots de formations (sessions + raw Digiforma) ; le
+      # défaut de 1 Mo est trop juste. L'API borne déjà ses lots à ~500 Ko.
+      MAX_PAYLOAD_SIZE: '5mb'
       PUBLIC_URL: ${DIRECTUS_PUBLIC_URL:-http://localhost:8055}
       # Flows : les opérations request lisent {{ $env.* }} à l'exécution
       # (schema/flows.mjs) — rien n'est cuit en base. Sans cette allow-list,
@@ -213,7 +216,7 @@ services:
       EMBEDDINGS_API_KEY: ${EMBEDDINGS_API_KEY:-}
       EMBEDDINGS_MODEL: ${EMBEDDINGS_MODEL:-}
       ASSISTANT_AI_TIMEOUT_MS: ${ASSISTANT_AI_TIMEOUT_MS:-30000}
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: ${REDIS_URL_DOCKER:-redis://redis:6379}
       DIRECTUS_INTERNAL_URL: http://directus:8055
       DIRECTUS_TOKEN: ${DIRECTUS_TOKEN}
       SOURCES_ENC_KEY: ${SOURCES_ENC_KEY:-}

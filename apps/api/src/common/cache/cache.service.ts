@@ -28,6 +28,9 @@ export interface CacheScopeProvider {
   invalidate(): void
 }
 
+const MEMORY_FALLBACK_TTL_MS = 60_000
+const MEMORY_FALLBACK_MAX_ENTRIES = 200
+
 export interface SyncRun {
   status: 'running' | 'success' | 'failed'
   startedAt: string
@@ -58,6 +61,12 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private initPromise?: Promise<void>
   private connectionErrorLogged = false
   private readonly catalogListeners = new Set<() => void>()
+  // Repli en mémoire quand Redis est absent ou injoignable (ex. fonction
+  // serverless sans REDIS_URL joignable). Sans lui, chaque requête catalogue
+  // relit tout Directus (limit=-1) : à fort trafic, Directus sature et tout
+  // le site passe en 502. Valeurs sérialisées (même sémantique qu'en Redis :
+  // pas de référence partagée mutable), TTL court, borné en taille.
+  private readonly memoryFallback = new Map<string, { value: string; expiresAt: number }>()
   private scopeProvider?: CacheScopeProvider
 
   constructor(config: ConfigService) {
@@ -97,7 +106,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async get<T>(key: string): Promise<T | null> {
-    if (!this.client || !this.isReady) return null
+    if (!this.client || !this.isReady) return this.memoryGet<T>(key)
 
     try {
       const value = await this.client.get(await this.versionedKey(key))
@@ -118,7 +127,10 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async set<T>(key: string, value: T, ttlSeconds = 3600): Promise<void> {
-    if (!this.client || !this.isReady) return
+    if (!this.client || !this.isReady) {
+      this.memorySet(key, value, ttlSeconds)
+      return
+    }
 
     try {
       const serialized = JSON.stringify(value)
@@ -129,7 +141,11 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   }
 
   async del(pattern: string): Promise<void> {
-    if (!this.client || !this.isReady) return
+    if (!this.client || !this.isReady) {
+      // Motifs glob : sans Redis, on vide tout le repli (quelques clés, TTL court).
+      this.memoryFallback.clear()
+      return
+    }
 
     try {
       await this.deleteByPattern(await this.versionedKey(pattern))
@@ -167,6 +183,33 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  private memoryGet<T>(key: string): T | null {
+    const entry = this.memoryFallback.get(key)
+    if (!entry) return null
+    if (entry.expiresAt <= Date.now()) {
+      this.memoryFallback.delete(key)
+      return null
+    }
+    try {
+      return JSON.parse(entry.value) as T
+    } catch {
+      this.memoryFallback.delete(key)
+      return null
+    }
+  }
+
+  private memorySet<T>(key: string, value: T, ttlSeconds: number): void {
+    try {
+      const ttlMs = Math.min(ttlSeconds * 1000, MEMORY_FALLBACK_TTL_MS)
+      if (this.memoryFallback.size >= MEMORY_FALLBACK_MAX_ENTRIES) {
+        this.memoryFallback.delete(this.memoryFallback.keys().next().value as string)
+      }
+      this.memoryFallback.set(key, { value: JSON.stringify(value), expiresAt: Date.now() + ttlMs })
+    } catch (error) {
+      this.logger.warn({ error, key }, 'Failed to set in-memory fallback value')
+    }
+  }
+
   /** Version courante des clés catalogue — bump à chaque invalidation complète. */
   get version(): number {
     return this.currentVersion
@@ -184,6 +227,7 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
 
   async invalidateCatalog(): Promise<void> {
     if (!this.client || !this.isReady) {
+      this.memoryFallback.clear()
       this.notifyCatalogInvalidated()
       return
     }

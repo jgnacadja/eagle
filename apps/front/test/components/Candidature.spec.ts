@@ -201,8 +201,11 @@ describe('components/Candidature', () => {
 
     await vi.advanceTimersByTimeAsync(1000)
 
-    // Confirmation déportée sur /confirmation/candidature/ (ST-30).
-    expect(confirmConversionMock).toHaveBeenCalledWith('candidature')
+    // Confirmation déportée sur /confirmation/candidature (ST-30) — le
+    // détail reprend le récapitulatif « Voie — Ville » de l'ancien écran.
+    expect(confirmConversionMock).toHaveBeenCalledWith('candidature', {
+      detail: 'Projet « Ouvrir un centre — Créteil (94) » — réponse sous 5 jours ouvrés.'
+    })
     expect(leadSubmitMock).toHaveBeenCalledWith(
       'candidature',
       expect.objectContaining({

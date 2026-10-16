@@ -1,6 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import ConfirmationPage from '~/pages/confirmation/[type].vue'
 import {
   CONFIRMATION_TYPES,
@@ -12,6 +12,7 @@ import {
 const routeStub = { params: { type: 'devis' as string } }
 vi.stubGlobal('useRoute', () => routeStub)
 vi.stubGlobal('ref', ref)
+vi.stubGlobal('nextTick', nextTick)
 vi.stubGlobal('onMounted', (fn: () => unknown) => fn())
 
 const navigateMock = vi.fn()
@@ -19,6 +20,12 @@ vi.stubGlobal('navigateTo', navigateMock)
 
 const headMock = vi.fn()
 vi.stubGlobal('useHead', headMock)
+
+// Vue mesurable : émise par la page elle-même, après validation du drapeau.
+const trackPageViewMock = vi.hoisted(() => vi.fn())
+vi.mock('~/composables/useAnalytics', () => ({
+  useAnalytics: () => ({ trackPageView: trackPageViewMock })
+}))
 
 // createError (auto-import Nuxt) : le setup de la page le lève pour les types
 // inconnus — converti en erreur testable.
@@ -36,7 +43,8 @@ const stubs = {
 
 async function mountPage(type: string) {
   routeStub.params.type = type
-  const wrapper = mount(ConfirmationPage, { global: { stubs } })
+  // attachTo body : le focus du titre n'existe que sur un arbre connecté.
+  const wrapper = mount(ConfirmationPage, { attachTo: document.body, global: { stubs } })
   await flushPromises()
   return wrapper
 }
@@ -45,6 +53,7 @@ describe('pages/confirmation/[type] (ST-30)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     window.sessionStorage.clear()
+    document.body.innerHTML = ''
   })
 
   it('refuse un type de confirmation inconnu en 404', async () => {
@@ -103,6 +112,29 @@ describe('pages/confirmation/[type] (ST-30)', () => {
     )
   })
 
+  it('restitue la ligne de détail du contexte', async () => {
+    window.sessionStorage.setItem(
+      confirmationFlagKey('devis'),
+      JSON.stringify({ detail: 'au sujet de la formation SST — Sauveteur secouriste du travail.' })
+    )
+
+    const wrapper = await mountPage('devis')
+
+    expect(wrapper.text()).toContain('au sujet de la formation SST — Sauveteur secouriste')
+  })
+
+  it("retombe sur l'accueil si le CTA retour du drapeau n'est pas un chemin interne", async () => {
+    window.sessionStorage.setItem(
+      confirmationFlagKey('devis'),
+      JSON.stringify({ backTo: 'https://externe.example', backLabel: 'Suite' })
+    )
+
+    const wrapper = await mountPage('devis')
+
+    expect(wrapper.find('a[href="https://externe.example"]').exists()).toBe(false)
+    expect(wrapper.find('a[href="/"]').text()).toContain('Suite')
+  })
+
   it('affiche la confirmation même si le drapeau est corrompu', async () => {
     window.sessionStorage.setItem(confirmationFlagKey('inscription'), '{json-cassé')
 
@@ -110,6 +142,21 @@ describe('pages/confirmation/[type] (ST-30)', () => {
 
     expect(wrapper.text()).toContain('Inscription confirmée')
     expect(navigateMock).not.toHaveBeenCalled()
+  })
+
+  it('émet la vue mesurable après validation du drapeau et focus le titre', async () => {
+    window.sessionStorage.setItem(confirmationFlagKey('devis'), '{}')
+
+    const wrapper = await mountPage('devis')
+
+    expect(trackPageViewMock).toHaveBeenCalledTimes(1)
+    expect(document.activeElement).toBe(wrapper.find('h1').element)
+  })
+
+  it("n'émet aucune vue en accès direct (pas de drapeau)", async () => {
+    await mountPage('candidature')
+
+    expect(trackPageViewMock).not.toHaveBeenCalled()
   })
 
   it('marque la page noindex/nofollow', async () => {

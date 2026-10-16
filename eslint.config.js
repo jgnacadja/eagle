@@ -109,6 +109,7 @@ const vueGlobals = {
   ref: 'readonly',
   reactive: 'readonly',
   computed: 'readonly',
+  nextTick: 'readonly',
   watch: 'readonly',
   watchEffect: 'readonly',
   onMounted: 'readonly',

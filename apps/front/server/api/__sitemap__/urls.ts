@@ -110,9 +110,19 @@ interface SitemapSources {
 // sitemap-pages (pages légales), sitemap-formations (familles + fiches),
 // sitemap-centres, sitemap-actualites (articles + catégories, namespace
 // partagé T9/T10), sitemap-local (lot 2 — encore vide). Sans `set`, la
-// réponse complète reste disponible (debug, rétrocompat).
+// réponse complète reste disponible (debug, rétrocompat). Chaque set ne
+// charge que les sources dont ses URLs dépendent — `sitemap-pages` n'a
+// pas à paginer tout le catalogue pour trois pages légales.
 type SitemapSet = 'pages' | 'formations' | 'centres' | 'actualites' | 'local'
 const SITEMAP_SETS: SitemapSet[] = ['pages', 'formations', 'centres', 'actualites', 'local']
+
+const SET_SOURCES: Record<SitemapSet, (keyof SitemapSources)[]> = {
+  pages: ['legales'],
+  formations: ['formations', 'familles'],
+  centres: ['centres'],
+  actualites: ['articles', 'categories'],
+  local: []
+}
 
 const EMPTY: SitemapSources = {
   formations: [],
@@ -121,21 +131,6 @@ const EMPTY: SitemapSources = {
   articles: [],
   categories: [],
   legales: []
-}
-
-function subset(src: SitemapSources, set: SitemapSet): SitemapSources {
-  switch (set) {
-    case 'pages':
-      return { ...EMPTY, legales: src.legales }
-    case 'formations':
-      return { ...EMPTY, formations: src.formations, familles: src.familles }
-    case 'centres':
-      return { ...EMPTY, centres: src.centres }
-    case 'actualites':
-      return { ...EMPTY, articles: src.articles, categories: src.categories }
-    case 'local':
-      return EMPTY
-  }
 }
 
 // Les slugs en base ne sont pas tous normalisés (saisie éditoriale :
@@ -213,24 +208,25 @@ export default defineCachedEventHandler(
     // court-circuite les appels plutôt que de dépendre de leur dispo.
     if (set === 'local') return []
 
-    const [formations, familles, centres, articles, categories, legales] = await Promise.all([
-      fetchAllCourses(api),
-      fetchSlugs(api, 'familles_formation'),
-      api('/centres').catch(() => [] as CentreRow[]),
-      fetchSlugs(api, 'articles'),
-      fetchSlugs(api, 'categories'),
-      fetchSlugs(api, 'pages_legales')
-    ])
-
-    const all: SitemapSources = {
-      formations,
-      familles,
-      centres: centres as CentreRow[],
-      articles,
-      categories,
-      legales
+    const loaders: Record<keyof SitemapSources, () => Promise<unknown[]>> = {
+      formations: () => fetchAllCourses(api),
+      familles: () => fetchSlugs(api, 'familles_formation'),
+      centres: () =>
+        api('/centres')
+          .then((rows) => rows as CentreRow[])
+          .catch(() => [] as CentreRow[]),
+      articles: () => fetchSlugs(api, 'articles'),
+      categories: () => fetchSlugs(api, 'categories'),
+      legales: () => fetchSlugs(api, 'pages_legales')
     }
-    return buildSitemapUrls(set ? subset(all, set) : all)
+    const needed = set ? SET_SOURCES[set] : (Object.keys(loaders) as (keyof SitemapSources)[])
+    const all = { ...EMPTY } as Record<keyof SitemapSources, unknown[]>
+    await Promise.all(
+      needed.map(async (key) => {
+        all[key] = await loaders[key]()
+      })
+    )
+    return buildSitemapUrls(all as SitemapSources)
   }),
   { maxAge: CACHE_MAX_AGE_S }
 )

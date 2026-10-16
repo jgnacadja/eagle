@@ -357,7 +357,9 @@ const {
             'cover_image',
             'seo_title',
             'seo_description',
-            'seo_canonical'
+            'seo_canonical',
+            'h1',
+            'seo_noindex'
           ],
           filter: { slug: { _eq: slug }, status: { _eq: 'published' } },
           limit: 1
@@ -400,7 +402,9 @@ const { data: category } = await useAsyncData<ArticleCategory | null>(
             'description',
             'seo_title',
             'seo_description',
-            'seo_canonical'
+            'seo_canonical',
+            'h1',
+            'seo_noindex'
           ],
           filter: { slug: { _eq: slug }, status: { _eq: 'published' } },
           limit: 1
@@ -650,7 +654,8 @@ const categorySeo = computed(() => {
       category.value?.description ??
         `Tous les articles de la catégorie ${category.value?.name ?? ''} du réseau LEARN UP.`
     ),
-    seo_canonical: category.value?.seo_canonical ?? `${config.public.siteUrl}/actualites/${slug}/`
+    seo_canonical: category.value?.seo_canonical ?? `${config.public.siteUrl}/actualites/${slug}`,
+    seo_noindex: category.value?.seo_noindex
   }
 })
 

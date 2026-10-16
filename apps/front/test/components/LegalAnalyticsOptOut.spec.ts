@@ -1,11 +1,11 @@
 import { mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import AnalyticsOptOut from '~/components/Legal/AnalyticsOptOut.vue'
 
 /** Exécute la commande fonction « isOptedOut » restée dans la file _paq. */
 function resolveOptedOut(opted: boolean) {
-  const entry = window._paq![window._paq!.length - 1]
+  const entry = window._paq![window._paq!.length - 1]!
   const command = entry[0] as unknown as (this: { isUserOptedOut: () => boolean }) => void
   command.call({ isUserOptedOut: () => opted })
 }
@@ -13,6 +13,10 @@ function resolveOptedOut(opted: boolean) {
 describe('LegalAnalyticsOptOut (ST-33)', () => {
   beforeEach(() => {
     window._paq = []
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('annonce un visiteur suivi quand le marqueur est absent', async () => {
@@ -59,6 +63,17 @@ describe('LegalAnalyticsOptOut (ST-33)', () => {
     await wrapper.find('button').trigger('click')
     expect(window._paq).toContainEqual(['forgetUserOptOut'])
     expect(wrapper.find('#analytics-optout-status').text()).toContain('suivi')
+  })
+
+  it('indique indisponible si matomo.js ne se charge jamais (script bloqué)', async () => {
+    vi.useFakeTimers()
+    const wrapper = mount(AnalyticsOptOut)
+    // La commande fonction n'est jamais rejouée : après l'échéance, le
+    // statut bascule plutôt que de rester sur « Vérification… ».
+    await vi.advanceTimersByTimeAsync(4000)
+
+    expect(wrapper.text()).toContain('pas active')
+    expect(wrapper.find('button').exists()).toBe(false)
   })
 
   it('expose le statut en live region pour les lecteurs d’écran', () => {

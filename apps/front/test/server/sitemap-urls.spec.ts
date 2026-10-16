@@ -206,10 +206,12 @@ describe('server/api/__sitemap__/urls', () => {
   })
 
   describe('?set= — sitemaps segmentés (ST-03)', () => {
-    it('set=pages ne retient que les pages légales', async () => {
+    it('set=pages ne retient que les pages légales et ne charge que sa source', async () => {
       querySet = 'pages'
       const result = await handler(event)
       expect(locs(result)).toEqual(['/mentions-legales'])
+      // Un segment n'interroge que les collections dont ses URLs dépendent.
+      expect(fetchCalls.map((c) => c.url)).toEqual(['http://api.test/directus/items/pages_legales'])
     })
 
     it('set=formations retient familles et fiches, sans centres ni actus', async () => {
@@ -220,18 +222,22 @@ describe('server/api/__sitemap__/urls', () => {
         '/formations/sante',
         '/formations/sante/sst'
       ])
+      expect(fetchCalls.some((c) => c.url.endsWith('/items/articles'))).toBe(false)
+      expect(fetchCalls.some((c) => c.url.endsWith('/centres'))).toBe(false)
     })
 
     it('set=centres ne retient que les centres', async () => {
       querySet = 'centres'
       const result = await handler(event)
       expect(locs(result)).toEqual(['/centres/lyon-part-dieu'])
+      expect(fetchCalls.map((c) => c.url)).toEqual(['http://api.test/centres'])
     })
 
     it('set=actualites retient articles et catégories (namespace partagé)', async () => {
       querySet = 'actualites'
       const result = await handler(event)
       expect(locs(result)).toEqual(['/actualites/loi-iafp', '/actualites/prevention'])
+      expect(fetchCalls.some((c) => c.url.endsWith('/courses'))).toBe(false)
     })
 
     it('set=local est vide (lot 2) sans interroger les sources', async () => {

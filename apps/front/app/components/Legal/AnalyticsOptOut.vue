@@ -74,7 +74,13 @@ onMounted(() => {
   }
   // Le tracker lit le marqueur d'opt-out ; si matomo.js n'a pas fini de
   // charger, la commande fonction est rejouée dans l'ordre de la file.
+  // Script bloqué (bloqueur de contenu, réseau) : jamais rejouée — sans
+  // échéance, le statut resterait « Vérification… » indéfiniment.
+  const timeout = window.setTimeout(() => {
+    if (state.value === 'loading') state.value = 'unavailable'
+  }, 4000)
   isOptedOut((opted) => {
+    window.clearTimeout(timeout)
     state.value = opted ? 'optedOut' : 'tracked'
   })
 })

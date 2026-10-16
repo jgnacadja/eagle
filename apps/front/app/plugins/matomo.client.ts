@@ -87,7 +87,17 @@ export default defineNuxtPlugin((nuxtApp) => {
     document.head.appendChild(script)
   }
 
+  // `page:finish` se déclenche aussi à la résolution du Suspense initial
+  // (hydratation SSR) : sans cette garde, la vue d'entrée serait comptée
+  // deux fois. Le chemin d'entrée identifie cette première invocation —
+  // une navigation vers une autre adresse est toujours mesurée.
+  const entryPath = window.location.pathname
+  let entryFinishSeen = false
   nuxtApp.hook('page:finish', () => {
+    if (!entryFinishSeen && window.location.pathname === entryPath) {
+      entryFinishSeen = true
+      return
+    }
     nextTick(() => {
       if (isPreviewQuery(useRoute().query) || !autoTrackable()) return
       applyRouteDimensions()

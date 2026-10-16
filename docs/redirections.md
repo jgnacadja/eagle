@@ -21,10 +21,12 @@ la page s'afficher.
 | `status`    | `301` (redirection permanente) ou `410` (page supprimée).           |
 | `origin`    | `manual` (saisie à la main), `auto` (écrite par le hook), `import`. |
 
-Règles d'édition : un chemin est **unique**, minuscules, sans slash final.
-Une ligne **manuelle n'est jamais modifiée** par les automatismes — si une
-URL doit pointer ailleurs qu'un renommage automatique, créer la ligne en
-`manual` avant ou la passer en `manual` après.
+Règles d'édition : un chemin est **unique**, minuscules, sans slash final —
+la validation le refuse sinon (`from_path` et `to_path` n'acceptent que des
+chemins internes normalisés, `/` comprise ; `to_path` vide = 410). Une ligne
+**manuelle n'est jamais modifiée** par les automatismes — si une URL doit
+pointer ailleurs qu'un renommage automatique, créer la ligne en `manual`
+avant ou la passer en `manual` après.
 
 ## Ce que fait l'automatisme (hook `slug-redirects`)
 
@@ -61,8 +63,9 @@ URL demandée → middleware Nuxt → GET /seo/resolve?path=…
 ```
 
 - Réponses mises en cache Redis (`seo:resolve:*`, 1 h) ; chaque écriture
-  `redirects` déclenche le flow « Invalidate site cache » qui purge ces
-  clés — propagation immédiate sur toutes les instances web.
+  `redirects` déclenche le flow « Invalidate redirect resolution » qui purge
+  ces clés **et** la page `from_path` côté ISR — une adresse encore en cache
+  edge serait sinon servie sans passer par la redirection jusqu'au TTL.
 - API indisponible : le middleware laisse passer (fail-open) — une panne de
   résolution ne rend jamais le site indisponible.
 - Méthodes non GET, routes `/api`, `/_nuxt`, fichiers : exclus, jamais

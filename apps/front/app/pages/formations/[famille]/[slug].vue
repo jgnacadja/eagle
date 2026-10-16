@@ -760,15 +760,21 @@ interface FormationLieeRow {
 
 const { data: formationDirectus } = await useAsyncData<{
   h1: string | null
+  seo_noindex: boolean | null
   formations_liees: FormationLieeRow[] | null
 }>(`formations-liees-${slug}`, async () => {
   try {
     const results = await directus.request<
-      { h1: string | null; formations_liees: FormationLieeRow[] | null }[]
+      {
+        h1: string | null
+        seo_noindex: boolean | null
+        formations_liees: FormationLieeRow[] | null
+      }[]
     >(
       readItems('formations', {
         fields: [
           'h1',
+          'seo_noindex',
           'formations_liees.sort',
           'formations_liees.related.slug',
           'formations_liees.related.title',
@@ -783,13 +789,13 @@ const { data: formationDirectus } = await useAsyncData<{
         limit: 1
       })
     )
-    return results[0] ?? { h1: null, formations_liees: [] }
+    return results[0] ?? { h1: null, seo_noindex: null, formations_liees: [] }
   } catch (error) {
     /* v8 ignore next 3 */
     if (import.meta.server) {
       logServerError(`[formations/slug] ${slug} related formations fetch failed:`, error)
     }
-    return { h1: null, formations_liees: [] }
+    return { h1: null, seo_noindex: null, formations_liees: [] }
   }
 })
 
@@ -916,7 +922,7 @@ useContentSeo(
           )
         : undefined,
       seo_canonical: isFound ? course.value!.seoCanonical : undefined,
-      seo_noindex: !isFound,
+      seo_noindex: !isFound || Boolean(formationDirectus.value?.seo_noindex),
       // Visuel OG/Twitter : fichier Directus éditorial, sinon image
       // synchronisée Digiforma (imageSrc gère déjà cette priorité).
       seo_image: isFound ? imageSrc.value : undefined

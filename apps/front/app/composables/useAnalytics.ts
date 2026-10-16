@@ -15,9 +15,9 @@ export interface AnalyticsPageDimensions {
 
 // Registre des dimensions courantes (ST-32). Module-level : la SPA vit dans
 // un seul onglet — un rechargement repart à zéro, ce qui est le comportement
-// attendu pour des dimensions de portée action. Les pages peuvent l'écrire
-// en SSR (le watch s'y exécute) : sans effet, rien n'est émis côté serveur —
-// la lecture n'a lieu que dans `trackPageView` (gardé navigateur).
+// attendu pour des dimensions de portée action. Écritures gardées côté
+// client : en SSR le registre serait partagé entre requêtes pour une valeur
+// jamais lue côté serveur (la lecture n'a lieu que dans `trackPageView`).
 const actionDimensions = new Map<number, string>()
 const visitDimensions = new Map<number, string>()
 
@@ -66,6 +66,7 @@ export function useAnalytics() {
    * doit pas survivre à la navigation (les dimensions Matomo persistent).
    */
   function setActionDimension(key: ActionDimensionKey, value?: string | null) {
+    if (import.meta.server) return
     const id = ACTION_DIMENSION[key]
     if (value) actionDimensions.set(id, value)
     else actionDimensions.delete(id)
@@ -80,6 +81,7 @@ export function useAnalytics() {
    * Matomo l'attache à la visite en cours quel que soit le hit.
    */
   function setVisitDimension(key: VisitDimensionKey, value?: string | null) {
+    if (import.meta.server) return
     const id = VISIT_DIMENSION[key]
     if (value) visitDimensions.set(id, value)
     else visitDimensions.delete(id)

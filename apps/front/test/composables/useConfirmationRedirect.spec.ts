@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useConfirmationRedirect } from '~/composables/useConfirmationRedirect'
-import { confirmationFlagKey } from '~/utils/confirmation'
+import { confirmationFlagKey, takeConfirmationFlag } from '~/utils/confirmation'
 
 const navigateMock = vi.fn()
 vi.stubGlobal('navigateTo', navigateMock)
@@ -37,15 +37,17 @@ describe('useConfirmationRedirect (ST-30)', () => {
     expect(navigateMock).toHaveBeenCalledWith('/confirmation/rendez-vous')
   })
 
-  it('navigue quand même si sessionStorage est indisponible', async () => {
+  it('navigue quand même si sessionStorage est indisponible (secours mémoire)', async () => {
     const setItemSpy = vi.spyOn(window.sessionStorage, 'setItem').mockImplementation(() => {
       throw new DOMException('denied')
     })
     const { confirmConversion } = useConfirmationRedirect()
 
-    await confirmConversion('devis')
+    await confirmConversion('devis', { reference: 'LU-1' })
 
     expect(navigateMock).toHaveBeenCalledWith('/confirmation/devis')
+    // Le drapeau mémoire prend le relais : la page affiche la confirmation.
+    expect(takeConfirmationFlag('devis')).toBe(JSON.stringify({ reference: 'LU-1' }))
     setItemSpy.mockRestore()
   })
 })

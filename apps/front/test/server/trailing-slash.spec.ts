@@ -67,4 +67,9 @@ describe('server/middleware/trailing-slash (ST-02)', () => {
     run('/formations/caces-conduite-engins/caces-r489/')
     expect(redirects[0]!.location).toBe('/formations/caces-conduite-engins/caces-r489')
   })
+
+  it('normalise la casse dans la cible (un seul saut, pas de 404 intermédiaire)', () => {
+    run('/Formations/CACES-R489/')
+    expect(redirects[0]!.location).toBe('/formations/caces-r489')
+  })
 })

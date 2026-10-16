@@ -5,6 +5,7 @@ import ConfirmationPage from '~/pages/confirmation/[type].vue'
 import {
   CONFIRMATION_TYPES,
   confirmationFlagKey,
+  markConfirmationFlag,
   type ConfirmationType
 } from '~/utils/confirmation'
 
@@ -133,6 +134,23 @@ describe('pages/confirmation/[type] (ST-30)', () => {
 
     expect(wrapper.find('a[href="https://externe.example"]').exists()).toBe(false)
     expect(wrapper.find('a[href="/"]').text()).toContain('Suite')
+  })
+
+  it('affiche la confirmation via le secours mémoire si sessionStorage est bloqué', async () => {
+    const setItemSpy = vi.spyOn(window.sessionStorage, 'setItem').mockImplementation(() => {
+      throw new DOMException('denied')
+    })
+    const getItemSpy = vi.spyOn(window.sessionStorage, 'getItem').mockImplementation(() => {
+      throw new DOMException('denied')
+    })
+    markConfirmationFlag('devis', JSON.stringify({ reference: 'LU-9' }))
+
+    const wrapper = await mountPage('devis')
+
+    expect(wrapper.text()).toContain('Votre demande est transmise')
+    expect(trackPageViewMock).toHaveBeenCalledTimes(1)
+    setItemSpy.mockRestore()
+    getItemSpy.mockRestore()
   })
 
   it('affiche la confirmation même si le drapeau est corrompu', async () => {

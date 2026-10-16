@@ -13,6 +13,17 @@ vi.stubGlobal('useRuntimeConfig', () => config)
 const hookCallbacks = new Map<string, () => void>()
 const fakeNuxtApp = { hook: vi.fn((event: string, cb: () => void) => hookCallbacks.set(event, cb)) }
 
+// happy-dom a le chargement de fichiers externes coupé (test/setup.ts) :
+// l'injection de matomo.js consigne un DOMException en console.error —
+// bruit attendu ici, filtré pour garder les autres erreurs visibles.
+// (`window.console` plutôt que `console` : la règle no-console ne vise que
+// les appels directs.)
+const realConsoleError = window.console.error.bind(window.console)
+vi.spyOn(window.console, 'error').mockImplementation((...args: unknown[]) => {
+  if (String(args[0]).includes('matomo.js')) return
+  realConsoleError(...args)
+})
+
 describe('matomo.client plugin (ST-27)', () => {
   beforeEach(() => {
     window._paq = undefined
@@ -30,7 +41,7 @@ describe('matomo.client plugin (ST-27)', () => {
 
   it('sans configuration : avertit, ni script ni file', () => {
     config = { public: { matomoUrl: '', matomoSiteId: '' } }
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { })
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     matomoPlugin(fakeNuxtApp as never)
     expect(warnSpy).toHaveBeenCalledWith(
       '[Analytics] NUXT_PUBLIC_MATOMO_URL / NUXT_PUBLIC_MATOMO_SITE_ID manquants : Matomo désactivé.'
@@ -58,9 +69,19 @@ describe('matomo.client plugin (ST-27)', () => {
     expect(commands.indexOf('disableCookies')).toBeLessThan(commands.indexOf('trackPageView'))
   })
 
+  it('la résolution initiale du Suspense ne compte pas une seconde vue', async () => {
+    matomoPlugin(fakeNuxtApp as never)
+    const before = window._paq!.filter((c) => c[0] === 'trackPageView').length
+    // Hydratation : même chemin que l'entrée → invoquée sans rien émettre.
+    hookCallbacks.get('page:finish')!()
+    await Promise.resolve()
+    expect(window._paq!.filter((c) => c[0] === 'trackPageView')).toHaveLength(before)
+  })
+
   it('une vue à chaque navigation client (hook page:finish)', async () => {
     matomoPlugin(fakeNuxtApp as never)
     const before = window._paq!.filter((c) => c[0] === 'trackPageView').length
+    window.history.pushState({}, '', '/formations')
     hookCallbacks.get('page:finish')!()
     await Promise.resolve() // nextTick
     const after = window._paq!.filter((c) => c[0] === 'trackPageView').length
@@ -110,6 +131,7 @@ describe('matomo.client plugin (ST-27)', () => {
     expect(window._paq).toContainEqual(['setCustomDimension', 1, 'accueil'])
     routeName = 'formations-famille-slug'
     params = { famille: 'securite' }
+    window.history.pushState({}, '', '/formations/securite/caces-r489')
     hookCallbacks.get('page:finish')!()
     await Promise.resolve()
     expect(window._paq).toContainEqual(['setCustomDimension', 1, 'formation'])
@@ -127,9 +149,11 @@ describe('matomo.client plugin (ST-27)', () => {
   // setup (avant page:finish) : applyRouteDimensions ne doit pas l'écraser.
   it('dimension Département de la fiche centre survit à page:finish (ST-32)', async () => {
     routeName = 'centres-slug'
+    window.history.pushState({}, '', '/centres/creteil')
     matomoPlugin(fakeNuxtApp as never)
     useAnalytics().setActionDimension('departement', 'Paris')
     window._paq = []
+    window.history.pushState({}, '', '/centres/lyon')
     hookCallbacks.get('page:finish')!()
     await Promise.resolve()
     expect(window._paq).toContainEqual(['setCustomDimension', 3, 'Paris'])
@@ -138,10 +162,12 @@ describe('matomo.client plugin (ST-27)', () => {
 
   it('Landing SEO (visite) figé sur la page d’entrée, une fois par session', async () => {
     routeName = 'formations-famille'
+    window.history.pushState({}, '', '/formations/sante')
     matomoPlugin(fakeNuxtApp as never)
     expect(window._paq).toContainEqual(['setCustomDimension', 5, 'famille'])
     window._paq = []
     routeName = 'centres'
+    window.history.pushState({}, '', '/centres')
     hookCallbacks.get('page:finish')!()
     await Promise.resolve()
     expect(window._paq).toContainEqual(['setCustomDimension', 5, 'famille'])

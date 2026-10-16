@@ -16,9 +16,15 @@ describe('cleanTrackedUrl (MAT-15)', () => {
     ).toBe('/formations')
   })
 
-  it('conserve les paramètres métier (recherche, filtres)', () => {
-    expect(cleanTrackedUrl('/formations', '?q=caces&famille=securite&page=2')).toBe(
-      '/formations?q=caces&famille=securite'
+  it('retire la saisie libre (recherche q, lieu) — mesurée par trackSiteSearch', () => {
+    expect(cleanTrackedUrl('/formations', '?q=06+xx+xx&lieu=chez+moi&famille=securite')).toBe(
+      '/formations?famille=securite'
+    )
+  })
+
+  it('conserve les paramètres métier (filtres à vocabulaire contrôlé)', () => {
+    expect(cleanTrackedUrl('/formations', '?famille=securite&centre=lille&page=2')).toBe(
+      '/formations?famille=securite&centre=lille'
     )
   })
 

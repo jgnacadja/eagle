@@ -1514,7 +1514,12 @@ export const collections = [
           width: 'half',
           required: true,
           note: 'Chemin source, sans domaine ni slash final — ex. /formations/gestion/ancien-slug',
-          ...fr('Depuis')
+          ...fr('Depuis'),
+          validation: {
+            _and: [{ from_path: { _regex: '^/([a-z0-9-]+(/[a-z0-9-]+)*)?$' } }]
+          },
+          validation_message:
+            'Chemin refusé — interne, minuscules, sans domaine ni slash final (ex. /formations/gestion/ancien-slug).'
         },
         schema: { is_unique: true }
       },
@@ -1525,7 +1530,16 @@ export const collections = [
           interface: 'input',
           width: 'half',
           note: 'Cible du 301 — vide obligatoirement pour un 410',
-          ...fr('Vers')
+          ...fr('Vers'),
+          validation: {
+            _or: [
+              { to_path: { _null: true } },
+              { to_path: { _empty: true } },
+              { to_path: { _regex: '^/([a-z0-9-]+(/[a-z0-9-]+)*)?$' } }
+            ]
+          },
+          validation_message:
+            'Cible refusée — chemin interne normalisé (minuscules, sans slash final) ; vide pour un 410.'
         }
       },
       {

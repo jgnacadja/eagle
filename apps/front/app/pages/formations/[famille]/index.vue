@@ -493,7 +493,7 @@ useContentSeo(
           )
         : undefined,
       seo_canonical: isFound ? familleData.value?.seo_canonical : undefined,
-      seo_noindex: !isFound,
+      seo_noindex: !isFound || Boolean(familleData.value?.seo_noindex),
       // Visuel OG/Twitter : visuel éditorial de la famille, sinon défaut.
       seo_image: isFound
         ? directusAssetUrl(familleData.value?.image, config.public.apiBase)

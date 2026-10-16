@@ -50,7 +50,7 @@
 // n'est émise qu'après validation du drapeau : le plugin exclut ces pages
 // du suivi automatique, jamais de conversion fantôme. Pages noindex/
 // nofollow, hors sitemaps.
-import { confirmationFlagKey, type ConfirmationType } from '~/utils/confirmation'
+import { takeConfirmationFlag, type ConfirmationType } from '~/utils/confirmation'
 import { useAnalytics } from '~/composables/useAnalytics'
 import type { ConfirmationContext } from '~/composables/useConfirmationRedirect'
 
@@ -99,15 +99,13 @@ const backLabel = ref("Retour à l'accueil")
 const allowed = ref(false)
 
 onMounted(async () => {
-  const key = confirmationFlagKey(type)
-  const flag = window.sessionStorage.getItem(key)
+  const flag = takeConfirmationFlag(type)
   if (flag === null) {
     // Accès direct, rechargement ou retour arrière : pas de conversion à
     // mesurer — retour accueil sans historiser la page.
     await navigateTo('/', { replace: true })
     return
   }
-  window.sessionStorage.removeItem(key)
   try {
     const context = JSON.parse(flag) as ConfirmationContext
     reference.value = context.reference || null

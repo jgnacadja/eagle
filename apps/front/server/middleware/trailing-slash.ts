@@ -16,5 +16,8 @@ export default defineEventHandler((event) => {
   if (pathname === '/' || !pathname.endsWith('/')) return
   if (INTERNAL_PREFIXES.test(pathname) || FILE_LIKE.test(pathname)) return
 
-  return sendRedirect(event, `${pathname.replace(/\/+$/, '')}${search}`, 301)
+  // Cible normalisée en minuscules : les slugs sont contraints en minuscules
+  // — `/Formations/` redirige directement vers `/formations` plutôt que
+  // d'enchaîner 301 puis 404 (le routeur est sensible à la casse).
+  return sendRedirect(event, `${pathname.replace(/\/+$/, '').toLowerCase()}${search}`, 301)
 })

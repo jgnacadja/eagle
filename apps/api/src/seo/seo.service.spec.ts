@@ -50,26 +50,21 @@ describe('SeoService', () => {
     })
   })
 
-  it('résout une fiche formation sur famille + slug', async () => {
-    readMany
-      .mockResolvedValueOnce({ data: [] })
-      .mockResolvedValueOnce({ data: [{ id: 7, famille: 3 }] })
-      .mockResolvedValueOnce({ data: [{ slug: 'securite' }] })
+  it('résout une fiche formation sur famille + slug (filtre relationnel)', async () => {
+    readMany.mockResolvedValueOnce({ data: [] }).mockResolvedValueOnce({ data: [{ id: 7 }] })
     expect(await service.resolve('/formations/securite/caces-r489')).toEqual({
       type: 'formation',
       id: 7
     })
     expect(readMany.mock.calls[1][1].filter).toEqual({
       slug: { _eq: 'caces-r489' },
-      status: { _eq: 'published' }
+      status: { _eq: 'published' },
+      famille: { slug: { _eq: 'securite' }, status: { _eq: 'published' } }
     })
   })
 
   it('refuse une fiche dont la famille de l’URL n’est pas la sienne', async () => {
-    readMany
-      .mockResolvedValueOnce({ data: [] })
-      .mockResolvedValueOnce({ data: [{ id: 7, famille: 3 }] })
-      .mockResolvedValueOnce({ data: [{ slug: 'gestion' }] })
+    readMany.mockResolvedValueOnce({ data: [] }).mockResolvedValueOnce({ data: [] })
     expect(await service.resolve('/formations/securite/caces-r489')).toEqual({
       type: null,
       id: null

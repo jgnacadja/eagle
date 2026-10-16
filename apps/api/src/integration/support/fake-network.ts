@@ -26,21 +26,47 @@ function matches(row: Row, field: string, op: string, expected: unknown): boolea
   throw new Error(`Unsupported Directus filter operator ${op}`)
 }
 
+// Relations M2O connues du fake : `collection.champ` → table ciblée. Une
+// condition imbriquée sur le champ relationnel s'applique à la ligne reliée
+// (ex. `famille: { slug: { _eq } }` sur formations → familles_formation).
+const RELATIONS: Record<string, string> = {
+  'formations.famille': 'familles_formation'
+}
+
+function rowMatches(
+  tables: Record<string, Row[]>,
+  collection: string,
+  row: Row,
+  filter: Row
+): boolean {
+  return Object.entries(filter).every(([field, condition]) =>
+    Object.entries(condition as Row).every(([opOrField, expected]) => {
+      if (opOrField.startsWith('_')) return matches(row, field, opOrField, expected)
+      const relatedTable = RELATIONS[`${collection}.${field}`]
+      const related = relatedTable
+        ? (tables[relatedTable] ?? []).find((r) => String(r.id) === String(row[field]))
+        : undefined
+      return (
+        Boolean(related) && rowMatches(tables, relatedTable!, related!, { [opOrField]: expected })
+      )
+    })
+  )
+}
+
 // Deux écritures de filtre coexistent dans l'API : `filter[champ][_op]=valeur`
 // (DirectusCatalogService) et `filter={"champ":{"_op":valeur}}` (DirectusItemsClient).
-function filtersOf(url: URL): Array<[string, string, unknown]> {
-  const filters: Array<[string, string, unknown]> = []
+function filtersOf(url: URL): Row {
+  const filter: Row = {}
   for (const [key, value] of url.searchParams) {
     const bracket = /^filter\[(\w+)\]\[(_\w+)\]$/.exec(key)
-    if (bracket) filters.push([bracket[1], bracket[2], value])
-  }
-  const json = url.searchParams.get('filter')
-  if (json) {
-    for (const [field, condition] of Object.entries(JSON.parse(json) as Record<string, Row>)) {
-      for (const [op, value] of Object.entries(condition)) filters.push([field, op, value])
+    if (bracket) {
+      const field = bracket[1]
+      filter[field] = { ...((filter[field] as Row) ?? {}), [bracket[2]]: value }
     }
   }
-  return filters
+  const json = url.searchParams.get('filter')
+  if (json) Object.assign(filter, JSON.parse(json))
+  return filter
 }
 
 /**
@@ -94,8 +120,8 @@ export class FakeDirectus {
     }
 
     if (method === 'GET') {
-      const filters = filtersOf(url)
-      const data = table.filter((row) => filters.every(([f, op, v]) => matches(row, f, op, v)))
+      const filter = filtersOf(url)
+      const data = table.filter((row) => rowMatches(this.tables, collection, row, filter))
       return jsonResponse(200, { data, meta: { filter_count: data.length } })
     }
     if (method === 'POST') return this.create(collection, body)

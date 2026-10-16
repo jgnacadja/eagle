@@ -4,7 +4,10 @@
 // MAT-15 : les variantes d'une même page (utm_*, tri, pagination, ordre)
 // n'ont pas à créer de lignes distinctes dans les rapports — elles sont
 // retirées de l'URL envoyée à Matomo, qui agrège alors les pages réelles.
-const EXCLUDED_QUERY_KEYS = new Set(['page', 'tri', 'sort', 'order'])
+// `q` et `lieu` (saisie libre du visiteur) sont exclus aussi : la recherche
+// est mesurée par `trackSiteSearch`, et un texte libre n'a rien à faire
+// dans les URLs des rapports (cardinalité, données personnelles saisies).
+const EXCLUDED_QUERY_KEYS = new Set(['page', 'tri', 'sort', 'order', 'q', 'lieu'])
 
 export function cleanTrackedUrl(pathname: string, search: string): string {
   if (!search || search === '?') return pathname

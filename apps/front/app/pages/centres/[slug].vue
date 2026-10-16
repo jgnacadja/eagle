@@ -854,7 +854,7 @@ useContentSeo(
             `Centre de formation ${centre.value!.city ?? ''} — LEARN UP ACADEMY.`
           )
         : undefined,
-      seo_noindex: !isFound,
+      seo_noindex: !isFound || Boolean(centre.value?.seo_noindex),
       // Visuel OG/Twitter : visuel éditorial du centre, sinon défaut.
       seo_image: isFound ? imageSrc.value : undefined
     }

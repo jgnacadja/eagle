@@ -79,21 +79,19 @@ export class SeoService {
     let match = /^\/formations\/([^/]+)\/([^/]+)$/.exec(path)
     if (match) {
       const [, famille, slug] = match
-      // Le slug est unique : on retrouve la fiche, puis on vérifie que la
-      // famille dans l'URL est bien la sienne (sinon — adresse composée à
-      // la main — pas de contenu ici).
-      const formation = await this.findOneWithFields<{ id: number; famille: number | null }>(
+      // La famille de l'URL est vérifiée en filtre relationnel — une seule
+      // requête au lieu de deux, et une adresse composée à la main (slug
+      // valide sous une famille qui n'est pas la sienne) ne résout pas.
+      const formation = await this.findOneWithFields<{ id: number }>(
         'formations',
-        { slug: { _eq: slug }, status: { _eq: 'published' } },
-        ['id', 'famille']
+        {
+          slug: { _eq: slug },
+          status: { _eq: 'published' },
+          famille: { slug: { _eq: famille }, status: { _eq: 'published' } }
+        },
+        ['id']
       )
-      if (!formation?.famille) return null
-      const fam = await this.findOneWithFields<{ slug: string }>(
-        'familles_formation',
-        { id: { _eq: formation.famille }, status: { _eq: 'published' } },
-        ['slug']
-      )
-      return fam?.slug === famille ? { type: 'formation', id: formation.id } : null
+      return formation ? { type: 'formation', id: formation.id } : null
     }
 
     match = /^\/formations\/([^/]+)$/.exec(path)

@@ -22,14 +22,14 @@ describe('useAnalytics (ST-27)', () => {
     expect(commands[0]).toBe('setCustomUrl')
     expect(commands[1]).toBe('setDocumentTitle')
     expect(commands.at(-1)).toBe('trackPageView')
-    expect(window._paq![0][1]).toBe(window.location.pathname)
+    expect(window._paq![0]![1]).toBe(window.location.pathname)
   })
 
-  it('les paramètres utm/tri/page ne quittent pas le navigateur', () => {
-    window.history.replaceState({}, '', '/formations?utm_source=x&tri=prix&q=caces')
+  it('les paramètres utm/tri/page et la saisie libre ne quittent pas le navigateur', () => {
+    window.history.replaceState({}, '', '/formations?utm_source=x&tri=prix&q=caces&lieu=paris')
     const { trackPageView } = useAnalytics()
     trackPageView()
-    expect(window._paq![0]).toEqual(['setCustomUrl', '/formations?q=caces'])
+    expect(window._paq![0]).toEqual(['setCustomUrl', '/formations'])
     window.history.replaceState({}, '', '/')
   })
 
@@ -178,7 +178,7 @@ describe('useAnalytics (ST-27)', () => {
         value = opted
       })
       expect(window._paq![0]).toHaveLength(1)
-      const command = window._paq![0][0] as unknown as (this: {
+      const command = window._paq![0]![0] as unknown as (this: {
         isUserOptedOut: () => boolean
       }) => void
       expect(command).toBeInstanceOf(Function)

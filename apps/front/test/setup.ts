@@ -237,6 +237,16 @@ class IntersectionObserverStub {
 }
 vi.stubGlobal('IntersectionObserver', IntersectionObserverStub)
 
+// happy-dom télécharge et exécute les <script src>/<link> injectés — le
+// plugin Matomo ajoute matomo.js distant en test, déclenchant un vrai
+// fetch (ENOTFOUND en stderr). Couper le chargement de fichiers externes.
+const happyDom = (window as unknown as { happyDOM?: { settings: Record<string, unknown> } })
+  .happyDOM
+if (happyDom?.settings) {
+  happyDom.settings.disableJavaScriptFileLoading = true
+  happyDom.settings.disableCSSFileLoading = true
+}
+
 // Pointer capture absent de happy-dom : requis par reka-ui (SelectTrigger
 // appelle hasPointerCapture au pointerdown).
 if (typeof Element !== 'undefined') {

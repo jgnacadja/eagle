@@ -24,7 +24,7 @@ vi.spyOn(window.console, 'error').mockImplementation((...args: unknown[]) => {
   realConsoleError(...args)
 })
 
-describe('matomo.client plugin (ST-27)', () => {
+describe('matomo.client plugin', () => {
   beforeEach(() => {
     window._paq = undefined
     query = {}
@@ -94,7 +94,7 @@ describe('matomo.client plugin (ST-27)', () => {
     expect(window._paq!.map((c) => c[0])).not.toContain('trackPageView')
   })
 
-  // ST-30 — la conversion n'est mesurée que par la page après validation du
+  // la conversion n'est mesurée que par la page après validation
   // drapeau : ni la vue initiale ni les navigations ne la comptent ici.
   it('confirmation : la vue initiale n’est pas émise', () => {
     window.history.pushState({}, '', '/confirmation/devis')
@@ -126,7 +126,7 @@ describe('matomo.client plugin (ST-27)', () => {
     expect(window._paq).toContainEqual(['setTrackerUrl', 'https://stats.learnup.test/matomo.php'])
   })
 
-  it('dimension Gabarit déduite de la route, posée sur chaque vue (ST-32)', async () => {
+  it('dimension Gabarit déduite de la route, posée sur chaque vue', async () => {
     matomoPlugin(fakeNuxtApp as never)
     expect(window._paq).toContainEqual(['setCustomDimension', 1, 'accueil'])
     routeName = 'formations-famille-slug'
@@ -138,16 +138,16 @@ describe('matomo.client plugin (ST-27)', () => {
     expect(window._paq).toContainEqual(['setCustomDimension', 2, 'securite'])
   })
 
-  it('dimension Département lue du filtre ?dept= (ST-32)', () => {
+  it('dimension Département lue du filtre ?dept=', () => {
     routeName = 'centres'
     query = { dept: '75' }
     matomoPlugin(fakeNuxtApp as never)
     expect(window._paq).toContainEqual(['setCustomDimension', 3, '75'])
   })
 
-  // ST-32 — la fiche centre pose Département depuis `centre.department` au
+  // la fiche centre pose Département depuis `centre.department`
   // setup (avant page:finish) : applyRouteDimensions ne doit pas l'écraser.
-  it('dimension Département de la fiche centre survit à page:finish (ST-32)', async () => {
+  it('dimension Département de la fiche centre survit à page:finish', async () => {
     routeName = 'centres-slug'
     window.history.pushState({}, '', '/centres/creteil')
     matomoPlugin(fakeNuxtApp as never)

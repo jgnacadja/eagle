@@ -182,7 +182,7 @@ function linkedCentreSlugs(raw: DirectusFormation): string[] {
 }
 
 // Code de la source d'origine de la formation (dimension « Source
-// catalogue » Matomo, ST-32) : `hq` = éditorial Learn Up, autre = compte
+// catalogue » Matomo) : `hq` = éditorial Learn Up, autre = compte
 // Digiforma. Le champ M2O arrive en `{ code }` (fields `source.code`).
 function sourceCode(raw: DirectusFormation): string | null {
   const source = raw.source

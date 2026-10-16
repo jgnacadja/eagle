@@ -248,7 +248,7 @@ services:
       NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE}
       NUXT_INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}
       NUXT_CACHE_PURGE_SECRET: ${NUXT_CACHE_PURGE_SECRET:-}
-      # Tracker Matomo (ST-27) : le navigateur charge matomo.js depuis
+      # Tracker Matomo : le navigateur charge matomo.js depuis
       # l'instance — localhost:8082 en full-compose, vide = tracking coupé.
       NUXT_PUBLIC_MATOMO_URL: ${NUXT_PUBLIC_MATOMO_URL:-http://localhost:8082}
       NUXT_PUBLIC_MATOMO_SITE_ID: ${NUXT_PUBLIC_MATOMO_SITE_ID:-1}
@@ -260,7 +260,7 @@ services:
       directus:
         condition: service_healthy
 
-  # Matomo auto-hébergé (ST-26) : même topologie que la VM — MariaDB dédiée
+  # Matomo auto-hébergé : même topologie que la VM — MariaDB dédiée
   # (Matomo n'est pas compatible PostgreSQL) + conteneur applicatif. Le
   # volume `matomohtml` conserve config et plugins entre les rebuilds.
   matomo-db:

@@ -5,7 +5,7 @@ import { confirmationFlagKey, takeConfirmationFlag } from '~/utils/confirmation'
 const navigateMock = vi.fn()
 vi.stubGlobal('navigateTo', navigateMock)
 
-describe('useConfirmationRedirect (ST-30)', () => {
+describe('useConfirmationRedirect', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     window.sessionStorage.clear()

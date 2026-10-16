@@ -1,4 +1,4 @@
-# Redirections 301/410 — Guide référent SEO (ST-03)
+# Redirections 301/410 — Guide référent SEO
 
 Le site maintient une table `redirects` dans Directus. Elle couvre deux cas :
 

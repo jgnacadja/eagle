@@ -1,8 +1,8 @@
-// Définitions v1 des collections métier LEARN UP ACADEMY (ST-11).
+// Définitions v1 des collections métier LEARN UP ACADEMY.
 // Champs SEO répétés sur chaque collection porteuse de page (centres,
 // familles_formation, articles, pages) : seo_title, seo_description,
-// seo_canonical — alignés sur le livrable ST-06 (structure ; les valeurs
-// réelles viendront avec ST-06).
+// seo_canonical — structure en place ; les valeurs réelles seront saisies
+// au fil de l'édition.
 
 // Libellés d'affichage admin : le client est francophone — Directus montre
 // la traduction quand la langue du profil utilisateur est fr-FR. Pour les
@@ -93,7 +93,7 @@ const sortField = () => ({
   meta: { interface: 'input', hidden: true, ...fr('Ordre') }
 })
 
-// Segments réservés au routage (ST-02) : un slug portant l'un d'eux serait
+// Segments réservés au routage : un slug portant l'un d'eux serait
 // soit masqué par une route statique (`/{slug}` cède devant la page
 // existante), soit invalide dans le plan d'URL (departement/ville/page
 // sont réservés aux gabarits locaux et à la pagination).
@@ -863,7 +863,7 @@ export const collections = [
   {
     collection: 'seo_patterns',
     icon: 'travel_explore',
-    note: 'Patrons de métas par gabarit (ST-04) — variables {…} substituées côté front.',
+    note: 'Patrons de métas par gabarit — variables {…} substituées côté front.',
     ...fr('Patrons SEO'),
     fields: [
       primaryKey(),
@@ -1495,7 +1495,7 @@ export const collections = [
     ]
   },
   {
-    // ST-03 : lignes créées par l'extension `slug-redirects` (renommage de
+    // lignes créées par l'extension `slug-redirects` (renommage
     // slug, dépublication) ou saisies à la main par le référent SEO / par
     // l'import. `from_path` unique — pas de doublon possible sur une même
     // adresse source. La résolution passe par l'API (`GET /seo/resolve`),
@@ -1888,7 +1888,7 @@ export const relations = [
       ...fr('Centres')
     }
   },
-  // Maillage interne éditorial (ST-05) : sélection de formations liées sur
+  // Maillage interne éditorial : sélection de formations liées
   // la fiche (self-M2M via formations_liees) — remplace le bloc
   // « Formations similaires » calculé par famille quand il est rempli.
   {

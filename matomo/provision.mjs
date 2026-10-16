@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Provisioning idempotent de l'instance Matomo (ST-32) : site, dimensions
+// Provisioning idempotent de l'instance Matomo : site, dimensions
 // personnalisées, objectifs, réglages vie privée. Équivalent de
 // directus/schema/build.mjs — config.mjs est la source de vérité.
 //

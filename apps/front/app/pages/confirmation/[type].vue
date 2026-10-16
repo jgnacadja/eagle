@@ -43,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-// ST-30 — page de confirmation d'une conversion. La conversion n'est
+// page de confirmation d'une conversion. La conversion n'est
 // mesurable que si elle suit un envoi réussi : le formulaire pose un
 // drapeau sessionStorage, consommé ici au montage (supprimé — un
 // rechargement ou un accès direct repart vers l'accueil). La vue Matomo

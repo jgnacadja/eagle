@@ -1,7 +1,7 @@
 # matomo/
 
 Configuration versionnée de l'instance Matomo (analytics auto-hébergé,
-ST-26/27/32) — équivalent de `directus/schema/` pour Directus.
+) — équivalent de `directus/schema/` pour Directus.
 
 ## Contenu
 
@@ -12,7 +12,7 @@ ST-26/27/32) — équivalent de `directus/schema/` pour Directus.
   jour les objectifs dont le déclencheur a changé, ignore le reste).
 - `provision.test.mjs` — couverture node:test (`pnpm test:matomo`).
 - `CNIL.md` — dossier d'exemption CNIL (config retenue, finalités,
-  rétention, opt-out, auto-évaluation, validation requise — ST-33).
+  rétention, opt-out, auto-évaluation, validation requise).
 
 ## Provisioning
 
@@ -37,7 +37,7 @@ JS adresse cet id (`dimension{N}`), pas l'index par portée. Le mapping
 vit dans `apps/front/app/utils/matomo-dimensions.ts` : toute modification
 de l'ordre ou des noms ici doit y être répercutée.
 
-Objectifs : ceux sur URL de confirmation (`/confirmation/*`, ST-30) se
+Objectifs : ceux sur URL de confirmation (`/confirmation/*`) se
 déclenchent sur la page vue trackée — aucun code front. Les objectifs
 événement (`click_download_program`, `click_phone`, `session_signup`,
 `click_cta_demande_formation_from_centre`) se déclenchent sur l'action
@@ -73,7 +73,7 @@ Vérifications acceptées en local (instance `localhost:8082`) :
 - 7/7 objectifs déclenchés (URL de confirmation + actions événement) :
   conversions visibles dans `Goals.get` par `idGoal`.
 - IP tronquée (`192.168.0.0`) conformément à `privacy`.
-- Opt-out (ST-33) : `/confidentialite` affiche le statut et le bouton
+- Opt-out : `/confidentialite` affiche le statut et le bouton
   sous « Mesure d'audience » ; `optUserOut` pose `mtm_consent_removed`
   (seul cookie), les hits suivants ne remontent plus dans `Live.*`,
   `forgetUserOptOut` restaure la collecte.

@@ -6,7 +6,7 @@ import { DirectusItemsClient } from '../directus/directus.items.client'
 import { SeoService, type SeoResolution } from '../seo/seo.service'
 import { DIRECTUS_URL, FakeDirectus, FakeNetwork } from './support/fake-network'
 
-// ST-03 — la résolution `/seo/resolve` exercée à travers le vrai
+// la résolution `/seo/resolve` exercée à travers le vrai
 // DirectusItemsClient : mêmes requêtes HTTP `/items/*` qu'en production,
 // réponses du Directus simulé. Seul le cache est en mémoire.
 describe('seo — resolve (intégration)', () => {

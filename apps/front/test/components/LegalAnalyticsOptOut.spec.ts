@@ -10,7 +10,7 @@ function resolveOptedOut(opted: boolean) {
   command.call({ isUserOptedOut: () => opted })
 }
 
-describe('LegalAnalyticsOptOut (ST-33)', () => {
+describe('LegalAnalyticsOptOut', () => {
   beforeEach(() => {
     window._paq = []
   })

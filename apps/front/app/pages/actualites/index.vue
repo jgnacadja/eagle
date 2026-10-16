@@ -164,7 +164,7 @@
               </li>
             </ul>
 
-            <!-- Bandeau newsletter — la confirmation vit sur /confirmation/inscription/ (ST-30) -->
+            <!-- Bandeau newsletter — la confirmation vit sur /confirmation/inscription/ -->
             <section
               aria-labelledby="newsletter-heading"
               class="mt-xl rounded-md bg-accent-soft p-xl lg:mt-3xl lg:flex lg:items-center lg:justify-between lg:p-2xl"

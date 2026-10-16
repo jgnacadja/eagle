@@ -456,7 +456,7 @@ watchEffect(() => {
     : defaultBreadcrumb.value
 })
 
-// Patron administrable `famille` (ST-04) : seo_* éditorial > patron > repli.
+// Patron administrable `famille` : seo_* éditorial > patron > repli.
 const famillePattern = useSeoPattern('famille')
 
 useContentSeo(

@@ -1,4 +1,4 @@
-// Configuration déclarative de l'instance Matomo (ST-32) — source de vérité
+// Configuration déclarative de l'instance Matomo — source de vérité
 // versionnée, équivalent de directus/schema/collections.mjs pour Directus.
 // Appliquée par provision.mjs de façon idempotente via l'API HTTP Matomo.
 //
@@ -17,7 +17,7 @@ export const site = {
   ecommerce: 0
 }
 
-// ST-32 : portée action pour Gabarit/Famille/Département/Source catalogue,
+// portée action pour Gabarit/Famille/Département/Source catalogue,
 // portée visite pour Landing SEO et Cluster (une valeur par visite).
 export const dimensions = [
   { key: 'gabarit', name: 'Gabarit', scope: 'action' },
@@ -28,8 +28,8 @@ export const dimensions = [
   { key: 'cluster', name: 'Cluster', scope: 'visit' }
 ]
 
-// 7 objectifs (ST-32). Trois familles de déclencheurs :
-// - URL de confirmation (ST-30) : une page vue sur l'URL suffit, aucun
+// 7. Trois familles de déclencheurs :
+// URL de confirmation : une page vue sur l'URL suffit, aucun
 //   code front requis — le drapeau sessionStorage garantit le comptage.
 // - Événement : correspondance sur l'action (`match_attribute`
 //   `event_action` — la valeur confrontée au motif est l'action Matomo,
@@ -89,7 +89,7 @@ export const goals = [
   }
 ]
 
-// Vie privée : exigence CNIL du tracker sans cookie (ST-27 côté client,
+// Vie privée : exigence CNIL du tracker sans cookie (côté client,
 // ici le pendant serveur). useAnonymizedIpForVisitEnrichment=0 évite
 // d'enrichir la visite avec l'IP déjà tronquée (géoloc approximative).
 export const privacy = {
@@ -102,7 +102,7 @@ export const privacy = {
   forceAnonymousVisitTracking: 0
 }
 
-// Durées de conservation (ST-33) : les données brutes de visite sont purgées
+// Durées de conservation : les données brutes de visite sont purgées
 // au-delà de 13 mois — borne du référentiel d'exemption CNIL. Les rapports
 // agrégés, déjà anonymes, sont conservés au-delà.
 export const retention = {

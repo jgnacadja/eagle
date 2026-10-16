@@ -21,7 +21,7 @@ function run(path: string, method = 'GET') {
   return handler(event)
 }
 
-describe('server/middleware/trailing-slash (ST-02)', () => {
+describe('server/middleware/trailing-slash', () => {
   it('redirige en 301 vers la forme sans slash en un seul saut', () => {
     run('/formations/')
     expect(redirects).toEqual([{ location: '/formations', code: 301 }])

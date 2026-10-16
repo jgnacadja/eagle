@@ -1,4 +1,4 @@
-// ST-03 — logique du hook `slug-redirects` : aucun changement d'URL ne doit
+// logique du hook `slug-redirects` : aucun changement d'URL ne doit
 // produire de 404. Les fonctions ici sont pures ou ne dépendent que d'un
 // service items (ItemsService-like) injecté — testables hors Directus.
 

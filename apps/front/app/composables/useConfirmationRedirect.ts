@@ -11,7 +11,7 @@ export interface ConfirmationContext {
 }
 
 /**
- * Conversion d'un formulaire (ST-30) : après un envoi réussi, le visiteur
+ * Conversion d'un formulaire : après un envoi réussi, le visiteur
  * arrive sur `/confirmation/{type}` — l'URL mesurable par l'objectif Matomo.
  * Le drapeau de conversion (`markConfirmationFlag`, sessionStorage ou
  * secours mémoire) authentifie la conversion : la vue de la page n'est

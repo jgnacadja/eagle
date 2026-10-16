@@ -65,7 +65,7 @@ describe('AppFooter', () => {
     )
   })
 
-  it('n’utilise aucune balise Hn (ST-06 — chrome hors hiérarchie)', () => {
+  it('n’utilise aucune balise Hn (chrome hors hiérarchie)', () => {
     const wrapper = mountFooter()
     expect(wrapper.findAll('h1, h2, h3, h4, h5, h6')).toHaveLength(0)
   })

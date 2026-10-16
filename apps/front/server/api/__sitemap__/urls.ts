@@ -106,7 +106,7 @@ interface SitemapSources {
   legales: DirectusRow[]
 }
 
-// Sous-ensembles servis aux sitemaps segmentés (ST-03) via `?set=…` :
+// Sous-ensembles servis aux sitemaps segmentés via `?set=…` :
 // sitemap-pages (pages légales), sitemap-formations (familles + fiches),
 // sitemap-centres, sitemap-actualites (articles + catégories, namespace
 // partagé T9/T10), sitemap-local (lot 2 — encore vide). Sans `set`, la

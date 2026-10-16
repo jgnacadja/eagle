@@ -7,7 +7,7 @@ import {
   publicPath
 } from './redirects.js'
 
-// ST-03 — aucun changement d'URL ne produit de 404. Le `filter` lit l'état
+// aucun changement d'URL ne produit de 404. Le `filter` lit l'état
 // AVANT écriture (l'action ne reçoit plus les anciennes valeurs) et empile
 // les plans ; l'`action` les applique après l'écriture — une erreur là ne
 // bloque jamais l'édition.

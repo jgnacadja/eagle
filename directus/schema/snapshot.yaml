@@ -402,7 +402,7 @@ collections:
       icon: travel_explore
       item_duplication_fields: null
       note: >-
-        Patrons de métas par gabarit (ST-04) — variables {…} substituées côté
+        Patrons de métas par gabarit — variables {…} substituées côté
         front.
       preview_url: null
       singleton: false

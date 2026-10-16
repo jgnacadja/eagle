@@ -41,7 +41,7 @@ export function useContentSeo(
     computed(() => {
       const resolved = toValue(source)
       const title = resolved.seo_title || toValue(fallbackTitle)
-      // Self-canonical garanti (ST-03) : champ Directus explicite, sinon
+      // Self-canonical garanti : champ Directus explicite, sinon
       // l'URL canonique de la requête — `route.path` est toujours la forme
       // sans slash final (middleware 301 amont), sans query ni fragment.
       // Origine de

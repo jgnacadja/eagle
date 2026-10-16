@@ -474,7 +474,7 @@ definePageMeta({
 const route = useRoute()
 const router = useRouter()
 
-// Indexation du catalogue (ST-03) : la page pilier reste indexable et les
+// Indexation du catalogue : la page pilier reste indexable et
 // variantes de recherche/filtre/tri passent en « noindex, follow » avec une
 // canonical vers la forme propre — leur valeur est le maillage, pas
 // l'indexation. `?page=N` seule garde sa self-canonical (pagination).

@@ -68,7 +68,7 @@ vi.stubGlobal('useLeadSubmit', () => ({
   error: submitErrorState
 }))
 
-// Redirection de confirmation (ST-30) : stubée — la page quitte le formulaire
+// Redirection de confirmation : stubée — la page quitte le formulaire
 // vers /confirmation/{type}/ avec le contexte de retour.
 const confirmConversionMock = vi.fn<(type: string, context?: unknown) => Promise<unknown>>()
 vi.stubGlobal('useConfirmationRedirect', () => ({

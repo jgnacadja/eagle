@@ -205,7 +205,7 @@ describe('server/api/__sitemap__/urls', () => {
     expect(locs(result).filter((l) => l === '/entreprise')).toHaveLength(1)
   })
 
-  describe('?set= — sitemaps segmentés (ST-03)', () => {
+  describe('?set= — sitemaps segmentés', () => {
     it('set=pages ne retient que les pages légales et ne charge que sa source', async () => {
       querySet = 'pages'
       const result = await handler(event)

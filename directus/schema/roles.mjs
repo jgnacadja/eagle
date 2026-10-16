@@ -1,4 +1,4 @@
-// 5 rôles RBAC (ST-11). "super-admin" = rôle Administrator natif de
+// 5 rôles RBAC. "super-admin" = rôle Administrator natif
 // Directus (bypass total, existe déjà) — les 4 autres sont créés ici.
 //
 // Directus 11 sépare rôle et permissions via une Policy intermédiaire
@@ -171,8 +171,8 @@ export function permissionsFor(roleName) {
   }
 }
 
-// Accès public (visiteurs du site, non authentifiés) — trouvé en testant
-// ST-12 en réel : le front lit Directus sans se connecter, donc sans ceci
+// Accès public (visiteurs du site, non authentifiés) — trouvé en conditions
+// réelles : le front lit Directus sans se connecter, donc sans ceci
 // tout GET est 403 (deny-by-default). Statut "published" uniquement sur les
 // collections qui ont un champ status ; le reste (page_blocks, stats,
 // directus_files) n'en a pas, lecture non filtrée.

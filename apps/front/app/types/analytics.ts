@@ -115,7 +115,7 @@ export interface ClickDownloadProgramEvent {
 }
 
 /**
- * Inscription à une session — objectif ST-32 déclenché sur l'action
+ * Inscription à une session — déclenché sur l'action
  * `session_signup` (tunnel d'inscription Digiforma à venir ; l'objectif
  * est déjà provisionné côté Matomo).
  */
@@ -310,7 +310,7 @@ export interface ClickCtaDemandeFormationFromCentreEvent {
   page_path: string
 }
 
-/** Clic sur un lien `tel:` — déclenche l'objectif « Clic téléphone » (ST-32). */
+/** Clic sur un lien `tel:` — déclenche l'objectif « Clic téléphone ». */
 export interface ClickPhoneEvent {
   event: 'click_phone'
   center_id: string

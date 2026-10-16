@@ -10,7 +10,7 @@
     </div>
 
     <!-- Transition fluide entre l'état initial et le formulaire déplié — la
-         confirmation vit sur /confirmation/rendez-vous/ (ST-30). -->
+         confirmation vit sur /confirmation/rendez-vous/. -->
     <Transition name="form-step" mode="out-in" @after-enter="onTransitionAfterEnter">
       <!-- État A : Encart compact (Bouton CTA principal) -->
       <div v-if="!isOpen" key="cta" class="mt-md">

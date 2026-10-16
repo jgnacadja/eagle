@@ -385,7 +385,7 @@ const article = computed(() => {
 })
 
 // T9/T10 : /actualites/{categorie}/ et /actualites/{slug}/ partagent le
-// même espace de noms (ST-02) — un slug qui n'est pas un article publié
+// même espace de noms — un slug qui n'est pas un article publié
 // est résolu côté serveur comme catégorie publiée. L'article prime en cas
 // de collision (les slugs sont uniques par collection, pas entre elles).
 const { data: category } = await useAsyncData<ArticleCategory | null>(
@@ -609,7 +609,7 @@ watchEffect(() => {
     : defaultBreadcrumb.value
 })
 
-// Patrons administrables (ST-04) : seo_* éditorial > patron > repli.
+// Patrons administrables : seo_* éditorial > patron > repli.
 const articlePattern = useSeoPattern('article')
 const categoriePattern = useSeoPattern('categorie')
 

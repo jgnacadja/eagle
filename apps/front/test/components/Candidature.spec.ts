@@ -28,7 +28,7 @@ vi.stubGlobal('useLeadSubmit', () => ({
   }
 }))
 
-// Redirection de confirmation (ST-30) : stubée — la candidature réussie quitte
+// Redirection de confirmation : stubée — la candidature réussie quitte
 // le dialog vers /confirmation/candidature/.
 const confirmConversionMock = vi.fn<(type: string, context?: unknown) => Promise<unknown>>()
 vi.stubGlobal('useConfirmationRedirect', () => ({
@@ -201,7 +201,7 @@ describe('components/Candidature', () => {
 
     await vi.advanceTimersByTimeAsync(1000)
 
-    // Confirmation déportée sur /confirmation/candidature (ST-30) — le
+    // Confirmation déportée sur /confirmation/candidature
     // détail reprend le récapitulatif « Voie — Ville » de l'ancien écran.
     expect(confirmConversionMock).toHaveBeenCalledWith('candidature', {
       detail: 'Projet « Ouvrir un centre — Créteil (94) » — réponse sous 5 jours ouvrés.'

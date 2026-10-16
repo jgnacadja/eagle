@@ -822,7 +822,7 @@ watchEffect(() => {
     : defaultBreadcrumb.value
 })
 
-// Patron administrable `centre` (ST-04) : seo_* éditorial > patron > repli.
+// Patron administrable `centre` : seo_* éditorial > patron > repli.
 const centrePattern = useSeoPattern('centre')
 
 useContentSeo(
@@ -1100,7 +1100,7 @@ function onErrorSearch(query: string) {
 
 const { pushEvent, setActionDimension } = useAnalytics()
 
-// Dimension « Département » (ST-32) : enrichie dès que la fiche centre est
+// Dimension « Département » : enrichie dès que la fiche centre est
 // résolue — avant la vue de fin de page quand la donnée vient du SSR.
 watch(
   () => centre.value?.department,
@@ -1141,7 +1141,7 @@ function onDownloadQualiopi() {
   }
 }
 
-// Clic `tel:` — objectif « Clic téléphone » (ST-32) : le numéro ne part
+// Clic `tel:` — objectif « Clic téléphone » : le numéro ne part
 // jamais (PII) ; seuls le centre et le type de ligne sont mesurés.
 function trackPhoneClick(phoneType: 'fixe' | 'mobile') {
   if (!centre.value) return

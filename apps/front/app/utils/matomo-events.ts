@@ -56,7 +56,7 @@ const EVENT_RULES: Record<string, EventRule> = {
     category: 'Formations',
     nameKeys: ['formation_name', 'formation_family']
   },
-  // Déclenche l'objectif « Inscription à une session » (ST-32) — contrat
+  // Déclenche l'objectif « Inscription à une session » — contrat
   // réservé au tunnel d'inscription Digiforma à venir.
   session_signup: { category: 'Formations', nameKeys: ['formation_id', 'session_id'] },
   // Module Chatbot du plan

@@ -1,6 +1,6 @@
 import type { SeoPattern } from '@learnup/types'
 
-// Patrons SEO administrables (ST-04) : une seule requête Directus par rendu,
+// Patrons SEO administrables : une seule requête Directus par rendu,
 // partagée entre toutes les pages qui résolvent leurs métas — l'édition d'un
 // patron dans le CMS est répercutée sans déploiement (dépend du TTL ISR).
 const CACHE_KEY = 'seo-patterns'

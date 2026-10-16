@@ -117,7 +117,7 @@ describe('planGoal', () => {
 })
 
 describe('config', () => {
-  it('déclare les 6 dimensions ST-32 avec les portées du ticket', () => {
+  it('déclare les 6 dimensions avec les portées du ticket', () => {
     assert.equal(dimensions.length, 6)
     const scopes = Object.fromEntries(dimensions.map((d) => [d.key, d.scope]))
     assert.equal(scopes.gabarit, 'action')
@@ -128,12 +128,12 @@ describe('config', () => {
     assert.equal(scopes.cluster, 'visit')
   })
 
-  it('déclare les 7 objectifs ST-32 sans doublon de nom', () => {
+  it('déclare les 7 sans doublon de nom', () => {
     assert.equal(goals.length, 7)
     assert.equal(new Set(goals.map((g) => g.name)).size, 7)
   })
 
-  it('chaque objectif URL pointe une confirmation ST-30 connue', () => {
+  it('chaque objectif URL pointe une confirmation connue', () => {
     const urlGoals = goals.filter((g) => g.matchAttribute === 'url')
     for (const g of urlGoals) {
       assert.match(g.pattern, /^\/confirmation\/(devis|rendez-vous|inscription|candidature)/, g.key)
@@ -165,7 +165,7 @@ describe('provision', () => {
     const privacyCall = calls.find((c) => c.method === 'PrivacyManager.setAnonymizeIpSettings')
     assert.deepEqual(privacyCall.params, privacy)
 
-    // ST-33 — rétention : purge des logs bruts au-delà de 13 mois. Sans mot
+    // rétention : purge des logs bruts au-delà de 13 mois. Sans mot
     // de passe admin (reconfirmation exigée par Matomo), l'appel est sauté.
     const retentionCall = calls.find((c) => c.method === 'PrivacyManager.setDeleteLogsSettings')
     assert.equal(retentionCall, undefined)
@@ -239,9 +239,6 @@ describe('provision', () => {
       'SitesManager.addSite': () => 2
     })
     await assert.rejects(() => provision(api), /idSite=2/)
-    assert.equal(
-      calls.filter((c) => c.method.startsWith('CustomDimensions.')).length,
-      0
-    )
+    assert.equal(calls.filter((c) => c.method.startsWith('CustomDimensions.')).length, 0)
   })
 })

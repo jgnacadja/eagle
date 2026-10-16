@@ -1,4 +1,4 @@
-// Audit Hn (ST-06) : un seul <h1> et aucun niveau sauté dans l'arbre rendu.
+// Audit Hn : un seul <h1> et aucun niveau sauté dans l'arbre rendu.
 // Utilisé par les specs de gabarits — vérifie la structure réellement montée.
 import type { VueWrapper } from '@vue/test-utils'
 import { expect } from 'vitest'

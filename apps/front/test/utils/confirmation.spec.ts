@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { CONFIRMATION_TYPES, confirmationFlagKey, isConfirmationPath } from '~/utils/confirmation'
 
-describe('confirmation utils (ST-30)', () => {
+describe('confirmation utils', () => {
   it('expose les quatre types de conversion du plan de tracking', () => {
     expect(CONFIRMATION_TYPES).toEqual(['devis', 'rendez-vous', 'inscription', 'candidature'])
   })

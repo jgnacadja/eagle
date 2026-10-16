@@ -34,7 +34,7 @@ async function run(path: string, method = 'GET', result: unknown = { type: null,
   return handler({ method } as H3Event)
 }
 
-describe('server/middleware/redirects (ST-03)', () => {
+describe('server/middleware/redirects', () => {
   it('applique un 301 de la table redirects, query conservée', async () => {
     await run('/formations/gestion/ancien?utm=x', 'GET', {
       redirect: { to: '/formations/gestion/nouveau', status: 301 }

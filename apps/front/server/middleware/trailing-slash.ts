@@ -1,4 +1,4 @@
-// Slash final proscrit (ST-02) : toute URL de page avec « / » terminal
+// Slash final proscrit : toute URL de page avec « / » terminal
 // redirige en 301 vers sa forme sans slash, en un seul saut (la query est
 // conservée ; le fragment ne quitte jamais le client).
 // Le middleware Nitro s'exécute avant le rendu et l'ISR : la redirection

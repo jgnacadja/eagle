@@ -1,4 +1,4 @@
-// Redirections 301/410 (ST-03) : avant tout rendu, le chemin demandé est
+// Redirections 301/410 : avant tout rendu, le chemin demandé est
 // résolu auprès de l'API (`GET /seo/resolve` — table `redirects` Directus,
 // remplie par le hook slug-redirects et le référent SEO). Le middleware
 // Nitro s'exécute avant l'ISR : la redirection coûte un appel API (réponse

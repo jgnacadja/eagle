@@ -7,7 +7,7 @@ vi.stubGlobal('useRoute', () => ({ query }))
 let config = { public: { matomoUrl: 'https://stats.learnup.test', matomoSiteId: '2' } }
 vi.stubGlobal('useRuntimeConfig', () => config)
 
-describe('useAnalytics (ST-27)', () => {
+describe('useAnalytics', () => {
   beforeEach(() => {
     window._paq = []
     query = {}
@@ -45,7 +45,7 @@ describe('useAnalytics (ST-27)', () => {
     expect(window._paq).toContainEqual(['setCustomDimension', 2, 'securite'])
   })
 
-  it('les dimensions du registre sont posées, les absentes retirées (ST-32)', () => {
+  it('les dimensions du registre sont posées, les absentes retirées', () => {
     const { setActionDimension, setVisitDimension, trackPageView } = useAnalytics()
     setActionDimension('gabarit', 'formation')
     setActionDimension('famille', 'securite')
@@ -156,7 +156,7 @@ describe('useAnalytics (ST-27)', () => {
     expect(window._paq).toBeUndefined()
   })
 
-  // Droit d'opposition (ST-33) : optUserOut/forgetUserOptOut sont des
+  // Droit d'opposition : optUserOut/forgetUserOptOut sont
   // commandes tracker ; isOptedOut passe par une commande fonction.
   describe('opt-out', () => {
     it('optOut empile la commande Matomo', () => {

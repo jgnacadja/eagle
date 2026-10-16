@@ -742,7 +742,7 @@ const { data: familleData } = await useAsyncData<FamilleFormation | null>(
 
 const familyName = computed(() => familleData.value?.name ?? famille)
 
-// Formations liées éditoriales (ST-05) : self-M2M `formations_liees` —
+// Formations liées éditoriales : self-M2M `formations_liees`
 // quand l'éditeur remplit le champ, il remplace le bloc « similaires »
 // calculé par famille. Vide/injoignable → [] et le fallback garde la main.
 interface FormationLieeRow {
@@ -876,7 +876,7 @@ const imageSrc = computed(
   () => directusAssetUrl(course.value!.image, config.public.apiBase) ?? course.value!.imageUrl
 )
 
-// Patron de métas administrable (ST-04) — priorité : champ seo_* éditorial,
+// Patron de métas administrable — priorité : champ seo_* éditorial,
 // puis patron `formation` de la collection seo_patterns, puis le repli.
 const formationPattern = useSeoPattern('formation')
 const metaVars = computed<MetaPatternVars>(() => {
@@ -1353,7 +1353,7 @@ const similarQuery = computed(() => ({
 const similarCatalog = await useCatalog(similarQuery)
 
 // Surcharge éditoriale : les lignes `formations_liees` triées remplacent
-// les similaires calculés — l'éditeur pilote le maillage interne (ST-05).
+// les similaires calculés — l'éditeur pilote le maillage interne.
 const liees = computed<FormationItem[]>(() =>
   [...(lieesRows.value ?? [])]
     .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0))
@@ -1407,7 +1407,7 @@ function formatPrice(value: number): string {
 
 const { pushEvent, setActionDimension } = useAnalytics()
 
-// Dimension « Source catalogue » (ST-32) : Digiforma vs éditorial Learn Up,
+// Dimension « Source catalogue » : Digiforma vs éditorial Learn Up,
 // enrichie dès que la fiche est résolue (SSR : avant la vue de fin de page).
 watch(
   () => course.value?.source,

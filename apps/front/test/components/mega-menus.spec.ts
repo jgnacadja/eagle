@@ -467,7 +467,7 @@ describe('MegaMenuFormations — interactions close', () => {
 
 describe('Mega-menus — structure Hn', () => {
   it.each([MegaMenuFormations, MegaMenuCentres, MegaMenuActualites])(
-    'n’utilise aucune balise Hn (ST-06 — chrome hors hiérarchie)',
+    'n’utilise aucune balise Hn (chrome hors hiérarchie)',
     async (component) => {
       const wrapper = await mountMenu(component)
       expect(wrapper.findAll('h1, h2, h3, h4, h5, h6')).toHaveLength(0)

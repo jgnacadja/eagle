@@ -50,7 +50,7 @@ async function mountPage(type: string) {
   return wrapper
 }
 
-describe('pages/confirmation/[type] (ST-30)', () => {
+describe('pages/confirmation/[type]', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     window.sessionStorage.clear()

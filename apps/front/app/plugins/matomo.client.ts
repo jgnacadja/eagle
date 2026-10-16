@@ -5,9 +5,9 @@ import { isPreviewQuery } from '~/utils/matomo'
 import { firstStringParam, gabaritForRouteName } from '~/utils/matomo-dimensions'
 import { logClientWarning } from '~/utils/logger'
 
-// ST-27 — tracker Matomo sans cookie. La file `_paq` est remplie avant
+// tracker Matomo sans cookie. La file `_paq` est remplie avant
 // l'injection du script : les commandes sont rejouées dans l'ordre au
-// chargement de matomo.js (hébergé sur le sous-domaine de la VM, ST-26).
+// chargement de matomo.js (hébergé sur le sous-domaine de la VM).
 // Cookies désactivés (disableCookies → conformité sans bandeau) ; l'IP
 // anonymisée (MAT-16) est un réglage de l'instance, pas du tracker.
 // Sans configuration (dev, preview Vercel) le script n'est pas chargé :
@@ -32,7 +32,7 @@ export default defineNuxtPlugin((nuxtApp) => {
   const { trackPageView, setActionDimension, setVisitDimension } = useAnalytics()
   const route = useRoute()
 
-  // Dimensions ST-32 dérivables de la route : Gabarit sur toutes les vues,
+  // Dimensions dérivables de la route : Gabarit sur toutes les vues,
   // Famille (param `/formations/:famille` ou filtre `?famille=`), Département
   // (filtre `?dept=` des centres). Les pages enrichissent Département/Source
   // via `setActionDimension` quand la donnée arrive (fiche centre/formation).
@@ -66,7 +66,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   // Vue initiale (déclenchée immédiatement, les commandes attendent matomo.js),
   // puis une vue à chaque navigation client — après useHead pour avoir le titre.
-  // /confirmation/{type} exclu (ST-30) : la vue n'y est émise que par la page
+  // /confirmation/{type} exclu : la vue n'y est émise que par la page
   // elle-même, après validation du drapeau de conversion — sinon un accès
   // direct, un rechargement ou un retour arrière compterait une conversion
   // fantôme avant même la redirection vers l'accueil.

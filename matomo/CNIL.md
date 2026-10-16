@@ -1,4 +1,4 @@
-# Dossier d'exemption CNIL — mesure d'audience Matomo (ST-33)
+# Dossier d'exemption CNIL — mesure d'audience Matomo
 
 Document de travail pour l'exemption de consentement de la mesure
 d'audience (référentiel CNIL « cookies — mesure d'audience » et guide
@@ -9,7 +9,7 @@ configuration technique retenue et l'auto-évaluation associée.
 
 ## Outil et finalités
 
-- **Outil** : Matomo 5 auto-hébergé (VM dédiée ST-26, `analytics.*` en
+- **Outil** Matomo 5 auto-hébergé (VM dédiée, `analytics.*`
   sous-domaine). Aucune donnée n'est envoyée à un prestataire tiers — la
   donnée ne quitte pas l'infrastructure du projet.
 - **Finalités** : production de statistiques de fréquentation (pages

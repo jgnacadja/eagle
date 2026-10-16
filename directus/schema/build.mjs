@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Bootstrap unique du schéma Directus v1 (ST-11) : collections, relations,
+// Bootstrap unique du schéma Directus v1 : collections, relations,
 // rôles + permissions. Vise un environnement Directus vierge fraîchement
 // démarré (`docker compose up`).
 //

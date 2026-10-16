@@ -9,11 +9,11 @@ import {
 import type { TrackingEvent } from '~/types/analytics'
 
 export interface AnalyticsPageDimensions {
-  /** Dimensions personnalisées Matomo (id → valeur), configurées dans ST-32. */
+  /** Dimensions personnalisées Matomo (id → valeur), configurées. */
   [dimensionId: number]: string
 }
 
-// Registre des dimensions courantes (ST-32). Module-level : la SPA vit dans
+// Registre des dimensions courantes. Module-level : la SPA vit
 // un seul onglet — un rechargement repart à zéro, ce qui est le comportement
 // attendu pour des dimensions de portée action. Écritures gardées côté
 // client : en SSR le registre serait partagé entre requêtes pour une valeur
@@ -23,7 +23,7 @@ const visitDimensions = new Map<number, string>()
 
 /**
  * API interne unique de tracking — le seul point de contact avec la file
- * Matomo `window._paq` (injectée par `plugins/matomo.client.ts`, ST-27).
+ * Matomo `window._paq` (injectée par `plugins/matomo.client.ts`).
  * Sans tracker (`_paq` absent, config manquante) ou pendant une
  * prévisualisation Directus (`?preview=`), chaque appel est un no-op : le
  * tracking ne casse jamais la navigation ni la consultation d'un brouillon.
@@ -161,7 +161,7 @@ export function useAnalytics() {
     return { page_path, page_title }
   }
 
-  // Droit d'opposition (ST-33) : le suivi est sans cookie, l'opt-out s'appuie
+  // Droit d'opposition : le suivi est sans cookie, l'opt-out s'appuie
   // donc sur le marqueur first-party de Matomo (`optUserOut` dépose le cookie
   // « mtm_consent_removed » sur le domaine du site — seul cookie toléré par
   // l'exemption, il matérialise le choix). `isOptedOut` passe par une

@@ -75,7 +75,7 @@ directus/
                   complète dans directus/README.md.
   seed/           Script de seed idempotent (`pnpm seed`) — données de démo
                   (3 centres, 11 familles, 3 articles). Saute proprement les
-                  collections pas dans le périmètre de ST-11 (voir son README).
+                  collections pas dans le périmètre (voir son README).
 ```
 
 ### Convention UI — zéro valeur de style en dur

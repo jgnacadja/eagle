@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Crée les redirections 301 aux renommages de slug et 410 aux dépublications — aucun changement d'URL ne produit de 404 (ST-03).",
+  "description": "Crée les redirections 301 aux renommages de slug et 410 aux dépublications — aucun changement d'URL ne produit de 404.",
   "directus:extension": {
     "type": "hook",
     "path": "index.js",

@@ -1,4 +1,4 @@
-// X-Robots-Tag (ST-03) : hors environnement indexable (dev local, previews
+// X-Robots-Tag : hors environnement indexable (dev local, previews
 // Vercel, préproduction), toute réponse de page porte « noindex » en
 // en-tête — filet en plus du « Disallow: / » du robots.txt : une preview
 // partagée ou crawlée hors robots ne peut pas être indexée.

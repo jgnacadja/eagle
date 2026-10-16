@@ -159,7 +159,7 @@ vi.stubGlobal('computed', computed)
 vi.stubGlobal('ref', ref)
 vi.stubGlobal('watchEffect', watchEffect)
 vi.stubGlobal('definePageMeta', vi.fn())
-// ST-04 : patrons Directus non administrés en test — les gabarits
+// patrons Directus non administrés en test — les gabarits
 // retombent sur leurs metas codées en dur (repli du moteur).
 vi.stubGlobal('useSeoPattern', () => ref(null))
 vi.stubGlobal('resolveSeoTitle', resolveSeoTitle)

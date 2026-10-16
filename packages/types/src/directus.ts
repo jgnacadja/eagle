@@ -1,4 +1,4 @@
-// Types de domaine — miroir des collections Directus modélisées en ST-11
+// Types de domaine — miroir des collections Directus modélisées
 // (directus/schema/collections.mjs est la source de vérité du schéma).
 
 export type ContentStatus = 'draft' | 'published' | 'archived'
@@ -182,7 +182,7 @@ export interface Avis {
   centre: number | null
 }
 
-/** Patron de métas administrable (ST-04) — un par gabarit (`key`). */
+/** Patron de métas administrable — un par gabarit (`key`). */
 export interface SeoPattern {
   id: number
   key: string

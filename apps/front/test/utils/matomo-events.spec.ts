@@ -101,7 +101,7 @@ describe('toMatomoCommands', () => {
     ])
   })
 
-  it('click_phone / session_signup déclenchent les objectifs ST-32 (action = nom du plan)', () => {
+  it('click_phone / session_signup déclenchent les objectifs (action = nom du plan)', () => {
     expect(
       toMatomoCommands({ event: 'click_phone', center_name: 'Paris', phone_type: 'fixe' })
     ).toEqual([['trackEvent', 'Centres', 'click_phone', 'Paris:fixe']])

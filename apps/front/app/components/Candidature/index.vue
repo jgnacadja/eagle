@@ -80,7 +80,7 @@ async function onSubmit(payload: CandidaturePayload) {
     form_id: formId
   })
 
-  // Confirmation mesurable (ST-30) : la conversion quitte le dialog, le
+  // Confirmation mesurable : la conversion quitte le dialog,
   // détail reprend le récapitulatif « Voie — Ville » de l'ancien écran.
   // ville est requise par le schéma (min 1) : toujours renseignée ici.
   await confirmConversion('candidature', {

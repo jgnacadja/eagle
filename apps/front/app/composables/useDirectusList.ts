@@ -16,7 +16,7 @@ function getCachedData<T>(
 /**
  * Fetch une liste d'items Directus, dégradée à [] en cas d'erreur — mais
  * loggée côté serveur avant de dégrader, pour qu'un trou de permission sur
- * le rôle Public (voir ST-12) apparaisse dans les logs serveur au lieu de se
+ * le rôle Public apparaisse dans les logs serveur au lieu de se
  * traduire silencieusement par une section vide.
  */
 // `query` peut être un getter : il est réévalué à chaque fetch et peut

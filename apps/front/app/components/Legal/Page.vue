@@ -104,7 +104,7 @@
                 />
               </section>
             </div>
-            <!-- Droit d'opposition à la mesure d'audience (ST-33) : injecté
+            <!-- Droit d'opposition à la mesure d'audience : injecté
                  dans la politique de confidentialité, sous la section dédiée. -->
             <LegalAnalyticsOptOut v-if="isAnalyticsSection(section.id)" class="mt-md" />
           </section>
@@ -153,7 +153,7 @@ const props = defineProps<{
 const route = useRoute()
 const currentSlug = computed(() => (route.params.slug as string) || props.page.slug)
 
-// ST-33 — le bloc d'opt-out Matomo n'existe que sur la politique de
+// le bloc d'opt-out Matomo n'existe que sur la politique
 // confidentialité, sous la section « Mesure d'audience » quand le contenu la
 // fournit, sinon en fin d'article (le droit d'opposition doit rester visible).
 const ANALYTICS_SECTION_ID = 'mesure-audience'

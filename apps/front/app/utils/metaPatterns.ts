@@ -1,4 +1,4 @@
-// Moteur de metas par patrons (ST-04) : les gabarits de titre/description
+// Moteur de metas par patrons : les gabarits de titre/description
 // sont éditables dans Directus (collection `seo_patterns`) sans déployer.
 // Un patron contient des variables `{cle}` remplacées par les données de
 // la page ; le résultat passe par les gardes-fous SERP (60/160).
@@ -87,7 +87,7 @@ function cutAtWord(text: string, max: number): string {
   return `${cut}…`
 }
 
-/** Résolution ST-04 : explicite > patron rendu > repli — puis garde 60/160. */
+/** Résolution : explicite > patron rendu > repli — puis garde 60/160. */
 export function resolveSeoTitle(
   explicit: string | null | undefined,
   pattern: string | null | undefined,

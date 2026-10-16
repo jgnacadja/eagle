@@ -1,6 +1,6 @@
 # @learnup/presence
 
-Page de présence statique LEARN UP ACADEMY — [S0-06](https://app.clickup.com/t/869eqqdj8).
+Page de présence statique LEARN UP ACADEMY.
 
 Isolée à dessein : ne dépend d'aucun package du monorepo (`@learnup/ui`,
 `@learnup/types`) ni du socle Nuxt 4 / NestJS / Directus / Scaleway. Vite +
@@ -56,7 +56,7 @@ que le hero, doublon visuel pur sans second contexte de fond clair pour le
 justifier. Gardé dans `public/` en cas de besoin futur (favicon, section sur
 fond clair).
 
-## Ce qui est fait vs. laissé de côté (ticket S0-06)
+## Ce qui est fait vs. laissé de côté (ticket)
 
 Fait dans cette PR : page complète (logo, slogan, bandeau "site en
 développement", CTA unique, section formulaire), mobile-first, RGAA de base

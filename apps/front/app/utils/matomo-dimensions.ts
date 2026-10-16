@@ -1,4 +1,4 @@
-// Dimensions personnalisées Matomo (ST-32) — contrat avec
+// Dimensions personnalisées Matomo — contrat
 // matomo/config.mjs : `idcustomdimension` est global et suit l'ordre de
 // déclaration du fichier de config (1..6). Le tracker JS adresse cet id
 // global (`dimension{idcustomdimension}`) — pas l'index par portée.
@@ -22,7 +22,7 @@ export type VisitDimensionKey = keyof typeof VISIT_DIMENSION
 
 /**
  * Gabarit de la page (dimension action, posée sur 100 % des vues) déduit
- * du nom de route Nuxt — liste fermée issue de ST-15. Une route non
+ * du nom de route Nuxt — liste fermée issue. Une route
  * répertoriée retombe sur `autre` : le crawl reste mesurable sans casse.
  */
 const GABARIT_BY_ROUTE: Record<string, string> = {

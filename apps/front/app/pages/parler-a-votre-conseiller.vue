@@ -13,7 +13,7 @@
 
       <div class="grid grid-cols-1 items-start gap-lg lg:grid-cols-3">
         <div class="lg:col-span-2 md:px-16">
-          <!-- La confirmation d'envoi vit sur /confirmation/rendez-vous/ (ST-30). -->
+          <!-- La confirmation d'envoi vit sur /confirmation/rendez-vous/. -->
           <form novalidate @focusin="onFieldFocus" @submit.prevent="onSubmit">
             <Card v-reveal class="space-y-lg p-lg sm:px-xl sm:py-lg">
               <fieldset>
@@ -259,7 +259,7 @@ useContentSeo(
     seo_title: 'Parler à votre conseiller | LEARN UP ACADEMY',
     seo_description:
       'Décrivez votre besoin : votre demande est transmise à l’interlocuteur compétent de votre territoire, qui vous recontacte sous 24 h ouvrées.',
-    // Formulaire de contact : hors indexation, liens suivis (ST-03).
+    // Formulaire de contact : hors indexation, liens suivis.
     seo_robots: 'noindex, follow'
   },
   'Parler à votre conseiller'

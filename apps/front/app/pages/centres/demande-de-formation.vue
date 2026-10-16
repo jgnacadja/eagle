@@ -782,7 +782,7 @@ useContentSeo(
       'Transmettez votre demande de formation : prise en charge par LEARN UP ACADEMY, réponse sous 24 h ouvrées.',
     // Page formulaire paramétrée : hors indexation mais ses liens gardent
     // du poids ; l'écran de confirmation vit désormais sur /confirmation
-    // (ST-30), noindex et hors sitemap.
+    // noindex et hors sitemap.
     seo_robots: 'noindex, follow'
   })),
   'Demande de formation'

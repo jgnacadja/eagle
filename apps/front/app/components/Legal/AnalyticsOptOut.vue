@@ -1,5 +1,5 @@
 <template>
-  <!-- ST-33 — droit d'opposition à la mesure d'audience (exemption CNIL) :
+  <!-- droit d'opposition à la mesure d'audience (exemption CNIL) :
        bloc interactif injecté dans la politique de confidentialité, section
        « mesure-audience ». Le suivi Matomo est sans cookie ; l'opt-out pose
        le marqueur first-party du tracker. -->

@@ -21,7 +21,7 @@ vi.stubGlobal('useLeadSubmit', () => ({
   })
 }))
 
-// Redirection de confirmation (ST-30) : stubée — le rappel réussi quitte la
+// Redirection de confirmation : stubée — le rappel réussi quitte
 // carte vers /confirmation/rendez-vous/.
 const confirmConversionMock = vi.fn<(type: string, context?: unknown) => Promise<unknown>>()
 vi.stubGlobal('useConfirmationRedirect', () => ({
@@ -262,7 +262,7 @@ describe('QuickCallbackCard', () => {
       }
     ])
 
-    // Confirmation déportée sur /confirmation/rendez-vous (ST-30) — le
+    // Confirmation déportée sur /confirmation/rendez-vous
     // détail reprend créneau et téléphone de l'ancien écran.
     expect(confirmConversionMock).toHaveBeenCalledWith('rendez-vous', {
       detail: 'Un conseiller vous rappellera dès que possible au 06 12 34 56 78.'

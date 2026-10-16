@@ -181,7 +181,7 @@ vi.stubGlobal('useLeadSubmit', () => ({
   error: leadError
 }))
 
-// Redirection de confirmation (ST-30) : stubée — l'inscription newsletter
+// Redirection de confirmation : stubée — l'inscription newsletter
 // quitte la page vers /confirmation/inscription/.
 const confirmConversionMock = vi.fn<(type: string, context?: unknown) => Promise<unknown>>()
 vi.stubGlobal('useConfirmationRedirect', () => ({
@@ -389,7 +389,7 @@ describe('pages/actualites/index', () => {
       'newsletter',
       expect.objectContaining({ email: 'abonne@site.fr' })
     )
-    // L'inscription réussie part vers la page de confirmation mesurable (ST-30).
+    // L'inscription réussie part vers la page de confirmation mesurable.
     expect(confirmConversionMock).toHaveBeenCalledWith('inscription', {
       detail:
         "Pensez à vérifier vos courriers indésirables si vous ne recevez rien d'ici quelques minutes."

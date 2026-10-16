@@ -22,7 +22,7 @@ function run(path: string, method = 'GET') {
   handler({ method } as H3Event)
 }
 
-describe('server/middleware/robots-tag (ST-03)', () => {
+describe('server/middleware/robots-tag', () => {
   it('pose X-Robots-Tag: noindex sur les pages hors environnement indexable', () => {
     indexable = false
     run('/formations')

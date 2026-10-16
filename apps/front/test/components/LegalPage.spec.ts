@@ -437,7 +437,7 @@ describe('components/LegalPage', () => {
     removeSpy.mockRestore()
   })
 
-  // ST-33 — le mécanisme d'opposition à la mesure d'audience n'existe que
+  // le mécanisme d'opposition à la mesure d'audience n'existe que
   // sur la politique de confidentialité.
   describe('opt-out mesure d’audience', () => {
     const confidentialite: LegalPageModel = {

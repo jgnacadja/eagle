@@ -1,4 +1,4 @@
-// ST-27 — helpers du tracker Matomo. Logique pure (testable hors Nuxt) :
+// helpers du tracker Matomo. Logique pure (testable hors Nuxt) :
 // nettoyage de l'URL suivie et détection de prévisualisation.
 //
 // MAT-15 : les variantes d'une même page (utm_*, tri, pagination, ordre)
@@ -31,9 +31,10 @@ export type MatomoCommand = [string, ...Array<string | number | boolean>]
 
 /**
  * Commande fonction : exécutée par matomo.js une fois chargé, `this` = l'API
- * du tracker (ex. `isUserOptedOut()` pour l'opt-out ST-33).
+ * du tracker (ex. `isUserOptedOut()` pour l'opt-out). La queue reste
+ * typée tableau — la queue de tuple évite les erreurs d'indexation en spec.
  */
-export type MatomoCallback = [() => void]
+export type MatomoCallback = [() => void, ...Array<string | number | boolean>]
 
 /**
  * File de commandes du tracker. Avant le chargement de `matomo.js` c'est un
@@ -41,7 +42,8 @@ export type MatomoCallback = [() => void]
  * proxy asynchrone — un objet qui expose toujours `push` (d'où le test
  * `typeof push === 'function'` dans `useAnalytics.ready`, pas `isArray`).
  * Le typage garde la forme tableau : seule `push` est utilisée au runtime
- * et les specs insèrent/inspectent les commandes.
+ * et les specs insèrent/inspectent les commandes. Les éléments sont des
+ * commandes classiques ou des commandes-fonction (opt-out).
  */
 export type MatomoQueue = Array<MatomoCommand | MatomoCallback>
 

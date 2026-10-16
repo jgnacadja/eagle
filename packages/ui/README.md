@@ -2,7 +2,7 @@
 
 Design system token-driven pour LEARN UP ACADEMY.
 
-## État actuel — charte graphique v1.0 (ST-13)
+## État actuel — charte graphique v1.0
 
 Les valeurs de `src/tokens/` et `src/tokens.css` implémentent la **charte
 graphique v1.0 (septembre 2026)** validée par LEARN UP PRIME : thème
@@ -16,7 +16,7 @@ Sources de vérité :
 - Figma — fichier « Website », node `8-4994` (export de la charte, variables
   listées ci-dessous).
 
-Les noms de tokens n'ont pas changé depuis les placeholders (ST-12) : le
+Les noms de tokens n'ont pas changé depuis les placeholders :
 re-skin d'`apps/front` s'est fait par configuration, sans toucher à la
 structure des composants. Les nouveaux tokens (marines, ambre, sémantiques,
 échelle de texte, mise en page, breakpoints) sont additifs.

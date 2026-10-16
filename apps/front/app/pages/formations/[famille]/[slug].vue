@@ -569,7 +569,11 @@
                   :date="formatArticleDate(article.publish_at)"
                   :excerpt="article.excerpt ?? ''"
                   :image-url="
-                    articleAssetUrl(article.cover_image, config.public.apiBase) ?? undefined
+                    articleAssetUrl(article.cover_image, config.public.apiBase, {
+                      width: 800,
+                      quality: 70,
+                      format: 'auto'
+                    }) ?? undefined
                   "
                   :to="`/actualites/${article.slug}`"
                   class="h-full"
@@ -873,7 +877,12 @@ watchEffect(() => {
 // Visuel : le fichier éditorial Directus prime sur l'URL synchronisée
 // depuis Digiforma (fallback quand aucun fichier n'a pu être importé).
 const imageSrc = computed(
-  () => directusAssetUrl(course.value!.image, config.public.apiBase) ?? course.value!.imageUrl
+  () =>
+    directusAssetUrl(course.value!.image, config.public.apiBase, {
+      width: 1200,
+      quality: 80,
+      format: 'auto'
+    }) ?? course.value!.imageUrl
 )
 
 // Patron de métas administrable — priorité : champ seo_* éditorial,

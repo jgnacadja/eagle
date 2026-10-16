@@ -496,7 +496,10 @@ useContentSeo(
       seo_noindex: !isFound || Boolean(familleData.value?.seo_noindex),
       // Visuel OG/Twitter : visuel éditorial de la famille, sinon défaut.
       seo_image: isFound
-        ? directusAssetUrl(familleData.value?.image, config.public.apiBase)
+        ? directusAssetUrl(familleData.value?.image, config.public.apiBase, {
+            width: 1200,
+            quality: 80
+          })
         : undefined
     }
   },
@@ -673,7 +676,13 @@ const familyTotal = computed(() => facets.data.value?.total ?? 0)
 
 // Visuel éditorial de la famille — champ `image` (fichier Directus).
 // Repli : placeholder avec le nom.
-const heroImage = computed(() => directusAssetUrl(familleData.value?.image, config.public.apiBase))
+const heroImage = computed(() =>
+  directusAssetUrl(familleData.value?.image, config.public.apiBase, {
+    width: 1600,
+    quality: 75,
+    format: 'auto'
+  })
+)
 
 // Tags du hero : modalités présentes dans la famille, lues dans
 // `facets.modalities` (toute la famille, pas seulement les `limit` items

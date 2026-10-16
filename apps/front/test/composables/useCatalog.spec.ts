@@ -161,7 +161,9 @@ describe('useCatalog helpers', () => {
   it('builds the card image via the provided apiBase', () => {
     const mapped = mapCourse({ ...course, image: 'file-1' }, undefined, apiBase)
 
-    expect(mapped.image).toBe('http://api.test/directus/assets/file-1')
+    expect(mapped.image).toBe(
+      'http://api.test/directus/assets/file-1?width=800&quality=70&format=auto'
+    )
   })
 
   it('falls back to the synced imageUrl without a Directus file', () => {

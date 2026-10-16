@@ -664,7 +664,7 @@ describe('pages/formations/[famille]/[slug]', () => {
     const wrapper = await mountPage()
 
     expect(wrapper.find('img').attributes('src')).toBe(
-      'http://api.test/directus/assets/file-abc-123'
+      'http://api.test/directus/assets/file-abc-123?width=1200&quality=80&format=auto'
     )
   })
 

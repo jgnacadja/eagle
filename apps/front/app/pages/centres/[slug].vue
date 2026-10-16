@@ -480,7 +480,11 @@
                   :date="formatArticleDate(article.publish_at)"
                   :excerpt="article.excerpt ?? ''"
                   :image-url="
-                    directusAssetUrl(article.cover_image, config.public.apiBase) ?? undefined
+                    directusAssetUrl(article.cover_image, config.public.apiBase, {
+                      width: 800,
+                      quality: 70,
+                      format: 'auto'
+                    }) ?? undefined
                   "
                   :to="`/actualites/${article.slug}`"
                   class="h-full"
@@ -778,7 +782,13 @@ const qualiopiValidUntilLabel = computed(() => {
   }).format(date)
 })
 
-const imageSrc = computed(() => directusAssetUrl(centre.value!.image, config.public.apiBase))
+const imageSrc = computed(() =>
+  directusAssetUrl(centre.value!.image, config.public.apiBase, {
+    width: 1600,
+    quality: 75,
+    format: 'auto'
+  })
+)
 
 // « Franchisé depuis 19 mai 2017 » sous le nom du responsable — repli
 // sur le rôle du contact quand la date de franchise n'est pas renseignée.

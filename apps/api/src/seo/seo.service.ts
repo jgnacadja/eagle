@@ -152,6 +152,10 @@ export class SeoService {
 // `from_path` est stocké sous cette forme, un double enregistrement
 // /A/ vs /a serait une fuite.
 function normalizePath(path: string): string {
-  const clean = path.replace(/\/+$/, '').toLowerCase()
+  // Pas de regex `\/+$` : CodeQL js/polynomial-redos — la chaîne vient du
+  // paramètre de route. Trim manuel des slashes finaux.
+  let end = path.length
+  while (end > 0 && path.charCodeAt(end - 1) === 47) end--
+  const clean = path.slice(0, end).toLowerCase()
   return clean.startsWith('/') ? clean : `/${clean}`
 }

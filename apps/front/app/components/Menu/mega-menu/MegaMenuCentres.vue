@@ -4,7 +4,7 @@
   >
     <!-- RÉGIONS -->
     <div>
-      <h3 class="text-small font-semibold text-ink-muted uppercase">Régions</h3>
+      <p class="text-small font-semibold text-ink-muted uppercase">Régions</p>
       <ul class="mt-sm space-y-1">
         <li v-for="region in regions" :key="region.slug">
           <button
@@ -34,11 +34,11 @@
 
     <!-- CENTRES DE LA RÉGION SÉLECTIONNÉE -->
     <div class="col-span-2 border-l border-rule pl-lg">
-      <h3 class="text-overline uppercase text-ink-muted">
+      <p class="text-overline uppercase text-ink-muted">
         {{ selectedRegionLabel }} — {{ selectedRegionCount }} centre{{
           selectedRegionCount > 1 ? 's' : ''
         }}
-      </h3>
+      </p>
       <Transition name="menu-panel" mode="out-in">
         <ul :key="selectedRegion" class="mt-sm grid grid-cols-2 gap-sm">
           <li
@@ -68,7 +68,7 @@
 
     <!-- TROUVER UN CENTRE + CTA -->
     <div>
-      <h3 class="text-small font-semibold text-ink-muted uppercase">Trouver un centre</h3>
+      <p class="text-small font-semibold text-ink-muted uppercase">Trouver un centre</p>
       <form class="mt-sm flex flex-col gap-sm" @submit.prevent="onSearchSubmit">
         <Label for="mega-menu-centre-search" class="sr-only">Ville ou code postal</Label>
         <Input

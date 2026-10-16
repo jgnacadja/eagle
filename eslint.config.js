@@ -67,10 +67,18 @@ const nuxtGlobals = {
   useCentresTotal: 'readonly',
   useCentreDepartments: 'readonly',
   useLeadSubmit: 'readonly',
+  useConfirmationRedirect: 'readonly',
   sanitizeHtml: 'readonly',
   logServerError: 'readonly',
   logClientError: 'readonly',
-  internalSsrHeaders: 'readonly'
+  internalSsrHeaders: 'readonly',
+  useSeoPattern: 'readonly',
+  useSeoPatterns: 'readonly',
+  renderPattern: 'readonly',
+  resolveSeoTitle: 'readonly',
+  resolveSeoDescription: 'readonly',
+  truncateTitle: 'readonly',
+  truncateDescription: 'readonly'
 }
 
 // Auto-imports Nitro (apps/front/server/) — injectés par unimport au build,
@@ -80,6 +88,11 @@ const nitroGlobals = {
   defineCachedEventHandler: 'readonly',
   defineSitemapEventHandler: 'readonly',
   getHeader: 'readonly',
+  getQuery: 'readonly',
+  getRequestURL: 'readonly',
+  getSiteIndexable: 'readonly',
+  setHeader: 'readonly',
+  sendRedirect: 'readonly',
   readBody: 'readonly',
   useStorage: 'readonly'
 }
@@ -96,6 +109,7 @@ const vueGlobals = {
   ref: 'readonly',
   reactive: 'readonly',
   computed: 'readonly',
+  nextTick: 'readonly',
   watch: 'readonly',
   watchEffect: 'readonly',
   onMounted: 'readonly',
@@ -200,7 +214,7 @@ export default defineConfig(
     }
   },
   {
-    files: ['directus/**/*.mjs'],
+    files: ['directus/**/*.mjs', 'matomo/**/*.mjs'],
     languageOptions: {
       globals: {
         ...nodeGlobals,

@@ -1,5 +1,5 @@
 /**
- * Types pour le plan de tracking DataLayer (GA4 / GTM)
+ * Types pour le plan de tracking (collecte Matomo — ex-GA4/GTM)
  * Conforme au plan de tracking LearnUp Academy :
  * - 1_Conventions_Attributs
  * - 2_Evenements_Cartographie
@@ -112,6 +112,18 @@ export interface ClickDownloadProgramEvent {
   formation_id: string
   formation_name: string
   formation_family: string
+}
+
+/**
+ * Inscription à une session — déclenché sur l'action
+ * `session_signup` (tunnel d'inscription Digiforma à venir ; l'objectif
+ * est déjà provisionné côté Matomo).
+ */
+export interface SessionSignupEvent {
+  event: 'session_signup'
+  formation_id: string
+  session_id?: string
+  page_path: string
 }
 
 // ── 3. Événements Chatbot ───────────────────────────────────────────────────
@@ -298,6 +310,15 @@ export interface ClickCtaDemandeFormationFromCentreEvent {
   page_path: string
 }
 
+/** Clic sur un lien `tel:` — déclenche l'objectif « Clic téléphone ». */
+export interface ClickPhoneEvent {
+  event: 'click_phone'
+  center_id: string
+  center_name: string
+  phone_type?: 'fixe' | 'mobile'
+  page_path: string
+}
+
 export interface ClickDownloadQualiopiEvent {
   event: 'click_download_qualiopi'
   center_id: string
@@ -416,6 +437,7 @@ export type TrackingEvent =
   | ViewFormationDetailEvent
   | ClickCtaConfierFormationEvent
   | ClickDownloadProgramEvent
+  | SessionSignupEvent
   | ChatbotOpenEvent
   | ChatbotMessageSentEvent
   | ChatbotSuggestedActionClickEvent
@@ -439,6 +461,7 @@ export type TrackingEvent =
   | ViewCentreDetailEvent
   | ToggleMapViewEvent
   | ClickCtaDemandeFormationFromCentreEvent
+  | ClickPhoneEvent
   | ClickDownloadQualiopiEvent
   | ViewBlogListEvent
   | FilterBlogCategoryEvent

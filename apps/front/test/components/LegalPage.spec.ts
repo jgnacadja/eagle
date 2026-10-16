@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import LegalPage from '~/components/Legal/Page.vue'
 import type { LegalPage as LegalPageModel, LegalPageTab } from '~/types/legal'
+import { assertHeadingStructure } from '../helpers/headings'
 
 const navigateToMock = vi.fn()
 
@@ -39,6 +40,7 @@ const stubs = {
   AccordionTrigger: { template: '<button><slot /></button>' },
   AccordionContent: { template: '<div><slot /></div>' },
   IconChevronUp: { template: '<svg />' },
+  LegalAnalyticsOptOut: { template: '<div data-optout />' },
   LegalSummary: {
     props: ['sections', 'activeId'],
     template:
@@ -50,6 +52,7 @@ const page: LegalPageModel = {
   slug: 'mentions-legales',
   label: 'Mentions légales',
   title: 'Mentions légales',
+  h1: null,
   lastUpdated: '01 septembre 2026',
   sections: [
     {
@@ -103,6 +106,15 @@ describe('components/LegalPage', () => {
     }
 
     expect(wrapper.text()).toContain(page.cta.label)
+    assertHeadingStructure(wrapper)
+  })
+
+  it('affiche le champ h1 éditorial quand renseigné, sinon le titre', () => {
+    const wrapper = mount(LegalPage, {
+      props: { page: { ...page, h1: 'H1 éditorial légal' }, tabs },
+      global: { stubs }
+    })
+    expect(wrapper.find('h1').text()).toBe('H1 éditorial légal')
   })
 
   it('rend le corps WYSIWYG des sections en HTML', () => {
@@ -423,5 +435,55 @@ describe('components/LegalPage', () => {
     expect(removeSpy).toHaveBeenCalledWith('scroll', expect.any(Function))
     expect(removeSpy).toHaveBeenCalledWith('resize', expect.any(Function))
     removeSpy.mockRestore()
+  })
+
+  // le mécanisme d'opposition à la mesure d'audience n'existe que
+  // sur la politique de confidentialité.
+  describe('opt-out mesure d’audience', () => {
+    const confidentialite: LegalPageModel = {
+      ...page,
+      slug: 'confidentialite',
+      title: 'Politique de confidentialité',
+      sections: [
+        ...page.sections,
+        {
+          id: 'mesure-audience',
+          number: '3',
+          title: 'Mesure d’audience',
+          body: '<p>Matomo sans cookie.</p>',
+          subsections: []
+        }
+      ]
+    }
+
+    it('injecte le bloc sous la section « Mesure d’audience »', () => {
+      const wrapper = mount(LegalPage, {
+        props: { page: confidentialite, tabs },
+        global: { stubs }
+      })
+
+      const section = wrapper.find('section#mesure-audience')
+      expect(section.exists()).toBe(true)
+      expect(section.find('[data-optout]').exists()).toBe(true)
+      expect(wrapper.findAll('[data-optout]')).toHaveLength(1)
+    })
+
+    it('affiche le bloc en fin d’article sans section dédiée', () => {
+      const sansSection: LegalPageModel = {
+        ...confidentialite,
+        sections: page.sections
+      }
+      const wrapper = mount(LegalPage, {
+        props: { page: sansSection, tabs },
+        global: { stubs }
+      })
+
+      expect(wrapper.findAll('[data-optout]')).toHaveLength(1)
+    })
+
+    it('n’affiche rien sur les autres pages légales', () => {
+      const wrapper = mount(LegalPage, { props: { page, tabs }, global: { stubs } })
+      expect(wrapper.find('[data-optout]').exists()).toBe(false)
+    })
   })
 })

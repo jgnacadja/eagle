@@ -1,4 +1,4 @@
-// 5 rôles RBAC (ST-11). "super-admin" = rôle Administrator natif de
+// 5 rôles RBAC. "super-admin" = rôle Administrator natif
 // Directus (bypass total, existe déjà) — les 4 autres sont créés ici.
 //
 // Directus 11 sépare rôle et permissions via une Policy intermédiaire
@@ -30,8 +30,11 @@ const CONTENT_COLLECTIONS = [
   'pages_legales_sections',
   'pages_legales_subsections',
   'stats',
+  'seo_patterns',
   'formations',
   'formations_centres',
+  'formations_liees',
+  'redirects',
   'recherches_sans_resultat'
 ]
 
@@ -79,6 +82,9 @@ export function permissionsFor(roleName) {
         // Jonction M2M : éditer le champ « Centres » d'une formation écrit
         // des lignes ici — la suppression permet de retirer un lien.
         ...grants('formations_centres', ['create', 'read', 'update', 'delete']),
+        ...grants('formations_liees', ['create', 'read', 'update', 'delete']),
+        // Redirections 301/410 : saisie manuelle par le référent SEO.
+        ...grants('redirects', ['create', 'read', 'update', 'delete']),
         ...grants('directus_files', ['create', 'read']),
         { collection: 'formations', action: 'read' },
         { collection: 'sources', action: 'read', fields: SOURCES_SAFE_FIELDS },
@@ -116,7 +122,9 @@ export function permissionsFor(roleName) {
             'image',
             'seo_title',
             'seo_description',
-            'seo_canonical'
+            'seo_canonical',
+            'h1',
+            'seo_noindex'
           ]
         }
       ]
@@ -140,6 +148,8 @@ export function permissionsFor(roleName) {
           'stats',
           'directus_files',
           'formations_centres',
+          'formations_liees',
+          'redirects',
           'recherches_sans_resultat'
         ].flatMap((c) => grants(c, ['read'])),
         { collection: 'formations', action: 'read' },
@@ -161,8 +171,8 @@ export function permissionsFor(roleName) {
   }
 }
 
-// Accès public (visiteurs du site, non authentifiés) — trouvé en testant
-// ST-12 en réel : le front lit Directus sans se connecter, donc sans ceci
+// Accès public (visiteurs du site, non authentifiés) — trouvé en conditions
+// réelles : le front lit Directus sans se connecter, donc sans ceci
 // tout GET est 403 (deny-by-default). Statut "published" uniquement sur les
 // collections qui ont un champ status ; le reste (page_blocks, stats,
 // directus_files) n'en a pas, lecture non filtrée.
@@ -183,10 +193,11 @@ const PUBLIC_STATUS_FILTERED = [
 // sur le parent (`page` pour une section, `section.page` pour une
 // sous-section). Sans ça, le contenu d'une page en brouillon fuiterait.
 const PUBLIC_PARENT_STATUS = {
+  formations_liees: { formation: { status: { _eq: 'published' } } },
   pages_legales_sections: { page: { status: { _eq: 'published' } } },
   pages_legales_subsections: { section: { page: { status: { _eq: 'published' } } } }
 }
-const PUBLIC_UNRESTRICTED = ['page_blocks', 'stats', 'directus_files']
+const PUBLIC_UNRESTRICTED = ['page_blocks', 'stats', 'seo_patterns', 'directus_files']
 
 // Champs exposés publiquement (allowlist) — le proxy `/directus` de l'API
 // relaie les requêtes sans token, tout champ interne non listé ici est
@@ -229,7 +240,9 @@ const PUBLIC_FIELDS = {
     'image',
     'seo_title',
     'seo_description',
-    'seo_canonical'
+    'seo_canonical',
+    'h1',
+    'seo_noindex'
   ],
   familles_formation: [
     'id',
@@ -245,7 +258,9 @@ const PUBLIC_FIELDS = {
     'validity_text',
     'seo_title',
     'seo_description',
-    'seo_canonical'
+    'seo_canonical',
+    'h1',
+    'seo_noindex'
   ],
   sous_familles_formation: ['id', 'status', 'sort', 'slug', 'name', 'caption', 'famille'],
   articles: [
@@ -266,11 +281,37 @@ const PUBLIC_FIELDS = {
     'cover_image',
     'seo_title',
     'seo_description',
-    'seo_canonical'
+    'seo_canonical',
+    'h1',
+    'seo_noindex'
   ],
-  categories: ['id', 'status', 'sort', 'slug', 'name', 'description'],
+  categories: [
+    'id',
+    'status',
+    'sort',
+    'slug',
+    'name',
+    'description',
+    'seo_title',
+    'seo_description',
+    'seo_canonical',
+    'h1',
+    'seo_noindex'
+  ],
+  seo_patterns: ['id', 'key', 'title_pattern', 'description_pattern'],
+  formations_liees: ['id', 'sort', 'formation', 'related'],
   avis: ['id', 'status', 'sort', 'slug', 'author', 'published_at', 'stars', 'quote', 'centre'],
-  pages: ['id', 'status', 'slug', 'title', 'seo_title', 'seo_description', 'seo_canonical'],
+  pages: [
+    'id',
+    'status',
+    'slug',
+    'title',
+    'seo_title',
+    'seo_description',
+    'seo_canonical',
+    'h1',
+    'seo_noindex'
+  ],
   pages_legales: [
     'id',
     'status',
@@ -286,7 +327,9 @@ const PUBLIC_FIELDS = {
     'updated_at',
     'seo_title',
     'seo_description',
-    'seo_canonical'
+    'seo_canonical',
+    'h1',
+    'seo_noindex'
   ],
   // `page`/`section` : nécessaires au filtre `status` du parent et au
   // peuplement de l'alias O2M côté page. `subsections` doit être listé ici
@@ -321,7 +364,10 @@ const PUBLIC_FIELDS = {
     'sous_famille',
     'seo_title',
     'seo_description',
-    'seo_canonical'
+    'seo_canonical',
+    'h1',
+    'seo_noindex',
+    'formations_liees'
   ]
 }
 

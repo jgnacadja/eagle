@@ -87,6 +87,8 @@ export interface CourseBase {
   seoTitle: string | null
   seoDescription: string | null
   seoCanonical: string | null
+  /** Code de la source d'origine (`hq` = éditorial, sinon compte Digiforma) — dimension Matomo. */
+  source?: string | null
 }
 
 export type CourseListItem = CourseBase

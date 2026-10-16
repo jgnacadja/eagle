@@ -45,7 +45,8 @@ const stubs = {
   LegalPage: {
     name: 'LegalPage',
     props: ['page', 'tabs'],
-    template: '<div class="legal-page">{{ page.title }}|{{ tabs.length }} tabs</div>'
+    template:
+      '<div class="legal-page"><h1>{{ page.h1 || page.title }}</h1>{{ tabs.length }} tabs</div>'
   }
 }
 
@@ -105,6 +106,16 @@ describe('pages/[slug] (pages légales)', () => {
       { label: 'Mentions légales' }
     ])
     expect(seoMock).toHaveBeenCalled()
+  })
+
+  it('propage le champ h1 Directus au gabarit légal', async () => {
+    requestMock.mockResolvedValue([{ ...pageFixture, h1: 'H1 éditorial mentions' }])
+
+    const wrapper = mount(Host, { global: { stubs } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('H1 éditorial mentions')
+    expect(wrapper.find('h1').text()).toBe('H1 éditorial mentions')
   })
 
   it('expose les getters SEO résolus sur la page chargée', async () => {

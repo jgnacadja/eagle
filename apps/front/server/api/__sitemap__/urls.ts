@@ -71,6 +71,7 @@ async function fetchAllCourses(api: ApiFetch): Promise<CourseRow[]> {
 const COLLECTION_FIELDS: Record<string, string[]> = {
   familles_formation: ['slug'],
   articles: ['slug', 'publish_at'],
+  categories: ['slug'],
   pages_legales: ['slug', 'updated_at']
 }
 // Le proxy /directus borne `limit` à 100 (limit=-1 refusé) — on pagine
@@ -101,7 +102,35 @@ interface SitemapSources {
   familles: DirectusRow[]
   centres: CentreRow[]
   articles: DirectusRow[]
+  categories: DirectusRow[]
   legales: DirectusRow[]
+}
+
+// Sous-ensembles servis aux sitemaps segmentés via `?set=…` :
+// sitemap-pages (pages légales), sitemap-formations (familles + fiches),
+// sitemap-centres, sitemap-actualites (articles + catégories, namespace
+// partagé T9/T10), sitemap-local (lot 2 — encore vide). Sans `set`, la
+// réponse complète reste disponible (debug, rétrocompat). Chaque set ne
+// charge que les sources dont ses URLs dépendent — `sitemap-pages` n'a
+// pas à paginer tout le catalogue pour trois pages légales.
+type SitemapSet = 'pages' | 'formations' | 'centres' | 'actualites' | 'local'
+const SITEMAP_SETS: SitemapSet[] = ['pages', 'formations', 'centres', 'actualites', 'local']
+
+const SET_SOURCES: Record<SitemapSet, (keyof SitemapSources)[]> = {
+  pages: ['legales'],
+  formations: ['formations', 'familles'],
+  centres: ['centres'],
+  actualites: ['articles', 'categories'],
+  local: []
+}
+
+const EMPTY: SitemapSources = {
+  formations: [],
+  familles: [],
+  centres: [],
+  articles: [],
+  categories: [],
+  legales: []
 }
 
 // Les slugs en base ne sont pas tous normalisés (saisie éditoriale :
@@ -129,6 +158,9 @@ function buildSitemapUrls(src: SitemapSources): SitemapUrlInput[] {
     }
   }
 
+  // Slash final proscrit : le middleware global 301 redirige toute URL
+  // slashée vers sa forme canonique sans slash — le sitemap n'émet que
+  // des URLs canoniques, jamais d'entrée redirigée.
   addRows(src.familles, (slug) => `/formations/${seg(slug)}`)
   addRows(src.centres, (slug) => `/centres/${seg(slug)}`)
   addRows(
@@ -136,6 +168,8 @@ function buildSitemapUrls(src: SitemapSources): SitemapUrlInput[] {
     (slug) => `/actualites/${seg(slug)}`,
     (row) => row.publish_at
   )
+  // T9/T10 : les catégories vivent dans le même namespace que les articles.
+  addRows(src.categories, (slug) => `/actualites/${seg(slug)}`)
   addRows(
     src.legales,
     (slug) => `/${seg(slug)}`,
@@ -153,28 +187,46 @@ function buildSitemapUrls(src: SitemapSources): SitemapUrlInput[] {
   return [...urls.values()]
 }
 
+// Le `$fetch` global Nitro est typé contre le registre des routes internes :
+// passer un `string` dynamique fait exploser la profondeur d'inférence TS.
+// Cast vers une signature générique — même runtime (`$fetch` = ofetch).
+const fetchJson = $fetch as unknown as (
+  url: string,
+  opts?: { query?: Record<string, unknown>; headers?: Record<string, string> }
+) => Promise<unknown>
+
 export default defineCachedEventHandler(
   defineSitemapEventHandler(async (event) => {
     const config = useRuntimeConfig(event)
     const token = config.internalApiToken
     const headers = typeof token === 'string' && token ? { 'x-internal-ssr': token } : undefined
-    const api: ApiFetch = (path, query) => $fetch(`${config.apiBase}${path}`, { query, headers })
+    const api: ApiFetch = (path, query) => fetchJson(`${config.apiBase}${path}`, { query, headers })
 
-    const [formations, familles, centres, articles, legales] = await Promise.all([
-      fetchAllCourses(api),
-      fetchSlugs(api, 'familles_formation'),
-      api('/centres').catch(() => [] as CentreRow[]),
-      fetchSlugs(api, 'articles'),
-      fetchSlugs(api, 'pages_legales')
-    ])
+    const raw = getQuery(event).set
+    const set = SITEMAP_SETS.includes(raw as SitemapSet) ? (raw as SitemapSet) : undefined
+    // `set=local` (lot 2, encore vide) n'a besoin d'aucune source — on
+    // court-circuite les appels plutôt que de dépendre de leur dispo.
+    if (set === 'local') return []
 
-    return buildSitemapUrls({
-      formations,
-      familles,
-      centres: centres as CentreRow[],
-      articles,
-      legales
-    })
+    const loaders: Record<keyof SitemapSources, () => Promise<unknown[]>> = {
+      formations: () => fetchAllCourses(api),
+      familles: () => fetchSlugs(api, 'familles_formation'),
+      centres: () =>
+        api('/centres')
+          .then((rows) => rows as CentreRow[])
+          .catch(() => [] as CentreRow[]),
+      articles: () => fetchSlugs(api, 'articles'),
+      categories: () => fetchSlugs(api, 'categories'),
+      legales: () => fetchSlugs(api, 'pages_legales')
+    }
+    const needed = set ? SET_SOURCES[set] : (Object.keys(loaders) as (keyof SitemapSources)[])
+    const all = { ...EMPTY } as Record<keyof SitemapSources, unknown[]>
+    await Promise.all(
+      needed.map(async (key) => {
+        all[key] = await loaders[key]()
+      })
+    )
+    return buildSitemapUrls(all as SitemapSources)
   }),
   { maxAge: CACHE_MAX_AGE_S }
 )

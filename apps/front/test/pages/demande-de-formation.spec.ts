@@ -1,4 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils'
+import { toValue } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   computed,
@@ -65,6 +66,13 @@ vi.stubGlobal('useLeadSubmit', () => ({
   submit: leadSubmitMock,
   sending: sendingState,
   error: submitErrorState
+}))
+
+// Redirection de confirmation : stubée — la page quitte le formulaire
+// vers /confirmation/{type}/ avec le contexte de retour.
+const confirmConversionMock = vi.fn<(type: string, context?: unknown) => Promise<unknown>>()
+vi.stubGlobal('useConfirmationRedirect', () => ({
+  confirmConversion: confirmConversionMock
 }))
 
 const routeStub = {
@@ -736,10 +744,12 @@ describe('pages/centres/demande-de-formation', () => {
   it('applique le SEO de la page', async () => {
     await mountPage()
 
-    expect(seoMock).toHaveBeenCalledWith(
-      expect.objectContaining({ seo_title: 'Demande de formation | LEARN UP ACADEMY' }),
-      'Demande de formation'
-    )
+    expect(seoMock).toHaveBeenCalledWith(expect.anything(), 'Demande de formation')
+    const source = toValue(seoMock.mock.calls[0]![0])
+    expect(source).toMatchObject({
+      seo_title: 'Demande de formation | LEARN UP ACADEMY',
+      seo_robots: 'noindex, follow'
+    })
   })
 
   it('poste la demande au module leads avec le contexte résolu', async () => {
@@ -856,19 +866,24 @@ describe('pages/centres/demande-de-formation', () => {
     expect(precisions.endsWith('…')).toBe(true)
   })
 
-  it('affiche le panneau de confirmation après un envoi réussi', async () => {
+  it('redirige vers la confirmation « devis » après un envoi réussi', async () => {
     const wrapper = await mountPage()
     await fillValidForm(wrapper)
 
     await wrapper.find('form').trigger('submit.prevent')
-    await waitUntil(() => wrapper.text().includes('Votre demande est transmise'))
+    await waitUntil(() => confirmConversionMock.mock.calls.length > 0)
 
-    expect(wrapper.text()).toContain('Votre demande est transmise')
-    // v-show : le formulaire reste monté mais masqué après confirmation.
-    expect(wrapper.find('form').attributes('style')).toContain('display: none')
+    // Sans contexte connu : pas de détail, retour à l'accueil.
+    expect(confirmConversionMock).toHaveBeenCalledWith('devis', {
+      detail: undefined,
+      backTo: '/',
+      backLabel: "Retour à l'accueil"
+    })
+    // Le brouillon est purgé avant la sortie.
+    expect(window.sessionStorage.getItem('demande-formation-draft')).toBeNull()
   })
 
-  it('confirmation : reprend formation et session, renvoie à la fiche', async () => {
+  it('confirmation : renvoie à la fiche formation quand elle est connue', async () => {
     routeStub.query = {
       centre: 'creteil',
       famille: 'sante',
@@ -879,34 +894,34 @@ describe('pages/centres/demande-de-formation', () => {
     await fillValidForm(wrapper)
 
     await wrapper.find('form').trigger('submit.prevent')
-    await waitUntil(() => wrapper.text().includes('Votre demande est transmise'))
+    await waitUntil(() => confirmConversionMock.mock.calls.length > 0)
 
-    expect(wrapper.text()).toContain('SST — Sauveteur secouriste du travail')
-    expect(wrapper.text()).toContain('session du 12 octobre 2026')
-    expect(wrapper.text()).toContain('à Créteil')
-    expect(wrapper.find('a[href="/formations/sante/sst-initial"]').text()).toContain(
-      'Retour à la formation'
-    )
-    expect(wrapper.find('a[href="/formations"]').text()).toContain('Parcourir le catalogue')
+    expect(confirmConversionMock).toHaveBeenCalledWith('devis', {
+      detail:
+        'au sujet de la formation SST — Sauveteur secouriste du travail, session du 12 octobre 2026 à Créteil.',
+      backTo: '/formations/sante/sst-initial',
+      backLabel: 'Retour à la formation'
+    })
   })
 
-  it('confirmation intra : mentionne la formation et le lieu saisi', async () => {
+  it('confirmation intra : même retour à la fiche', async () => {
     routeStub.query = { famille: 'sante', formation: 'sst-initial', intra: '1' }
     const wrapper = await mountPage()
     await wrapper.find('#lieu').setValue('Lyon 69003')
     await fillValidForm(wrapper)
 
     await wrapper.find('form').trigger('submit.prevent')
-    await waitUntil(() => wrapper.text().includes('Votre demande est transmise'))
+    await waitUntil(() => confirmConversionMock.mock.calls.length > 0)
 
-    expect(wrapper.text()).toContain('SST — Sauveteur secouriste du travail')
-    expect(wrapper.text()).toContain('dans votre entreprise à Lyon 69003')
-    expect(wrapper.find('a[href="/formations/sante/sst-initial"]').text()).toContain(
-      'Retour à la formation'
-    )
+    expect(confirmConversionMock).toHaveBeenCalledWith('devis', {
+      detail:
+        'au sujet de la formation SST — Sauveteur secouriste du travail, dans votre entreprise à Lyon 69003.',
+      backTo: '/formations/sante/sst-initial',
+      backLabel: 'Retour à la formation'
+    })
   })
 
-  it('confirmation : session sans date affiche « session programmée »', async () => {
+  it('confirmation : session sans date annonce « session programmée »', async () => {
     fetchMock.mockImplementation(async () => ({
       ...courseSst,
       sessions: [{ ...courseSst.sessions[0], startDate: '' }]
@@ -921,59 +936,29 @@ describe('pages/centres/demande-de-formation', () => {
     await fillValidForm(wrapper)
 
     await wrapper.find('form').trigger('submit.prevent')
-    await waitUntil(() => wrapper.text().includes('Votre demande est transmise'))
+    await waitUntil(() => confirmConversionMock.mock.calls.length > 0)
 
-    expect(wrapper.text()).toContain('session programmée à Créteil')
+    expect(confirmConversionMock).toHaveBeenCalledWith('devis', {
+      detail:
+        'au sujet de la formation SST — Sauveteur secouriste du travail, session programmée à Créteil.',
+      backTo: '/formations/sante/sst-initial',
+      backLabel: 'Retour à la formation'
+    })
   })
 
-  it('confirmation sans session ni intra : le suffixe se limite au point final', async () => {
+  it('confirmation : formation sans session ni intra — détail au nom seul', async () => {
     routeStub.query = { famille: 'sante', formation: 'sst-initial' }
     const wrapper = await mountPage()
     await fillValidForm(wrapper)
 
     await wrapper.find('form').trigger('submit.prevent')
-    await waitUntil(() => wrapper.text().includes('Votre demande est transmise'))
+    await waitUntil(() => confirmConversionMock.mock.calls.length > 0)
 
-    expect(wrapper.text()).toContain('SST — Sauveteur secouriste du travail.')
-  })
-
-  it('confirmation : session sans lieu retombe sur la ville du centre', async () => {
-    fetchMock.mockImplementation(async () => ({
-      ...courseSst,
-      sessions: [
-        { id: 'sess-1', startDate: '2026-10-12', modality: 'presentiel', seatsRemaining: 5 }
-      ]
-    }))
-    routeStub.query = {
-      centre: 'creteil',
-      famille: 'sante',
-      formation: 'sst-initial',
-      session: 'sess-1'
-    }
-    const wrapper = await mountPage()
-    await fillValidForm(wrapper)
-
-    await wrapper.find('form').trigger('submit.prevent')
-    await waitUntil(() => wrapper.text().includes('Votre demande est transmise'))
-
-    expect(wrapper.text()).toContain('session du 12 octobre 2026 à Créteil')
-  })
-
-  it('confirmation : session sans lieu ni centre omet la ville', async () => {
-    fetchMock.mockImplementation(async () => ({
-      ...courseSst,
-      sessions: [
-        { id: 'sess-1', startDate: '2026-10-12', modality: 'presentiel', seatsRemaining: 5 }
-      ]
-    }))
-    routeStub.query = { famille: 'sante', formation: 'sst-initial', session: 'sess-1' }
-    const wrapper = await mountPage()
-    await fillValidForm(wrapper)
-
-    await wrapper.find('form').trigger('submit.prevent')
-    await waitUntil(() => wrapper.text().includes('Votre demande est transmise'))
-
-    expect(wrapper.text()).toContain('session du 12 octobre 2026.')
+    expect(confirmConversionMock).toHaveBeenCalledWith('devis', {
+      detail: 'au sujet de la formation SST — Sauveteur secouriste du travail.',
+      backTo: '/formations/sante/sst-initial',
+      backLabel: 'Retour à la formation'
+    })
   })
 
   it('garde le formulaire et le brouillon si l’envoi échoue', async () => {
@@ -986,7 +971,7 @@ describe('pages/centres/demande-de-formation', () => {
     await waitUntil(() => leadSubmitMock.mock.calls.length > 0)
 
     expect(wrapper.find('form').exists()).toBe(true)
-    expect(wrapper.text()).not.toContain('Votre demande est transmise')
+    expect(confirmConversionMock).not.toHaveBeenCalled()
     expect(window.sessionStorage.getItem('demande-formation-draft')).not.toBeNull()
   })
 
@@ -1084,6 +1069,7 @@ describe('pages/centres/demande-de-formation', () => {
 
   it('formate le méta centre pour chaque variante de code postal', async () => {
     centresBySlug.set('fort-de-france', {
+      id: 21,
       slug: 'fort-de-france',
       name: 'Centre de Fort-de-France',
       city: 'Fort-de-France',
@@ -1091,6 +1077,7 @@ describe('pages/centres/demande-de-formation', () => {
       postal_code: '97234'
     })
     centresBySlug.set('bastia', {
+      id: 22,
       slug: 'bastia',
       name: 'Centre de Bastia',
       city: 'Bastia',
@@ -1098,6 +1085,7 @@ describe('pages/centres/demande-de-formation', () => {
       postal_code: '20290'
     })
     centresBySlug.set('ajaccio', {
+      id: 23,
       slug: 'ajaccio',
       name: "Centre d'Ajaccio",
       city: 'Ajaccio',
@@ -1105,6 +1093,7 @@ describe('pages/centres/demande-de-formation', () => {
       postal_code: '20100'
     })
     centresBySlug.set('paris', {
+      id: 24,
       slug: 'paris',
       name: 'Centre de Paris',
       city: 'Paris',
@@ -1112,6 +1101,7 @@ describe('pages/centres/demande-de-formation', () => {
       postal_code: '75001'
     })
     centresBySlug.set('sans-cp', {
+      id: 25,
       slug: 'sans-cp',
       name: 'Centre sans code postal',
       city: 'Lyon',
@@ -1140,15 +1130,19 @@ describe('pages/centres/demande-de-formation', () => {
     expect(wrapper.text()).toContain('Centre partenaire')
   })
 
-  it('affiche le titre du centre comme libellé de retour sans fiche formation', async () => {
+  it('confirmation : renvoie au centre sans fiche formation', async () => {
     routeStub.query = { centre: 'creteil' }
     const wrapper = await mountPage()
     await fillValidForm(wrapper)
 
     await wrapper.find('form').trigger('submit.prevent')
-    await waitUntil(() => wrapper.text().includes('Votre demande est transmise'))
+    await waitUntil(() => confirmConversionMock.mock.calls.length > 0)
 
-    expect(wrapper.find('a[href="/centres/creteil"]').text()).toContain('Retour au centre')
+    expect(confirmConversionMock).toHaveBeenCalledWith('devis', {
+      detail: undefined,
+      backTo: '/centres/creteil',
+      backLabel: 'Retour au centre'
+    })
   })
 
   it('conserve la modalité brute quand elle est inconnue du dictionnaire', async () => {

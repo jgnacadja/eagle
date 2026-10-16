@@ -1,8 +1,8 @@
-// Définitions v1 des collections métier LEARN UP ACADEMY (ST-11).
+// Définitions v1 des collections métier LEARN UP ACADEMY.
 // Champs SEO répétés sur chaque collection porteuse de page (centres,
 // familles_formation, articles, pages) : seo_title, seo_description,
-// seo_canonical — alignés sur le livrable ST-06 (structure ; les valeurs
-// réelles viendront avec ST-06).
+// seo_canonical — structure en place ; les valeurs réelles seront saisies
+// au fil de l'édition.
 
 // Libellés d'affichage admin : le client est francophone — Directus montre
 // la traduction quand la langue du profil utilisateur est fr-FR. Pour les
@@ -25,7 +25,8 @@ const seoFields = () => [
   {
     field: 'seo_title',
     type: 'string',
-    meta: { interface: 'input', width: 'half', ...fr('Titre SEO') }
+    meta: { interface: 'input', width: 'half', ...fr('Titre SEO') },
+    schema: { is_unique: true }
   },
   {
     field: 'seo_description',
@@ -36,6 +37,28 @@ const seoFields = () => [
     field: 'seo_canonical',
     type: 'string',
     meta: { interface: 'input', width: 'half', ...fr('URL canonique') }
+  },
+  {
+    field: 'h1',
+    type: 'string',
+    meta: {
+      interface: 'input',
+      width: 'half',
+      note: 'Titre principal de la page — vide : le gabarit reprend le titre du contenu.',
+      ...fr('Titre H1')
+    },
+    schema: { is_unique: true }
+  },
+  {
+    field: 'seo_noindex',
+    type: 'boolean',
+    meta: {
+      interface: 'boolean',
+      width: 'half',
+      note: 'Exclut la page de l’indexation (meta robots noindex).',
+      ...fr('Noindex')
+    },
+    schema: { default_value: false }
   }
 ]
 
@@ -70,10 +93,46 @@ const sortField = () => ({
   meta: { interface: 'input', hidden: true, ...fr('Ordre') }
 })
 
+// Segments réservés au routage : un slug portant l'un d'eux serait
+// soit masqué par une route statique (`/{slug}` cède devant la page
+// existante), soit invalide dans le plan d'URL (departement/ville/page
+// sont réservés aux gabarits locaux et à la pagination).
+const RESERVED_SLUG_SEGMENTS = [
+  'departement',
+  'ville',
+  'page',
+  'recherche',
+  'actualites',
+  'centres',
+  'formations',
+  'a-propos',
+  'entreprise',
+  'entreprise-reseau',
+  'partenaire-reseau',
+  'parler-a-votre-conseiller',
+  'referencer-mon-organisme',
+  'rejoindre-le-reseau',
+  'api',
+  'directus'
+]
+
 const slugField = () => ({
   field: 'slug',
   type: 'string',
-  meta: { interface: 'input', width: 'half', required: true, ...fr('Slug') },
+  meta: {
+    interface: 'input',
+    width: 'half',
+    required: true,
+    ...fr('Slug'),
+    validation: {
+      _and: [
+        { slug: { _nin: RESERVED_SLUG_SEGMENTS } },
+        { slug: { _regex: '^[a-z0-9]+(-[a-z0-9]+)*$' } }
+      ]
+    },
+    validation_message:
+      'Slug refusé — minuscules non accentuées, chiffres et tirets uniquement, hors segments réservés au routage.'
+  },
   schema: { is_unique: true }
 })
 
@@ -472,7 +531,8 @@ export const collections = [
           note: 'Accroche éditoriale de la rubrique',
           ...fr('Description')
         }
-      }
+      },
+      ...seoFields()
     ]
   },
   {
@@ -796,6 +856,50 @@ export const collections = [
           required: true,
           note: 'Ex: "500+"',
           ...fr('Valeur')
+        }
+      }
+    ]
+  },
+  {
+    collection: 'seo_patterns',
+    icon: 'travel_explore',
+    note: 'Patrons de métas par gabarit — variables {…} substituées côté front.',
+    ...fr('Patrons SEO'),
+    fields: [
+      primaryKey(),
+      {
+        field: 'key',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          required: true,
+          note: 'Identifiant du gabarit : formation, famille, centre, article, categorie, catalogue…',
+          ...fr('Clé du gabarit'),
+          validation: { key: { _regex: '^[a-z0-9]+(-[a-z0-9]+)*$' } },
+          validation_message: 'Clé refusée — minuscules, chiffres et tirets uniquement.'
+        },
+        schema: { is_unique: true }
+      },
+      {
+        field: 'title_pattern',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'full',
+          required: true,
+          note: 'Ex: « Formation {intitulé} — {famille} | LEARN UP ACADEMY »',
+          ...fr('Patron de titre')
+        }
+      },
+      {
+        field: 'description_pattern',
+        type: 'text',
+        meta: {
+          interface: 'input-multiline',
+          width: 'full',
+          note: 'Ex: « Formation {intitulé} à {ville} ({cp}) — {durée}, certifiante {code}. »',
+          ...fr('Patron de description')
         }
       }
     ]
@@ -1214,6 +1318,16 @@ export const collections = [
     fields: [primaryKey(), sortField()]
   },
   {
+    // Jonction self-M2M formations ↔ formations liées — maillage interne
+    // éditorial : surcharge du bloc « Formations similaires ».
+    collection: 'formations_liees',
+    icon: 'link',
+    hidden: true,
+    note: "Jonction formations ↔ formations liées — lignes créées via le champ « Formations liées » de la fiche formation. La sync n'y touche pas.",
+    ...fr('Formations liées'),
+    fields: [primaryKey(), sortField()]
+  },
+  {
     collection: 'avis',
     icon: 'reviews',
     note: 'Avis clients affichés dans la section « Avis » des fiches centres. Sans centre associé, l’avis vaut pour la marque (toutes implantations).',
@@ -1377,6 +1491,103 @@ export const collections = [
           ...fr('Traité')
         },
         schema: { default_value: false }
+      }
+    ]
+  },
+  {
+    // lignes créées par l'extension `slug-redirects` (renommage
+    // slug, dépublication) ou saisies à la main par le référent SEO / par
+    // l'import. `from_path` unique — pas de doublon possible sur une même
+    // adresse source. La résolution passe par l'API (`GET /seo/resolve`),
+    // la collection n'est jamais exposée publiquement.
+    collection: 'redirects',
+    icon: 'alt_route',
+    note: 'Redirections 301/410 — remplies automatiquement aux changements de slug et dépublications, ou saisies à la main. 301 sans cible et 410 avec cible sont ignorés à la résolution.',
+    ...fr('Redirections'),
+    fields: [
+      primaryKey(),
+      {
+        field: 'from_path',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          required: true,
+          note: 'Chemin source, sans domaine ni slash final — ex. /formations/gestion/ancien-slug',
+          ...fr('Depuis'),
+          validation: {
+            _and: [{ from_path: { _regex: '^/([a-z0-9-]+(/[a-z0-9-]+)*)?$' } }]
+          },
+          validation_message:
+            'Chemin refusé — interne, minuscules, sans domaine ni slash final (ex. /formations/gestion/ancien-slug).'
+        },
+        schema: { is_unique: true }
+      },
+      {
+        field: 'to_path',
+        type: 'string',
+        meta: {
+          interface: 'input',
+          width: 'half',
+          note: 'Cible du 301 — vide obligatoirement pour un 410',
+          ...fr('Vers'),
+          validation: {
+            _or: [
+              { to_path: { _null: true } },
+              { to_path: { _empty: true } },
+              { to_path: { _regex: '^/([a-z0-9-]+(/[a-z0-9-]+)*)?$' } }
+            ]
+          },
+          validation_message:
+            'Cible refusée — chemin interne normalisé (minuscules, sans slash final) ; vide pour un 410.'
+        }
+      },
+      {
+        field: 'status',
+        type: 'string',
+        meta: {
+          interface: 'select-dropdown',
+          width: 'half',
+          required: true,
+          options: {
+            choices: [
+              { text: '301 — Déplacé définitivement', value: '301' },
+              { text: '410 — Supprimé', value: '410' }
+            ]
+          },
+          ...fr('Code HTTP')
+        },
+        schema: { default_value: '301' }
+      },
+      {
+        field: 'origin',
+        type: 'string',
+        meta: {
+          interface: 'select-dropdown',
+          width: 'half',
+          required: true,
+          options: {
+            choices: [
+              { text: 'Saisie manuelle', value: 'manual' },
+              { text: 'Automatique (slug/dépublication)', value: 'auto' },
+              { text: 'Import', value: 'import' }
+            ]
+          },
+          note: 'Les lignes « auto » sont maintenues par le système — une ligne manuelle n’est jamais écrasée.',
+          ...fr('Origine')
+        },
+        schema: { default_value: 'manual' }
+      },
+      {
+        field: 'created_at',
+        type: 'timestamp',
+        meta: {
+          special: ['date-created'],
+          interface: 'datetime',
+          width: 'half',
+          readonly: true,
+          ...fr('Créée le')
+        }
       }
     ]
   },
@@ -1675,6 +1886,35 @@ export const relations = [
       width: 'full',
       note: 'Centres dispensant la formation — proposés par la sync quand vide, réassignables (jamais écrasés)',
       ...fr('Centres')
+    }
+  },
+  // Maillage interne éditorial : sélection de formations liées
+  // la fiche (self-M2M via formations_liees) — remplace le bloc
+  // « Formations similaires » calculé par famille quand il est rempli.
+  {
+    collection: 'formations_liees',
+    field: 'related',
+    related_collection: 'formations',
+    meta: m2o('{{title}}', { required: true, width: 'half', ...fr('Formation liée') }),
+    junction_field: 'formation'
+  },
+  {
+    collection: 'formations_liees',
+    field: 'formation',
+    related_collection: 'formations',
+    meta: m2o('{{title}}', { required: true, width: 'half', ...fr('Formation') }),
+    junction_field: 'related',
+    one_field: 'formations_liees',
+    sort_field: 'sort',
+    one_meta: {
+      interface: 'list-m2m',
+      special: ['m2m'],
+      options: { template: '{{related.title}}', enableCreate: false, enableSelect: true },
+      display: 'related-values',
+      display_options: { template: '{{related.title}}' },
+      width: 'full',
+      note: 'Remplace « Formations similaires » sur le site quand rempli — ordre = ordre d’affichage',
+      ...fr('Formations liées')
     }
   },
   // Pages légales : M2O obligatoire + alias O2M `sections`/`subsections`

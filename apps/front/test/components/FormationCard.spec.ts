@@ -75,7 +75,7 @@ describe('FormationCard', () => {
   })
 
   it('pushes select_formation_card when clicking link', async () => {
-    window.dataLayer = []
+    window._paq = []
     const wrapper = mount(FormationCard, {
       props: {
         title: 'SST',
@@ -89,13 +89,9 @@ describe('FormationCard', () => {
     const link = wrapper.find('a')
     await link.trigger('click')
 
-    const event = window.dataLayer?.find((e) => e.event === 'select_formation_card')
-    expect(event).toMatchObject({
-      event: 'select_formation_card',
-      formation_id: 'sst',
-      formation_name: 'SST',
-      formation_family: 'Sécurité',
-      list_name: 'catalogue'
-    })
+    const event = window._paq?.find(
+      (c) => c[0] === 'trackEvent' && c[2] === 'select_formation_card'
+    )
+    expect(event).toEqual(['trackEvent', 'Formations', 'select_formation_card', 'SST:catalogue'])
   })
 })

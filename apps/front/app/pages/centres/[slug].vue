@@ -19,7 +19,7 @@
                   id="hero-title"
                   class="mt-sm font-display text-h2 font-extrabold text-ink lg:text-h1"
                 >
-                  {{ centre.name }}
+                  {{ centre.h1 || centre.name }}
                 </h1>
 
                 <ul v-if="specialties.length" class="mt-md flex flex-wrap gap-sm">
@@ -124,6 +124,7 @@
                       <NuxtLink
                         :to="`tel:${centre.phone.replace(/\s/g, '')}`"
                         class="font-semibold text-ink transition-colors hover:text-accent-text"
+                        @click="trackPhoneClick('fixe')"
                       >
                         {{ centre.phone }}
                       </NuxtLink>
@@ -133,6 +134,7 @@
                       <NuxtLink
                         :to="`tel:${centre.mobile.replace(/\s/g, '')}`"
                         class="font-semibold text-ink transition-colors hover:text-accent-text"
+                        @click="trackPhoneClick('mobile')"
                       >
                         {{ centre.mobile }}
                       </NuxtLink>
@@ -331,7 +333,7 @@
                   :meta="formation.meta"
                   :status="formation.status"
                   :to="formation.to ?? undefined"
-                  :center-id="centre.slug || centre.id"
+                  :center-id="centre.slug"
                   :center-name="centre.name"
                   :center-city="centre.city ?? undefined"
                   :position="i + 1"
@@ -608,6 +610,7 @@ import { useGeolocation } from '~/composables/useGeolocation'
 import { useAssistantLauncher } from '~/composables/useAssistantLauncher'
 import { sanitizeHtml } from '~/utils/sanitizeHtml'
 import { directusAssetUrl } from '~/utils/directusAsset'
+import { buildLocalBusinessJsonLd } from '~/utils/jsonLd'
 import { departmentCodeFromPostalCode, distanceKm, formatDistance } from '~/utils/geo'
 import { articleCategory, formatArticleDate } from '~/utils/article'
 import { mapAvis } from '~/utils/avis'
@@ -615,7 +618,7 @@ import { MODALITY_LABELS } from '~/utils/catalog-filters'
 import { sessionSeatType } from '~/utils/placesLabel'
 import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
-import { useDataLayer } from '~/composables/useDataLayer'
+import { useAnalytics } from '~/composables/useAnalytics'
 
 definePageMeta({
   layout: 'with-breadcrumb'
@@ -703,7 +706,9 @@ const contactEmail = computed(() => {
 
 function callCentrePhone() {
   const phone = centre.value?.phone
-  if (phone) window.location.href = `tel:${phone.replace(/\s/g, '')}`
+  if (!phone) return
+  trackPhoneClick('fixe')
+  window.location.href = `tel:${phone.replace(/\s/g, '')}`
 }
 
 const { position: userPosition } = useGeolocation()
@@ -817,19 +822,39 @@ watchEffect(() => {
     : defaultBreadcrumb.value
 })
 
+// Patron administrable `centre` : seo_* éditorial > patron > repli.
+const centrePattern = useSeoPattern('centre')
+
 useContentSeo(
   () => {
     const isFound = pageState.value === 'found'
     const name = centre.value?.name ?? 'Centre'
+    const vars = isFound
+      ? {
+          nom: name,
+          ville: centre.value!.city,
+          cp: centre.value!.postal_code,
+          département: centre.value!.department
+        }
+      : {}
     return {
       seo_title: isFound
-        ? (centre.value!.seo_title ?? `${name} — LEARN UP ACADEMY`)
+        ? resolveSeoTitle(
+            centre.value!.seo_title,
+            centrePattern.value?.title_pattern,
+            vars,
+            `${name} — LEARN UP ACADEMY`
+          )
         : stateLabels[pageState.value],
       seo_description: isFound
-        ? (centre.value!.seo_description ??
-          `Centre de formation ${centre.value!.city ?? ''} — LEARN UP ACADEMY.`)
+        ? resolveSeoDescription(
+            centre.value!.seo_description,
+            centrePattern.value?.description_pattern,
+            vars,
+            `Centre de formation ${centre.value!.city ?? ''} — LEARN UP ACADEMY.`
+          )
         : undefined,
-      seo_noindex: !isFound,
+      seo_noindex: !isFound || Boolean(centre.value?.seo_noindex),
       // Visuel OG/Twitter : visuel éditorial du centre, sinon défaut.
       seo_image: isFound ? imageSrc.value : undefined
     }
@@ -837,6 +862,19 @@ useContentSeo(
   () => {
     const isFound = pageState.value === 'found'
     return isFound ? centre.value!.name : stateLabels[pageState.value]
+  },
+  {
+    // JSON-LD schema.org/LocalBusiness — adresse, géo et contact du
+    // centre, uniquement sur une fiche trouvée.
+    jsonLd: () => {
+      if (pageState.value !== 'found' || !centre.value) return null
+      return buildLocalBusinessJsonLd({
+        centre: centre.value,
+        url: centre.value.seo_canonical ?? `${config.public.siteUrl}${route.path}`,
+        siteUrl: config.public.siteUrl,
+        imageUrl: imageSrc.value
+      })
+    }
   }
 )
 
@@ -1060,7 +1098,15 @@ function onErrorSearch(query: string) {
   navigateTo({ path: '/formations', query: query ? { q: query } : {} })
 }
 
-const { pushEvent } = useDataLayer()
+const { pushEvent, setActionDimension } = useAnalytics()
+
+// Dimension « Département » : enrichie dès que la fiche centre est
+// résolue — avant la vue de fin de page quand la donnée vient du SSR.
+watch(
+  () => centre.value?.department,
+  (department) => setActionDimension('departement', department ?? undefined),
+  { immediate: true }
+)
 
 onMounted(() => {
   if (centre.value) {
@@ -1089,9 +1135,22 @@ function onDownloadQualiopi() {
   if (centre.value) {
     pushEvent({
       event: 'click_download_qualiopi',
-      center_id: centre.value.slug || centre.value.id,
+      center_id: centre.value.slug,
       center_name: centre.value.name
     })
   }
+}
+
+// Clic `tel:` — objectif « Clic téléphone » : le numéro ne part
+// jamais (PII) ; seuls le centre et le type de ligne sont mesurés.
+function trackPhoneClick(phoneType: 'fixe' | 'mobile') {
+  if (!centre.value) return
+  pushEvent({
+    event: 'click_phone',
+    center_id: centre.value.slug,
+    center_name: centre.value.name,
+    phone_type: phoneType,
+    page_path: typeof window !== 'undefined' ? window.location.pathname : ''
+  })
 }
 </script>

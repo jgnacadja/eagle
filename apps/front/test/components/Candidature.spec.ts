@@ -28,6 +28,13 @@ vi.stubGlobal('useLeadSubmit', () => ({
   }
 }))
 
+// Redirection de confirmation : stubée — la candidature réussie quitte
+// le dialog vers /confirmation/candidature/.
+const confirmConversionMock = vi.fn<(type: string, context?: unknown) => Promise<unknown>>()
+vi.stubGlobal('useConfirmationRedirect', () => ({
+  confirmConversion: confirmConversionMock
+}))
+
 // Le contenu du dialog est téléporté dans document.body (reka-ui DialogPortal) :
 // on l'y interroge directement plutôt que via le wrapper.
 function mountDialog(props: Record<string, unknown> = {}) {
@@ -94,6 +101,7 @@ async function fillValidForm(overrides: Record<string, string> = {}) {
 
 beforeEach(() => {
   leadSubmitMock.mockReset().mockResolvedValue(true)
+  confirmConversionMock.mockClear()
   leadSending.value = false
   leadError.value = null
 })
@@ -189,13 +197,15 @@ describe('components/Candidature', () => {
 
     // État d'envoi avant la confirmation (transition non instantanée).
     expect(document.body.textContent).toContain('Envoi en cours…')
-    expect(document.body.textContent).not.toContain('Votre candidature est transmise')
+    expect(confirmConversionMock).not.toHaveBeenCalled()
 
     await vi.advanceTimersByTimeAsync(1000)
 
-    expect(document.body.textContent).toContain('Votre candidature est transmise')
-    expect(document.body.textContent).toContain('Ouvrir un centre — Créteil (94)')
-    expect(document.body.textContent).toContain('Découvrir les actualités du réseau')
+    // Confirmation déportée sur /confirmation/candidature
+    // détail reprend le récapitulatif « Voie — Ville » de l'ancien écran.
+    expect(confirmConversionMock).toHaveBeenCalledWith('candidature', {
+      detail: 'Projet « Ouvrir un centre — Créteil (94) » — réponse sous 5 jours ouvrés.'
+    })
     expect(leadSubmitMock).toHaveBeenCalledWith(
       'candidature',
       expect.objectContaining({
@@ -238,7 +248,7 @@ describe('components/Candidature', () => {
     await waitUntil(() => Boolean(document.body.textContent?.includes('envoi a échoué')))
 
     expect(document.body.textContent).toContain('envoi a échoué')
-    expect(document.body.textContent).not.toContain('Votre candidature est transmise')
+    expect(confirmConversionMock).not.toHaveBeenCalled()
   })
 
   it('revient au formulaire avec la nouvelle voie à la réouverture', async () => {
@@ -249,7 +259,7 @@ describe('components/Candidature', () => {
     await bodyEl('form').trigger('submit')
     await settleValidation()
     await vi.advanceTimersByTimeAsync(1000)
-    expect(document.body.textContent).toContain('Votre candidature est transmise')
+    await waitUntil(() => confirmConversionMock.mock.calls.length > 0)
 
     await wrapper.setProps({ open: false })
     await wrapper.setProps({ open: true, voie: 'centre' })

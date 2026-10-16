@@ -133,7 +133,9 @@ const families: FamilleFormation[] = [
     validity_text: null,
     seo_title: null,
     seo_description: null,
-    seo_canonical: null
+    seo_canonical: null,
+    h1: null,
+    seo_noindex: null
   },
   {
     id: 2,
@@ -148,7 +150,9 @@ const families: FamilleFormation[] = [
     validity_text: null,
     seo_title: null,
     seo_description: null,
-    seo_canonical: null
+    seo_canonical: null,
+    h1: null,
+    seo_noindex: null
   },
   {
     id: 3,
@@ -163,7 +167,9 @@ const families: FamilleFormation[] = [
     validity_text: null,
     seo_title: null,
     seo_description: null,
-    seo_canonical: null
+    seo_canonical: null,
+    h1: null,
+    seo_noindex: null
   },
   {
     id: 4,
@@ -173,9 +179,14 @@ const families: FamilleFormation[] = [
     intro: null,
     icon: null,
     image: null,
+    subnav_title: null,
+    audience_text: null,
+    validity_text: null,
     seo_title: null,
     seo_description: null,
-    seo_canonical: null
+    seo_canonical: null,
+    h1: null,
+    seo_noindex: null
   }
 ]
 
@@ -191,7 +202,7 @@ const useContentSeoMock = vi.fn()
 const directusRequest = vi.fn()
 const fetchMock = vi.fn()
 const route = reactive({
-  query: {} as Record<string, string>,
+  query: {} as Record<string, string | string[]>,
   path: '/formations',
   meta: {}
 })
@@ -210,7 +221,9 @@ vi.stubGlobal('watchEffect', watchEffect)
 vi.stubGlobal('nextTick', nextTick)
 vi.stubGlobal('onBeforeUnmount', onBeforeUnmount)
 vi.stubGlobal('definePageMeta', vi.fn())
-vi.stubGlobal('useRuntimeConfig', () => ({ public: { apiBase: 'http://api.test' } }))
+vi.stubGlobal('useRuntimeConfig', () => ({
+  public: { apiBase: 'http://api.test', siteUrl: 'https://learnup.test' }
+}))
 vi.stubGlobal('useRoute', () => route)
 vi.stubGlobal('useRouter', () => ({ replace: routerReplace }))
 vi.stubGlobal('useContentSeo', useContentSeoMock)
@@ -458,9 +471,41 @@ describe('pages/formations/index', () => {
     await mountPage()
 
     expect(useContentSeoMock).toHaveBeenCalledWith(
-      expect.objectContaining({ seo_title: 'Catalogue de formations — LEARN UP ACADEMY' }),
+      expect.anything(),
       'Catalogue de formations — LEARN UP ACADEMY'
     )
+    const source = toValue(useContentSeoMock.mock.calls[0]![0])
+    expect(source).toMatchObject({
+      seo_title: 'Catalogue de formations — LEARN UP ACADEMY',
+      seo_canonical: expect.stringContaining('/formations')
+    })
+  })
+
+  it('passe en noindex,follow + canonical propre sur une variante filtrée', async () => {
+    route.query = { q: 'caces' }
+    await mountPage()
+
+    const source = toValue(useContentSeoMock.mock.calls[0]![0])
+    expect(source.seo_robots).toBe('noindex, follow')
+    expect(source.seo_canonical).toBe('https://learnup.test/formations')
+  })
+
+  it('garde une self-canonical sur ?page=N sans filtre', async () => {
+    route.query = { page: '3' }
+    await mountPage()
+
+    const source = toValue(useContentSeoMock.mock.calls[0]![0])
+    expect(source.seo_robots ?? null).toBeNull()
+    expect(source.seo_canonical).toBe('https://learnup.test/formations?page=3')
+  })
+
+  it('noindex même paginée quand un filtre est actif', async () => {
+    route.query = { centre: 'lille', page: '2' }
+    await mountPage()
+
+    const source = toValue(useContentSeoMock.mock.calls[0]![0])
+    expect(source.seo_robots).toBe('noindex, follow')
+    expect(source.seo_canonical).toBe('https://learnup.test/formations')
   })
 
   describe('raccourcis familles (showAllFamilies)', () => {

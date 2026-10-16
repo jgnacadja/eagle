@@ -3,9 +3,9 @@
 // Usage : node directus/seed/seed.mjs (après `docker compose up`).
 //
 // Les collections ciblées (centres, familles_formation, articles) sont
-// modélisées en ST-11. Tant qu'une collection n'existe pas encore, ce script
+// modélisées. Tant qu'une collection n'existe pas encore, ce script
 // la saute proprement (log + skip) plutôt que d'échouer — il devient
-// pleinement actif une fois ST-11 livré, sans changement requis.
+// pleinement actif une fois le schéma livré, sans changement requis.
 
 import {
   articles,
@@ -286,7 +286,7 @@ async function prepareItem(token, rawItem, refs, refsBySlug, collection) {
 async function seedDataset(token, dataset) {
   const { collection, items, refs, children } = dataset
   if (!(await collectionExists(token, collection))) {
-    log(`⏭  ${collection} — collection absente (ST-11 non livré), ignoré`)
+    log(`⏭ ${collection} — collection absente, ignoré`)
     return
   }
 

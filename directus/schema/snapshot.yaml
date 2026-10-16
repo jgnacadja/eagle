@@ -190,6 +190,34 @@ collections:
       versioning: false
     schema:
       name: formations_centres
+  - collection: formations_liees
+    meta:
+      accountability: all
+      archive_app_filter: true
+      archive_field: null
+      archive_value: null
+      collapse: open
+      collection: formations_liees
+      color: null
+      display_template: null
+      group: null
+      hidden: true
+      icon: link
+      item_duplication_fields: null
+      note: >-
+        Jonction formations ↔ formations liées — lignes créées via « Formations
+        liées » sur la fiche.
+      preview_url: null
+      singleton: false
+      sort: null
+      sort_field: null
+      translations:
+        - language: fr-FR
+          translation: Formations liées
+      unarchive_value: null
+      versioning: false
+    schema:
+      name: formations_liees
   - collection: page_blocks
     meta:
       accountability: all
@@ -359,6 +387,34 @@ collections:
       versioning: false
     schema:
       name: recherches_sans_resultat
+  - collection: seo_patterns
+    meta:
+      accountability: all
+      archive_app_filter: true
+      archive_field: null
+      archive_value: null
+      collapse: open
+      collection: seo_patterns
+      color: null
+      display_template: null
+      group: null
+      hidden: false
+      icon: travel_explore
+      item_duplication_fields: null
+      note: >-
+        Patrons de métas par gabarit — variables {…} substituées côté
+        front.
+      preview_url: null
+      singleton: false
+      sort: null
+      sort_field: null
+      translations:
+        - language: fr-FR
+          translation: Patrons SEO
+      unarchive_value: null
+      versioning: false
+    schema:
+      name: seo_patterns
   - collection: sous_familles_formation
     meta:
       accountability: all
@@ -569,8 +625,31 @@ fields:
       translations:
         - language: fr-FR
           translation: Slug
-      validation: null
-      validation_message: null
+      validation:
+        _and:
+          - slug:
+              _nin:
+                - departement
+                - ville
+                - page
+                - recherche
+                - actualites
+                - centres
+                - formations
+                - a-propos
+                - entreprise
+                - entreprise-reseau
+                - partenaire-reseau
+                - parler-a-votre-conseiller
+                - referencer-mon-organisme
+                - rejoindre-le-reseau
+                - api
+                - directus
+          - slug:
+              _regex: ^[a-z0-9]+(-[a-z0-9]+)*$
+      validation_message: >-
+        Slug refusé — minuscules non accentuées, chiffres et tirets uniquement,
+        hors segments réservés au routage.
       width: half
     schema:
       name: slug
@@ -917,7 +996,7 @@ fields:
       numeric_precision: null
       numeric_scale: null
       is_nullable: true
-      is_unique: false
+      is_unique: true
       is_indexed: false
       is_primary_key: false
       is_generated: false
@@ -1183,6 +1262,92 @@ fields:
       has_auto_increment: false
       foreign_key_table: directus_files
       foreign_key_column: id
+  - collection: articles
+    field: h1
+    type: string
+    meta:
+      collection: articles
+      conditions: null
+      display: null
+      display_options: null
+      field: h1
+      group: null
+      hidden: false
+      interface: input
+      note: >-
+        Titre principal de la page — vide : le gabarit reprend le titre du
+        contenu.
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 19
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Titre H1
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: h1
+      table: articles
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: true
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: articles
+    field: seo_noindex
+    type: boolean
+    meta:
+      collection: articles
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_noindex
+      group: null
+      hidden: false
+      interface: boolean
+      note: Exclut la page de l’indexation (meta robots noindex).
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 20
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Noindex
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_noindex
+      table: articles
+      data_type: boolean
+      default_value: false
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
   - collection: avis
     field: id
     type: integer
@@ -1338,8 +1503,31 @@ fields:
       translations:
         - language: fr-FR
           translation: Slug
-      validation: null
-      validation_message: null
+      validation:
+        _and:
+          - slug:
+              _nin:
+                - departement
+                - ville
+                - page
+                - recherche
+                - actualites
+                - centres
+                - formations
+                - a-propos
+                - entreprise
+                - entreprise-reseau
+                - partenaire-reseau
+                - parler-a-votre-conseiller
+                - referencer-mon-organisme
+                - rejoindre-le-reseau
+                - api
+                - directus
+          - slug:
+              _regex: ^[a-z0-9]+(-[a-z0-9]+)*$
+      validation_message: >-
+        Slug refusé — minuscules non accentuées, chiffres et tirets uniquement,
+        hors segments réservés au routage.
       width: half
     schema:
       name: slug
@@ -1725,8 +1913,31 @@ fields:
       translations:
         - language: fr-FR
           translation: Slug
-      validation: null
-      validation_message: null
+      validation:
+        _and:
+          - slug:
+              _nin:
+                - departement
+                - ville
+                - page
+                - recherche
+                - actualites
+                - centres
+                - formations
+                - a-propos
+                - entreprise
+                - entreprise-reseau
+                - partenaire-reseau
+                - parler-a-votre-conseiller
+                - referencer-mon-organisme
+                - rejoindre-le-reseau
+                - api
+                - directus
+          - slug:
+              _regex: ^[a-z0-9]+(-[a-z0-9]+)*$
+      validation_message: >-
+        Slug refusé — minuscules non accentuées, chiffres et tirets uniquement,
+        hors segments réservés au routage.
       width: half
     schema:
       name: slug
@@ -1817,6 +2028,206 @@ fields:
       table: categories
       data_type: text
       default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: categories
+    field: seo_title
+    type: string
+    meta:
+      collection: categories
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_title
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 7
+      special: null
+      translations: null
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_title
+      table: categories
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: true
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: categories
+    field: seo_canonical
+    type: string
+    meta:
+      collection: categories
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_canonical
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 8
+      special: null
+      translations: null
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_canonical
+      table: categories
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: categories
+    field: h1
+    type: string
+    meta:
+      collection: categories
+      conditions: null
+      display: null
+      display_options: null
+      field: h1
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 9
+      special: null
+      translations: null
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: h1
+      table: categories
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: categories
+    field: seo_description
+    type: text
+    meta:
+      collection: categories
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_description
+      group: null
+      hidden: false
+      interface: input-multiline
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 10
+      special: null
+      translations: null
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: seo_description
+      table: categories
+      data_type: text
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: categories
+    field: seo_noindex
+    type: boolean
+    meta:
+      collection: categories
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_noindex
+      group: null
+      hidden: false
+      interface: boolean
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 11
+      special: null
+      translations: null
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_noindex
+      table: categories
+      data_type: boolean
+      default_value: false
       max_length: null
       numeric_precision: null
       numeric_scale: null
@@ -1984,8 +2395,31 @@ fields:
       translations:
         - language: fr-FR
           translation: Slug
-      validation: null
-      validation_message: null
+      validation:
+        _and:
+          - slug:
+              _nin:
+                - departement
+                - ville
+                - page
+                - recherche
+                - actualites
+                - centres
+                - formations
+                - a-propos
+                - entreprise
+                - entreprise-reseau
+                - partenaire-reseau
+                - parler-a-votre-conseiller
+                - referencer-mon-organisme
+                - rejoindre-le-reseau
+                - api
+                - directus
+          - slug:
+              _regex: ^[a-z0-9]+(-[a-z0-9]+)*$
+      validation_message: >-
+        Slug refusé — minuscules non accentuées, chiffres et tirets uniquement,
+        hors segments réservés au routage.
       width: half
     schema:
       name: slug
@@ -3262,7 +3696,7 @@ fields:
       numeric_precision: null
       numeric_scale: null
       is_nullable: true
-      is_unique: false
+      is_unique: true
       is_indexed: false
       is_primary_key: false
       is_generated: false
@@ -3398,6 +3832,264 @@ fields:
       has_auto_increment: false
       foreign_key_table: directus_files
       foreign_key_column: id
+  - collection: centres
+    field: google_place_id
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: google_place_id
+      group: null
+      hidden: false
+      interface: input
+      note: >-
+        Identifiant Google Places (Place ID) — active la synchro des avis et le
+        bouton « Voir tous les avis »
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 31
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Google Place ID
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: google_place_id
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: google_maps_url
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: google_maps_url
+      group: null
+      hidden: false
+      interface: input
+      note: >-
+        Lien de partage Google Maps — utilisé par « Voir tous les avis » à la
+        place de l’URL construite depuis le Place ID
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 32
+      special: null
+      translations:
+        - language: fr-FR
+          translation: URL Google Maps
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: google_maps_url
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: google_rating
+    type: float
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: google_rating
+      group: null
+      hidden: false
+      interface: input
+      note: Note globale Google — mise à jour par la synchro des avis
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 33
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Note Google
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: google_rating
+      table: centres
+      data_type: real
+      default_value: null
+      max_length: null
+      numeric_precision: 24
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: google_reviews_count
+    type: integer
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: google_reviews_count
+      group: null
+      hidden: false
+      interface: input
+      note: Nombre d’avis Google — mis à jour par la synchro des avis
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 34
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Nombre d’avis Google
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: google_reviews_count
+      table: centres
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: h1
+    type: string
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: h1
+      group: null
+      hidden: false
+      interface: input
+      note: >-
+        Titre principal de la page — vide : le gabarit reprend le titre du
+        contenu.
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 41
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Titre H1
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: h1
+      table: centres
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: true
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: centres
+    field: seo_noindex
+    type: boolean
+    meta:
+      collection: centres
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_noindex
+      group: null
+      hidden: false
+      interface: boolean
+      note: Exclut la page de l’indexation (meta robots noindex).
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 42
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Noindex
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_noindex
+      table: centres
+      data_type: boolean
+      default_value: false
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
   - collection: familles_formation
     field: id
     type: integer
@@ -3553,8 +4245,31 @@ fields:
       translations:
         - language: fr-FR
           translation: Slug
-      validation: null
-      validation_message: null
+      validation:
+        _and:
+          - slug:
+              _nin:
+                - departement
+                - ville
+                - page
+                - recherche
+                - actualites
+                - centres
+                - formations
+                - a-propos
+                - entreprise
+                - entreprise-reseau
+                - partenaire-reseau
+                - parler-a-votre-conseiller
+                - referencer-mon-organisme
+                - rejoindre-le-reseau
+                - api
+                - directus
+          - slug:
+              _regex: ^[a-z0-9]+(-[a-z0-9]+)*$
+      validation_message: >-
+        Slug refusé — minuscules non accentuées, chiffres et tirets uniquement,
+        hors segments réservés au routage.
       width: half
     schema:
       name: slug
@@ -3657,6 +4372,174 @@ fields:
       has_auto_increment: false
       foreign_key_table: null
       foreign_key_column: null
+  - collection: familles_formation
+    field: seo_title
+    type: string
+    meta:
+      collection: familles_formation
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_title
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 8
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Titre SEO
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_title
+      table: familles_formation
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: true
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: familles_formation
+    field: seo_description
+    type: text
+    meta:
+      collection: familles_formation
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_description
+      group: null
+      hidden: false
+      interface: input-multiline
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 9
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Description SEO
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: seo_description
+      table: familles_formation
+      data_type: text
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: familles_formation
+    field: seo_canonical
+    type: string
+    meta:
+      collection: familles_formation
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_canonical
+      group: null
+      hidden: false
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 10
+      special: null
+      translations:
+        - language: fr-FR
+          translation: URL canonique
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_canonical
+      table: familles_formation
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: familles_formation
+    field: icon
+    type: uuid
+    meta:
+      collection: familles_formation
+      conditions: null
+      display: null
+      display_options: null
+      field: icon
+      group: null
+      hidden: false
+      interface: file-image
+      note: Picto
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 11
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Icône
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: icon
+      table: familles_formation
+      data_type: uuid
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: directus_files
+      foreign_key_column: id
   - collection: familles_formation
     field: image
     type: uuid
@@ -3826,32 +4709,34 @@ fields:
       foreign_key_table: null
       foreign_key_column: null
   - collection: familles_formation
-    field: seo_title
+    field: h1
     type: string
     meta:
       collection: familles_formation
       conditions: null
       display: null
       display_options: null
-      field: seo_title
+      field: h1
       group: null
       hidden: false
       interface: input
-      note: null
+      note: >-
+        Titre principal de la page — vide : le gabarit reprend le titre du
+        contenu.
       options: null
       readonly: false
       required: false
       searchable: true
-      sort: 11
+      sort: 15
       special: null
       translations:
         - language: fr-FR
-          translation: Titre SEO
+          translation: Titre H1
       validation: null
       validation_message: null
       width: half
     schema:
-      name: seo_title
+      name: h1
       table: familles_formation
       data_type: character varying
       default_value: null
@@ -3859,7 +4744,7 @@ fields:
       numeric_precision: null
       numeric_scale: null
       is_nullable: true
-      is_unique: false
+      is_unique: true
       is_indexed: false
       is_primary_key: false
       is_generated: false
@@ -3868,35 +4753,35 @@ fields:
       foreign_key_table: null
       foreign_key_column: null
   - collection: familles_formation
-    field: seo_description
-    type: text
+    field: seo_noindex
+    type: boolean
     meta:
       collection: familles_formation
       conditions: null
       display: null
       display_options: null
-      field: seo_description
+      field: seo_noindex
       group: null
       hidden: false
-      interface: input-multiline
-      note: null
+      interface: boolean
+      note: Exclut la page de l’indexation (meta robots noindex).
       options: null
       readonly: false
       required: false
       searchable: true
-      sort: 12
+      sort: 16
       special: null
       translations:
         - language: fr-FR
-          translation: Description SEO
+          translation: Noindex
       validation: null
       validation_message: null
-      width: full
+      width: half
     schema:
-      name: seo_description
+      name: seo_noindex
       table: familles_formation
-      data_type: text
-      default_value: null
+      data_type: boolean
+      default_value: false
       max_length: null
       numeric_precision: null
       numeric_scale: null
@@ -3909,90 +4794,6 @@ fields:
       has_auto_increment: false
       foreign_key_table: null
       foreign_key_column: null
-  - collection: familles_formation
-    field: seo_canonical
-    type: string
-    meta:
-      collection: familles_formation
-      conditions: null
-      display: null
-      display_options: null
-      field: seo_canonical
-      group: null
-      hidden: false
-      interface: input
-      note: null
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 13
-      special: null
-      translations:
-        - language: fr-FR
-          translation: URL canonique
-      validation: null
-      validation_message: null
-      width: half
-    schema:
-      name: seo_canonical
-      table: familles_formation
-      data_type: character varying
-      default_value: null
-      max_length: 255
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: null
-      foreign_key_column: null
-  - collection: familles_formation
-    field: icon
-    type: uuid
-    meta:
-      collection: familles_formation
-      conditions: null
-      display: null
-      display_options: null
-      field: icon
-      group: null
-      hidden: false
-      interface: file-image
-      note: Picto
-      options: null
-      readonly: false
-      required: false
-      searchable: true
-      sort: 14
-      special: null
-      translations:
-        - language: fr-FR
-          translation: Icône
-      validation: null
-      validation_message: null
-      width: full
-    schema:
-      name: icon
-      table: familles_formation
-      data_type: uuid
-      default_value: null
-      max_length: null
-      numeric_precision: null
-      numeric_scale: null
-      is_nullable: true
-      is_unique: false
-      is_indexed: false
-      is_primary_key: false
-      is_generated: false
-      generation_expression: null
-      has_auto_increment: false
-      foreign_key_table: directus_files
-      foreign_key_column: id
   - collection: formations
     field: id
     type: integer
@@ -5292,7 +6093,7 @@ fields:
       numeric_precision: null
       numeric_scale: null
       is_nullable: true
-      is_unique: false
+      is_unique: true
       is_indexed: false
       is_primary_key: false
       is_generated: false
@@ -5675,6 +6476,124 @@ fields:
       validation: null
       validation_message: null
       width: full
+  - collection: formations
+    field: h1
+    type: string
+    meta:
+      collection: formations
+      conditions: null
+      display: null
+      display_options: null
+      field: h1
+      group: null
+      hidden: false
+      interface: input
+      note: >-
+        Titre principal de la page — vide : le gabarit reprend le titre du
+        contenu.
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 100
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Titre H1
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: h1
+      table: formations
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: true
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: formations
+    field: seo_noindex
+    type: boolean
+    meta:
+      collection: formations
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_noindex
+      group: null
+      hidden: false
+      interface: boolean
+      note: Exclut la page de l’indexation (meta robots noindex).
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 101
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Noindex
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_noindex
+      table: formations
+      data_type: boolean
+      default_value: false
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: formations
+    field: formations_liees
+    type: alias
+    meta:
+      collection: formations
+      conditions: null
+      display: related-values
+      display_options:
+        template: '{{related.title}}'
+      field: formations_liees
+      group: null
+      hidden: false
+      interface: list-m2m
+      note: >-
+        Remplace « Formations similaires » sur le site quand rempli — ordre =
+        ordre d affichage
+      options:
+        enableCreate: false
+        enableSelect: true
+        template: '{{related.title}}'
+      readonly: false
+      required: false
+      searchable: true
+      sort: 102
+      special:
+        - m2m
+      translations:
+        - language: fr-FR
+          translation: Formations liées
+      validation: null
+      validation_message: null
+      width: full
   - collection: formations_centres
     field: id
     type: integer
@@ -5833,6 +6752,172 @@ fields:
     schema:
       name: formation
       table: formations_centres
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: formations_liees
+    field: id
+    type: integer
+    meta:
+      collection: formations_liees
+      conditions: null
+      display: null
+      display_options: null
+      field: id
+      group: null
+      hidden: true
+      interface: input
+      note: null
+      options: null
+      readonly: true
+      required: false
+      searchable: true
+      sort: 1
+      special: null
+      translations: null
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: id
+      table: formations_liees
+      data_type: integer
+      default_value: nextval('formations_liees_id_seq'::regclass)
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: false
+      is_unique: true
+      is_indexed: false
+      is_primary_key: true
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: true
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: formations_liees
+    field: sort
+    type: integer
+    meta:
+      collection: formations_liees
+      conditions: null
+      display: null
+      display_options: null
+      field: sort
+      group: null
+      hidden: true
+      interface: input
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 2
+      special: null
+      translations: null
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: sort
+      table: formations_liees
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: formations_liees
+    field: formation
+    type: integer
+    meta:
+      collection: formations_liees
+      conditions: null
+      display: null
+      display_options: null
+      field: formation
+      group: null
+      hidden: false
+      interface: select-dropdown-m2o
+      note: null
+      options:
+        template: '{{title}}'
+      readonly: false
+      required: true
+      searchable: true
+      sort: 3
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Formation
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: formation
+      table: formations_liees
+      data_type: integer
+      default_value: null
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: formations_liees
+    field: related
+    type: integer
+    meta:
+      collection: formations_liees
+      conditions: null
+      display: null
+      display_options: null
+      field: related
+      group: null
+      hidden: false
+      interface: select-dropdown-m2o
+      note: null
+      options:
+        template: '{{title}}'
+      readonly: false
+      required: true
+      searchable: true
+      sort: 4
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Formation liée
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: related
+      table: formations_liees
       data_type: integer
       default_value: null
       max_length: null
@@ -6265,8 +7350,31 @@ fields:
       translations:
         - language: fr-FR
           translation: Slug
-      validation: null
-      validation_message: null
+      validation:
+        _and:
+          - slug:
+              _nin:
+                - departement
+                - ville
+                - page
+                - recherche
+                - actualites
+                - centres
+                - formations
+                - a-propos
+                - entreprise
+                - entreprise-reseau
+                - partenaire-reseau
+                - parler-a-votre-conseiller
+                - referencer-mon-organisme
+                - rejoindre-le-reseau
+                - api
+                - directus
+          - slug:
+              _regex: ^[a-z0-9]+(-[a-z0-9]+)*$
+      validation_message: >-
+        Slug refusé — minuscules non accentuées, chiffres et tirets uniquement,
+        hors segments réservés au routage.
       width: half
     schema:
       name: slug
@@ -6361,7 +7469,7 @@ fields:
       numeric_precision: null
       numeric_scale: null
       is_nullable: true
-      is_unique: false
+      is_unique: true
       is_indexed: false
       is_primary_key: false
       is_generated: false
@@ -6442,6 +7550,92 @@ fields:
       data_type: character varying
       default_value: null
       max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages
+    field: h1
+    type: string
+    meta:
+      collection: pages
+      conditions: null
+      display: null
+      display_options: null
+      field: h1
+      group: null
+      hidden: false
+      interface: input
+      note: >-
+        Titre principal de la page — vide : le gabarit reprend le titre du
+        contenu.
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 8
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Titre H1
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: h1
+      table: pages
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: true
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages
+    field: seo_noindex
+    type: boolean
+    meta:
+      collection: pages
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_noindex
+      group: null
+      hidden: false
+      interface: boolean
+      note: Exclut la page de l’indexation (meta robots noindex).
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 9
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Noindex
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_noindex
+      table: pages
+      data_type: boolean
+      default_value: false
+      max_length: null
       numeric_precision: null
       numeric_scale: null
       is_nullable: true
@@ -6609,8 +7803,31 @@ fields:
       translations:
         - language: fr-FR
           translation: Slug
-      validation: null
-      validation_message: null
+      validation:
+        _and:
+          - slug:
+              _nin:
+                - departement
+                - ville
+                - page
+                - recherche
+                - actualites
+                - centres
+                - formations
+                - a-propos
+                - entreprise
+                - entreprise-reseau
+                - partenaire-reseau
+                - parler-a-votre-conseiller
+                - referencer-mon-organisme
+                - rejoindre-le-reseau
+                - api
+                - directus
+          - slug:
+              _regex: ^[a-z0-9]+(-[a-z0-9]+)*$
+      validation_message: >-
+        Slug refusé — minuscules non accentuées, chiffres et tirets uniquement,
+        hors segments réservés au routage.
       width: half
     schema:
       name: slug
@@ -6873,7 +8090,7 @@ fields:
       numeric_precision: null
       numeric_scale: null
       is_nullable: true
-      is_unique: false
+      is_unique: true
       is_indexed: false
       is_primary_key: false
       is_generated: false
@@ -7080,6 +8297,92 @@ fields:
       validation: null
       validation_message: null
       width: full
+  - collection: pages_legales
+    field: h1
+    type: string
+    meta:
+      collection: pages_legales
+      conditions: null
+      display: null
+      display_options: null
+      field: h1
+      group: null
+      hidden: false
+      interface: input
+      note: >-
+        Titre principal de la page — vide : le gabarit reprend le titre du
+        contenu.
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 15
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Titre H1
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: h1
+      table: pages_legales
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: true
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: pages_legales
+    field: seo_noindex
+    type: boolean
+    meta:
+      collection: pages_legales
+      conditions: null
+      display: null
+      display_options: null
+      field: seo_noindex
+      group: null
+      hidden: false
+      interface: boolean
+      note: Exclut la page de l’indexation (meta robots noindex).
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 16
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Noindex
+      validation: null
+      validation_message: null
+      width: half
+    schema:
+      name: seo_noindex
+      table: pages_legales
+      data_type: boolean
+      default_value: false
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
   - collection: pages_legales_sections
     field: id
     type: integer
@@ -8011,6 +9314,178 @@ fields:
       has_auto_increment: false
       foreign_key_table: null
       foreign_key_column: null
+  - collection: seo_patterns
+    field: id
+    type: integer
+    meta:
+      collection: seo_patterns
+      conditions: null
+      display: null
+      display_options: null
+      field: id
+      group: null
+      hidden: true
+      interface: null
+      note: null
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 1
+      special: null
+      translations: null
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: id
+      table: seo_patterns
+      data_type: integer
+      default_value: nextval('seo_patterns_id_seq'::regclass)
+      max_length: null
+      numeric_precision: 32
+      numeric_scale: 0
+      is_nullable: false
+      is_unique: true
+      is_indexed: false
+      is_primary_key: true
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: true
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: seo_patterns
+    field: key
+    type: string
+    meta:
+      collection: seo_patterns
+      conditions: null
+      display: null
+      display_options: null
+      field: key
+      group: null
+      hidden: false
+      interface: input
+      note: >-
+        Identifiant du gabarit : formation, famille, centre, article, categorie,
+        catalogue…
+      options: null
+      readonly: false
+      required: true
+      searchable: true
+      sort: 2
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Clé du gabarit
+      validation:
+        key:
+          _regex: ^[a-z0-9]+(-[a-z0-9]+)*$
+      validation_message: Clé refusée — minuscules, chiffres et tirets uniquement.
+      width: half
+    schema:
+      name: key
+      table: seo_patterns
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: true
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: seo_patterns
+    field: title_pattern
+    type: string
+    meta:
+      collection: seo_patterns
+      conditions: null
+      display: null
+      display_options: null
+      field: title_pattern
+      group: null
+      hidden: false
+      interface: input
+      note: 'Ex: « Formation {intitulé} — {famille} | LEARN UP ACADEMY »'
+      options: null
+      readonly: false
+      required: true
+      searchable: true
+      sort: 3
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Patron de titre
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: title_pattern
+      table: seo_patterns
+      data_type: character varying
+      default_value: null
+      max_length: 255
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
+  - collection: seo_patterns
+    field: description_pattern
+    type: text
+    meta:
+      collection: seo_patterns
+      conditions: null
+      display: null
+      display_options: null
+      field: description_pattern
+      group: null
+      hidden: false
+      interface: input-multiline
+      note: >-
+        Ex: « Formation {intitulé} à {ville} ({cp}) — {durée}, certifiante
+        {code}. »
+      options: null
+      readonly: false
+      required: false
+      searchable: true
+      sort: 4
+      special: null
+      translations:
+        - language: fr-FR
+          translation: Patron de description
+      validation: null
+      validation_message: null
+      width: full
+    schema:
+      name: description_pattern
+      table: seo_patterns
+      data_type: text
+      default_value: null
+      max_length: null
+      numeric_precision: null
+      numeric_scale: null
+      is_nullable: true
+      is_unique: false
+      is_indexed: false
+      is_primary_key: false
+      is_generated: false
+      generation_expression: null
+      has_auto_increment: false
+      foreign_key_table: null
+      foreign_key_column: null
   - collection: sous_familles_formation
     field: id
     type: integer
@@ -8166,8 +9641,31 @@ fields:
       translations:
         - language: fr-FR
           translation: Slug
-      validation: null
-      validation_message: null
+      validation:
+        _and:
+          - slug:
+              _nin:
+                - departement
+                - ville
+                - page
+                - recherche
+                - actualites
+                - centres
+                - formations
+                - a-propos
+                - entreprise
+                - entreprise-reseau
+                - partenaire-reseau
+                - parler-a-votre-conseiller
+                - referencer-mon-organisme
+                - rejoindre-le-reseau
+                - api
+                - directus
+          - slug:
+              _regex: ^[a-z0-9]+(-[a-z0-9]+)*$
+      validation_message: >-
+        Slug refusé — minuscules non accentuées, chiffres et tirets uniquement,
+        hors segments réservés au routage.
       width: half
     schema:
       name: slug
@@ -8851,6 +10349,38 @@ relations:
       foreign_key_table: formations
       foreign_key_column: id
       constraint_name: formations_centres_formation_foreign
+  - collection: formations_liees
+    field: formation
+    related_collection: formations
+    meta:
+      junction_field: related
+      many_collection: formations_liees
+      many_field: formation
+      one_allowed_collections: null
+      one_collection: formations
+      one_collection_field: null
+      one_deselect_action: delete
+      one_field: formations_liees
+      sort_field: sort
+  - collection: formations_liees
+    field: related
+    related_collection: formations
+    meta:
+      junction_field: formation
+      many_collection: formations_liees
+      many_field: related
+      one_allowed_collections: null
+      one_collection: formations
+      one_collection_field: null
+      one_deselect_action: nullify
+      one_field: null
+      sort_field: null
+    schema:
+      table: formations_liees
+      column: related
+      foreign_key_table: formations
+      foreign_key_column: id
+      constraint_name: formations_liees_related_foreign
       on_update: NO ACTION
       on_delete: NO ACTION
   - collection: page_blocks

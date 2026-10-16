@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h3 class="font-sans text-small font-bold text-ink">Comparer les formations recommandées</h3>
+    <p class="font-sans text-small font-bold text-ink">Comparer les formations recommandées</p>
     <p v-if="needSummary" class="mt-xs text-meta text-ink-muted">
       Les différences ci-dessous portent sur le besoin exprimé : {{ needSummary }}.
     </p>

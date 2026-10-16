@@ -206,6 +206,17 @@ const routeState = reactive({
 })
 vi.stubGlobal('useRoute', () => routeState)
 
+// useRuntimeConfig (auto-import Nuxt) : config publique minimale — instance
+// Matomo « configurée » pour que `useAnalytics()` collecte dans `window._paq`.
+// Les specs peuvent la remplacer par leur propre `vi.stubGlobal`.
+vi.stubGlobal('useRuntimeConfig', () => ({
+  public: {
+    apiBase: 'http://localhost:3001',
+    matomoUrl: 'https://stats.test',
+    matomoSiteId: '1'
+  }
+}))
+
 // Directives motion-v (enregistrées par le module Nuxt, absentes ici) et
 // utilitaires de reveal utilisés dans les templates.
 config.global.directives = {
@@ -225,6 +236,16 @@ class IntersectionObserverStub {
   disconnect = noop
 }
 vi.stubGlobal('IntersectionObserver', IntersectionObserverStub)
+
+// happy-dom télécharge et exécute les <script src>/<link> injectés — le
+// plugin Matomo ajoute matomo.js distant en test, déclenchant un vrai
+// fetch (ENOTFOUND en stderr). Couper le chargement de fichiers externes.
+const happyDom = (window as unknown as { happyDOM?: { settings: Record<string, unknown> } })
+  .happyDOM
+if (happyDom?.settings) {
+  happyDom.settings.disableJavaScriptFileLoading = true
+  happyDom.settings.disableCSSFileLoading = true
+}
 
 // Pointer capture absent de happy-dom : requis par reka-ui (SelectTrigger
 // appelle hasPointerCapture au pointerdown).

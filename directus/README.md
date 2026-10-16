@@ -94,8 +94,8 @@ lecture toujours OK pour les 4 rôles internes, écriture/suppression refusées
 `directus_access` où `role` et `user` valent tous les deux `null`, pas par une
 entrée dans `directus_roles`. Sans permissions dessus, un visiteur du site
 (donc non authentifié) reçoit un 403 sur toute lecture — c'est ce qui a été
-découvert en branchant le front (ST-12) : le manque avait échappé à la revue
-initiale de ST-11, qui n'avait modélisé que les rôles internes.
+découvert en branchant le front : le manque avait échappé à la revue
+initiale, qui n'avait modélisé que les rôles internes.
 
 ## Recherches sans résultat
 
@@ -178,18 +178,19 @@ asset en WebP à la volée via l'API de transformation d'images
 ## SEO
 
 Chaque collection porteuse de page (`centres`, `familles_formation`,
-`articles`, `pages`) a ses propres champs `seo_title` / `seo_description` /
-`seo_canonical`. Structure posée maintenant ; les valeurs et règles précises
-(matrice d'intentions, anti-duplication, données structurées) viennent du
-livrable ST-06 et seront saisies dans ces mêmes champs, sans changement de
-schéma attendu.
+`articles`, `pages`, `pages_legales`, `formations`) a ses propres champs
+`seo_title` / `seo_description` / `seo_canonical` / `h1` / `seo_noindex`.
+`seo_title` et `h1` portent une contrainte d'unicité par collection
+(règle AD-3) — un doublon est refusé à l'enregistrement. Les valeurs et
+règles précises (matrice d'intentions, anti-duplication, données
+structurées) sont saisies dans ces mêmes champs.
 
 ## Point d'attention — "formations"
 
-ST-11 ne définit pas de collection `formations` dédiée (seules `centres`,
-`familles_formation`, `articles`, `pages`/`page_blocks`, `stats` sont dans son
+Le schéma ne définit pas de collection `formations` dédiée (seules `centres`,
+`familles_formation`, `articles`, `pages`/`page_blocks`, `stats` sont dans le
 périmètre explicite) : les formations individuelles sont pilotées depuis
 Digiforma plutôt que dupliquées dans Directus. Le jeu de données "formations
-témoin" initialement seedé par ST-09 a été retiré en conséquence — si un
+témoin" initialement seedé a été retiré en conséquence — si un
 besoin de collection `formations` apparaît plus tard, il fera l'objet d'un
 ticket dédié plutôt que d'une réintroduction du seed.

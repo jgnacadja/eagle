@@ -287,7 +287,7 @@ import type { CentresQuery } from '~/composables/useCentres'
 import { revealStagger } from '~/utils/reveal'
 import type { CenterResult } from '~/types/center-result'
 import { availabilityStatus, useCentreSessionDates } from '~/composables/useCentres'
-import { useDataLayer } from '~/composables/useDataLayer'
+import { useAnalytics } from '~/composables/useAnalytics'
 import { resolveDepartment } from '~/utils/departments'
 
 const route = useRoute()
@@ -563,7 +563,7 @@ function onResize() {
   measureListOverflow()
 }
 
-const { pushEvent } = useDataLayer()
+const { pushEvent } = useAnalytics()
 
 onMounted(() => {
   pushEvent({

@@ -119,7 +119,7 @@ describe('CenterFormationCard', () => {
   })
 
   it('pushes select_formation_centre when center props are passed', async () => {
-    window.dataLayer = []
+    window._paq = []
     const wrapper = mount(CenterFormationCard, {
       props: {
         ...baseProps,
@@ -135,20 +135,20 @@ describe('CenterFormationCard', () => {
     const link = wrapper.find('a')
     await link.trigger('click')
 
-    const event = window.dataLayer?.find((e) => e.event === 'select_formation_centre')
-    expect(event).toMatchObject({
-      event: 'select_formation_centre',
-      center_id: 'creteil',
-      center_name: 'Learn Up Créteil',
-      center_city: 'Créteil',
-      formation_name: 'CACES R489 — chariots élévateurs',
-      list_name: 'formations_centre',
-      position: 1
-    })
+    const event = window._paq?.find(
+      (c) => c[0] === 'trackEvent' && c[2] === 'select_formation_centre'
+    )
+    expect(event).toEqual([
+      'trackEvent',
+      'Formations',
+      'select_formation_centre',
+      'CACES R489 — chariots élévateurs:Learn Up Créteil',
+      1
+    ])
   })
 
   it('pushes select_formation_card when no center props are passed', async () => {
-    window.dataLayer = []
+    window._paq = []
     const wrapper = mount(CenterFormationCard, {
       props: {
         ...baseProps,
@@ -162,11 +162,14 @@ describe('CenterFormationCard', () => {
     const link = wrapper.find('a')
     await link.trigger('click')
 
-    const event = window.dataLayer?.find((e) => e.event === 'select_formation_card')
-    expect(event).toMatchObject({
-      event: 'select_formation_card',
-      formation_name: 'CACES R489 — chariots élévateurs',
-      list_name: 'formations_similaires'
-    })
+    const event = window._paq?.find(
+      (c) => c[0] === 'trackEvent' && c[2] === 'select_formation_card'
+    )
+    expect(event).toEqual([
+      'trackEvent',
+      'Formations',
+      'select_formation_card',
+      'CACES R489 — chariots élévateurs:formations_similaires'
+    ])
   })
 })
